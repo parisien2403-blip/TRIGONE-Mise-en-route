@@ -453,6 +453,30 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
   .BTN-ACCUEIL-PETIT { letter-spacing: 0.05em; padding: 13px 8px; }
   .P0-TAB { flex: 1 1 auto; font-size: 0.52rem; letter-spacing: 0.02em; padding: 10px 4px; }
 }
+/* ===== Petits écrans (comme TRIGONE compte-rendu) : rien de coupé ni de superposé, de 320 px à la tablette ===== */
+.MER-PANIER-ITEM { flex-wrap: wrap; }
+.MER-PANIER-ITEM-TXT { flex: 1 1 160px; overflow-wrap: anywhere; }
+.MER-PANIER-ITEM-SUB, .MER-HINT, .MER-FD-TITRE { overflow-wrap: anywhere; }
+@media (max-width: 430px) {
+  body { padding-left: max(10px, env(safe-area-inset-left, 0px)); padding-right: max(10px, env(safe-area-inset-right, 0px)); }
+  .CARD { padding: 18px 14px 20px; }
+  .MER-BOTTOM-BAR { margin-left: -14px; margin-right: -14px; margin-bottom: -20px; padding-left: 12px; padding-right: 12px; }
+  #MER-MODALE-FOND { padding: 10px !important; }
+  .MER-PERSONNE-CARD { padding: 12px 10px; }
+}
+@media (max-width: 400px) {
+  /* 5 onglets : deux rangées (3 + 2) pour garder les libellés entiers */
+  .MER-TABS { flex-wrap: wrap; }
+  .MER-TAB { flex: 1 1 28%; font-size: 0.62rem; padding: 7px 4px; flex-direction: row; justify-content: center; gap: 6px; }
+  .MER-TAB-NUM { width: 20px; height: 20px; flex-shrink: 0; }
+  .MER-BOTTOM-BAR .BTN { letter-spacing: 0.03em; padding: 11px 10px; }
+  .BTN { letter-spacing: 0.05em; }
+}
+@media (max-width: 374px) {
+  /* champs côte à côte trop étroits : l'un sous l'autre */
+  .MER-ROW2, .MER-ROW3 { grid-template-columns: 1fr; gap: 0; }
+  .MER-FIELD input[type=text], .MER-FIELD input[type=password], .MER-FIELD input[type=email], .MER-FIELD input[type=number], .MER-FIELD input[type=datetime-local], .MER-FIELD select, .MER-FIELD textarea { padding: 11px 12px; }
+}
 .MER-ERREUR { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.12) !important; }
 .MER-CHECKBOX-ROW { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; padding: 12px 14px; background: rgba(90,122,148,0.06); border-radius: 10px; cursor: pointer; }
 .MER-CHECKBOX-ROW input { width: 18px; height: 18px; flex-shrink: 0; }
