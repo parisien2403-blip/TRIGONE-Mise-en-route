@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 17;
+var APP_CODE_VERSION = 18;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -123,8 +123,8 @@ function TPL_ACCUEIL() {
         '<div class="MER-P0-HERO">' +
           '<button type="button" class="BTN-ACCUEIL" onclick="NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
           '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur</button>' +
-          '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_CODE_VERSION + '</span></p>' +
         '</div>' +
+        '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_CODE_VERSION + '</span></p>' +
         '<nav class="P0-TAB-BAR" aria-label="Navigation accueil"><div class="P0-DOCK-INNER">' +
           TPL_ONGLET_DOCK('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
           TPL_ONGLET_DOCK('PANIER', MER_ICONES.PANIER, 'Panier' + (n ? ' (' + n + ')' : ''), n > 0) +
@@ -1017,6 +1017,53 @@ function FERMER_POURQUOI() {
     }, 350);
 }
 
+// ===================== CONFIGURATION INITIALE (« Avant de commencer ») =====================
+// Première ouverture, après la présentation : identité, mails et code à 4 chiffres, comme TRIGONE compte-rendu.
+// Les mêmes réglages que Mon espace ; un valideur ou l'assistant Chorus DT peut passer cette étape.
+var STORAGE_CONFIG_FAITE = 'mer_config_faite';
+function CONFIG_FAITE() { try { return localStorage.getItem(STORAGE_CONFIG_FAITE) === '1'; } catch (e) { return true; } }
+var MER_CONFIG_CHAMPS = { UNITE: 'unite', CIE: 'cie', GRADE: 'grade', MATRICULE: 'matricule', NOM: 'nom', PRENOM: 'prenom' };
+function AFFICHER_CONFIG_INITIALE() {
+    var r = GET_REGLAGES(), id = r.identite || {};
+    Object.keys(MER_CONFIG_CHAMPS).forEach(function(k) {
+        var c = MER_CONFIG_CHAMPS[k];
+        document.getElementById('CONFIG-' + k).value = id[c] || (c === 'unite' ? r.derniereUnite : c === 'cie' ? r.derniereCie : '') || '';
+    });
+    document.getElementById('CONFIG-MAIL-VALIDEUR').value = r.mailSignataire || '';
+    document.getElementById('CONFIG-MAIL-MOI').value = r.mailDemandeur || '';
+    document.getElementById('CONFIG-PIN-BLOC').style.display = PIN_EST_DEFINI() ? 'none' : '';
+    document.getElementById('CONFIG-ERREUR').classList.add('HIDDEN');
+    document.getElementById('CONFIG-INITIALE-OVERLAY').classList.remove('HIDDEN');
+}
+function FERMER_CONFIG_INITIALE() {
+    try { localStorage.setItem(STORAGE_CONFIG_FAITE, '1'); } catch (e) {}
+    document.getElementById('CONFIG-INITIALE-OVERLAY').classList.add('HIDDEN');
+    SHOW_PAGE('ACCUEIL');
+}
+function VALIDER_CONFIG_INITIALE() {
+    var erreur = document.getElementById('CONFIG-ERREUR');
+    function refuser(t) { erreur.textContent = '⛔ ' + t; erreur.classList.remove('HIDDEN'); }
+    var v = {};
+    Object.keys(MER_CONFIG_CHAMPS).forEach(function(k) { v[MER_CONFIG_CHAMPS[k]] = document.getElementById('CONFIG-' + k).value.trim(); });
+    var mailV = document.getElementById('CONFIG-MAIL-VALIDEUR').value.trim(), mailM = document.getElementById('CONFIG-MAIL-MOI').value.trim();
+    var avecPin = !PIN_EST_DEFINI();
+    var pin1 = document.getElementById('CONFIG-PIN-1').value.trim(), pin2 = document.getElementById('CONFIG-PIN-2').value.trim();
+    if (!v.unite || !v.cie || !v.grade || !v.nom || !v.prenom || !v.matricule || !mailV || !mailM || (avecPin && (!pin1 || !pin2))) return refuser('Merci de remplir tous les champs avant de continuer.');
+    if (v.matricule.replace(/\D/g, '').length !== 10) return refuser('Le matricule doit comporter 10 chiffres (ex : 067 50 10 191).');
+    if (mailV.indexOf('@') === -1 || mailM.indexOf('@') === -1) return refuser('Adresse mail invalide.');
+    if (avecPin && !/^\d{4}$/.test(pin1)) return refuser('Le code doit contenir exactement 4 chiffres.');
+    if (avecPin && pin1 !== pin2) return refuser('Les deux codes ne correspondent pas.');
+    var r = GET_REGLAGES();
+    r.identite = v; r.derniereUnite = v.unite; r.derniereCie = v.cie;
+    r.mailSignataire = mailV; r.mailDemandeur = mailM;
+    SAVE_REGLAGES(r);
+    (avecPin ? PIN_EMPREINTE(pin1).then(function(hash) { try { localStorage.setItem(STORAGE_PIN, hash); } catch (e) {} }) : Promise.resolve()).then(function() {
+        FERMER_CONFIG_INITIALE();
+        MSG_INFO('C\'est prêt', 'Vos informations pré-rempliront chaque nouvelle demande.' + (avecPin ? ' Votre code vous sera demandé à chaque ouverture.' : ''), '✅', 'mascotte-pouce.webp');
+    });
+}
+function PASSER_CONFIG_INITIALE() { FERMER_CONFIG_INITIALE(); }
+
 // ===================== NOTICE =====================
 var MER_NOTICE_CLE = null;
 var MER_NOTICES = {
@@ -1848,7 +1895,7 @@ function GET_MAJ_VUES() { try { return JSON.parse(localStorage.getItem(STORAGE_M
 function SET_MAJ_VUE(cle, v) { var m = GET_MAJ_VUES(); m[cle] = v; try { localStorage.setItem(STORAGE_MAJ_VUES, JSON.stringify(m)); } catch (e) {} }
 function ECRAN_LIBRE() {
     if (document.getElementById('INTRO-SPLASH')) return false;
-    return ['MSG-OVERLAY', 'PIN-OVERLAY', 'POURQUOI-OVERLAY'].every(function(id) {
+    return ['MSG-OVERLAY', 'PIN-OVERLAY', 'POURQUOI-OVERLAY', 'CONFIG-INITIALE-OVERLAY'].every(function(id) {
         var el = document.getElementById(id); return !el || el.classList.contains('HIDDEN');
     });
 }
@@ -1932,10 +1979,13 @@ window.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('hashchange', function() { if (location.hash === '#admin') OUVRIR_ADMIN(); });
     if (location.hash === '#admin') OUVRIR_ADMIN();
     else SHOW_PAGE(D.personnes[0].nom || D.objet ? 'FORMULAIRE' : 'ACCUEIL');
+    // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
     try { vue = localStorage.getItem(STORAGE_POURQUOI) === '1'; } catch (e) {}
-    if (!vue) AFFICHER_POURQUOI();
-    else if (PIN_EST_DEFINI()) OUVRIR_ECRAN_PIN('verif');
+    var suite = function() { if (!CONFIG_FAITE()) AFFICHER_CONFIG_INITIALE(); };
+    if (!vue) AFFICHER_POURQUOI(suite);
+    else if (PIN_EST_DEFINI()) OUVRIR_ECRAN_PIN('verif', suite);
+    else suite();
     REGISTER_SERVICE_WORKER();
     INIT_VERIF_MAJ_AUTO();
 });

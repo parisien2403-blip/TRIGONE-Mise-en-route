@@ -83,9 +83,9 @@ body.dark-mode .CARD:not(#MER-P0) { border-top-color: #525252; }
   flex: 1; min-height: 0; height: 100%; display: flex; flex-direction: column;
   justify-content: space-between; gap: 10px;
 }
-.MER-P0-INNER { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
-.MER-LOGO-WRAP { width: calc(100% + 36px); margin: 0 -18px; display: flex; justify-content: center; align-items: center; overflow: hidden; flex: 1; min-height: 0; max-height: min(52vh, 340px); }
-.MER-LOGO-IMG { width: min(400px, 84vw); height: auto; max-height: 100%; object-fit: contain; transition: filter 0.3s ease; }
+.MER-P0-INNER { position: relative; flex: 0 1 auto; min-height: 0; padding-top: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+.MER-LOGO-WRAP { width: calc(100% + 36px); margin: 0 -18px; display: flex; justify-content: center; align-items: center; overflow: hidden; min-height: 0; max-height: min(46vh, 300px); }
+.MER-LOGO-IMG { width: min(300px, 70vw); height: auto; max-height: 100%; object-fit: contain; transition: filter 0.3s ease; }
 body.dark-mode .MER-LOGO-IMG { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
 .MER-P0-HERO { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 360px; margin: 4px auto 0; flex-shrink: 0; }
 /* Accueil : bouton principal, liens et barre d'onglets, repris de TRIGONE compte-rendu */
@@ -99,7 +99,9 @@ body.dark-mode .MER-LOGO-IMG { filter: brightness(0) saturate(100%) invert(48%) 
 .BTN-ACCUEIL:active { transform: scale(0.98); }
 /* Boutons secondaires de l'accueil : même style que « Nouvelle demande », en plus petit */
 .BTN-ACCUEIL-PETIT { display: block; text-align: center; font-size: clamp(0.62rem, 3vw, 0.74rem); padding: 13px 16px; margin-bottom: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
-.MER-P0-HERO { gap: 8px; }
+/* Les boutons occupent l'espace libre entre le logo et « Conçu par », centrés dedans */
+.MER-P0-HERO { gap: 8px; flex: 1 1 auto; margin: 0 auto; }
+#MER-P0 .app-credit { margin: 0 0 8px; }
 .P0-LIEN {
   display: block; width: 100%; background: none; color: #1a1a1a; font-family: inherit; font-size: 0.68em;
   padding: 9px 20px; border: none; font-weight: 700; cursor: pointer; text-transform: uppercase;
@@ -289,6 +291,33 @@ body.dark-mode .NOTICE-CARD, body.dark-mode .notice-fold { background: #242424; 
 @media (max-width: 560px) { .P0-REF-BTN { right: 54px; top: 14px; } }
 body.dark-mode .P0-REF-BTN { background: rgba(36,36,36,0.9); border-color: #404040; color: #94a3b8; }
 
+/* Configuration initiale (« Avant de commencer »), reprise de TRIGONE compte-rendu */
+.config-page { position: fixed; inset: 0; z-index: 99994; background: var(--sm2-surface); display: flex; flex-direction: column; overflow: hidden; }
+.config-page.HIDDEN { display: none; }
+.config-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.config-content { max-width: 420px; margin: 0 auto; padding: 40px 26px 50px; }
+.config-logo { width: 52px; height: auto; display: block; margin: 0 auto 14px; }
+.config-titre { font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 1.5em; text-align: center; color: var(--tg-ink); margin: 0 0 8px; }
+.config-soustitre { text-align: center; font-size: 0.85em; color: #64748b; line-height: 1.5; margin: 0 0 26px; }
+.config-groupe { font-size: 0.72em; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: var(--tg-ink); padding-bottom: 6px; border-bottom: 2px solid var(--tg-ink); margin: 22px 0 14px; }
+.config-champ { margin-bottom: 16px; }
+.config-champ label { display: block; font-size: 0.8em; font-weight: 700; color: var(--tg-ink); margin-bottom: 6px; }
+.config-champ input { width: 100%; box-sizing: border-box; padding: 12px 14px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 0.95em; font-family: inherit; background: var(--sm2-surface); color: var(--tg-ink); }
+.config-champ input:focus { outline: none; border-color: var(--tg-accent); }
+.config-duo { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.config-hint { font-size: 0.76em; color: #64748b; margin: 0 0 10px; }
+.config-pin-row { display: flex; gap: 12px; }
+.config-pin-row input { flex: 1 1 0; min-width: 0; box-sizing: border-box; padding: 12px 10px; border-radius: 10px; border: 1.5px solid #cbd5e1; font-size: 1em; letter-spacing: 0.15em; text-align: center; font-family: inherit; background: var(--sm2-surface); color: var(--tg-ink); }
+.config-erreur { color: #dc2626; font-size: 0.85em; font-weight: 600; text-align: center; margin: 0 0 16px; white-space: pre-line; }
+.config-erreur.HIDDEN { display: none; }
+.config-cta { display: block; width: 100%; margin-top: 10px; padding: 15px; border: none; border-radius: 12px; background: var(--tg-ink); color: #fff; font-family: inherit; font-weight: 700; font-size: 0.95em; cursor: pointer; }
+.config-cta:active { transform: scale(0.98); }
+.config-passer { display: block; margin: 18px auto 0; background: none; border: none; font-family: inherit; font-size: 0.78em; font-weight: 600; color: #6b7280; text-decoration: underline; cursor: pointer; }
+body.dark-mode .config-page { background: #141414; }
+body.dark-mode .config-titre, body.dark-mode .config-champ label, body.dark-mode .config-groupe { color: #f5f5f5; border-color: #f5f5f5; }
+body.dark-mode .config-champ input, body.dark-mode .config-pin-row input { background: #1f1f1f; color: #e5e5e5; border-color: #404040; }
+body.dark-mode .config-cta { background: #f5f5f5; color: #141414; }
+
 .THEME-TOGGLE {
   position: fixed; top: calc(14px + var(--safe-top)); right: calc(14px + var(--safe-right)); z-index: 500;
   width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--sm2-border); background: #fff;
@@ -443,6 +472,44 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
 </script>
 <button type="button" class="THEME-TOGGLE" id="THEME-TOGGLE-BTN" onclick="TOGGLE_THEME()" aria-label="Mode sombre">🌙</button>
 <div class="PAGE-STAGE" id="PAGE-STAGE"></div>
+<div id="CONFIG-INITIALE-OVERLAY" class="config-page HIDDEN">
+  <div class="config-scroll">
+    <div class="config-content">
+      <img src="phoenix-icon.png" alt="TRIGONE" class="config-logo">
+      <h1 class="config-titre">Avant de commencer</h1>
+      <p class="config-soustitre">Ces informations pré-remplissent chaque demande de mise en route. Modifiables à tout moment depuis Mon espace.</p>
+      <div class="config-groupe">Mon identité</div>
+      <div class="config-duo">
+        <div class="config-champ"><label for="CONFIG-UNITE">Unité / entité</label><input type="text" id="CONFIG-UNITE" placeholder="EX : 4°RIISC" autocomplete="off"></div>
+        <div class="config-champ"><label for="CONFIG-CIE">CIE</label><input type="text" id="CONFIG-CIE" placeholder="EX : 4CIE" autocomplete="off"></div>
+      </div>
+      <div class="config-duo">
+        <div class="config-champ"><label for="CONFIG-GRADE">Grade</label><input type="text" id="CONFIG-GRADE" placeholder="EX : ADJUDANT" autocomplete="off"></div>
+        <div class="config-champ"><label for="CONFIG-MATRICULE">Matricule</label><input type="text" id="CONFIG-MATRICULE" placeholder="EX : 067 50 10 191" autocomplete="off" inputmode="numeric" oninput="this.value=FORMAT_MATRICULE(this.value)"></div>
+      </div>
+      <div class="config-duo">
+        <div class="config-champ"><label for="CONFIG-NOM">Nom</label><input type="text" id="CONFIG-NOM" placeholder="EX : BOUQUET" autocomplete="off"></div>
+        <div class="config-champ"><label for="CONFIG-PRENOM">Prénom</label><input type="text" id="CONFIG-PRENOM" placeholder="EX : Germain-Pierre" autocomplete="off"></div>
+      </div>
+      <div class="config-groupe">Envoi de mes demandes</div>
+        <div class="config-champ"><label for="CONFIG-MAIL-VALIDEUR">Mail du 1er valideur (chef de service)</label><input type="email" id="CONFIG-MAIL-VALIDEUR" placeholder="EX : prenom.nom@interieur.gouv.fr" autocomplete="off"></div>
+        <div class="config-champ"><label for="CONFIG-MAIL-MOI">Mon mail</label><input type="email" id="CONFIG-MAIL-MOI" placeholder="EX : prenom.nom@interieur.gouv.fr" autocomplete="off"></div>
+      <div class="config-groupe">Sécurité</div>
+      <div class="config-champ" id="CONFIG-PIN-BLOC">
+        <label>Code d'accès à 4 chiffres</label>
+        <p class="config-hint">Demandé à chaque ouverture de TRIGONE Mise en route, pour protéger vos données.</p>
+        <div class="config-pin-row">
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="CONFIG-PIN-1" placeholder="Code" autocomplete="off">
+          <input type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="CONFIG-PIN-2" placeholder="Confirmer" autocomplete="off">
+        </div>
+      </div>
+      <p id="CONFIG-ERREUR" class="config-erreur HIDDEN"></p>
+      <button type="button" class="config-cta" onclick="VALIDER_CONFIG_INITIALE()">Continuer →</button>
+      <button type="button" class="config-passer" onclick="PASSER_CONFIG_INITIALE()">Je suis valideur ou assistant Chorus DT : passer</button>
+    </div>
+  </div>
+</div>
+
 <div id="POURQUOI-OVERLAY" class="pourquoi-page HIDDEN">
   <div class="pourquoi-halo"></div>
   <div class="pourquoi-content">
