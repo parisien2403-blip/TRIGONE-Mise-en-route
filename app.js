@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 22;
+var APP_CODE_VERSION = 23;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -94,7 +94,6 @@ function SHOW_PAGE(page) {
     else if (page === 'PANIER') zone.innerHTML = TPL_PANIER();
     else if (page === 'VALIDATION') { OUVRIR_VALIDATION(); return; }
     else if (page === 'VERIFIER') zone.innerHTML = TPL_VERIFIER();
-    else if (page === 'ADMIN') zone.innerHTML = TPL_ADMIN();
     else if (page === 'BIBLIOTHEQUE') zone.innerHTML = TPL_BIBLIOTHEQUE();
     else if (page === 'ESPACE') zone.innerHTML = TPL_MON_ESPACE();
     else if (page === 'NOTICE') zone.innerHTML = TPL_NOTICE();
@@ -216,8 +215,7 @@ function TPL_MON_ESPACE() {
               '<button type="button" class="BTN BTN-GHOST" onclick="OUVRIR_ECRAN_PIN(\'creation\')">Activer un code à 4 chiffres</button>') +
         '<div class="MER-SECTION-TITLE">Application</div>' +
         '<button type="button" class="BTN BTN-GHOST" onclick="PROPOSER_INSTALLATION(true)">📲 Installer l\'application</button>' +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
-        '<button type="button" class="P0-LIEN" style="opacity:0.6;" onclick="OUVRIR_ADMIN()">Administration des valideurs</button></div>';
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 
 function NOUVELLE_DEMANDE() {
@@ -1486,7 +1484,6 @@ function TELECHARGER_OCTETS(nom, octets, type) {
 // le valideur connaît. Le code déverrouille la clé ; une validation est une signature ECDSA du contenu
 // exact de la demande : une signature faite avec une clé absente de la liste, ou une demande modifiée après
 // signature, est détectée par le 2e valideur, par l'assistant Chorus DT et par la page de vérification.
-var MER_DEPOT_GITHUB = 'https://github.com/parisien2403-blip/TRIGONE-Mise-en-route';
 var STORAGE_LISTE_VALIDEURS = 'mer_liste_valideurs';
 var MER_CLE_SESSION = null;          // clé privée déverrouillée par le code d'accès (non exportable, mémorisée sur l'appareil)
 var MER_ACCES_SESSION = null;        // entrée de valideurs.json correspondant au code saisi
@@ -1525,7 +1522,6 @@ function TEXTE_A_SIGNER(d, niveau, signataire, le) {
         niveau: niveau, signataire: signataire, le: le
     });
 }
-function EMPREINTE_COURTE(sig) { return (sig || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 12).toUpperCase().replace(/(.{4})/g, '$1 ').trim(); }
 
 var ALGO_CLE = { name: 'ECDSA', namedCurve: 'P-256' };
 var ALGO_SIG = { name: 'ECDSA', hash: 'SHA-256' };
@@ -1581,29 +1577,6 @@ function VERIFIER_VALIDATIONS(d) {
     }));
 }
 
-// ---- Codes d'accès des valideurs ----
-var CODE_CARACTERES = { lettres: 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz', chiffres: '23456789', symboles: '#$%&*+=?@!' };
-function GENERER_CODE_ACCES() {
-    var tous = CODE_CARACTERES.lettres + CODE_CARACTERES.chiffres + CODE_CARACTERES.symboles;
-    function tirer(jeu) { return jeu[crypto.getRandomValues(new Uint32Array(1))[0] % jeu.length]; }
-    for (;;) {
-        var c = '';
-        for (var i = 0; i < 16; i++) c += tirer(tous);
-        if (/[A-Za-z]/.test(c) && /\d/.test(c) && /[#$%&*+=?@!]/.test(c)) return c;
-    }
-}
-// Crée l'accès d'un rôle : nouvelle paire de clés, clé privée chiffrée par un nouveau code (affiché une seule fois).
-function CREER_ACCES(role) {
-    var code = GENERER_CODE_ACCES();
-    var sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-    return crypto.subtle.generateKey(ALGO_CLE, true, ['sign', 'verify']).then(function(p) {
-        return Promise.all([crypto.subtle.exportKey('spki', p.publicKey), crypto.subtle.exportKey('pkcs8', p.privateKey), CLE_DU_CODE(code, sel)]);
-    }).then(function(r) {
-        return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, r[2], r[1]).then(function(chiffre) {
-            return { code: code, acces: { role: role, cle: B64(r[0]), sel: B64(sel), iv: B64(iv), prive: B64(chiffre), creeLe: new Date().toISOString() } };
-        });
-    });
-}
 // Essaie le code sur chaque accès actif : celui qu'il déchiffre donne la clé de signature et le rôle.
 function DEVERROUILLER_ACCES(code) {
     var acces = ((MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || []).filter(function(a) { return a.prive && !a.retire; });
@@ -2082,67 +2055,6 @@ function TELECHARGER_PDF_VERIFIE(indices) {
     }).catch(function(e) { FERMER_MSG(); setTimeout(function() { MSG_ERREUR('PDF impossible', e.message || String(e)); }, 350); });
 }
 
-// ===================== ADMINISTRATION DES VALIDEURS =====================
-// L'administrateur colle les codes d'habilitation reçus ; l'écran produit le contenu de valideurs.json à
-// publier sur GitHub. Seul un compte autorisé sur le dépôt peut le publier : c'est là qu'est la sécurité.
-var MER_ADMIN_LISTE = null;
-function OUVRIR_ADMIN() {
-    CHARGER_LISTE_VALIDEURS().then(function(l) {
-        MER_ADMIN_LISTE = JSON.parse(JSON.stringify(l.valideurs ? l : { valideurs: [] }));
-        SHOW_PAGE('ADMIN');
-    });
-}
-function TPL_ADMIN() {
-    var l = MER_ADMIN_LISTE || { valideurs: [] };
-    var lignes = l.valideurs.map(function(v, i) {
-        return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
-            '<span class="MER-BADGE">' + LIBELLE_ROLE(v.role) + '</span>' + (v.retire ? ' <span class="MER-BADGE" style="color:#b91c1c;">Retiré</span>' : '') +
-            '<div class="MER-PANIER-ITEM-SUB" style="margin-top:6px;">Code créé le ' + ESC(new Date(v.creeLe || v.habiliteLe).toLocaleDateString('fr-FR')) +
-            (v.retire ? ', retiré le ' + ESC(new Date(v.retire).toLocaleDateString('fr-FR')) : '') + ' · clé ' + ESC(EMPREINTE_COURTE(v.cle.slice(-24))) + '</div></div>' +
-            (v.retire ? '' : '<button type="button" class="BTN-DANGER-TEXT" onclick="ADMIN_RETIRER(' + i + ')">Retirer</button>') + '</div>';
-    }).join('') || '<div class="MER-EMPTY">Aucun code d\'accès valideur.</div>';
-    return '<div class="CARD"><h2>Administration</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Codes d\'accès des valideurs (fichier valideurs.json du dépôt GitHub)</p>' + lignes +
-        '<div class="MER-SECTION-TITLE">Nouveau code d\'accès</div>' +
-        '<p class="MER-HINT" style="margin-bottom:10px;">Remplace le code actuel du rôle choisi : les validations déjà faites restent valables, l\'ancien code ne fonctionne plus.</p>' +
-        '<div class="MER-ACTIONS" style="margin-bottom:10px;">' +
-            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ADMIN_NOUVEAU_CODE(1)">1er valideur</button>' +
-            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ADMIN_NOUVEAU_CODE(2)">2e valideur</button>' +
-        '</div>' +
-        '<div class="MER-SECTION-TITLE">Publier</div>' +
-        '<p class="MER-HINT" style="margin-bottom:10px;">1. Copiez le contenu ci-dessous. 2. Ouvrez valideurs.json sur GitHub, remplacez tout son contenu, puis « Commit changes ». Actif 1 à 2 minutes après.</p>' +
-        '<textarea class="MER-CODE" id="MER-ADMIN-JSON" readonly rows="6">' + ESC(JSON.stringify(l, null, 2)) + '</textarea>' +
-        '<div class="MER-ACTIONS" style="margin:10px 0;">' +
-            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="COPIER_TEXTE(document.getElementById(\'MER-ADMIN-JSON\').value, this)">Copier</button>' +
-            '<a class="BTN BTN-PRIMARY BTN-SMALL" target="_blank" rel="noopener" href="' + MER_DEPOT_GITHUB + '/edit/main/valideurs.json">Ouvrir sur GitHub</a>' +
-        '</div>' +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
-}
-function ADMIN_NOUVEAU_CODE(role) {
-    MSG_CONFIRM('Nouveau code ?', 'Créer un nouveau code d\'accès pour le ' + LIBELLE_ROLE(role) + ' ?\n\nL\'ancien code cessera de fonctionner une fois la liste publiée.',
-        'Créer le code', function() { ADMIN_CREER_CODE(role); }, '🔑', 'mascotte-code.webp');
-}
-function ADMIN_CREER_CODE(role) {
-    CREER_ACCES(role).then(function(r) {
-        var maintenant = new Date().toISOString();
-        MER_ADMIN_LISTE.valideurs.forEach(function(a) { if (a.role === role && !a.retire) a.retire = maintenant; });
-        MER_ADMIN_LISTE.valideurs.push(r.acces);
-        SHOW_PAGE('ADMIN');
-        AFFICHER_MODALE('Code du ' + LIBELLE_ROLE(role),
-            '<p style="font-size:0.86em; line-height:1.5;">Notez ce code et remettez-le au valideur : il ne sera plus jamais affiché. Pensez ensuite à publier la liste.</p>' +
-            '<div class="MER-CODE" style="font-size:1.2em; min-height:0; text-align:center; letter-spacing:0.08em; user-select:all;">' + ESC(r.code) + '</div>',
-            '<button type="button" class="BTN BTN-SECONDARY" onclick="COPIER_TEXTE(\'' + r.code + '\', this)">Copier</button>' +
-            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE()">C\'est noté</button>');
-    });
-}
-function ADMIN_RETIRER(i) {
-    var v = MER_ADMIN_LISTE.valideurs[i];
-    MSG_CONFIRM('Retirer ce code ?', 'Code d\'accès du ' + LIBELLE_ROLE(v.role) + '.\n\nLes validations passées restent valables ; ce code ne fonctionnera plus.', 'Retirer', function() {
-        v.retire = new Date().toISOString();
-        SHOW_PAGE('ADMIN');
-    }, '🗑️', 'mascotte-poubelle.webp', true);
-}
-
 // ===================== RETOUR D'UN REFUS (côté demandeur) =====================
 function IMPORTER_REFUS(input) {
     LIRE_FICHIERS_JSON(input, function(contenus) { STOCKER_PJ_IMPORTEES(contenus).then(function() {
@@ -2262,9 +2174,7 @@ function REGISTER_SERVICE_WORKER() {
 window.addEventListener('DOMContentLoaded', function() {
     APPLIQUER_THEME_INITIAL();
     LOAD_BROUILLON();
-    window.addEventListener('hashchange', function() { if (location.hash === '#admin') OUVRIR_ADMIN(); });
-    if (location.hash === '#admin') OUVRIR_ADMIN();
-    else SHOW_PAGE(D.personnes[0].nom || D.objet ? 'FORMULAIRE' : 'ACCUEIL');
+    SHOW_PAGE(D.personnes[0].nom || D.objet ? 'FORMULAIRE' : 'ACCUEIL');
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
     try { vue = localStorage.getItem(STORAGE_POURQUOI) === '1'; } catch (e) {}

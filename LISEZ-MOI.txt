@@ -62,10 +62,10 @@ CIRCUIT DE VALIDATION SÉCURISÉ
 - Le code n'est demandé qu'une fois par appareil : la clé déverrouillée est conservée sur le
   téléphone ou le PC sous forme non exportable (utilisable pour signer, jamais lisible), jusqu'à
   « Déconnexion ». Si l'administrateur remplace le code, l'appareil est déconnecté.
-- L'administrateur (page « Administration des valideurs », depuis Mon espace, ou adresse #admin)
-  peut créer un nouveau code pour un rôle (l'ancien cesse de fonctionner, les validations déjà
-  faites restent valables) puis publier la liste dans valideurs.json sur GitHub. Seul un compte
-  autorisé sur le dépôt peut la modifier.
+- Aucune page d'administration dans l'application : les codes ne sont visibles nulle part.
+  Pour changer un code, une nouvelle clé chiffrée est publiée dans valideurs.json sur GitHub
+  (seul un compte autorisé sur le dépôt peut le modifier) ; l'ancien code cesse alors de
+  fonctionner, les validations déjà faites restent valables.
 - Une fois connecté, le valideur importe les .json, valide (signature électronique du
   contenu exact de la demande) ou refuse avec un motif, une par une ou en lot.
   1er valideur -> .json au 2e valideur ; 2e valideur -> .json à l'assistant Chorus DT ;
