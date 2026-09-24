@@ -1,0 +1,37 @@
+TRIGONE — Mise en route — première version (le demandeur)
+============================================================
+
+MIS À JOUR : les vraies librairies (jsPDF, autotable, QR code) et les vraies icônes de TRIGONE ont
+remplacé mes copies provisoires, et un service worker (identique dans sa logique à celui de TRIGONE
+compte-rendu) permet maintenant l'installation et l'usage hors ligne.
+
+CE QUI EST FAIT DANS CETTE VERSION
+- Écran du demandeur (missionnaire, chef de cellule ou adjoint) : formulaire complet
+  reprenant les champs de la DOMR papier (identité, CIE, mission/formation, ABT,
+  trois trajets, nourri/logé à titre onéreux, demande d'avance, imputation, code
+  FD@LIGNE, notes de service à joindre).
+- Demande collective : possibilité d'ajouter plusieurs personnes sur une même demande.
+- Panier : plusieurs demandes peuvent être préparées puis envoyées ensemble en un
+  seul mail, pour ne pas multiplier les messages au premier signataire.
+- Génération d'un PDF (une page par demande) reprenant les informations de la DOMR
+  officielle, et d'un fichier .json qui portera la demande d'un signataire à l'autre.
+- Relecture avant envoi (comme sur TRIGONE compte-rendu) : rappel de ce qu'il faut
+  joindre au mail avant de l'envoyer.
+- Rien n'est perdu si l'application est fermée en pleine saisie (comme TRIGONE
+  compte-rendu) : la demande en cours et le panier sont sauvegardés automatiquement
+  sur l'appareil.
+- Même identité visuelle que TRIGONE (couleurs, police, boutons, mode sombre).
+
+CE QUI RESTE À FAIRE (la suite du circuit)
+- L'écran du 1er signataire (chef de service) : importer le .json reçu, consulter
+  la ou les demandes, signer, puis renvoyer vers le CDC.
+- L'écran du 2e signataire (secrétariat du chef de corps) : même principe, et
+  génération du PDF final avec les deux signatures une fois validé.
+- Le circuit de refus (renvoi au demandeur avec motif) que vous avez demandé — pas
+  encore construit, à prévoir avec les écrans de signature.
+- Un vrai manifeste d'icônes pour l'installation sur l'écran d'accueil du téléphone
+  (celui-ci est minimal pour l'instant).
+
+INSTALLATION
+Comme TRIGONE : déposez tous les fichiers (index.html, app.js, manifest.json, le
+dossier vendor/) à la racine d'un même espace d'hébergement.

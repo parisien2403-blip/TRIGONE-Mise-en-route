@@ -1,0 +1,179 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>TRIGONE — Mise en route</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#E8F0F6">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<script src="vendor/jspdf.umd.min.js"></script>
+<style>
+:root {
+  --tg-ink: #1a1a1a;
+  --tg-muted: #525252;
+  --tg-soft: #737373;
+  --tg-accent: #5A7A94;
+  --tg-accent-light: #7A9DB5;
+  --tg-border: #e8e8e8;
+  --tg-shadow: 0 10px 40px rgba(0, 0, 0, 0.06);
+  --safe-top: env(safe-area-inset-top, 0px);
+  --safe-bottom: env(safe-area-inset-bottom, 0px);
+  --safe-left: env(safe-area-inset-left, 0px);
+  --safe-right: env(safe-area-inset-right, 0px);
+  --sm2-bg: #F8FBFD;
+  --sm2-bg-accent: #E8F0F6;
+  --app-bg: linear-gradient(165deg, #F8FBFD 0%, #E8F0F6 100%);
+  --sm2-surface: #fff;
+  --sm2-text: var(--tg-ink);
+  --sm2-muted: var(--tg-muted);
+  --sm2-accent: var(--tg-accent);
+  --sm2-border: var(--tg-border);
+  --sm2-shadow: var(--tg-shadow);
+  --sm2-radius: 16px;
+  --sm2-radius-sm: 12px;
+  --sm2-font: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+* { box-sizing: border-box; }
+html { scroll-padding-top: env(safe-area-inset-top, 0px); min-height: 100%; min-height: 100dvh; background: #E8F0F6; }
+body {
+  margin: 0; font-family: var(--sm2-font); background: var(--app-bg); color: var(--sm2-text);
+  padding-top: calc(2px + env(safe-area-inset-top, 0px)); padding-bottom: env(safe-area-inset-bottom, 0px);
+  padding-left: max(24px, env(safe-area-inset-left, 0px)); padding-right: max(24px, env(safe-area-inset-right, 0px));
+  min-height: 100vh; min-height: 100dvh;
+}
+body.dark-mode {
+  --sm2-bg: #141414; --sm2-bg-accent: #1a1a1a; --sm2-surface: #1f1f1f;
+  --sm2-text: #e5e5e5; --sm2-muted: #a3a3a3; --sm2-border: rgba(255,255,255,0.08);
+  --sm2-shadow: 0 18px 50px rgba(0,0,0,0.4);
+  background: var(--sm2-bg); color: var(--sm2-text);
+}
+h1, h2, h3 { font-family: var(--sm2-font); margin: 0; }
+body.dark-mode h2 { color: #f5f5f5; }
+.PAGE-STAGE { position: relative; max-width: 480px; margin: 0 auto; }
+.PAGE-STAGE.avec-marge { padding: 18px 0 40px; }
+.CARD {
+  position: relative; background: var(--sm2-surface); border-radius: var(--sm2-radius);
+  padding: 22px 20px 24px; max-width: 480px; margin: 0 auto 18px; border: 1px solid var(--sm2-border);
+  box-shadow: var(--sm2-shadow); overflow: hidden;
+}
+.CARD:not(#MER-P0) { border-top: 2px solid var(--tg-ink); }
+body.dark-mode .CARD:not(#MER-P0) { border-top-color: #525252; }
+.HIDDEN { display: none !important; }
+
+/* Page d'accueil : occupe presque toute la hauteur de l'écran, comme TRIGONE compte-rendu — pas une petite
+   carte centrée. #MER-P0 remplace .CARD pour cet écran précis (pas de fond/ombre/bordure à ce niveau,
+   c'est .MER-P0-SHELL, à l'intérieur, qui porte l'habillage visuel). */
+#MER-P0 {
+  text-align: center; padding: 0; border: none; background: transparent; box-shadow: none;
+  max-width: 480px; margin: 0 auto;
+  height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
+  max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
+  min-height: 0; display: flex; flex-direction: column; align-items: stretch; justify-content: stretch;
+  overflow: hidden;
+}
+.MER-P0-SHELL {
+  position: relative; border-radius: 20px; padding: 20px 18px 14px; background: var(--sm2-surface);
+  color: var(--sm2-text); box-shadow: var(--sm2-shadow); border: 1px solid var(--sm2-border);
+  border-top: 2px solid var(--tg-accent-light); overflow: hidden;
+  flex: 1; min-height: 0; height: 100%; display: flex; flex-direction: column;
+  justify-content: space-between; gap: 10px;
+}
+.MER-P0-INNER { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
+.MER-LOGO-WRAP { width: calc(100% + 36px); margin: 0 -18px; display: flex; justify-content: center; align-items: center; overflow: hidden; flex: 1; min-height: 0; max-height: min(52vh, 340px); }
+.MER-LOGO-IMG { width: min(400px, 84vw); height: auto; max-height: 100%; object-fit: contain; transition: filter 0.3s ease; }
+body.dark-mode .MER-LOGO-IMG { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+.MER-P0-HERO { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 360px; margin: 4px auto 0; flex-shrink: 0; }
+.THEME-TOGGLE {
+  position: fixed; top: calc(14px + var(--safe-top)); right: calc(14px + var(--safe-right)); z-index: 500;
+  width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--sm2-border); background: #fff;
+  display: flex; align-items: center; justify-content: center; font-size: 1.1em; cursor: pointer;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.1);
+}
+body.dark-mode .THEME-TOGGLE { background: rgba(26,26,26,0.94); border-color: rgba(255,255,255,0.1); color: #e5e5e5; }
+.APP-VERSION-TAG { opacity: 0.75; }
+.app-credit { margin: 18px 0 0; text-align: center; font-size: 0.68em; color: var(--tg-muted); letter-spacing: 0.02em; }
+body.dark-mode .app-credit { color: #d97706; }
+
+.MER-LOGO-BLOCK { text-align: center; margin: 10px 0 22px; }
+.MER-PHOENIX { width: min(150px, 42vw); height: auto; margin: 0 auto 14px; display: block; transition: filter 0.3s ease; }
+body.dark-mode .MER-PHOENIX { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+.MER-WORDMARK { font-weight: 800; letter-spacing: 0.14em; font-size: 1.7em; line-height: 1; margin: 0; }
+.MER-SUBTITLE { color: var(--sm2-muted); font-size: 0.86em; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 6px 0 0; }
+
+.BTN {
+  display: block; width: 100%; border: none; border-radius: 12px; padding: 15px 20px; font-family: inherit;
+  font-weight: 700; font-size: 0.82em; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer;
+  text-align: center; transition: transform 0.15s ease, opacity 0.15s ease;
+}
+.BTN:active { transform: scale(0.98); }
+.BTN-PRIMARY { background: var(--tg-ink); color: #fff; box-shadow: 0 6px 20px rgba(0,0,0,0.14); }
+.MER-P0-HERO .BTN-PRIMARY { font-size: clamp(0.72rem, 3.6vw, 0.92rem); padding: 22px 16px; letter-spacing: 0.11em; line-height: 1.3; }
+.BTN-SECONDARY { background: none; color: var(--tg-ink); text-decoration: underline; text-underline-offset: 3px; box-shadow: none; padding: 10px 20px; }
+body.dark-mode .BTN-SECONDARY { color: #f5f5f5; }
+.BTN-ACCENT { background: var(--tg-accent); color: #fff; box-shadow: 0 6px 20px rgba(90,122,148,0.3); }
+.BTN-GHOST { background: rgba(90,122,148,0.08); color: var(--tg-accent); border: 1.5px solid rgba(90,122,148,0.25); box-shadow: none; }
+.BTN-DISABLED, .BTN:disabled { opacity: 0.4; cursor: not-allowed; }
+.BTN-SMALL { padding: 9px 14px; font-size: 0.72em; }
+.BTN-DANGER-TEXT { background: none; color: #b91c1c; box-shadow: none; text-transform: none; letter-spacing: 0; font-weight: 700; padding: 8px; font-size: 0.78em; }
+
+.MER-FIELD { margin-bottom: 16px; }
+.MER-FIELD label { display: block; font-size: 0.72em; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: var(--sm2-muted); margin-bottom: 6px; }
+.MER-FIELD input[type=text], .MER-FIELD input[type=email], .MER-FIELD input[type=number], .MER-FIELD input[type=datetime-local], .MER-FIELD select, .MER-FIELD textarea {
+  width: 100%; padding: 12px 14px; border-radius: 10px; border: 1.5px solid var(--sm2-border); background: var(--sm2-surface);
+  color: var(--sm2-text); font-family: inherit; font-size: 0.92em;
+}
+body.dark-mode .MER-FIELD input, body.dark-mode .MER-FIELD select, body.dark-mode .MER-FIELD textarea { background: #262626; border-color: #404040; }
+.MER-ROW2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+.MER-ROW3 { display: grid; grid-template-columns: 1.4fr 0.8fr 1fr; gap: 10px; }
+
+.MER-TOGGLE-PAIR { display: flex; gap: 8px; }
+.MER-TOGGLE-BTN {
+  flex: 1; padding: 11px 8px; border-radius: 10px; border: 1.5px solid var(--sm2-border); background: var(--sm2-surface);
+  color: var(--sm2-text); font-weight: 700; font-size: 0.8em; cursor: pointer; text-align: center;
+}
+.MER-TOGGLE-BTN.actif { background: var(--tg-ink); color: #fff; border-color: var(--tg-ink); }
+body.dark-mode .MER-TOGGLE-BTN { background: #262626; border-color: #404040; }
+
+.MER-SECTION-TITLE { font-size: 0.9em; font-weight: 800; margin: 22px 0 12px; padding-top: 16px; border-top: 1px solid var(--sm2-border); }
+.MER-SECTION-TITLE:first-child { margin-top: 0; padding-top: 0; border-top: none; }
+
+.MER-PERSONNE-CARD { border: 1.5px solid var(--sm2-border); border-radius: 12px; padding: 14px; margin-bottom: 12px; position: relative; }
+.MER-PERSONNE-CARD .MER-RETIRER { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #b91c1c; font-size: 1em; cursor: pointer; padding: 6px; }
+
+.MER-HINT { font-size: 0.76em; color: var(--sm2-muted); margin-top: 4px; line-height: 1.4; }
+.MER-BADGE { display: inline-block; background: rgba(90,122,148,0.12); color: var(--tg-accent); font-size: 0.7em; font-weight: 800; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.03em; }
+
+.MER-PANIER-ITEM { border: 1.5px solid var(--sm2-border); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
+.MER-PANIER-ITEM-TXT { flex: 1; min-width: 0; }
+.MER-PANIER-ITEM-TITRE { font-weight: 800; font-size: 0.88em; }
+.MER-PANIER-ITEM-SUB { font-size: 0.76em; color: var(--sm2-muted); margin-top: 2px; }
+
+.MER-EMPTY { text-align: center; padding: 30px 10px; color: var(--sm2-muted); font-size: 0.86em; }
+
+.MER-BOTTOM-BAR { position: sticky; bottom: 0; margin: 20px -20px -24px; padding: 14px 20px calc(14px + var(--safe-bottom)); background: var(--sm2-surface); border-top: 1px solid var(--sm2-border); display: flex; gap: 10px; }
+
+/* Onglets du formulaire : reprise exacte du système de TRIGONE compte-rendu (P1-TABS). */
+.MER-TABS { display: flex; gap: 4px; padding: 4px; margin: 0 0 18px; background: var(--sm2-bg-accent); border-radius: 12px; flex-wrap: wrap; }
+body.dark-mode .MER-TABS { background: rgba(255,255,255,0.06); }
+.MER-TAB {
+  flex: 1 1 calc(50% - 2px); min-width: 0; border: none; background: none; padding: 11px 6px;
+  font-size: 0.78em; line-height: 1.25; font-weight: 700; color: var(--sm2-muted); border-radius: 9px;
+  cursor: pointer; text-align: center; overflow-wrap: anywhere;
+}
+.MER-TAB.active { background: var(--tg-ink); color: #fff; }
+body.dark-mode .MER-TAB.active { background: #f1f5f9; color: #1a1a1a; }
+.MER-CHECKBOX-ROW { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; padding: 12px 14px; background: rgba(90,122,148,0.06); border-radius: 10px; cursor: pointer; }
+.MER-CHECKBOX-ROW input { width: 18px; height: 18px; flex-shrink: 0; }
+.MER-CHECKBOX-ROW span { font-size: 0.82em; font-weight: 700; }
+</style>
+</head>
+<body>
+<button type="button" class="THEME-TOGGLE" id="THEME-TOGGLE-BTN" onclick="TOGGLE_THEME()" aria-label="Mode sombre">🌙</button>
+<div class="PAGE-STAGE" id="PAGE-STAGE"></div>
+<script src="app.js"></script>
+</body>
+</html>
