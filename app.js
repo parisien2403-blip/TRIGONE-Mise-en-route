@@ -119,10 +119,10 @@ function TPL_ACCUEIL() {
         '</div>' +
         '<div class="MER-P0-HERO">' +
           '<button type="button" class="BTN-ACCUEIL" onclick="NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
-          '<label class="P0-LIEN">Importer une demande refusée' +
+          '<label class="BTN-ACCUEIL BTN-ACCUEIL-PETIT">Importer une demande refusée' +
             '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
-          '<button type="button" class="P0-LIEN" onclick="SHOW_PAGE(\'VALIDATION\')">🔒 Espace valideur</button>' +
-          '<button type="button" class="P0-LIEN" onclick="SHOW_PAGE(\'VERIFIER\')">✔ Vérifier une mise en route</button>' +
+          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur</button>' +
+          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VERIFIER\')">Vérifier une mise en route</button>' +
           '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + MER_VERSION + '</span></p>' +
         '</div>' +
         '<nav class="P0-TAB-BAR" aria-label="Navigation accueil"><div class="P0-DOCK-INNER">' +
