@@ -295,7 +295,11 @@ body.dark-mode .NOTICE-CARD, body.dark-mode .notice-fold { background: #242424; 
 .P0-REF-BTN { position: absolute; top: 10px; right: 10px; z-index: 5; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--tg-border); background: rgba(255,255,255,0.9); color: #64748b; font-family: inherit; font-size: 0.68em; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1; cursor: pointer; }
 .P0-REF-BTN:active { transform: scale(0.95); }
 /* Sur téléphone, le bouton du mode sombre occupe le coin : on se place juste à sa gauche. */
-@media (max-width: 560px) { .P0-REF-BTN { right: 54px; top: 14px; } }
+/* « Références » en haut, « Mise à jour » juste en dessous, comme TRIGONE compte-rendu */
+.P0-CHECK-UPDATE-BTN { top: 40px; }
+@media (max-width: 560px) { .P0-REF-BTN { right: 54px; top: 14px; } .P0-CHECK-UPDATE-BTN { top: 44px; } }
+.FOLD-ICON { display: inline-flex; width: 18px; height: 18px; margin-right: 8px; vertical-align: -4px; }
+.FOLD-ICON svg { width: 18px; height: 18px; stroke: var(--tg-accent); fill: none; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
 body.dark-mode .P0-REF-BTN { background: rgba(36,36,36,0.9); border-color: #404040; color: #94a3b8; }
 
 /* Configuration initiale (« Avant de commencer »), reprise de TRIGONE compte-rendu */
