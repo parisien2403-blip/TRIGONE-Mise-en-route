@@ -753,14 +753,15 @@ function FINALISER_ENVOI() {
 }
 
 // ===================== SÉCURITÉ DES VALIDATIONS =====================
-// Pas de serveur : chaque valideur possède une clé de signature créée sur son appareil et verrouillée par
-// son code PIN. L'administrateur publie dans valideurs.json (sur GitHub, qu'il est seul à pouvoir modifier)
-// la clé publique et le rôle de chaque valideur habilité. Une validation est une signature ECDSA du contenu
+// Pas de serveur : valideurs.json (sur GitHub, que seul l'administrateur peut modifier) contient, pour le 1er
+// et le 2e valideur, une clé publique et la clé privée correspondante chiffrée par un code d'accès que seul
+// le valideur connaît. Le code déverrouille la clé ; une validation est une signature ECDSA du contenu
 // exact de la demande : une signature faite avec une clé absente de la liste, ou une demande modifiée après
 // signature, est détectée par le 2e valideur, par l'assistant Chorus DT et par la page de vérification.
 var MER_DEPOT_GITHUB = 'https://github.com/parisien2403-blip/TRIGONE-Mise-en-route';
 var STORAGE_LISTE_VALIDEURS = 'mer_liste_valideurs';
-var MER_CLE_SESSION = null;          // clé privée déverrouillée par le PIN, gardée en mémoire seulement
+var MER_CLE_SESSION = null;          // clé privée déverrouillée par le code d'accès, gardée en mémoire seulement
+var MER_ACCES_SESSION = null;        // entrée de valideurs.json correspondant au code saisi
 var MER_LISTE_VALIDEURS = null;      // contenu de valideurs.json
 
 function B64(buf) {
@@ -852,28 +853,41 @@ function VERIFIER_VALIDATIONS(d) {
     }));
 }
 
-// ---- Clé du valideur sur cet appareil ----
-function CREER_CLE_VALIDEUR(identite, pin) {
+// ---- Codes d'accès des valideurs ----
+var CODE_CARACTERES = { lettres: 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz', chiffres: '23456789', symboles: '#$%&*+=?@!' };
+function GENERER_CODE_ACCES() {
+    var tous = CODE_CARACTERES.lettres + CODE_CARACTERES.chiffres + CODE_CARACTERES.symboles;
+    function tirer(jeu) { return jeu[crypto.getRandomValues(new Uint32Array(1))[0] % jeu.length]; }
+    for (;;) {
+        var c = '';
+        for (var i = 0; i < 16; i++) c += tirer(tous);
+        if (/[A-Za-z]/.test(c) && /\d/.test(c) && /[#$%&*+=?@!]/.test(c)) return c;
+    }
+}
+// Crée l'accès d'un rôle : nouvelle paire de clés, clé privée chiffrée par un nouveau code (affiché une seule fois).
+function CREER_ACCES(role) {
+    var code = GENERER_CODE_ACCES();
     var sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-    var paire;
     return crypto.subtle.generateKey(ALGO_CLE, true, ['sign', 'verify']).then(function(p) {
-        paire = p;
-        return Promise.all([crypto.subtle.exportKey('spki', p.publicKey), crypto.subtle.exportKey('pkcs8', p.privateKey), CLE_DU_PIN(pin, sel)]);
+        return Promise.all([crypto.subtle.exportKey('spki', p.publicKey), crypto.subtle.exportKey('pkcs8', p.privateKey), CLE_DU_PIN(code, sel)]);
     }).then(function(r) {
         return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, r[2], r[1]).then(function(chiffre) {
-            var v = Object.assign({}, identite, { cle: B64(r[0]), sel: B64(sel), iv: B64(iv), prive: B64(chiffre) });
-            SAVE_VALIDEUR(v);
-            return crypto.subtle.importKey('pkcs8', r[1], ALGO_CLE, false, ['sign']);
+            return { code: code, acces: { role: role, cle: B64(r[0]), sel: B64(sel), iv: B64(iv), prive: B64(chiffre), creeLe: new Date().toISOString() } };
         });
-    }).then(function(k) { MER_CLE_SESSION = k; });
+    });
 }
-function DEVERROUILLER_CLE(pin) {
-    var v = GET_VALIDEUR();
-    return CLE_DU_PIN(pin, new Uint8Array(DEB64(v.sel))).then(function(k) {
-        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(DEB64(v.iv)) }, k, DEB64(v.prive));
-    }).then(function(pkcs8) {
-        return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
-    }).then(function(k) { MER_CLE_SESSION = k; });
+// Essaie le code sur chaque accès actif : celui qu'il déchiffre donne la clé de signature et le rôle.
+function DEVERROUILLER_ACCES(code) {
+    var acces = ((MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || []).filter(function(a) { return a.prive && !a.retire; });
+    return acces.reduce(function(prec, a) {
+        return prec.catch(function() {
+            return CLE_DU_PIN(code, new Uint8Array(DEB64(a.sel))).then(function(k) {
+                return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(DEB64(a.iv)) }, k, DEB64(a.prive));
+            }).then(function(pkcs8) {
+                return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
+            }).then(function(k) { MER_CLE_SESSION = k; MER_ACCES_SESSION = a; });
+        });
+    }, Promise.reject(new Error('code')));
 }
 function SIGNER_VALIDATION(d, h) {
     var niveau = (d.validations || []).length + 1;
@@ -883,11 +897,6 @@ function SIGNER_VALIDATION(d, h) {
         return { niveau: niveau, signataire: signataire, grade: h.grade, nom: h.nom, prenom: h.prenom, fonction: h.fonction, le: le, sig: B64(sig) };
     });
 }
-function CODE_HABILITATION() {
-    var v = GET_VALIDEUR();
-    return 'TRIGONE-VALIDEUR:' + B64_TEXTE(JSON.stringify({ grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction, cle: v.cle, le: new Date().toISOString() }));
-}
-
 // ---- Données intégrées au PDF, pour la page « Vérifier une mise en route » ----
 function PDF_DONNEES(demandes) { return 'TRIGONE-MER:' + B64_TEXTE(JSON.stringify(demandes)) + ':FIN'; }
 function LIRE_DONNEES_PDF(texte) {
@@ -911,7 +920,13 @@ function GET_A_VALIDER() {
 }
 function SAVE_A_VALIDER(liste) { try { localStorage.setItem(STORAGE_A_VALIDER, JSON.stringify(liste)); } catch (e) {} }
 function NIVEAU_VALIDATION(d) { return (d.validations || []).length + 1; }
-function HABILITATION_COURANTE() { var v = GET_VALIDEUR(); return v.cle ? HABILITATION(v.cle) : null; }
+// Valideur connecté : rôle et clé de l'accès déverrouillé, identité saisie à la connexion.
+function HABILITATION_COURANTE() {
+    if (!MER_CLE_SESSION || !MER_ACCES_SESSION) return null;
+    var v = GET_VALIDEUR();
+    return { role: MER_ACCES_SESSION.role, cle: MER_ACCES_SESSION.cle, retire: MER_ACCES_SESSION.retire,
+        grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction };
+}
 
 // Recharge la liste des habilités et revérifie les validations reçues avant d'afficher la page.
 function OUVRIR_VALIDATION() {
@@ -933,76 +948,37 @@ function RENDER_VALIDATION_INPLACE() {
     });
 }
 
-// ---- 1. Activation ----
-function TPL_ACTIVATION() {
+// ---- Connexion par code d'accès ----
+function TPL_CONNEXION(v) {
     function champ(k, label, ph) {
-        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" placeholder="' + ph + '"></div>';
+        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" value="' + ESC(v[k] || '') + '" placeholder="' + ph + '"></div>';
     }
-    return '<p class="MER-HINT" style="margin:0 0 14px;">Première utilisation sur cet appareil. Renseignez votre identité et choisissez un code PIN : ' +
-        'il vous sera demandé à chaque connexion. Votre accès devra ensuite être habilité par l\'administrateur.</p>' +
+    return '<p class="MER-HINT" style="margin:0 0 14px;">Réservé aux valideurs. Votre identité apparaîtra dans la case de validation du PDF ; ' +
+        'le code d\'accès vous est remis par l\'administrateur de TRIGONE.</p>' +
         '<div class="MER-ROW2">' + champ('grade', 'Grade', 'EX : CAPITAINE') + champ('fonction', 'Fonction', 'EX : CHEF DE SERVICE') + '</div>' +
         '<div class="MER-ROW2">' + champ('nom', 'Nom', 'EX : DUPONT') + champ('prenom', 'Prénom', 'EX : Jean') + '</div>' +
-        '<div class="MER-ROW2">' +
-            '<div class="MER-FIELD"><label>Code PIN (6 chiffres)</label><input type="password" inputmode="numeric" maxlength="6" id="MER-VAL-pin" autocomplete="new-password"></div>' +
-            '<div class="MER-FIELD"><label>Confirmer le PIN</label><input type="password" inputmode="numeric" maxlength="6" id="MER-VAL-pin2" autocomplete="new-password"></div>' +
-        '</div>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="ACTIVER_VALIDEUR(this)">Activer mon accès valideur</button>';
+        '<div class="MER-FIELD"><label>Code d\'accès valideur</label><input type="password" id="MER-CODE-ACCES" autocomplete="current-password" ' +
+            'autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key===\'Enter\') SE_CONNECTER(this)"></div>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="SE_CONNECTER(this)">Se connecter</button>';
 }
-function ACTIVER_VALIDEUR(btn) {
-    var id = {};
-    ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) { id[k] = (document.getElementById('MER-VAL-' + k).value || '').trim(); });
-    var pin = document.getElementById('MER-VAL-pin').value, pin2 = document.getElementById('MER-VAL-pin2').value;
-    if (!id.grade || !id.nom || !id.prenom || !id.fonction) { alert('Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
-    if (!/^\d{6}$/.test(pin)) { alert('Le code PIN doit comporter 6 chiffres.'); return; }
-    if (pin !== pin2) { alert('Les deux codes PIN ne sont pas identiques.'); return; }
-    id.nom = id.nom.toUpperCase(); id.grade = id.grade.toUpperCase();
-    btn.disabled = true; btn.textContent = 'Création de votre clé…';
-    CREER_CLE_VALIDEUR(id, pin).then(RENDER_VALIDATION_INPLACE).catch(function(e) {
-        alert('Activation impossible sur ce navigateur : ' + e.message);
-        btn.disabled = false; btn.textContent = 'Activer mon accès valideur';
+function SE_CONNECTER(btn) {
+    var v = GET_VALIDEUR();
+    ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) { v[k] = (document.getElementById('MER-VAL-' + k).value || '').trim(); });
+    if (!v.grade || !v.nom || !v.prenom || !v.fonction) { alert('Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
+    v.grade = v.grade.toUpperCase(); v.nom = v.nom.toUpperCase();
+    SAVE_VALIDEUR(v);
+    var champ = document.getElementById('MER-CODE-ACCES');
+    var code = champ.value.trim();
+    if (!code) { alert('Merci de saisir votre code d\'accès.'); return; }
+    var bouton = document.querySelector('#PAGE-STAGE .BTN-PRIMARY');
+    if (bouton) { bouton.disabled = true; bouton.textContent = 'Vérification…'; }
+    CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(RENDER_VALIDATION_INPLACE).catch(function() {
+        alert('Code d\'accès incorrect.');
+        champ.value = '';
+        if (bouton) { bouton.disabled = false; bouton.textContent = 'Se connecter'; }
     });
 }
-
-// ---- 2. Connexion ----
-function TPL_CONNEXION(v) {
-    return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
-            '<div class="MER-PANIER-ITEM-TITRE">' + ESC(v.grade + ' ' + v.nom + ' ' + v.prenom) + '</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + ESC(v.fonction) + '</div></div></div>' +
-        '<div class="MER-FIELD"><label>Code PIN</label><input type="password" inputmode="numeric" maxlength="6" id="MER-PIN" autocomplete="current-password" ' +
-            'onkeydown="if(event.key===\'Enter\') SE_CONNECTER()"></div>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="SE_CONNECTER()">Se connecter</button>' +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="REINITIALISER_ACCES()">Code PIN oublié ?</button>';
-}
-function SE_CONNECTER() {
-    var pin = document.getElementById('MER-PIN').value;
-    DEVERROUILLER_CLE(pin).then(RENDER_VALIDATION_INPLACE).catch(function() {
-        alert('Code PIN incorrect.');
-        document.getElementById('MER-PIN').value = '';
-    });
-}
-function SE_DECONNECTER() { MER_CLE_SESSION = null; RENDER_VALIDATION_INPLACE(); }
-function REINITIALISER_ACCES() {
-    if (!confirm('Réinitialiser votre accès valideur sur cet appareil ?\n\nVous choisirez un nouveau code PIN et devrez renvoyer une demande d\'habilitation à l\'administrateur.')) return;
-    SAVE_VALIDEUR({}); MER_CLE_SESSION = null;
-    RENDER_VALIDATION_INPLACE();
-}
-
-// ---- 3. Habilitation en attente ----
-function TPL_HABILITATION_ATTENTE(v, h) {
-    var code = CODE_HABILITATION();
-    var corps = 'Bonjour,\n\nMerci d\'habiliter mon accès valideur TRIGONE Mise en route.\n\n' + v.grade + ' ' + v.nom + ' ' + v.prenom + ' — ' + v.fonction +
-        '\n\nCode d\'habilitation :\n' + code + '\n\nCordialement.';
-    return (h && h.retire
-            ? '<p class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Votre habilitation a été retirée par l\'administrateur.</p>'
-            : '<p class="MER-HINT" style="font-weight:800;">⏳ Accès créé, en attente d\'habilitation.</p>') +
-        '<p class="MER-HINT" style="margin-bottom:10px;">Envoyez ce code à l\'administrateur de TRIGONE. Dès qu\'il vous aura habilité (1er ou 2e valideur), appuyez sur « Actualiser ».</p>' +
-        '<textarea class="MER-CODE" readonly onclick="this.select()">' + ESC(code) + '</textarea>' +
-        '<div class="MER-ACTIONS" style="margin:10px 0;">' +
-            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="COPIER_TEXTE(this.parentNode.previousSibling.value, this)">Copier le code</button>' +
-            '<a class="BTN BTN-PRIMARY BTN-SMALL" href="mailto:?subject=' + encodeURIComponent('Habilitation valideur TRIGONE Mise en route') + '&body=' + encodeURIComponent(corps) + '">Envoyer par mail</a>' +
-        '</div>' +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_VALIDATION()">↻ Actualiser</button>';
-}
+function SE_DECONNECTER() { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; RENDER_VALIDATION_INPLACE(); }
 function COPIER_TEXTE(t, btn) {
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function() {
         if (btn) { btn.textContent = '✔ Copié'; }
@@ -1048,7 +1024,7 @@ function TPL_ENTREE_VALIDATION(e, h) {
 function TPL_ESPACE_VALIDATION(v, h) {
     var liste = GET_A_VALIDER();
     var html = '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
-            '<span class="MER-BADGE">🔒 ' + LIBELLE_ROLE(h.role) + ' habilité</span>' +
+            '<span class="MER-BADGE">🔒 Connecté — ' + LIBELLE_ROLE(h.role) + '</span>' +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + ESC(h.fonction) + '</div></div>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>' +
@@ -1078,11 +1054,9 @@ function TPL_ESPACE_VALIDATION(v, h) {
 
 function TPL_VALIDATION() {
     var v = GET_VALIDEUR();
-    var h = v.cle ? HABILITATION(v.cle) : null;
+    var h = HABILITATION_COURANTE();
     var corps, sous;
-    if (!v.cle) { sous = 'Activation de votre accès'; corps = TPL_ACTIVATION(); }
-    else if (!MER_CLE_SESSION) { sous = 'Connexion'; corps = TPL_CONNEXION(v); }
-    else if (!h || h.retire) { sous = 'Habilitation'; corps = TPL_HABILITATION_ATTENTE(v, h); }
+    if (!h || h.retire) { sous = 'Connexion'; corps = TPL_CONNEXION(v); }
     else { sous = 'Validation des demandes reçues'; corps = TPL_ESPACE_VALIDATION(v, h); }
     return '<div class="CARD">' +
         '<h2>Espace valideur</h2>' +
@@ -1340,18 +1314,20 @@ function TPL_ADMIN() {
     var lignes = l.valideurs.map(function(v, i) {
         return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
             '<span class="MER-BADGE">' + LIBELLE_ROLE(v.role) + '</span>' + (v.retire ? ' <span class="MER-BADGE" style="color:#b91c1c;">Retiré</span>' : '') +
-            '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(v.grade + ' ' + v.nom + ' ' + v.prenom) + '</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + ESC(v.fonction) + ' · clé ' + ESC(EMPREINTE_COURTE(v.cle.slice(-24))) + '</div></div>' +
+            '<div class="MER-PANIER-ITEM-SUB" style="margin-top:6px;">Code créé le ' + ESC(new Date(v.creeLe || v.habiliteLe).toLocaleDateString('fr-FR')) +
+            (v.retire ? ', retiré le ' + ESC(new Date(v.retire).toLocaleDateString('fr-FR')) : '') + ' · clé ' + ESC(EMPREINTE_COURTE(v.cle.slice(-24))) + '</div></div>' +
             (v.retire ? '' : '<button type="button" class="BTN-DANGER-TEXT" onclick="ADMIN_RETIRER(' + i + ')">Retirer</button>') + '</div>';
-    }).join('') || '<div class="MER-EMPTY">Aucun valideur habilité.</div>';
+    }).join('') || '<div class="MER-EMPTY">Aucun code d\'accès valideur.</div>';
     return '<div class="CARD"><h2>Administration</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Valideurs habilités (fichier valideurs.json du dépôt GitHub)</p>' + lignes +
-        '<div class="MER-SECTION-TITLE">Habiliter un valideur</div>' +
-        '<div class="MER-FIELD"><label>Code d\'habilitation reçu</label><textarea id="MER-ADMIN-CODE" rows="3" placeholder="TRIGONE-VALIDEUR:…"></textarea></div>' +
-        '<div class="MER-FIELD"><label>Rôle</label><select id="MER-ADMIN-ROLE"><option value="1">1er valideur (chef de service)</option><option value="2">2e valideur (secrétariat du chef de corps)</option></select></div>' +
-        '<button type="button" class="BTN BTN-GHOST" onclick="ADMIN_AJOUTER()">+ Ajouter à la liste</button>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Codes d\'accès des valideurs (fichier valideurs.json du dépôt GitHub)</p>' + lignes +
+        '<div class="MER-SECTION-TITLE">Nouveau code d\'accès</div>' +
+        '<p class="MER-HINT" style="margin-bottom:10px;">Remplace le code actuel du rôle choisi : les validations déjà faites restent valables, l\'ancien code ne fonctionne plus.</p>' +
+        '<div class="MER-ACTIONS" style="margin-bottom:10px;">' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ADMIN_NOUVEAU_CODE(1)">1er valideur</button>' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ADMIN_NOUVEAU_CODE(2)">2e valideur</button>' +
+        '</div>' +
         '<div class="MER-SECTION-TITLE">Publier</div>' +
-        '<p class="MER-HINT" style="margin-bottom:10px;">1. Copiez le contenu ci-dessous. 2. Ouvrez valideurs.json sur GitHub, remplacez tout son contenu, puis « Commit changes ». La liste est active 1 à 2 minutes après.</p>' +
+        '<p class="MER-HINT" style="margin-bottom:10px;">1. Copiez le contenu ci-dessous. 2. Ouvrez valideurs.json sur GitHub, remplacez tout son contenu, puis « Commit changes ». Actif 1 à 2 minutes après.</p>' +
         '<textarea class="MER-CODE" id="MER-ADMIN-JSON" readonly rows="6">' + ESC(JSON.stringify(l, null, 2)) + '</textarea>' +
         '<div class="MER-ACTIONS" style="margin:10px 0;">' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="COPIER_TEXTE(document.getElementById(\'MER-ADMIN-JSON\').value, this)">Copier</button>' +
@@ -1359,20 +1335,23 @@ function TPL_ADMIN() {
         '</div>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
-function ADMIN_AJOUTER() {
-    var code = (document.getElementById('MER-ADMIN-CODE').value || '').trim().replace(/\s+/g, '');
-    var v;
-    try { v = JSON.parse(TEXTE_B64(code.replace(/^TRIGONE-VALIDEUR:/, ''))); if (!v.cle || !v.nom) throw 0; }
-    catch (e) { alert('Code d\'habilitation illisible. Copiez-le en entier, depuis « TRIGONE-VALIDEUR: ».'); return; }
-    var l = MER_ADMIN_LISTE;
-    if (l.valideurs.some(function(x) { return x.cle === v.cle; })) { alert('Ce valideur est déjà dans la liste.'); return; }
-    l.valideurs.push({ grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction,
-        role: +document.getElementById('MER-ADMIN-ROLE').value, cle: v.cle, habiliteLe: new Date().toISOString() });
-    SHOW_PAGE('ADMIN');
+function ADMIN_NOUVEAU_CODE(role) {
+    if (!confirm('Créer un nouveau code d\'accès pour le ' + LIBELLE_ROLE(role) + ' ?\n\nL\'ancien code cessera de fonctionner une fois la liste publiée.')) return;
+    CREER_ACCES(role).then(function(r) {
+        var maintenant = new Date().toISOString();
+        MER_ADMIN_LISTE.valideurs.forEach(function(a) { if (a.role === role && !a.retire) a.retire = maintenant; });
+        MER_ADMIN_LISTE.valideurs.push(r.acces);
+        SHOW_PAGE('ADMIN');
+        AFFICHER_MODALE('Code du ' + LIBELLE_ROLE(role),
+            '<p style="font-size:0.86em; line-height:1.5;">Notez ce code et remettez-le au valideur : il ne sera plus jamais affiché. Pensez ensuite à publier la liste.</p>' +
+            '<div class="MER-CODE" style="font-size:1.2em; min-height:0; text-align:center; letter-spacing:0.08em; user-select:all;">' + ESC(r.code) + '</div>',
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="COPIER_TEXTE(\'' + r.code + '\', this)">Copier</button>' +
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE()">C\'est noté</button>');
+    });
 }
 function ADMIN_RETIRER(i) {
     var v = MER_ADMIN_LISTE.valideurs[i];
-    if (!confirm('Retirer l\'habilitation de ' + v.grade + ' ' + v.nom + ' ?\n\nSes validations passées restent valables ; les suivantes seront refusées.')) return;
+    if (!confirm('Retirer ce code d\'accès (' + LIBELLE_ROLE(v.role) + ') ?\n\nLes validations passées restent valables ; ce code ne fonctionnera plus.')) return;
     v.retire = new Date().toISOString();
     SHOW_PAGE('ADMIN');
 }

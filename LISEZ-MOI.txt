@@ -29,14 +29,15 @@ ACCUEIL
 
 CIRCUIT DE VALIDATION SÉCURISÉ
 - Le demandeur envoie le PDF et le .json au 1er valideur.
-- Espace valideur : à la première utilisation, le valideur saisit son identité et choisit un code
-  PIN (6 chiffres). L'appli crée sur l'appareil une clé de signature verrouillée par ce PIN et
-  affiche un code d'habilitation, à envoyer à l'administrateur.
+- Espace valideur : le valideur saisit son grade, nom, prénom, fonction et son code d'accès
+  (un code pour le 1er valideur, un code pour le 2e, remis par l'administrateur). Le code
+  déverrouille la clé de signature de son rôle, publiée chiffrée dans valideurs.json : le code
+  lui-même n'est écrit nulle part.
 - L'administrateur (page « Administration des valideurs », depuis Mon espace, ou adresse #admin)
-  colle le code, choisit le rôle (1er ou 2e valideur) et publie la liste dans valideurs.json sur
-  GitHub. Seul un compte autorisé sur le dépôt peut la modifier : c'est ce qui empêche un
-  missionnaire de se déclarer valideur.
-- Le valideur se connecte avec son PIN, importe les .json, valide (signature électronique du
+  peut créer un nouveau code pour un rôle (l'ancien cesse de fonctionner, les validations déjà
+  faites restent valables) puis publier la liste dans valideurs.json sur GitHub. Seul un compte
+  autorisé sur le dépôt peut la modifier.
+- Une fois connecté, le valideur importe les .json, valide (signature électronique du
   contenu exact de la demande) ou refuse avec un motif, une par une ou en lot.
   1er valideur -> .json au 2e valideur ; 2e valideur -> PDF signé à l'assistant Chorus DT ;
   refus -> .json au demandeur, qui l'importe, corrige et renvoie.
@@ -45,9 +46,7 @@ CIRCUIT DE VALIDATION SÉCURISÉ
 - Le PDF porte deux cases (1er valideur à gauche, 2e à droite) : nom, fonction, date, heure et
   empreinte de la signature. Les données signées sont intégrées au PDF : l'assistant Chorus DT
   le glisse dans « Vérifier une mise en route » pour contrôler les signatures.
-- Retirer un valideur (départ, changement d'appareil) : ses validations passées restent
-  valables, les suivantes sont refusées. PIN oublié : réinitialiser l'accès et redemander une
-  habilitation.
+- Code perdu ou divulgué, changement de valideur : créer un nouveau code pour ce rôle.
 
 INSTALLATION
 Comme TRIGONE : déposez tous les fichiers (index.html, app.js, manifest.json, le

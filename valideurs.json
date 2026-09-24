@@ -1,3 +1,20 @@
 {
-  "valideurs": []
+  "valideurs": [
+    {
+      "role": 1,
+      "cle": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEVwlIX2ZRF1kJ0RjMr1rJRkHD8lVnMdUKyupxDTSIirUNdVbBBjSJzSu+nizMUWUYjmYDVSMW7w7GYI6uyKbYIw==",
+      "sel": "8tr8LzxMjTcSDgc+NCT6Iw==",
+      "iv": "xvpIOTUh/wSpCvpJ",
+      "prive": "+VzpK1nJ8CPQr3kQwCijiX5sM3PrT37OGqeLOsFX8NEkP8vzgBWF3AH6nVrJrlbRNXKPAZCn3lF3nV5g94Kwn1Wp4qTG0q/ojdzpdwJt5Q5Tuf8N/GIcX4xFmXhtAXqNtWiE7lz5WPHocpirEGxM4s5QxMDZhY/Tk1hbm7J9vb556UJBe1X169Bly27Ghe1R5eYjrzo5EBLgaA==",
+      "creeLe": "2026-09-24T16:43:17.093Z"
+    },
+    {
+      "role": 2,
+      "cle": "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEW88PXaU2Vtfqv/yItieR8w6VVo/EGbR9zrkJIOOwuvFydjO5JN1FqP+CEUrhmOP1zzW5u7067HL+mrIMRmV5kw==",
+      "sel": "G5S/4Pbh4Y7Xw1c6IBk5+A==",
+      "iv": "nVVVy7NJ363LP93a",
+      "prive": "gW1k3aeil8crBBYqni0vIfqeNEIfnsDWwH23zlZnX7XJA450MFSJRMBplNISnbWo0Dyxy9sLUwny3FzFLCAILDc1juTkeKeBcSZqb4pRkKgK9XCldTRMVLCmHSooThWN4L0D59G6RJh6uWjhSO9DwX4bG79UarrWwiLfrzNZWGBRnMjTf4KiVpZzSezm1DjdnG0OieDfjGclqQ==",
+      "creeLe": "2026-09-24T16:43:17.131Z"
+    }
+  ]
 }
