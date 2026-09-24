@@ -958,7 +958,7 @@ function PIN_VALIDER() {
             try { localStorage.setItem(STORAGE_PIN, h); } catch (e) {}
             FERMER_ECRAN_PIN();
             if (PAGE_ACTUELLE === 'ESPACE') SHOW_PAGE('ESPACE');
-            MSG_INFO('Code d\'accès activé', 'Il vous sera demandé à chaque ouverture de TRIGONE Mise en route.', '🔒', 'mascotte-code.webp');
+            MSG_INFO('Code d\'accès activé', 'Il vous sera demandé à chaque ouverture de TRIGONE Mise en route.', '🔒', 'mascotte-pouce.webp');
         });
         return;
     }
