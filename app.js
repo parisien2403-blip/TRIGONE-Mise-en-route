@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 29;
+var APP_CODE_VERSION = 30;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -111,6 +111,7 @@ function SHOW_PAGE(page) {
     else if (page === 'BIBLIOTHEQUE') zone.innerHTML = TPL_BIBLIOTHEQUE();
     else if (page === 'ESPACE') zone.innerHTML = TPL_MON_ESPACE();
     else if (page === 'NOTICE') zone.innerHTML = TPL_NOTICE();
+    else if (page === 'REFERENCES') { zone.innerHTML = TPL_REFERENCES(); CHARGER_CODIER().then(function(c) { if (c && PAGE_ACTUELLE === 'REFERENCES') zone.innerHTML = TPL_REFERENCES(); }); }
     window.scrollTo(0, 0);
 }
 
@@ -129,7 +130,8 @@ function TPL_ACCUEIL() {
     return '' +
     '<div id="MER-P0">' +
       '<div class="MER-P0-SHELL">' +
-        '<button type="button" id="BTN-CHECK-UPDATE" class="P0-REF-BTN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()" title="Vérifier si une mise à jour est disponible">🔄 Mise à jour</button>' +
+        '<button type="button" id="BTN-REFERENCES" class="P0-REF-BTN" onclick="SHOW_PAGE(\'REFERENCES\')" title="Référentiels utilisés par TRIGONE Mise en route">Références</button>' +
+        '<button type="button" id="BTN-CHECK-UPDATE" class="P0-REF-BTN P0-CHECK-UPDATE-BTN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()" title="Vérifier si une mise à jour est disponible">🔄 Mise à jour</button>' +
         '<div class="MER-P0-INNER">' +
           '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG" src="logo_mer.webp" alt="TRIGONE — Mise en route"></div>' +
         '</div>' +
@@ -559,7 +561,7 @@ function TPL_ONGLET_CONDITIONS() {
       TOGGLE_OUI_NON('Logé à titre onéreux', 'logeMission');
 }
 
-// ---- Codier FD (codier.json, extrait du codier FD du 22/07/2026) ----
+// ---- Codier FD (codier.json ; sa date d'extraction est dans la clé « _source ») ----
 var MER_CODIER = null, MER_CODIER_CHARGEMENT = null;
 function CHARGER_CODIER() {
     if (!MER_CODIER_CHARGEMENT) {
@@ -1182,6 +1184,44 @@ function TPL_NOTICE() {
             '<li>Votre saisie en cours, votre panier et votre bibliothèque sont conservés.</li></ul></details>' +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="AFFICHER_POURQUOI()">Revoir la présentation</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+
+// ===================== RÉFÉRENCES (comme TRIGONE compte-rendu) =====================
+// Les référentiels sur lesquels s'appuie l'appli, et la façon dont ils sont tenus à jour.
+function MER_FOLD(icone, titre, lignes) {
+    return '<details class="notice-fold"><summary><span class="FOLD-ICON">' + icone + '</span>' + titre + '</summary><ul>' +
+        lignes.map(function(l) { return '<li>' + l + '</li>'; }).join('') + '</ul></details>';
+}
+function TPL_REFERENCES() {
+    var c = MER_CODIER, actifs = 0, clotures = 0, source = (c && c._source) || {};
+    if (c) Object.keys(c).forEach(function(k) { if (k.charAt(0) === '_') return; if (c[k].cf) actifs++; else clotures++; });
+    var nb = function(n) { return n.toLocaleString('fr-FR'); };
+    var date = source.date ? new Date(source.date).toLocaleDateString('fr-FR') : '';
+    return '<div class="CARD"><h2>Références</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Les référentiels utilisés par TRIGONE Mise en route et leur mise à jour.</p>' +
+        MER_FOLD('<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M8 14h3M8 17h6"/></svg>', 'Imputations — codier FD', [
+            'Source : <b>' + ESC(source.libelle || 'Codier FD') + '</b>' + (date ? ', extraction du <b>' + date + '</b>' : '') + '.',
+            c ? '<b>' + nb(actifs) + '</b> codes d\'engagement actifs et <b>' + nb(clotures) + '</b> codes clôturés.' : 'Chargement du codier…',
+            'Pour chaque code actif, TRIGONE affiche et recopie dans la demande : le <b>libellé</b>, le <b>centre financier</b>, le <b>centre de coût</b> et le <b>code activité</b>. Ils figurent sur le PDF et sont couverts par la signature des valideurs.',
+            'Code <b>clôturé</b> : TRIGONE l\'indique avec sa date de clôture et propose, quand il existe, le <b>code de remplacement</b> en un clic.',
+            'Code <b>inconnu</b> : signalé en rouge, la demande ne peut pas être imputée sur un code erroné.',
+            '<b>Mise à jour automatique</b> : le codier est relu sur le serveur à chaque ouverture de l\'appli dès qu\'il y a du réseau. Une nouvelle version publiée est donc prise en compte sans rien faire ; hors ligne, la dernière version reçue reste utilisée.']) +
+        MER_FOLD('<svg viewBox="0 0 24 24"><path d="M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>', 'Communes et codes postaux', [
+            'Recherche des villes françaises et de leur code postal dans la <b>Base adresse nationale</b> (api-adresse.data.gouv.fr).',
+            'Interrogée en direct pendant la saisie : toujours à jour, sans mise à jour à faire. Hors ligne, la ville et le code postal se saisissent à la main.',
+            'Pays étrangers : liste reprise de TRIGONE compte-rendu ; le code postal n\'est alors pas demandé.']) +
+        MER_FOLD('<svg viewBox="0 0 24 24"><path d="M5 17h14M5 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0M15 17a2 2 0 1 0 4 0 2 2 0 1 0-4 0M3 17V9l2-5h10l4 5v8M3 9h16"/></svg>', 'Moyens de transport', [
+            'Véhicule de service, <b>voie routière civile (VRC)</b>, voie ferrée, voie aérienne, voie maritime.',
+            'Selon le moyen, le départ et l\'arrivée sont une <b>gare</b>, un <b>aéroport</b> ou un <b>port</b>.',
+            'VRC : joindre la <b>demande d\'autorisation VRC</b>, la <b>carte grise</b> et l\'<b>attestation d\'assurance</b> du véhicule.']) +
+        MER_FOLD('<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>', 'Valideurs habilités', [
+            'La liste des valideurs habilités (1er et 2e valideur) est publiée avec l\'appli et relue à chaque ouverture de l\'Espace valideur : un changement de code s\'applique automatiquement.',
+            'Chaque validation est une <b>signature électronique</b> du contenu exact de la demande et de ses pièces jointes : toute modification ultérieure est détectée.']) +
+        MER_FOLD('<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>', 'Mises à jour de l\'application', [
+            'L\'appli vérifie à chaque ouverture si une nouvelle version existe ; le bouton « Mise à jour » de l\'accueil permet de le faire à la main.',
+            'Votre saisie en cours, votre panier et votre bibliothèque sont conservés.',
+            'Version actuelle : <b>V' + APP_CODE_VERSION + '</b>.']) +
+        '<button type="button" class="BTN BTN-SECONDARY" style="margin-top:6px;" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 
 // ===================== MESSAGE CENTRÉ (comme TRIGONE compte-rendu) =====================
