@@ -61,6 +61,14 @@ CIRCUIT DE VALIDATION SÉCURISÉ
   le glisse dans « Vérifier une mise en route » pour contrôler les signatures.
 - Code perdu ou divulgué, changement de valideur : créer un nouveau code pour ce rôle.
 
+MISES À JOUR
+- À chaque ouverture (et au retour sur l'appli), TRIGONE relit updates-manifest.json.
+- Pour publier une nouvelle version : augmenter APP_CODE_VERSION dans app.js ET appCodeVersion
+  dans updates-manifest.json (même numéro), avec un appCodeMessage décrivant les nouveautés.
+  Les appareils en retard affichent « Mise à jour obligatoire », ceux déjà à jour « Nouveautés ».
+- appMessageVersion / appMessage : message d'information affiché une fois à tout le monde.
+- Bouton « Mise à jour » en haut à droite de l'accueil : vérification manuelle.
+
 INSTALLATION
 Comme TRIGONE : déposez tous les fichiers (index.html, app.js, manifest.json, le
 dossier vendor/) à la racine d'un même espace d'hébergement.
