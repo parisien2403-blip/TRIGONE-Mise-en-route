@@ -1,12 +1,26 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 27;
+var APP_CODE_VERSION = 28;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
 
-var MOYENS = { SERVICE: 'Véhicule de service', FERREE: 'Voie ferrée', AERIENNE: 'Voie aérienne', MARITIME: 'Voie maritime' };
+var MOYENS = { SERVICE: 'Véhicule de service', CIVILE: 'Voie routière civile (VRC)', FERREE: 'Voie ferrée', AERIENNE: 'Voie aérienne', MARITIME: 'Voie maritime' };
+// Libellés des lieux selon le moyen de transport : gare, aéroport, port ; lieu pour la route.
+var MER_LIEUX_MOYEN = {
+    FERREE: ['Gare de départ', 'Gare d\'arrivée'],
+    AERIENNE: ['Aéroport de départ', 'Aéroport d\'arrivée'],
+    MARITIME: ['Port de départ', 'Port d\'arrivée']
+};
+function LIBELLES_LIEUX(moyen) { return MER_LIEUX_MOYEN[moyen] || ['Lieu de départ', 'Lieu d\'arrivée']; }
+// Voie routière civile : demande d'autorisation VRC, carte grise et assurance à joindre.
+function UTILISE_VRC(d) {
+    var t = d.trajets || {};
+    return ['aller', 'retour'].concat(t.intermediaireAllerActif ? ['intermediaireAller'] : [], t.intermediaireRetourActif ? ['intermediaireRetour'] : [])
+        .some(function(k) { return t[k] && t[k].moyen === 'CIVILE'; });
+}
+var MER_PIECES_VRC = 'la demande d\'autorisation VRC, la carte grise et l\'attestation d\'assurance du véhicule';
 
 // Échappe le texte inséré dans le HTML (les demandes importées viennent d'autres personnes).
 function ESC(v) {
@@ -254,6 +268,7 @@ function ON_CHAMP_INPUT(path, val) {
     if (/^trajets\.retour\.(lieu|cp|pays|residence)/.test(path)) D.trajets.retourAuto = false;
     if (/^trajets\.aller\./.test(path)) SYNCHRO_RETOUR();
     SAVE_BROUILLON();
+    if (/\.moyen$/.test(path)) RENDER_FORMULAIRE_INPLACE();   // libellés gare / aéroport / port
 }
 // Retour = aller inversé (lieux, codes postaux, pays, moyen), tant que le missionnaire n'a pas touché au retour.
 var MER_PAIRES_RETOUR = [['residenceArr', 'residenceDep'], ['lieuDep', 'lieuArr'], ['cpDep', 'cpArr'], ['paysDep', 'paysArr'], ['lieuArr', 'lieuDep'], ['cpArr', 'cpDep'], ['paysArr', 'paysDep'], ['moyen', 'moyen']];
@@ -311,7 +326,7 @@ function TOGGLE_OUI_NON(label, path, hintOui, hintNon) {
 
 function SELECT_MOYEN(path) {
     var v = GET_CHAMP(path) || '';
-    var opts = ['', 'SERVICE', 'FERREE', 'AERIENNE', 'MARITIME'].map(function(k) {
+    var opts = ['', 'SERVICE', 'CIVILE', 'FERREE', 'AERIENNE', 'MARITIME'].map(function(k) {
         var label = k ? MOYENS[k] : '— Choisir —';
         return '<option value="' + k + '"' + (v === k ? ' selected' : '') + '>' + label + '</option>';
     }).join('');
@@ -360,11 +375,13 @@ function TPL_LIEU(label, path, cote) {
         'onchange="ON_CHAMP_BOOL(\'' + path + '.pays' + cote + '\', this.value)">' + options + '</select></div>';
 }
 function TPL_TRAJET(titre, path, optionnel) {
+    var moyen = GET_CHAMP(path + '.moyen'), lib = LIBELLES_LIEUX(moyen);
     return (titre ? '<p class="MER-HINT" style="font-weight:800; text-transform:uppercase; letter-spacing:0.04em; margin:14px 0 8px;">' + titre + (optionnel ? ' <span style="font-weight:600; text-transform:none;">(si besoin)</span>' : '') + '</p>' : '') +
         SELECT_MOYEN(path + '.moyen') +
-        TPL_LIEU('Lieu de départ', path, 'Dep') +
+        (moyen === 'CIVILE' ? '<p class="MER-HINT" style="margin:-8px 0 12px; color:#b45309; font-weight:700;">🚗 VRC : pensez à joindre ' + MER_PIECES_VRC + ' (onglet Imputation).</p>' : '') +
+        TPL_LIEU(lib[0], path, 'Dep') +
         CHAMP_TXT('Date et heure de départ', path + '.dateDep', '', 'datetime-local') +
-        TPL_LIEU('Lieu d\'arrivée', path, 'Arr') +
+        TPL_LIEU(lib[1], path, 'Arr') +
         CHAMP_TXT('Date et heure d\'arrivée', path + '.dateArr', '', 'datetime-local');
 }
 
@@ -432,10 +449,11 @@ function MANQUES_ONGLET(tab) {
         blocs.forEach(function(b) {
             var tr = t[b[0]], base = 'trajets.' + b[0] + '.';
             exiger(base + 'moyen', b[1] + ' : moyen de transport');
-            exiger(base + 'lieuDep', b[1] + ' : lieu de départ');
+            var lib = LIBELLES_LIEUX(tr.moyen);
+            exiger(base + 'lieuDep', b[1] + ' : ' + lib[0].toLowerCase());
             if (!tr.paysDep) exiger(base + 'cpDep', b[1] + ' : code postal de départ');
             exiger(base + 'dateDep', b[1] + ' : date et heure de départ');
-            exiger(base + 'lieuArr', b[1] + ' : lieu d\'arrivée');
+            exiger(base + 'lieuArr', b[1] + ' : ' + lib[1].toLowerCase());
             if (!tr.paysArr) exiger(base + 'cpArr', b[1] + ' : code postal d\'arrivée');
             exiger(base + 'dateArr', b[1] + ' : date et heure d\'arrivée');
             if (tr.dateDep && tr.dateArr && tr.dateArr < tr.dateDep) m.push({ path: base + 'dateArr', libelle: b[1] + ' : l\'arrivée est avant le départ' });
@@ -1266,6 +1284,8 @@ function PREPARER_ENVOI() {
         '<p style="font-size:0.86em; line-height:1.7; background:rgba(90,122,148,0.07); padding:10px 12px; border-radius:10px;">📎 ' + ESC(NOM_FICHIER_BASE(panier)) + '.json' +
             (pj.length ? '<br><span style="color:var(--sm2-muted);">avec, à l\'intérieur : ' + pj.map(function(p) { return ESC(p.nom); }).join(', ') + '</span>' : '') + '</p>' +
         (sansPJ ? '<p class="MER-HINT" style="color:#b45309; font-weight:700;">⚠ ' + sansPJ + ' demande(s) sans NDS ni DAF jointe.</p>' : '') +
+        (panier.some(UTILISE_VRC) ? '<div style="font-size:0.86em; line-height:1.5; background:rgba(180,83,9,0.09); border:1.5px solid rgba(180,83,9,0.35); color:#92400e; padding:10px 12px; border-radius:10px; margin:10px 0;">' +
+            '🚗 <b>Rappel — voie routière civile (VRC)</b><br>Joignez ' + MER_PIECES_VRC + ' : ajoutez-les en pièces jointes de la demande (onglet Imputation) avant d\'envoyer.</div>' : '') +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:8px;" onclick="VOIR_APERCU_PANIER()">👁 Aperçu du PDF</button>' +
         '<p style="font-size:0.8em; color:var(--sm2-muted);">« Envoyer » télécharge le fichier .json et ouvre le mail : joignez-y ce fichier avant d\'envoyer.</p>',
         '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="FERMER_MODALE()">Annuler</button>' +
@@ -1412,6 +1432,7 @@ function TPL_PJ_FORMULAIRE() {
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="OUVRIR_PJ(\'' + p.id + '\')">Voir</button>' +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="RETIRER_PJ(' + i + ')">Retirer</button></div>';
     }).join('') +
+    (UTILISE_VRC(D) ? '<p class="MER-HINT" style="color:#b45309; font-weight:700; margin-bottom:8px;">🚗 VRC : joignez aussi ' + MER_PIECES_VRC + '.</p>' : '') +
     '<label class="BTN BTN-GHOST" style="margin-bottom:6px;">📎 Joindre la NDS ou la DAF (PDF ou photo)' +
         '<input type="file" accept="application/pdf,image/jpeg,image/png" multiple style="display:none;" onchange="AJOUTER_PJ(this)"></label>' +
     '<p class="MER-HINT" style="margin-bottom:14px;">Le fichier voyage avec la demande jusqu\'au 2e valideur, qui l\'ajoute au PDF final envoyé à l\'assistant Chorus DT.</p>';
