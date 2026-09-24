@@ -86,14 +86,25 @@ function SHOW_PAGE(page) {
     if (page === 'ACCUEIL') zone.innerHTML = TPL_ACCUEIL();
     else if (page === 'FORMULAIRE') zone.innerHTML = TPL_FORMULAIRE();
     else if (page === 'PANIER') zone.innerHTML = TPL_PANIER();
-    else if (page === 'VALIDATION') zone.innerHTML = TPL_VALIDATION();
+    else if (page === 'VALIDATION') { OUVRIR_VALIDATION(); return; }
+    else if (page === 'VERIFIER') zone.innerHTML = TPL_VERIFIER();
+    else if (page === 'ADMIN') zone.innerHTML = TPL_ADMIN();
+    else if (page === 'BIBLIOTHEQUE') zone.innerHTML = TPL_BIBLIOTHEQUE();
+    else if (page === 'ESPACE') zone.innerHTML = TPL_MON_ESPACE();
     window.scrollTo(0, 0);
 }
 
+var MER_ICONES = {
+    BIBLIOTHEQUE: '<svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg>',
+    PANIER: '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>',
+    ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>'
+};
+function TPL_ONGLET_DOCK(page, icone, libelle, pastille) {
+    return '<button type="button" class="P0-TAB' + (pastille ? ' has-badge' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')">' +
+        '<span class="P0-TAB-ICON" aria-hidden="true">' + icone + '</span><span class="P0-TAB-LBL">' + libelle + '</span></button>';
+}
 function TPL_ACCUEIL() {
-    var panier = GET_PANIER();
-    var n = panier.length;
-    var nAValider = GET_A_VALIDER().filter(function(e) { return !e.decision; }).length;
+    var n = GET_PANIER().length;
     return '' +
     '<div id="MER-P0">' +
       '<div class="MER-P0-SHELL">' +
@@ -101,26 +112,104 @@ function TPL_ACCUEIL() {
           '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG" src="logo_mer.webp" alt="TRIGONE — Mise en route"></div>' +
         '</div>' +
         '<div class="MER-P0-HERO">' +
-          '<button type="button" class="BTN BTN-PRIMARY" onclick="NOUVELLE_DEMANDE()">+ Nouvelle demande</button>' +
-          (n ? '<button type="button" class="BTN BTN-ACCENT" onclick="SHOW_PAGE(\'PANIER\')">📋 Mon panier <span class="MER-BADGE" style="background:rgba(255,255,255,0.25); color:#fff;">' + n + '</span></button>'
-             : '<button type="button" class="BTN BTN-SECONDARY" disabled>Panier vide</button>') +
-          '<label class="BTN BTN-SECONDARY" style="padding:4px 20px;">📥 Importer une demande refusée' +
+          '<button type="button" class="BTN-ACCUEIL" onclick="NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
+          '<label class="P0-LIEN">Importer une demande refusée' +
             '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
-          '<div class="MER-ACCUEIL-SEP">Valideurs</div>' +
-          '<button type="button" class="BTN BTN-GHOST" onclick="SHOW_PAGE(\'VALIDATION\')">✅ Valider des mises en route' +
-            (nAValider ? ' <span class="MER-BADGE">' + nAValider + '</span>' : '') + '</button>' +
+          '<button type="button" class="P0-LIEN" onclick="SHOW_PAGE(\'VALIDATION\')">🔒 Espace valideur</button>' +
+          '<button type="button" class="P0-LIEN" onclick="SHOW_PAGE(\'VERIFIER\')">✔ Vérifier une mise en route</button>' +
           '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + MER_VERSION + '</span></p>' +
         '</div>' +
+        '<nav class="P0-TAB-BAR" aria-label="Navigation accueil"><div class="P0-DOCK-INNER">' +
+          TPL_ONGLET_DOCK('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
+          TPL_ONGLET_DOCK('PANIER', MER_ICONES.PANIER, 'Panier' + (n ? ' (' + n + ')' : ''), n > 0) +
+          TPL_ONGLET_DOCK('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
+        '</div></nav>' +
       '</div>' +
     '</div>';
+}
+
+// ===================== BIBLIOTHÈQUE (demandes envoyées) =====================
+var STORAGE_BIBLIOTHEQUE = 'mer_bibliotheque';
+function GET_BIBLIOTHEQUE() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_BIBLIOTHEQUE) || '[]'); } catch (e) { return []; }
+}
+function SAVE_BIBLIOTHEQUE(l) { try { localStorage.setItem(STORAGE_BIBLIOTHEQUE, JSON.stringify(l.slice(0, 50))); } catch (e) {} }
+function ARCHIVER_ENVOI(demandes, destinataire) {
+    var l = GET_BIBLIOTHEQUE();
+    l.unshift({ id: 'e' + Date.now(), envoyeLe: new Date().toISOString(), destinataire: destinataire, demandes: demandes });
+    SAVE_BIBLIOTHEQUE(l);
+}
+function TPL_BIBLIOTHEQUE() {
+    var l = GET_BIBLIOTHEQUE();
+    var items = l.map(function(e) {
+        var noms = e.demandes.map(function(d) { return RESUME_DEMANDE(d).noms; }).join(' · ');
+        var objets = e.demandes.map(function(d) { return d.objet || ''; }).join(' · ');
+        return '<div class="MER-PANIER-ITEM" style="align-items:flex-start;"><div class="MER-PANIER-ITEM-TXT">' +
+            '<span class="MER-BADGE">Envoyée le ' + ESC(new Date(e.envoyeLe).toLocaleDateString('fr-FR')) + '</span>' +
+            '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(noms) + '</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(objets) + (e.destinataire ? '<br>À ' + ESC(e.destinataire) : '') + '</div>' +
+            '<div class="MER-VAL-ACTIONS">' +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
+                '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_SUPPRIMER(\'' + e.id + '\')">Supprimer</button>' +
+            '</div></div></div>';
+    }).join('');
+    return '<div class="CARD"><h2>Bibliothèque</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées.</p>' +
+        (items || '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+function BIB_TROUVER(id) { return GET_BIBLIOTHEQUE().filter(function(e) { return e.id === id; })[0]; }
+function BIB_PDF(id) {
+    var e = BIB_TROUVER(id); if (!e) return;
+    try { GENERER_PDF(e.demandes).save(NOM_FICHIER_BASE(e.demandes) + '.pdf'); }
+    catch (err) { alert('Erreur lors de la génération du PDF : ' + err.message); }
+}
+// Repart d'une demande envoyée (même objet, mêmes personnes) pour en créer une nouvelle.
+function BIB_REUTILISER(id) {
+    var e = BIB_TROUVER(id); if (!e) return;
+    var d = JSON.parse(JSON.stringify(e.demandes[0]));
+    d.id = VIDE_DEMANDE().id; d.validations = []; delete d.refus;
+    D = d; MER_ACTIVE_TAB = 'IDENTITE'; SAVE_BROUILLON();
+    SHOW_PAGE('FORMULAIRE');
+}
+function BIB_SUPPRIMER(id) {
+    if (!confirm('Supprimer cette demande de la bibliothèque ?')) return;
+    SAVE_BIBLIOTHEQUE(GET_BIBLIOTHEQUE().filter(function(e) { return e.id !== id; }));
+    SHOW_PAGE('BIBLIOTHEQUE');
+}
+
+// ===================== MON ESPACE =====================
+function SET_REGLAGE(cle, valeur) { var r = GET_REGLAGES(); r[cle] = valeur; SAVE_REGLAGES(r); }
+function TPL_MON_ESPACE() {
+    var r = GET_REGLAGES(), id = r.identite || {};
+    function champId(k, label, ph) {
+        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" value="' + ESC(id[k] || (k === 'unite' ? r.derniereUnite : k === 'cie' ? r.derniereCie : '') || '') +
+            '" placeholder="' + ph + '" oninput="var r=GET_REGLAGES(); r.identite=r.identite||{}; r.identite[\'' + k + '\']=this.value; SAVE_REGLAGES(r);"></div>';
+    }
+    function champMail(k, label, hint) {
+        return '<div class="MER-FIELD"><label>' + label + '</label><input type="email" value="' + ESC(r[k] || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
+            'oninput="SET_REGLAGE(\'' + k + '\', this.value)">' + (hint ? '<p class="MER-HINT">' + hint + '</p>' : '') + '</div>';
+    }
+    return '<div class="CARD"><h2>Mon espace</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Enregistré sur cet appareil uniquement. Utilisé pour pré-remplir vos demandes.</p>' +
+        '<div class="MER-SECTION-TITLE">Mon identité</div>' +
+        '<div class="MER-ROW2">' + champId('unite', 'Unité / entité', 'EX : 4°RIISC') + champId('cie', 'CIE', 'EX : 4CIE') + '</div>' +
+        '<div class="MER-ROW2">' + champId('grade', 'Grade', 'EX : ADJUDANT') + champId('matricule', 'Matricule', 'EX : 06 750 101 91') + '</div>' +
+        '<div class="MER-ROW2">' + champId('nom', 'Nom', 'EX : BOUQUET') + champId('prenom', 'Prénom', 'EX : G-P') + '</div>' +
+        '<div class="MER-SECTION-TITLE">Envoi de mes demandes</div>' +
+        champMail('mailSignataire', 'Mail du 1er valideur (chef de service)') +
+        champMail('mailDemandeur', 'Mon mail', 'Pour vous renvoyer une demande si un valideur la refuse.') +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
+        '<button type="button" class="P0-LIEN" style="opacity:0.6;" onclick="OUVRIR_ADMIN()">Administration des valideurs</button></div>';
 }
 
 function NOUVELLE_DEMANDE() {
     CLEAR_BROUILLON();
     MER_ACTIVE_TAB = 'IDENTITE';
-    var reg = GET_REGLAGES();
-    if (reg.derniereUnite) D.personnes[0].unite = reg.derniereUnite;
-    if (reg.derniereCie) D.personnes[0].cie = reg.derniereCie;
+    var reg = GET_REGLAGES(), id = reg.identite || {};
+    D.personnes[0] = Object.assign(VIDE_PERSONNE(), { unite: reg.derniereUnite || '', cie: reg.derniereCie || '' },
+        Object.keys(id).reduce(function(o, k) { if (id[k]) o[k] = id[k]; return o; }, {}));
     SAVE_BROUILLON();
     SHOW_PAGE('FORMULAIRE');
 }
@@ -527,6 +616,10 @@ function PDF_CASES_VALIDATION(doc, d, M, L) {
         doc.text(doc.splitTextToSize(s.fonction || '', larg - 6)[0], x + 3, y + 20.5);
         doc.setTextColor.apply(doc, PDF_ACCENT); doc.setFont('helvetica', 'bold');
         doc.text('Le ' + le.toLocaleDateString('fr-FR') + ' à ' + le.toLocaleTimeString('fr-FR'), x + 3, y + 26.5);
+        if (s.sig) {
+            doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(120, 120, 120);
+            doc.text('Signature électronique ' + EMPREINTE_COURTE(s.sig), x + larg - 3, y + 26.5, { align: 'right' });
+        }
         doc.setTextColor.apply(doc, PDF_TEXTE);
     });
     doc.setDrawColor(0);
@@ -569,6 +662,8 @@ function GENERER_PDF(panier) {
         doc.setTextColor.apply(doc, PDF_TEXTE);
     });
     doc.deletePage(1); // page vierge créée par jsPDF à l'ouverture du document
+    // Demandes et signatures intégrées au PDF : la page « Vérifier une mise en route » les relit.
+    doc.setProperties({ title: 'TRIGONE — Demande et ordre de mise en route', keywords: PDF_DONNEES(panier) });
 
     return doc;
 }
@@ -649,6 +744,7 @@ function FINALISER_ENVOI() {
 
     var sujet = 'TRIGONE Mise en route — ' + panier.length + ' demande(s) — ' + (panier[0].personnes[0].nom || '');
     var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) et ordre(s) de mise en route, ainsi que le fichier de suivi (.json).\n\nCordialement.';
+    ARCHIVER_ENVOI(panier, reg.mailSignataire);
     FERMER_MODALE();
     window.location.href = 'mailto:' + encodeURIComponent(reg.mailSignataire) + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
 
@@ -656,11 +752,155 @@ function FINALISER_ENVOI() {
     setTimeout(function() { SHOW_PAGE('ACCUEIL'); }, 300);
 }
 
+// ===================== SÉCURITÉ DES VALIDATIONS =====================
+// Pas de serveur : chaque valideur possède une clé de signature créée sur son appareil et verrouillée par
+// son code PIN. L'administrateur publie dans valideurs.json (sur GitHub, qu'il est seul à pouvoir modifier)
+// la clé publique et le rôle de chaque valideur habilité. Une validation est une signature ECDSA du contenu
+// exact de la demande : une signature faite avec une clé absente de la liste, ou une demande modifiée après
+// signature, est détectée par le 2e valideur, par l'assistant Chorus DT et par la page de vérification.
+var MER_DEPOT_GITHUB = 'https://github.com/parisien2403-blip/TRIGONE-Mise-en-route';
+var STORAGE_LISTE_VALIDEURS = 'mer_liste_valideurs';
+var MER_CLE_SESSION = null;          // clé privée déverrouillée par le PIN, gardée en mémoire seulement
+var MER_LISTE_VALIDEURS = null;      // contenu de valideurs.json
+
+function B64(buf) {
+    var s = '', o = new Uint8Array(buf);
+    for (var i = 0; i < o.length; i++) s += String.fromCharCode(o[i]);
+    return btoa(s);
+}
+function DEB64(b64) {
+    var s = atob(b64), o = new Uint8Array(s.length);
+    for (var i = 0; i < s.length; i++) o[i] = s.charCodeAt(i);
+    return o.buffer;
+}
+function B64_TEXTE(t) { return btoa(unescape(encodeURIComponent(t))); }
+function TEXTE_B64(b) { return decodeURIComponent(escape(atob(b))); }
+function OCTETS(t) { return new TextEncoder().encode(t); }
+
+// JSON à clés triées : la même demande donne toujours exactement le même texte à signer.
+function JSON_STABLE(v) {
+    if (v === null || typeof v !== 'object') return JSON.stringify(v === undefined ? null : v);
+    if (Array.isArray(v)) return '[' + v.map(JSON_STABLE).join(',') + ']';
+    return '{' + Object.keys(v).sort().filter(function(k) { return v[k] !== undefined; })
+        .map(function(k) { return JSON.stringify(k) + ':' + JSON_STABLE(v[k]); }).join(',') + '}';
+}
+function CONTENU_SIGNE(d) {
+    var c = JSON.parse(JSON.stringify(d));
+    delete c.validations; delete c.refus;
+    return c;
+}
+function TEXTE_A_SIGNER(d, niveau, signataire, le) {
+    return JSON_STABLE({
+        demande: CONTENU_SIGNE(d),
+        precedentes: (d.validations || []).slice(0, niveau - 1).map(function(v) { return v.sig; }),
+        niveau: niveau, signataire: signataire, le: le
+    });
+}
+function EMPREINTE_COURTE(sig) { return (sig || '').replace(/[^A-Za-z0-9]/g, '').slice(0, 12).toUpperCase().replace(/(.{4})/g, '$1 ').trim(); }
+
+var ALGO_CLE = { name: 'ECDSA', namedCurve: 'P-256' };
+var ALGO_SIG = { name: 'ECDSA', hash: 'SHA-256' };
+
+function CLE_DU_PIN(pin, sel) {
+    return crypto.subtle.importKey('raw', OCTETS(pin), 'PBKDF2', false, ['deriveKey']).then(function(base) {
+        return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: sel, iterations: 250000, hash: 'SHA-256' },
+            base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+    });
+}
+
+// ---- Liste des valideurs habilités (valideurs.json) ----
+function CHARGER_LISTE_VALIDEURS() {
+    return fetch('valideurs.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) {
+        if (!r.ok) throw new Error('liste');
+        return r.json();
+    }).then(function(liste) {
+        MER_LISTE_VALIDEURS = liste;
+        try { localStorage.setItem(STORAGE_LISTE_VALIDEURS, JSON.stringify(liste)); } catch (e) {}
+        return liste;
+    }).catch(function() {
+        // Hors ligne : dernière liste connue.
+        try { MER_LISTE_VALIDEURS = JSON.parse(localStorage.getItem(STORAGE_LISTE_VALIDEURS) || 'null'); } catch (e) {}
+        MER_LISTE_VALIDEURS = MER_LISTE_VALIDEURS || { valideurs: [] };
+        return MER_LISTE_VALIDEURS;
+    });
+}
+function HABILITATION(cle) {
+    var l = (MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || [];
+    return l.filter(function(v) { return v.cle === cle; })[0] || null;
+}
+function LIBELLE_ROLE(role) { return role === 2 ? '2e valideur' : '1er valideur'; }
+
+// Vérifie chaque validation d'une demande. Renvoie une liste { ok, message, validation }.
+function VERIFIER_VALIDATIONS(d) {
+    var vals = d.validations || [];
+    return Promise.all(vals.map(function(v, i) {
+        var niveau = i + 1;
+        var h = v.signataire ? HABILITATION(v.signataire.cle) : null;
+        var ko = function(m) { return { ok: false, message: m, validation: v, niveau: niveau }; };
+        if (!v.sig || !v.signataire) return Promise.resolve(ko('Validation sans signature électronique'));
+        if (!h) return Promise.resolve(ko('Valideur non habilité'));
+        if (h.role !== niveau) return Promise.resolve(ko('Valideur habilité comme ' + LIBELLE_ROLE(h.role) + ' seulement'));
+        if (h.retire && v.le > h.retire) return Promise.resolve(ko('Habilitation retirée le ' + new Date(h.retire).toLocaleDateString('fr-FR')));
+        if (vals.slice(0, i).some(function(p) { return p.signataire && p.signataire.cle === v.signataire.cle; }))
+            return Promise.resolve(ko('Même valideur pour les deux niveaux'));
+        return crypto.subtle.importKey('spki', DEB64(v.signataire.cle), ALGO_CLE, false, ['verify']).then(function(pub) {
+            return crypto.subtle.verify(ALGO_SIG, pub, DEB64(v.sig), OCTETS(TEXTE_A_SIGNER(d, niveau, v.signataire, v.le)));
+        }).then(function(bon) {
+            return bon ? { ok: true, message: 'Signature vérifiée', validation: v, niveau: niveau }
+                       : ko('Demande modifiée après validation');
+        }).catch(function() { return ko('Signature illisible'); });
+    }));
+}
+
+// ---- Clé du valideur sur cet appareil ----
+function CREER_CLE_VALIDEUR(identite, pin) {
+    var sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+    var paire;
+    return crypto.subtle.generateKey(ALGO_CLE, true, ['sign', 'verify']).then(function(p) {
+        paire = p;
+        return Promise.all([crypto.subtle.exportKey('spki', p.publicKey), crypto.subtle.exportKey('pkcs8', p.privateKey), CLE_DU_PIN(pin, sel)]);
+    }).then(function(r) {
+        return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, r[2], r[1]).then(function(chiffre) {
+            var v = Object.assign({}, identite, { cle: B64(r[0]), sel: B64(sel), iv: B64(iv), prive: B64(chiffre) });
+            SAVE_VALIDEUR(v);
+            return crypto.subtle.importKey('pkcs8', r[1], ALGO_CLE, false, ['sign']);
+        });
+    }).then(function(k) { MER_CLE_SESSION = k; });
+}
+function DEVERROUILLER_CLE(pin) {
+    var v = GET_VALIDEUR();
+    return CLE_DU_PIN(pin, new Uint8Array(DEB64(v.sel))).then(function(k) {
+        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(DEB64(v.iv)) }, k, DEB64(v.prive));
+    }).then(function(pkcs8) {
+        return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
+    }).then(function(k) { MER_CLE_SESSION = k; });
+}
+function SIGNER_VALIDATION(d, h) {
+    var niveau = (d.validations || []).length + 1;
+    var signataire = { cle: h.cle, grade: h.grade, nom: h.nom, prenom: h.prenom, fonction: h.fonction };
+    var le = new Date().toISOString();
+    return crypto.subtle.sign(ALGO_SIG, MER_CLE_SESSION, OCTETS(TEXTE_A_SIGNER(d, niveau, signataire, le))).then(function(sig) {
+        return { niveau: niveau, signataire: signataire, grade: h.grade, nom: h.nom, prenom: h.prenom, fonction: h.fonction, le: le, sig: B64(sig) };
+    });
+}
+function CODE_HABILITATION() {
+    var v = GET_VALIDEUR();
+    return 'TRIGONE-VALIDEUR:' + B64_TEXTE(JSON.stringify({ grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction, cle: v.cle, le: new Date().toISOString() }));
+}
+
+// ---- Données intégrées au PDF, pour la page « Vérifier une mise en route » ----
+function PDF_DONNEES(demandes) { return 'TRIGONE-MER:' + B64_TEXTE(JSON.stringify(demandes)) + ':FIN'; }
+function LIRE_DONNEES_PDF(texte) {
+    var m = /TRIGONE-MER:([A-Za-z0-9+\/=]+):FIN/.exec(texte);
+    return m ? JSON.parse(TEXTE_B64(m[1])) : null;
+}
+
 // ===================== VALIDATION (1er et 2e valideur) =====================
-// Le valideur importe le ou les .json reçus, consulte chaque demande, la valide ou la refuse (une par une
-// ou en lot), puis transmet : .json au 2e valideur, PDF signé à l'assistant Chorus DT, refus au demandeur.
+// Accès en trois temps : activation sur l'appareil (identité + code PIN, création de la clé), habilitation
+// par l'administrateur (ajout de la clé à valideurs.json), puis connexion par PIN à chaque utilisation.
 var STORAGE_VALIDEUR = 'mer_valideur';
 var STORAGE_A_VALIDER = 'mer_a_valider';
+var MER_VERIF = {};   // résultat de vérification des validations précédentes, par entrée
 
 function GET_VALIDEUR() {
     try { return JSON.parse(localStorage.getItem(STORAGE_VALIDEUR) || '{}'); } catch (e) { return {}; }
@@ -670,126 +910,207 @@ function GET_A_VALIDER() {
     try { return JSON.parse(localStorage.getItem(STORAGE_A_VALIDER) || '[]'); } catch (e) { return []; }
 }
 function SAVE_A_VALIDER(liste) { try { localStorage.setItem(STORAGE_A_VALIDER, JSON.stringify(liste)); } catch (e) {} }
-function PROFIL_COMPLET(v) { return !!(v.grade && v.nom && v.prenom && v.fonction); }
 function NIVEAU_VALIDATION(d) { return (d.validations || []).length + 1; }
-function SIGNATAIRE(v) { return { grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction, le: new Date().toISOString() }; }
+function HABILITATION_COURANTE() { var v = GET_VALIDEUR(); return v.cle ? HABILITATION(v.cle) : null; }
+
+// Recharge la liste des habilités et revérifie les validations reçues avant d'afficher la page.
+function OUVRIR_VALIDATION() {
+    PAGE_ACTUELLE = 'VALIDATION';
+    var zone = document.getElementById('PAGE-STAGE');
+    zone.classList.add('avec-marge');
+    zone.innerHTML = '<div class="CARD"><div class="MER-EMPTY">Chargement…</div></div>';
+    CHARGER_LISTE_VALIDEURS().then(RENDER_VALIDATION_INPLACE);
+}
 function RENDER_VALIDATION_INPLACE() {
-    var scroll = window.scrollY;
-    document.getElementById('PAGE-STAGE').innerHTML = TPL_VALIDATION();
-    window.scrollTo(0, scroll);
-}
-
-function ENREGISTRER_PROFIL_VALIDEUR() {
-    var v = GET_VALIDEUR();
-    ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) {
-        v[k] = (document.getElementById('MER-VAL-' + k).value || '').trim();
+    var liste = GET_A_VALIDER();
+    Promise.all(liste.map(function(e) {
+        return VERIFIER_VALIDATIONS(e.d).then(function(r) { MER_VERIF[e.id] = r; });
+    })).then(function() {
+        if (PAGE_ACTUELLE !== 'VALIDATION') return;
+        var scroll = window.scrollY;
+        document.getElementById('PAGE-STAGE').innerHTML = TPL_VALIDATION();
+        window.scrollTo(0, scroll);
     });
-    if (!PROFIL_COMPLET(v)) { alert('Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
-    v.nom = v.nom.toUpperCase();
-    v.edition = false;
-    SAVE_VALIDEUR(v);
-    RENDER_VALIDATION_INPLACE();
 }
-function MODIFIER_PROFIL_VALIDEUR() { var v = GET_VALIDEUR(); v.edition = true; SAVE_VALIDEUR(v); RENDER_VALIDATION_INPLACE(); }
-function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
 
-function TPL_PROFIL_VALIDEUR(v) {
-    if (PROFIL_COMPLET(v) && !v.edition) {
-        return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
-            '<div class="MER-PANIER-ITEM-TITRE">' + ESC(v.grade + ' ' + v.nom + ' ' + v.prenom) + '</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + ESC(v.fonction) + '</div>' +
-            '</div><button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="MODIFIER_PROFIL_VALIDEUR()">Modifier</button></div>';
-    }
+// ---- 1. Activation ----
+function TPL_ACTIVATION() {
     function champ(k, label, ph) {
-        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" value="' + ESC(v[k] || '') + '" placeholder="' + ph + '"></div>';
+        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" placeholder="' + ph + '"></div>';
     }
-    return '<p class="MER-HINT" style="margin:0 0 12px;">À renseigner une seule fois : ces informations apparaîtront dans la case de validation du PDF.</p>' +
+    return '<p class="MER-HINT" style="margin:0 0 14px;">Première utilisation sur cet appareil. Renseignez votre identité et choisissez un code PIN : ' +
+        'il vous sera demandé à chaque connexion. Votre accès devra ensuite être habilité par l\'administrateur.</p>' +
         '<div class="MER-ROW2">' + champ('grade', 'Grade', 'EX : CAPITAINE') + champ('fonction', 'Fonction', 'EX : CHEF DE SERVICE') + '</div>' +
         '<div class="MER-ROW2">' + champ('nom', 'Nom', 'EX : DUPONT') + champ('prenom', 'Prénom', 'EX : Jean') + '</div>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="ENREGISTRER_PROFIL_VALIDEUR()">Enregistrer</button>';
+        '<div class="MER-ROW2">' +
+            '<div class="MER-FIELD"><label>Code PIN (6 chiffres)</label><input type="password" inputmode="numeric" maxlength="6" id="MER-VAL-pin" autocomplete="new-password"></div>' +
+            '<div class="MER-FIELD"><label>Confirmer le PIN</label><input type="password" inputmode="numeric" maxlength="6" id="MER-VAL-pin2" autocomplete="new-password"></div>' +
+        '</div>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="ACTIVER_VALIDEUR(this)">Activer mon accès valideur</button>';
+}
+function ACTIVER_VALIDEUR(btn) {
+    var id = {};
+    ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) { id[k] = (document.getElementById('MER-VAL-' + k).value || '').trim(); });
+    var pin = document.getElementById('MER-VAL-pin').value, pin2 = document.getElementById('MER-VAL-pin2').value;
+    if (!id.grade || !id.nom || !id.prenom || !id.fonction) { alert('Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
+    if (!/^\d{6}$/.test(pin)) { alert('Le code PIN doit comporter 6 chiffres.'); return; }
+    if (pin !== pin2) { alert('Les deux codes PIN ne sont pas identiques.'); return; }
+    id.nom = id.nom.toUpperCase(); id.grade = id.grade.toUpperCase();
+    btn.disabled = true; btn.textContent = 'Création de votre clé…';
+    CREER_CLE_VALIDEUR(id, pin).then(RENDER_VALIDATION_INPLACE).catch(function(e) {
+        alert('Activation impossible sur ce navigateur : ' + e.message);
+        btn.disabled = false; btn.textContent = 'Activer mon accès valideur';
+    });
 }
 
-function TPL_ENTREE_VALIDATION(e) {
+// ---- 2. Connexion ----
+function TPL_CONNEXION(v) {
+    return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
+            '<div class="MER-PANIER-ITEM-TITRE">' + ESC(v.grade + ' ' + v.nom + ' ' + v.prenom) + '</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(v.fonction) + '</div></div></div>' +
+        '<div class="MER-FIELD"><label>Code PIN</label><input type="password" inputmode="numeric" maxlength="6" id="MER-PIN" autocomplete="current-password" ' +
+            'onkeydown="if(event.key===\'Enter\') SE_CONNECTER()"></div>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="SE_CONNECTER()">Se connecter</button>' +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="REINITIALISER_ACCES()">Code PIN oublié ?</button>';
+}
+function SE_CONNECTER() {
+    var pin = document.getElementById('MER-PIN').value;
+    DEVERROUILLER_CLE(pin).then(RENDER_VALIDATION_INPLACE).catch(function() {
+        alert('Code PIN incorrect.');
+        document.getElementById('MER-PIN').value = '';
+    });
+}
+function SE_DECONNECTER() { MER_CLE_SESSION = null; RENDER_VALIDATION_INPLACE(); }
+function REINITIALISER_ACCES() {
+    if (!confirm('Réinitialiser votre accès valideur sur cet appareil ?\n\nVous choisirez un nouveau code PIN et devrez renvoyer une demande d\'habilitation à l\'administrateur.')) return;
+    SAVE_VALIDEUR({}); MER_CLE_SESSION = null;
+    RENDER_VALIDATION_INPLACE();
+}
+
+// ---- 3. Habilitation en attente ----
+function TPL_HABILITATION_ATTENTE(v, h) {
+    var code = CODE_HABILITATION();
+    var corps = 'Bonjour,\n\nMerci d\'habiliter mon accès valideur TRIGONE Mise en route.\n\n' + v.grade + ' ' + v.nom + ' ' + v.prenom + ' — ' + v.fonction +
+        '\n\nCode d\'habilitation :\n' + code + '\n\nCordialement.';
+    return (h && h.retire
+            ? '<p class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Votre habilitation a été retirée par l\'administrateur.</p>'
+            : '<p class="MER-HINT" style="font-weight:800;">⏳ Accès créé, en attente d\'habilitation.</p>') +
+        '<p class="MER-HINT" style="margin-bottom:10px;">Envoyez ce code à l\'administrateur de TRIGONE. Dès qu\'il vous aura habilité (1er ou 2e valideur), appuyez sur « Actualiser ».</p>' +
+        '<textarea class="MER-CODE" readonly onclick="this.select()">' + ESC(code) + '</textarea>' +
+        '<div class="MER-ACTIONS" style="margin:10px 0;">' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="COPIER_TEXTE(this.parentNode.previousSibling.value, this)">Copier le code</button>' +
+            '<a class="BTN BTN-PRIMARY BTN-SMALL" href="mailto:?subject=' + encodeURIComponent('Habilitation valideur TRIGONE Mise en route') + '&body=' + encodeURIComponent(corps) + '">Envoyer par mail</a>' +
+        '</div>' +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_VALIDATION()">↻ Actualiser</button>';
+}
+function COPIER_TEXTE(t, btn) {
+    (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function() {
+        if (btn) { btn.textContent = '✔ Copié'; }
+    }).catch(function() { prompt('Copiez ce texte :', t); });
+}
+
+// ---- 4. Espace de validation ----
+function TPL_ENTREE_VALIDATION(e, h) {
     var d = e.d, r = RESUME_DEMANDE(d), niveau = NIVEAU_VALIDATION(d);
-    var badge = niveau > 2 ? 'Déjà validée'
-        : (niveau === 1 ? '1re validation' : '2e validation — 1re par ' + ESC(d.validations[0].grade + ' ' + d.validations[0].nom));
-    var etat, actions;
+    var verif = MER_VERIF[e.id] || [];
+    var precedenteKo = verif.filter(function(x) { return !x.ok; })[0];
+    var pourMoi = niveau === h.role && !precedenteKo;
+    var badge = niveau > 2 ? 'Déjà validée' : (niveau === 1 ? 'À valider — 1er niveau' : 'À valider — 2e niveau');
+    var controle = verif.map(function(x) {
+        return '<div class="MER-HINT" style="font-weight:700; color:' + (x.ok ? '#15803d' : '#b91c1c') + ';">' + (x.ok ? '✔ ' : '✖ ') +
+            LIBELLE_ROLE(x.niveau) + ' : ' + ESC((x.validation.grade || '') + ' ' + (x.validation.nom || '')) + ' — ' + ESC(x.message) + '</div>';
+    }).join('');
+    var etat = '', actions = '';
     if (e.decision === 'VALIDEE') {
-        etat = '<div class="MER-HINT" style="color:#15803d; font-weight:800;">✔ Validée le ' + ESC(new Date(e.signature.le).toLocaleString('fr-FR')) + '</div>';
+        etat = '<div class="MER-HINT" style="color:#15803d; font-weight:800;">✔ Validée et signée le ' + ESC(new Date(e.signature.le).toLocaleString('fr-FR')) + '</div>';
         actions = '<button type="button" class="BTN-DANGER-TEXT" onclick="ANNULER_DECISION(\'' + e.id + '\')">Annuler</button>';
     } else if (e.decision === 'REFUSEE') {
         etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée : ' + ESC(e.signature.motif) + '</div>';
         actions = '<button type="button" class="BTN-DANGER-TEXT" onclick="ANNULER_DECISION(\'' + e.id + '\')">Annuler</button>';
-    } else {
-        etat = '';
-        actions = niveau > 2 ? '' :
-            '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_DEMANDES([\'' + e.id + '\'])">Valider</button>' +
-            '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">Refuser</button>';
+    } else if (niveau <= 2) {
+        if (pourMoi) actions += '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_DEMANDES([\'' + e.id + '\'])">Valider</button>';
+        else if (!precedenteKo) etat = '<div class="MER-HINT">Réservée au ' + LIBELLE_ROLE(niveau) + ' : vous ne pouvez pas la valider.</div>';
+        else etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">Validation précédente non conforme : refusez cette demande.</div>';
+        actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">Refuser</button>';
     }
-    var coche = !e.decision && niveau <= 2
-        ? '<input type="checkbox" class="MER-VAL-SEL" value="' + e.id + '" style="width:18px; height:18px; flex-shrink:0;">' : '';
+    var coche = !e.decision && pourMoi ? '<input type="checkbox" class="MER-VAL-SEL" value="' + e.id + '" style="width:18px; height:18px; flex-shrink:0;">' : '';
     return '<div class="MER-PANIER-ITEM" style="align-items:flex-start;">' + coche +
         '<div class="MER-PANIER-ITEM-TXT">' +
             '<span class="MER-BADGE">' + badge + '</span>' +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(r.noms) + '</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' + etat +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' + controle + etat +
             '<div class="MER-VAL-ACTIONS">' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_PDF_VALIDATION(\'' + e.id + '\')">Voir le PDF</button>' + actions +
             '</div>' +
         '</div></div>';
 }
 
-function TPL_VALIDATION() {
-    var v = GET_VALIDEUR();
+function TPL_ESPACE_VALIDATION(v, h) {
     var liste = GET_A_VALIDER();
-    var html = '<div class="CARD">' +
-        '<h2>Validations</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Validation des demandes et ordres de mise en route reçus (.json)</p>' +
-        '<div class="MER-SECTION-TITLE">Mon identité de valideur</div>' + TPL_PROFIL_VALIDEUR(v);
-    if (!PROFIL_COMPLET(v) || v.edition) return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
-
-    html += '<div class="MER-SECTION-TITLE">Demandes reçues</div>' +
+    var html = '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
+            '<span class="MER-BADGE">🔒 ' + LIBELLE_ROLE(h.role) + ' habilité</span>' +
+            '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(h.fonction) + '</div></div>' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>' +
+        '<div class="MER-SECTION-TITLE">Demandes reçues</div>' +
         '<label class="BTN BTN-GHOST" style="margin-bottom:14px;">📥 Importer un ou plusieurs fichiers .json' +
         '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>';
-    if (!liste.length) {
-        html += '<div class="MER-EMPTY">Aucune demande à valider.<br>Importez le fichier .json reçu par mail.</div>';
-    } else {
-        var enAttente = liste.filter(function(e) { return !e.decision && NIVEAU_VALIDATION(e.d) <= 2; }).length;
-        var decidees = liste.filter(function(e) { return e.decision; }).length;
-        html += liste.map(TPL_ENTREE_VALIDATION).join('');
-        if (enAttente) {
-            html += '<div class="MER-ACTIONS" style="margin:4px 0 8px;">' +
-                '<button type="button" class="BTN BTN-SECONDARY BTN-SMALL" onclick="COCHER_TOUT_VALIDATION()">Tout cocher</button>' +
-                '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_SELECTION()">✔ Valider la sélection</button>' +
-                '</div>';
-        }
-        html += '<div class="MER-SECTION-TITLE">Transmission</div>' +
-            '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)">' +
-            '<p class="MER-HINT">Utilisé quand vous êtes 1er valideur.</p></div>' +
-            '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
-            '<p class="MER-HINT">Utilisé quand vous êtes 2e valideur : il reçoit le PDF signé.</p></div>' +
-            '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
+    if (!liste.length) return html + '<div class="MER-EMPTY">Aucune demande à valider.<br>Importez le fichier .json reçu par mail.</div>';
+
+    var decidees = liste.filter(function(e) { return e.decision; }).length;
+    var cochables = liste.filter(function(e) {
+        return !e.decision && NIVEAU_VALIDATION(e.d) === h.role && !(MER_VERIF[e.id] || []).some(function(x) { return !x.ok; });
+    }).length;
+    html += liste.map(function(e) { return TPL_ENTREE_VALIDATION(e, h); }).join('');
+    if (cochables > 1) {
+        html += '<div class="MER-ACTIONS" style="margin:4px 0 8px;">' +
+            '<button type="button" class="BTN BTN-SECONDARY BTN-SMALL" onclick="COCHER_TOUT_VALIDATION()">Tout cocher</button>' +
+            '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_SELECTION()">✔ Valider la sélection</button></div>';
     }
-    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+    html += '<div class="MER-SECTION-TITLE">Transmission</div>' +
+        (h.role === 1
+            ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>'
+            : '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
+              '<p class="MER-HINT">Il reçoit le PDF signé.</p></div>') +
+        '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
+    return html;
 }
 
-function LIRE_FICHIERS_JSON(input, traiter) {
+function TPL_VALIDATION() {
+    var v = GET_VALIDEUR();
+    var h = v.cle ? HABILITATION(v.cle) : null;
+    var corps, sous;
+    if (!v.cle) { sous = 'Activation de votre accès'; corps = TPL_ACTIVATION(); }
+    else if (!MER_CLE_SESSION) { sous = 'Connexion'; corps = TPL_CONNEXION(v); }
+    else if (!h || h.retire) { sous = 'Habilitation'; corps = TPL_HABILITATION_ATTENTE(v, h); }
+    else { sous = 'Validation des demandes reçues'; corps = TPL_ESPACE_VALIDATION(v, h); }
+    return '<div class="CARD">' +
+        '<h2>Espace valideur</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">' + sous + '</p>' + corps +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
+
+function LIRE_FICHIERS(input, lire, traiter) {
     var fichiers = Array.prototype.slice.call(input.files || []);
     input.value = '';
     var restants = fichiers.length, contenus = [];
     fichiers.forEach(function(f) {
         var lecteur = new FileReader();
         lecteur.onload = function() {
-            try {
-                var data = JSON.parse(lecteur.result);
-                if (data.app !== 'TRIGONE-MISE-EN-ROUTE' || !Array.isArray(data.demandes)) throw new Error('format');
-                contenus.push(data);
-            } catch (e) { alert('Le fichier « ' + f.name + ' » n\'est pas un fichier TRIGONE Mise en route valide.'); }
+            try { contenus.push(lire(lecteur.result, f)); }
+            catch (e) { alert('Le fichier « ' + f.name + ' » n\'est pas un fichier TRIGONE Mise en route valide.'); }
             if (--restants === 0) traiter(contenus);
         };
-        lecteur.readAsText(f);
+        if (/\.pdf$/i.test(f.name)) lecteur.readAsBinaryString(f); else lecteur.readAsText(f);
     });
 }
+function LIRE_JSON_MER(texte) {
+    var data = JSON.parse(texte);
+    if (data.app !== 'TRIGONE-MISE-EN-ROUTE' || !Array.isArray(data.demandes)) throw new Error('format');
+    return data;
+}
+function LIRE_FICHIERS_JSON(input, traiter) { LIRE_FICHIERS(input, LIRE_JSON_MER, traiter); }
 
 function IMPORTER_A_VALIDER(input) {
     LIRE_FICHIERS_JSON(input, function(contenus) {
@@ -806,24 +1127,23 @@ function IMPORTER_A_VALIDER(input) {
         });
         SAVE_A_VALIDER(liste);
         RENDER_VALIDATION_INPLACE();
-        if (refus) alert(refus + ' demande(s) refusée(s) ignorée(s) : un refus s\'importe côté « Mes demandes », par le demandeur.');
+        if (refus) alert(refus + ' demande(s) refusée(s) ignorée(s) : un refus s\'importe côté demandeur.');
         else if (!ajoutees && contenus.length) alert('Ces demandes sont déjà dans votre liste.');
     });
 }
 
-function MAJ_ENTREES(ids, maj) {
-    var liste = GET_A_VALIDER();
-    liste.forEach(function(e) { if (ids.indexOf(e.id) !== -1) maj(e); });
-    SAVE_A_VALIDER(liste);
-    RENDER_VALIDATION_INPLACE();
-}
 function VALIDER_DEMANDES(ids) {
-    var v = GET_VALIDEUR();
-    MAJ_ENTREES(ids, function(e) {
-        if (e.decision || NIVEAU_VALIDATION(e.d) > 2) return;
-        e.decision = 'VALIDEE';
-        e.signature = SIGNATAIRE(v);
-    });
+    var h = HABILITATION_COURANTE();
+    if (!MER_CLE_SESSION || !h || h.retire) { RENDER_VALIDATION_INPLACE(); return; }
+    var liste = GET_A_VALIDER();
+    Promise.all(liste.map(function(e) {
+        var ko = (MER_VERIF[e.id] || []).some(function(x) { return !x.ok; });
+        if (ids.indexOf(e.id) === -1 || e.decision || NIVEAU_VALIDATION(e.d) !== h.role || ko) return null;
+        return SIGNER_VALIDATION(e.d, h).then(function(s) { e.decision = 'VALIDEE'; e.signature = s; });
+    })).then(function() {
+        SAVE_A_VALIDER(liste);
+        RENDER_VALIDATION_INPLACE();
+    }).catch(function(err) { alert('Signature impossible : ' + err.message); });
 }
 function COCHER_TOUT_VALIDATION() {
     var cases = document.querySelectorAll('.MER-VAL-SEL');
@@ -835,6 +1155,12 @@ function VALIDER_SELECTION() {
         .map(function(c) { return c.value; });
     if (!ids.length) { alert('Cochez au moins une demande.'); return; }
     VALIDER_DEMANDES(ids);
+}
+function MAJ_ENTREES(ids, maj) {
+    var liste = GET_A_VALIDER();
+    liste.forEach(function(e) { if (ids.indexOf(e.id) !== -1) maj(e); });
+    SAVE_A_VALIDER(liste);
+    RENDER_VALIDATION_INPLACE();
 }
 function ANNULER_DECISION(id) { MAJ_ENTREES([id], function(e) { e.decision = null; e.signature = null; }); }
 
@@ -850,18 +1176,19 @@ function DEMANDER_REFUS(id) {
 function CONFIRMER_REFUS(id) {
     var motif = (document.getElementById('MER-MOTIF-REFUS').value || '').trim();
     if (!motif) { alert('Merci d\'indiquer le motif du refus.'); return; }
-    var v = GET_VALIDEUR();
+    var h = HABILITATION_COURANTE();
+    if (!MER_CLE_SESSION || !h) { FERMER_MODALE(); RENDER_VALIDATION_INPLACE(); return; }
     FERMER_MODALE();
     MAJ_ENTREES([id], function(e) {
         e.decision = 'REFUSEE';
-        e.signature = SIGNATAIRE(v);
-        e.signature.motif = motif;
+        e.signature = { grade: h.grade, nom: h.nom, prenom: h.prenom, fonction: h.fonction, le: new Date().toISOString(), motif: motif };
     });
 }
 
-// Demande telle qu'elle sera transmise : la validation en cours est ajoutée aux précédentes.
+// Demande telle qu'elle sera transmise : la validation signée est ajoutée aux précédentes.
 function DEMANDE_AVEC_DECISION(e) {
     var d = JSON.parse(JSON.stringify(e.d));
+    d.validations = d.validations || [];
     if (e.decision === 'VALIDEE') d.validations.push(e.signature);
     if (e.decision === 'REFUSEE') { d.refus = e.signature; d.refus.niveau = NIVEAU_VALIDATION(e.d); }
     return d;
@@ -925,12 +1252,13 @@ function EXECUTER_ENVOI(i) {
         try { GENERER_PDF(env.demandes).save(env.pj); }
         catch (e) { alert('Erreur lors de la génération du PDF : ' + e.message); return; }
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) validée(s) — ' + nom;
-        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement.\n\nCordialement.';
+        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement.\n' +
+            'Les validations sont signées électroniquement : TRIGONE Mise en route > Vérifier une mise en route permet de les contrôler.\n\nCordialement.';
     } else if (env.type === 'VALIDATION_1') {
         TELECHARGER_TEXTE(env.pj, GENERER_JSON(env.demandes, 'VALIDATION_1'), 'application/json');
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) à valider — ' + nom;
         corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation.\n' +
-            'Ouvrez TRIGONE Mise en route > Valider des mises en route, puis importez le fichier .json joint.\n\nCordialement.';
+            'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez le fichier .json joint.\n\nCordialement.';
     } else {
         TELECHARGER_TEXTE(env.pj, GENERER_JSON(env.demandes, 'REFUS'), 'application/json');
         sujet = 'TRIGONE Mise en route — demande(s) refusée(s) — ' + nom;
@@ -947,6 +1275,106 @@ function TERMINER_TRANSMISSION() {
     SAVE_A_VALIDER(GET_A_VALIDER().filter(function(e) { return !e.decision; }));
     MER_ENVOIS = [];
     RENDER_VALIDATION_INPLACE();
+}
+
+// ===================== VÉRIFIER UNE MISE EN ROUTE (assistant Chorus DT) =====================
+var MER_RESULTATS_VERIF = null;
+function TPL_VERIFIER() {
+    var res = MER_RESULTATS_VERIF;
+    var html = '<div class="CARD"><h2>Vérifier une mise en route</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Contrôle des signatures électroniques des valideurs, à partir du PDF (ou du .json) reçu.</p>' +
+        '<label class="BTN BTN-PRIMARY" style="margin-bottom:16px;">📄 Choisir le PDF à vérifier' +
+        '<input type="file" accept=".pdf,application/pdf,.json,application/json" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
+    if (res) {
+        html += !res.length ? '<div class="MER-EMPTY">Aucune donnée TRIGONE dans ce fichier.<br>Seuls les PDF produits par TRIGONE Mise en route peuvent être vérifiés.</div>'
+            : res.map(function(x) {
+                var nbOk = x.verif.filter(function(v) { return v.ok; }).length;
+                var conforme = nbOk === 2 && x.verif.length === 2;
+                var r = RESUME_DEMANDE(x.d);
+                return '<div class="MER-PANIER-ITEM" style="align-items:flex-start; border-color:' + (conforme ? '#86efac' : '#fca5a5') + ';"><div class="MER-PANIER-ITEM-TXT">' +
+                    '<div style="font-weight:800; font-size:0.9em; color:' + (conforme ? '#15803d' : '#b91c1c') + ';">' +
+                        (conforme ? '✔ Conforme : validée par les deux valideurs habilités' : '✖ Non conforme') + '</div>' +
+                    '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(r.noms) + '</div>' +
+                    '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' +
+                    [1, 2].map(function(n) {
+                        var v = x.verif[n - 1];
+                        if (!v) return '<div class="MER-HINT" style="color:#b91c1c; font-weight:700;">✖ ' + LIBELLE_ROLE(n) + ' : aucune validation</div>';
+                        return '<div class="MER-HINT" style="font-weight:700; color:' + (v.ok ? '#15803d' : '#b91c1c') + ';">' + (v.ok ? '✔ ' : '✖ ') +
+                            LIBELLE_ROLE(n) + ' : ' + ESC((v.validation.grade || '') + ' ' + (v.validation.nom || '') + ' ' + (v.validation.prenom || '')) +
+                            (v.validation.le ? ', le ' + ESC(new Date(v.validation.le).toLocaleString('fr-FR')) : '') + ' — ' + ESC(v.message) + '</div>';
+                    }).join('') +
+                '</div></div>';
+            }).join('');
+    }
+    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+function VERIFIER_FICHIERS(input) {
+    LIRE_FICHIERS(input, function(contenu, f) {
+        if (/\.pdf$/i.test(f.name)) return LIRE_DONNEES_PDF(contenu) || [];
+        return LIRE_JSON_MER(contenu).demandes;
+    }, function(listes) {
+        var demandes = [].concat.apply([], listes);
+        CHARGER_LISTE_VALIDEURS().then(function() {
+            return Promise.all(demandes.map(function(d) {
+                return VERIFIER_VALIDATIONS(d).then(function(verif) { return { d: d, verif: verif }; });
+            }));
+        }).then(function(res) {
+            MER_RESULTATS_VERIF = res;
+            SHOW_PAGE('VERIFIER');
+        });
+    });
+}
+
+// ===================== ADMINISTRATION DES VALIDEURS =====================
+// L'administrateur colle les codes d'habilitation reçus ; l'écran produit le contenu de valideurs.json à
+// publier sur GitHub. Seul un compte autorisé sur le dépôt peut le publier : c'est là qu'est la sécurité.
+var MER_ADMIN_LISTE = null;
+function OUVRIR_ADMIN() {
+    CHARGER_LISTE_VALIDEURS().then(function(l) {
+        MER_ADMIN_LISTE = JSON.parse(JSON.stringify(l.valideurs ? l : { valideurs: [] }));
+        SHOW_PAGE('ADMIN');
+    });
+}
+function TPL_ADMIN() {
+    var l = MER_ADMIN_LISTE || { valideurs: [] };
+    var lignes = l.valideurs.map(function(v, i) {
+        return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
+            '<span class="MER-BADGE">' + LIBELLE_ROLE(v.role) + '</span>' + (v.retire ? ' <span class="MER-BADGE" style="color:#b91c1c;">Retiré</span>' : '') +
+            '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(v.grade + ' ' + v.nom + ' ' + v.prenom) + '</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(v.fonction) + ' · clé ' + ESC(EMPREINTE_COURTE(v.cle.slice(-24))) + '</div></div>' +
+            (v.retire ? '' : '<button type="button" class="BTN-DANGER-TEXT" onclick="ADMIN_RETIRER(' + i + ')">Retirer</button>') + '</div>';
+    }).join('') || '<div class="MER-EMPTY">Aucun valideur habilité.</div>';
+    return '<div class="CARD"><h2>Administration</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Valideurs habilités (fichier valideurs.json du dépôt GitHub)</p>' + lignes +
+        '<div class="MER-SECTION-TITLE">Habiliter un valideur</div>' +
+        '<div class="MER-FIELD"><label>Code d\'habilitation reçu</label><textarea id="MER-ADMIN-CODE" rows="3" placeholder="TRIGONE-VALIDEUR:…"></textarea></div>' +
+        '<div class="MER-FIELD"><label>Rôle</label><select id="MER-ADMIN-ROLE"><option value="1">1er valideur (chef de service)</option><option value="2">2e valideur (secrétariat du chef de corps)</option></select></div>' +
+        '<button type="button" class="BTN BTN-GHOST" onclick="ADMIN_AJOUTER()">+ Ajouter à la liste</button>' +
+        '<div class="MER-SECTION-TITLE">Publier</div>' +
+        '<p class="MER-HINT" style="margin-bottom:10px;">1. Copiez le contenu ci-dessous. 2. Ouvrez valideurs.json sur GitHub, remplacez tout son contenu, puis « Commit changes ». La liste est active 1 à 2 minutes après.</p>' +
+        '<textarea class="MER-CODE" id="MER-ADMIN-JSON" readonly rows="6">' + ESC(JSON.stringify(l, null, 2)) + '</textarea>' +
+        '<div class="MER-ACTIONS" style="margin:10px 0;">' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="COPIER_TEXTE(document.getElementById(\'MER-ADMIN-JSON\').value, this)">Copier</button>' +
+            '<a class="BTN BTN-PRIMARY BTN-SMALL" target="_blank" rel="noopener" href="' + MER_DEPOT_GITHUB + '/edit/main/valideurs.json">Ouvrir sur GitHub</a>' +
+        '</div>' +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+function ADMIN_AJOUTER() {
+    var code = (document.getElementById('MER-ADMIN-CODE').value || '').trim().replace(/\s+/g, '');
+    var v;
+    try { v = JSON.parse(TEXTE_B64(code.replace(/^TRIGONE-VALIDEUR:/, ''))); if (!v.cle || !v.nom) throw 0; }
+    catch (e) { alert('Code d\'habilitation illisible. Copiez-le en entier, depuis « TRIGONE-VALIDEUR: ».'); return; }
+    var l = MER_ADMIN_LISTE;
+    if (l.valideurs.some(function(x) { return x.cle === v.cle; })) { alert('Ce valideur est déjà dans la liste.'); return; }
+    l.valideurs.push({ grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction,
+        role: +document.getElementById('MER-ADMIN-ROLE').value, cle: v.cle, habiliteLe: new Date().toISOString() });
+    SHOW_PAGE('ADMIN');
+}
+function ADMIN_RETIRER(i) {
+    var v = MER_ADMIN_LISTE.valideurs[i];
+    if (!confirm('Retirer l\'habilitation de ' + v.grade + ' ' + v.nom + ' ?\n\nSes validations passées restent valables ; les suivantes seront refusées.')) return;
+    v.retire = new Date().toISOString();
+    SHOW_PAGE('ADMIN');
 }
 
 // ===================== RETOUR D'UN REFUS (côté demandeur) =====================
@@ -986,6 +1414,8 @@ function REGISTER_SERVICE_WORKER() {
 window.addEventListener('DOMContentLoaded', function() {
     APPLIQUER_THEME_INITIAL();
     LOAD_BROUILLON();
-    SHOW_PAGE(D.personnes[0].nom || D.objet ? 'FORMULAIRE' : 'ACCUEIL');
+    window.addEventListener('hashchange', function() { if (location.hash === '#admin') OUVRIR_ADMIN(); });
+    if (location.hash === '#admin') OUVRIR_ADMIN();
+    else SHOW_PAGE(D.personnes[0].nom || D.objet ? 'FORMULAIRE' : 'ACCUEIL');
     REGISTER_SERVICE_WORKER();
 });
