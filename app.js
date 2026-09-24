@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 23;
+var APP_CODE_VERSION = 24;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -1276,6 +1276,25 @@ function VOIR_APERCU_PANIER() {
     catch (e) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + e.message); }
 }
 
+// ---- Objets des mails ----
+// Le demandeur est la première personne de la demande ; COLLECTIF dès qu'elle concerne plusieurs personnes.
+// Plusieurs demandes dans un même mail : l'objet reprend la première et indique le nombre des autres.
+function SUJET_DEMANDEUR(d) {
+    var p = (d.personnes || [])[0] || {};
+    return [(p.grade || '').toUpperCase(), (p.nom || '').toUpperCase()].filter(Boolean).join(' ');
+}
+function SUJET_NATURE(d) { return (d.personnes || []).length > 1 ? 'COLLECTIF' : 'INDIVIDUEL'; }
+function SUJET_AUTRES(demandes) {
+    var n = demandes.length - 1;
+    return n > 0 ? ' (+ ' + n + ' autre' + (n > 1 ? 's' : '') + ' demande' + (n > 1 ? 's' : '') + ')' : '';
+}
+function SUJET_MAIL(etape, demandes) {
+    var d = demandes[0], qui = SUJET_DEMANDEUR(d), objet = (d.objet || '').trim(), autres = SUJET_AUTRES(demandes);
+    if (etape === 'DEMANDE') return qui + (objet ? ' - ' + objet : '') + autres;
+    if (etape === 'VALIDATION_1') return 'Demande de validation ' + SUJET_NATURE(d) + ' pour ' + qui + (objet ? ' - ' + objet : '') + autres;
+    if (etape === 'CHORUS') return 'Demande de Mise en route ' + SUJET_NATURE(d) + ' - ' + qui + autres;
+    return 'Demande refusée - ' + qui + (objet ? ' - ' + objet : '') + autres;
+}
 function FINALISER_ENVOI() {
     var reg = GET_REGLAGES();
     var panier = GET_PANIER();
@@ -1283,7 +1302,7 @@ function FINALISER_ENVOI() {
     var base = NOM_FICHIER_BASE(panier);
     GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE').then(function(json) {
         TELECHARGER_TEXTE(base + '.json', json, 'application/json');
-        var sujet = 'TRIGONE Mise en route — ' + panier.length + ' demande(s) — ' + (panier[0].personnes[0].nom || '');
+        var sujet = SUJET_MAIL('DEMANDE', panier);
         var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) et ordre(s) de mise en route, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
             'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.';
         ARCHIVER_ENVOI(panier, reg.mailSignataire);
@@ -1945,22 +1964,22 @@ function AFFICHER_TRANSMISSION() {
     );
 }
 function EXECUTER_ENVOI(i) {
-    var env = MER_ENVOIS[i], n = env.demandes.length, nom = env.demandes[0].personnes[0].nom || '';
+    var env = MER_ENVOIS[i], n = env.demandes.length;
     var base = NOM_FICHIER_BASE(env.demandes), travail, sujet, corps;
     if (env.type === 'CHORUS') {
         // Un seul .json (demandes signées + NDS / DAF) : l'assistant Chorus DT le contrôle et génère le PDF.
         travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_2').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
-        sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) validée(s) — ' + nom;
+        sujet = SUJET_MAIL('CHORUS', env.demandes);
         corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
             'Ouvrez TRIGONE Mise en route > Espace valideur > Vérifier une mise en route, importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.';
     } else if (env.type === 'VALIDATION_1') {
         travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_1').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
-        sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) à valider — ' + nom;
+        sujet = SUJET_MAIL('VALIDATION_1', env.demandes);
         corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation (pièces jointes NDS / DAF incluses dans le fichier).\n' +
             'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez le fichier .json joint.\n\nCordialement.';
     } else {
         travail = GENERER_JSON_COMPLET(env.demandes, 'REFUS').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
-        sujet = 'TRIGONE Mise en route — demande(s) refusée(s) — ' + nom;
+        sujet = SUJET_MAIL('REFUS', env.demandes);
         corps = 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
         }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Panier > Importer une demande refusée, puis importez le fichier .json joint.\n\nCordialement.';
