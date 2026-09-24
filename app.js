@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 28;
+var APP_CODE_VERSION = 29;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -1138,18 +1138,20 @@ var MER_NOTICES = {
     DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · panier · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
         etapes: ['<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
-            '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), ville (code postal automatique) ou pays étranger, dates et heures. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
-            '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (PDF ou photo) : elle voyage avec la demande.',
-            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis « Envoyer » : un <b>seul fichier .json</b> (pièces jointes comprises) est téléchargé et le mail au 1er valideur s\'ouvre.',
+            '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), moyen de transport, ville (code postal automatique) ou pays étranger, dates et heures. Selon le moyen, TRIGONE demande la <b>gare</b> (voie ferrée), l\'<b>aéroport</b> (voie aérienne) ou le <b>port</b> (voie maritime) de départ et d\'arrivée. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
+            '<b>Voie routière civile (VRC)</b> : joignez la <b>demande d\'autorisation VRC</b>, la <b>carte grise</b> et l\'<b>attestation d\'assurance</b> du véhicule ; un rappel s\'affiche jusqu\'à l\'envoi.',
+            '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
+            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises) et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
             'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
-        etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e). Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
+        etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
-            '<b>Transmettre</b> : le 1er valideur envoie un seul .json au 2e valideur ; le 2e valideur envoie à l\'assistant Chorus DT <b>un seul .json</b> (demandes signées + NDS / DAF) ; un refus repart vers le demandeur.'] },
+            '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
+            'Terminez par « Terminé » une fois tous les mails envoyés : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier le .json et générer le PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['Ouvrez <b>Espace valideur</b> puis <b>Vérifier une mise en route</b> (aucun code n\'est nécessaire).',
-            'Choisissez le fichier <b>.json</b> reçu du 2e valideur : TRIGONE contrôle les signatures électroniques et les pièces jointes.',
+            'Enregistrez le fichier <b>.json</b> reçu du 2e valideur, puis choisissez-le : TRIGONE contrôle les signatures électroniques et les pièces jointes.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).'] }
 };
@@ -1269,6 +1271,26 @@ function TELECHARGER_TEXTE(nomFichier, contenu, type) {
     setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
 }
 
+// Enregistre un .json : l'utilisateur choisit l'emplacement quand le navigateur le permet (PC), sinon le fichier
+// part dans Téléchargements. Renvoie true une fois enregistré, false si l'utilisateur a annulé.
+function ENREGISTRER_JSON(nom, generer) {
+    var telecharger = function() { return generer().then(function(json) { TELECHARGER_TEXTE(nom, json, 'application/json'); return true; }); };
+    if (!window.showSaveFilePicker) return telecharger();
+    return window.showSaveFilePicker({ suggestedName: nom, types: [{ description: 'Fichier TRIGONE (.json)', accept: { 'application/json': ['.json'] } }] })
+        .then(function(h) {
+            return generer().then(function(json) {
+                return h.createWritable().then(function(w) { return w.write(json).then(function() { return w.close(); }); });
+            }).then(function() { return true; });
+        }, function(e) {
+            if (e && e.name === 'AbortError') return false;   // enregistrement annulé
+            return telecharger();                              // sélecteur indisponible : téléchargement classique
+        });
+}
+function OUVRIR_MAIL(dest, sujet, corps) {
+    window.location.href = 'mailto:' + encodeURIComponent(dest || '') + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
+}
+
+var MER_PANIER_ENREGISTRE = false;
 function PREPARER_ENVOI() {
     var reg = GET_REGLAGES();
     var mail = (document.getElementById('MER-MAIL-DEST') || {}).value || reg.mailSignataire || '';
@@ -1279,6 +1301,7 @@ function PREPARER_ENVOI() {
     if (!panier.length) return;
     var pj = [].concat.apply([], panier.map(function(d) { return d.pieces || []; }));
     var sansPJ = panier.filter(function(d) { return !(d.pieces || []).length; }).length;
+    MER_PANIER_ENREGISTRE = false;
     AFFICHER_MODALE('Avant d\'envoyer',
         '<p style="font-size:0.86em; line-height:1.5;">Vérifiez votre demande dans l\'aperçu, puis envoyez-la. Le 1er valideur ne reçoit qu\'<b>un seul fichier</b> :</p>' +
         '<p style="font-size:0.86em; line-height:1.7; background:rgba(90,122,148,0.07); padding:10px 12px; border-radius:10px;">📎 ' + ESC(NOM_FICHIER_BASE(panier)) + '.json' +
@@ -1287,9 +1310,10 @@ function PREPARER_ENVOI() {
         (panier.some(UTILISE_VRC) ? '<div style="font-size:0.86em; line-height:1.5; background:rgba(180,83,9,0.09); border:1.5px solid rgba(180,83,9,0.35); color:#92400e; padding:10px 12px; border-radius:10px; margin:10px 0;">' +
             '🚗 <b>Rappel — voie routière civile (VRC)</b><br>Joignez ' + MER_PIECES_VRC + ' : ajoutez-les en pièces jointes de la demande (onglet Imputation) avant d\'envoyer.</div>' : '') +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:8px;" onclick="VOIR_APERCU_PANIER()">👁 Aperçu du PDF</button>' +
-        '<p style="font-size:0.8em; color:var(--sm2-muted);">« Envoyer » télécharge le fichier .json et ouvre le mail : joignez-y ce fichier avant d\'envoyer.</p>',
+        '<button type="button" class="BTN BTN-PRIMARY" id="MER-BTN-ENREGISTRER" style="margin-top:8px;" onclick="ENREGISTRER_PANIER()">1. 💾 Enregistrer le .json</button>' +
+        '<p style="font-size:0.8em; color:var(--sm2-muted);">Enregistrez d\'abord le fichier .json, puis « Envoyer » ouvre le mail : joignez-y le fichier enregistré.</p>',
         '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="FERMER_MODALE()">Annuler</button>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="FINALISER_ENVOI()">Envoyer</button>'
+        '<button type="button" class="BTN BTN-PRIMARY" id="MER-BTN-ENVOYER" disabled onclick="ENVOYER_PANIER()">2. Envoyer</button>'
     );
 }
 function VOIR_APERCU_PANIER() {
@@ -1316,25 +1340,36 @@ function SUJET_MAIL(etape, demandes) {
     if (etape === 'CHORUS') return 'Demande de Mise en route ' + SUJET_NATURE(d) + ' - ' + qui + autres;
     return 'Demande refusée - ' + qui + (objet ? ' - ' + objet : '') + autres;
 }
-function FINALISER_ENVOI() {
-    var reg = GET_REGLAGES();
-    var panier = GET_PANIER();
+
+function PANIER_A_ENVOYER() {
+    var reg = GET_REGLAGES(), panier = GET_PANIER();
     panier.forEach(function(d) { d.mailDemandeur = (reg.mailDemandeur || '').trim(); d.validations = []; delete d.refus; });
-    var base = NOM_FICHIER_BASE(panier);
-    GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE').then(function(json) {
-        TELECHARGER_TEXTE(base + '.json', json, 'application/json');
-        var sujet = SUJET_MAIL('DEMANDE', panier);
-        var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.';
-        ARCHIVER_ENVOI(panier, reg.mailSignataire);
-        FERMER_MODALE();
-        window.location.href = 'mailto:' + encodeURIComponent(reg.mailSignataire) + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
-        SAVE_PANIER([]);
-        setTimeout(function() {
-            SHOW_PAGE('ACCUEIL');
-            MSG_INFO('Mail préparé', 'Joignez le fichier .json téléchargé, puis envoyez le mail. La demande est rangée dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
-        }, 300);
-    }).catch(function(e) { MSG_ERREUR('Envoi impossible', e.message || String(e)); });
+    return panier;
+}
+function ENREGISTRER_PANIER() {
+    var panier = PANIER_A_ENVOYER();
+    ENREGISTRER_JSON(NOM_FICHIER_BASE(panier) + '.json', function() { return GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE'); }).then(function(ok) {
+        if (!ok) return;
+        MER_PANIER_ENREGISTRE = true;
+        var b = document.getElementById('MER-BTN-ENREGISTRER'), e = document.getElementById('MER-BTN-ENVOYER');
+        if (b) { b.className = 'BTN BTN-GHOST'; b.textContent = '✔ .json enregistré — enregistrer à nouveau'; }
+        if (e) e.disabled = false;
+    }).catch(function(e) { MSG_ERREUR('Enregistrement impossible', e.message || String(e)); });
+}
+function ENVOYER_PANIER() {
+    if (!MER_PANIER_ENREGISTRE) return;
+    var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER();
+    var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
+        'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.';
+    ARCHIVER_ENVOI(panier, reg.mailSignataire);
+    FERMER_MODALE();
+    OUVRIR_MAIL(reg.mailSignataire, SUJET_MAIL('DEMANDE', panier), corps);
+    SAVE_PANIER([]);
+    MER_PANIER_ENREGISTRE = false;
+    setTimeout(function() {
+        SHOW_PAGE('ACCUEIL');
+        MSG_INFO('Mail préparé', 'Joignez le fichier .json enregistré, puis envoyez le mail. La demande est rangée dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
+    }, 300);
 }
 
 // ===================== PIÈCES JOINTES (NDS / DAF) =====================
@@ -1984,46 +2019,51 @@ function PREPARER_TRANSMISSION() {
 function AFFICHER_TRANSMISSION() {
     FERMER_MODALE();
     var lignes = MER_ENVOIS.map(function(env, i) {
-        return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
+        return '<div class="MER-PANIER-ITEM" style="flex-wrap:wrap;"><div class="MER-PANIER-ITEM-TXT" style="flex:1 1 100%;">' +
             '<div class="MER-PANIER-ITEM-TITRE">' + ESC(env.titre) + ' — ' + env.demandes.length + ' demande(s)</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + ESC(env.mail || '') + '<br>📎 ' + ESC(env.pj) + '</div></div>' +
-            (env.fait ? '<span class="MER-BADGE">✔ Préparé</span>'
-                : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:auto;" onclick="EXECUTER_ENVOI(' + i + ')">Préparer</button>') +
-            '</div>';
+            '<div class="MER-PANIER-ITEM-SUB" style="word-break:break-all;">' + ESC(env.mail || '') + '<br>📎 ' + ESC(env.pj) + '</div></div>' +
+            '<div style="display:flex; gap:8px; width:100%; margin-top:8px;">' +
+                '<button type="button" class="BTN ' + (env.enregistre ? 'BTN-GHOST' : 'BTN-PRIMARY') + ' BTN-SMALL" style="flex:1; margin:0;" onclick="ENREGISTRER_ENVOI(' + i + ')">' +
+                    (env.enregistre ? '✔ Enregistré' : '1. 💾 Enregistrer') + '</button>' +
+                '<button type="button" class="BTN ' + (env.enregistre && !env.fait ? 'BTN-PRIMARY' : 'BTN-GHOST') + ' BTN-SMALL" style="flex:1; margin:0;"' + (env.enregistre ? '' : ' disabled') +
+                    ' onclick="ENVOYER_ENVOI(' + i + ')">' + (env.fait ? '✔ Envoyé' : '2. ✉️ Envoyer') + '</button>' +
+            '</div></div>';
     }).join('');
     var tousFaits = MER_ENVOIS.every(function(env) { return env.fait; });
     AFFICHER_MODALE('Transmettre',
-        '<p style="font-size:0.86em; line-height:1.5;">Pour chaque envoi, « Préparer » télécharge la pièce jointe et ouvre le mail : joignez-y le fichier téléchargé avant d\'envoyer.</p>' + lignes,
+        '<p style="font-size:0.86em; line-height:1.5;">Pour chaque envoi : <b>1. Enregistrer</b> le fichier .json, puis <b>2. Envoyer</b> ouvre le mail : joignez-y le fichier enregistré.</p>' + lignes,
         '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button>' +
         '<button type="button" class="BTN BTN-PRIMARY"' + (tousFaits ? '' : ' disabled') + ' onclick="TERMINER_TRANSMISSION()">Terminé</button>'
     );
 }
-function EXECUTER_ENVOI(i) {
-    var env = MER_ENVOIS[i], n = env.demandes.length;
-    var base = NOM_FICHIER_BASE(env.demandes), travail, sujet, corps;
-    if (env.type === 'CHORUS') {
-        // Un seul .json (demandes signées + NDS / DAF) : l'assistant Chorus DT le contrôle et génère le PDF.
-        travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_2').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
-        sujet = SUJET_MAIL('CHORUS', env.demandes);
-        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez TRIGONE Mise en route > Espace valideur > Vérifier une mise en route, importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.';
-    } else if (env.type === 'VALIDATION_1') {
-        travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_1').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
-        sujet = SUJET_MAIL('VALIDATION_1', env.demandes);
-        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation (pièces jointes NDS / DAF incluses dans le fichier).\n' +
-            'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez le fichier .json joint.\n\nCordialement.';
-    } else {
-        travail = GENERER_JSON_COMPLET(env.demandes, 'REFUS').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
-        sujet = SUJET_MAIL('REFUS', env.demandes);
-        corps = 'Bonjour,\n\n' + env.demandes.map(function(d) {
+// Contenu d'un envoi : étape du .json, objet et texte du mail.
+function CONTENU_ENVOI(env) {
+    var n = env.demandes.length;
+    if (env.type === 'CHORUS') return { etape: 'VALIDATION_2', sujet: SUJET_MAIL('CHORUS', env.demandes),
+        corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
+            'Ouvrez TRIGONE Mise en route > Espace valideur > Vérifier une mise en route, importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.' };
+    if (env.type === 'VALIDATION_1') return { etape: 'VALIDATION_1', sujet: SUJET_MAIL('VALIDATION_1', env.demandes),
+        corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation (pièces jointes NDS / DAF incluses dans le fichier).\n' +
+            'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez le fichier .json joint.\n\nCordialement.' };
+    return { etape: 'REFUS', sujet: SUJET_MAIL('REFUS', env.demandes),
+        corps: 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
-        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Panier > Importer une demande refusée, puis importez le fichier .json joint.\n\nCordialement.';
-    }
-    travail.then(function() {
-        env.fait = true;
-        window.location.href = 'mailto:' + encodeURIComponent(env.mail || '') + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
-        AFFICHER_TRANSMISSION();
-    }).catch(function(e) { MSG_ERREUR('Préparation impossible', e.message || String(e)); });
+        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Panier > Importer une demande refusée, puis importez le fichier .json joint.\n\nCordialement.' };
+}
+// 1. Enregistrer le .json (un seul fichier : demandes signées + NDS / DAF), 2. Envoyer : s'active une fois le fichier enregistré.
+function ENREGISTRER_ENVOI(i) {
+    var env = MER_ENVOIS[i], c = CONTENU_ENVOI(env);
+    ENREGISTRER_JSON(env.pj, function() { return GENERER_JSON_COMPLET(env.demandes, c.etape); }).then(function(ok) {
+        if (ok) { env.enregistre = true; AFFICHER_TRANSMISSION(); }
+    }).catch(function(e) { MSG_ERREUR('Enregistrement impossible', e.message || String(e)); });
+}
+function ENVOYER_ENVOI(i) {
+    var env = MER_ENVOIS[i];
+    if (!env.enregistre) return;
+    var c = CONTENU_ENVOI(env);
+    env.fait = true;
+    OUVRIR_MAIL(env.mail, c.sujet, c.corps);
+    AFFICHER_TRANSMISSION();
 }
 function TERMINER_TRANSMISSION() {
     FERMER_MODALE();

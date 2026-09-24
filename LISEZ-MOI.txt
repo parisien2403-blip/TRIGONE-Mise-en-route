@@ -17,6 +17,12 @@ CE QUI EST FAIT DANS CETTE VERSION
   officielle, et d'un fichier .json qui portera la demande d'un signataire à l'autre.
 - Relecture avant envoi (comme sur TRIGONE compte-rendu) : rappel de ce qu'il faut
   joindre au mail avant de l'envoyer.
+- Envoi en deux temps, pour le demandeur comme pour les valideurs (validation ou refus) :
+  « 1. Enregistrer le .json » (sur PC, on choisit où le ranger), puis « 2. Envoyer »,
+  qui ne s'active qu'une fois le fichier enregistré, ouvre le mail auquel on le joint.
+- Trajets : gare / aéroport / port de départ et d'arrivée selon le moyen de transport ;
+  voie routière civile (VRC) avec rappel des pièces à joindre (demande d'autorisation
+  VRC, carte grise, assurance).
 - Rien n'est perdu si l'application est fermée en pleine saisie (comme TRIGONE
   compte-rendu) : la demande en cours et le panier sont sauvegardés automatiquement
   sur l'appareil.
