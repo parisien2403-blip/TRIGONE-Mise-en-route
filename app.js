@@ -11,7 +11,7 @@ function ESC(v) {
     return (v == null ? '' : v + '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
 }
 
-function VIDE_TRAJET() { return { moyen: '', lieuDep: '', cpDep: '', dateDep: '', lieuArr: '', cpArr: '', dateArr: '' }; }
+function VIDE_TRAJET() { return { moyen: '', lieuDep: '', cpDep: '', paysDep: '', dateDep: '', lieuArr: '', cpArr: '', paysArr: '', dateArr: '' }; }
 function VIDE_PERSONNE() { return { unite: '', cie: '', grade: '', nom: '', prenom: '', matricule: '' }; }
 function VIDE_DEMANDE() {
     return {
@@ -22,7 +22,8 @@ function VIDE_DEMANDE() {
         trajets: {
             aller: VIDE_TRAJET(), retour: VIDE_TRAJET(),
             intermediaireAllerActif: false, intermediaireAller: VIDE_TRAJET(),
-            intermediaireRetourActif: false, intermediaireRetour: VIDE_TRAJET()
+            intermediaireRetourActif: false, intermediaireRetour: VIDE_TRAJET(),
+            retourAuto: true      // le retour reprend l'aller inversé tant que le missionnaire ne le modifie pas
         },
         nourriDeplacement: false, transportCommun: false, autresDeplacement: false, autresDeplacementTexte: '',
         nourriMission: false, logeMission: false,
@@ -185,7 +186,7 @@ function TPL_MON_ESPACE() {
     var r = GET_REGLAGES(), id = r.identite || {};
     function champId(k, label, ph) {
         return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" value="' + ESC(id[k] || (k === 'unite' ? r.derniereUnite : k === 'cie' ? r.derniereCie : '') || '') +
-            '" placeholder="' + ph + '" oninput="var r=GET_REGLAGES(); r.identite=r.identite||{}; r.identite[\'' + k + '\']=this.value; SAVE_REGLAGES(r);"></div>';
+            '" placeholder="' + ph + '" oninput="' + (k === 'matricule' ? 'this.value=FORMAT_MATRICULE(this.value); ' : '') + 'var r=GET_REGLAGES(); r.identite=r.identite||{}; r.identite[\'' + k + '\']=this.value; SAVE_REGLAGES(r);"></div>';
     }
     function champMail(k, label, hint) {
         return '<div class="MER-FIELD"><label>' + label + '</label><input type="email" value="' + ESC(r[k] || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
@@ -195,7 +196,7 @@ function TPL_MON_ESPACE() {
         '<p class="MER-HINT" style="margin:4px 0 16px;">Enregistré sur cet appareil uniquement. Utilisé pour pré-remplir vos demandes.</p>' +
         '<div class="MER-SECTION-TITLE">Mon identité</div>' +
         '<div class="MER-ROW2">' + champId('unite', 'Unité / entité', 'EX : 4°RIISC') + champId('cie', 'CIE', 'EX : 4CIE') + '</div>' +
-        '<div class="MER-ROW2">' + champId('grade', 'Grade', 'EX : ADJUDANT') + champId('matricule', 'Matricule', 'EX : 06 750 101 91') + '</div>' +
+        '<div class="MER-ROW2">' + champId('grade', 'Grade', 'EX : ADJUDANT') + champId('matricule', 'Matricule', 'EX : 067 50 10 191') + '</div>' +
         '<div class="MER-ROW2">' + champId('nom', 'Nom', 'EX : BOUQUET') + champId('prenom', 'Prénom', 'EX : G-P') + '</div>' +
         '<div class="MER-SECTION-TITLE">Envoi de mes demandes</div>' +
         champMail('mailSignataire', 'Mail du 1er valideur (chef de service)') +
@@ -232,8 +233,29 @@ function NAV_CHAMP(path) {
     for (var i = 0; i < parts.length - 1; i++) obj = obj[parts[i]];
     return { obj: obj, key: parts[parts.length - 1] };
 }
-function ON_CHAMP_INPUT(path, val) { var n = NAV_CHAMP(path); n.obj[n.key] = val; SAVE_BROUILLON(); }
-function ON_CHAMP_BOOL(path, val) { var n = NAV_CHAMP(path); n.obj[n.key] = val; SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
+function ON_CHAMP_INPUT(path, val) {
+    var n = NAV_CHAMP(path); n.obj[n.key] = val;
+    if (/^trajets\.retour\.(lieu|cp|pays)/.test(path)) D.trajets.retourAuto = false;
+    if (/^trajets\.aller\./.test(path)) SYNCHRO_RETOUR();
+    SAVE_BROUILLON();
+}
+// Retour = aller inversé (lieux, codes postaux, pays, moyen), tant que le missionnaire n'a pas touché au retour.
+var MER_PAIRES_RETOUR = [['lieuDep', 'lieuArr'], ['cpDep', 'cpArr'], ['paysDep', 'paysArr'], ['lieuArr', 'lieuDep'], ['cpArr', 'cpDep'], ['paysArr', 'paysDep'], ['moyen', 'moyen']];
+function SYNCHRO_RETOUR() {
+    var t = D.trajets;
+    // Anciens brouillons (sans l'indicateur) : on ne touche pas à un retour déjà rempli.
+    if (t.retourAuto === false || (t.retourAuto === undefined && (t.retour.lieuDep || t.retour.lieuArr))) return;
+    MER_PAIRES_RETOUR.forEach(function(p) {
+        t.retour[p[0]] = t.aller[p[1]] || '';
+        MAJ_CHAMP_DOM('trajets.retour.' + p[0]);
+    });
+}
+function ON_CHAMP_BOOL(path, val) {
+    var n = NAV_CHAMP(path); n.obj[n.key] = val;
+    if (/^trajets\.retour\./.test(path) && path !== 'trajets.retour.moyen') D.trajets.retourAuto = false;
+    if (/^trajets\.aller\./.test(path)) SYNCHRO_RETOUR();
+    SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE();
+}
 function GET_CHAMP(path) { var n = NAV_CHAMP(path); return n.obj[n.key]; }
 
 function RENDER_FORMULAIRE_INPLACE() {
@@ -242,12 +264,23 @@ function RENDER_FORMULAIRE_INPLACE() {
     window.scrollTo(0, scroll);
 }
 
-function CHAMP_TXT(label, path, placeholder, type) {
+// format : nom d'une fonction qui remet en forme la saisie (ex. FORMAT_MATRICULE).
+function CHAMP_TXT(label, path, placeholder, type, format) {
     type = type || 'text';
     var v = (GET_CHAMP(path) || '');
     return '<div class="MER-FIELD"><label>' + label + '</label>' +
-        '<input type="' + type + '" value="' + ESC(v) + '" placeholder="' + (placeholder || '') + '" ' +
-        'oninput="ON_CHAMP_INPUT(\'' + path + '\', this.value)"></div>';
+        '<input type="' + type + '" data-path="' + path + '" value="' + ESC(v) + '" placeholder="' + (placeholder || '') + '" ' +
+        (format === 'FORMAT_MATRICULE' ? 'inputmode="numeric" ' : '') +
+        'oninput="' + (format ? 'this.value=' + format + '(this.value); ' : '') + 'ON_CHAMP_INPUT(\'' + path + '\', this.value)"></div>';
+}
+// Matricule : 10 chiffres groupés 3 + 2 + 2 + 3 (ex. 067 50 10 191).
+function FORMAT_MATRICULE(v) {
+    var c = (v || '').replace(/\D/g, '').slice(0, 10);
+    return [c.slice(0, 3), c.slice(3, 5), c.slice(5, 7), c.slice(7, 10)].filter(Boolean).join(' ');
+}
+function MAJ_CHAMP_DOM(path) {
+    var el = document.querySelector('[data-path="' + path + '"]');
+    if (el && el !== document.activeElement) el.value = GET_CHAMP(path) || '';
 }
 
 function TOGGLE_OUI_NON(label, path, hintOui, hintNon) {
@@ -266,7 +299,7 @@ function SELECT_MOYEN(path) {
         var label = k ? MOYENS[k] : '— Choisir —';
         return '<option value="' + k + '"' + (v === k ? ' selected' : '') + '>' + label + '</option>';
     }).join('');
-    return '<div class="MER-FIELD"><label>Moyen de transport</label><select onchange="ON_CHAMP_INPUT(\'' + path + '\', this.value)">' + opts + '</select></div>';
+    return '<div class="MER-FIELD"><label>Moyen de transport</label><select data-path="' + path + '" onchange="ON_CHAMP_INPUT(\'' + path + '\', this.value)">' + opts + '</select></div>';
 }
 
 function TPL_PERSONNE(i) {
@@ -280,7 +313,7 @@ function TPL_PERSONNE(i) {
         '</div>' +
         '<div class="MER-ROW2">' +
             CHAMP_TXT('Grade', 'personnes.' + i + '.grade', 'EX : ADJUDANT') +
-            CHAMP_TXT('Matricule', 'personnes.' + i + '.matricule', 'EX : 06 750 101 91') +
+            CHAMP_TXT('Matricule', 'personnes.' + i + '.matricule', 'EX : 067 50 10 191', 'text', 'FORMAT_MATRICULE') +
         '</div>' +
         '<div class="MER-ROW2">' +
             CHAMP_TXT('Nom', 'personnes.' + i + '.nom', 'EX : BOUQUET') +
@@ -291,19 +324,68 @@ function TPL_PERSONNE(i) {
 function AJOUTER_PERSONNE() { D.personnes.push(VIDE_PERSONNE()); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
 function RETIRER_PERSONNE(i) { D.personnes.splice(i, 1); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
 
+// Pays étrangers : liste reprise de TRIGONE compte-rendu. Vide = France.
+var MER_PAYS = ["AFGHANISTAN", "AFRIQUE DU SUD", "ALBANIE", "ALGERIE", "ALLEMAGNE", "ANDORRE", "ANGOLA", "ANGUILLA", "ANTIGUA ET BARBUDA", "ARABIE SAOUDITE", "ARGENTINE", "ARMENIE", "ARUBA", "AUSTRALIE", "AUTRICHE", "AZERBAIDJAN", "BAHAMAS", "BAHREIN", "BANGLADESH", "BELGIQUE", "BELIZE", "BENIN", "BERMUDES", "BIELORUSSIE", "BIRMANIE", "BOLIVIE", "BOSNIE-HERZEGOVINE", "BOTSWANA", "BRESIL", "BRUNEI", "BULGARIE", "BURKINA FASO", "BURUNDI", "CAIMANS (iles)", "CAMBODGE", "CAMEROUN", "CANADA", "CAP-VERT", "CENTRAFRICAINE (Republique)", "CHILI", "CHINE", "CHYPRE", "COLOMBIE", "COMORES", "CONGO (Republique democratique du)", "CONGO BRAZZAVILLE", "COOK (iles)", "COREE DU NORD", "COREE DU SUD", "COSTA RICA", "COTE D'IVOIRE", "CROATIE", "CUBA", "CURACAO", "DANEMARK", "DJIBOUTI", "DOMINICAINE (Republique)", "EGYPTE", "EMIRATS ARABES UNIS", "EQUATEUR", "ERYTHREE", "ESPAGNE", "ESTONIE", "ETATS-UNIS", "ETATS-UNIS (hors New York)", "ETHIOPIE", "FIDJI", "FINLANDE", "GABON", "GAMBIE", "GEORGIE", "GHANA", "GRANDE-BRETAGNE", "GRECE", "GRENADE", "GUATEMALA", "GUINEE", "GUINEE EQUATORIALE", "GUINEE-BISSAU", "GUYANA", "HAITI", "HONDURAS", "HONG KONG", "HONGRIE", "INDE", "INDONESIE", "IRAK", "IRAN", "IRLANDE", "ISLANDE", "ISRAEL", "ITALIE", "JAMAIQUE", "JAPON", "JORDANIE", "KAZAKHSTAN", "KENYA", "KIRGHIZISTAN", "KIRIBATI", "KOSOVO", "KOWEIT", "LA BARBADE", "LA DOMINIQUE", "LAOS", "LESOTHO", "LETTONIE", "LIBAN", "LIBERIA", "LIBYE", "LIECHTENSTEIN", "LITUANIE", "LUXEMBOURG", "MACAO", "MACEDOINE", "MADAGASCAR", "MALAISIE", "MALAWI", "MALDIVES (iles)", "MALI", "MALTE", "MAROC", "MARSHALL (iles)", "MAURICE", "MAURITANIE", "MEXIQUE", "MICRONESIE", "MOLDAVIE", "MONGOLIE EXTERIEURE", "MONTENEGRO", "MOZAMBIQUE", "NAMIBIE", "NAURU", "NEPAL", "NICARAGUA", "NIGER", "NIGERIA", "NIUE", "NORVEGE", "NOUVELLE-ZELANDE", "OMAN", "OUGANDA", "OUZBEKISTAN", "PAKISTAN", "PALAOS (iles)", "PANAMA", "PAPOUASIE-NOUVELLE-GUINEE", "PARAGUAY", "PAYS-BAS", "PEROU", "PHILIPPINES", "POLOGNE", "PORTUGAL", "QATAR", "ROUMANIE", "RUSSIE", "RWANDA", "SAINT-CHRISTOPHE-ET-NIEVES", "SAINT-VINCENT ET LES GRENADINES", "SAINTE-LUCIE", "SALOMON", "SALVADOR", "SAMOA", "SAO TOME ET PRINCIPE", "SENEGAL", "SERBIE", "SEYCHELLES", "SIERRA LEONE", "SINGAPOUR", "SLOVAQUIE", "SLOVENIE", "SOMALIE", "SOUDAN", "SOUDAN DU SUD", "SRI LANKA", "SUEDE", "SUISSE", "SURINAME", "SWAZILAND", "SYRIE", "TADJIKISTAN", "TAIWAN", "TANZANIE", "TCHAD", "TCHEQUE (Republique)", "THAILANDE", "TIMOR ORIENTAL", "TOGO", "TONGA", "TRINITE ET TOBAGO", "TUNISIE", "TURKMENISTAN", "TURQUIE", "TUVALU", "UKRAINE", "URUGUAY", "VANUATU", "VENEZUELA", "VIETNAM", "YEMEN", "ZAMBIE", "ZIMBABWE"];
+
+function TPL_LIEU(label, path, cote) {
+    var t = GET_CHAMP(path), pays = t['pays' + cote] || '', id = 'MER-VILLES-' + path.replace(/\./g, '-') + cote;
+    var options = '<option value="">France</option>' + MER_PAYS.map(function(p) {
+        return '<option value="' + ESC(p) + '"' + (p === pays ? ' selected' : '') + '>' + ESC(p) + '</option>';
+    }).join('');
+    var ville = '<div class="MER-FIELD"><label>' + label + '</label>' +
+        '<input type="text" data-path="' + path + '.lieu' + cote + '" value="' + ESC(t['lieu' + cote] || '') + '" ' +
+        'placeholder="' + (pays ? 'EX : Berlin' : 'EX : Bordeaux') + '" autocomplete="off"' + (pays ? '' : ' list="' + id + '"') + ' ' +
+        'oninput="ON_CHAMP_INPUT(\'' + path + '.lieu' + cote + '\', this.value)' + (pays ? '' : '; SUGGERER_VILLES(this, \'' + id + '\')') + '" ' +
+        (pays ? '' : 'onchange="CHOISIR_VILLE(\'' + path + '\', \'' + cote + '\', this)"') + '>' +
+        (pays ? '' : '<datalist id="' + id + '"></datalist>') + '</div>';
+    return '<div class="MER-ROW2">' + ville +
+        (pays ? '' : CHAMP_TXT('Code postal', path + '.cp' + cote, 'Automatique')) + '</div>' +
+        '<div class="MER-FIELD" style="margin-top:-8px;"><label>Pays</label><select data-path="' + path + '.pays' + cote + '" ' +
+        'onchange="ON_CHAMP_BOOL(\'' + path + '.pays' + cote + '\', this.value)">' + options + '</select></div>';
+}
 function TPL_TRAJET(titre, path, optionnel) {
     return '<p class="MER-HINT" style="font-weight:800; text-transform:uppercase; letter-spacing:0.04em; margin:14px 0 8px;">' + titre + (optionnel ? ' <span style="font-weight:600; text-transform:none;">(si besoin)</span>' : '') + '</p>' +
         SELECT_MOYEN(path + '.moyen') +
-        '<div class="MER-ROW2">' +
-            CHAMP_TXT('Lieu de départ', path + '.lieuDep', 'EX : Bordeaux') +
-            CHAMP_TXT('Code postal', path + '.cpDep', 'EX : 33000') +
-        '</div>' +
+        TPL_LIEU('Lieu de départ', path, 'Dep') +
         CHAMP_TXT('Date et heure de départ', path + '.dateDep', '', 'datetime-local') +
-        '<div class="MER-ROW2">' +
-            CHAMP_TXT('Lieu d\'arrivée', path + '.lieuArr', 'EX : Paris') +
-            CHAMP_TXT('Code postal', path + '.cpArr', 'EX : 75015') +
-        '</div>' +
+        TPL_LIEU('Lieu d\'arrivée', path, 'Arr') +
         CHAMP_TXT('Date et heure d\'arrivée', path + '.dateArr', '', 'datetime-local');
+}
+
+// Communes françaises : même service que TRIGONE compte-rendu (Base adresse nationale, api-adresse.data.gouv.fr).
+var MER_API_COMMUNES = 'https://api-adresse.data.gouv.fr/search/?type=municipality&autocomplete=1&limit=6&q=';
+var MER_MINUTEUR_VILLES = null;
+function CHERCHER_COMMUNES(q) {
+    return fetch(MER_API_COMMUNES + encodeURIComponent(q)).then(function(r) { return r.json(); }).then(function(d) {
+        return (d.features || []).map(function(f) {
+            return { ville: (f.properties.city || f.properties.name || '').toUpperCase(), cp: f.properties.postcode || '' };
+        }).filter(function(c) { return c.ville && c.cp; });
+    });
+}
+function SUGGERER_VILLES(input, listeId) {
+    clearTimeout(MER_MINUTEUR_VILLES);
+    var q = input.value.replace(/\s*\(\d{4,6}\)\s*$/, '').trim();
+    if (q.length < 2) return;
+    MER_MINUTEUR_VILLES = setTimeout(function() {
+        CHERCHER_COMMUNES(q).then(function(communes) {
+            var dl = document.getElementById(listeId);
+            if (dl) dl.innerHTML = communes.map(function(c) { return '<option value="' + ESC(c.ville + ' (' + c.cp + ')') + '"></option>'; }).join('');
+        }).catch(function() {});
+    }, 250);
+}
+// Ville choisie (ou saisie) : on sépare « VILLE (CP) », sinon on demande le code postal au service.
+function CHOISIR_VILLE(path, cote, input) {
+    var brut = input.value.trim(), m = /^(.*?)\s*\((\d{4,6})\)$/.exec(brut);
+    function poser(ville, cp) {
+        ON_CHAMP_INPUT(path + '.lieu' + cote, ville); input.value = ville;
+        ON_CHAMP_INPUT(path + '.cp' + cote, cp); MAJ_CHAMP_DOM(path + '.cp' + cote);
+    }
+    if (m) { poser(m[1].toUpperCase(), m[2]); return; }
+    if (brut.length < 2) return;
+    CHERCHER_COMMUNES(brut).then(function(c) {
+        if (c[0] && c[0].ville.toUpperCase() === brut.toUpperCase()) poser(c[0].ville, c[0].cp);
+        else if (c[0] && !GET_CHAMP(path + '.cp' + cote)) poser(c[0].ville, c[0].cp);
+    }).catch(function() {});
 }
 
 // ===================== ONGLETS DU FORMULAIRE =====================
@@ -332,7 +414,7 @@ function TPL_ONGLET_IDENTITE() {
         '<button type="button" class="MER-TOGGLE-BTN' + (D.type === 'MISSION' ? ' actif' : '') + '" onclick="ON_CHAMP_BOOL(\'type\', \'MISSION\')">Mission</button>' +
         '<button type="button" class="MER-TOGGLE-BTN' + (D.type === 'FORMATION' ? ' actif' : '') + '" onclick="ON_CHAMP_BOOL(\'type\', \'FORMATION\')">Formation / stage</button>' +
       '</div>' +
-      '<div class="MER-FIELD"><label>Objet</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'objet\', this.value)" placeholder="EX : Formation conseiller facteur humain">' + (D.objet || '') + '</textarea></div>' +
+      '<div class="MER-FIELD"><label>Objet</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'objet\', this.value)" placeholder="EX : Formation conseiller facteur humain">' + ESC(D.objet || '') + '</textarea></div>' +
       '<div class="MER-SECTION-TITLE">Personnel concerné</div>' +
       D.personnes.map(function(_, i) { return TPL_PERSONNE(i); }).join('') +
       '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_PERSONNE()">+ Ajouter une personne (demande collective)</button>';
@@ -353,20 +435,62 @@ function TPL_ONGLET_CONDITIONS() {
     return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Durant le déplacement</div>' +
       TOGGLE_OUI_NON('Nourri à titre onéreux', 'nourriDeplacement') +
       TOGGLE_OUI_NON('Transport en commun', 'transportCommun') +
-      TOGGLE_OUI_NON('Autres frais', 'autresDeplacement') +
-      (D.autresDeplacement ? CHAMP_TXT('Préciser', 'autresDeplacementTexte', '') : '') +
       '<div class="MER-SECTION-TITLE">Durant la mission</div>' +
       TOGGLE_OUI_NON('Nourri à titre onéreux', 'nourriMission', 'Repas midi gratuit, repas du soir secteur privé, sauf indication contraire.') +
       TOGGLE_OUI_NON('Logé à titre onéreux', 'logeMission');
 }
 
+// ---- Codier FD (codier.json, extrait du codier FD du 22/07/2026) ----
+var MER_CODIER = null, MER_CODIER_CHARGEMENT = null;
+function CHARGER_CODIER() {
+    if (!MER_CODIER_CHARGEMENT) {
+        MER_CODIER_CHARGEMENT = fetch('codier.json').then(function(r) { return r.json(); })
+            .then(function(c) { MER_CODIER = c; return c; })
+            .catch(function() { MER_CODIER_CHARGEMENT = null; return null; });
+    }
+    return MER_CODIER_CHARGEMENT;
+}
+function TPL_INFO_FD() {
+    var code = (D.codeFD || '').toUpperCase();
+    if (!code) return '';
+    if (!MER_CODIER) {
+        CHARGER_CODIER().then(function(c) { if (c) AFFICHER_CODE_FD(); });
+        return '<p class="MER-HINT">Recherche dans le codier FD…</p>';
+    }
+    var e = MER_CODIER[code];
+    if (!e) return code.length < 10 ? '' : '<p class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Code inconnu du codier FD : vérifiez-le.</p>';
+    if (!e.cf) {
+        return '<p class="MER-HINT" style="color:#b45309; font-weight:800;">⚠ Code clôturé le ' + ESC(new Date(e.fin).toLocaleDateString('fr-FR')) + '.' +
+            (e.dev ? ' Code de remplacement : <button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; display:inline-block; margin-left:4px;" onclick="UTILISER_CODE_FD(\'' + ESC(e.dev) + '\')">' + ESC(e.dev) + '</button>' : '') + '</p>';
+    }
+    function ligne(l, v) { return '<div class="MER-FD-LIGNE"><span>' + l + '</span><b>' + ESC(v || '—') + '</b></div>'; }
+    return '<div class="MER-FD-CARTE">' +
+        '<div class="MER-FD-TITRE">✔ ' + ESC(e.lib) + '</div>' +
+        ligne('Code engagement', code) + ligne('Centre financier', e.cf) + ligne('Centre de coût', e.cc) + ligne('Code activité', e.act) +
+        (e.fin ? '<p class="MER-HINT">Valable jusqu\'au ' + ESC(new Date(e.fin).toLocaleDateString('fr-FR')) + '.</p>' : '') +
+    '</div>';
+}
+// Recopie dans la demande les imputations du codier, pour le PDF et les valideurs.
+function AFFICHER_CODE_FD() {
+    var e = MER_CODIER && MER_CODIER[(D.codeFD || '').toUpperCase()];
+    if (e && e.cf) D.imputationFD = { cf: e.cf, cc: e.cc, act: e.act, lib: e.lib };
+    else delete D.imputationFD;
+    SAVE_BROUILLON();
+    var zone = document.getElementById('MER-FD-INFO');
+    if (zone) zone.innerHTML = TPL_INFO_FD();
+}
+function UTILISER_CODE_FD(code) { D.codeFD = code; MAJ_CHAMP_DOM('codeFD'); AFFICHER_CODE_FD(); }
+
 function TPL_ONGLET_IMPUTATION() {
     return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Imputation</div>' +
       TOGGLE_OUI_NON('Mission imputée à l\'unité', 'missionImputee', '', 'Fournir le justificatif de l\'autorité ayant prescrit le déplacement.') +
-      CHAMP_TXT('Code d\'engagement FD@LIGNE', 'codeFD', 'EX : FD1ADSJ11F') +
+      '<div class="MER-FIELD"><label>Code d\'engagement FD@LIGNE</label>' +
+        '<input type="text" data-path="codeFD" value="' + ESC(D.codeFD || '') + '" placeholder="EX : FD1ADSJ11F" autocapitalize="characters" autocomplete="off" ' +
+        'oninput="this.value=this.value.toUpperCase().replace(/\\s/g, \'\'); ON_CHAMP_INPUT(\'codeFD\', this.value); AFFICHER_CODE_FD()"></div>' +
+      '<div id="MER-FD-INFO">' + TPL_INFO_FD() + '</div>' +
       TOGGLE_OUI_NON('Demande d\'avance', 'demandeAvance') +
       '<div class="MER-SECTION-TITLE">NDS ou DAF</div>' +
-      '<div class="MER-FIELD"><label>Note de service ou DAF à joindre</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'piecesJointes\', this.value)" placeholder="EX : note de service n°... jointe au mail">' + (D.piecesJointes || '') + '</textarea>' +
+      '<div class="MER-FIELD"><label>Note de service ou DAF à joindre</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'piecesJointes\', this.value)" placeholder="EX : note de service n°... jointe au mail">' + ESC(D.piecesJointes || '') + '</textarea>' +
       '<p class="MER-HINT">Décrivez ici la pièce à joindre — le fichier lui-même s\'ajoute au moment de l\'envoi du mail, comme le PDF.</p></div>';
 }
 
@@ -399,6 +523,8 @@ function AJOUTER_AU_PANIER() {
     var p0 = D.personnes[0];
     if (!p0.nom || !p0.prenom) { alert('Merci de renseigner au moins le nom et le prénom de la première personne.'); return; }
     if (!D.objet) { alert('Merci de renseigner l\'objet de la demande.'); return; }
+    var malFormes = D.personnes.filter(function(p) { return p.matricule && p.matricule.replace(/\D/g, '').length !== 10; });
+    if (malFormes.length) { alert('Le matricule doit comporter 10 chiffres (ex : 067 50 10 191) : ' + malFormes.map(function(p) { return p.nom || '?'; }).join(', ') + '.'); return; }
     var reg = GET_REGLAGES();
     reg.derniereUnite = p0.unite; reg.derniereCie = p0.cie;
     SAVE_REGLAGES(reg);
@@ -541,26 +667,24 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
     if (t.intermediaireAllerActif) trajets.push(['Intermédiaire (aller)', t.intermediaireAller]);
     if (t.intermediaireRetourActif) trajets.push(['Intermédiaire (retour)', t.intermediaireRetour]);
     trajets.push(['Retour', t.retour]);
-    function lieu(nom, cp) { return (nom || '').toUpperCase() + (cp ? ' (' + cp + ')' : ''); }
+    function lieu(nom, cp, pays) { return (nom || '').toUpperCase() + (pays ? ' — ' + pays : (cp ? ' (' + cp + ')' : '')); }
     y = PDF_SECTION(doc, 'TRAJETS', X, y, P);
     y = PDF_TABLEAU(doc, y, M, L, P, {
         head: [['Trajet', 'Moyen de transport', 'Départ', 'Arrivée']],
         body: trajets.map(function(r) {
             var tr = r[1] || VIDE_TRAJET();
             return [r[0], tr.moyen ? MOYENS[tr.moyen] : '',
-                    lieu(tr.lieuDep, tr.cpDep) + '\n' + PDF_DATE(tr.dateDep),
-                    lieu(tr.lieuArr, tr.cpArr) + '\n' + PDF_DATE(tr.dateArr)];
+                    lieu(tr.lieuDep, tr.cpDep, tr.paysDep) + '\n' + PDF_DATE(tr.dateDep),
+                    lieu(tr.lieuArr, tr.cpArr, tr.paysArr) + '\n' + PDF_DATE(tr.dateArr)];
         }),
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 36 }, 1: { cellWidth: 38 } }
     });
 
     y = PDF_SECTION(doc, 'ALIMENTATION & HÉBERGEMENT', X, y, P);
-    var autres = 'Autres frais' + (d.autresDeplacement && d.autresDeplacementTexte ? ' : ' + d.autresDeplacementTexte : '');
     y = PDF_TABLEAU(doc, y, M, L, P, {
         head: [['Durant le déplacement', ''], ],
         body: [['Nourri à titre onéreux', PDF_OUI_NON(d.nourriDeplacement)],
-               ['Transport en commun', PDF_OUI_NON(d.transportCommun)],
-               [autres, PDF_OUI_NON(d.autresDeplacement)]],
+               ['Transport en commun', PDF_OUI_NON(d.transportCommun)]],
         columnStyles: { 1: { halign: 'right', fontStyle: 'bold', cellWidth: 30 } }
     }) - P.ecart + 1;
     y = PDF_TABLEAU(doc, y, M, L, P, {
@@ -574,7 +698,9 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
     y = PDF_SECTION(doc, 'IMPUTATION', X, y, P);
     y = PDF_TABLEAU(doc, y, M, L, P, {
         head: [['Champ', 'Valeur']],
-        body: [['Mission imputée à l\'unité', PDF_OUI_NON(d.missionImputee)], ['Code FD@LIGNE', d.codeFD || '']],
+        body: [['Mission imputée à l\'unité', PDF_OUI_NON(d.missionImputee)], ['Code engagement FD@LIGNE', d.codeFD || '']].concat(d.imputationFD ? [
+            ['Centre financier', d.imputationFD.cf], ['Centre de coût', d.imputationFD.cc],
+            ['Code activité', d.imputationFD.act], ['Libellé', d.imputationFD.lib]] : []),
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 } }
     });
 
@@ -753,14 +879,15 @@ function FINALISER_ENVOI() {
 }
 
 // ===================== SÉCURITÉ DES VALIDATIONS =====================
-// Pas de serveur : chaque valideur possède une clé de signature créée sur son appareil et verrouillée par
-// son code PIN. L'administrateur publie dans valideurs.json (sur GitHub, qu'il est seul à pouvoir modifier)
-// la clé publique et le rôle de chaque valideur habilité. Une validation est une signature ECDSA du contenu
+// Pas de serveur : valideurs.json (sur GitHub, que seul l'administrateur peut modifier) contient, pour le 1er
+// et le 2e valideur, une clé publique et la clé privée correspondante chiffrée par un code d'accès que seul
+// le valideur connaît. Le code déverrouille la clé ; une validation est une signature ECDSA du contenu
 // exact de la demande : une signature faite avec une clé absente de la liste, ou une demande modifiée après
 // signature, est détectée par le 2e valideur, par l'assistant Chorus DT et par la page de vérification.
 var MER_DEPOT_GITHUB = 'https://github.com/parisien2403-blip/TRIGONE-Mise-en-route';
 var STORAGE_LISTE_VALIDEURS = 'mer_liste_valideurs';
-var MER_CLE_SESSION = null;          // clé privée déverrouillée par le PIN, gardée en mémoire seulement
+var MER_CLE_SESSION = null;          // clé privée déverrouillée par le code d'accès, gardée en mémoire seulement
+var MER_ACCES_SESSION = null;        // entrée de valideurs.json correspondant au code saisi
 var MER_LISTE_VALIDEURS = null;      // contenu de valideurs.json
 
 function B64(buf) {
@@ -801,8 +928,8 @@ function EMPREINTE_COURTE(sig) { return (sig || '').replace(/[^A-Za-z0-9]/g, '')
 var ALGO_CLE = { name: 'ECDSA', namedCurve: 'P-256' };
 var ALGO_SIG = { name: 'ECDSA', hash: 'SHA-256' };
 
-function CLE_DU_PIN(pin, sel) {
-    return crypto.subtle.importKey('raw', OCTETS(pin), 'PBKDF2', false, ['deriveKey']).then(function(base) {
+function CLE_DU_CODE(code, sel) {
+    return crypto.subtle.importKey('raw', OCTETS(code), 'PBKDF2', false, ['deriveKey']).then(function(base) {
         return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: sel, iterations: 250000, hash: 'SHA-256' },
             base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
     });
@@ -852,28 +979,41 @@ function VERIFIER_VALIDATIONS(d) {
     }));
 }
 
-// ---- Clé du valideur sur cet appareil ----
-function CREER_CLE_VALIDEUR(identite, pin) {
+// ---- Codes d'accès des valideurs ----
+var CODE_CARACTERES = { lettres: 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnpqrstuvwxyz', chiffres: '23456789', symboles: '#$%&*+=?@!' };
+function GENERER_CODE_ACCES() {
+    var tous = CODE_CARACTERES.lettres + CODE_CARACTERES.chiffres + CODE_CARACTERES.symboles;
+    function tirer(jeu) { return jeu[crypto.getRandomValues(new Uint32Array(1))[0] % jeu.length]; }
+    for (;;) {
+        var c = '';
+        for (var i = 0; i < 16; i++) c += tirer(tous);
+        if (/[A-Za-z]/.test(c) && /\d/.test(c) && /[#$%&*+=?@!]/.test(c)) return c;
+    }
+}
+// Crée l'accès d'un rôle : nouvelle paire de clés, clé privée chiffrée par un nouveau code (affiché une seule fois).
+function CREER_ACCES(role) {
+    var code = GENERER_CODE_ACCES();
     var sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
-    var paire;
     return crypto.subtle.generateKey(ALGO_CLE, true, ['sign', 'verify']).then(function(p) {
-        paire = p;
-        return Promise.all([crypto.subtle.exportKey('spki', p.publicKey), crypto.subtle.exportKey('pkcs8', p.privateKey), CLE_DU_PIN(pin, sel)]);
+        return Promise.all([crypto.subtle.exportKey('spki', p.publicKey), crypto.subtle.exportKey('pkcs8', p.privateKey), CLE_DU_CODE(code, sel)]);
     }).then(function(r) {
         return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, r[2], r[1]).then(function(chiffre) {
-            var v = Object.assign({}, identite, { cle: B64(r[0]), sel: B64(sel), iv: B64(iv), prive: B64(chiffre) });
-            SAVE_VALIDEUR(v);
-            return crypto.subtle.importKey('pkcs8', r[1], ALGO_CLE, false, ['sign']);
+            return { code: code, acces: { role: role, cle: B64(r[0]), sel: B64(sel), iv: B64(iv), prive: B64(chiffre), creeLe: new Date().toISOString() } };
         });
-    }).then(function(k) { MER_CLE_SESSION = k; });
+    });
 }
-function DEVERROUILLER_CLE(pin) {
-    var v = GET_VALIDEUR();
-    return CLE_DU_PIN(pin, new Uint8Array(DEB64(v.sel))).then(function(k) {
-        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(DEB64(v.iv)) }, k, DEB64(v.prive));
-    }).then(function(pkcs8) {
-        return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
-    }).then(function(k) { MER_CLE_SESSION = k; });
+// Essaie le code sur chaque accès actif : celui qu'il déchiffre donne la clé de signature et le rôle.
+function DEVERROUILLER_ACCES(code) {
+    var acces = ((MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || []).filter(function(a) { return a.prive && !a.retire; });
+    return acces.reduce(function(prec, a) {
+        return prec.catch(function() {
+            return CLE_DU_CODE(code, new Uint8Array(DEB64(a.sel))).then(function(k) {
+                return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(DEB64(a.iv)) }, k, DEB64(a.prive));
+            }).then(function(pkcs8) {
+                return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
+            }).then(function(k) { MER_CLE_SESSION = k; MER_ACCES_SESSION = a; });
+        });
+    }, Promise.reject(new Error('code')));
 }
 function SIGNER_VALIDATION(d, h) {
     var niveau = (d.validations || []).length + 1;
@@ -883,11 +1023,6 @@ function SIGNER_VALIDATION(d, h) {
         return { niveau: niveau, signataire: signataire, grade: h.grade, nom: h.nom, prenom: h.prenom, fonction: h.fonction, le: le, sig: B64(sig) };
     });
 }
-function CODE_HABILITATION() {
-    var v = GET_VALIDEUR();
-    return 'TRIGONE-VALIDEUR:' + B64_TEXTE(JSON.stringify({ grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction, cle: v.cle, le: new Date().toISOString() }));
-}
-
 // ---- Données intégrées au PDF, pour la page « Vérifier une mise en route » ----
 function PDF_DONNEES(demandes) { return 'TRIGONE-MER:' + B64_TEXTE(JSON.stringify(demandes)) + ':FIN'; }
 function LIRE_DONNEES_PDF(texte) {
@@ -896,8 +1031,8 @@ function LIRE_DONNEES_PDF(texte) {
 }
 
 // ===================== VALIDATION (1er et 2e valideur) =====================
-// Accès en trois temps : activation sur l'appareil (identité + code PIN, création de la clé), habilitation
-// par l'administrateur (ajout de la clé à valideurs.json), puis connexion par PIN à chaque utilisation.
+// Le valideur se connecte avec son identité et le code d'accès de son rôle (1er ou 2e valideur), remis par
+// l'administrateur ; le code déverrouille la clé de signature de ce rôle, publiée chiffrée dans valideurs.json.
 var STORAGE_VALIDEUR = 'mer_valideur';
 var STORAGE_A_VALIDER = 'mer_a_valider';
 var MER_VERIF = {};   // résultat de vérification des validations précédentes, par entrée
@@ -911,7 +1046,13 @@ function GET_A_VALIDER() {
 }
 function SAVE_A_VALIDER(liste) { try { localStorage.setItem(STORAGE_A_VALIDER, JSON.stringify(liste)); } catch (e) {} }
 function NIVEAU_VALIDATION(d) { return (d.validations || []).length + 1; }
-function HABILITATION_COURANTE() { var v = GET_VALIDEUR(); return v.cle ? HABILITATION(v.cle) : null; }
+// Valideur connecté : rôle et clé de l'accès déverrouillé, identité saisie à la connexion.
+function HABILITATION_COURANTE() {
+    if (!MER_CLE_SESSION || !MER_ACCES_SESSION) return null;
+    var v = GET_VALIDEUR();
+    return { role: MER_ACCES_SESSION.role, cle: MER_ACCES_SESSION.cle, retire: MER_ACCES_SESSION.retire,
+        grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction };
+}
 
 // Recharge la liste des habilités et revérifie les validations reçues avant d'afficher la page.
 function OUVRIR_VALIDATION() {
@@ -933,76 +1074,37 @@ function RENDER_VALIDATION_INPLACE() {
     });
 }
 
-// ---- 1. Activation ----
-function TPL_ACTIVATION() {
+// ---- Connexion par code d'accès ----
+function TPL_CONNEXION(v) {
     function champ(k, label, ph) {
-        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" placeholder="' + ph + '"></div>';
+        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" value="' + ESC(v[k] || '') + '" placeholder="' + ph + '"></div>';
     }
-    return '<p class="MER-HINT" style="margin:0 0 14px;">Première utilisation sur cet appareil. Renseignez votre identité et choisissez un code PIN : ' +
-        'il vous sera demandé à chaque connexion. Votre accès devra ensuite être habilité par l\'administrateur.</p>' +
+    return '<p class="MER-HINT" style="margin:0 0 14px;">Réservé aux valideurs. Votre identité apparaîtra dans la case de validation du PDF ; ' +
+        'le code d\'accès vous est remis par l\'administrateur de TRIGONE.</p>' +
         '<div class="MER-ROW2">' + champ('grade', 'Grade', 'EX : CAPITAINE') + champ('fonction', 'Fonction', 'EX : CHEF DE SERVICE') + '</div>' +
         '<div class="MER-ROW2">' + champ('nom', 'Nom', 'EX : DUPONT') + champ('prenom', 'Prénom', 'EX : Jean') + '</div>' +
-        '<div class="MER-ROW2">' +
-            '<div class="MER-FIELD"><label>Code PIN (6 chiffres)</label><input type="password" inputmode="numeric" maxlength="6" id="MER-VAL-pin" autocomplete="new-password"></div>' +
-            '<div class="MER-FIELD"><label>Confirmer le PIN</label><input type="password" inputmode="numeric" maxlength="6" id="MER-VAL-pin2" autocomplete="new-password"></div>' +
-        '</div>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="ACTIVER_VALIDEUR(this)">Activer mon accès valideur</button>';
+        '<div class="MER-FIELD"><label>Code d\'accès valideur</label><input type="password" id="MER-CODE-ACCES" autocomplete="current-password" ' +
+            'autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key===\'Enter\') SE_CONNECTER(this)"></div>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="SE_CONNECTER(this)">Se connecter</button>';
 }
-function ACTIVER_VALIDEUR(btn) {
-    var id = {};
-    ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) { id[k] = (document.getElementById('MER-VAL-' + k).value || '').trim(); });
-    var pin = document.getElementById('MER-VAL-pin').value, pin2 = document.getElementById('MER-VAL-pin2').value;
-    if (!id.grade || !id.nom || !id.prenom || !id.fonction) { alert('Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
-    if (!/^\d{6}$/.test(pin)) { alert('Le code PIN doit comporter 6 chiffres.'); return; }
-    if (pin !== pin2) { alert('Les deux codes PIN ne sont pas identiques.'); return; }
-    id.nom = id.nom.toUpperCase(); id.grade = id.grade.toUpperCase();
-    btn.disabled = true; btn.textContent = 'Création de votre clé…';
-    CREER_CLE_VALIDEUR(id, pin).then(RENDER_VALIDATION_INPLACE).catch(function(e) {
-        alert('Activation impossible sur ce navigateur : ' + e.message);
-        btn.disabled = false; btn.textContent = 'Activer mon accès valideur';
+function SE_CONNECTER(btn) {
+    var v = GET_VALIDEUR();
+    ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) { v[k] = (document.getElementById('MER-VAL-' + k).value || '').trim(); });
+    if (!v.grade || !v.nom || !v.prenom || !v.fonction) { alert('Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
+    v.grade = v.grade.toUpperCase(); v.nom = v.nom.toUpperCase();
+    SAVE_VALIDEUR(v);
+    var champ = document.getElementById('MER-CODE-ACCES');
+    var code = champ.value.trim();
+    if (!code) { alert('Merci de saisir votre code d\'accès.'); return; }
+    var bouton = document.querySelector('#PAGE-STAGE .BTN-PRIMARY');
+    if (bouton) { bouton.disabled = true; bouton.textContent = 'Vérification…'; }
+    CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(RENDER_VALIDATION_INPLACE).catch(function() {
+        alert('Code d\'accès incorrect.');
+        champ.value = '';
+        if (bouton) { bouton.disabled = false; bouton.textContent = 'Se connecter'; }
     });
 }
-
-// ---- 2. Connexion ----
-function TPL_CONNEXION(v) {
-    return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
-            '<div class="MER-PANIER-ITEM-TITRE">' + ESC(v.grade + ' ' + v.nom + ' ' + v.prenom) + '</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + ESC(v.fonction) + '</div></div></div>' +
-        '<div class="MER-FIELD"><label>Code PIN</label><input type="password" inputmode="numeric" maxlength="6" id="MER-PIN" autocomplete="current-password" ' +
-            'onkeydown="if(event.key===\'Enter\') SE_CONNECTER()"></div>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="SE_CONNECTER()">Se connecter</button>' +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="REINITIALISER_ACCES()">Code PIN oublié ?</button>';
-}
-function SE_CONNECTER() {
-    var pin = document.getElementById('MER-PIN').value;
-    DEVERROUILLER_CLE(pin).then(RENDER_VALIDATION_INPLACE).catch(function() {
-        alert('Code PIN incorrect.');
-        document.getElementById('MER-PIN').value = '';
-    });
-}
-function SE_DECONNECTER() { MER_CLE_SESSION = null; RENDER_VALIDATION_INPLACE(); }
-function REINITIALISER_ACCES() {
-    if (!confirm('Réinitialiser votre accès valideur sur cet appareil ?\n\nVous choisirez un nouveau code PIN et devrez renvoyer une demande d\'habilitation à l\'administrateur.')) return;
-    SAVE_VALIDEUR({}); MER_CLE_SESSION = null;
-    RENDER_VALIDATION_INPLACE();
-}
-
-// ---- 3. Habilitation en attente ----
-function TPL_HABILITATION_ATTENTE(v, h) {
-    var code = CODE_HABILITATION();
-    var corps = 'Bonjour,\n\nMerci d\'habiliter mon accès valideur TRIGONE Mise en route.\n\n' + v.grade + ' ' + v.nom + ' ' + v.prenom + ' — ' + v.fonction +
-        '\n\nCode d\'habilitation :\n' + code + '\n\nCordialement.';
-    return (h && h.retire
-            ? '<p class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Votre habilitation a été retirée par l\'administrateur.</p>'
-            : '<p class="MER-HINT" style="font-weight:800;">⏳ Accès créé, en attente d\'habilitation.</p>') +
-        '<p class="MER-HINT" style="margin-bottom:10px;">Envoyez ce code à l\'administrateur de TRIGONE. Dès qu\'il vous aura habilité (1er ou 2e valideur), appuyez sur « Actualiser ».</p>' +
-        '<textarea class="MER-CODE" readonly onclick="this.select()">' + ESC(code) + '</textarea>' +
-        '<div class="MER-ACTIONS" style="margin:10px 0;">' +
-            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="COPIER_TEXTE(this.parentNode.previousSibling.value, this)">Copier le code</button>' +
-            '<a class="BTN BTN-PRIMARY BTN-SMALL" href="mailto:?subject=' + encodeURIComponent('Habilitation valideur TRIGONE Mise en route') + '&body=' + encodeURIComponent(corps) + '">Envoyer par mail</a>' +
-        '</div>' +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_VALIDATION()">↻ Actualiser</button>';
-}
+function SE_DECONNECTER() { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; RENDER_VALIDATION_INPLACE(); }
 function COPIER_TEXTE(t, btn) {
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function() {
         if (btn) { btn.textContent = '✔ Copié'; }
@@ -1048,7 +1150,7 @@ function TPL_ENTREE_VALIDATION(e, h) {
 function TPL_ESPACE_VALIDATION(v, h) {
     var liste = GET_A_VALIDER();
     var html = '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
-            '<span class="MER-BADGE">🔒 ' + LIBELLE_ROLE(h.role) + ' habilité</span>' +
+            '<span class="MER-BADGE">🔒 Connecté — ' + LIBELLE_ROLE(h.role) + '</span>' +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + ESC(h.fonction) + '</div></div>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>' +
@@ -1078,11 +1180,9 @@ function TPL_ESPACE_VALIDATION(v, h) {
 
 function TPL_VALIDATION() {
     var v = GET_VALIDEUR();
-    var h = v.cle ? HABILITATION(v.cle) : null;
+    var h = HABILITATION_COURANTE();
     var corps, sous;
-    if (!v.cle) { sous = 'Activation de votre accès'; corps = TPL_ACTIVATION(); }
-    else if (!MER_CLE_SESSION) { sous = 'Connexion'; corps = TPL_CONNEXION(v); }
-    else if (!h || h.retire) { sous = 'Habilitation'; corps = TPL_HABILITATION_ATTENTE(v, h); }
+    if (!h || h.retire) { sous = 'Connexion'; corps = TPL_CONNEXION(v); }
     else { sous = 'Validation des demandes reçues'; corps = TPL_ESPACE_VALIDATION(v, h); }
     return '<div class="CARD">' +
         '<h2>Espace valideur</h2>' +
@@ -1340,18 +1440,20 @@ function TPL_ADMIN() {
     var lignes = l.valideurs.map(function(v, i) {
         return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
             '<span class="MER-BADGE">' + LIBELLE_ROLE(v.role) + '</span>' + (v.retire ? ' <span class="MER-BADGE" style="color:#b91c1c;">Retiré</span>' : '') +
-            '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(v.grade + ' ' + v.nom + ' ' + v.prenom) + '</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + ESC(v.fonction) + ' · clé ' + ESC(EMPREINTE_COURTE(v.cle.slice(-24))) + '</div></div>' +
+            '<div class="MER-PANIER-ITEM-SUB" style="margin-top:6px;">Code créé le ' + ESC(new Date(v.creeLe || v.habiliteLe).toLocaleDateString('fr-FR')) +
+            (v.retire ? ', retiré le ' + ESC(new Date(v.retire).toLocaleDateString('fr-FR')) : '') + ' · clé ' + ESC(EMPREINTE_COURTE(v.cle.slice(-24))) + '</div></div>' +
             (v.retire ? '' : '<button type="button" class="BTN-DANGER-TEXT" onclick="ADMIN_RETIRER(' + i + ')">Retirer</button>') + '</div>';
-    }).join('') || '<div class="MER-EMPTY">Aucun valideur habilité.</div>';
+    }).join('') || '<div class="MER-EMPTY">Aucun code d\'accès valideur.</div>';
     return '<div class="CARD"><h2>Administration</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Valideurs habilités (fichier valideurs.json du dépôt GitHub)</p>' + lignes +
-        '<div class="MER-SECTION-TITLE">Habiliter un valideur</div>' +
-        '<div class="MER-FIELD"><label>Code d\'habilitation reçu</label><textarea id="MER-ADMIN-CODE" rows="3" placeholder="TRIGONE-VALIDEUR:…"></textarea></div>' +
-        '<div class="MER-FIELD"><label>Rôle</label><select id="MER-ADMIN-ROLE"><option value="1">1er valideur (chef de service)</option><option value="2">2e valideur (secrétariat du chef de corps)</option></select></div>' +
-        '<button type="button" class="BTN BTN-GHOST" onclick="ADMIN_AJOUTER()">+ Ajouter à la liste</button>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Codes d\'accès des valideurs (fichier valideurs.json du dépôt GitHub)</p>' + lignes +
+        '<div class="MER-SECTION-TITLE">Nouveau code d\'accès</div>' +
+        '<p class="MER-HINT" style="margin-bottom:10px;">Remplace le code actuel du rôle choisi : les validations déjà faites restent valables, l\'ancien code ne fonctionne plus.</p>' +
+        '<div class="MER-ACTIONS" style="margin-bottom:10px;">' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ADMIN_NOUVEAU_CODE(1)">1er valideur</button>' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ADMIN_NOUVEAU_CODE(2)">2e valideur</button>' +
+        '</div>' +
         '<div class="MER-SECTION-TITLE">Publier</div>' +
-        '<p class="MER-HINT" style="margin-bottom:10px;">1. Copiez le contenu ci-dessous. 2. Ouvrez valideurs.json sur GitHub, remplacez tout son contenu, puis « Commit changes ». La liste est active 1 à 2 minutes après.</p>' +
+        '<p class="MER-HINT" style="margin-bottom:10px;">1. Copiez le contenu ci-dessous. 2. Ouvrez valideurs.json sur GitHub, remplacez tout son contenu, puis « Commit changes ». Actif 1 à 2 minutes après.</p>' +
         '<textarea class="MER-CODE" id="MER-ADMIN-JSON" readonly rows="6">' + ESC(JSON.stringify(l, null, 2)) + '</textarea>' +
         '<div class="MER-ACTIONS" style="margin:10px 0;">' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="COPIER_TEXTE(document.getElementById(\'MER-ADMIN-JSON\').value, this)">Copier</button>' +
@@ -1359,20 +1461,23 @@ function TPL_ADMIN() {
         '</div>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
-function ADMIN_AJOUTER() {
-    var code = (document.getElementById('MER-ADMIN-CODE').value || '').trim().replace(/\s+/g, '');
-    var v;
-    try { v = JSON.parse(TEXTE_B64(code.replace(/^TRIGONE-VALIDEUR:/, ''))); if (!v.cle || !v.nom) throw 0; }
-    catch (e) { alert('Code d\'habilitation illisible. Copiez-le en entier, depuis « TRIGONE-VALIDEUR: ».'); return; }
-    var l = MER_ADMIN_LISTE;
-    if (l.valideurs.some(function(x) { return x.cle === v.cle; })) { alert('Ce valideur est déjà dans la liste.'); return; }
-    l.valideurs.push({ grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction,
-        role: +document.getElementById('MER-ADMIN-ROLE').value, cle: v.cle, habiliteLe: new Date().toISOString() });
-    SHOW_PAGE('ADMIN');
+function ADMIN_NOUVEAU_CODE(role) {
+    if (!confirm('Créer un nouveau code d\'accès pour le ' + LIBELLE_ROLE(role) + ' ?\n\nL\'ancien code cessera de fonctionner une fois la liste publiée.')) return;
+    CREER_ACCES(role).then(function(r) {
+        var maintenant = new Date().toISOString();
+        MER_ADMIN_LISTE.valideurs.forEach(function(a) { if (a.role === role && !a.retire) a.retire = maintenant; });
+        MER_ADMIN_LISTE.valideurs.push(r.acces);
+        SHOW_PAGE('ADMIN');
+        AFFICHER_MODALE('Code du ' + LIBELLE_ROLE(role),
+            '<p style="font-size:0.86em; line-height:1.5;">Notez ce code et remettez-le au valideur : il ne sera plus jamais affiché. Pensez ensuite à publier la liste.</p>' +
+            '<div class="MER-CODE" style="font-size:1.2em; min-height:0; text-align:center; letter-spacing:0.08em; user-select:all;">' + ESC(r.code) + '</div>',
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="COPIER_TEXTE(\'' + r.code + '\', this)">Copier</button>' +
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE()">C\'est noté</button>');
+    });
 }
 function ADMIN_RETIRER(i) {
     var v = MER_ADMIN_LISTE.valideurs[i];
-    if (!confirm('Retirer l\'habilitation de ' + v.grade + ' ' + v.nom + ' ?\n\nSes validations passées restent valables ; les suivantes seront refusées.')) return;
+    if (!confirm('Retirer ce code d\'accès (' + LIBELLE_ROLE(v.role) + ') ?\n\nLes validations passées restent valables ; ce code ne fonctionnera plus.')) return;
     v.retire = new Date().toISOString();
     SHOW_PAGE('ADMIN');
 }
