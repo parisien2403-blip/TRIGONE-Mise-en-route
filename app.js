@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 19;
+var APP_CODE_VERSION = 20;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -592,8 +592,8 @@ function TPL_ONGLET_IMPUTATION() {
       '<div id="MER-FD-INFO">' + TPL_INFO_FD() + '</div>' +
       TOGGLE_OUI_NON('Demande d\'avance', 'demandeAvance') +
       '<div class="MER-SECTION-TITLE">NDS ou DAF</div>' +
-      '<div class="MER-FIELD"><label>Note de service ou DAF à joindre</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'piecesJointes\', this.value)" placeholder="EX : note de service n°... jointe au mail">' + ESC(D.piecesJointes || '') + '</textarea>' +
-      '<p class="MER-HINT">Décrivez ici la pièce à joindre — le fichier lui-même s\'ajoute au moment de l\'envoi du mail, comme le PDF.</p></div>';
+      TPL_PJ_FORMULAIRE() +
+      '<div class="MER-FIELD"><label>Référence (facultatif)</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'piecesJointes\', this.value)" placeholder="EX : NDS n°42/2026">' + ESC(D.piecesJointes || '') + '</textarea></div>';
 }
 
 function TPL_FORMULAIRE() {
@@ -811,11 +811,12 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 45 } }
     });
 
-    if (d.piecesJointes) {
+    var lignesPJ = (d.piecesJointes ? [[d.piecesJointes]] : []).concat((d.pieces || []).map(function(p) { return ['Fichier joint : ' + p.nom]; }));
+    if (lignesPJ.length) {
         y = PDF_TABLEAU(doc, y, M, L, P, {
             theme: 'grid',
             head: [['Pièces jointes (NDS / DAF)']],
-            body: [[d.piecesJointes]],
+            body: lignesPJ,
             alternateRowStyles: {}
         });
     }
@@ -1121,14 +1122,14 @@ var MER_NOTICES = {
         etapes: ['<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
             '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), ville (code postal automatique) ou pays étranger, dates et heures. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
-            '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité.',
-            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. « Envoyer » télécharge le PDF et le .json et ouvre le mail pour le 1er valideur.',
+            '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (PDF ou photo) : elle voyage avec la demande.',
+            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis « Envoyer » : un <b>seul fichier .json</b> (pièces jointes comprises) est téléchargé et le mail au 1er valideur s\'ouvre.',
             'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e).',
-            'Importez le ou les fichiers .json reçus par mail, puis « Voir le PDF » pour consulter chaque demande.',
+            'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
-            '<b>Transmettre</b> : le 1er valideur envoie le .json au 2e valideur ; le 2e valideur envoie le PDF signé à l\'assistant Chorus DT ; un refus repart vers le demandeur.'] },
+            '<b>Transmettre</b> : le 1er valideur envoie un seul .json au 2e valideur ; le 2e valideur envoie à l\'assistant Chorus DT <b>un seul PDF</b> (demande signée suivie des pages de la NDS / DAF) et le .json ; un refus repart vers le demandeur.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier les signatures d\'un PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['Ouvrez <b>Espace valideur</b> puis <b>Vérifier une mise en route</b> (aucun code n\'est nécessaire).',
             'Choisissez le PDF reçu : TRIGONE contrôle les signatures électroniques enregistrées dans le fichier.',
@@ -1258,21 +1259,22 @@ function PREPARER_ENVOI() {
 
     var panier = GET_PANIER();
     if (!panier.length) return;
-
-    var pjNotes = panier.filter(function(d) { return d.piecesJointes; }).map(function(d) {
-        return '📎 ' + RESUME_DEMANDE(d).noms + ' : ' + d.piecesJointes;
-    });
-    var listeTexte = '📎 ' + NOM_FICHIER_BASE(panier) + '.pdf (à télécharger ci-dessous)' +
-        '<br>📎 ' + NOM_FICHIER_BASE(panier) + '.json (à télécharger ci-dessous, pour le signataire suivant)' +
-        (pjNotes.length ? '<br>' + pjNotes.join('<br>') : '');
-
+    var pj = [].concat.apply([], panier.map(function(d) { return d.pieces || []; }));
+    var sansPJ = panier.filter(function(d) { return !(d.pieces || []).length; }).length;
     AFFICHER_MODALE('Avant d\'envoyer',
-        '<p style="font-size:0.86em; line-height:1.5;">Vérifiez que vous joindrez ces éléments dans le mail qui va s\'ouvrir :</p>' +
-        '<p style="font-size:0.86em; line-height:1.7; background:rgba(90,122,148,0.07); padding:10px 12px; border-radius:10px;">' + listeTexte + '</p>' +
-        '<p style="font-size:0.8em; color:var(--sm2-muted);">TRIGONE ne peut pas les joindre automatiquement — c\'est à vous de les ajouter dans votre application mail, comme pour TRIGONE compte-rendu.</p>',
+        '<p style="font-size:0.86em; line-height:1.5;">Vérifiez votre demande dans l\'aperçu, puis envoyez-la. Le 1er valideur ne reçoit qu\'<b>un seul fichier</b> :</p>' +
+        '<p style="font-size:0.86em; line-height:1.7; background:rgba(90,122,148,0.07); padding:10px 12px; border-radius:10px;">📎 ' + ESC(NOM_FICHIER_BASE(panier)) + '.json' +
+            (pj.length ? '<br><span style="color:var(--sm2-muted);">avec, à l\'intérieur : ' + pj.map(function(p) { return ESC(p.nom); }).join(', ') + '</span>' : '') + '</p>' +
+        (sansPJ ? '<p class="MER-HINT" style="color:#b45309; font-weight:700;">⚠ ' + sansPJ + ' demande(s) sans NDS ni DAF jointe.</p>' : '') +
+        '<button type="button" class="BTN BTN-GHOST" style="margin-top:8px;" onclick="VOIR_APERCU_PANIER()">👁 Aperçu du PDF</button>' +
+        '<p style="font-size:0.8em; color:var(--sm2-muted);">« Envoyer » télécharge le fichier .json et ouvre le mail : joignez-y ce fichier avant d\'envoyer.</p>',
         '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="FERMER_MODALE()">Annuler</button>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="FINALISER_ENVOI()">J\'ai tout prêt — Envoyer</button>'
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="FINALISER_ENVOI()">Envoyer</button>'
     );
+}
+function VOIR_APERCU_PANIER() {
+    try { window.open(GENERER_PDF(GET_PANIER()).output('bloburl'), '_blank'); }
+    catch (e) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + e.message); }
 }
 
 function FINALISER_ENVOI() {
@@ -1280,23 +1282,188 @@ function FINALISER_ENVOI() {
     var panier = GET_PANIER();
     panier.forEach(function(d) { d.mailDemandeur = (reg.mailDemandeur || '').trim(); d.validations = []; delete d.refus; });
     var base = NOM_FICHIER_BASE(panier);
-    try {
-        var doc = GENERER_PDF(panier);
-        doc.save(base + '.pdf');
-    } catch (e) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + e.message); return; }
-    TELECHARGER_TEXTE(base + '.json', GENERER_JSON(panier, 'DEMANDE_INITIALE'), 'application/json');
+    GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE').then(function(json) {
+        TELECHARGER_TEXTE(base + '.json', json, 'application/json');
+        var sujet = 'TRIGONE Mise en route — ' + panier.length + ' demande(s) — ' + (panier[0].personnes[0].nom || '');
+        var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) et ordre(s) de mise en route, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
+            'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.';
+        ARCHIVER_ENVOI(panier, reg.mailSignataire);
+        FERMER_MODALE();
+        window.location.href = 'mailto:' + encodeURIComponent(reg.mailSignataire) + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
+        SAVE_PANIER([]);
+        setTimeout(function() {
+            SHOW_PAGE('ACCUEIL');
+            MSG_INFO('Mail préparé', 'Joignez le fichier .json téléchargé, puis envoyez le mail. La demande est rangée dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
+        }, 300);
+    }).catch(function(e) { MSG_ERREUR('Envoi impossible', e.message || String(e)); });
+}
 
-    var sujet = 'TRIGONE Mise en route — ' + panier.length + ' demande(s) — ' + (panier[0].personnes[0].nom || '');
-    var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) et ordre(s) de mise en route, ainsi que le fichier de suivi (.json).\n\nCordialement.';
-    ARCHIVER_ENVOI(panier, reg.mailSignataire);
-    FERMER_MODALE();
-    window.location.href = 'mailto:' + encodeURIComponent(reg.mailSignataire) + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
+// ===================== PIÈCES JOINTES (NDS / DAF) =====================
+// Le missionnaire joint sa NDS ou sa DAF (PDF ou photo) à la demande. Les fichiers sont rangés dans IndexedDB
+// (trop lourds pour localStorage) ; la demande ne garde que nom, type, taille et empreinte SHA-256 — empreinte
+// couverte par les signatures des valideurs. Les fichiers voyagent DANS le .json (champ « pieces ») : un seul
+// fichier circule jusqu'au 2e valideur, qui produit le PDF final (demande signée + pages des pièces jointes).
+var PJ_TAILLE_MAX = 10 * 1024 * 1024;
+var MER_PJ_ALTEREES = {};   // pièces du formulaire en cours dont le contenu ne correspond plus à l'empreinte
+var PJ_BASE = null;
+function PJ_DB() {
+    if (!PJ_BASE) PJ_BASE = new Promise(function(ok, ko) {
+        var r = indexedDB.open('trigone-mise-en-route', 1);
+        r.onupgradeneeded = function() { r.result.createObjectStore('pieces'); };
+        r.onsuccess = function() { ok(r.result); };
+        r.onerror = function() { ko(r.error); };
+    });
+    return PJ_BASE;
+}
+function PJ_ECRIRE(id, piece) {
+    return PJ_DB().then(function(db) { return new Promise(function(ok, ko) {
+        var tx = db.transaction('pieces', 'readwrite'); tx.objectStore('pieces').put(piece, id);
+        tx.oncomplete = function() { ok(); }; tx.onerror = function() { ko(tx.error); };
+    }); });
+}
+function PJ_LIRE(id) {
+    return PJ_DB().then(function(db) { return new Promise(function(ok, ko) {
+        var r = db.transaction('pieces').objectStore('pieces').get(id);
+        r.onsuccess = function() { ok(r.result || null); }; r.onerror = function() { ko(r.error); };
+    }); });
+}
+function SHA256_HEX(buf) {
+    return crypto.subtle.digest('SHA-256', buf).then(function(h) {
+        return Array.prototype.map.call(new Uint8Array(h), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    });
+}
+function TAILLE_LISIBLE(o) { return o < 1024 * 1024 ? Math.max(1, Math.round(o / 1024)) + ' Ko' : (o / 1024 / 1024).toFixed(1).replace('.', ',') + ' Mo'; }
 
-    SAVE_PANIER([]);
-    setTimeout(function() {
-        SHOW_PAGE('ACCUEIL');
-        MSG_INFO('Mail préparé', 'Joignez le PDF et le fichier .json téléchargés, puis envoyez le mail. La demande est rangée dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
-    }, 300);
+function AJOUTER_PJ(input) {
+    var fichiers = Array.prototype.slice.call(input.files || []);
+    input.value = '';
+    D.pieces = D.pieces || [];
+    fichiers.reduce(function(prec, f) {
+        return prec.then(function() {
+            if (f.size > PJ_TAILLE_MAX) { MSG_ERREUR('Fichier trop lourd', '« ' + f.name + ' » dépasse 10 Mo. Réduisez-le (scan en qualité standard) puis réessayez.'); return; }
+            if (!/^(application\/pdf|image\/(jpeg|png))$/.test(f.type)) { MSG_ERREUR('Format non accepté', '« ' + f.name + ' » : seuls les PDF et les photos JPEG ou PNG sont acceptés.'); return; }
+            return f.arrayBuffer().then(function(buf) {
+                return SHA256_HEX(buf).then(function(sha) {
+                    var id = 'pj-' + sha.slice(0, 24);
+                    return PJ_ECRIRE(id, { nom: f.name, type: f.type, b64: B64(buf) }).then(function() {
+                        if (!D.pieces.some(function(p) { return p.id === id; }))
+                            D.pieces.push({ id: id, nom: f.name, type: f.type, taille: f.size, sha256: sha });
+                    });
+                });
+            });
+        });
+    }, Promise.resolve()).then(function() { SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); })
+      .catch(function(e) { MSG_ERREUR('Pièce jointe impossible', e.message || String(e)); });
+}
+function RETIRER_PJ(i) { D.pieces.splice(i, 1); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
+// Ouvre une pièce jointe (la fenêtre est ouverte tout de suite, sinon le navigateur la bloque).
+function OUVRIR_PJ(id, alteree) {
+    if (alteree || MER_PJ_ALTEREES[id]) { MSG_ERREUR('Pièce jointe modifiée', 'Le fichier reçu ne correspond pas à celui signé : il a été modifié en cours de route.'); return; }
+    var w = window.open('', '_blank');
+    PJ_LIRE(id).then(function(p) {
+        if (!p) { if (w) w.close(); MSG_ERREUR('Pièce jointe absente', 'Ce fichier n\'est pas sur cet appareil. Importez le .json qui le contient.'); return; }
+        var url = URL.createObjectURL(new Blob([DEB64(p.b64)], { type: p.type }));
+        if (w) w.location = url; else window.open(url, '_blank');
+    });
+}
+function TPL_PJ_PUCES(pieces, alterees) {
+    return (pieces || []).map(function(p) {
+        var ko = (alterees || []).indexOf(p.id) !== -1;
+        return '<button type="button" class="MER-PJ-PUCE' + (ko ? ' ko' : '') + '" onclick="OUVRIR_PJ(\'' + p.id + '\'' + (ko ? ', true' : '') + ')">' + (ko ? '⚠ ' : '📎 ') + ESC(p.nom) + '</button>';
+    }).join('');
+}
+function TPL_PJ_FORMULAIRE() {
+    var pieces = D.pieces || [];
+    return pieces.map(function(p, i) {
+        return '<div class="MER-PANIER-ITEM" style="padding:10px 12px;"><div class="MER-PANIER-ITEM-TXT">' +
+            '<div class="MER-PANIER-ITEM-TITRE">📎 ' + ESC(p.nom) + '</div><div class="MER-PANIER-ITEM-SUB">' + TAILLE_LISIBLE(p.taille) + '</div></div>' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="OUVRIR_PJ(\'' + p.id + '\')">Voir</button>' +
+            '<button type="button" class="BTN-DANGER-TEXT" onclick="RETIRER_PJ(' + i + ')">Retirer</button></div>';
+    }).join('') +
+    '<label class="BTN BTN-GHOST" style="margin-bottom:6px;">📎 Joindre la NDS ou la DAF (PDF ou photo)' +
+        '<input type="file" accept="application/pdf,image/jpeg,image/png" multiple style="display:none;" onchange="AJOUTER_PJ(this)"></label>' +
+    '<p class="MER-HINT" style="margin-bottom:14px;">Le fichier voyage avec la demande jusqu\'au 2e valideur, qui l\'ajoute au PDF final envoyé à l\'assistant Chorus DT.</p>';
+}
+
+// .json complet : les demandes + le contenu des pièces jointes.
+function GENERER_JSON_COMPLET(demandes, etape) {
+    var ids = {};
+    demandes.forEach(function(d) { (d.pieces || []).forEach(function(p) { ids[p.id] = true; }); });
+    var pieces = {};
+    return Promise.all(Object.keys(ids).map(function(id) {
+        return PJ_LIRE(id).then(function(p) { if (p) pieces[id] = p; });
+    })).then(function() {
+        var data = JSON.parse(GENERER_JSON(demandes, etape));
+        data.pieces = pieces;
+        return JSON.stringify(data);
+    });
+}
+// À l'import : chaque fichier est vérifié contre l'empreinte signée avant d'être rangé sur l'appareil.
+// Renvoie, par demande, la liste des pièces dont le contenu a été modifié (ou qui manquent au fichier).
+function STOCKER_PJ_IMPORTEES(contenus) {
+    var taches = [], alterees = {};
+    contenus.forEach(function(data) {
+        var fichiers = data.pieces || {};
+        data.demandes.forEach(function(d) {
+            (d.pieces || []).forEach(function(meta) {
+                var f = fichiers[meta.id];
+                if (!f) return;
+                taches.push(SHA256_HEX(DEB64(f.b64)).then(function(sha) {
+                    if (sha !== meta.sha256) { (alterees[d.id] = alterees[d.id] || []).push(meta.id); return; }
+                    return PJ_ECRIRE(meta.id, f);
+                }));
+            });
+        });
+    });
+    return Promise.all(taches).then(function() { return alterees; });
+}
+
+// PDF final (2e valideur → Chorus DT) : la page de chaque demande, suivie des pages de ses pièces jointes.
+var PDFLIB_CHARGEMENT = null;
+function CHARGER_PDFLIB() {
+    if (window.PDFLib) return Promise.resolve();
+    if (!PDFLIB_CHARGEMENT) PDFLIB_CHARGEMENT = new Promise(function(ok, ko) {
+        var sc = document.createElement('script'); sc.src = 'vendor/pdf-lib.min.js';
+        sc.onload = function() { ok(); }; sc.onerror = function() { PDFLIB_CHARGEMENT = null; ko(new Error('module PDF indisponible')); };
+        document.head.appendChild(sc);
+    });
+    return PDFLIB_CHARGEMENT;
+}
+function GENERER_PDF_FINAL(demandes) {
+    var base = GENERER_PDF(demandes).output('arraybuffer');
+    return CHARGER_PDFLIB().then(function() { return PDFLib.PDFDocument.load(base); }).then(function(doc) {
+        var decalage = 0;
+        return demandes.reduce(function(prec, d, i) {
+            return prec.then(function() {
+                var position = i + 1 + decalage;   // juste après la page de cette demande
+                return (d.pieces || []).reduce(function(p2, meta) {
+                    return p2.then(function() { return PJ_LIRE(meta.id); }).then(function(pj) {
+                        if (!pj) return;
+                        var octets = new Uint8Array(DEB64(pj.b64));
+                        if (pj.type === 'application/pdf') {
+                            return PDFLib.PDFDocument.load(octets, { ignoreEncryption: true }).then(function(src) {
+                                return doc.copyPages(src, src.getPageIndices());
+                            }).then(function(pages) {
+                                pages.forEach(function(pg) { doc.insertPage(position++, pg); decalage++; });
+                            });
+                        }
+                        return (pj.type === 'image/png' ? doc.embedPng(octets) : doc.embedJpg(octets)).then(function(img) {
+                            var A4 = [595.28, 841.89], marge = 28;
+                            var e = Math.min((A4[0] - 2 * marge) / img.width, (A4[1] - 2 * marge) / img.height, 1);
+                            var pg = doc.insertPage(position++, A4); decalage++;
+                            pg.drawImage(img, { x: (A4[0] - img.width * e) / 2, y: (A4[1] - img.height * e) / 2, width: img.width * e, height: img.height * e });
+                        });
+                    });
+                }, Promise.resolve());
+            });
+        }, Promise.resolve()).then(function() { return doc.save({ useObjectStreams: false }); });
+    });
+}
+function TELECHARGER_OCTETS(nom, octets, type) {
+    var url = URL.createObjectURL(new Blob([octets], { type: type }));
+    var a = document.createElement('a'); a.href = url; a.download = nom;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
 }
 
 // ===================== SÉCURITÉ DES VALIDATIONS =====================
@@ -1536,7 +1703,7 @@ function COPIER_TEXTE(t, btn) {
 function TPL_ENTREE_VALIDATION(e, h) {
     var d = e.d, r = RESUME_DEMANDE(d), niveau = NIVEAU_VALIDATION(d);
     var verif = MER_VERIF[e.id] || [];
-    var precedenteKo = verif.filter(function(x) { return !x.ok; })[0];
+    var precedenteKo = verif.filter(function(x) { return !x.ok; })[0] || ((e.pjAlterees || []).length ? { message: 'pièce jointe modifiée' } : null);
     var pourMoi = niveau === h.role && !precedenteKo;
     var badge = niveau > 2 ? 'Déjà validée' : (niveau === 1 ? 'À valider — 1er niveau' : 'À valider — 2e niveau');
     var controle = verif.map(function(x) {
@@ -1553,7 +1720,7 @@ function TPL_ENTREE_VALIDATION(e, h) {
     } else if (niveau <= 2) {
         if (pourMoi) actions += '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_DEMANDES([\'' + e.id + '\'])">Valider</button>';
         else if (!precedenteKo) etat = '<div class="MER-HINT">Réservée au ' + LIBELLE_ROLE(niveau) + ' : vous ne pouvez pas la valider.</div>';
-        else etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">Validation précédente non conforme : refusez cette demande.</div>';
+        else etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">' + ((e.pjAlterees || []).length ? 'Demande non conforme' : 'Validation précédente non conforme') + ' : refusez cette demande.</div>';
         actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">Refuser</button>';
     }
     var coche = !e.decision && pourMoi ? '<input type="checkbox" class="MER-VAL-SEL" value="' + e.id + '" style="width:18px; height:18px; flex-shrink:0;">' : '';
@@ -1561,9 +1728,12 @@ function TPL_ENTREE_VALIDATION(e, h) {
         '<div class="MER-PANIER-ITEM-TXT">' +
             '<span class="MER-BADGE">' + badge + '</span>' +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(r.noms) + '</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' + controle + etat +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' +
+            ((d.pieces || []).length ? '<div class="MER-PJ-LISTE">' + TPL_PJ_PUCES(d.pieces, e.pjAlterees) + '</div>' : '<div class="MER-HINT">Aucune NDS ni DAF jointe.</div>') +
+            ((e.pjAlterees || []).length ? '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Pièce jointe modifiée après l\'envoi : elle ne correspond plus à celle de la demande.</div>' : '') +
+            controle + etat +
             '<div class="MER-VAL-ACTIONS">' +
-                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_PDF_VALIDATION(\'' + e.id + '\')">Voir le PDF</button>' + actions +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_PDF_VALIDATION(\'' + e.id + '\')">Aperçu</button>' + actions +
             '</div>' +
         '</div></div>';
 }
@@ -1582,7 +1752,7 @@ function TPL_ESPACE_VALIDATION(v, h) {
 
     var decidees = liste.filter(function(e) { return e.decision; }).length;
     var cochables = liste.filter(function(e) {
-        return !e.decision && NIVEAU_VALIDATION(e.d) === h.role && !(MER_VERIF[e.id] || []).some(function(x) { return !x.ok; });
+        return !e.decision && NIVEAU_VALIDATION(e.d) === h.role && !(MER_VERIF[e.id] || []).some(function(x) { return !x.ok; }) && !(e.pjAlterees || []).length;
     }).length;
     html += liste.map(function(e) { return TPL_ENTREE_VALIDATION(e, h); }).join('');
     if (cochables > 1) {
@@ -1636,7 +1806,7 @@ function LIRE_JSON_MER(texte) {
 function LIRE_FICHIERS_JSON(input, traiter) { LIRE_FICHIERS(input, LIRE_JSON_MER, traiter); }
 
 function IMPORTER_A_VALIDER(input) {
-    LIRE_FICHIERS_JSON(input, function(contenus) {
+    LIRE_FICHIERS_JSON(input, function(contenus) { STOCKER_PJ_IMPORTEES(contenus).then(function(alterees) {
         var liste = GET_A_VALIDER(), ajoutees = 0, refus = 0;
         contenus.forEach(function(data) {
             data.demandes.forEach(function(d) {
@@ -1644,7 +1814,7 @@ function IMPORTER_A_VALIDER(input) {
                 d.validations = d.validations || [];
                 var cle = d.id + '#' + d.validations.length;
                 if (liste.some(function(e) { return e.id === cle; })) return;
-                liste.push({ id: cle, d: d, decision: null, signature: null });
+                liste.push({ id: cle, d: d, decision: null, signature: null, pjAlterees: alterees[d.id] || [] });
                 ajoutees++;
             });
         });
@@ -1652,7 +1822,7 @@ function IMPORTER_A_VALIDER(input) {
         RENDER_VALIDATION_INPLACE();
         if (refus) MSG_INFO('Demandes refusées ignorées', refus + ' demande(s) refusée(s) ignorée(s) : un refus s\'importe côté demandeur.');
         else if (!ajoutees && contenus.length) MSG_INFO('Déjà importées', 'Ces demandes sont déjà dans votre liste.');
-    });
+    }); });
 }
 
 function VALIDER_DEMANDES(ids) {
@@ -1660,7 +1830,7 @@ function VALIDER_DEMANDES(ids) {
     if (!MER_CLE_SESSION || !h || h.retire) { RENDER_VALIDATION_INPLACE(); return; }
     var liste = GET_A_VALIDER();
     Promise.all(liste.map(function(e) {
-        var ko = (MER_VERIF[e.id] || []).some(function(x) { return !x.ok; });
+        var ko = (MER_VERIF[e.id] || []).some(function(x) { return !x.ok; }) || (e.pjAlterees || []).length;
         if (ids.indexOf(e.id) === -1 || e.decision || NIVEAU_VALIDATION(e.d) !== h.role || ko) return null;
         return SIGNER_VALIDATION(e.d, h).then(function(s) { e.decision = 'VALIDEE'; e.signature = s; });
     })).then(function() {
@@ -1743,7 +1913,7 @@ function PREPARER_TRANSMISSION() {
     if (vers2.length) MER_ENVOIS.push({ type: 'VALIDATION_1', demandes: vers2, mail: v.mailValideur2,
         titre: 'Au 2e valideur', pj: NOM_FICHIER_BASE(vers2) + '_VALIDATION-1.json' });
     if (versChorus.length) MER_ENVOIS.push({ type: 'CHORUS', demandes: versChorus, mail: v.mailChorus,
-        titre: 'À l\'assistant Chorus DT', pj: NOM_FICHIER_BASE(versChorus) + '_VALIDEE.pdf' });
+        titre: 'À l\'assistant Chorus DT', pj: NOM_FICHIER_BASE(versChorus) + '_VALIDEE.pdf + .json' });
     Object.keys(refusParMail).forEach(function(m) {
         var ds = refusParMail[m];
         MER_ENVOIS.push({ type: 'REFUS', demandes: ds, mail: m,
@@ -1770,28 +1940,33 @@ function AFFICHER_TRANSMISSION() {
 }
 function EXECUTER_ENVOI(i) {
     var env = MER_ENVOIS[i], n = env.demandes.length, nom = env.demandes[0].personnes[0].nom || '';
-    var sujet, corps;
+    var base = NOM_FICHIER_BASE(env.demandes), travail, sujet, corps;
     if (env.type === 'CHORUS') {
-        try { GENERER_PDF(env.demandes).save(env.pj); }
-        catch (e) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + e.message); return; }
+        // Un seul PDF : chaque demande signée suivie de sa NDS / DAF ; plus le .json pour la vérification.
+        travail = GENERER_PDF_FINAL(env.demandes).then(function(octets) {
+            TELECHARGER_OCTETS(base + '_VALIDEE.pdf', octets, 'application/pdf');
+            return GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_2');
+        }).then(function(json) { TELECHARGER_TEXTE(base + '_VALIDEE.json', json, 'application/json'); });
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) validée(s) — ' + nom;
-        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement.\n' +
+        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement : le PDF (pièces jointes NDS / DAF incluses) et le fichier .json.\n' +
             'Les validations sont signées électroniquement : TRIGONE Mise en route > Espace valideur > Vérifier une mise en route permet de les contrôler.\n\nCordialement.';
     } else if (env.type === 'VALIDATION_1') {
-        TELECHARGER_TEXTE(env.pj, GENERER_JSON(env.demandes, 'VALIDATION_1'), 'application/json');
+        travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_1').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) à valider — ' + nom;
-        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation.\n' +
+        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation (pièces jointes NDS / DAF incluses dans le fichier).\n' +
             'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez le fichier .json joint.\n\nCordialement.';
     } else {
-        TELECHARGER_TEXTE(env.pj, GENERER_JSON(env.demandes, 'REFUS'), 'application/json');
+        travail = GENERER_JSON_COMPLET(env.demandes, 'REFUS').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
         sujet = 'TRIGONE Mise en route — demande(s) refusée(s) — ' + nom;
         corps = 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
         }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Panier > Importer une demande refusée, puis importez le fichier .json joint.\n\nCordialement.';
     }
-    env.fait = true;
-    window.location.href = 'mailto:' + encodeURIComponent(env.mail || '') + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
-    AFFICHER_TRANSMISSION();
+    travail.then(function() {
+        env.fait = true;
+        window.location.href = 'mailto:' + encodeURIComponent(env.mail || '') + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
+        AFFICHER_TRANSMISSION();
+    }).catch(function(e) { MSG_ERREUR('Préparation impossible', e.message || String(e)); });
 }
 function TERMINER_TRANSMISSION() {
     FERMER_MODALE();
@@ -1911,7 +2086,7 @@ function ADMIN_RETIRER(i) {
 
 // ===================== RETOUR D'UN REFUS (côté demandeur) =====================
 function IMPORTER_REFUS(input) {
-    LIRE_FICHIERS_JSON(input, function(contenus) {
+    LIRE_FICHIERS_JSON(input, function(contenus) { STOCKER_PJ_IMPORTEES(contenus).then(function() {
         var panier = GET_PANIER(), n = 0;
         contenus.forEach(function(data) {
             data.demandes.forEach(function(d) {
@@ -1924,7 +2099,7 @@ function IMPORTER_REFUS(input) {
         if (!n) { MSG_INFO('Aucun refus', 'Aucune demande refusée dans ce fichier.'); return; }
         SAVE_PANIER(panier);
         SHOW_PAGE('PANIER');
-    });
+    }); });
 }
 function MODIFIER_DEMANDE(id) {
     var d = GET_PANIER().filter(function(x) { return x.id === id; })[0];

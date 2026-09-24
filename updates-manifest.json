@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 19,
-  "appCodeMessage": "Nouvelle icône TRIGONE Mise en route (phénix violet) pour l'application installée sur téléphone et ordinateur. Si l'application est déjà installée, l'icône se met à jour après une réinstallation. « Installer l'application » est disponible dans Mon espace.",
+  "appCodeVersion": 20,
+  "appCodeMessage": "La NDS ou la DAF se joint directement à la demande (onglet Imputation). Un seul fichier .json circule jusqu'au 2e valideur, pièces jointes comprises ; chacun ne voit qu'un aperçu. Le 2e valideur envoie à l'assistant Chorus DT un seul PDF (demande signée + NDS / DAF) et le .json.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

@@ -40,6 +40,17 @@ ACCUEIL
   et « Vérifier une mise en route », et en bas les onglets Bibliothèque (demandes envoyées),
   Panier et Mon espace (identité et mails pré-remplis).
 
+UN SEUL FICHIER QUI CIRCULE
+- Le missionnaire joint sa NDS ou sa DAF (PDF, JPEG ou PNG, 10 Mo maximum) dans l'onglet
+  Imputation. À l'envoi, il voit un aperçu du PDF et n'envoie qu'un fichier .json, qui contient
+  la demande ET les pièces jointes (rangées sur l'appareil dans IndexedDB).
+- Le 1er valideur importe ce .json, consulte l'aperçu et les pièces (📎), signe, et renvoie un
+  seul .json au 2e valideur.
+- Le 2e valideur envoie à l'assistant Chorus DT un seul PDF (chaque demande signée suivie des
+  pages de sa NDS / DAF, assemblées avec vendor/pdf-lib.min.js) et le .json.
+- L'empreinte SHA-256 de chaque pièce fait partie de la demande signée : une pièce remplacée en
+  cours de route est signalée en rouge et la demande ne peut pas être validée.
+
 CIRCUIT DE VALIDATION SÉCURISÉ
 - Le demandeur envoie le PDF et le .json au 1er valideur.
 - Espace valideur : le valideur saisit son grade, nom, prénom, fonction et son code d'accès
