@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 28,
-  "appCodeMessage": "Trajets : « Gare », « Aéroport » ou « Port » de départ / d'arrivée selon le moyen de transport, et nouveau moyen « Voie routière civile (VRC) » avec rappel des pièces à joindre (demande d'autorisation VRC, carte grise, assurance).",
+  "appCodeVersion": 29,
+  "appCodeMessage": "Envoi en deux temps : « 1. Enregistrer le .json » (vous choisissez où le ranger), puis « 2. Envoyer » s'active et ouvre le mail. Notice mise à jour.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
