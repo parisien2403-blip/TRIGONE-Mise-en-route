@@ -36,8 +36,10 @@ function VIDE_DEMANDE() {
 
 var D = VIDE_DEMANDE();          // demande en cours de saisie
 var PAGE_ACTUELLE = 'ACCUEIL';
-var MER_TABS_ORDRE = ['IDENTITE', 'TRAJETS', 'CONDITIONS', 'IMPUTATION'];
-var MER_TABS_LABELS = { IDENTITE: 'Identité', TRAJETS: 'Trajets', CONDITIONS: 'Alim./Héb.', IMPUTATION: 'Imputation' };
+var MER_TABS_ORDRE = ['IDENTITE', 'ALLER', 'RETOUR', 'CONDITIONS', 'IMPUTATION'];
+var MER_TABS_LABELS = { IDENTITE: 'Identité', ALLER: 'Aller', RETOUR: 'Retour', CONDITIONS: 'Alim./Héb.', IMPUTATION: 'Imputation' };
+// Lieu de départ / de retour de mission, comme dans TRIGONE compte-rendu.
+var MER_RESIDENCES = { ADMINISTRATIVE: 'Résidence administrative', FAMILIALE: 'Résidence familiale' };
 var MER_ACTIVE_TAB = 'IDENTITE';
 
 function GET_REGLAGES() {
@@ -61,7 +63,8 @@ function LOAD_BROUILLON() {
         if (raw) {
             var sauvegarde = JSON.parse(raw);
             D = sauvegarde.demande || sauvegarde;   // compatibilité avec un ancien format de brouillon
-            if (sauvegarde.onglet) MER_ACTIVE_TAB = sauvegarde.onglet;
+            if (sauvegarde.onglet) MER_ACTIVE_TAB = sauvegarde.onglet === 'TRAJETS' ? 'ALLER' : sauvegarde.onglet;
+            if (MER_TABS_ORDRE.indexOf(MER_ACTIVE_TAB) === -1) MER_ACTIVE_TAB = 'IDENTITE';
         }
     } catch (e) {}
 }
@@ -92,13 +95,15 @@ function SHOW_PAGE(page) {
     else if (page === 'ADMIN') zone.innerHTML = TPL_ADMIN();
     else if (page === 'BIBLIOTHEQUE') zone.innerHTML = TPL_BIBLIOTHEQUE();
     else if (page === 'ESPACE') zone.innerHTML = TPL_MON_ESPACE();
+    else if (page === 'NOTICE') zone.innerHTML = TPL_NOTICE();
     window.scrollTo(0, 0);
 }
 
 var MER_ICONES = {
     BIBLIOTHEQUE: '<svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg>',
     PANIER: '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>',
-    ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>'
+    ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>',
+    NOTICE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 15.7v-5M12 8h.01"/></svg>'
 };
 function TPL_ONGLET_DOCK(page, icone, libelle, pastille) {
     return '<button type="button" class="P0-TAB' + (pastille ? ' has-badge' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')">' +
@@ -123,6 +128,7 @@ function TPL_ACCUEIL() {
         '<nav class="P0-TAB-BAR" aria-label="Navigation accueil"><div class="P0-DOCK-INNER">' +
           TPL_ONGLET_DOCK('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
           TPL_ONGLET_DOCK('PANIER', MER_ICONES.PANIER, 'Panier' + (n ? ' (' + n + ')' : ''), n > 0) +
+          TPL_ONGLET_DOCK('NOTICE', MER_ICONES.NOTICE, 'Notice') +
           TPL_ONGLET_DOCK('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
         '</div></nav>' +
       '</div>' +
@@ -202,6 +208,12 @@ function TPL_MON_ESPACE() {
         '<div class="MER-SECTION-TITLE">Envoi de mes demandes</div>' +
         champMail('mailSignataire', 'Mail du 1er valideur (chef de service)') +
         champMail('mailDemandeur', 'Mon mail', 'Pour vous renvoyer une demande si un valideur la refuse.') +
+        '<div class="MER-SECTION-TITLE">Sécurité — code d\'accès</div>' +
+        (PIN_EST_DEFINI()
+            ? '<p class="MER-HINT" style="margin:0 0 10px;">🔒 Code activé : il est demandé à chaque ouverture de l\'application.</p>' +
+              '<button type="button" class="BTN BTN-GHOST" onclick="OUVRIR_ECRAN_PIN(\'suppression\')">Désactiver le code</button>'
+            : '<p class="MER-HINT" style="margin:0 0 10px;">Protégez l\'application par un code à 4 chiffres, demandé à chaque ouverture. Utile si votre téléphone n\'est pas verrouillé ou est partagé.</p>' +
+              '<button type="button" class="BTN BTN-GHOST" onclick="OUVRIR_ECRAN_PIN(\'creation\')">Activer un code à 4 chiffres</button>') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
         '<button type="button" class="P0-LIEN" style="opacity:0.6;" onclick="OUVRIR_ADMIN()">Administration des valideurs</button></div>';
 }
@@ -238,12 +250,12 @@ function ON_CHAMP_INPUT(path, val) {
     var n = NAV_CHAMP(path); n.obj[n.key] = val;
     var el = document.querySelector('.MER-ERREUR[data-path="' + path + '"]');
     if (el) el.classList.remove('MER-ERREUR');
-    if (/^trajets\.retour\.(lieu|cp|pays)/.test(path)) D.trajets.retourAuto = false;
+    if (/^trajets\.retour\.(lieu|cp|pays|residence)/.test(path)) D.trajets.retourAuto = false;
     if (/^trajets\.aller\./.test(path)) SYNCHRO_RETOUR();
     SAVE_BROUILLON();
 }
 // Retour = aller inversé (lieux, codes postaux, pays, moyen), tant que le missionnaire n'a pas touché au retour.
-var MER_PAIRES_RETOUR = [['lieuDep', 'lieuArr'], ['cpDep', 'cpArr'], ['paysDep', 'paysArr'], ['lieuArr', 'lieuDep'], ['cpArr', 'cpDep'], ['paysArr', 'paysDep'], ['moyen', 'moyen']];
+var MER_PAIRES_RETOUR = [['residenceArr', 'residenceDep'], ['lieuDep', 'lieuArr'], ['cpDep', 'cpArr'], ['paysDep', 'paysArr'], ['lieuArr', 'lieuDep'], ['cpArr', 'cpDep'], ['paysArr', 'paysDep'], ['moyen', 'moyen']];
 function SYNCHRO_RETOUR() {
     var t = D.trajets;
     // Anciens brouillons (sans l'indicateur) : on ne touche pas à un retour déjà rempli.
@@ -347,7 +359,7 @@ function TPL_LIEU(label, path, cote) {
         'onchange="ON_CHAMP_BOOL(\'' + path + '.pays' + cote + '\', this.value)">' + options + '</select></div>';
 }
 function TPL_TRAJET(titre, path, optionnel) {
-    return '<p class="MER-HINT" style="font-weight:800; text-transform:uppercase; letter-spacing:0.04em; margin:14px 0 8px;">' + titre + (optionnel ? ' <span style="font-weight:600; text-transform:none;">(si besoin)</span>' : '') + '</p>' +
+    return (titre ? '<p class="MER-HINT" style="font-weight:800; text-transform:uppercase; letter-spacing:0.04em; margin:14px 0 8px;">' + titre + (optionnel ? ' <span style="font-weight:600; text-transform:none;">(si besoin)</span>' : '') + '</p>' : '') +
         SELECT_MOYEN(path + '.moyen') +
         TPL_LIEU('Lieu de départ', path, 'Dep') +
         CHAMP_TXT('Date et heure de départ', path + '.dateDep', '', 'datetime-local') +
@@ -405,11 +417,17 @@ function MANQUES_ONGLET(tab) {
             });
             if ((p.matricule || '').replace(/\D/g, '').length !== 10) m.push({ path: 'personnes.' + i + '.matricule', libelle: 'Matricule à 10 chiffres' + qui });
         });
-    } else if (tab === 'TRAJETS') {
-        var t = D.trajets, blocs = [['aller', 'Aller']];
-        if (t.intermediaireAllerActif) blocs.push(['intermediaireAller', 'Intermédiaire aller']);
-        blocs.push(['retour', 'Retour']);
-        if (t.intermediaireRetourActif) blocs.push(['intermediaireRetour', 'Intermédiaire retour']);
+    } else if (tab === 'ALLER' || tab === 'RETOUR') {
+        var t = D.trajets, blocs;
+        if (tab === 'ALLER') {
+            exiger('trajets.aller.residenceDep', 'Lieu de départ de mission');
+            blocs = [['aller', 'Aller']];
+            if (t.intermediaireAllerActif) blocs.push(['intermediaireAller', 'Intermédiaire aller']);
+        } else {
+            exiger('trajets.retour.residenceArr', 'Lieu de retour de mission');
+            blocs = [['retour', 'Retour']];
+            if (t.intermediaireRetourActif) blocs.push(['intermediaireRetour', 'Intermédiaire retour']);
+        }
         blocs.forEach(function(b) {
             var tr = t[b[0]], base = 'trajets.' + b[0] + '.';
             exiger(base + 'moyen', b[1] + ' : moyen de transport');
@@ -488,15 +506,29 @@ function TPL_ONGLET_IDENTITE() {
       '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_PERSONNE()">+ Ajouter une personne (demande collective)</button>';
 }
 
-function TPL_ONGLET_TRAJETS() {
-    var interA = !!D.trajets.intermediaireAllerActif;
-    var interR = !!D.trajets.intermediaireRetourActif;
-    return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Trajet aller</div>' + TPL_TRAJET('Trajet aller', 'trajets.aller') +
-      '<label class="MER-CHECKBOX-ROW"><input type="checkbox" ' + (interA ? 'checked' : '') + ' onchange="ON_CHAMP_BOOL(\'trajets.intermediaireAllerActif\', this.checked)"><span>Trajet intermédiaire sur l\'aller</span></label>' +
-      (interA ? TPL_TRAJET('Trajet intermédiaire (aller)', 'trajets.intermediaireAller') : '') +
-      '<div class="MER-SECTION-TITLE">Trajet retour</div>' + TPL_TRAJET('Trajet retour', 'trajets.retour') +
-      '<label class="MER-CHECKBOX-ROW"><input type="checkbox" ' + (interR ? 'checked' : '') + ' onchange="ON_CHAMP_BOOL(\'trajets.intermediaireRetourActif\', this.checked)"><span>Trajet intermédiaire sur le retour</span></label>' +
-      (interR ? TPL_TRAJET('Trajet intermédiaire (retour)', 'trajets.intermediaireRetour') : '');
+function SELECT_RESIDENCE(label, path) {
+    var v = GET_CHAMP(path) || '';
+    var opts = '<option value="">— Choisir —</option>' + Object.keys(MER_RESIDENCES).map(function(k) {
+        return '<option value="' + k + '"' + (v === k ? ' selected' : '') + '>' + MER_RESIDENCES[k].toUpperCase() + '</option>';
+    }).join('');
+    return '<div class="MER-FIELD"><label>' + label + '</label><select data-path="' + path + '" onchange="ON_CHAMP_INPUT(\'' + path + '\', this.value)">' + opts + '</select></div>';
+}
+function TPL_ONGLET_ALLER() {
+    var inter = !!D.trajets.intermediaireAllerActif;
+    return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Trajet aller</div>' +
+      SELECT_RESIDENCE('Lieu de départ de mission', 'trajets.aller.residenceDep') +
+      TPL_TRAJET('', 'trajets.aller') +
+      '<label class="MER-CHECKBOX-ROW"><input type="checkbox" ' + (inter ? 'checked' : '') + ' onchange="ON_CHAMP_BOOL(\'trajets.intermediaireAllerActif\', this.checked)"><span>Trajet intermédiaire sur l\'aller</span></label>' +
+      (inter ? TPL_TRAJET('Trajet intermédiaire (aller)', 'trajets.intermediaireAller') : '');
+}
+function TPL_ONGLET_RETOUR() {
+    var inter = !!D.trajets.intermediaireRetourActif;
+    return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Trajet retour</div>' +
+      '<p class="MER-HINT" style="margin:-6px 0 12px;">Pré-rempli avec l\'aller inversé : modifiez si besoin.</p>' +
+      SELECT_RESIDENCE('Lieu de retour de mission', 'trajets.retour.residenceArr') +
+      TPL_TRAJET('', 'trajets.retour') +
+      '<label class="MER-CHECKBOX-ROW"><input type="checkbox" ' + (inter ? 'checked' : '') + ' onchange="ON_CHAMP_BOOL(\'trajets.intermediaireRetourActif\', this.checked)"><span>Trajet intermédiaire sur le retour</span></label>' +
+      (inter ? TPL_TRAJET('Trajet intermédiaire (retour)', 'trajets.intermediaireRetour') : '');
 }
 
 function TPL_ONGLET_CONDITIONS() {
@@ -566,7 +598,8 @@ function TPL_FORMULAIRE() {
     var idx = MER_TABS_ORDRE.indexOf(MER_ACTIVE_TAB);
     var dernier = idx === MER_TABS_ORDRE.length - 1;
     var contenu = MER_ACTIVE_TAB === 'IDENTITE' ? TPL_ONGLET_IDENTITE()
-        : MER_ACTIVE_TAB === 'TRAJETS' ? TPL_ONGLET_TRAJETS()
+        : MER_ACTIVE_TAB === 'ALLER' ? TPL_ONGLET_ALLER()
+        : MER_ACTIVE_TAB === 'RETOUR' ? TPL_ONGLET_RETOUR()
         : MER_ACTIVE_TAB === 'CONDITIONS' ? TPL_ONGLET_CONDITIONS()
         : TPL_ONGLET_IMPUTATION();
     return '' +
@@ -742,8 +775,8 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
         body: trajets.map(function(r) {
             var tr = r[1] || VIDE_TRAJET();
             return [r[0], tr.moyen ? MOYENS[tr.moyen] : '',
-                    lieu(tr.lieuDep, tr.cpDep, tr.paysDep) + '\n' + PDF_DATE(tr.dateDep),
-                    lieu(tr.lieuArr, tr.cpArr, tr.paysArr) + '\n' + PDF_DATE(tr.dateArr)];
+                    lieu(tr.lieuDep, tr.cpDep, tr.paysDep) + (tr.residenceDep ? '\n' + MER_RESIDENCES[tr.residenceDep] : '') + '\n' + PDF_DATE(tr.dateDep),
+                    lieu(tr.lieuArr, tr.cpArr, tr.paysArr) + (tr.residenceArr ? '\n' + MER_RESIDENCES[tr.residenceArr] : '') + '\n' + PDF_DATE(tr.dateArr)];
         }),
         columnStyles: { 0: { fontStyle: 'bold', cellWidth: 36 }, 1: { cellWidth: 38 } }
     });
@@ -860,6 +893,173 @@ function GENERER_PDF(panier) {
     doc.setProperties({ title: 'TRIGONE — Demande et ordre de mise en route', keywords: PDF_DONNEES(panier) });
 
     return doc;
+}
+
+// ===================== CODE D'ACCÈS À 4 CHIFFRES (comme TRIGONE compte-rendu) =====================
+// Facultatif, activé depuis Mon espace : demandé à chaque ouverture de l'application. Seule une empreinte
+// (SHA-256) du code est gardée sur l'appareil ; code oublié = effacer toutes les données de l'appli.
+var STORAGE_PIN = 'mer_pin_hash';
+var PIN_UI = { saisie: '', mode: null, premier: null, verrouillage: false, apres: null };
+function PIN_EST_DEFINI() { try { return !!localStorage.getItem(STORAGE_PIN); } catch (e) { return false; } }
+function PIN_EMPREINTE(code) {
+    return crypto.subtle.digest('SHA-256', new TextEncoder().encode('TRIGONE-MER:' + code)).then(function(b) {
+        return Array.prototype.map.call(new Uint8Array(b), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+    });
+}
+// mode : 'verif' (ouverture de l'appli), 'creation', 'suppression'
+function OUVRIR_ECRAN_PIN(mode, apres) {
+    PIN_UI = { saisie: '', mode: mode, premier: null, verrouillage: mode === 'verif', apres: apres || null };
+    var titres = { verif: ['Code d\'accès', 'Entrez votre code à 4 chiffres pour continuer.'],
+                   creation: ['Nouveau code d\'accès', 'Choisissez un code à 4 chiffres.'],
+                   suppression: ['Désactiver le code', 'Entrez votre code actuel.'] };
+    document.getElementById('PIN-OVERLAY-TITRE').textContent = titres[mode][0];
+    document.getElementById('PIN-OVERLAY-SOUS-TITRE').textContent = titres[mode][1];
+    document.getElementById('PIN-OVERLAY-ERREUR').classList.add('HIDDEN');
+    document.getElementById('PIN-OVERLAY-CLOSE').classList.toggle('HIDDEN', mode === 'verif');
+    document.getElementById('PIN-OUBLIE').style.display = mode === 'creation' ? 'none' : '';
+    RENDER_PIN_DOTS();
+    document.getElementById('PIN-OVERLAY').classList.remove('HIDDEN');
+}
+function FERMER_ECRAN_PIN() {
+    if (PIN_UI.verrouillage) return;   // le verrouillage d'ouverture ne se ferme qu'avec le bon code
+    document.getElementById('PIN-OVERLAY').classList.add('HIDDEN');
+}
+function RENDER_PIN_DOTS() {
+    document.querySelectorAll('#PIN-OVERLAY .pin-dot').forEach(function(d, i) { d.classList.toggle('filled', i < PIN_UI.saisie.length); });
+}
+function PIN_ERREUR(texte) {
+    var e = document.getElementById('PIN-OVERLAY-ERREUR');
+    e.textContent = texte; e.classList.remove('HIDDEN');
+    PIN_UI.saisie = ''; RENDER_PIN_DOTS();
+}
+function PIN_TOUCHE(chiffre) {
+    if (PIN_UI.saisie.length >= 4) return;
+    PIN_UI.saisie += String(chiffre);
+    RENDER_PIN_DOTS();
+    if (PIN_UI.saisie.length === 4) setTimeout(PIN_VALIDER, 150);
+}
+function PIN_EFFACER() { PIN_UI.saisie = PIN_UI.saisie.slice(0, -1); RENDER_PIN_DOTS(); }
+function PIN_VALIDER() {
+    var code = PIN_UI.saisie;
+    if (PIN_UI.mode === 'creation') {
+        if (!PIN_UI.premier) {
+            PIN_UI.premier = code; PIN_UI.saisie = '';
+            document.getElementById('PIN-OVERLAY-SOUS-TITRE').textContent = 'Confirmez votre nouveau code.';
+            RENDER_PIN_DOTS();
+            return;
+        }
+        if (code !== PIN_UI.premier) {
+            PIN_UI.premier = null;
+            document.getElementById('PIN-OVERLAY-SOUS-TITRE').textContent = 'Choisissez un code à 4 chiffres.';
+            PIN_ERREUR('⛔ Les deux codes ne correspondent pas. Recommencez.');
+            return;
+        }
+        PIN_EMPREINTE(code).then(function(h) {
+            try { localStorage.setItem(STORAGE_PIN, h); } catch (e) {}
+            FERMER_ECRAN_PIN();
+            if (PAGE_ACTUELLE === 'ESPACE') SHOW_PAGE('ESPACE');
+            MSG_INFO('Code d\'accès activé', 'Il vous sera demandé à chaque ouverture de TRIGONE Mise en route.', '🔒', 'mascotte-code.webp');
+        });
+        return;
+    }
+    var attendu = '';
+    try { attendu = localStorage.getItem(STORAGE_PIN) || ''; } catch (e) {}
+    PIN_EMPREINTE(code).then(function(h) {
+        if (h !== attendu) { PIN_ERREUR('⛔ Code incorrect.'); return; }
+        if (PIN_UI.mode === 'suppression') {
+            try { localStorage.removeItem(STORAGE_PIN); } catch (e) {}
+            FERMER_ECRAN_PIN();
+            if (PAGE_ACTUELLE === 'ESPACE') SHOW_PAGE('ESPACE');
+            MSG_INFO('Code d\'accès désactivé', 'TRIGONE Mise en route s\'ouvrira sans code.', '🔓', 'mascotte-code.webp');
+            return;
+        }
+        PIN_UI.verrouillage = false;
+        FERMER_ECRAN_PIN();
+        if (PIN_UI.apres) PIN_UI.apres();
+    });
+}
+function PIN_CODE_OUBLIE() {
+    MSG_CONFIRM('Code oublié ?',
+        'Il n\'existe aucun moyen de récupérer votre code. La seule solution est d\'effacer toutes les données de TRIGONE Mise en route sur cet appareil (demande en cours, panier, bibliothèque, réglages). Cette action est irréversible.',
+        'Oui, tout effacer et recommencer', function() {
+            try { localStorage.clear(); } catch (e) {}
+            location.reload();
+        }, '⚠️', 'mascotte-code.webp', true);
+}
+
+// ===================== PAGE DE PRÉSENTATION (première ouverture) =====================
+var STORAGE_POURQUOI = 'mer_presentation_vue';
+var POURQUOI_APRES = null;
+function AFFICHER_POURQUOI(apres) {
+    POURQUOI_APRES = apres || null;
+    var o = document.getElementById('POURQUOI-OVERLAY'), mot = document.getElementById('POURQUOI-WORDMARK');
+    mot.innerHTML = '';
+    'TRIGONE'.split('').forEach(function(ch, i) {
+        var sp = document.createElement('span');
+        sp.textContent = ch; sp.style.animationDelay = (0.35 + i * 0.055) + 's';
+        mot.appendChild(sp);
+    });
+    o.classList.remove('jouer'); o.classList.remove('HIDDEN');
+    void o.offsetWidth;
+    o.classList.add('jouer');
+}
+function FERMER_POURQUOI() {
+    var o = document.getElementById('POURQUOI-OVERLAY');
+    try { localStorage.setItem(STORAGE_POURQUOI, '1'); } catch (e) {}
+    o.style.transition = 'opacity 0.35s ease'; o.style.opacity = '0';
+    setTimeout(function() {
+        o.classList.add('HIDDEN'); o.style.opacity = ''; o.style.transition = '';
+        if (POURQUOI_APRES) { var f = POURQUOI_APRES; POURQUOI_APRES = null; f(); }
+    }, 350);
+}
+
+// ===================== NOTICE =====================
+var MER_NOTICE_CLE = null;
+var MER_NOTICES = {
+    DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · panier · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
+        etapes: ['<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
+            '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
+            '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), ville (code postal automatique) ou pays étranger, dates et heures. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
+            '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité.',
+            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. « Envoyer » télécharge le PDF et le .json et ouvre le mail pour le 1er valideur.',
+            'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu (« Importer une demande refusée »), corrigez et renvoyez.'] },
+    VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
+        etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e).',
+            'Importez le ou les fichiers .json reçus par mail, puis « Voir le PDF » pour consulter chaque demande.',
+            '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
+            '<b>Transmettre</b> : le 1er valideur envoie le .json au 2e valideur ; le 2e valideur envoie le PDF signé à l\'assistant Chorus DT ; un refus repart vers le demandeur.'] },
+    CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier les signatures d\'un PDF', icone: MER_ICONES_NOTICE_CHECK(),
+        etapes: ['Ouvrez <b>Vérifier une mise en route</b> depuis l\'accueil.',
+            'Choisissez le PDF reçu : TRIGONE contrôle les signatures électroniques enregistrées dans le fichier.',
+            '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande modifiée).'] }
+};
+function MER_ICONES_NOTICE_PERSO() { return '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'; }
+function MER_ICONES_NOTICE_CADENAS() { return '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'; }
+function MER_ICONES_NOTICE_CHECK() { return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>'; }
+function OUVRIR_NOTICE(cle) { MER_NOTICE_CLE = cle || null; SHOW_PAGE('NOTICE'); }
+function TPL_NOTICE() {
+    var n = MER_NOTICE_CLE && MER_NOTICES[MER_NOTICE_CLE];
+    if (n) {
+        return '<div class="CARD"><h2>' + n.titre + '</h2><p class="MER-HINT" style="margin:4px 0 16px;">' + n.sous + '</p>' +
+            '<ol class="notice-steps">' + n.etapes.map(function(e) { return '<li>' + e + '</li>'; }).join('') + '</ol>' +
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_NOTICE()">← Notice</button></div>';
+    }
+    return '<div class="CARD"><h2>Notice</h2><p class="MER-HINT" style="margin:4px 0 16px;">Choisissez le guide selon votre rôle.</p>' +
+        Object.keys(MER_NOTICES).map(function(k) {
+            var c = MER_NOTICES[k];
+            return '<button type="button" class="NOTICE-CARD" onclick="OUVRIR_NOTICE(\'' + k + '\')"><span class="NOTICE-CARD-ICON">' + c.icone + '</span>' +
+                '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">' + c.titre + '</span><span class="NOTICE-CARD-SUB">' + c.sous + '</span></span>' +
+                '<span class="NOTICE-CARD-CHEV">›</span></button>';
+        }).join('') +
+        '<details class="notice-fold"><summary>🔒 Code d\'accès de l\'appli (4 chiffres)</summary><ul>' +
+            '<li>Dans <b>Mon espace</b>, activez un code à 4 chiffres demandé à <b>chaque ouverture</b> de TRIGONE Mise en route.</li>' +
+            '<li>Le code ne quitte jamais votre appareil.</li>' +
+            '<li><b>Code oublié</b> : le lien « Code oublié ? » efface toutes les données de l\'appli sur cet appareil. Il n\'existe aucun autre moyen.</li></ul></details>' +
+        '<details class="notice-fold"><summary>🔄 Mises à jour</summary><ul>' +
+            '<li>L\'appli se met à jour toute seule dès qu\'il y a du réseau ; un message « Mise à jour » s\'affiche quand une nouvelle version est prête.</li>' +
+            '<li>Votre saisie en cours, votre panier et votre bibliothèque sont conservés.</li></ul></details>' +
+        '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="AFFICHER_POURQUOI()">Revoir la présentation</button>' +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 
 // ===================== MESSAGE CENTRÉ (comme TRIGONE compte-rendu) =====================
@@ -1656,5 +1856,9 @@ window.addEventListener('DOMContentLoaded', function() {
     window.addEventListener('hashchange', function() { if (location.hash === '#admin') OUVRIR_ADMIN(); });
     if (location.hash === '#admin') OUVRIR_ADMIN();
     else SHOW_PAGE(D.personnes[0].nom || D.objet ? 'FORMULAIRE' : 'ACCUEIL');
+    var vue = false;
+    try { vue = localStorage.getItem(STORAGE_POURQUOI) === '1'; } catch (e) {}
+    if (!vue) AFFICHER_POURQUOI();
+    else if (PIN_EST_DEFINI()) OUVRIR_ECRAN_PIN('verif');
     REGISTER_SERVICE_WORKER();
 });

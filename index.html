@@ -185,6 +185,74 @@ body.dark-mode .msg-titre { color: #f5f5f5; }
 body.dark-mode .msg-texte { color: #a3a3a3; }
 body.dark-mode .BTN-MSG-ANNULER { border-color: #4a4a4a; color: #d4d4d4; }
 
+/* Code d'accès à 4 chiffres (écran de verrouillage), repris de TRIGONE compte-rendu */
+.PIN-OVERLAY { position: fixed; inset: 0; z-index: 99997; background: var(--sm2-surface); display: flex; align-items: center; justify-content: center; padding: 24px; }
+.PIN-OVERLAY.HIDDEN { display: none; }
+.PIN-OVERLAY-CLOSE { position: absolute; top: 16px; right: 16px; width: 36px; height: 36px; border-radius: 50%; border: none; background: rgba(0,0,0,0.06); color: var(--tg-muted); font-size: 1.1em; cursor: pointer; }
+.PIN-OVERLAY-CLOSE.HIDDEN { display: none; }
+.pin-card { max-width: 320px; width: 100%; text-align: center; }
+.pin-lock-icon { font-size: 2.2em; margin-bottom: 10px; }
+.pin-titre { font-family: Georgia, serif; font-weight: 700; font-size: 1.3em; color: var(--tg-ink); margin: 0 0 6px; }
+.pin-sous-titre { font-size: 0.88em; color: var(--tg-muted); margin: 0 0 22px; }
+.pin-dots { display: flex; justify-content: center; gap: 16px; margin-bottom: 14px; }
+.pin-dot { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--tg-accent); background: transparent; transition: background 0.15s; }
+.pin-dot.filled { background: var(--tg-accent); }
+.pin-erreur { color: #dc2626; font-size: 0.82em; font-weight: 600; margin: 0 0 14px; }
+.pin-erreur.HIDDEN { display: none; }
+.pin-keypad { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; max-width: 260px; margin: 0 auto; }
+.pin-keypad button { aspect-ratio: 1; border-radius: 50%; border: 1.5px solid var(--tg-border); background: #fafafa; color: var(--tg-ink); font-family: inherit; font-size: 1.3em; font-weight: 600; cursor: pointer; }
+.pin-keypad button:active { background: var(--tg-accent-light); color: #fff; }
+.pin-key-spacer { visibility: hidden; }
+.pin-oublie-link { display: block; margin: 22px auto 0; background: none; border: none; font-family: inherit; font-size: 0.82em; font-weight: 600; color: #6b7280; text-decoration: underline; cursor: pointer; padding: 6px; }
+body.dark-mode .PIN-OVERLAY { background: #1a1a1a; }
+body.dark-mode .pin-titre { color: #f5f5f5; }
+body.dark-mode .pin-sous-titre, body.dark-mode .pin-oublie-link { color: #a3a3a3; }
+body.dark-mode .pin-keypad button { background: #242424; border-color: #404040; color: #e5e5e5; }
+
+/* Page de présentation (première ouverture), reprise de TRIGONE compte-rendu */
+.pourquoi-page { position: fixed; inset: 0; z-index: 99995; background: var(--sm2-surface); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 32px 28px; text-align: center; overflow: hidden; }
+.pourquoi-page.HIDDEN { display: none; }
+.pourquoi-halo { position: absolute; width: 380px; height: 380px; border-radius: 50%; background: radial-gradient(circle, rgba(90,122,148,0.12) 0%, rgba(90,122,148,0.04) 45%, transparent 70%); animation: pourquoiHaloPulse 4s ease-in-out infinite; }
+@keyframes pourquoiHaloPulse { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.1); opacity: 1; } }
+.pourquoi-content { position: relative; max-width: 380px; }
+.pourquoi-logo { width: 88px; height: auto; opacity: 0; transform: scale(0.75); }
+.pourquoi-page.jouer .pourquoi-logo { animation: pourquoiLogoIn 0.7s cubic-bezier(0.2,0.8,0.2,1) 0.1s forwards; }
+@keyframes pourquoiLogoIn { to { opacity: 1; transform: scale(1); } }
+.pourquoi-wordmark { margin-top: 16px; display: flex; justify-content: center; font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 1.7em; letter-spacing: 0.08em; color: var(--tg-ink); }
+.pourquoi-wordmark span { display: inline-block; opacity: 0; transform: translateY(12px); }
+.pourquoi-page.jouer .pourquoi-wordmark span { animation: pourquoiLetterIn 0.5s cubic-bezier(0.2,0.8,0.2,1) forwards; }
+@keyframes pourquoiLetterIn { to { opacity: 1; transform: translateY(0); } }
+.pourquoi-sous { margin-top: 6px; font-size: 0.72em; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: var(--tg-accent); opacity: 0; }
+.pourquoi-page.jouer .pourquoi-sous { animation: pourquoiFadeUp 0.6s ease 0.85s forwards; }
+.pourquoi-titre { margin: 26px 0 0; font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 1.55em; line-height: 1.35; color: var(--tg-ink); opacity: 0; }
+.pourquoi-page.jouer .pourquoi-titre { animation: pourquoiFadeUp 0.7s ease 1.05s forwards; }
+.pourquoi-texte { margin: 16px 0 0; font-size: 0.95em; line-height: 1.55; color: #64748b; opacity: 0; }
+.pourquoi-page.jouer .pourquoi-texte { animation: pourquoiFadeUp 0.7s ease 1.35s forwards; }
+@keyframes pourquoiFadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+.pourquoi-cta { position: relative; margin-top: 34px; padding: 15px 38px; border: none; border-radius: 999px; background: var(--tg-ink); color: #fff; font-family: inherit; font-weight: 700; font-size: 0.95em; letter-spacing: 0.02em; cursor: pointer; opacity: 0; }
+.pourquoi-page.jouer .pourquoi-cta { animation: pourquoiFadeUp 0.7s ease 1.65s forwards; }
+@media (prefers-reduced-motion: reduce) { .pourquoi-page.jouer * { animation-duration: 0.01s !important; animation-delay: 0s !important; } }
+body.dark-mode .pourquoi-page { background: #141414; }
+body.dark-mode .pourquoi-wordmark, body.dark-mode .pourquoi-titre { color: #f5f5f5; }
+body.dark-mode .pourquoi-texte { color: #a3a3a3; }
+body.dark-mode .pourquoi-cta { background: #f5f5f5; color: #141414; }
+
+/* Notice */
+.NOTICE-CARD { display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px; margin-bottom: 10px; border: 1.5px solid var(--tg-border); border-radius: var(--sm2-radius-sm); background: linear-gradient(165deg, #F8FBFD 0%, #fff 100%); cursor: pointer; text-align: left; font-family: inherit; color: var(--tg-ink); box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+.NOTICE-CARD:active { transform: scale(0.98); border-color: var(--tg-accent-light); }
+.NOTICE-CARD-ICON { flex-shrink: 0; width: 44px; height: 44px; border-radius: 12px; background: rgba(90,122,148,0.1); border: 1px solid rgba(90,122,148,0.15); display: flex; align-items: center; justify-content: center; }
+.NOTICE-CARD-ICON svg { width: 22px; height: 22px; stroke: var(--tg-accent); fill: none; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
+.NOTICE-CARD-BODY { flex: 1; min-width: 0; }
+.NOTICE-CARD-TITLE { display: block; font-size: 0.82em; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; }
+.NOTICE-CARD-SUB { display: block; margin-top: 3px; font-size: 0.76em; font-weight: 600; color: var(--tg-muted); line-height: 1.35; }
+.NOTICE-CARD-CHEV { flex-shrink: 0; font-size: 1.1em; font-weight: 700; color: var(--tg-muted); opacity: 0.55; }
+.notice-steps { margin: 0 0 16px; padding-left: 22px; font-size: 0.86em; line-height: 1.6; color: var(--sm2-text); }
+.notice-steps li { margin-bottom: 8px; }
+.notice-fold { border: 1.5px solid var(--tg-border); border-radius: 12px; margin-bottom: 10px; background: var(--sm2-surface); }
+.notice-fold summary { cursor: pointer; padding: 12px 14px; font-size: 0.82em; font-weight: 800; }
+.notice-fold ul { margin: 0; padding: 0 16px 12px 32px; font-size: 0.82em; line-height: 1.55; color: var(--tg-muted); }
+body.dark-mode .NOTICE-CARD, body.dark-mode .notice-fold { background: #242424; border-color: #404040; color: #e5e5e5; }
+
 .THEME-TOGGLE {
   position: fixed; top: calc(14px + var(--safe-top)); right: calc(14px + var(--safe-right)); z-index: 500;
   width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--sm2-border); background: #fff;
@@ -256,7 +324,8 @@ body.dark-mode .MER-TOGGLE-BTN { background: #262626; border-color: #404040; }
 .MER-ACCUEIL-SEP::before, .MER-ACCUEIL-SEP::after { content: ''; flex: 1; height: 1px; background: var(--sm2-border); }
 .MER-EMPTY { text-align: center; padding: 30px 10px; color: var(--sm2-muted); font-size: 0.86em; }
 
-.MER-BOTTOM-BAR { position: sticky; bottom: 0; margin: 24px -20px -24px; padding: 8px 16px calc(8px + var(--safe-bottom)); background: var(--sm2-surface); border-top: 1px solid var(--sm2-border); box-shadow: 0 -6px 14px rgba(0,0,0,0.04); display: flex; align-items: center; gap: 10px; z-index: 5; }
+/* En fin de formulaire (et non plus flottante) : elle ne recouvre jamais le dernier champ. */
+.MER-BOTTOM-BAR { margin: 28px -20px -24px; padding: 14px 16px calc(14px + var(--safe-bottom)); background: var(--sm2-surface); border-top: 1px solid var(--sm2-border); display: flex; align-items: center; gap: 10px; }
 .MER-BOTTOM-BAR .BTN { padding: 11px 14px; font-size: 0.72em; }
 .MER-FD-CARTE { border: 1.5px solid rgba(21,128,61,0.35); background: rgba(21,128,61,0.05); border-radius: 12px; padding: 12px 14px; margin: -4px 0 16px; }
 .MER-FD-TITRE { font-weight: 800; font-size: 0.8em; color: #15803d; margin-bottom: 8px; line-height: 1.35; }
@@ -291,6 +360,13 @@ body.dark-mode .MER-TAB { background: linear-gradient(165deg, #242424 0%, #1a1a1
 .MER-TAB.verrou .MER-TAB-NUM { font-size: 0.7em; }
 body.dark-mode .MER-TAB.active { background: #f1f5f9; border-color: #f1f5f9; color: #1a1a1a; }
 body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color: #e5e5e5; }
+@media (max-width: 440px) {
+  .MER-TABS { gap: 4px; }
+  /* chaque onglet prend la largeur de son libellé : « Aller » cède de la place à « Imputation » */
+  .MER-TAB { flex: 1 1 auto; font-size: 0.56rem; letter-spacing: -0.01em; padding: 8px 3px; }
+  .P0-DOCK-INNER { gap: 5px; }
+  .P0-TAB { flex: 1 1 auto; font-size: 0.52rem; letter-spacing: 0.02em; padding: 10px 4px; }
+}
 .MER-ERREUR { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.12) !important; }
 .MER-CHECKBOX-ROW { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; padding: 12px 14px; background: rgba(90,122,148,0.06); border-radius: 10px; cursor: pointer; }
 .MER-CHECKBOX-ROW input { width: 18px; height: 18px; flex-shrink: 0; }
@@ -300,6 +376,36 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
 <body>
 <button type="button" class="THEME-TOGGLE" id="THEME-TOGGLE-BTN" onclick="TOGGLE_THEME()" aria-label="Mode sombre">🌙</button>
 <div class="PAGE-STAGE" id="PAGE-STAGE"></div>
+<div id="POURQUOI-OVERLAY" class="pourquoi-page HIDDEN">
+  <div class="pourquoi-halo"></div>
+  <div class="pourquoi-content">
+    <img src="phoenix-icon.png" alt="TRIGONE" class="pourquoi-logo">
+    <div class="pourquoi-wordmark" id="POURQUOI-WORDMARK"></div>
+    <div class="pourquoi-sous">Mise en route</div>
+    <h1 class="pourquoi-titre">Vous partez en mission.<br>TRIGONE prépare la mise en route.</h1>
+    <p class="pourquoi-texte">Demande saisie, PDF prêt, validations signées — à vous de compléter, TRIGONE fait le reste.</p>
+  </div>
+  <button type="button" class="pourquoi-cta" onclick="FERMER_POURQUOI()">Continuer →</button>
+</div>
+
+<div id="PIN-OVERLAY" class="PIN-OVERLAY HIDDEN">
+  <button type="button" id="PIN-OVERLAY-CLOSE" class="PIN-OVERLAY-CLOSE" onclick="FERMER_ECRAN_PIN()" aria-label="Annuler">✕</button>
+  <div class="pin-card">
+    <div class="pin-lock-icon">🔒</div>
+    <h2 id="PIN-OVERLAY-TITRE" class="pin-titre">Code d'accès</h2>
+    <p id="PIN-OVERLAY-SOUS-TITRE" class="pin-sous-titre">Entrez votre code à 4 chiffres.</p>
+    <div class="pin-dots"><span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span><span class="pin-dot"></span></div>
+    <p id="PIN-OVERLAY-ERREUR" class="pin-erreur HIDDEN"></p>
+    <div class="pin-keypad">
+      <button type="button" onclick="PIN_TOUCHE(1)">1</button><button type="button" onclick="PIN_TOUCHE(2)">2</button><button type="button" onclick="PIN_TOUCHE(3)">3</button>
+      <button type="button" onclick="PIN_TOUCHE(4)">4</button><button type="button" onclick="PIN_TOUCHE(5)">5</button><button type="button" onclick="PIN_TOUCHE(6)">6</button>
+      <button type="button" onclick="PIN_TOUCHE(7)">7</button><button type="button" onclick="PIN_TOUCHE(8)">8</button><button type="button" onclick="PIN_TOUCHE(9)">9</button>
+      <button type="button" class="pin-key-spacer" tabindex="-1" aria-hidden="true"></button><button type="button" onclick="PIN_TOUCHE(0)">0</button><button type="button" onclick="PIN_EFFACER()" aria-label="Effacer">⌫</button>
+    </div>
+    <button type="button" id="PIN-OUBLIE" class="pin-oublie-link" onclick="PIN_CODE_OUBLIE()">Code oublié ?</button>
+  </div>
+</div>
+
 <div id="MSG-OVERLAY" class="MSG-OVERLAY HIDDEN" role="dialog" aria-modal="true" aria-labelledby="MSG-TITRE">
   <div class="msg-wrap">
     <img id="MSG-MASCOTTE" class="msg-mascotte HIDDEN" src="mascotte.webp" alt="" aria-hidden="true">
