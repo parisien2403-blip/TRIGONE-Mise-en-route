@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 23,
-  "appCodeMessage": "La page « Administration des valideurs » a été retirée : les codes d'accès ne sont plus visibles nulle part dans l'application.",
+  "appCodeVersion": 24,
+  "appCodeMessage": "Nouveaux objets de mail : « GRADE NOM - objet » vers le 1er valideur, « Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet » vers le 2e, « Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM » vers l'assistant Chorus DT.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
