@@ -802,8 +802,8 @@ function EMPREINTE_COURTE(sig) { return (sig || '').replace(/[^A-Za-z0-9]/g, '')
 var ALGO_CLE = { name: 'ECDSA', namedCurve: 'P-256' };
 var ALGO_SIG = { name: 'ECDSA', hash: 'SHA-256' };
 
-function CLE_DU_PIN(pin, sel) {
-    return crypto.subtle.importKey('raw', OCTETS(pin), 'PBKDF2', false, ['deriveKey']).then(function(base) {
+function CLE_DU_CODE(code, sel) {
+    return crypto.subtle.importKey('raw', OCTETS(code), 'PBKDF2', false, ['deriveKey']).then(function(base) {
         return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: sel, iterations: 250000, hash: 'SHA-256' },
             base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
     });
@@ -869,7 +869,7 @@ function CREER_ACCES(role) {
     var code = GENERER_CODE_ACCES();
     var sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
     return crypto.subtle.generateKey(ALGO_CLE, true, ['sign', 'verify']).then(function(p) {
-        return Promise.all([crypto.subtle.exportKey('spki', p.publicKey), crypto.subtle.exportKey('pkcs8', p.privateKey), CLE_DU_PIN(code, sel)]);
+        return Promise.all([crypto.subtle.exportKey('spki', p.publicKey), crypto.subtle.exportKey('pkcs8', p.privateKey), CLE_DU_CODE(code, sel)]);
     }).then(function(r) {
         return crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv }, r[2], r[1]).then(function(chiffre) {
             return { code: code, acces: { role: role, cle: B64(r[0]), sel: B64(sel), iv: B64(iv), prive: B64(chiffre), creeLe: new Date().toISOString() } };
@@ -881,7 +881,7 @@ function DEVERROUILLER_ACCES(code) {
     var acces = ((MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || []).filter(function(a) { return a.prive && !a.retire; });
     return acces.reduce(function(prec, a) {
         return prec.catch(function() {
-            return CLE_DU_PIN(code, new Uint8Array(DEB64(a.sel))).then(function(k) {
+            return CLE_DU_CODE(code, new Uint8Array(DEB64(a.sel))).then(function(k) {
                 return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(DEB64(a.iv)) }, k, DEB64(a.prive));
             }).then(function(pkcs8) {
                 return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
@@ -905,8 +905,8 @@ function LIRE_DONNEES_PDF(texte) {
 }
 
 // ===================== VALIDATION (1er et 2e valideur) =====================
-// Accès en trois temps : activation sur l'appareil (identité + code PIN, création de la clé), habilitation
-// par l'administrateur (ajout de la clé à valideurs.json), puis connexion par PIN à chaque utilisation.
+// Le valideur se connecte avec son identité et le code d'accès de son rôle (1er ou 2e valideur), remis par
+// l'administrateur ; le code déverrouille la clé de signature de ce rôle, publiée chiffrée dans valideurs.json.
 var STORAGE_VALIDEUR = 'mer_valideur';
 var STORAGE_A_VALIDER = 'mer_a_valider';
 var MER_VERIF = {};   // résultat de vérification des validations précédentes, par entrée
