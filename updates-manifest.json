@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 21,
-  "appCodeMessage": "Le 2e valideur n'envoie plus qu'un seul fichier .json à l'assistant Chorus DT. L'assistant l'importe dans « Vérifier une mise en route » : signatures et pièces jointes sont contrôlées, puis il génère le PDF (demande + NDS / DAF) d'un clic.",
+  "appCodeVersion": 22,
+  "appCodeMessage": "Les valideurs n'ont plus à ressaisir leur code d'accès : après la première connexion, l'appareil reste connecté jusqu'à « Déconnexion ». Le code lui-même n'est jamais enregistré.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 21;
+var APP_CODE_VERSION = 22;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -1126,7 +1126,7 @@ var MER_NOTICES = {
             '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis « Envoyer » : un <b>seul fichier .json</b> (pièces jointes comprises) est téléchargé et le mail au 1er valideur s\'ouvre.',
             'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
-        etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e).',
+        etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e). Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
             '<b>Transmettre</b> : le 1er valideur envoie un seul .json au 2e valideur ; le 2e valideur envoie à l\'assistant Chorus DT <b>un seul .json</b> (demandes signées + NDS / DAF) ; un refus repart vers le demandeur.'] },
@@ -1309,8 +1309,12 @@ var MER_PJ_ALTEREES = {};   // pièces du formulaire en cours dont le contenu ne
 var PJ_BASE = null;
 function PJ_DB() {
     if (!PJ_BASE) PJ_BASE = new Promise(function(ok, ko) {
-        var r = indexedDB.open('trigone-mise-en-route', 1);
-        r.onupgradeneeded = function() { r.result.createObjectStore('pieces'); };
+        var r = indexedDB.open('trigone-mise-en-route', 2);
+        r.onupgradeneeded = function() {
+            var noms = r.result.objectStoreNames;
+            if (!noms.contains('pieces')) r.result.createObjectStore('pieces');
+            if (!noms.contains('acces')) r.result.createObjectStore('acces');
+        };
         r.onsuccess = function() { ok(r.result); };
         r.onerror = function() { ko(r.error); };
     });
@@ -1326,6 +1330,15 @@ function PJ_LIRE(id) {
     return PJ_DB().then(function(db) { return new Promise(function(ok, ko) {
         var r = db.transaction('pieces').objectStore('pieces').get(id);
         r.onsuccess = function() { ok(r.result || null); }; r.onerror = function() { ko(r.error); };
+    }); });
+}
+// Accès valideur mémorisé sur l'appareil : la clé de signature déverrouillée est conservée NON EXPORTABLE
+// (le navigateur peut s'en servir pour signer mais jamais la révéler) ; le code d'accès, lui, n'est jamais stocké.
+function ACCES_MEMO(action, valeur) {
+    return PJ_DB().then(function(db) { return new Promise(function(ok, ko) {
+        var tx = db.transaction('acces', action === 'lire' ? 'readonly' : 'readwrite'), st = tx.objectStore('acces');
+        var r = action === 'lire' ? st.get('valideur') : action === 'effacer' ? st.delete('valideur') : st.put(valeur, 'valideur');
+        tx.oncomplete = function() { ok(action === 'lire' ? (r.result || null) : null); }; tx.onerror = function() { ko(tx.error); };
     }); });
 }
 function SHA256_HEX(buf) {
@@ -1475,7 +1488,7 @@ function TELECHARGER_OCTETS(nom, octets, type) {
 // signature, est détectée par le 2e valideur, par l'assistant Chorus DT et par la page de vérification.
 var MER_DEPOT_GITHUB = 'https://github.com/parisien2403-blip/TRIGONE-Mise-en-route';
 var STORAGE_LISTE_VALIDEURS = 'mer_liste_valideurs';
-var MER_CLE_SESSION = null;          // clé privée déverrouillée par le code d'accès, gardée en mémoire seulement
+var MER_CLE_SESSION = null;          // clé privée déverrouillée par le code d'accès (non exportable, mémorisée sur l'appareil)
 var MER_ACCES_SESSION = null;        // entrée de valideurs.json correspondant au code saisi
 var MER_LISTE_VALIDEURS = null;      // contenu de valideurs.json
 
@@ -1600,9 +1613,23 @@ function DEVERROUILLER_ACCES(code) {
                 return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(DEB64(a.iv)) }, k, DEB64(a.prive));
             }).then(function(pkcs8) {
                 return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
-            }).then(function(k) { MER_CLE_SESSION = k; MER_ACCES_SESSION = a; });
+            }).then(function(k) {
+                MER_CLE_SESSION = k; MER_ACCES_SESSION = a;
+                return ACCES_MEMO('ecrire', { cle: k, pub: a.cle }).catch(function() {});
+            });
         });
     }, Promise.reject(new Error('code')));
+}
+// Reconnexion automatique : reprend la clé mémorisée tant que son accès figure toujours, actif, dans valideurs.json
+// (un code remplacé ou retiré par l'administrateur déconnecte l'appareil).
+function RESTAURER_ACCES() {
+    if (MER_CLE_SESSION) return Promise.resolve();
+    return ACCES_MEMO('lire').then(function(m) {
+        if (!m || !m.cle) return;
+        var a = ((MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || []).filter(function(x) { return x.cle === m.pub && !x.retire; })[0];
+        if (a) { MER_CLE_SESSION = m.cle; MER_ACCES_SESSION = a; }
+        else if (MER_LISTE_VALIDEURS && (MER_LISTE_VALIDEURS.valideurs || []).length) return ACCES_MEMO('effacer');
+    }).catch(function() {});
 }
 function SIGNER_VALIDATION(d, h) {
     var niveau = (d.validations || []).length + 1;
@@ -1649,7 +1676,7 @@ function OUVRIR_VALIDATION() {
     var zone = document.getElementById('PAGE-STAGE');
     zone.classList.add('avec-marge');
     zone.innerHTML = '<div class="CARD"><div class="MER-EMPTY">Chargement…</div></div>';
-    CHARGER_LISTE_VALIDEURS().then(RENDER_VALIDATION_INPLACE);
+    CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(RENDER_VALIDATION_INPLACE);
 }
 function RENDER_VALIDATION_INPLACE() {
     var liste = GET_A_VALIDER();
@@ -1669,7 +1696,7 @@ function TPL_CONNEXION(v) {
         return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" value="' + ESC(v[k] || '') + '" placeholder="' + ph + '"></div>';
     }
     return '<p class="MER-HINT" style="margin:0 0 14px;">Réservé aux valideurs. Votre identité apparaîtra dans la case de validation du PDF ; ' +
-        'le code d\'accès vous est remis par l\'administrateur de TRIGONE.</p>' +
+        'le code d\'accès vous est remis par l\'administrateur de TRIGONE. Il n\'est demandé qu\'une fois : l\'appareil reste connecté jusqu\'à « Déconnexion ».</p>' +
         '<div class="MER-ROW2">' + champ('grade', 'Grade', 'EX : CAPITAINE') + champ('fonction', 'Fonction', 'EX : CHEF DE SERVICE') + '</div>' +
         '<div class="MER-ROW2">' + champ('nom', 'Nom', 'EX : DUPONT') + champ('prenom', 'Prénom', 'EX : Jean') + '</div>' +
         '<div class="MER-FIELD"><label>Code d\'accès valideur</label><input type="password" id="MER-CODE-ACCES" autocomplete="current-password" ' +
@@ -1693,7 +1720,12 @@ function SE_CONNECTER(btn) {
         if (bouton) { bouton.disabled = false; bouton.textContent = 'Se connecter'; }
     });
 }
-function SE_DECONNECTER() { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; RENDER_VALIDATION_INPLACE(); }
+function SE_DECONNECTER() {
+    MSG_CONFIRM('Se déconnecter ?', 'Votre code d\'accès valideur vous sera redemandé à la prochaine connexion sur cet appareil.', 'Se déconnecter', function() {
+        MER_CLE_SESSION = null; MER_ACCES_SESSION = null;
+        ACCES_MEMO('effacer').catch(function() {}).then(RENDER_VALIDATION_INPLACE);
+    });
+}
 function COPIER_TEXTE(t, btn) {
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function() {
         if (btn) { btn.textContent = '✔ Copié'; }
