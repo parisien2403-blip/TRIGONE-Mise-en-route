@@ -471,7 +471,7 @@ function AFFICHER_MODALE(titre, html, boutons) {
     carte.className = 'CARD';
     carte.style.cssText = 'margin:0; max-height:85vh; overflow-y:auto; width:100%;';
     carte.innerHTML = '<h2 style="margin-bottom:12px;">' + titre + '</h2>' + html +
-        '<div style="display:flex; gap:10px; margin-top:18px;">' + boutons + '</div>';
+        '<div class="MER-ACTIONS" style="margin-top:18px;">' + boutons + '</div>';
     fond.appendChild(carte);
     document.body.appendChild(fond);
 }
