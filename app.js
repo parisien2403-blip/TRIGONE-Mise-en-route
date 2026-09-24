@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 30;
+var APP_CODE_VERSION = 31;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -1408,7 +1408,7 @@ function ENVOYER_PANIER() {
     MER_PANIER_ENREGISTRE = false;
     setTimeout(function() {
         SHOW_PAGE('ACCUEIL');
-        MSG_INFO('Mail préparé', 'Joignez le fichier .json enregistré, puis envoyez le mail. La demande est rangée dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
+        MSG_INFO('Demande envoyée', 'Votre demande a été transmise au 1er valideur. Vous la retrouvez dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
     }, 300);
 }
 
