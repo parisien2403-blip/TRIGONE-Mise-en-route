@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 31;
+var APP_CODE_VERSION = 32;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -2072,7 +2072,8 @@ function AFFICHER_TRANSMISSION() {
     var tousFaits = MER_ENVOIS.every(function(env) { return env.fait; });
     AFFICHER_MODALE('Transmettre',
         '<p style="font-size:0.86em; line-height:1.5;">Pour chaque envoi : <b>1. Enregistrer</b> le fichier .json, puis <b>2. Envoyer</b> ouvre le mail : joignez-y le fichier enregistré.</p>' + lignes,
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button>' +
+        // « Plus tard » ferme sans rien perdre tant qu'un envoi reste à faire ; tout envoyé, seul « Terminé » reste.
+        (tousFaits ? '' : '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button>') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (tousFaits ? '' : ' disabled') + ' onclick="TERMINER_TRANSMISSION()">Terminé</button>'
     );
 }
