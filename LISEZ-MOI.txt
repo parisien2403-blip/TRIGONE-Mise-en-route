@@ -59,13 +59,16 @@ CIRCUIT DE VALIDATION SÉCURISÉ
   (un code pour le 1er valideur, un code pour le 2e, remis par l'administrateur). Le code
   déverrouille la clé de signature de son rôle, publiée chiffrée dans valideurs.json : le code
   lui-même n'est écrit nulle part.
+- Le code n'est demandé qu'une fois par appareil : la clé déverrouillée est conservée sur le
+  téléphone ou le PC sous forme non exportable (utilisable pour signer, jamais lisible), jusqu'à
+  « Déconnexion ». Si l'administrateur remplace le code, l'appareil est déconnecté.
 - L'administrateur (page « Administration des valideurs », depuis Mon espace, ou adresse #admin)
   peut créer un nouveau code pour un rôle (l'ancien cesse de fonctionner, les validations déjà
   faites restent valables) puis publier la liste dans valideurs.json sur GitHub. Seul un compte
   autorisé sur le dépôt peut la modifier.
 - Une fois connecté, le valideur importe les .json, valide (signature électronique du
   contenu exact de la demande) ou refuse avec un motif, une par une ou en lot.
-  1er valideur -> .json au 2e valideur ; 2e valideur -> PDF signé à l'assistant Chorus DT ;
+  1er valideur -> .json au 2e valideur ; 2e valideur -> .json à l'assistant Chorus DT ;
   refus -> .json au demandeur, qui l'importe, corrige et renvoie.
 - Toute validation faite par un valideur non habilité, ou toute demande modifiée après
   validation, est signalée en rouge (au 2e valideur et sur « Vérifier une mise en route »).
