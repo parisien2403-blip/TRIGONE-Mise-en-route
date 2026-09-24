@@ -652,7 +652,7 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
     y = PDF_SECTION(doc, 'PERSONNEL CONCERNÉ', X, y, P);
     y = PDF_TABLEAU(doc, y, M, L, P, {
         head: [['Unité / entité', 'CIE', 'Grade', 'Nom', 'Prénom', 'Matricule']],
-        body: d.personnes.map(function(p) { return [p.unite, p.cie, p.grade, (p.nom || '').toUpperCase(), p.prenom, p.matricule]; })
+        body: d.personnes.map(function(p) { return [p.unite, p.cie, p.grade, (p.nom || '').toUpperCase(), p.prenom, FORMAT_MATRICULE(p.matricule)]; })
     });
 
     y = PDF_SECTION(doc, 'MISSION', X, y, P);
@@ -744,7 +744,7 @@ function PDF_CASES_VALIDATION(doc, d, M, L) {
         doc.text('Le ' + le.toLocaleDateString('fr-FR') + ' à ' + le.toLocaleTimeString('fr-FR'), x + 3, y + 26.5);
         if (s.sig) {
             doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(120, 120, 120);
-            doc.text('Signature électronique ' + EMPREINTE_COURTE(s.sig), x + larg - 3, y + 26.5, { align: 'right' });
+            doc.text('Signé électroniquement', x + larg - 3, y + 26.5, { align: 'right' });
         }
         doc.setTextColor.apply(doc, PDF_TEXTE);
     });
