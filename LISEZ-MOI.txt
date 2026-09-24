@@ -22,6 +22,19 @@ CE QUI EST FAIT DANS CETTE VERSION
   sur l'appareil.
 - Même identité visuelle que TRIGONE (couleurs, police, boutons, mode sombre).
 
+SAISIE D'UNE DEMANDE
+- Villes françaises : suggestions pendant la saisie et code postal rempli automatiquement (même
+  service que TRIGONE compte-rendu : api-adresse.data.gouv.fr). Pays étranger au choix pour
+  chaque lieu (liste des pays de TRIGONE compte-rendu).
+- Matricule mis en forme automatiquement : 3 + 2 + 2 + 3 chiffres (ex : 067 50 10 191).
+- Trajet retour pré-rempli avec l'aller inversé ; il suffit de le modifier si besoin.
+- Code FD@LIGNE : le code engagement, le centre financier, le centre de coût, le code activité et
+  le libellé s'affichent d'après codier.json (extrait du codier FD du 22/07/2026) et figurent
+  dans le PDF. Un code clôturé est signalé avec son code de remplacement.
+  Mettre à jour le codier : remplacer codier.json (colonnes CODE ENGAGEMENT, CENTRE FINANCIER,
+  CENTRE DE COÛT, CODE ACTIVITE, LIBELLE ENGAGEMENT, FIN DE VALIDITE, CODE ENGAGEMENT DE
+  DEVERSEMENT).
+
 ACCUEIL
 - Bouton principal « Nouvelle demande », liens « Importer une demande refusée », « Espace valideur »
   et « Vérifier une mise en route », et en bas les onglets Bibliothèque (demandes envoyées),
