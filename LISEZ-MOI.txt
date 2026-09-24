@@ -22,15 +22,20 @@ CE QUI EST FAIT DANS CETTE VERSION
   sur l'appareil.
 - Même identité visuelle que TRIGONE (couleurs, police, boutons, mode sombre).
 
-CE QUI RESTE À FAIRE (la suite du circuit)
-- L'écran du 1er signataire (chef de service) : importer le .json reçu, consulter
-  la ou les demandes, signer, puis renvoyer vers le CDC.
-- L'écran du 2e signataire (secrétariat du chef de corps) : même principe, et
-  génération du PDF final avec les deux signatures une fois validé.
-- Le circuit de refus (renvoi au demandeur avec motif) que vous avez demandé — pas
-  encore construit, à prévoir avec les écrans de signature.
-- Un vrai manifeste d'icônes pour l'installation sur l'écran d'accueil du téléphone
-  (celui-ci est minimal pour l'instant).
+CIRCUIT DE VALIDATION
+- Page d'accueil : deux accès, « Nouvelle demande / Mon panier » pour le demandeur et
+  « Valider des mises en route » pour les valideurs.
+- Le demandeur envoie le PDF et le .json au 1er valideur (il indique aussi son propre mail,
+  pour un éventuel refus).
+- Le valideur renseigne une seule fois son grade, nom, prénom et fonction, importe le ou les
+  .json reçus, consulte le PDF de chaque demande, puis valide ou refuse (motif obligatoire),
+  une par une ou en lot.
+- 1er valideur : les demandes validées partent en .json au 2e valideur.
+  2e valideur : les demandes validées partent en PDF signé à l'assistant Chorus DT.
+  Refus : un .json part au demandeur, qui l'importe (« Importer une demande refusée »),
+  corrige sa demande et la renvoie.
+- Le PDF porte en bas deux cases (1er valideur à gauche, 2e à droite) : « Validé par »,
+  grade, nom, prénom, fonction, date et heure de validation.
 
 INSTALLATION
 Comme TRIGONE : déposez tous les fichiers (index.html, app.js, manifest.json, le

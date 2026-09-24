@@ -6,6 +6,11 @@ var STORAGE_REGLAGES = 'mer_reglages';
 
 var MOYENS = { SERVICE: 'Véhicule de service', FERREE: 'Voie ferrée', AERIENNE: 'Voie aérienne', MARITIME: 'Voie maritime' };
 
+// Échappe le texte inséré dans le HTML (les demandes importées viennent d'autres personnes).
+function ESC(v) {
+    return (v == null ? '' : v + '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+}
+
 function VIDE_TRAJET() { return { moyen: '', lieuDep: '', cpDep: '', dateDep: '', lieuArr: '', cpArr: '', dateArr: '' }; }
 function VIDE_PERSONNE() { return { unite: '', cie: '', grade: '', nom: '', prenom: '', matricule: '' }; }
 function VIDE_DEMANDE() {
@@ -81,12 +86,14 @@ function SHOW_PAGE(page) {
     if (page === 'ACCUEIL') zone.innerHTML = TPL_ACCUEIL();
     else if (page === 'FORMULAIRE') zone.innerHTML = TPL_FORMULAIRE();
     else if (page === 'PANIER') zone.innerHTML = TPL_PANIER();
+    else if (page === 'VALIDATION') zone.innerHTML = TPL_VALIDATION();
     window.scrollTo(0, 0);
 }
 
 function TPL_ACCUEIL() {
     var panier = GET_PANIER();
     var n = panier.length;
+    var nAValider = GET_A_VALIDER().filter(function(e) { return !e.decision; }).length;
     return '' +
     '<div id="MER-P0">' +
       '<div class="MER-P0-SHELL">' +
@@ -97,6 +104,11 @@ function TPL_ACCUEIL() {
           '<button type="button" class="BTN BTN-PRIMARY" onclick="NOUVELLE_DEMANDE()">+ Nouvelle demande</button>' +
           (n ? '<button type="button" class="BTN BTN-ACCENT" onclick="SHOW_PAGE(\'PANIER\')">📋 Mon panier <span class="MER-BADGE" style="background:rgba(255,255,255,0.25); color:#fff;">' + n + '</span></button>'
              : '<button type="button" class="BTN BTN-SECONDARY" disabled>Panier vide</button>') +
+          '<label class="BTN BTN-SECONDARY" style="padding:4px 20px;">📥 Importer une demande refusée' +
+            '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
+          '<div class="MER-ACCUEIL-SEP">Valideurs</div>' +
+          '<button type="button" class="BTN BTN-GHOST" onclick="SHOW_PAGE(\'VALIDATION\')">✅ Valider des mises en route' +
+            (nAValider ? ' <span class="MER-BADGE">' + nAValider + '</span>' : '') + '</button>' +
           '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + MER_VERSION + '</span></p>' +
         '</div>' +
       '</div>' +
@@ -145,7 +157,7 @@ function CHAMP_TXT(label, path, placeholder, type) {
     type = type || 'text';
     var v = (GET_CHAMP(path) || '');
     return '<div class="MER-FIELD"><label>' + label + '</label>' +
-        '<input type="' + type + '" value="' + (v + '').replace(/"/g, '&quot;') + '" placeholder="' + (placeholder || '') + '" ' +
+        '<input type="' + type + '" value="' + ESC(v) + '" placeholder="' + (placeholder || '') + '" ' +
         'oninput="ON_CHAMP_INPUT(\'' + path + '\', this.value)"></div>';
 }
 
@@ -280,6 +292,8 @@ function TPL_FORMULAIRE() {
     '<div class="CARD">' +
       '<h2>Nouvelle demande</h2>' +
       '<p class="MER-HINT" style="margin:4px 0 16px;">Demande et Ordre de Mise en Route (DOMR)</p>' +
+      (D.refus ? '<p class="MER-HINT" style="color:#b91c1c; font-weight:800; margin:-6px 0 16px;">✖ Refusée par ' +
+          ESC(D.refus.grade + ' ' + D.refus.nom) + ' : ' + ESC(D.refus.motif) + '</p>' : '') +
       TPL_TABS_BAR() +
       contenu +
       '<div class="MER-BOTTOM-BAR">' +
@@ -299,6 +313,8 @@ function AJOUTER_AU_PANIER() {
     var reg = GET_REGLAGES();
     reg.derniereUnite = p0.unite; reg.derniereCie = p0.cie;
     SAVE_REGLAGES(reg);
+    delete D.refus;
+    D.validations = [];
     var panier = GET_PANIER();
     panier.push(D);
     SAVE_PANIER(panier);
@@ -336,10 +352,14 @@ function TPL_PANIER() {
     }
     var items = panier.map(function(d) {
         var r = RESUME_DEMANDE(d);
+        var refus = d.refus ? '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée par ' +
+            ESC(d.refus.grade + ' ' + d.refus.nom) + ' : ' + ESC(d.refus.motif) + '<br>Modifiez-la puis renvoyez-la.</div>' : '';
         return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
-            '<div class="MER-PANIER-ITEM-TITRE">' + r.noms + '</div>' +
-            '<div class="MER-PANIER-ITEM-SUB">' + r.sous + '</div>' +
-            '</div><button type="button" class="BTN-DANGER-TEXT" onclick="RETIRER_DU_PANIER(\'' + d.id + '\')">Retirer</button></div>';
+            '<div class="MER-PANIER-ITEM-TITRE">' + ESC(r.noms) + '</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' + refus +
+            '</div><div class="MER-VAL-ACTIONS" style="flex-direction:column; margin:0;">' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MODIFIER_DEMANDE(\'' + d.id + '\')">Modifier</button>' +
+            '<button type="button" class="BTN-DANGER-TEXT" onclick="RETIRER_DU_PANIER(\'' + d.id + '\')">Retirer</button></div></div>';
     }).join('');
     return '<div class="CARD">' +
         '<h2>Mon panier</h2>' +
@@ -348,8 +368,12 @@ function TPL_PANIER() {
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:18px;" onclick="NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
         '<div class="MER-SECTION-TITLE">Envoi</div>' +
         '<div class="MER-FIELD"><label>Mail du 1er signataire (chef de service)</label>' +
-        '<input type="email" id="MER-MAIL-DEST" value="' + (reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
+        '<input type="email" id="MER-MAIL-DEST" value="' + ESC(reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
         'oninput="var r=GET_REGLAGES(); r.mailSignataire=this.value; SAVE_REGLAGES(r);"></div>' +
+        '<div class="MER-FIELD"><label>Votre mail</label>' +
+        '<input type="email" id="MER-MAIL-DEMANDEUR" value="' + ESC(reg.mailDemandeur || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
+        'oninput="var r=GET_REGLAGES(); r.mailDemandeur=this.value; SAVE_REGLAGES(r);">' +
+        '<p class="MER-HINT">Pour vous renvoyer la demande si un valideur la refuse.</p></div>' +
         '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📧 Envoyer le panier (' + panier.length + ')</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
     '</div>';
@@ -476,6 +500,38 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
     return y;
 }
 
+// Deux cases en bas de page : 1er valideur à gauche, 2e à droite, remplies à chaque validation.
+var PDF_Y_VALIDATIONS = 255;
+function PDF_CASES_VALIDATION(doc, d, M, L) {
+    var x0 = M + 4, larg = (L - 8 - 6) / 2, h = 30, y = PDF_Y_VALIDATIONS;
+    [0, 1].forEach(function(i) {
+        var x = x0 + i * (larg + 6), s = (d.validations || [])[i];
+        doc.setDrawColor(210, 216, 225); doc.setLineWidth(0.3);
+        doc.rect(x, y, larg, h);
+        doc.setFillColor.apply(doc, PDF_ACCENT); doc.rect(x, y, larg, 6.5, 'F');
+        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+        doc.text(i === 0 ? '1er VALIDEUR' : '2e VALIDEUR', x + 3, y + 4.4);
+        doc.setTextColor.apply(doc, PDF_TEXTE);
+        if (!s) {
+            doc.setFont('helvetica', 'italic'); doc.setFontSize(8); doc.setTextColor(150, 150, 150);
+            doc.text('En attente de validation', x + larg / 2, y + 19, { align: 'center' });
+            doc.setTextColor.apply(doc, PDF_TEXTE);
+            return;
+        }
+        var le = new Date(s.le);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+        doc.text('Validé par :', x + 3, y + 11.5);
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(9);
+        doc.text(doc.splitTextToSize((s.grade + ' ' + s.nom + ' ' + s.prenom).trim(), larg - 6)[0], x + 3, y + 16);
+        doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
+        doc.text(doc.splitTextToSize(s.fonction || '', larg - 6)[0], x + 3, y + 20.5);
+        doc.setTextColor.apply(doc, PDF_ACCENT); doc.setFont('helvetica', 'bold');
+        doc.text('Le ' + le.toLocaleDateString('fr-FR') + ' à ' + le.toLocaleTimeString('fr-FR'), x + 3, y + 26.5);
+        doc.setTextColor.apply(doc, PDF_TEXTE);
+    });
+    doc.setDrawColor(0);
+}
+
 // Réglages du plus aéré au plus resserré : chaque demande doit tenir sur une seule page.
 var PDF_NIVEAUX = [
     { fTable: 8.5, pad: 2.2, ecart: 5,   hSection: 7,   fSection: 11 },
@@ -486,7 +542,7 @@ var PDF_NIVEAUX = [
     { fTable: 6.5, pad: 0.8, ecart: 2,   hSection: 6,   fSection: 9.5 },
     { fTable: 6,   pad: 0.6, ecart: 1.5, hSection: 5.5, fSection: 9 }
 ];
-var PDF_BAS = 285;
+var PDF_BAS = PDF_Y_VALIDATIONS - 3;
 
 function GENERER_PDF(panier) {
     var jsPDFCtor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : window.jsPDF;
@@ -506,6 +562,8 @@ function GENERER_PDF(panier) {
             if (tient || n === PDF_NIVEAUX.length - 1) break;
             while (doc.getNumberOfPages() >= page) doc.deletePage(doc.getNumberOfPages());
         }
+        doc.setPage(page);
+        PDF_CASES_VALIDATION(doc, d, M, L);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(7); doc.setTextColor(140, 140, 140);
         doc.text('TRIGONE — Mise en route — demande ' + (idx + 1) + ' / ' + panier.length, 105, 292, { align: 'center' });
         doc.setTextColor.apply(doc, PDF_TEXTE);
@@ -531,10 +589,11 @@ function AFFICHER_MODALE(titre, html, boutons) {
 function FERMER_MODALE() { var f = document.getElementById('MER-MODALE-FOND'); if (f) f.remove(); }
 
 // ===================== ENVOI =====================
-function GENERER_JSON_PANIER(panier) {
+// etape : DEMANDE_INITIALE (vers le 1er valideur), VALIDATION_1 (vers le 2e), REFUS (retour au demandeur)
+function GENERER_JSON(demandes, etape) {
     return JSON.stringify({
-        app: 'TRIGONE-MISE-EN-ROUTE', version: MER_VERSION, etape: 'DEMANDE_INITIALE',
-        creeLe: new Date().toISOString(), demandes: panier
+        app: 'TRIGONE-MISE-EN-ROUTE', version: MER_VERSION, etape: etape,
+        creeLe: new Date().toISOString(), demandes: demandes
     }, null, 2);
 }
 function NOM_FICHIER_BASE(panier) {
@@ -578,15 +637,16 @@ function PREPARER_ENVOI() {
 }
 
 function FINALISER_ENVOI() {
+    var reg = GET_REGLAGES();
     var panier = GET_PANIER();
+    panier.forEach(function(d) { d.mailDemandeur = (reg.mailDemandeur || '').trim(); d.validations = []; delete d.refus; });
     var base = NOM_FICHIER_BASE(panier);
     try {
         var doc = GENERER_PDF(panier);
         doc.save(base + '.pdf');
     } catch (e) { alert('Erreur lors de la génération du PDF : ' + e.message); return; }
-    TELECHARGER_TEXTE(base + '.json', GENERER_JSON_PANIER(panier), 'application/json');
+    TELECHARGER_TEXTE(base + '.json', GENERER_JSON(panier, 'DEMANDE_INITIALE'), 'application/json');
 
-    var reg = GET_REGLAGES();
     var sujet = 'TRIGONE Mise en route — ' + panier.length + ' demande(s) — ' + (panier[0].personnes[0].nom || '');
     var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) et ordre(s) de mise en route, ainsi que le fichier de suivi (.json).\n\nCordialement.';
     FERMER_MODALE();
@@ -594,6 +654,326 @@ function FINALISER_ENVOI() {
 
     SAVE_PANIER([]);
     setTimeout(function() { SHOW_PAGE('ACCUEIL'); }, 300);
+}
+
+// ===================== VALIDATION (1er et 2e valideur) =====================
+// Le valideur importe le ou les .json reçus, consulte chaque demande, la valide ou la refuse (une par une
+// ou en lot), puis transmet : .json au 2e valideur, PDF signé à l'assistant Chorus DT, refus au demandeur.
+var STORAGE_VALIDEUR = 'mer_valideur';
+var STORAGE_A_VALIDER = 'mer_a_valider';
+
+function GET_VALIDEUR() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_VALIDEUR) || '{}'); } catch (e) { return {}; }
+}
+function SAVE_VALIDEUR(v) { try { localStorage.setItem(STORAGE_VALIDEUR, JSON.stringify(v)); } catch (e) {} }
+function GET_A_VALIDER() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_A_VALIDER) || '[]'); } catch (e) { return []; }
+}
+function SAVE_A_VALIDER(liste) { try { localStorage.setItem(STORAGE_A_VALIDER, JSON.stringify(liste)); } catch (e) {} }
+function PROFIL_COMPLET(v) { return !!(v.grade && v.nom && v.prenom && v.fonction); }
+function NIVEAU_VALIDATION(d) { return (d.validations || []).length + 1; }
+function SIGNATAIRE(v) { return { grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction, le: new Date().toISOString() }; }
+function RENDER_VALIDATION_INPLACE() {
+    var scroll = window.scrollY;
+    document.getElementById('PAGE-STAGE').innerHTML = TPL_VALIDATION();
+    window.scrollTo(0, scroll);
+}
+
+function ENREGISTRER_PROFIL_VALIDEUR() {
+    var v = GET_VALIDEUR();
+    ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) {
+        v[k] = (document.getElementById('MER-VAL-' + k).value || '').trim();
+    });
+    if (!PROFIL_COMPLET(v)) { alert('Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
+    v.nom = v.nom.toUpperCase();
+    v.edition = false;
+    SAVE_VALIDEUR(v);
+    RENDER_VALIDATION_INPLACE();
+}
+function MODIFIER_PROFIL_VALIDEUR() { var v = GET_VALIDEUR(); v.edition = true; SAVE_VALIDEUR(v); RENDER_VALIDATION_INPLACE(); }
+function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
+
+function TPL_PROFIL_VALIDEUR(v) {
+    if (PROFIL_COMPLET(v) && !v.edition) {
+        return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
+            '<div class="MER-PANIER-ITEM-TITRE">' + ESC(v.grade + ' ' + v.nom + ' ' + v.prenom) + '</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(v.fonction) + '</div>' +
+            '</div><button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="MODIFIER_PROFIL_VALIDEUR()">Modifier</button></div>';
+    }
+    function champ(k, label, ph) {
+        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" value="' + ESC(v[k] || '') + '" placeholder="' + ph + '"></div>';
+    }
+    return '<p class="MER-HINT" style="margin:0 0 12px;">À renseigner une seule fois : ces informations apparaîtront dans la case de validation du PDF.</p>' +
+        '<div class="MER-ROW2">' + champ('grade', 'Grade', 'EX : CAPITAINE') + champ('fonction', 'Fonction', 'EX : CHEF DE SERVICE') + '</div>' +
+        '<div class="MER-ROW2">' + champ('nom', 'Nom', 'EX : DUPONT') + champ('prenom', 'Prénom', 'EX : Jean') + '</div>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="ENREGISTRER_PROFIL_VALIDEUR()">Enregistrer</button>';
+}
+
+function TPL_ENTREE_VALIDATION(e) {
+    var d = e.d, r = RESUME_DEMANDE(d), niveau = NIVEAU_VALIDATION(d);
+    var badge = niveau > 2 ? 'Déjà validée'
+        : (niveau === 1 ? '1re validation' : '2e validation — 1re par ' + ESC(d.validations[0].grade + ' ' + d.validations[0].nom));
+    var etat, actions;
+    if (e.decision === 'VALIDEE') {
+        etat = '<div class="MER-HINT" style="color:#15803d; font-weight:800;">✔ Validée le ' + ESC(new Date(e.signature.le).toLocaleString('fr-FR')) + '</div>';
+        actions = '<button type="button" class="BTN-DANGER-TEXT" onclick="ANNULER_DECISION(\'' + e.id + '\')">Annuler</button>';
+    } else if (e.decision === 'REFUSEE') {
+        etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée : ' + ESC(e.signature.motif) + '</div>';
+        actions = '<button type="button" class="BTN-DANGER-TEXT" onclick="ANNULER_DECISION(\'' + e.id + '\')">Annuler</button>';
+    } else {
+        etat = '';
+        actions = niveau > 2 ? '' :
+            '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_DEMANDES([\'' + e.id + '\'])">Valider</button>' +
+            '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">Refuser</button>';
+    }
+    var coche = !e.decision && niveau <= 2
+        ? '<input type="checkbox" class="MER-VAL-SEL" value="' + e.id + '" style="width:18px; height:18px; flex-shrink:0;">' : '';
+    return '<div class="MER-PANIER-ITEM" style="align-items:flex-start;">' + coche +
+        '<div class="MER-PANIER-ITEM-TXT">' +
+            '<span class="MER-BADGE">' + badge + '</span>' +
+            '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(r.noms) + '</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' + etat +
+            '<div class="MER-VAL-ACTIONS">' +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_PDF_VALIDATION(\'' + e.id + '\')">Voir le PDF</button>' + actions +
+            '</div>' +
+        '</div></div>';
+}
+
+function TPL_VALIDATION() {
+    var v = GET_VALIDEUR();
+    var liste = GET_A_VALIDER();
+    var html = '<div class="CARD">' +
+        '<h2>Validations</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Validation des demandes et ordres de mise en route reçus (.json)</p>' +
+        '<div class="MER-SECTION-TITLE">Mon identité de valideur</div>' + TPL_PROFIL_VALIDEUR(v);
+    if (!PROFIL_COMPLET(v) || v.edition) return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+
+    html += '<div class="MER-SECTION-TITLE">Demandes reçues</div>' +
+        '<label class="BTN BTN-GHOST" style="margin-bottom:14px;">📥 Importer un ou plusieurs fichiers .json' +
+        '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>';
+    if (!liste.length) {
+        html += '<div class="MER-EMPTY">Aucune demande à valider.<br>Importez le fichier .json reçu par mail.</div>';
+    } else {
+        var enAttente = liste.filter(function(e) { return !e.decision && NIVEAU_VALIDATION(e.d) <= 2; }).length;
+        var decidees = liste.filter(function(e) { return e.decision; }).length;
+        html += liste.map(TPL_ENTREE_VALIDATION).join('');
+        if (enAttente) {
+            html += '<div class="MER-ACTIONS" style="margin:4px 0 8px;">' +
+                '<button type="button" class="BTN BTN-SECONDARY BTN-SMALL" onclick="COCHER_TOUT_VALIDATION()">Tout cocher</button>' +
+                '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_SELECTION()">✔ Valider la sélection</button>' +
+                '</div>';
+        }
+        html += '<div class="MER-SECTION-TITLE">Transmission</div>' +
+            '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)">' +
+            '<p class="MER-HINT">Utilisé quand vous êtes 1er valideur.</p></div>' +
+            '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
+            '<p class="MER-HINT">Utilisé quand vous êtes 2e valideur : il reçoit le PDF signé.</p></div>' +
+            '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
+    }
+    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+
+function LIRE_FICHIERS_JSON(input, traiter) {
+    var fichiers = Array.prototype.slice.call(input.files || []);
+    input.value = '';
+    var restants = fichiers.length, contenus = [];
+    fichiers.forEach(function(f) {
+        var lecteur = new FileReader();
+        lecteur.onload = function() {
+            try {
+                var data = JSON.parse(lecteur.result);
+                if (data.app !== 'TRIGONE-MISE-EN-ROUTE' || !Array.isArray(data.demandes)) throw new Error('format');
+                contenus.push(data);
+            } catch (e) { alert('Le fichier « ' + f.name + ' » n\'est pas un fichier TRIGONE Mise en route valide.'); }
+            if (--restants === 0) traiter(contenus);
+        };
+        lecteur.readAsText(f);
+    });
+}
+
+function IMPORTER_A_VALIDER(input) {
+    LIRE_FICHIERS_JSON(input, function(contenus) {
+        var liste = GET_A_VALIDER(), ajoutees = 0, refus = 0;
+        contenus.forEach(function(data) {
+            data.demandes.forEach(function(d) {
+                if (d.refus) { refus++; return; }
+                d.validations = d.validations || [];
+                var cle = d.id + '#' + d.validations.length;
+                if (liste.some(function(e) { return e.id === cle; })) return;
+                liste.push({ id: cle, d: d, decision: null, signature: null });
+                ajoutees++;
+            });
+        });
+        SAVE_A_VALIDER(liste);
+        RENDER_VALIDATION_INPLACE();
+        if (refus) alert(refus + ' demande(s) refusée(s) ignorée(s) : un refus s\'importe côté « Mes demandes », par le demandeur.');
+        else if (!ajoutees && contenus.length) alert('Ces demandes sont déjà dans votre liste.');
+    });
+}
+
+function MAJ_ENTREES(ids, maj) {
+    var liste = GET_A_VALIDER();
+    liste.forEach(function(e) { if (ids.indexOf(e.id) !== -1) maj(e); });
+    SAVE_A_VALIDER(liste);
+    RENDER_VALIDATION_INPLACE();
+}
+function VALIDER_DEMANDES(ids) {
+    var v = GET_VALIDEUR();
+    MAJ_ENTREES(ids, function(e) {
+        if (e.decision || NIVEAU_VALIDATION(e.d) > 2) return;
+        e.decision = 'VALIDEE';
+        e.signature = SIGNATAIRE(v);
+    });
+}
+function COCHER_TOUT_VALIDATION() {
+    var cases = document.querySelectorAll('.MER-VAL-SEL');
+    var toutes = Array.prototype.every.call(cases, function(c) { return c.checked; });
+    Array.prototype.forEach.call(cases, function(c) { c.checked = !toutes; });
+}
+function VALIDER_SELECTION() {
+    var ids = Array.prototype.filter.call(document.querySelectorAll('.MER-VAL-SEL'), function(c) { return c.checked; })
+        .map(function(c) { return c.value; });
+    if (!ids.length) { alert('Cochez au moins une demande.'); return; }
+    VALIDER_DEMANDES(ids);
+}
+function ANNULER_DECISION(id) { MAJ_ENTREES([id], function(e) { e.decision = null; e.signature = null; }); }
+
+function DEMANDER_REFUS(id) {
+    AFFICHER_MODALE('Refuser la demande',
+        '<div class="MER-FIELD"><label>Motif du refus</label><textarea id="MER-MOTIF-REFUS" rows="4" placeholder="EX : merci de joindre la DAF"></textarea>' +
+        '<p class="MER-HINT">Le demandeur recevra ce motif et pourra corriger puis renvoyer sa demande.</p></div>',
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Annuler</button>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="CONFIRMER_REFUS(\'' + id + '\')">Refuser</button>'
+    );
+    setTimeout(function() { var t = document.getElementById('MER-MOTIF-REFUS'); if (t) t.focus(); }, 50);
+}
+function CONFIRMER_REFUS(id) {
+    var motif = (document.getElementById('MER-MOTIF-REFUS').value || '').trim();
+    if (!motif) { alert('Merci d\'indiquer le motif du refus.'); return; }
+    var v = GET_VALIDEUR();
+    FERMER_MODALE();
+    MAJ_ENTREES([id], function(e) {
+        e.decision = 'REFUSEE';
+        e.signature = SIGNATAIRE(v);
+        e.signature.motif = motif;
+    });
+}
+
+// Demande telle qu'elle sera transmise : la validation en cours est ajoutée aux précédentes.
+function DEMANDE_AVEC_DECISION(e) {
+    var d = JSON.parse(JSON.stringify(e.d));
+    if (e.decision === 'VALIDEE') d.validations.push(e.signature);
+    if (e.decision === 'REFUSEE') { d.refus = e.signature; d.refus.niveau = NIVEAU_VALIDATION(e.d); }
+    return d;
+}
+function VOIR_PDF_VALIDATION(id) {
+    var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0];
+    if (!e) return;
+    try { window.open(GENERER_PDF([DEMANDE_AVEC_DECISION(e)]).output('bloburl'), '_blank'); }
+    catch (err) { alert('Erreur lors de la génération du PDF : ' + err.message); }
+}
+
+var MER_ENVOIS = [];
+function PREPARER_TRANSMISSION() {
+    var v = GET_VALIDEUR();
+    var decidees = GET_A_VALIDER().filter(function(e) { return e.decision; });
+    var vers2 = [], versChorus = [], refusParMail = {};
+    decidees.forEach(function(e) {
+        var d = DEMANDE_AVEC_DECISION(e);
+        if (e.decision === 'REFUSEE') {
+            var m = d.mailDemandeur || '';
+            (refusParMail[m] = refusParMail[m] || []).push(d);
+        } else if (d.validations.length === 1) vers2.push(d);
+        else versChorus.push(d);
+    });
+    if (vers2.length && !/@/.test(v.mailValideur2 || '')) { alert('Merci de renseigner le mail du 2e valideur.'); return; }
+    if (versChorus.length && !/@/.test(v.mailChorus || '')) { alert('Merci de renseigner le mail de l\'assistant Chorus DT.'); return; }
+
+    MER_ENVOIS = [];
+    if (vers2.length) MER_ENVOIS.push({ type: 'VALIDATION_1', demandes: vers2, mail: v.mailValideur2,
+        titre: 'Au 2e valideur', pj: NOM_FICHIER_BASE(vers2) + '_VALIDATION-1.json' });
+    if (versChorus.length) MER_ENVOIS.push({ type: 'CHORUS', demandes: versChorus, mail: v.mailChorus,
+        titre: 'À l\'assistant Chorus DT', pj: NOM_FICHIER_BASE(versChorus) + '_VALIDEE.pdf' });
+    Object.keys(refusParMail).forEach(function(m) {
+        var ds = refusParMail[m];
+        MER_ENVOIS.push({ type: 'REFUS', demandes: ds, mail: m,
+            titre: 'Refus au demandeur' + (m ? '' : ' (adresse inconnue : à saisir dans le mail)'), pj: NOM_FICHIER_BASE(ds) + '_REFUS.json' });
+    });
+    AFFICHER_TRANSMISSION();
+}
+function AFFICHER_TRANSMISSION() {
+    FERMER_MODALE();
+    var lignes = MER_ENVOIS.map(function(env, i) {
+        return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
+            '<div class="MER-PANIER-ITEM-TITRE">' + ESC(env.titre) + ' — ' + env.demandes.length + ' demande(s)</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(env.mail || '') + '<br>📎 ' + ESC(env.pj) + '</div></div>' +
+            (env.fait ? '<span class="MER-BADGE">✔ Préparé</span>'
+                : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:auto;" onclick="EXECUTER_ENVOI(' + i + ')">Préparer</button>') +
+            '</div>';
+    }).join('');
+    var tousFaits = MER_ENVOIS.every(function(env) { return env.fait; });
+    AFFICHER_MODALE('Transmettre',
+        '<p style="font-size:0.86em; line-height:1.5;">Pour chaque envoi, « Préparer » télécharge la pièce jointe et ouvre le mail : joignez-y le fichier téléchargé avant d\'envoyer.</p>' + lignes,
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button>' +
+        '<button type="button" class="BTN BTN-PRIMARY"' + (tousFaits ? '' : ' disabled') + ' onclick="TERMINER_TRANSMISSION()">Terminé</button>'
+    );
+}
+function EXECUTER_ENVOI(i) {
+    var env = MER_ENVOIS[i], n = env.demandes.length, nom = env.demandes[0].personnes[0].nom || '';
+    var sujet, corps;
+    if (env.type === 'CHORUS') {
+        try { GENERER_PDF(env.demandes).save(env.pj); }
+        catch (e) { alert('Erreur lors de la génération du PDF : ' + e.message); return; }
+        sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) validée(s) — ' + nom;
+        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement.\n\nCordialement.';
+    } else if (env.type === 'VALIDATION_1') {
+        TELECHARGER_TEXTE(env.pj, GENERER_JSON(env.demandes, 'VALIDATION_1'), 'application/json');
+        sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) à valider — ' + nom;
+        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation.\n' +
+            'Ouvrez TRIGONE Mise en route > Valider des mises en route, puis importez le fichier .json joint.\n\nCordialement.';
+    } else {
+        TELECHARGER_TEXTE(env.pj, GENERER_JSON(env.demandes, 'REFUS'), 'application/json');
+        sujet = 'TRIGONE Mise en route — demande(s) refusée(s) — ' + nom;
+        corps = 'Bonjour,\n\n' + env.demandes.map(function(d) {
+            return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
+        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Importer une demande refusée, puis importez le fichier .json joint.\n\nCordialement.';
+    }
+    env.fait = true;
+    window.location.href = 'mailto:' + encodeURIComponent(env.mail || '') + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
+    AFFICHER_TRANSMISSION();
+}
+function TERMINER_TRANSMISSION() {
+    FERMER_MODALE();
+    SAVE_A_VALIDER(GET_A_VALIDER().filter(function(e) { return !e.decision; }));
+    MER_ENVOIS = [];
+    RENDER_VALIDATION_INPLACE();
+}
+
+// ===================== RETOUR D'UN REFUS (côté demandeur) =====================
+function IMPORTER_REFUS(input) {
+    LIRE_FICHIERS_JSON(input, function(contenus) {
+        var panier = GET_PANIER(), n = 0;
+        contenus.forEach(function(data) {
+            data.demandes.forEach(function(d) {
+                if (!d.refus) return;
+                panier = panier.filter(function(x) { return x.id !== d.id; });
+                panier.push(d);
+                n++;
+            });
+        });
+        if (!n) { alert('Aucune demande refusée dans ce fichier.'); return; }
+        SAVE_PANIER(panier);
+        SHOW_PAGE('PANIER');
+    });
+}
+function MODIFIER_DEMANDE(id) {
+    var d = GET_PANIER().filter(function(x) { return x.id === id; })[0];
+    if (!d) return;
+    SAVE_PANIER(GET_PANIER().filter(function(x) { return x.id !== id; }));
+    D = d;
+    MER_ACTIVE_TAB = 'IDENTITE';
+    SAVE_BROUILLON();
+    SHOW_PAGE('FORMULAIRE');
 }
 
 // ===================== DÉMARRAGE =====================
