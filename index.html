@@ -256,6 +256,39 @@ body.dark-mode .pourquoi-cta { background: #f5f5f5; color: #141414; }
 .notice-fold ul { margin: 0; padding: 0 16px 12px 32px; font-size: 0.82em; line-height: 1.55; color: var(--tg-muted); }
 body.dark-mode .NOTICE-CARD, body.dark-mode .notice-fold { background: #242424; border-color: #404040; color: #e5e5e5; }
 
+/* Écran d'ouverture animé, repris de TRIGONE compte-rendu */
+#INTRO-SPLASH { position: fixed; inset: 0; z-index: 99999; background: #0a0a0a; display: flex; flex-direction: column; align-items: center; justify-content: center; transition: opacity 0.5s ease, visibility 0.5s ease; }
+#INTRO-SPLASH.intro-out { opacity: 0; visibility: hidden; pointer-events: none; }
+.intro-halo { position: absolute; width: 300px; height: 300px; border-radius: 50%; background: radial-gradient(circle, rgba(122,157,181,0.18) 0%, rgba(122,157,181,0.06) 45%, transparent 70%); animation: introHaloPulse 3.2s ease-in-out infinite; }
+@keyframes introHaloPulse { 0%, 100% { transform: scale(1); opacity: 0.7; } 50% { transform: scale(1.08); opacity: 1; } }
+.intro-emblem { position: relative; width: 140px; height: 140px; display: flex; align-items: center; justify-content: center; margin-bottom: 6px; }
+.intro-ring { position: absolute; border-radius: 50%; border: 1px solid rgba(255,255,255,0.12); }
+.intro-ring.r1 { inset: -16px; }
+.intro-ring.r2 { inset: -34px; border-color: rgba(255,255,255,0.06); }
+.intro-ring-arc { position: absolute; inset: -16px; border-radius: 50%; border: 1.5px solid transparent; border-top-color: var(--tg-accent-light); border-right-color: rgba(122,157,181,0.5); animation: introSpin 2.6s cubic-bezier(0.65,0,0.35,1) infinite; }
+@keyframes introSpin { to { transform: rotate(360deg); } }
+.intro-logo { width: 98px; height: auto; filter: brightness(0) invert(1); animation: introLogoTurn 3.6s ease-in-out infinite, introLogoIn 0.9s cubic-bezier(0.2,0.8,0.2,1) both; transform-style: preserve-3d; }
+@keyframes introLogoTurn { 0%, 100% { transform: perspective(700px) rotateY(0deg); } 50% { transform: perspective(700px) rotateY(360deg); } }
+@keyframes introLogoIn { from { opacity: 0; transform: scale(0.7) translateY(10px); } to { opacity: 1; transform: scale(1) translateY(0); } }
+.intro-wordmark { margin-top: 22px; display: flex; font-family: Georgia, 'Times New Roman', serif; font-weight: 700; font-size: 2.2em; letter-spacing: 0.06em; color: #fff; }
+.intro-wordmark span { display: inline-block; opacity: 0; transform: translateY(14px); animation: introLetterIn 0.55s cubic-bezier(0.2,0.8,0.2,1) forwards; }
+@keyframes introLetterIn { to { opacity: 1; transform: translateY(0); } }
+.intro-tagline { margin-top: 8px; font-size: 0.8em; letter-spacing: 0.16em; text-transform: uppercase; color: rgba(255,255,255,0.55); opacity: 0; animation: introFadeUp 0.7s ease 1.35s forwards; }
+@keyframes introFadeUp { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: translateY(0); } }
+.intro-loader { position: absolute; bottom: 56px; width: 110px; height: 3px; background: rgba(255,255,255,0.15); border-radius: 99px; overflow: hidden; opacity: 0; animation: introFadeUp 0.6s ease 1.6s forwards; }
+.intro-loader-bar { position: absolute; inset: 0; background: linear-gradient(90deg, var(--tg-accent-light), #fff); border-radius: 99px; width: 0%; animation: introLoaderFill 1.2s ease 1.9s forwards; }
+@keyframes introLoaderFill { to { width: 100%; } }
+@media (prefers-reduced-motion: reduce) {
+  .intro-logo { animation: introLogoIn 0.5s ease both; }
+  .intro-ring-arc, .intro-halo { animation: none; }
+}
+/* Petit bouton « Mise à jour » en haut à droite de l'accueil */
+.P0-REF-BTN { position: absolute; top: 10px; right: 10px; z-index: 5; padding: 6px 12px; border-radius: 999px; border: 1.5px solid var(--tg-border); background: rgba(255,255,255,0.9); color: #64748b; font-family: inherit; font-size: 0.68em; font-weight: 700; letter-spacing: 0.04em; text-transform: uppercase; line-height: 1; cursor: pointer; }
+.P0-REF-BTN:active { transform: scale(0.95); }
+/* Sur téléphone, le bouton du mode sombre occupe le coin : on se place juste à sa gauche. */
+@media (max-width: 560px) { .P0-REF-BTN { right: 54px; top: 14px; } }
+body.dark-mode .P0-REF-BTN { background: rgba(36,36,36,0.9); border-color: #404040; color: #94a3b8; }
+
 .THEME-TOGGLE {
   position: fixed; top: calc(14px + var(--safe-top)); right: calc(14px + var(--safe-right)); z-index: 500;
   width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--sm2-border); background: #fff;
@@ -378,6 +411,36 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
 </style>
 </head>
 <body>
+<div id="INTRO-SPLASH">
+  <div class="intro-halo"></div>
+  <div class="intro-emblem">
+    <div class="intro-ring r1"></div>
+    <div class="intro-ring r2"></div>
+    <div class="intro-ring-arc"></div>
+    <img class="intro-logo" src="phoenix-icon.png" alt="TRIGONE">
+  </div>
+  <div class="intro-wordmark" id="INTRO-WORDMARK"></div>
+  <div class="intro-tagline">Mise en route</div>
+  <div class="intro-loader"><div class="intro-loader-bar"></div></div>
+</div>
+<script>
+(function() {
+  var el = document.getElementById('INTRO-WORDMARK');
+  var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  'TRIGONE'.split('').forEach(function(ch, i) {
+    var s = document.createElement('span');
+    s.textContent = ch;
+    s.style.animationDelay = (reduit ? 0 : (0.75 + i * 0.055)) + 's';
+    el.appendChild(s);
+  });
+  setTimeout(function() {
+    var splash = document.getElementById('INTRO-SPLASH');
+    if (!splash) return;
+    splash.classList.add('intro-out');
+    setTimeout(function() { splash.remove(); }, 550);
+  }, reduit ? 900 : 2900);
+})();
+</script>
 <button type="button" class="THEME-TOGGLE" id="THEME-TOGGLE-BTN" onclick="TOGGLE_THEME()" aria-label="Mode sombre">🌙</button>
 <div class="PAGE-STAGE" id="PAGE-STAGE"></div>
 <div id="POURQUOI-OVERLAY" class="pourquoi-page HIDDEN">

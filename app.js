@@ -1,5 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
-var MER_VERSION = 1;
+var MER_VERSION = 1;          // version du format des fichiers .json échangés
+// Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
+var APP_CODE_VERSION = 17;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -114,16 +116,14 @@ function TPL_ACCUEIL() {
     return '' +
     '<div id="MER-P0">' +
       '<div class="MER-P0-SHELL">' +
+        '<button type="button" id="BTN-CHECK-UPDATE" class="P0-REF-BTN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()" title="Vérifier si une mise à jour est disponible">🔄 Mise à jour</button>' +
         '<div class="MER-P0-INNER">' +
           '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG" src="logo_mer.webp" alt="TRIGONE — Mise en route"></div>' +
         '</div>' +
         '<div class="MER-P0-HERO">' +
           '<button type="button" class="BTN-ACCUEIL" onclick="NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
-          '<label class="BTN-ACCUEIL BTN-ACCUEIL-PETIT">Importer une demande refusée' +
-            '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
           '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur</button>' +
-          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VERIFIER\')">Vérifier une mise en route</button>' +
-          '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + MER_VERSION + '</span></p>' +
+          '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_CODE_VERSION + '</span></p>' +
         '</div>' +
         '<nav class="P0-TAB-BAR" aria-label="Navigation accueil"><div class="P0-DOCK-INNER">' +
           TPL_ONGLET_DOCK('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
@@ -663,6 +663,8 @@ function TPL_PANIER() {
             '<h2>Mon panier</h2>' +
             '<div class="MER-EMPTY">Aucune demande en attente.<br>Créez une nouvelle demande pour commencer.</div>' +
             '<button type="button" class="BTN BTN-PRIMARY" onclick="NOUVELLE_DEMANDE()">+ Nouvelle demande</button>' +
+            '<label class="BTN BTN-GHOST BTN-SMALL" style="margin:6px 0 14px;">📥 Importer une demande refusée' +
+            '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
             '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
         '</div>';
     }
@@ -681,7 +683,9 @@ function TPL_PANIER() {
         '<h2>Mon panier</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 18px;">' + panier.length + ' demande(s) prête(s) à être envoyée(s) ensemble, en un seul mail.</p>' +
         items +
-        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:18px;" onclick="NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
+        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:8px;" onclick="NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
+        '<label class="BTN BTN-GHOST BTN-SMALL" style="margin:6px 0 14px;">📥 Importer une demande refusée' +
+            '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
         '<div class="MER-SECTION-TITLE">Envoi</div>' +
         '<div class="MER-FIELD"><label>Mail du 1er signataire (chef de service)</label>' +
         '<input type="email" id="MER-MAIL-DEST" value="' + ESC(reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
@@ -1022,14 +1026,14 @@ var MER_NOTICES = {
             '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), ville (code postal automatique) ou pays étranger, dates et heures. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité.',
             '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. « Envoyer » télécharge le PDF et le .json et ouvre le mail pour le 1er valideur.',
-            'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu (« Importer une demande refusée »), corrigez et renvoyez.'] },
+            'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e).',
             'Importez le ou les fichiers .json reçus par mail, puis « Voir le PDF » pour consulter chaque demande.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
             '<b>Transmettre</b> : le 1er valideur envoie le .json au 2e valideur ; le 2e valideur envoie le PDF signé à l\'assistant Chorus DT ; un refus repart vers le demandeur.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier les signatures d\'un PDF', icone: MER_ICONES_NOTICE_CHECK(),
-        etapes: ['Ouvrez <b>Vérifier une mise en route</b> depuis l\'accueil.',
+        etapes: ['Ouvrez <b>Espace valideur</b> puis <b>Vérifier une mise en route</b> (aucun code n\'est nécessaire).',
             'Choisissez le PDF reçu : TRIGONE contrôle les signatures électroniques enregistrées dans le fichier.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande modifiée).'] }
 };
@@ -1505,6 +1509,8 @@ function TPL_VALIDATION() {
     return '<div class="CARD">' +
         '<h2>Espace valideur</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 16px;">' + sous + '</p>' + corps +
+        '<div class="MER-SECTION-TITLE">Assistant Chorus DT</div>' +
+        '<button type="button" class="BTN BTN-GHOST" onclick="SHOW_PAGE(\'VERIFIER\')">✔ Vérifier une mise en route</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
@@ -1671,7 +1677,7 @@ function EXECUTER_ENVOI(i) {
         catch (e) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + e.message); return; }
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) validée(s) — ' + nom;
         corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement.\n' +
-            'Les validations sont signées électroniquement : TRIGONE Mise en route > Vérifier une mise en route permet de les contrôler.\n\nCordialement.';
+            'Les validations sont signées électroniquement : TRIGONE Mise en route > Espace valideur > Vérifier une mise en route permet de les contrôler.\n\nCordialement.';
     } else if (env.type === 'VALIDATION_1') {
         TELECHARGER_TEXTE(env.pj, GENERER_JSON(env.demandes, 'VALIDATION_1'), 'application/json');
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) à valider — ' + nom;
@@ -1682,7 +1688,7 @@ function EXECUTER_ENVOI(i) {
         sujet = 'TRIGONE Mise en route — demande(s) refusée(s) — ' + nom;
         corps = 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
-        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Importer une demande refusée, puis importez le fichier .json joint.\n\nCordialement.';
+        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Panier > Importer une demande refusée, puis importez le fichier .json joint.\n\nCordialement.';
     }
     env.fait = true;
     window.location.href = 'mailto:' + encodeURIComponent(env.mail || '') + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
@@ -1724,7 +1730,7 @@ function TPL_VERIFIER() {
                 '</div></div>';
             }).join('');
     }
-    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'VALIDATION\')">← Espace valideur</button></div>';
 }
 function VERIFIER_FICHIERS(input) {
     LIRE_FICHIERS(input, function(contenu, f) {
@@ -1832,19 +1838,89 @@ function MODIFIER_DEMANDE(id) {
 }
 
 // ===================== DÉMARRAGE =====================
-// Nouvelle version installée pendant que l'appli est ouverte : message centré « Mise à jour » (mascotte dédiée)
-// et rechargement, pour que tout l'écran passe d'un coup à la nouvelle version.
+// ===================== MISES À JOUR (comme TRIGONE compte-rendu) =====================
+// updates-manifest.json est relu à chaque ouverture, au retour sur l'appli et au retour du réseau.
+// appCodeVersion plus récente que ce code : « Mise à jour obligatoire ». Déjà à jour mais version jamais vue :
+// « Nouveautés ». appMessageVersion : simple information. Bouton « 🔄 Mise à jour » : vérification manuelle.
+var STORAGE_MAJ_VUES = 'mer_maj_vues';
+var MAJ_DERNIERE_VERIF = 0, MAJ_DELAI_MIN_MS = 10 * 60 * 1000, MAJ_EN_ATTENTE = false;
+function GET_MAJ_VUES() { try { return JSON.parse(localStorage.getItem(STORAGE_MAJ_VUES) || '{}'); } catch (e) { return {}; } }
+function SET_MAJ_VUE(cle, v) { var m = GET_MAJ_VUES(); m[cle] = v; try { localStorage.setItem(STORAGE_MAJ_VUES, JSON.stringify(m)); } catch (e) {} }
+function ECRAN_LIBRE() {
+    if (document.getElementById('INTRO-SPLASH')) return false;
+    return ['MSG-OVERLAY', 'PIN-OVERLAY', 'POURQUOI-OVERLAY'].every(function(id) {
+        var el = document.getElementById(id); return !el || el.classList.contains('HIDDEN');
+    });
+}
+function ATTENDRE_ECRAN_LIBRE(fn) {
+    var essais = 0;
+    (function tenter() { if (ECRAN_LIBRE()) fn(); else if (++essais < 600) setTimeout(tenter, 500); })();
+}
+function VERIFIER_MISES_A_JOUR(manuel) {
+    if (!manuel && (MAJ_EN_ATTENTE || Date.now() - MAJ_DERNIERE_VERIF < MAJ_DELAI_MIN_MS)) return;
+    if (!navigator.onLine) {
+        if (manuel) MSG_ERREUR('Pas de connexion', 'Aucune connexion internet : impossible de vérifier les mises à jour pour le moment.');
+        return;
+    }
+    fetch('updates-manifest.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
+        if (!data) throw new Error('manifeste');
+        MAJ_DERNIERE_VERIF = Date.now();
+        var vues = GET_MAJ_VUES(), premiere = !Object.keys(vues).length;
+        var aFaire = [];
+        if (data.appCodeVersion > APP_CODE_VERSION) aFaire.push({ type: 'code', version: data.appCodeVersion, texte: data.appCodeMessage });
+        else if (data.appCodeVersion > 0 && vues.appCode !== data.appCodeVersion) {
+            if (premiere) SET_MAJ_VUE('appCode', data.appCodeVersion);      // première installation : rien à annoncer
+            else aFaire.push({ type: 'nouveautes', version: data.appCodeVersion, texte: data.appCodeMessage });
+        }
+        if (data.appMessageVersion > 0 && vues.appMessage !== data.appMessageVersion) {
+            if (premiere) SET_MAJ_VUE('appMessage', data.appMessageVersion);
+            else aFaire.push({ type: 'info', version: data.appMessageVersion, texte: data.appMessage });
+        }
+        if (!aFaire.length) { if (manuel) AFFICHER_A_JOUR(); return; }
+        MAJ_EN_ATTENTE = true;
+        ATTENDRE_ECRAN_LIBRE(function() { AFFICHER_MAJ(aFaire); });
+    }).catch(function() {
+        if (manuel) MSG_ERREUR('Vérification impossible', 'Impossible de vérifier les mises à jour pour le moment. Réessayez plus tard.');
+    });
+}
+function AFFICHER_A_JOUR() {
+    MSG_INFO('TRIGONE est à jour', 'Aucune mise à jour disponible pour le moment.', '✅', 'mascotte-ok.webp');
+}
+function AFFICHER_MAJ(liste) {
+    var item = liste.shift();
+    if (!item) { MAJ_EN_ATTENTE = false; return; }
+    function suite() { AFFICHER_MAJ(liste); }
+    if (item.type === 'code') {
+        AFFICHER_MSG_CENTRE({ titre: 'Mise à jour obligatoire', icone: '📢', mascotte: 'mascotte-maj.webp',
+            texte: (item.texte || 'Une nouvelle version de TRIGONE Mise en route est disponible.') + ' Vos données (demande en cours, panier, bibliothèque) ne sont pas affectées.',
+            boutons: [{ label: 'Mettre à jour', action: APPLIQUER_MISE_A_JOUR }] });
+        return;
+    }
+    SET_MAJ_VUE(item.type === 'info' ? 'appMessage' : 'appCode', item.version);
+    AFFICHER_MSG_CENTRE({ titre: item.type === 'info' ? 'Information' : 'Nouveautés', icone: item.type === 'info' ? '📢' : '✨', mascotte: 'mascotte-maj.webp',
+        texte: item.texte || 'TRIGONE Mise en route vient d\'être mis à jour.', boutons: [{ label: 'J\'ai compris', action: suite }] });
+}
+// Vide le cache de l'appli et recharge : les données (localStorage) ne sont jamais touchées.
+function APPLIQUER_MISE_A_JOUR() {
+    AFFICHER_MSG_CENTRE({ titre: 'Mise à jour en cours…', texte: 'Merci de patienter quelques instants.', icone: '⏳', mascotte: 'mascotte-maj.webp', boutons: [] });
+    var etapes = [];
+    if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.map(function(c) { return caches.delete(c); })); }));
+    if (navigator.serviceWorker) etapes.push(navigator.serviceWorker.getRegistration().then(function(r) { return r && r.update(); }));
+    Promise.all(etapes).catch(function() {}).then(function() { setTimeout(function() { location.reload(); }, 400); });
+}
+function VERIFIER_MISE_A_JOUR_MANUELLE() {
+    var btn = document.getElementById('BTN-CHECK-UPDATE');
+    if (btn) { btn.textContent = '🔄 Vérification…'; btn.disabled = true; }
+    VERIFIER_MISES_A_JOUR(true);
+    setTimeout(function() { if (btn) { btn.textContent = '🔄 Mise à jour'; btn.disabled = false; } }, 1200);
+}
+function INIT_VERIF_MAJ_AUTO() {
+    VERIFIER_MISES_A_JOUR(false);
+    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') VERIFIER_MISES_A_JOUR(false); });
+    window.addEventListener('online', function() { MAJ_DERNIERE_VERIF = 0; VERIFIER_MISES_A_JOUR(false); });
+}
 function REGISTER_SERVICE_WORKER() {
     if (!('serviceWorker' in navigator)) return;
-    var dejaControle = !!navigator.serviceWorker.controller;
-    navigator.serviceWorker.addEventListener('controllerchange', function() {
-        if (!dejaControle) { dejaControle = true; return; }
-        AFFICHER_MSG_CENTRE({
-            titre: 'Mise à jour', texte: 'Une nouvelle version de TRIGONE Mise en route est disponible. Votre saisie en cours est conservée.',
-            icone: '🔄', mascotte: 'mascotte-maj.webp',
-            boutons: [{ label: 'Mettre à jour', action: function() { location.reload(); } }]
-        });
-    });
     navigator.serviceWorker.register('./sw.js').then(function(reg) {
         document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') reg.update().catch(function() {}); });
     }).catch(function(e) { console.warn('Service Worker:', e); });
@@ -1861,4 +1937,5 @@ window.addEventListener('DOMContentLoaded', function() {
     if (!vue) AFFICHER_POURQUOI();
     else if (PIN_EST_DEFINI()) OUVRIR_ECRAN_PIN('verif');
     REGISTER_SERVICE_WORKER();
+    INIT_VERIF_MAJ_AUTO();
 });
