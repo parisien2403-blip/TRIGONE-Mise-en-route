@@ -97,6 +97,9 @@ body.dark-mode .MER-LOGO-IMG { filter: brightness(0) saturate(100%) invert(48%) 
   box-shadow: 0 6px 20px rgba(0,0,0,0.14); transition: transform 0.15s ease; margin-bottom: 6px;
 }
 .BTN-ACCUEIL:active { transform: scale(0.98); }
+/* Boutons secondaires de l'accueil : même style que « Nouvelle demande », en plus petit */
+.BTN-ACCUEIL-PETIT { display: block; text-align: center; font-size: clamp(0.62rem, 3vw, 0.74rem); padding: 13px 16px; margin-bottom: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
+.MER-P0-HERO { gap: 8px; }
 .P0-LIEN {
   display: block; width: 100%; background: none; color: #1a1a1a; font-family: inherit; font-size: 0.68em;
   padding: 9px 20px; border: none; font-weight: 700; cursor: pointer; text-transform: uppercase;
@@ -108,7 +111,7 @@ body.dark-mode .P0-LIEN { color: #f5f5f5; }
 .P0-TAB-BAR { width: 100%; flex-shrink: 0; margin-top: auto; }
 .P0-DOCK-INNER { display: flex; align-items: stretch; gap: 8px; padding: 10px 0 0; border-top: 1px solid var(--tg-border); }
 .P0-TAB {
-  position: relative; flex: 1 1 0; min-width: 0; min-height: 58px; display: flex; flex-direction: column;
+  position: relative; flex: 1 1 auto; min-width: 0; min-height: 58px; display: flex; flex-direction: column;
   align-items: center; justify-content: center; gap: 6px; padding: 10px 6px;
   border: 1.5px solid var(--tg-border); border-radius: var(--sm2-radius-sm);
   background: linear-gradient(165deg, #F8FBFD 0%, #fff 100%); color: var(--tg-ink); font-family: inherit;
@@ -365,6 +368,7 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
   /* chaque onglet prend la largeur de son libellé : « Aller » cède de la place à « Imputation » */
   .MER-TAB { flex: 1 1 auto; font-size: 0.56rem; letter-spacing: -0.01em; padding: 8px 3px; }
   .P0-DOCK-INNER { gap: 5px; }
+  .BTN-ACCUEIL-PETIT { letter-spacing: 0.05em; padding: 13px 8px; }
   .P0-TAB { flex: 1 1 auto; font-size: 0.52rem; letter-spacing: 0.02em; padding: 10px 4px; }
 }
 .MER-ERREUR { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.12) !important; }
