@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v27';
+const CACHE_NAME = 'trigone-mise-en-route-v28';
 const ASSETS = [
   './',
   './manifest.json',
