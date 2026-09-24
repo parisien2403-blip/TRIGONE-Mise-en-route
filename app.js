@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 26;
+var APP_CODE_VERSION = 27;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -1692,9 +1692,22 @@ function TPL_CONNEXION(v) {
         'le code d\'accès vous est remis par l\'administrateur de TRIGONE. Il n\'est demandé qu\'une fois : l\'appareil reste connecté jusqu\'à « Déconnexion ».</p>' +
         '<div class="MER-ROW2">' + champ('grade', 'Grade', 'EX : CAPITAINE') + champ('fonction', 'Fonction', 'EX : CHEF DE SERVICE') + '</div>' +
         '<div class="MER-ROW2">' + champ('nom', 'Nom', 'EX : DUPONT') + champ('prenom', 'Prénom', 'EX : Jean') + '</div>' +
-        '<div class="MER-FIELD"><label>Code d\'accès valideur</label><input type="password" id="MER-CODE-ACCES" autocomplete="current-password" ' +
-            'autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key===\'Enter\') SE_CONNECTER(this)"></div>' +
+        '<div class="MER-FIELD"><label>Code d\'accès valideur</label><div class="MER-MDP"><input type="password" id="MER-CODE-ACCES" autocomplete="current-password" ' +
+            'autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key===\'Enter\') SE_CONNECTER(this)">' +
+            '<button type="button" class="MER-MDP-OEIL" onclick="BASCULER_CODE_VISIBLE(this)" aria-label="Afficher le code" title="Afficher le code">' + MER_OEIL_SVG(false) + '</button></div></div>' +
         '<button type="button" class="BTN BTN-PRIMARY" onclick="SE_CONNECTER(this)">Se connecter</button>';
+}
+// Œil du champ code : affiche ou masque ce qui est tapé.
+function MER_OEIL_SVG(barre) {
+    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>' +
+        (barre ? '<line x1="3" y1="3" x2="21" y2="21"/>' : '') + '</svg>';
+}
+function BASCULER_CODE_VISIBLE(btn) {
+    var champ = btn.parentNode.querySelector('input'), visible = champ.type === 'password';
+    champ.type = visible ? 'text' : 'password';
+    btn.innerHTML = MER_OEIL_SVG(visible);
+    btn.setAttribute('aria-label', visible ? 'Masquer le code' : 'Afficher le code'); btn.title = btn.getAttribute('aria-label');
+    champ.focus();
 }
 function SE_CONNECTER(btn) {
     var v = GET_VALIDEUR();
