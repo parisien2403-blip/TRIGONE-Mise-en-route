@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 25;
+var APP_CODE_VERSION = 26;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -606,7 +606,7 @@ function TPL_FORMULAIRE() {
     return '' +
     '<div class="CARD">' +
       '<h2>Nouvelle demande</h2>' +
-      '<p class="MER-HINT" style="margin:4px 0 16px;">Demande et Ordre de Mise en Route (DOMR)</p>' +
+      '<p class="MER-HINT" style="margin:4px 0 16px;">Demande d\'Ordre de Mise en Route (DOMR)</p>' +
       (D.refus ? '<p class="MER-HINT" style="color:#b91c1c; font-weight:800; margin:-6px 0 16px;">✖ Refusée par ' +
           ESC(D.refus.grade + ' ' + D.refus.nom) + ' : ' + ESC(D.refus.motif) + '</p>' : '') +
       TPL_TABS_BAR() +
@@ -721,7 +721,7 @@ function PDF_BANDEAU(doc, d, M, L, edition) {
     doc.text('TRIGONE', M + 4, 14);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
     var unite = d.personnes[0] && d.personnes[0].unite ? d.personnes[0].unite + ' — ' : '';
-    doc.text(unite + 'Demande et ordre de mise en route', M + 4, 21);
+    doc.text(unite + 'Demande d\'ordre de mise en route', M + 4, 21);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
     doc.text(d.type === 'FORMATION' ? 'FORMATION / STAGE' : 'MISSION', M + L - 4, 15, { align: 'right' });
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
@@ -896,7 +896,7 @@ function GENERER_PDF(panier) {
     });
     doc.deletePage(1); // page vierge créée par jsPDF à l'ouverture du document
     // Demandes et signatures intégrées au PDF : la page « Vérifier une mise en route » les relit.
-    doc.setProperties({ title: 'TRIGONE — Demande et ordre de mise en route', keywords: PDF_DONNEES(panier) });
+    doc.setProperties({ title: 'TRIGONE — Demande d\'ordre de mise en route', keywords: PDF_DONNEES(panier) });
 
     return doc;
 }
@@ -1304,7 +1304,7 @@ function FINALISER_ENVOI() {
     GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE').then(function(json) {
         TELECHARGER_TEXTE(base + '.json', json, 'application/json');
         var sujet = SUJET_MAIL('DEMANDE', panier);
-        var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) et ordre(s) de mise en route, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
+        var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
             'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.';
         ARCHIVER_ENVOI(panier, reg.mailSignataire);
         FERMER_MODALE();
@@ -1971,7 +1971,7 @@ function EXECUTER_ENVOI(i) {
         // Un seul .json (demandes signées + NDS / DAF) : l'assistant Chorus DT le contrôle et génère le PDF.
         travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_2').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
         sujet = SUJET_MAIL('CHORUS', env.demandes);
-        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
+        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
             'Ouvrez TRIGONE Mise en route > Espace valideur > Vérifier une mise en route, importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.';
     } else if (env.type === 'VALIDATION_1') {
         travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_1').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
