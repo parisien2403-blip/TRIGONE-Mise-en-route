@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v8';
+const CACHE_NAME = 'trigone-mise-en-route-v9';
 const ASSETS = [
   './',
   './manifest.json',
@@ -92,6 +92,22 @@ self.addEventListener('fetch', function(event) {
     var fin;
     event.waitUntil(new Promise(function(resolve) { fin = resolve; }));
     event.respondWith(reseauDAbord(event.request, fin));
+    return;
+  }
+
+  // Code et données de l'appli (app.js, codier.json…) : réseau d'abord, pour qu'une mise à jour soit
+  // visible dès la première ouverture ; le cache ne sert que hors ligne.
+  if (/\.(js|json)$/.test(url.pathname) && !/\/vendor\//.test(url.pathname)) {
+    event.respondWith(
+      caches.open(CACHE_NAME).then(function(cache) {
+        return fetch(event.request, { cache: 'no-cache' }).then(function(response) {
+          if (response && response.ok && !url.search) cache.put(event.request, response.clone());
+          return response;
+        }).catch(function() {
+          return cache.match(event.request, { ignoreSearch: true }).then(function(c) { return c || Response.error(); });
+        });
+      })
+    );
     return;
   }
 
