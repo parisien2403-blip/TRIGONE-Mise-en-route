@@ -356,110 +356,295 @@ function TPL_PANIER() {
 }
 
 // ===================== GÉNÉRATION DU PDF =====================
-function DESSINER_CASE(doc, x, y, coche) {
-    doc.rect(x, y - 3, 3.2, 3.2);
-    if (coche) { doc.setFontSize(8); doc.text('X', x + 0.5, y - 0.3); }
+// Mise en page calquée sur la DOMR papier (tableaux encadrés, cases à cocher), une page par demande.
+var PDF_ROUGE = [200, 30, 30], PDF_BLEU = [30, 60, 190], PDF_GRIS = [222, 227, 236];
+
+function PDF_POLICE(doc, style, taille, couleur) {
+    doc.setFont('helvetica', style || 'normal');
+    if (taille) doc.setFontSize(taille);
+    doc.setTextColor.apply(doc, couleur || [0, 0, 0]);
 }
-function LIGNE_OUI_NON(doc, x, y, label, valeur) {
-    doc.setFont(undefined, 'normal'); doc.setFontSize(9);
-    doc.text(label, x, y);
-    var xCase = x + doc.getTextWidth(label) + 4;
-    DESSINER_CASE(doc, xCase, y, !!valeur); doc.text('OUI', xCase + 5, y);
-    DESSINER_CASE(doc, xCase + 16, y, !valeur); doc.text('NON', xCase + 21, y);
+// Case à cocher dont y est la ligne de base du texte voisin ; renvoie la position x après le libellé.
+function PDF_CASE(doc, x, y, coche, libelle) {
+    doc.setLineWidth(0.25);
+    doc.rect(x, y - 2.8, 3, 3);
+    if (coche) { doc.line(x + 0.5, y - 2.3, x + 2.5, y - 0.3); doc.line(x + 2.5, y - 2.3, x + 0.5, y - 0.3); }
+    if (!libelle) return x + 3;
+    doc.text(libelle, x + 4.2, y);
+    return x + 4.2 + doc.getTextWidth(libelle);
+}
+function PDF_OUI_NON(doc, x, y, valeur, ecart) {
+    // valeur null/undefined : aucune case cochée (information non saisie dans l'application)
+    PDF_CASE(doc, x, y, valeur === true, 'OUI');
+    PDF_CASE(doc, x + (ecart || 15), y, valeur === false, 'NON');
+}
+function PDF_SOULIGNE(doc, texte, x, y, opts) {
+    var w = doc.getTextWidth(texte);
+    var x0 = opts && opts.align === 'center' ? x - w / 2 : x;
+    doc.text(texte, x0, y);
+    doc.setLineWidth(0.2); doc.line(x0, y + 0.6, x0 + w, y + 0.6);
+    return x0 + w;
+}
+// Texte centré dans une cellule, police réduite si nécessaire pour tenir dans la largeur.
+function PDF_TEXTE_CELLULE(doc, texte, x, y, largeur, taille) {
+    texte = (texte || '').toString();
+    var t = taille;
+    doc.setFontSize(t);
+    while (t > 5 && doc.getTextWidth(texte) > largeur - 2) { t -= 0.5; doc.setFontSize(t); }
+    doc.text(texte, x + largeur / 2, y, { align: 'center' });
+    doc.setFontSize(taille);
+}
+function PDF_DATE(v) {
+    if (!v) return '';
+    var dt = new Date(v);
+    if (isNaN(dt)) return '';
+    return dt.toLocaleDateString('fr-FR') + ' ' + ('0' + dt.getHours()).slice(-2) + 'h' + ('0' + dt.getMinutes()).slice(-2);
+}
+
+function PDF_ENTETE(doc, M, L) {
+    PDF_POLICE(doc, 'bold', 13);
+    doc.text('MINISTÈRE', M, 20);
+    doc.text('DE L\'INTÉRIEUR', M, 25.5);
+    PDF_POLICE(doc, 'italic', 7.5);
+    doc.text(['Liberté', 'Égalité', 'Fraternité'], M, 30.5, { lineHeightFactor: 1.15 });
+
+    // Cadre d'enregistrement (rempli par le secrétariat EM)
+    var bx = M + L - 60;
+    doc.setLineWidth(0.3); doc.rect(bx, 8, 60, 24);
+    PDF_POLICE(doc, 'bolditalic', 7.5);
+    doc.text('(Enregistrement secrétariat EM)', bx + 30, 12.5, { align: 'center' });
+    PDF_POLICE(doc, 'bold', 9);
+    doc.text('n°', bx + 12, 20);
+    doc.setLineDashPattern([0.6, 0.6], 0); doc.line(bx + 16, 20.3, bx + 52, 20.3); doc.setLineDashPattern([], 0);
+    PDF_POLICE(doc, 'normal', 9);
+    doc.text('DATE :', bx + 22, 28);
+
+    // Titre encadré
+    doc.setLineWidth(0.4); doc.rect(105 - 35, 36, 70, 11);
+    PDF_POLICE(doc, 'bold', 11);
+    doc.text('DEMANDE ET ORDRE', 105, 40.6, { align: 'center' });
+    doc.text('DE MISE EN ROUTE', 105, 45.2, { align: 'center' });
+
+    // Consigne d'envoi
+    var a = '(à faire parvenir à ', mail = 'dsc-courrier-comformisc@interieur.gouv.fr', b = '  minimum 7 jours avant la mission )';
+    PDF_POLICE(doc, 'normal', 8);
+    var x = 105 - (doc.getTextWidth(a) + doc.getTextWidth(mail) + doc.getTextWidth(b)) / 2;
+    doc.text(a, x, 51); x += doc.getTextWidth(a);
+    doc.setTextColor.apply(doc, PDF_BLEU); doc.setDrawColor.apply(doc, PDF_BLEU);
+    x = PDF_SOULIGNE(doc, mail, x, 51);
+    doc.setDrawColor(0); doc.setTextColor(0);
+    x = PDF_SOULIGNE(doc, 'minimum 7 jours avant la mission', x + 1.2, 51);
+    doc.text(' )', x, 51);
+    return 54;
+}
+
+function PDF_PERSONNEL(doc, d, M, L, y) {
+    var larg = [35.5, 13.3, 26.4, 36.2, 39.9, 0];
+    larg[5] = L - larg.slice(0, 5).reduce(function(s, v) { return s + v; }, 0);
+    var entetes = ['UNITÉ/ENTITÉ', 'CIE', 'GRADE', 'NOM', 'PRÉNOM', 'MATRICULE'];
+    var hEntete = 7.5, hLigne = 5.5;
+    var lignes = Math.max(4, d.personnes.length);
+    doc.setLineWidth(0.25);
+    var x = M;
+    entetes.forEach(function(h, i) {
+        doc.rect(x, y, larg[i], hEntete);
+        PDF_POLICE(doc, 'bold', 9, i === 1 ? PDF_ROUGE : null);
+        doc.text(h, x + larg[i] / 2, y + 5, { align: 'center' });
+        x += larg[i];
+    });
+    y += hEntete;
+    for (var r = 0; r < lignes; r++) {
+        var p = d.personnes[r] || {};
+        var vals = [p.unite, p.cie, p.grade, p.nom, p.prenom, p.matricule];
+        x = M;
+        vals.forEach(function(v, i) {
+            doc.rect(x, y, larg[i], hLigne);
+            PDF_POLICE(doc, i < 2 ? 'bold' : 'normal', 9);
+            PDF_TEXTE_CELLULE(doc, i === 3 ? (v || '').toUpperCase() : v, x, y + 3.9, larg[i], 9);
+            x += larg[i];
+        });
+        y += hLigne;
+    }
+
+    // Type
+    doc.rect(M, y, L, 7);
+    PDF_POLICE(doc, 'normal', 9);
+    PDF_CASE(doc, M + 3, y + 4.8, d.type === 'MISSION', 'MISSION');
+    var xf = PDF_CASE(doc, M + 42, y + 4.8, d.type === 'FORMATION', 'FORMATION/STAGE');
+    PDF_POLICE(doc, 'normal', 7.5);
+    doc.text('(sur présentation d\'une DAF, donc stage inscrit au CAF)', xf + 1.2, y + 4.8);
+    y += 7;
+
+    // Objet
+    PDF_POLICE(doc, 'bold', 9);
+    var lbl = 'Objet : ';
+    var objLignes = doc.splitTextToSize((d.objet || '').toUpperCase(), L - 4 - doc.getTextWidth(lbl));
+    var hObj = Math.max(7, 3 + 4.2 * objLignes.length);
+    doc.rect(M, y, L, hObj);
+    doc.text(lbl, M + 2, y + 4.8);
+    doc.text(objLignes, M + 2 + doc.getTextWidth(lbl), y + 4.8, { lineHeightFactor: 1.3 });
+    y += hObj;
+
+    // Création d'un OM (non saisi dans l'application : laissé vierge)
+    var hOM = 21, gOM = 64;
+    doc.setFillColor.apply(doc, PDF_GRIS); doc.rect(M, y, gOM, hOM, 'FD');
+    doc.rect(M + gOM, y, L - gOM, hOM);
+    PDF_POLICE(doc, 'normal', 11);
+    doc.text('OM', M + gOM / 2 + 1.5, y + hOM / 2 + 3, { angle: 90 });
+    var xt = M + gOM + 2;
+    PDF_POLICE(doc, 'bold', 8.5);
+    var xo = PDF_SOULIGNE(doc, 'Création d\'un Ordre de Mission (OM) :', xt, y + 4.2);
+    PDF_POLICE(doc, 'normal', 8.5);
+    PDF_OUI_NON(doc, xo + 2, y + 4.2, null, 14);
+    doc.text(['Veuillez cocher OUI si il y aura des frais de déplacement (tous types).',
+              'Une D\'OMR = Un OM individuel / Plusieurs noms sur une D\'OMR = Un Ordre de',
+              'Mission Collectif (OMC)'], xt, y + 8.2, { lineHeightFactor: 1.2 });
+    PDF_POLICE(doc, 'normal', 8.5, PDF_ROUGE);
+    doc.text('Si vous souhaitez des OM individuels, veuillez initier plusieurs DOMR.', xt, y + 19);
+    doc.setTextColor(0);
+    return y + hOM;
+}
+
+function PDF_ABT(doc, M, L, y) {
+    // Réservations ABT : non saisies dans l'application, laissées vierges.
+    var h = 26, g = 9;
+    doc.setLineWidth(0.25);
+    doc.setFillColor.apply(doc, PDF_GRIS); doc.rect(M, y, g, h, 'FD');
+    doc.rect(M + g, y, L - g, h);
+    PDF_POLICE(doc, 'normal', 11);
+    doc.text('ABT', M + g / 2 + 1.5, y + h / 2 + 3.5, { angle: 90 });
+    var xt = M + g + 2, xc = M + 88;
+    [['Réservation transport par ABT :', y + 5], ['Réservation Hôtel par ABT :', y + 17]].forEach(function(l) {
+        PDF_POLICE(doc, 'bold', 8.5, PDF_ROUGE); doc.setDrawColor.apply(doc, PDF_ROUGE);
+        PDF_SOULIGNE(doc, l[0], xt, l[1]);
+        doc.text(['SI OUI veuillez remplir l\'annexe en bas de', 'page (une par missionnaire).'], xt, l[1] + 4.2, { lineHeightFactor: 1.2 });
+        doc.setDrawColor(0);
+        PDF_POLICE(doc, 'normal', 8.5);
+        PDF_OUI_NON(doc, xc, l[1], null, 14);
+    });
+    return y + h;
+}
+
+function PDF_TRAJETS(doc, d, M, L, y) {
+    var t = d.trajets;
+    var blocs = [['TRAJET ALLÉ', t.aller]];
+    if (t.intermediaireAllerActif) blocs.push(['TRAJET INTERMÉDIAIRE (ALLER)', t.intermediaireAller]);
+    if (t.intermediaireRetourActif) blocs.push(['TRAJET INTERMÉDIAIRE (RETOUR)', t.intermediaireRetour]);
+    if (!t.intermediaireAllerActif && !t.intermediaireRetourActif) blocs.push(['TRAJET RETOUR OU INTERMÉDIAIRE', VIDE_TRAJET()]);
+    blocs.push(['TRAJET RETOUR', t.retour]);
+
+    doc.setLineWidth(0.25);
+    doc.rect(M, y, L, 5);
+    PDF_POLICE(doc, 'bolditalic', 9);
+    doc.text('À remplir obligatoirement par le demandeur', M + L / 2, y + 3.6, { align: 'center' });
+    y += 5;
+    var colonnes = [['SERVICE', 'VÉHICULE DE SERVICE'], ['FERREE', 'VOIE FERRÉE'], ['AERIENNE', 'VOIE AÉRIENNE'], ['MARITIME', 'VOIE MARITIME']];
+    var xMilieu = M + L * 0.53;
+    blocs.forEach(function(b) {
+        var tr = b[1] || VIDE_TRAJET(), h = 23;
+        doc.rect(M, y, L, h);
+        PDF_POLICE(doc, 'bold', 8.5);
+        PDF_SOULIGNE(doc, b[0], M + L / 2, y + 3.4, { align: 'center' });
+        PDF_POLICE(doc, 'normal', 8.5);
+        var x = M + 2;
+        doc.text('Moyen de transport :', x, y + 7.6);
+        x += doc.getTextWidth('Moyen de transport :') + 2;
+        PDF_POLICE(doc, 'bold', 8.5);
+        colonnes.forEach(function(c) { x = PDF_CASE(doc, x, y + 7.6, tr.moyen === c[0], c[1]) + 4.5; });
+        doc.setLineWidth(0.4); doc.line(xMilieu, y + 9.3, xMilieu, y + h - 0.8); doc.setLineWidth(0.25);
+        [[M + 2, 'Lieu de départ', tr.lieuDep, tr.cpDep, tr.dateDep], [xMilieu + 2, 'Lieu d\'arrivée', tr.lieuArr, tr.cpArr, tr.dateArr]].forEach(function(c) {
+            PDF_POLICE(doc, 'bold', 8.5);
+            doc.text(c[1] + ' :', c[0], y + 12.3);
+            var xVal = c[0] + doc.getTextWidth(c[1] + ' :') + 1.5;
+            PDF_POLICE(doc, 'normal', 8.5);
+            doc.text(c[2] || '', xVal, y + 12.3, { maxWidth: xMilieu - M - 30 });
+            doc.text('Code postal : ' + (c[3] || ''), c[0], y + 16.3);
+            doc.text('Date et heure : ' + PDF_DATE(c[4]), c[0], y + 20.3);
+        });
+        y += h;
+    });
+    return y;
+}
+
+function PDF_CONDITIONS(doc, d, M, L, y) {
+    var xLbl = M + 44, xCase = M + 88;
+    PDF_POLICE(doc, 'normal', 9);
+    PDF_SOULIGNE(doc, 'Durant le déplacement', M + 2, y);
+    doc.text('NOURRI à titre onéreux :', xLbl, y); PDF_OUI_NON(doc, xCase, y, !!d.nourriDeplacement); y += 5;
+    doc.text('Transport en commun :', xLbl, y); PDF_OUI_NON(doc, xCase, y, !!d.transportCommun); y += 5;
+    var autres = 'Autres : ' + (d.autresDeplacement && d.autresDeplacementTexte ? d.autresDeplacementTexte : '');
+    doc.text(autres, xLbl, y, { maxWidth: xCase - xLbl - 2 }); PDF_OUI_NON(doc, xCase, y, !!d.autresDeplacement); y += 7;
+    var yMission = y;
+    PDF_SOULIGNE(doc, 'Durant la mission', M + 2, y);
+    doc.text('NOURRI à titre onéreux :', xLbl, y); PDF_OUI_NON(doc, xCase, y, !!d.nourriMission); y += 5;
+    doc.text('LOGÉ à titre onéreux :', xLbl, y); PDF_OUI_NON(doc, xCase, y, !!d.logeMission); y += 5;
+
+    var xAv = M + L - 38;
+    PDF_POLICE(doc, 'bold', 9, PDF_ROUGE); doc.setDrawColor.apply(doc, PDF_ROUGE);
+    PDF_SOULIGNE(doc, 'Demande d\'avance', xAv + 16, yMission - 2, { align: 'center' });
+    doc.setDrawColor(0);
+    PDF_POLICE(doc, 'normal', 9);
+    PDF_OUI_NON(doc, xAv + 2, yMission + 2.5, !!d.demandeAvance, 15);
+    return y + 4;
+}
+
+function PDF_IMPUTATION(doc, d, M, L, y) {
+    PDF_POLICE(doc, 'bold', 9);
+    var x = PDF_SOULIGNE(doc, 'Mission imputée au GMNT-COMFORMISC', M + 2, y);
+    PDF_POLICE(doc, 'normal', 9);
+    PDF_OUI_NON(doc, x + 3, y, !!d.missionImputee, 15);
+    y += 5;
+    PDF_POLICE(doc, 'normal', 9, PDF_BLEU); doc.setDrawColor.apply(doc, PDF_BLEU);
+    x = PDF_SOULIGNE(doc, 'FD@LIGNE', M + 2, y);
+    doc.setDrawColor(0);
+    PDF_POLICE(doc, 'normal', 9);
+    doc.text(' code d\'engagement : ', x, y); x += doc.getTextWidth(' code d\'engagement : ');
+    PDF_POLICE(doc, 'bold', 9, PDF_ROUGE);
+    doc.text(d.codeFD || '', x, y); x += doc.getTextWidth(d.codeFD || '');
+    PDF_POLICE(doc, 'bold', 9);
+    doc.text(' (changer si différent)', x, y);
+    y += 5;
+    PDF_POLICE(doc, 'normal', 9);
+    doc.text('Si NON, ', M + 2, y);
+    x = PDF_SOULIGNE(doc, 'Fournir justificatif', M + 2 + doc.getTextWidth('Si NON, '), y);
+    doc.text(' de l\'autorité ayant prescrit le déplacement', x, y);
+    y += 4.5;
+    PDF_POLICE(doc, 'bold', 8, PDF_ROUGE);
+    doc.text('Tout personnel en mission au sein d\'une UIISC sera placé au taux NOURRI et LOGE à titre gratuit (Facture payée par l\'état-major)', M + 2, y, { maxWidth: L - 4 });
+    y += 6;
+    if (d.piecesJointes) {
+        PDF_POLICE(doc, 'bold', 9);
+        doc.text('NDS / DAF jointe :', M + 2, y);
+        var xPj = M + 2 + doc.getTextWidth('NDS / DAF jointe :') + 1.5;
+        PDF_POLICE(doc, 'normal', 9);
+        doc.text(d.piecesJointes, xPj, y, { maxWidth: L - 36 });
+    }
+    doc.setTextColor(0);
 }
 
 function GENERER_PDF(panier) {
     var jsPDFCtor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : window.jsPDF;
     var doc = new jsPDFCtor({ unit: 'mm', format: 'a4' });
-    var MARGE = 15, LARGEUR = 210 - 2 * MARGE;
+    var M = 12, L = 210 - 2 * M, BAS = 285;
+    var dateEdition = new Date().toLocaleDateString('fr-FR');
 
     panier.forEach(function(d, idx) {
         if (idx > 0) doc.addPage();
-        var y = MARGE;
+        var y = PDF_ENTETE(doc, M, L);
+        y = PDF_PERSONNEL(doc, d, M, L, y);
+        y = PDF_ABT(doc, M, L, y + 4);
+        y = PDF_TRAJETS(doc, d, M, L, y + 4);
+        // Demande collective ou trajets intermédiaires : la suite passe sur une nouvelle page si besoin.
+        if (y + 58 > BAS) { doc.addPage(); y = 12; }
+        y = PDF_CONDITIONS(doc, d, M, L, y + 7);
+        PDF_IMPUTATION(doc, d, M, L, y + 4);
 
-        doc.setFont(undefined, 'bold'); doc.setFontSize(14);
-        doc.text('DEMANDE ET ORDRE DE MISE EN ROUTE', 105, y, { align: 'center' });
-        y += 6;
-        doc.setFont(undefined, 'normal'); doc.setFontSize(9);
-        doc.text('Établie via TRIGONE — Mise en route, le ' + new Date().toLocaleDateString('fr-FR'), 105, y, { align: 'center' });
-        y += 9;
-        doc.setLineWidth(0.3); doc.line(MARGE, y, MARGE + LARGEUR, y); y += 8;
-
-        // ---- personnel ----
-        doc.setFont(undefined, 'bold'); doc.setFontSize(10); doc.text('PERSONNEL CONCERNÉ', MARGE, y); y += 5;
-        doc.setFont(undefined, 'normal'); doc.setFontSize(8.5);
-        var colX = [MARGE, MARGE + 28, MARGE + 48, MARGE + 68, MARGE + 100, MARGE + 132];
-        var entetes = ['Unité', 'CIE', 'Grade', 'Nom', 'Prénom', 'Matricule'];
-        doc.setFont(undefined, 'bold');
-        entetes.forEach(function(h, i) { doc.text(h, colX[i], y); });
-        y += 4; doc.setFont(undefined, 'normal');
-        d.personnes.forEach(function(p) {
-            var vals = [p.unite, p.cie, p.grade, p.nom, p.prenom, p.matricule];
-            vals.forEach(function(v, i) { doc.text((v || '—').toString().slice(0, 16), colX[i], y); });
-            y += 4.5;
-        });
-        y += 4;
-
-        // ---- type / objet ----
-        doc.setFont(undefined, 'bold'); doc.setFontSize(9);
-        doc.text('Type :', MARGE, y);
-        DESSINER_CASE(doc, MARGE + 12, y, d.type === 'MISSION'); doc.setFont(undefined, 'normal'); doc.text('Mission', MARGE + 17, y);
-        DESSINER_CASE(doc, MARGE + 40, y, d.type === 'FORMATION'); doc.text('Formation / stage', MARGE + 45, y);
-        y += 6;
-        doc.setFont(undefined, 'bold'); doc.text('Objet :', MARGE, y); doc.setFont(undefined, 'normal');
-        var objetLignes = doc.splitTextToSize(d.objet || '—', LARGEUR - 18);
-        doc.text(objetLignes, MARGE + 18, y);
-        y += 4.5 * objetLignes.length + 4;
-
-        // ---- trajets (aller, intermédiaire éventuel sur l'aller, retour, intermédiaire éventuel sur le retour) ----
-        var blocsTrajet = [['TRAJET ALLER', d.trajets.aller]];
-        if (d.trajets.intermediaireAllerActif) blocsTrajet.push(['TRAJET INTERMÉDIAIRE (ALLER)', d.trajets.intermediaireAller]);
-        blocsTrajet.push(['TRAJET RETOUR', d.trajets.retour]);
-        if (d.trajets.intermediaireRetourActif) blocsTrajet.push(['TRAJET INTERMÉDIAIRE (RETOUR)', d.trajets.intermediaireRetour]);
-        blocsTrajet.forEach(function(pair) {
-            var titre = pair[0], t = pair[1];
-            var vide = !t.lieuDep && !t.lieuArr;
-            doc.setFont(undefined, 'bold'); doc.setFontSize(9); doc.text(titre, MARGE, y); y += 4.5;
-            doc.setFont(undefined, 'normal'); doc.setFontSize(8.5);
-            if (vide) { doc.text('—', MARGE + 4, y); y += 6; return; }
-            doc.text('Moyen : ' + (t.moyen ? MOYENS[t.moyen] : '—'), MARGE + 4, y); y += 4;
-            doc.text('Départ : ' + (t.lieuDep || '—') + ' (' + (t.cpDep || '—') + ') — ' + FORMAT_DATE_LONG(t.dateDep), MARGE + 4, y); y += 4;
-            doc.text('Arrivée : ' + (t.lieuArr || '—') + ' (' + (t.cpArr || '—') + ') — ' + FORMAT_DATE_LONG(t.dateArr), MARGE + 4, y); y += 6;
-        });
-        y += 2;
-
-        doc.setFont(undefined, 'bold'); doc.setFontSize(9); doc.text('DURANT LE DÉPLACEMENT', MARGE, y); y += 5;
-        LIGNE_OUI_NON(doc, MARGE, y, 'Nourri à titre onéreux', d.nourriDeplacement); y += 6;
-        LIGNE_OUI_NON(doc, MARGE, y, 'Transport en commun', d.transportCommun); y += 6;
-        LIGNE_OUI_NON(doc, MARGE, y, 'Autres frais' + (d.autresDeplacement && d.autresDeplacementTexte ? ' (' + d.autresDeplacementTexte + ')' : ''), d.autresDeplacement); y += 8;
-
-        doc.setFont(undefined, 'bold'); doc.setFontSize(9); doc.text('DURANT LA MISSION', MARGE, y); y += 5;
-        LIGNE_OUI_NON(doc, MARGE, y, 'Nourri à titre onéreux', d.nourriMission); y += 6;
-        LIGNE_OUI_NON(doc, MARGE, y, 'Logé à titre onéreux', d.logeMission); y += 6;
-        LIGNE_OUI_NON(doc, MARGE, y, 'Demande d\'avance', d.demandeAvance); y += 8;
-
-        LIGNE_OUI_NON(doc, MARGE, y, 'Mission imputée à l\'unité', d.missionImputee); y += 6;
-        doc.setFont(undefined, 'bold'); doc.setFontSize(9); doc.text('Code FD@LIGNE : ', MARGE, y); doc.setFont(undefined, 'normal');
-        doc.text(d.codeFD || '—', MARGE + 30, y); y += 7;
-
-        if (d.piecesJointes) {
-            doc.setFont(undefined, 'bold'); doc.text('NDS ou DAF :', MARGE, y); y += 4.5;
-            doc.setFont(undefined, 'normal');
-            var pjLignes = doc.splitTextToSize(d.piecesJointes, LARGEUR - 4);
-            doc.text(pjLignes, MARGE + 4, y);
-        }
-
-        doc.setFontSize(7.5); doc.setTextColor(140);
-        doc.text('Page ' + (idx + 1) + ' / ' + panier.length, 105, 290, { align: 'center' });
+        PDF_POLICE(doc, 'normal', 7, [140, 140, 140]);
+        doc.text('Établie via TRIGONE — Mise en route, le ' + dateEdition + ' — demande ' + (idx + 1) + ' / ' + panier.length, 105, 292, { align: 'center' });
         doc.setTextColor(0);
     });
 
     return doc;
-}
-function FORMAT_DATE_LONG(v) {
-    if (!v) return '—';
-    try { var dt = new Date(v); return dt.toLocaleDateString('fr-FR') + ' ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); }
-    catch (e) { return '—'; }
 }
 
 // ===================== MODALE (relecture avant envoi) =====================
