@@ -46,8 +46,10 @@ UN SEUL FICHIER QUI CIRCULE
   la demande ET les pièces jointes (rangées sur l'appareil dans IndexedDB).
 - Le 1er valideur importe ce .json, consulte l'aperçu et les pièces (📎), signe, et renvoie un
   seul .json au 2e valideur.
-- Le 2e valideur envoie à l'assistant Chorus DT un seul PDF (chaque demande signée suivie des
-  pages de sa NDS / DAF, assemblées avec vendor/pdf-lib.min.js) et le .json.
+- Le 2e valideur ne voit lui aussi qu'un aperçu et envoie à l'assistant Chorus DT un seul .json.
+- L'assistant Chorus DT l'importe dans « Vérifier une mise en route » : signatures et pièces
+  contrôlées, puis « PDF avec NDS / DAF » génère le PDF à traiter (chaque demande signée suivie
+  des pages de ses pièces jointes, assemblées avec vendor/pdf-lib.min.js).
 - L'empreinte SHA-256 de chaque pièce fait partie de la demande signée : une pièce remplacée en
   cours de route est signalée en rouge et la demande ne peut pas être validée.
 

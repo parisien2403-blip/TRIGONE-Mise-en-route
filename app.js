@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 20;
+var APP_CODE_VERSION = 21;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -1129,11 +1129,12 @@ var MER_NOTICES = {
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e).',
             'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
-            '<b>Transmettre</b> : le 1er valideur envoie un seul .json au 2e valideur ; le 2e valideur envoie à l\'assistant Chorus DT <b>un seul PDF</b> (demande signée suivie des pages de la NDS / DAF) et le .json ; un refus repart vers le demandeur.'] },
-    CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier les signatures d\'un PDF', icone: MER_ICONES_NOTICE_CHECK(),
+            '<b>Transmettre</b> : le 1er valideur envoie un seul .json au 2e valideur ; le 2e valideur envoie à l\'assistant Chorus DT <b>un seul .json</b> (demandes signées + NDS / DAF) ; un refus repart vers le demandeur.'] },
+    CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier le .json et générer le PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['Ouvrez <b>Espace valideur</b> puis <b>Vérifier une mise en route</b> (aucun code n\'est nécessaire).',
-            'Choisissez le PDF reçu : TRIGONE contrôle les signatures électroniques enregistrées dans le fichier.',
-            '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande modifiée).'] }
+            'Choisissez le fichier <b>.json</b> reçu du 2e valideur : TRIGONE contrôle les signatures électroniques et les pièces jointes.',
+            '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
+            'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).'] }
 };
 function MER_ICONES_NOTICE_PERSO() { return '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'; }
 function MER_ICONES_NOTICE_CADENAS() { return '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'; }
@@ -1764,7 +1765,7 @@ function TPL_ESPACE_VALIDATION(v, h) {
         (h.role === 1
             ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>'
             : '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
-              '<p class="MER-HINT">Il reçoit le PDF signé.</p></div>') +
+              '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF dans « Vérifier une mise en route ».</p></div>') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
     return html;
 }
@@ -1913,7 +1914,7 @@ function PREPARER_TRANSMISSION() {
     if (vers2.length) MER_ENVOIS.push({ type: 'VALIDATION_1', demandes: vers2, mail: v.mailValideur2,
         titre: 'Au 2e valideur', pj: NOM_FICHIER_BASE(vers2) + '_VALIDATION-1.json' });
     if (versChorus.length) MER_ENVOIS.push({ type: 'CHORUS', demandes: versChorus, mail: v.mailChorus,
-        titre: 'À l\'assistant Chorus DT', pj: NOM_FICHIER_BASE(versChorus) + '_VALIDEE.pdf + .json' });
+        titre: 'À l\'assistant Chorus DT', pj: NOM_FICHIER_BASE(versChorus) + '_VALIDEE.json' });
     Object.keys(refusParMail).forEach(function(m) {
         var ds = refusParMail[m];
         MER_ENVOIS.push({ type: 'REFUS', demandes: ds, mail: m,
@@ -1942,14 +1943,11 @@ function EXECUTER_ENVOI(i) {
     var env = MER_ENVOIS[i], n = env.demandes.length, nom = env.demandes[0].personnes[0].nom || '';
     var base = NOM_FICHIER_BASE(env.demandes), travail, sujet, corps;
     if (env.type === 'CHORUS') {
-        // Un seul PDF : chaque demande signée suivie de sa NDS / DAF ; plus le .json pour la vérification.
-        travail = GENERER_PDF_FINAL(env.demandes).then(function(octets) {
-            TELECHARGER_OCTETS(base + '_VALIDEE.pdf', octets, 'application/pdf');
-            return GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_2');
-        }).then(function(json) { TELECHARGER_TEXTE(base + '_VALIDEE.json', json, 'application/json'); });
+        // Un seul .json (demandes signées + NDS / DAF) : l'assistant Chorus DT le contrôle et génère le PDF.
+        travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_2').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) validée(s) — ' + nom;
-        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement : le PDF (pièces jointes NDS / DAF incluses) et le fichier .json.\n' +
-            'Les validations sont signées électroniquement : TRIGONE Mise en route > Espace valideur > Vérifier une mise en route permet de les contrôler.\n\nCordialement.';
+        corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
+            'Ouvrez TRIGONE Mise en route > Espace valideur > Vérifier une mise en route, importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.';
     } else if (env.type === 'VALIDATION_1') {
         travail = GENERER_JSON_COMPLET(env.demandes, 'VALIDATION_1').then(function(json) { TELECHARGER_TEXTE(env.pj, json, 'application/json'); });
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) à valider — ' + nom;
@@ -1976,24 +1974,31 @@ function TERMINER_TRANSMISSION() {
 }
 
 // ===================== VÉRIFIER UNE MISE EN ROUTE (assistant Chorus DT) =====================
+// L'assistant Chorus DT importe le .json reçu du 2e valideur : TRIGONE contrôle les signatures et les pièces
+// jointes, puis génère le PDF (demande signée + pages de la NDS / DAF). Un PDF déjà produit peut aussi être contrôlé.
 var MER_RESULTATS_VERIF = null;
+function EST_CONFORME(x) {
+    return x.verif.length === 2 && x.verif.every(function(v) { return v.ok; }) && !(x.pjAlterees || []).length;
+}
 function TPL_VERIFIER() {
     var res = MER_RESULTATS_VERIF;
     var html = '<div class="CARD"><h2>Vérifier une mise en route</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Contrôle des signatures électroniques des valideurs, à partir du PDF (ou du .json) reçu.</p>' +
-        '<label class="BTN BTN-PRIMARY" style="margin-bottom:16px;">📄 Choisir le PDF à vérifier' +
-        '<input type="file" accept=".pdf,application/pdf,.json,application/json" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Importez le fichier .json reçu du 2e valideur : TRIGONE contrôle les signatures et les pièces jointes, puis génère le PDF à traiter (demande + NDS / DAF). Un PDF TRIGONE peut aussi être contrôlé.</p>' +
+        '<label class="BTN BTN-PRIMARY" style="margin-bottom:16px;">📥 Choisir le fichier .json (ou le PDF)' +
+        '<input type="file" accept=".json,application/json,.pdf,application/pdf" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
     if (res) {
-        html += !res.length ? '<div class="MER-EMPTY">Aucune donnée TRIGONE dans ce fichier.<br>Seuls les PDF produits par TRIGONE Mise en route peuvent être vérifiés.</div>'
-            : res.map(function(x) {
-                var nbOk = x.verif.filter(function(v) { return v.ok; }).length;
-                var conforme = nbOk === 2 && x.verif.length === 2;
+        var conformes = res.filter(function(x) { return x.source === 'json' && EST_CONFORME(x); });
+        html += !res.length ? '<div class="MER-EMPTY">Aucune donnée TRIGONE dans ce fichier.<br>Seuls les fichiers produits par TRIGONE Mise en route peuvent être vérifiés.</div>'
+            : res.map(function(x, i) {
+                var conforme = EST_CONFORME(x);
                 var r = RESUME_DEMANDE(x.d);
                 return '<div class="MER-PANIER-ITEM" style="align-items:flex-start; border-color:' + (conforme ? '#86efac' : '#fca5a5') + ';"><div class="MER-PANIER-ITEM-TXT">' +
                     '<div style="font-weight:800; font-size:0.9em; color:' + (conforme ? '#15803d' : '#b91c1c') + ';">' +
                         (conforme ? '✔ Conforme : validée par les deux valideurs habilités' : '✖ Non conforme') + '</div>' +
                     '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(r.noms) + '</div>' +
                     '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' +
+                    ((x.d.pieces || []).length ? '<div class="MER-PJ-LISTE">' + TPL_PJ_PUCES(x.d.pieces, x.pjAlterees) + '</div>' : '') +
+                    ((x.pjAlterees || []).length ? '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Pièce jointe modifiée : elle ne correspond plus à celle validée.</div>' : '') +
                     [1, 2].map(function(n) {
                         var v = x.verif[n - 1];
                         if (!v) return '<div class="MER-HINT" style="color:#b91c1c; font-weight:700;">✖ ' + LIBELLE_ROLE(n) + ' : aucune validation</div>';
@@ -2001,26 +2006,48 @@ function TPL_VERIFIER() {
                             LIBELLE_ROLE(n) + ' : ' + ESC((v.validation.grade || '') + ' ' + (v.validation.nom || '') + ' ' + (v.validation.prenom || '')) +
                             (v.validation.le ? ', le ' + ESC(new Date(v.validation.le).toLocaleString('fr-FR')) : '') + ' — ' + ESC(v.message) + '</div>';
                     }).join('') +
+                    (x.source === 'json' && conforme
+                        ? '<div class="MER-VAL-ACTIONS"><button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="TELECHARGER_PDF_VERIFIE([' + i + '])">📄 PDF avec NDS / DAF</button></div>' : '') +
                 '</div></div>';
             }).join('');
+        if (conformes.length > 1) {
+            html += '<button type="button" class="BTN BTN-PRIMARY" onclick="TELECHARGER_PDF_VERIFIE(null)">📄 Un seul PDF pour les ' + conformes.length + ' demandes conformes</button>';
+        }
     }
     return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'VALIDATION\')">← Espace valideur</button></div>';
 }
 function VERIFIER_FICHIERS(input) {
     LIRE_FICHIERS(input, function(contenu, f) {
-        if (/\.pdf$/i.test(f.name)) return LIRE_DONNEES_PDF(contenu) || [];
-        return LIRE_JSON_MER(contenu).demandes;
-    }, function(listes) {
-        var demandes = [].concat.apply([], listes);
-        CHARGER_LISTE_VALIDEURS().then(function() {
-            return Promise.all(demandes.map(function(d) {
-                return VERIFIER_VALIDATIONS(d).then(function(verif) { return { d: d, verif: verif }; });
+        if (/\.pdf$/i.test(f.name)) return { source: 'pdf', demandes: LIRE_DONNEES_PDF(contenu) || [] };
+        var data = LIRE_JSON_MER(contenu);
+        return { source: 'json', demandes: data.demandes, data: data };
+    }, function(lus) {
+        var jsons = lus.filter(function(l) { return l.source === 'json'; }).map(function(l) { return l.data; });
+        Promise.all([CHARGER_LISTE_VALIDEURS(), STOCKER_PJ_IMPORTEES(jsons)]).then(function(r) {
+            var alterees = r[1];
+            var elements = [].concat.apply([], lus.map(function(l) { return l.demandes.map(function(d) { return { d: d, source: l.source }; }); }));
+            return Promise.all(elements.map(function(x) {
+                return VERIFIER_VALIDATIONS(x.d).then(function(verif) {
+                    return { d: x.d, source: x.source, verif: verif, pjAlterees: x.source === 'json' ? (alterees[x.d.id] || []) : [] };
+                });
             }));
         }).then(function(res) {
             MER_RESULTATS_VERIF = res;
             SHOW_PAGE('VERIFIER');
         });
     });
+}
+// indices : demandes choisies ; null = toutes les demandes conformes, dans un seul PDF.
+function TELECHARGER_PDF_VERIFIE(indices) {
+    var res = MER_RESULTATS_VERIF || [];
+    var choix = (indices ? indices.map(function(i) { return res[i]; }) : res).filter(function(x) { return x && x.source === 'json' && EST_CONFORME(x); });
+    if (!choix.length) return;
+    var demandes = choix.map(function(x) { return x.d; });
+    AFFICHER_MSG_CENTRE({ titre: 'Génération du PDF…', texte: 'Assemblage de la demande et des pièces jointes.', icone: '⏳', mascotte: false, boutons: [] });
+    GENERER_PDF_FINAL(demandes).then(function(octets) {
+        FERMER_MSG();
+        TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes) + '_VALIDEE.pdf', octets, 'application/pdf');
+    }).catch(function(e) { FERMER_MSG(); setTimeout(function() { MSG_ERREUR('PDF impossible', e.message || String(e)); }, 350); });
 }
 
 // ===================== ADMINISTRATION DES VALIDEURS =====================
