@@ -139,6 +139,52 @@ body.dark-mode .P0-TAB.has-badge::after { border-color: #1f1f1f; }
   background: rgba(90,122,148,0.05); resize: vertical; word-break: break-all;
 }
 
+/* Message centré avec mascotte, repris de TRIGONE compte-rendu (remplace alert / confirm) */
+.MSG-OVERLAY {
+  position: fixed; inset: 0; z-index: 99998; background: rgba(20,20,20,0);
+  backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px);
+  display: flex; align-items: center; justify-content: center; padding: 24px;
+  transition: background 0.35s ease, backdrop-filter 0.35s ease, -webkit-backdrop-filter 0.35s ease;
+}
+.MSG-OVERLAY.HIDDEN { display: none; }
+.MSG-OVERLAY.msg-in { background: rgba(20,20,20,0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.msg-wrap { position: relative; width: 100%; max-width: 340px; display: block; }
+.msg-wrap.has-mascotte { max-width: 252px; }
+.msg-card {
+  position: relative; z-index: 2; background: var(--sm2-surface); border-radius: 22px; padding: 34px 28px 30px;
+  width: 100%; text-align: center; box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+  transform: scale(0.85) translateY(18px); transition: transform 0.4s cubic-bezier(0.2,0.9,0.25,1.15);
+  max-height: calc(100dvh - 48px); overflow-x: hidden; overflow-y: auto; overscroll-behavior: contain;
+}
+.MSG-OVERLAY.msg-in .msg-card { transform: scale(1) translateY(0); }
+.msg-mascotte {
+  position: absolute; right: -104px; top: 50%; width: 176px; height: auto; z-index: 1; pointer-events: none;
+  transform-origin: left bottom; filter: drop-shadow(-5px 4px 12px rgba(0,0,0,0.28));
+  animation: msg-mascotte-in 0.5s cubic-bezier(0.2,0.8,0.2,1) both;
+}
+.msg-mascotte.HIDDEN { display: none; }
+.msg-mascotte.msg-mascotte-droit { right: -140px; width: 200px; transform-origin: center; animation-name: msg-mascotte-in-droit; }
+@keyframes msg-mascotte-in { from { opacity: 0; transform: translateY(-50%) translateX(30px) rotate(16deg); } to { opacity: 1; transform: translateY(-50%) translateX(0) rotate(16deg); } }
+@keyframes msg-mascotte-in-droit { from { opacity: 0; transform: translateY(-50%) translateX(30px); } to { opacity: 1; transform: translateY(-50%) translateX(0); } }
+@media (max-width: 460px) {
+  .msg-wrap.has-mascotte { max-width: 190px; }
+  .msg-mascotte { right: -58px; width: 112px; }
+  .msg-mascotte.msg-mascotte-droit { right: calc(-1 * min(92px, 50vw - 99px)); width: 130px; }
+  .msg-card { padding: 28px 18px 24px; }
+}
+@media (prefers-reduced-motion: reduce) { .msg-mascotte { animation: none; } }
+.msg-icone { font-size: 2.3em; margin-bottom: 10px; }
+.msg-titre { font-family: 'Georgia', serif; font-weight: 700; font-size: 1.3em; color: var(--tg-ink); margin: 0 0 8px; }
+.msg-texte { font-size: 0.86em; color: var(--tg-muted); line-height: 1.5; margin: 0 0 22px; white-space: pre-line; overflow-wrap: break-word; }
+.msg-texte.msg-gauche { text-align: left; }
+.msg-boutons { display: flex; flex-direction: column; gap: 10px; margin-top: 4px; }
+.msg-boutons .BTN { margin: 0; }
+.BTN-MSG-ANNULER { width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 10px; cursor: pointer; background: transparent; color: #64748b; font-family: inherit; font-size: 0.82em; font-weight: 600; }
+body.dark-mode .msg-card { background: #1f1f1f; }
+body.dark-mode .msg-titre { color: #f5f5f5; }
+body.dark-mode .msg-texte { color: #a3a3a3; }
+body.dark-mode .BTN-MSG-ANNULER { border-color: #4a4a4a; color: #d4d4d4; }
+
 .THEME-TOGGLE {
   position: fixed; top: calc(14px + var(--safe-top)); right: calc(14px + var(--safe-right)); z-index: 500;
   width: 40px; height: 40px; border-radius: 50%; border: 1px solid var(--sm2-border); background: #fff;
@@ -254,6 +300,17 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
 <body>
 <button type="button" class="THEME-TOGGLE" id="THEME-TOGGLE-BTN" onclick="TOGGLE_THEME()" aria-label="Mode sombre">🌙</button>
 <div class="PAGE-STAGE" id="PAGE-STAGE"></div>
+<div id="MSG-OVERLAY" class="MSG-OVERLAY HIDDEN" role="dialog" aria-modal="true" aria-labelledby="MSG-TITRE">
+  <div class="msg-wrap">
+    <img id="MSG-MASCOTTE" class="msg-mascotte HIDDEN" src="mascotte.webp" alt="" aria-hidden="true">
+    <div class="msg-card">
+      <div id="MSG-ICONE" class="msg-icone">ℹ️</div>
+      <h2 id="MSG-TITRE" class="msg-titre"></h2>
+      <p id="MSG-TEXTE" class="msg-texte"></p>
+      <div id="MSG-BOUTONS" class="msg-boutons"></div>
+    </div>
+  </div>
+</div>
 <script src="app.js"></script>
 </body>
 </html>

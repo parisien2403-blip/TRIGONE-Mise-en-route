@@ -164,7 +164,7 @@ function BIB_TROUVER(id) { return GET_BIBLIOTHEQUE().filter(function(e) { return
 function BIB_PDF(id) {
     var e = BIB_TROUVER(id); if (!e) return;
     try { GENERER_PDF(e.demandes).save(NOM_FICHIER_BASE(e.demandes) + '.pdf'); }
-    catch (err) { alert('Erreur lors de la génération du PDF : ' + err.message); }
+    catch (err) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + err.message); }
 }
 // Repart d'une demande envoyée (même objet, mêmes personnes) pour en créer une nouvelle.
 function BIB_REUTILISER(id) {
@@ -175,9 +175,10 @@ function BIB_REUTILISER(id) {
     SHOW_PAGE('FORMULAIRE');
 }
 function BIB_SUPPRIMER(id) {
-    if (!confirm('Supprimer cette demande de la bibliothèque ?')) return;
-    SAVE_BIBLIOTHEQUE(GET_BIBLIOTHEQUE().filter(function(e) { return e.id !== id; }));
-    SHOW_PAGE('BIBLIOTHEQUE');
+    MSG_CONFIRM('Supprimer ?', 'Cette demande sera retirée de la bibliothèque.', 'Supprimer', function() {
+        SAVE_BIBLIOTHEQUE(GET_BIBLIOTHEQUE().filter(function(e) { return e.id !== id; }));
+        SHOW_PAGE('BIBLIOTHEQUE');
+    }, '🗑️', 'mascotte-poubelle.webp', true);
 }
 
 // ===================== MON ESPACE =====================
@@ -433,8 +434,8 @@ function SIGNALER_MANQUES(manques) {
     });
     var premier = document.querySelector('.MER-ERREUR');
     if (premier) premier.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    alert('À compléter avant de continuer :\n\n- ' + manques.slice(0, 10).map(function(x) { return x.libelle; }).join('\n- ') +
-        (manques.length > 10 ? '\n… et ' + (manques.length - 10) + ' autre(s)' : ''));
+    MSG_ERREUR('À compléter', '• ' + manques.slice(0, 10).map(function(x) { return x.libelle; }).join('\n• ') +
+        (manques.length > 10 ? '\n… et ' + (manques.length - 10) + ' autre(s)' : ''), true);
 }
 // Aller vers un onglet : libre en arrière ; en avant, tous les onglets précédents doivent être complets.
 function SWITCH_MER_TAB(tab) {
@@ -588,10 +589,10 @@ function TPL_FORMULAIRE() {
 // ===================== PANIER =====================
 function AJOUTER_AU_PANIER() {
     var p0 = D.personnes[0];
-    if (!p0.nom || !p0.prenom) { alert('Merci de renseigner au moins le nom et le prénom de la première personne.'); return; }
-    if (!D.objet) { alert('Merci de renseigner l\'objet de la demande.'); return; }
+    if (!p0.nom || !p0.prenom) { MSG_ERREUR('Identité incomplète', 'Merci de renseigner au moins le nom et le prénom de la première personne.'); return; }
+    if (!D.objet) { MSG_ERREUR('Objet manquant', 'Merci de renseigner l\'objet de la demande.'); return; }
     var malFormes = D.personnes.filter(function(p) { return p.matricule && p.matricule.replace(/\D/g, '').length !== 10; });
-    if (malFormes.length) { alert('Le matricule doit comporter 10 chiffres (ex : 067 50 10 191) : ' + malFormes.map(function(p) { return p.nom || '?'; }).join(', ') + '.'); return; }
+    if (malFormes.length) { MSG_ERREUR('Matricule incorrect', 'Le matricule doit comporter 10 chiffres (ex : 067 50 10 191) : ' + malFormes.map(function(p) { return p.nom || '?'; }).join(', ') + '.'); return; }
     var reg = GET_REGLAGES();
     reg.derniereUnite = p0.unite; reg.derniereCie = p0.cie;
     SAVE_REGLAGES(reg);
@@ -861,6 +862,53 @@ function GENERER_PDF(panier) {
     return doc;
 }
 
+// ===================== MESSAGE CENTRÉ (comme TRIGONE compte-rendu) =====================
+// Remplace alert / confirm : carte centrée, icône, titre, texte et mascotte à droite.
+function TYPO_FR(t) { return String(t).replace(/ ([?!:;»])/g, '\u00A0$1').replace(/(«) /g, '$1\u00A0'); }
+function FERMER_MSG() {
+    var o = document.getElementById('MSG-OVERLAY');
+    if (!o) return;
+    o.classList.remove('msg-in');
+    setTimeout(function() { o.classList.add('HIDDEN'); }, 300);
+}
+// opts : titre, texte, icone, mascotte (nom d'image, false = sans), mascotteDroit, gauche (texte aligné à gauche), boutons [{label, style, action}]
+function AFFICHER_MSG_CENTRE(opts) {
+    var o = document.getElementById('MSG-OVERLAY');
+    if (!o) { alert((opts.titre ? opts.titre + '\n\n' : '') + (opts.texte || '')); return; }
+    var mascotte = document.getElementById('MSG-MASCOTTE');
+    var erreur = opts.icone === '⛔';
+    var src = opts.mascotte === false ? null : (opts.mascotte || (erreur ? 'mascotte-erreur.webp' : 'mascotte.webp'));
+    mascotte.classList.toggle('HIDDEN', !src);
+    if (src) mascotte.setAttribute('src', src);
+    mascotte.classList.toggle('msg-mascotte-droit', !!opts.mascotteDroit || (erreur && !opts.mascotte));
+    mascotte.parentElement.classList.toggle('has-mascotte', !!src);
+    document.getElementById('MSG-ICONE').textContent = opts.icone || 'ℹ️';
+    document.getElementById('MSG-TITRE').textContent = TYPO_FR(opts.titre || '');
+    var texte = document.getElementById('MSG-TEXTE');
+    texte.textContent = TYPO_FR(opts.texte || '');
+    texte.classList.toggle('msg-gauche', !!opts.gauche);
+    var zone = document.getElementById('MSG-BOUTONS');
+    zone.innerHTML = '';
+    (opts.boutons || [{ label: 'OK' }]).forEach(function(b) {
+        var btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = b.style || 'BTN BTN-PRIMARY';
+        btn.textContent = b.label;
+        btn.onclick = function() { FERMER_MSG(); if (b.action) setTimeout(b.action, 300); };
+        zone.appendChild(btn);
+    });
+    o.classList.remove('HIDDEN');
+    requestAnimationFrame(function() { requestAnimationFrame(function() { o.classList.add('msg-in'); }); });
+    var premier = zone.querySelector('.BTN-PRIMARY') || zone.lastChild;
+    if (premier) premier.focus();
+}
+function MSG_ERREUR(titre, texte, gauche) { AFFICHER_MSG_CENTRE({ titre: titre, texte: texte, icone: '⛔', gauche: gauche }); }
+function MSG_INFO(titre, texte, icone, mascotte) { AFFICHER_MSG_CENTRE({ titre: titre, texte: texte, icone: icone, mascotte: mascotte }); }
+function MSG_CONFIRM(titre, texte, libelle, action, icone, mascotte, mascotteDroit) {
+    AFFICHER_MSG_CENTRE({ titre: titre, texte: texte, icone: icone || '⚠️', mascotte: mascotte, mascotteDroit: mascotteDroit,
+        boutons: [{ label: 'Annuler', style: 'BTN-MSG-ANNULER' }, { label: libelle || 'Confirmer', action: action }] });
+}
+
 // ===================== MODALE (relecture avant envoi) =====================
 function AFFICHER_MODALE(titre, html, boutons) {
     var fond = document.createElement('div');
@@ -902,7 +950,7 @@ function TELECHARGER_TEXTE(nomFichier, contenu, type) {
 function PREPARER_ENVOI() {
     var reg = GET_REGLAGES();
     var mail = (document.getElementById('MER-MAIL-DEST') || {}).value || reg.mailSignataire || '';
-    if (!mail || mail.indexOf('@') === -1) { alert('Merci de renseigner l\'adresse mail du 1er signataire avant l\'envoi.'); return; }
+    if (!mail || mail.indexOf('@') === -1) { MSG_ERREUR('Mail manquant', 'Merci de renseigner l\'adresse mail du 1er valideur avant l\'envoi.'); return; }
     reg.mailSignataire = mail; SAVE_REGLAGES(reg);
 
     var panier = GET_PANIER();
@@ -932,7 +980,7 @@ function FINALISER_ENVOI() {
     try {
         var doc = GENERER_PDF(panier);
         doc.save(base + '.pdf');
-    } catch (e) { alert('Erreur lors de la génération du PDF : ' + e.message); return; }
+    } catch (e) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + e.message); return; }
     TELECHARGER_TEXTE(base + '.json', GENERER_JSON(panier, 'DEMANDE_INITIALE'), 'application/json');
 
     var sujet = 'TRIGONE Mise en route — ' + panier.length + ' demande(s) — ' + (panier[0].personnes[0].nom || '');
@@ -942,7 +990,10 @@ function FINALISER_ENVOI() {
     window.location.href = 'mailto:' + encodeURIComponent(reg.mailSignataire) + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
 
     SAVE_PANIER([]);
-    setTimeout(function() { SHOW_PAGE('ACCUEIL'); }, 300);
+    setTimeout(function() {
+        SHOW_PAGE('ACCUEIL');
+        MSG_INFO('Mail préparé', 'Joignez le PDF et le fichier .json téléchargés, puis envoyez le mail. La demande est rangée dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
+    }, 300);
 }
 
 // ===================== SÉCURITÉ DES VALIDATIONS =====================
@@ -1157,16 +1208,16 @@ function TPL_CONNEXION(v) {
 function SE_CONNECTER(btn) {
     var v = GET_VALIDEUR();
     ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) { v[k] = (document.getElementById('MER-VAL-' + k).value || '').trim(); });
-    if (!v.grade || !v.nom || !v.prenom || !v.fonction) { alert('Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
+    if (!v.grade || !v.nom || !v.prenom || !v.fonction) { MSG_ERREUR('Identité incomplète', 'Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
     v.grade = v.grade.toUpperCase(); v.nom = v.nom.toUpperCase();
     SAVE_VALIDEUR(v);
     var champ = document.getElementById('MER-CODE-ACCES');
     var code = champ.value.trim();
-    if (!code) { alert('Merci de saisir votre code d\'accès.'); return; }
+    if (!code) { MSG_ERREUR('Code manquant', 'Merci de saisir votre code d\'accès valideur.'); return; }
     var bouton = document.querySelector('#PAGE-STAGE .BTN-PRIMARY');
     if (bouton) { bouton.disabled = true; bouton.textContent = 'Vérification…'; }
     CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(RENDER_VALIDATION_INPLACE).catch(function() {
-        alert('Code d\'accès incorrect.');
+        AFFICHER_MSG_CENTRE({ titre: 'Code incorrect', texte: 'Ce code d\'accès n\'est pas reconnu. Vérifiez-le, en respectant les majuscules et les symboles.', icone: '⛔', mascotte: 'mascotte-code.webp' });
         champ.value = '';
         if (bouton) { bouton.disabled = false; bouton.textContent = 'Se connecter'; }
     });
@@ -1175,7 +1226,7 @@ function SE_DECONNECTER() { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; RE
 function COPIER_TEXTE(t, btn) {
     (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function() {
         if (btn) { btn.textContent = '✔ Copié'; }
-    }).catch(function() { prompt('Copiez ce texte :', t); });
+    }).catch(function() { MSG_INFO('Copiez ce texte', t, '📋', false); });
 }
 
 // ---- 4. Espace de validation ----
@@ -1266,7 +1317,7 @@ function LIRE_FICHIERS(input, lire, traiter) {
         var lecteur = new FileReader();
         lecteur.onload = function() {
             try { contenus.push(lire(lecteur.result, f)); }
-            catch (e) { alert('Le fichier « ' + f.name + ' » n\'est pas un fichier TRIGONE Mise en route valide.'); }
+            catch (e) { MSG_ERREUR('Fichier non reconnu', 'Le fichier « ' + f.name + ' » n\'est pas un fichier TRIGONE Mise en route valide.'); }
             if (--restants === 0) traiter(contenus);
         };
         if (/\.pdf$/i.test(f.name)) lecteur.readAsBinaryString(f); else lecteur.readAsText(f);
@@ -1294,8 +1345,8 @@ function IMPORTER_A_VALIDER(input) {
         });
         SAVE_A_VALIDER(liste);
         RENDER_VALIDATION_INPLACE();
-        if (refus) alert(refus + ' demande(s) refusée(s) ignorée(s) : un refus s\'importe côté demandeur.');
-        else if (!ajoutees && contenus.length) alert('Ces demandes sont déjà dans votre liste.');
+        if (refus) MSG_INFO('Demandes refusées ignorées', refus + ' demande(s) refusée(s) ignorée(s) : un refus s\'importe côté demandeur.');
+        else if (!ajoutees && contenus.length) MSG_INFO('Déjà importées', 'Ces demandes sont déjà dans votre liste.');
     });
 }
 
@@ -1310,7 +1361,7 @@ function VALIDER_DEMANDES(ids) {
     })).then(function() {
         SAVE_A_VALIDER(liste);
         RENDER_VALIDATION_INPLACE();
-    }).catch(function(err) { alert('Signature impossible : ' + err.message); });
+    }).catch(function(err) { MSG_ERREUR('Signature impossible', err.message); });
 }
 function COCHER_TOUT_VALIDATION() {
     var cases = document.querySelectorAll('.MER-VAL-SEL');
@@ -1320,7 +1371,7 @@ function COCHER_TOUT_VALIDATION() {
 function VALIDER_SELECTION() {
     var ids = Array.prototype.filter.call(document.querySelectorAll('.MER-VAL-SEL'), function(c) { return c.checked; })
         .map(function(c) { return c.value; });
-    if (!ids.length) { alert('Cochez au moins une demande.'); return; }
+    if (!ids.length) { MSG_ERREUR('Aucune demande cochée', 'Cochez au moins une demande à valider.'); return; }
     VALIDER_DEMANDES(ids);
 }
 function MAJ_ENTREES(ids, maj) {
@@ -1342,7 +1393,7 @@ function DEMANDER_REFUS(id) {
 }
 function CONFIRMER_REFUS(id) {
     var motif = (document.getElementById('MER-MOTIF-REFUS').value || '').trim();
-    if (!motif) { alert('Merci d\'indiquer le motif du refus.'); return; }
+    if (!motif) { MSG_ERREUR('Motif manquant', 'Merci d\'indiquer le motif du refus.'); return; }
     var h = HABILITATION_COURANTE();
     if (!MER_CLE_SESSION || !h) { FERMER_MODALE(); RENDER_VALIDATION_INPLACE(); return; }
     FERMER_MODALE();
@@ -1364,7 +1415,7 @@ function VOIR_PDF_VALIDATION(id) {
     var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0];
     if (!e) return;
     try { window.open(GENERER_PDF([DEMANDE_AVEC_DECISION(e)]).output('bloburl'), '_blank'); }
-    catch (err) { alert('Erreur lors de la génération du PDF : ' + err.message); }
+    catch (err) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + err.message); }
 }
 
 var MER_ENVOIS = [];
@@ -1380,8 +1431,8 @@ function PREPARER_TRANSMISSION() {
         } else if (d.validations.length === 1) vers2.push(d);
         else versChorus.push(d);
     });
-    if (vers2.length && !/@/.test(v.mailValideur2 || '')) { alert('Merci de renseigner le mail du 2e valideur.'); return; }
-    if (versChorus.length && !/@/.test(v.mailChorus || '')) { alert('Merci de renseigner le mail de l\'assistant Chorus DT.'); return; }
+    if (vers2.length && !/@/.test(v.mailValideur2 || '')) { MSG_ERREUR('Mail manquant', 'Merci de renseigner le mail du 2e valideur.'); return; }
+    if (versChorus.length && !/@/.test(v.mailChorus || '')) { MSG_ERREUR('Mail manquant', 'Merci de renseigner le mail de l\'assistant Chorus DT.'); return; }
 
     MER_ENVOIS = [];
     if (vers2.length) MER_ENVOIS.push({ type: 'VALIDATION_1', demandes: vers2, mail: v.mailValideur2,
@@ -1417,7 +1468,7 @@ function EXECUTER_ENVOI(i) {
     var sujet, corps;
     if (env.type === 'CHORUS') {
         try { GENERER_PDF(env.demandes).save(env.pj); }
-        catch (e) { alert('Erreur lors de la génération du PDF : ' + e.message); return; }
+        catch (e) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + e.message); return; }
         sujet = 'TRIGONE Mise en route — ' + n + ' demande(s) validée(s) — ' + nom;
         corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) et ordre(s) de mise en route validé(s), pour traitement.\n' +
             'Les validations sont signées électroniquement : TRIGONE Mise en route > Vérifier une mise en route permet de les contrôler.\n\nCordialement.';
@@ -1529,7 +1580,10 @@ function TPL_ADMIN() {
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 function ADMIN_NOUVEAU_CODE(role) {
-    if (!confirm('Créer un nouveau code d\'accès pour le ' + LIBELLE_ROLE(role) + ' ?\n\nL\'ancien code cessera de fonctionner une fois la liste publiée.')) return;
+    MSG_CONFIRM('Nouveau code ?', 'Créer un nouveau code d\'accès pour le ' + LIBELLE_ROLE(role) + ' ?\n\nL\'ancien code cessera de fonctionner une fois la liste publiée.',
+        'Créer le code', function() { ADMIN_CREER_CODE(role); }, '🔑', 'mascotte-code.webp');
+}
+function ADMIN_CREER_CODE(role) {
     CREER_ACCES(role).then(function(r) {
         var maintenant = new Date().toISOString();
         MER_ADMIN_LISTE.valideurs.forEach(function(a) { if (a.role === role && !a.retire) a.retire = maintenant; });
@@ -1544,9 +1598,10 @@ function ADMIN_NOUVEAU_CODE(role) {
 }
 function ADMIN_RETIRER(i) {
     var v = MER_ADMIN_LISTE.valideurs[i];
-    if (!confirm('Retirer ce code d\'accès (' + LIBELLE_ROLE(v.role) + ') ?\n\nLes validations passées restent valables ; ce code ne fonctionnera plus.')) return;
-    v.retire = new Date().toISOString();
-    SHOW_PAGE('ADMIN');
+    MSG_CONFIRM('Retirer ce code ?', 'Code d\'accès du ' + LIBELLE_ROLE(v.role) + '.\n\nLes validations passées restent valables ; ce code ne fonctionnera plus.', 'Retirer', function() {
+        v.retire = new Date().toISOString();
+        SHOW_PAGE('ADMIN');
+    }, '🗑️', 'mascotte-poubelle.webp', true);
 }
 
 // ===================== RETOUR D'UN REFUS (côté demandeur) =====================
@@ -1561,7 +1616,7 @@ function IMPORTER_REFUS(input) {
                 n++;
             });
         });
-        if (!n) { alert('Aucune demande refusée dans ce fichier.'); return; }
+        if (!n) { MSG_INFO('Aucun refus', 'Aucune demande refusée dans ce fichier.'); return; }
         SAVE_PANIER(panier);
         SHOW_PAGE('PANIER');
     });
@@ -1577,10 +1632,22 @@ function MODIFIER_DEMANDE(id) {
 }
 
 // ===================== DÉMARRAGE =====================
+// Nouvelle version installée pendant que l'appli est ouverte : message centré « Mise à jour » (mascotte dédiée)
+// et rechargement, pour que tout l'écran passe d'un coup à la nouvelle version.
 function REGISTER_SERVICE_WORKER() {
-    if ('serviceWorker' in navigator) {
-        navigator.serviceWorker.register('./sw.js').catch(function(e) { console.warn('Service Worker:', e); });
-    }
+    if (!('serviceWorker' in navigator)) return;
+    var dejaControle = !!navigator.serviceWorker.controller;
+    navigator.serviceWorker.addEventListener('controllerchange', function() {
+        if (!dejaControle) { dejaControle = true; return; }
+        AFFICHER_MSG_CENTRE({
+            titre: 'Mise à jour', texte: 'Une nouvelle version de TRIGONE Mise en route est disponible. Votre saisie en cours est conservée.',
+            icone: '🔄', mascotte: 'mascotte-maj.webp',
+            boutons: [{ label: 'Mettre à jour', action: function() { location.reload(); } }]
+        });
+    });
+    navigator.serviceWorker.register('./sw.js').then(function(reg) {
+        document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') reg.update().catch(function() {}); });
+    }).catch(function(e) { console.warn('Service Worker:', e); });
 }
 
 window.addEventListener('DOMContentLoaded', function() {
