@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v18';
+const CACHE_NAME = 'trigone-mise-en-route-v19';
 const ASSETS = [
   './',
   './manifest.json',
@@ -17,6 +17,7 @@ const ASSETS = [
   './icon-512.png',
   './icon-512-maskable.png',
   './apple-touch-icon.png',
+  './favicon-32.png',
   './vendor/jspdf.umd.min.js',
   './vendor/jspdf.plugin.autotable.min.js',
   './vendor/qrcode.min.js',

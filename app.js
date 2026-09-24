@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 18;
+var APP_CODE_VERSION = 19;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -214,6 +214,8 @@ function TPL_MON_ESPACE() {
               '<button type="button" class="BTN BTN-GHOST" onclick="OUVRIR_ECRAN_PIN(\'suppression\')">Désactiver le code</button>'
             : '<p class="MER-HINT" style="margin:0 0 10px;">Protégez l\'application par un code à 4 chiffres, demandé à chaque ouverture. Utile si votre téléphone n\'est pas verrouillé ou est partagé.</p>' +
               '<button type="button" class="BTN BTN-GHOST" onclick="OUVRIR_ECRAN_PIN(\'creation\')">Activer un code à 4 chiffres</button>') +
+        '<div class="MER-SECTION-TITLE">Application</div>' +
+        '<button type="button" class="BTN BTN-GHOST" onclick="PROPOSER_INSTALLATION(true)">📲 Installer l\'application</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
         '<button type="button" class="P0-LIEN" style="opacity:0.6;" onclick="OUVRIR_ADMIN()">Administration des valideurs</button></div>';
 }
@@ -1064,6 +1066,54 @@ function VALIDER_CONFIG_INITIALE() {
 }
 function PASSER_CONFIG_INITIALE() { FERMER_CONFIG_INITIALE(); }
 
+// ===================== INSTALLATION DE L'APPLICATION (comme TRIGONE compte-rendu) =====================
+// Proposée une fois à la première connexion, puis à tout moment depuis Mon espace.
+var STORAGE_INSTALL_PROPOSEE = 'mer_installation_proposee';
+var PWA_INVITE = null;
+window.addEventListener('beforeinstallprompt', function(e) { e.preventDefault(); PWA_INVITE = e; });
+window.addEventListener('appinstalled', function() { PWA_INVITE = null; });
+function EST_APP_INSTALLEE() { return window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true; }
+function PLATEFORME() {
+    var ua = navigator.userAgent || '';
+    if (/iPad|iPhone|iPod/.test(ua) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1)) return 'ios';
+    if (/Android/i.test(ua)) return 'android';
+    return 'ordinateur';
+}
+function PROPOSER_INSTALLATION(manuel) {
+    if (EST_APP_INSTALLEE()) {
+        if (manuel) MSG_INFO('Déjà installée', 'TRIGONE Mise en route est déjà installée sur cet appareil.', '✅', 'mascotte-ok.webp');
+        return;
+    }
+    try { localStorage.setItem(STORAGE_INSTALL_PROPOSEE, '1'); } catch (e) {}
+    var plateforme = PLATEFORME(), texte, boutons;
+    if (PWA_INVITE) {
+        texte = 'Ajoutez TRIGONE Mise en route à votre ' + (plateforme === 'ordinateur' ? 'ordinateur' : 'écran d\'accueil') +
+            ' : elle s\'ouvrira comme une vraie application, avec son icône, même sans réseau.';
+        boutons = [{ label: 'Plus tard', style: 'BTN-MSG-ANNULER' }, { label: '📲 Installer l\'application', action: function() {
+            var invite = PWA_INVITE; PWA_INVITE = null;
+            invite.prompt();
+            invite.userChoice.then(function(c) {
+                if (c && c.outcome === 'accepted') MSG_INFO('Application installée', 'Retrouvez TRIGONE Mise en route sur votre ' + (plateforme === 'ordinateur' ? 'bureau' : 'écran d\'accueil') + '.', '✅', 'mascotte-pouce.webp');
+            });
+        } }];
+    } else if (plateforme === 'ios') {
+        texte = 'Dans Safari, appuyez sur Partager (le carré avec une flèche), puis « Sur l\'écran d\'accueil ». TRIGONE Mise en route s\'ouvrira ensuite comme une vraie application, avec son icône.';
+    } else if (plateforme === 'android') {
+        texte = 'Menu du navigateur ⋮ puis « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ». TRIGONE Mise en route s\'ouvrira ensuite comme une vraie application, avec son icône.';
+    } else {
+        texte = 'Dans Chrome ou Edge, cliquez sur l\'icône d\'installation à droite de la barre d\'adresse (ou menu ⋮ puis « Installer TRIGONE Mise en route »). L\'application aura alors son icône sur votre ordinateur.';
+    }
+    AFFICHER_MSG_CENTRE({ titre: 'Installer l\'application', texte: texte, iconeImage: 'icon-192.png', mascotte: 'mascotte-pouce.webp',
+        boutons: boutons || [{ label: 'J\'ai compris' }] });
+}
+function PROPOSER_INSTALLATION_PREMIERE_FOIS() {
+    var deja = false;
+    try { deja = localStorage.getItem(STORAGE_INSTALL_PROPOSEE) === '1'; } catch (e) {}
+    if (deja || EST_APP_INSTALLEE()) return;
+    // laisse le temps au navigateur d'annoncer qu'il sait installer l'appli (Android, Chrome, Edge)
+    setTimeout(function() { ATTENDRE_ECRAN_LIBRE(function() { PROPOSER_INSTALLATION(false); }); }, 1500);
+}
+
 // ===================== NOTICE =====================
 var MER_NOTICE_CLE = null;
 var MER_NOTICES = {
@@ -1133,7 +1183,9 @@ function AFFICHER_MSG_CENTRE(opts) {
     if (src) mascotte.setAttribute('src', src);
     mascotte.classList.toggle('msg-mascotte-droit', !!opts.mascotteDroit || (erreur && !opts.mascotte));
     mascotte.parentElement.classList.toggle('has-mascotte', !!src);
-    document.getElementById('MSG-ICONE').textContent = opts.icone || 'ℹ️';
+    var icone = document.getElementById('MSG-ICONE');
+    if (opts.iconeImage) icone.innerHTML = '<img src="' + opts.iconeImage + '" alt="" style="width:72px; height:72px; border-radius:16px; box-shadow:0 6px 16px rgba(0,0,0,0.18);">';
+    else icone.textContent = opts.icone || 'ℹ️';
     document.getElementById('MSG-TITRE').textContent = TYPO_FR(opts.titre || '');
     var texte = document.getElementById('MSG-TEXTE');
     texte.textContent = TYPO_FR(opts.texte || '');
@@ -1982,7 +2034,7 @@ window.addEventListener('DOMContentLoaded', function() {
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
     try { vue = localStorage.getItem(STORAGE_POURQUOI) === '1'; } catch (e) {}
-    var suite = function() { if (!CONFIG_FAITE()) AFFICHER_CONFIG_INITIALE(); };
+    var suite = function() { if (!CONFIG_FAITE()) AFFICHER_CONFIG_INITIALE(); PROPOSER_INSTALLATION_PREMIERE_FOIS(); };
     if (!vue) AFFICHER_POURQUOI(suite);
     else if (PIN_EST_DEFINI()) OUVRIR_ECRAN_PIN('verif', suite);
     else suite();

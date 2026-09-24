@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 18,
-  "appCodeMessage": "Nouveau logo (« MISE EN ROUTE » plus fin, comme TRIGONE compte-rendu), boutons de l'accueil recentrés, et page « Avant de commencer » à la première ouverture pour renseigner votre identité, vos mails et votre code d'accès.",
+  "appCodeVersion": 19,
+  "appCodeMessage": "Nouvelle icône TRIGONE Mise en route (phénix violet) pour l'application installée sur téléphone et ordinateur. Si l'application est déjà installée, l'icône se met à jour après une réinstallation. « Installer l'application » est disponible dans Mon espace.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
