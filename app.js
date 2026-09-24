@@ -37,7 +37,7 @@ function VIDE_DEMANDE() {
 var D = VIDE_DEMANDE();          // demande en cours de saisie
 var PAGE_ACTUELLE = 'ACCUEIL';
 var MER_TABS_ORDRE = ['IDENTITE', 'TRAJETS', 'CONDITIONS', 'IMPUTATION'];
-var MER_TABS_LABELS = { IDENTITE: '1. Identité', TRAJETS: '2. Trajets', CONDITIONS: '3. Alimentation & hébergement', IMPUTATION: '4. Imputation' };
+var MER_TABS_LABELS = { IDENTITE: 'Identité', TRAJETS: 'Trajets', CONDITIONS: 'Alim./Héb.', IMPUTATION: 'Imputation' };
 var MER_ACTIVE_TAB = 'IDENTITE';
 
 function GET_REGLAGES() {
@@ -235,6 +235,8 @@ function NAV_CHAMP(path) {
 }
 function ON_CHAMP_INPUT(path, val) {
     var n = NAV_CHAMP(path); n.obj[n.key] = val;
+    var el = document.querySelector('.MER-ERREUR[data-path="' + path + '"]');
+    if (el) el.classList.remove('MER-ERREUR');
     if (/^trajets\.retour\.(lieu|cp|pays)/.test(path)) D.trajets.retourAuto = false;
     if (/^trajets\.aller\./.test(path)) SYNCHRO_RETOUR();
     SAVE_BROUILLON();
@@ -389,14 +391,71 @@ function CHOISIR_VILLE(path, cote, input) {
 }
 
 // ===================== ONGLETS DU FORMULAIRE =====================
+// Champs obligatoires de chaque onglet : on ne passe à l'onglet suivant que si le précédent est complet.
+function MANQUES_ONGLET(tab) {
+    var m = [];
+    function exiger(path, libelle) { if (!String(GET_CHAMP(path) || '').trim()) m.push({ path: path, libelle: libelle }); }
+    if (tab === 'IDENTITE') {
+        exiger('objet', 'Objet');
+        D.personnes.forEach(function(p, i) {
+            var qui = D.personnes.length > 1 ? ' (personne ' + (i + 1) + ')' : '';
+            [['unite', 'Unité / entité'], ['cie', 'CIE'], ['grade', 'Grade'], ['nom', 'Nom'], ['prenom', 'Prénom']].forEach(function(c) {
+                exiger('personnes.' + i + '.' + c[0], c[1] + qui);
+            });
+            if ((p.matricule || '').replace(/\D/g, '').length !== 10) m.push({ path: 'personnes.' + i + '.matricule', libelle: 'Matricule à 10 chiffres' + qui });
+        });
+    } else if (tab === 'TRAJETS') {
+        var t = D.trajets, blocs = [['aller', 'Aller']];
+        if (t.intermediaireAllerActif) blocs.push(['intermediaireAller', 'Intermédiaire aller']);
+        blocs.push(['retour', 'Retour']);
+        if (t.intermediaireRetourActif) blocs.push(['intermediaireRetour', 'Intermédiaire retour']);
+        blocs.forEach(function(b) {
+            var tr = t[b[0]], base = 'trajets.' + b[0] + '.';
+            exiger(base + 'moyen', b[1] + ' : moyen de transport');
+            exiger(base + 'lieuDep', b[1] + ' : lieu de départ');
+            if (!tr.paysDep) exiger(base + 'cpDep', b[1] + ' : code postal de départ');
+            exiger(base + 'dateDep', b[1] + ' : date et heure de départ');
+            exiger(base + 'lieuArr', b[1] + ' : lieu d\'arrivée');
+            if (!tr.paysArr) exiger(base + 'cpArr', b[1] + ' : code postal d\'arrivée');
+            exiger(base + 'dateArr', b[1] + ' : date et heure d\'arrivée');
+            if (tr.dateDep && tr.dateArr && tr.dateArr < tr.dateDep) m.push({ path: base + 'dateArr', libelle: b[1] + ' : l\'arrivée est avant le départ' });
+        });
+    } else if (tab === 'IMPUTATION') {
+        exiger('codeFD', 'Code d\'engagement FD@LIGNE');
+    }
+    return m;
+}
+function ONGLET_COMPLET(tab) { return MANQUES_ONGLET(tab).length === 0; }
+function SIGNALER_MANQUES(manques) {
+    manques.forEach(function(x) {
+        var el = document.querySelector('[data-path="' + x.path + '"]');
+        if (el) el.classList.add('MER-ERREUR');
+    });
+    var premier = document.querySelector('.MER-ERREUR');
+    if (premier) premier.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    alert('À compléter avant de continuer :\n\n- ' + manques.slice(0, 10).map(function(x) { return x.libelle; }).join('\n- ') +
+        (manques.length > 10 ? '\n… et ' + (manques.length - 10) + ' autre(s)' : ''));
+}
+// Aller vers un onglet : libre en arrière ; en avant, tous les onglets précédents doivent être complets.
 function SWITCH_MER_TAB(tab) {
+    var cible = MER_TABS_ORDRE.indexOf(tab);
+    for (var i = 0; i < cible; i++) {
+        var manques = MANQUES_ONGLET(MER_TABS_ORDRE[i]);
+        if (!manques.length) continue;
+        if (MER_TABS_ORDRE[i] !== MER_ACTIVE_TAB) { MER_ACTIVE_TAB = MER_TABS_ORDRE[i]; RENDER_FORMULAIRE_INPLACE(); }
+        SIGNALER_MANQUES(manques);
+        return;
+    }
     MER_ACTIVE_TAB = tab;
     RENDER_FORMULAIRE_INPLACE();
+    window.scrollTo(0, 0);
 }
 function MER_TAB_SUIVANT() {
     var idx = MER_TABS_ORDRE.indexOf(MER_ACTIVE_TAB);
-    if (idx < MER_TABS_ORDRE.length - 1) SWITCH_MER_TAB(MER_TABS_ORDRE[idx + 1]);
-    else AJOUTER_AU_PANIER();
+    if (idx < MER_TABS_ORDRE.length - 1) { SWITCH_MER_TAB(MER_TABS_ORDRE[idx + 1]); return; }
+    var manques = MANQUES_ONGLET(MER_ACTIVE_TAB);
+    if (manques.length) { SIGNALER_MANQUES(manques); return; }
+    AJOUTER_AU_PANIER();
 }
 function MER_TAB_PRECEDENT() {
     var idx = MER_TABS_ORDRE.indexOf(MER_ACTIVE_TAB);
@@ -404,8 +463,16 @@ function MER_TAB_PRECEDENT() {
 }
 
 function TPL_TABS_BAR() {
-    return '<div class="MER-TABS">' + MER_TABS_ORDRE.map(function(t) {
-        return '<button type="button" class="MER-TAB' + (t === MER_ACTIVE_TAB ? ' active' : '') + '" onclick="SWITCH_MER_TAB(\'' + t + '\')">' + MER_TABS_LABELS[t] + '</button>';
+    // Onglet déjà passé et complet : coche ; onglet derrière un onglet incomplet : verrouillé.
+    var ouvert = true, courant = MER_TABS_ORDRE.indexOf(MER_ACTIVE_TAB);
+    return '<div class="MER-TABS">' + MER_TABS_ORDRE.map(function(t, i) {
+        var complet = ONGLET_COMPLET(t);
+        var etat = i === courant ? ' active' : (!ouvert ? ' verrou' : (complet && i < courant ? ' fait' : ''));
+        var html = '<button type="button" class="MER-TAB' + etat + '" onclick="SWITCH_MER_TAB(\'' + t + '\')">' +
+            '<span class="MER-TAB-NUM">' + (etat === ' fait' ? '✓' : (etat === ' verrou' ? '🔒' : i + 1)) + '</span>' +
+            '<span class="MER-TAB-LBL">' + MER_TABS_LABELS[t] + '</span></button>';
+        if (!complet) ouvert = false;
+        return html;
     }).join('') + '</div>';
 }
 
@@ -414,7 +481,7 @@ function TPL_ONGLET_IDENTITE() {
         '<button type="button" class="MER-TOGGLE-BTN' + (D.type === 'MISSION' ? ' actif' : '') + '" onclick="ON_CHAMP_BOOL(\'type\', \'MISSION\')">Mission</button>' +
         '<button type="button" class="MER-TOGGLE-BTN' + (D.type === 'FORMATION' ? ' actif' : '') + '" onclick="ON_CHAMP_BOOL(\'type\', \'FORMATION\')">Formation / stage</button>' +
       '</div>' +
-      '<div class="MER-FIELD"><label>Objet</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'objet\', this.value)" placeholder="EX : Formation conseiller facteur humain">' + ESC(D.objet || '') + '</textarea></div>' +
+      '<div class="MER-FIELD"><label>Objet</label><textarea rows="2" data-path="objet" oninput="ON_CHAMP_INPUT(\'objet\', this.value)" placeholder="EX : Formation conseiller facteur humain">' + ESC(D.objet || '') + '</textarea></div>' +
       '<div class="MER-SECTION-TITLE">Personnel concerné</div>' +
       D.personnes.map(function(_, i) { return TPL_PERSONNE(i); }).join('') +
       '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_PERSONNE()">+ Ajouter une personne (demande collective)</button>';
