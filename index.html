@@ -464,6 +464,24 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
   #MER-MODALE-FOND { padding: 10px !important; }
   .MER-PERSONNE-CARD { padding: 12px 10px; }
 }
+@media (max-width: 520px) {
+  /* le titre des pages ne passe pas sous le bouton 🌙 (fixe, en haut à droite) */
+  .CARD > h2:first-child { padding-right: 34px; }
+}
+@media (max-width: 430px) {
+  /* accueil : le logo commence sous « Références » et « Mise à jour » */
+  .MER-P0-INNER { padding-top: 60px; padding-bottom: 30px; }
+}
+/* Téléphone à l'horizontale : l'accueil défile au lieu d'être tronqué, logo réduit */
+@media (orientation: landscape) and (max-height: 500px) {
+  #MER-P0 { height: auto; max-height: none; overflow: visible; }
+  .MER-P0-SHELL { height: auto; }
+  .MER-P0-INNER { flex: 0 0 auto; padding-top: 34px; padding-bottom: 10px; }
+  .MER-LOGO-WRAP { max-height: none; }
+  .MER-LOGO-IMG { width: auto; height: 140px; max-height: none; }
+  .MER-P0-ESPACE { display: none; }
+  .P0-TAB-BAR { margin-top: 16px; }
+}
 @media (max-width: 400px) {
   /* 5 onglets : deux rangées (3 + 2) pour garder les libellés entiers */
   .MER-TABS { flex-wrap: wrap; }
@@ -474,6 +492,8 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
 }
 @media (max-width: 374px) {
   /* champs côte à côte trop étroits : l'un sous l'autre */
+  .config-duo { grid-template-columns: 1fr; gap: 0; }
+  .config-content { padding: 30px 18px 40px; }
   .MER-ROW2, .MER-ROW3 { grid-template-columns: 1fr; gap: 0; }
   .MER-FIELD input[type=text], .MER-FIELD input[type=password], .MER-FIELD input[type=email], .MER-FIELD input[type=number], .MER-FIELD input[type=datetime-local], .MER-FIELD select, .MER-FIELD textarea { padding: 11px 12px; }
 }
