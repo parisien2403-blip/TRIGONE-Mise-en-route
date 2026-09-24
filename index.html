@@ -222,15 +222,26 @@ body.dark-mode .MER-TOGGLE-BTN { background: #262626; border-color: #404040; }
 .MER-BOTTOM-BAR .BTN-PRIMARY, .MER-ACTIONS .BTN-PRIMARY { flex: 1 1 auto; }
 
 /* Onglets du formulaire : reprise exacte du système de TRIGONE compte-rendu (P1-TABS). */
-.MER-TABS { display: flex; gap: 4px; padding: 4px; margin: 0 0 18px; background: var(--sm2-bg-accent); border-radius: 12px; flex-wrap: wrap; }
+.MER-TABS { display: flex; flex-wrap: nowrap; gap: 4px; padding: 5px; margin: 0 0 18px; background: var(--sm2-bg-accent); border-radius: 12px; }
 body.dark-mode .MER-TABS { background: rgba(255,255,255,0.06); }
 .MER-TAB {
-  flex: 1 1 calc(50% - 2px); min-width: 0; border: none; background: none; padding: 11px 6px;
-  font-size: 0.78em; line-height: 1.25; font-weight: 700; color: var(--sm2-muted); border-radius: 9px;
-  cursor: pointer; text-align: center; overflow-wrap: anywhere;
+  flex: 1 1 0; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 5px;
+  border: none; background: none; padding: 8px 2px; border-radius: 9px; cursor: pointer; font-family: inherit;
+  font-size: clamp(0.56rem, 2.4vw, 0.7rem); font-weight: 700; color: var(--sm2-muted); letter-spacing: 0.01em;
 }
+.MER-TAB-NUM {
+  width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center;
+  background: #fff; border: 1.5px solid var(--sm2-border); color: var(--tg-ink); font-size: 1.05em; font-weight: 800; line-height: 1;
+}
+.MER-TAB-LBL { max-width: 100%; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .MER-TAB.active { background: var(--tg-ink); color: #fff; }
+.MER-TAB.active .MER-TAB-NUM { border-color: #fff; }
+.MER-TAB.fait .MER-TAB-NUM { background: #15803d; border-color: #15803d; color: #fff; }
+.MER-TAB.verrou { opacity: 0.45; }
+.MER-TAB.verrou .MER-TAB-NUM { font-size: 0.7em; }
 body.dark-mode .MER-TAB.active { background: #f1f5f9; color: #1a1a1a; }
+body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color: #e5e5e5; }
+.MER-ERREUR { border-color: #dc2626 !important; box-shadow: 0 0 0 3px rgba(220,38,38,0.12) !important; }
 .MER-CHECKBOX-ROW { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; padding: 12px 14px; background: rgba(90,122,148,0.06); border-radius: 10px; cursor: pointer; }
 .MER-CHECKBOX-ROW input { width: 18px; height: 18px; flex-shrink: 0; }
 .MER-CHECKBOX-ROW span { font-size: 0.82em; font-weight: 700; }
