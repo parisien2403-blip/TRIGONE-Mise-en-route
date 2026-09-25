@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=7"></script>
+<script src="../jumelage.js?v=8"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4971,6 +4971,55 @@ body.dark-mode .PC-BASCULE img { filter: grayscale(1) invert(1); }
 .PC-LIEN { border: 0; background: none; text-align: left; padding: 7px 12px; border-radius: 10px; font-family: inherit; font-size: 0.76rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; text-transform: none; letter-spacing: 0; }
 .PC-LIEN:hover { background: rgba(90,122,148,0.08); }
 .PC-PIED { display: flex; justify-content: space-between; font-size: 0.66rem; color: #94a3b8; padding: 8px 12px 0; }
+
+.P0-PC { display: none; }
+@media (min-width: 1100px) {
+  /* Accueil : tableau de bord à la place de la carte téléphone */
+  body:not(.demo-active) #P0 { max-width: none !important; height: auto !important; max-height: none !important; min-height: 0 !important;
+    background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; overflow: visible !important; display: block !important; }
+  body:not(.demo-active) #P0.HIDDEN { display: none !important; }
+  body:not(.demo-active) #P0 > .P0-SHELL { display: none !important; }
+  body:not(.demo-active) .P0-PC { display: block; padding: 10px 0 40px; text-align: left; }
+  /* Bibliothèque, Notice, Remboursement, Simulateur : pleine largeur, listes en grille */
+  body:not(.demo-active) #P-BIB, body:not(.demo-active) #P-NOTICE, body:not(.demo-active) #P-STAT, body:not(.demo-active) #P-SIMU { max-width: none !important; min-height: 0; }
+  body:not(.demo-active) .BIB-LIST { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  body:not(.demo-active) .NOTICE-MENU-LIST { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  body:not(.demo-active) .NOTICE-MENU-EXTRA { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; align-items: start; }
+  body:not(.demo-active) #P-SIMU .BIB-VIEW { max-width: 760px; }
+  /* Trajets aller / retour : mode de transport à gauche, gares à droite */
+  body:not(.demo-active) .P1-TRANS-BLOCK { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: start; }
+  body:not(.demo-active) .P1-TRANS-BLOCK > * { grid-column: 1; }
+  body:not(.demo-active) .P1-TRANS-BLOCK > #SPEC-A, body:not(.demo-active) .P1-TRANS-BLOCK > #SPEC-R { grid-column: 2; grid-row: 1 / span 12; margin-top: 0; }
+}
+.PC-TITRE { font-size: 1.5rem; margin: 0 0 4px; color: var(--sm2-text); }
+.PC-SOUS { color: #64748b; font-size: 0.84rem; margin: 0 0 22px; }
+.PC-CARTE { background: var(--sm2-surface-solid, #fff); border: 1px solid rgba(15,23,42,0.08); border-radius: 16px; padding: 20px; box-shadow: 0 2px 14px rgba(15,23,42,0.05); color: var(--sm2-text); }
+body.dark-mode .PC-CARTE { background: #1f1f1f; border-color: #333; }
+.PC-CARTE-TITRE { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+.PC-HERO { display: flex; align-items: center; gap: 30px; padding: 26px 30px; }
+.PC-HERO-LOGO { width: 220px; height: auto; flex-shrink: 0; cursor: pointer; }
+body.dark-mode .PC-HERO-LOGO { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+.PC-HERO-TXT { flex: 1; min-width: 0; }
+.PC-HERO-TITRE { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; }
+.PC-HERO-TXT p { margin: 0; font-size: 0.84rem; color: #64748b; line-height: 1.55; }
+.PC-HERO-ACTIONS { display: flex; flex-direction: column; gap: 10px; width: 300px; flex-shrink: 0; }
+.PC-HERO-ACTIONS .BTN { margin: 0; width: 100%; }
+.PC-BTN-CLAIR { width: 100%; padding: 12px 14px; border-radius: 12px; border: 1.5px solid rgba(15,23,42,0.12); background: transparent; font-family: inherit;
+  font-size: 0.74rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--sm2-text); cursor: pointer; }
+.PC-BTN-CLAIR:hover { border-color: var(--tg-accent-light); }
+.PC-GRILLE2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+.PC-LIGNE { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 4px; border: 0; border-top: 1px solid rgba(90,122,148,0.12); background: none;
+  font-family: inherit; font-size: 0.82rem; color: var(--sm2-text); text-align: left; cursor: pointer; text-transform: none; letter-spacing: 0; box-shadow: none; }
+.PC-LIGNE:first-of-type { border-top: 0; }
+.PC-LIGNE:hover b { text-decoration: underline; }
+.PC-LIGNE-DROITE { margin-left: auto; color: #64748b; white-space: nowrap; font-size: 0.78rem; }
+.PC-BADGE { flex-shrink: 0; white-space: nowrap; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: #dcfce7; color: #15803d; }
+.PC-BADGE-GRIS { background: #fef3c7; color: #a16207; }
+.PC-VIDE { color: #94a3b8; font-size: 0.82rem; padding: 10px 0; line-height: 1.5; }
+.PC-KV { display: grid; grid-template-columns: 120px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid rgba(90,122,148,0.12); font-size: 0.8rem; }
+.PC-KV:first-of-type { border-top: 0; }
+.PC-KV > span { color: #64748b; }
+.PC-CREDIT { text-align: center; font-size: 0.72rem; color: #64748b; margin-top: 22px; }
 /* ===== Jumelage : démarrer le compte-rendu à partir d'une mise en route ===== */
 #BTN-DEPUIS-MER { margin-top: 2px; }
 .MER-LISTE.HIDDEN { display: none; }
@@ -5188,6 +5237,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <div id="PAGE-STAGE" class="page-stage">
 
 <div class="CARD" id="P0">
+<div id="P0-PC" class="P0-PC"></div>
 
 <div class="P0-SHELL">
 <div class="P0-GLOW P0-GLOW-a"></div>
@@ -11453,7 +11503,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 104;
+var APP_CODE_VERSION = 105;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12850,7 +12900,7 @@ function INIT_TITRES_AUTO() {
 
 function AFTER_SHOW_PAGE(page) {
     M.PAGE = page;
-    if (page === 'P0') MAJ_BOUTON_DEPUIS_MER();
+    if (page === 'P0') { MAJ_BOUTON_DEPUIS_MER(); RENDRE_P0_PC(); }
     RENDRE_MENU_PC_CR(page);
     requestAnimationFrame(AJUSTER_DOCKS);
     AJUSTER_TITRES();
@@ -13619,8 +13669,51 @@ function RENDRE_MENU_PC_CR(page) {
         '</div>';
 }
 if (CR_PC_MQ) {
-    var CR_PC_CHANGE = function() { RENDRE_MENU_PC_CR(); };
+    var CR_PC_CHANGE = function() { RENDRE_MENU_PC_CR(); if (M.PAGE === 'P0') RENDRE_P0_PC(); };
     if (CR_PC_MQ.addEventListener) CR_PC_MQ.addEventListener('change', CR_PC_CHANGE); else if (CR_PC_MQ.addListener) CR_PC_MQ.addListener(CR_PC_CHANGE);
+}
+
+// Accueil PC : tableau de bord (mission en cours, derniers comptes-rendus), comme TRIGONE Mise en route.
+function RENDRE_P0_PC() {
+    var z = document.getElementById('P0-PC');
+    if (!z) return;
+    if (!(CR_PC_MQ && CR_PC_MQ.matches) || DEMO_MODE_ACTIF) { z.innerHTML = ''; return; }
+    var lire = function(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
+    var qui = [lire('mission_saved_grade'), lire('mission_saved_user')].filter(Boolean).join(' ');
+    var enCours = !M.IS_PAX && !M.MAIL_SENT && HAS_ACTIVE_MISSION_DATA(M);
+    var btnMer = document.getElementById('BTN-DEPUIS-MER');
+    var depuisMer = !enCours && btnMer && !btnMer.classList.contains('HIDDEN');
+    var esc = function(t) { return ESC_HTML(String(t == null ? '' : t)); };
+    var kv = function(k, v) { return v ? '<div class="PC-KV"><span>' + k + '</span><div>' + esc(v) + '</div></div>' : ''; };
+    var bib = GET_BIBLIOTHEQUE_DISPLAY_LIST().slice(0, 5);
+    var mission = enCours
+        ? kv('Libellé', M.LIBELLE_MISSION) + kv('Missionnaire', ((M.GRADE || '') + ' ' + (M.USER || '')).trim()) + kv('Départ', M.DEBUT || 'pas encore horodaté') +
+          kv('Arrivée sur site', M.ARR_SITE) + kv('Départ du site', M.DEP_SITE) +
+          '<button type="button" class="BTN BTN-START" style="margin-top:14px;" onclick="OUVRIR_MENU_MISSION()">Continuer ma mission →</button>'
+        : '<div class="PC-VIDE">Aucune mission en cours. Le jour du départ, appuyez sur « La mission commence ici ».</div>';
+    var liste = bib.length ? bib.map(function(item) {
+        var e = item.entry;
+        return '<button type="button" class="PC-LIGNE" onclick="OUVRIR_BIBLIOTHEQUE()"><span class="PC-BADGE' + (item.preview ? ' PC-BADGE-GRIS' : '') + '">' + (item.preview ? 'Non envoyé' : 'Envoyé') + '</span>' +
+            '<b>Mission du ' + esc(e.debut || '—') + '</b><span class="PC-LIGNE-DROITE">' + esc(e.user || '') + (e.forfaitOfficiel != null ? ' · ' + FORMAT_EURO(e.forfaitOfficiel) + ' €' : '') + '</span></button>';
+    }).join('') : '<div class="PC-VIDE">Aucun compte-rendu pour l\'instant.</div>';
+    z.innerHTML = '<h1 class="PC-TITRE">' + (qui ? 'Bonjour, ' + esc(qui) : 'Bienvenue') + '</h1>' +
+        '<p class="PC-SOUS">Compte-rendu de mission — au retour, TRIGONE calcule vos frais et prépare l\'envoi.</p>' +
+        '<div class="PC-CARTE PC-HERO">' +
+            '<img src="logo_cr_accueil.png" class="PC-HERO-LOGO" alt="TRIGONE Compte-rendu de mission" title="Revenir au choix Mise en route / Compte-rendu" onclick="JUMELAGE_CHOIX()">' +
+            '<div class="PC-HERO-TXT"><div class="PC-HERO-TITRE">Compte-rendu de mission</div>' +
+                '<p>Horodatez le départ, l\'arrivée sur site et la fin de mission ; saisissez vos repas, nuitées et trajets : le forfait est calculé et le compte-rendu signé part par mail.</p></div>' +
+            '<div class="PC-HERO-ACTIONS">' +
+                (enCours ? '<button type="button" class="BTN BTN-START" onclick="OUVRIR_MENU_MISSION()">Reprendre ma mission en cours</button>'
+                         : '<button type="button" class="BTN BTN-START" onclick="ENTRER()">La mission commence ici</button>') +
+                (depuisMer ? '<button type="button" class="PC-BTN-CLAIR" onclick="OUVRIR_LISTE_MISES_EN_ROUTE()">📋 À partir d\'une mise en route</button>' : '') +
+                '<button type="button" class="PC-BTN-CLAIR" onclick="SHOW_PAGE(\'P-SIMU\')">Simuler une mission à venir</button>' +
+                '<button type="button" class="PC-BTN-CLAIR" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
+            '</div></div>' +
+        '<div class="PC-GRILLE2">' +
+            '<div class="PC-CARTE"><div class="PC-CARTE-TITRE">Mission en cours</div>' + mission + '</div>' +
+            '<div class="PC-CARTE"><div class="PC-CARTE-TITRE">Derniers comptes-rendus</div>' + liste + '</div>' +
+        '</div>' +
+        '<p class="PC-CREDIT">Conçu par Germain-Pierre BOUQUET - V' + APP_VERSION_AFFICHEE + '</p>';
 }
 var MER_LIBELLES_COURTS = { 'Bibliothèque': 'Biblio', 'Remboursement': 'Rembours.' };
 function LIBELLES_COURTS_DOCK() {
