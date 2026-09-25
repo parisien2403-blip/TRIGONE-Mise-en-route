@@ -1,6 +1,6 @@
 {
   "id": "trigone-mise-en-route",
-  "name": "TRIGONE — Mise en route & Compte-rendu de mission",
+  "name": "TRIGONE",
   "short_name": "TRIGONE",
   "start_url": "./",
   "scope": "./",
@@ -26,5 +26,6 @@
       "type": "image/png",
       "purpose": "maskable"
     }
-  ]
+  ],
+  "description": "TRIGONE — mise en route et compte-rendu de mission"
 }
