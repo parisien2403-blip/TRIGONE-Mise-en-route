@@ -19,6 +19,26 @@
         try { localStorage.setItem(CLE_THEME, sombre ? '1' : '0'); } catch (e) {}
     };
 
+    // Hauteur réelle de l'écran (--vh-reel), utilisée par l'accueil des deux applis à la place de 100dvh : sur un
+    // écran pliable (Galaxy Z Fold…) ou après la fermeture du clavier, 100dvh peut rester périmé et l'accueil
+    // déborde en bas jusqu'à une rotation. Remesurée à chaque changement ; pas pendant la saisie (clavier ouvert).
+    function mesurerHauteur() {
+        var actif = document.activeElement;
+        if (actif && /^(INPUT|TEXTAREA|SELECT)$/.test(actif.tagName) && actif.type !== 'file' && actif.type !== 'checkbox') return;
+        var h = window.innerHeight || document.documentElement.clientHeight;
+        if (h > 0) document.documentElement.style.setProperty('--vh-reel', h + 'px');
+    }
+    function mesurerPlusTard() { mesurerHauteur(); setTimeout(mesurerHauteur, 120); setTimeout(mesurerHauteur, 450); }
+    window.JUMELAGE_MESURER = mesurerPlusTard;
+    mesurerHauteur();
+    window.addEventListener('resize', mesurerPlusTard);
+    window.addEventListener('orientationchange', mesurerPlusTard);
+    window.addEventListener('pageshow', mesurerPlusTard);
+    document.addEventListener('focusout', function() { setTimeout(mesurerPlusTard, 250); });
+    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') mesurerPlusTard(); });
+    if (window.visualViewport) window.visualViewport.addEventListener('resize', mesurerPlusTard);
+    if (window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', mesurerPlusTard);
+
     var css = '' +
         '.JUM-SCENE { position: relative; }' +
         '.JUM-PRINCIPAL { position: relative; z-index: 1; pointer-events: none; }' +
@@ -65,7 +85,7 @@
     }
     window.JUMELAGE_PLACER = placer;
     var prevu = false;
-    function placerBientot() { if (prevu) return; prevu = true; requestAnimationFrame(function() { prevu = false; placer(); }); }
+    function placerBientot() { if (prevu) return; prevu = true; requestAnimationFrame(function() { prevu = false; mesurerHauteur(); placer(); }); }
     window.addEventListener('resize', placerBientot);
     window.addEventListener('load', placerBientot);
     document.addEventListener('load', function(e) { if (e.target && e.target.classList && e.target.classList.contains('JUM-PRINCIPAL')) placerBientot(); }, true);

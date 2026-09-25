@@ -642,6 +642,8 @@ button, input, select, textarea { font-family: inherit; }
   max-width: 520px;
   height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 32px);
   max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 32px);
+  height: calc(var(--vh-reel, 100dvh) - var(--safe-top) - var(--safe-bottom) - 32px);
+  max-height: calc(var(--vh-reel, 100dvh) - var(--safe-top) - var(--safe-bottom) - 32px);
   min-height: 0;
   margin: 0 auto 0;
   display: flex;
@@ -4895,6 +4897,8 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
     margin-right: auto;
     height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 48px);
     max-height: calc(100dvh - var(--safe-top) - var(--safe-bottom) - 48px);
+    height: calc(var(--vh-reel, 100dvh) - var(--safe-top) - var(--safe-bottom) - 48px);
+    max-height: calc(var(--vh-reel, 100dvh) - var(--safe-top) - var(--safe-bottom) - 48px);
   }
   #P0 .welcome-logo {
     width: min(510px, 90vw);
