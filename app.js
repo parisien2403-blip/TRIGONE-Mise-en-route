@@ -198,7 +198,7 @@ function TPL_ACCUEIL() {
         '<div class="MER-P0-HERO">' +
           (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
-          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur</button>' +
+          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur &amp; Chorus DT</button>' +
           '<button type="button" class="P0-LIEN" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
         '</div>' +
         '<div class="MER-P0-ESPACE"></div>' +
@@ -208,7 +208,6 @@ function TPL_ACCUEIL() {
           TPL_ONGLET_DOCK('PANIER', MER_ICONES.PANIER, 'Panier' + (n ? ' (' + n + ')' : ''), n > 0) +
           TPL_ONGLET_DOCK('NOTICE', MER_ICONES.NOTICE, 'Notice') +
           TPL_ONGLET_DOCK('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
-          TPL_ONGLET_DOCK('VERIFIER', MER_ICONES.CHORUS, 'Chorus DT') +
         '</div></nav>' +
       '</div>' +
     '</div>';
@@ -1429,7 +1428,7 @@ var MER_NOTICES = {
             '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le nom du fichier dit qui l\'a produit : « 2-SIGNE VALIDEUR 1 - GRADE NOM - OMR … » après le 1er valideur, « 3-SIGNE VALIDEUR 2 - … » après le 2e, « REFUS VALIDEUR 1 (ou 2) - … » pour un refus. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
             'Terminez par « Terminé » une fois tous les mails envoyés : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier le .json et générer le PDF', icone: MER_ICONES_NOTICE_CHECK(),
-        etapes: ['Ouvrez l\'onglet <b>Chorus DT</b>, en bas à droite de l\'accueil (aucun code n\'est nécessaire). Il ne sert qu\'à l\'assistant : un fichier qui n\'a pas les deux signatures y est refusé.',
+        etapes: ['Sur l\'accueil, touchez <b>Espace valideur &amp; Chorus DT</b>, puis <b>Assistant Chorus DT</b> (aucun code n\'est nécessaire). Il ne sert qu\'à l\'assistant : un fichier qui n\'a pas les deux signatures y est refusé.',
             'Enregistrez le fichier <b>.json</b> reçu du 2e valideur, puis choisissez-le : TRIGONE contrôle les signatures électroniques et les pièces jointes.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).'] }
@@ -1781,7 +1780,7 @@ function ENVOYER_PANIER() {
     if (!MER_PANIER_ENREGISTRE) return;
     var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER();
     var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier « ' + NOM_FICHIER_BASE(panier, 'DEMANDE') + '.json » (pièces jointes NDS / DAF incluses).\n' +
-        'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.';
+        'Ouvrez TRIGONE Mise en route > « Espace valideur & Chorus DT », puis importez ce fichier.\n\nCordialement.';
     ARCHIVER_ENVOI(panier, reg.mailSignataire);
     FERMER_MODALE();
     OUVRIR_MAIL(reg.mailSignataire, SUJET_MAIL('DEMANDE', panier), corps);
@@ -2284,7 +2283,7 @@ function TPL_ESPACE_VALIDATION(v, h) {
     html += '<div class="MER-SECTION-TITLE">Transmission</div>' +
         (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
         (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
-              '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF depuis l\'onglet « Chorus DT » de l\'accueil.</p></div>' : '') +
+              '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF depuis « Espace valideur &amp; Chorus DT » sur l\'accueil.</p></div>' : '') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
     return html;
 }
@@ -2293,10 +2292,15 @@ function TPL_VALIDATION() {
     var v = GET_VALIDEUR();
     var h = HABILITATION_COURANTE();
     var corps, sous;
-    if (!h || h.retire) { sous = 'Connexion'; corps = TPL_CONNEXION(v); }
+    // L'assistant Chorus DT n'a pas de code : son accès est proposé ici, à côté de la connexion des valideurs.
+    var chorus = '<button type="button" class="NOTICE-CARD" onclick="SHOW_PAGE(\'VERIFIER\')"><span class="NOTICE-CARD-ICON">' + MER_ICONES.CHORUS + '</span>' +
+        '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Assistant Chorus DT</span><span class="NOTICE-CARD-SUB">Vérifier le .json signé et générer le PDF — sans code</span></span>' +
+        '<span class="NOTICE-CARD-CHEV">›</span></button>';
+    var connecte = h && !h.retire;
+    if (!connecte) { sous = 'Valideurs : connexion · Assistant Chorus DT : accès direct'; corps = chorus + '<div class="MER-SECTION-TITLE">Connexion valideur</div>' + TPL_CONNEXION(v); }
     else { sous = 'Validation des demandes reçues'; corps = TPL_ESPACE_VALIDATION(v, h); }
     return '<div class="CARD">' +
-        '<h2>Espace valideur</h2>' +
+        '<h2>Espace valideur &amp; Chorus DT</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 16px;">' + sous + '</p>' + corps +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
@@ -2474,10 +2478,10 @@ function CONTENU_ENVOI(env) {
     var n = env.demandes.length;
     if (env.type === 'CHORUS') return { etape: 'VALIDATION_2', sujet: SUJET_MAIL('CHORUS', env.demandes),
         corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez TRIGONE Mise en route > onglet « Chorus DT » (en bas de l\'accueil), importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.' };
+            'Ouvrez TRIGONE Mise en route > « Espace valideur & Chorus DT » > « Assistant Chorus DT », importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.' };
     if (env.type === 'VALIDATION_1') return { etape: 'VALIDATION_1', sujet: SUJET_MAIL('VALIDATION_1', env.demandes),
         corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.' };
+            'Ouvrez TRIGONE Mise en route > « Espace valideur & Chorus DT », puis importez ce fichier.\n\nCordialement.' };
     return { etape: 'REFUS', sujet: SUJET_MAIL('REFUS', env.demandes),
         corps: 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
@@ -2546,7 +2550,7 @@ function TPL_VERIFIER() {
             html += '<button type="button" class="BTN BTN-PRIMARY" onclick="TELECHARGER_PDF_VERIFIE(null)">📄 Un seul PDF pour les ' + conformes.length + ' demandes conformes</button>';
         }
     }
-    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'VALIDATION\')">← Retour</button></div>';
 }
 function VERIFIER_FICHIERS(input) {
     LIRE_FICHIERS(input, function(contenu, f) {
@@ -2570,7 +2574,7 @@ function VERIFIER_FICHIERS(input) {
                 var une = res.some(function(x) { return (x.d.validations || []).length === 1; });
                 AFFICHER_MSG_CENTRE({ titre: 'Fichier non validé', icone: '⛔', mascotte: 'mascotte-erreur.webp',
                     texte: (une ? 'Ce fichier ne porte que la signature du 1er valideur.' : 'Ce fichier n\'a encore aucune signature de valideur.') +
-                        ' Cet onglet est réservé à l\'assistant Chorus DT, qui traite le fichier « 3-SIGNE VALIDEUR 2 … » signé par les deux valideurs.',
+                        ' Cet espace est réservé à l\'assistant Chorus DT, qui traite le fichier « 3-SIGNE VALIDEUR 2 … » signé par les deux valideurs.',
                     boutons: [{ label: 'J\'ai compris' }] });
                 return;
             }
