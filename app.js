@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 34;
+var APP_CODE_VERSION = 35;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -733,6 +733,8 @@ function PDF_DATE(v) {
     return dt.toLocaleDateString('fr-FR') + ' ' + ('0' + dt.getHours()).slice(-2) + 'h' + ('0' + dt.getMinutes()).slice(-2);
 }
 function PDF_OUI_NON(v) { return v ? 'OUI' : 'NON'; }
+// Réponse à signaler (demande d'avance, réservation ABT) : un OUI ressort en rouge gras.
+function PDF_OUI_NON_ALERTE(v) { return v ? { content: 'OUI', styles: { textColor: [200, 16, 16], fontStyle: 'bold' } } : 'NON'; }
 
 function PDF_BANDEAU(doc, d, M, L, edition) {
     doc.setFillColor.apply(doc, PDF_ACCENT);
@@ -810,7 +812,7 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
     y = PDF_SECTION(doc, 'ALIMENTATION & HÉBERGEMENT', X, y, P);
     y = PDF_TABLEAU(doc, y, M, L, P, {
         head: [['Durant le déplacement', ''], ],
-        body: [['Réservation ABT', PDF_OUI_NON(d.reservationABT)],
+        body: [['Réservation ABT', PDF_OUI_NON_ALERTE(d.reservationABT)],
                ['Nourri à titre onéreux', PDF_OUI_NON(d.nourriDeplacement)],
                ['Transport en commun', PDF_OUI_NON(d.transportCommun)]],
         columnStyles: { 1: { halign: 'right', fontStyle: 'bold', cellWidth: 30 } }
@@ -819,7 +821,7 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
         head: [['Durant la mission', '']],
         body: [['Nourri à titre onéreux', PDF_OUI_NON(d.nourriMission)],
                ['Logé à titre onéreux', PDF_OUI_NON(d.logeMission)],
-               ['Demande d\'avance', PDF_OUI_NON(d.demandeAvance)]],
+               ['Demande d\'avance', PDF_OUI_NON_ALERTE(d.demandeAvance)]],
         columnStyles: { 1: { halign: 'right', fontStyle: 'bold', cellWidth: 30 } }
     });
 
