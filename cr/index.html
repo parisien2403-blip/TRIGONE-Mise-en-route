@@ -13540,8 +13540,19 @@ var MER_LISTE_DEMANDES = [];
 function LIRE_MISES_EN_ROUTE() {
     var l = [];
     try { l = JSON.parse(localStorage.getItem('mer_bibliotheque') || '[]'); } catch (e) {}
-    var res = [];
-    (l || []).forEach(function(e) { (e.demandes || []).forEach(function(d) { res.push({ d: d, envoyeLe: e.envoyeLe }); }); });
+    // Une même demande renvoyée (après un refus, une correction…) figure plusieurs fois dans la bibliothèque :
+    // on ne garde que son envoi le plus récent (même identifiant, ou même contenu).
+    var res = [], vues = {};
+    (l || []).slice().sort(function(x, y) { return String(y.envoyeLe || '').localeCompare(String(x.envoyeLe || '')); }).forEach(function(e) {
+        (e.demandes || []).forEach(function(d) {
+            var a = (d.trajets && d.trajets.aller) || {}, r = (d.trajets && d.trajets.retour) || {};
+            var contenu = [d.objet, a.lieuDep, a.lieuArr, a.dateDep, r.dateArr, (d.personnes || []).map(function(p) { return (p.nom || '') + (p.prenom || ''); }).join(',')].join('|').toUpperCase();
+            if ((d.id && vues['id:' + d.id]) || vues['c:' + contenu]) return;
+            if (d.id) vues['id:' + d.id] = true;
+            vues['c:' + contenu] = true;
+            res.push({ d: d, envoyeLe: e.envoyeLe });
+        });
+    });
     return res;
 }
 function MAJ_BOUTON_DEPUIS_MER() {
