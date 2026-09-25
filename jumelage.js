@@ -113,7 +113,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 5, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 6, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -123,10 +123,10 @@
     function tenterMaj() {
         if (!MAJ_DISPO || !peutRecharger()) return;
         // Garde-fou : le serveur peut encore servir l'ancienne version quelques minutes après une publication ;
-        // on ne relance pas en boucle, au plus une tentative toutes les 3 minutes.
+        // on ne relance pas en boucle, au plus une tentative toutes les 45 secondes.
         try {
             var t = +sessionStorage.getItem(CLE_RECHARGE) || 0;
-            if (Date.now() - t < 180000) return;
+            if (Date.now() - t < 45000) return;
             sessionStorage.setItem(CLE_RECHARGE, String(Date.now()));
         } catch (e) {}
         try { if (window.JUMELAGE_AVANT_RECHARGE) window.JUMELAGE_AVANT_RECHARGE(); } catch (e) {}

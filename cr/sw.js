@@ -1,6 +1,6 @@
 // Copie jumelée dans TRIGONE Mise en route (dossier cr/) : caches préfixés « trigone-cr- » ; ceux de
 // Mise en route (« trigone-mise-en-route- ») ne sont jamais effacés d'ici.
-const CACHE_NAME = 'trigone-cr-v394';
+const CACHE_NAME = 'trigone-cr-v395';
 const ASSETS = [
   './',
   './manifest.json',
@@ -85,6 +85,34 @@ self.addEventListener('message', function(event) {
 // on retombe sur la version en cache. La page est toujours rangée sous la même clé ('./'), quels que
 // soient les paramètres de l'adresse d'ouverture (lien de QR, montre...).
 var DELAI_RESEAU_MS = 3000;
+var RACINE_TRIGONE = new URL('../', self.registration.scope).href;
+// Numéro de publication (build.json à la racine, lu en direct) ajouté à l'adresse du code de l'appli : GitHub Pages
+// garde ses fichiers jusqu'à 10 minutes en mémoire après une publication ; une adresse nouvelle l'oblige à servir
+// la version qui vient d'être publiée. La mise à jour est ainsi immédiate, comme sur Cloudflare.
+var PUBLICATION = { n: null, lu: 0 };
+function numeroPublication() {
+  if (PUBLICATION.n && Date.now() - PUBLICATION.lu < 5000) return Promise.resolve(PUBLICATION.n);
+  var u = new URL('build.json', RACINE_TRIGONE);
+  u.searchParams.set('t', Date.now());
+  var lecture = fetch(u.href, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+    if (d && d.build) { PUBLICATION.n = d.build; PUBLICATION.lu = Date.now(); }
+    return PUBLICATION.n;
+  }).catch(function() { return PUBLICATION.n; });
+  var delai = new Promise(function(resolve) { setTimeout(function() { resolve(PUBLICATION.n); }, 1500); });
+  return Promise.race([lecture, delai]);
+}
+function chargerPublication(request) {
+  return numeroPublication().then(function(n) {
+    if (!n) return fetch(request, { cache: 'no-cache' });
+    var u = new URL(request.url);
+    u.searchParams.set('pub', n);
+    return fetch(u.href, { cache: 'no-cache', credentials: 'same-origin' }).then(function(r) {
+      // une réponse redirigée ne peut pas servir une navigation : on refait la requête d'origine
+      return r.redirected ? fetch(request, { cache: 'no-cache' }) : r;
+    });
+  });
+}
+
 
 function reseauDAbord(request, fin) {
   return caches.open(CACHE_NAME).then(function(cache) {
@@ -102,7 +130,7 @@ function reseauDAbord(request, fin) {
       }
       minuteur = setTimeout(function() { replier(null); }, DELAI_RESEAU_MS);
       // no-cache : on revalide toujours auprès du serveur (304 très léger si rien n'a changé)
-      fetch(request, { cache: 'no-cache' }).then(function(response) {
+      chargerPublication(request).then(function(response) {
         if (response && response.ok) {
           // gardée pour la prochaine ouverture, même si le cache a déjà répondu entre-temps
           cache.put('./', response.clone()).catch(function() {});
@@ -130,6 +158,24 @@ self.addEventListener('fetch', function(event) {
     var fin;
     event.waitUntil(new Promise(function(resolve) { fin = resolve; }));
     event.respondWith(reseauDAbord(event.request, fin));
+    return;
+  }
+
+  // Code et données de l'appli (../jumelage.js, *.json…) : réseau d'abord, à la dernière publication ; le cache
+  // ne sert que hors ligne. (Auparavant servis depuis le cache : il fallait deux ouvertures pour les avoir à jour.)
+  if (/\.(js|json)$/.test(url.pathname) && !/\/vendor\//.test(url.pathname)) {
+    // ../jumelage.js?v=N : la page appelle le script commun avec le numéro de publication.
+    var cle = url.origin + url.pathname;
+    event.respondWith(
+      caches.open(CACHE_NAME).then(function(cache) {
+        return (url.searchParams.has('v') ? fetch(event.request, { cache: 'no-cache' }) : chargerPublication(event.request)).then(function(response) {
+          if (response && response.ok) cache.put(cle, response.clone());
+          return response;
+        }).catch(function() {
+          return cache.match(cle, { ignoreSearch: true }).then(function(c) { return c || Response.error(); });
+        });
+      })
+    );
     return;
   }
 

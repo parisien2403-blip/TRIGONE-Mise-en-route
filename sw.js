@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v59';
+const CACHE_NAME = 'trigone-mise-en-route-v60';
 const ASSETS = [
   './',
   './manifest.json',
@@ -75,6 +75,34 @@ self.addEventListener('message', function(event) {
 // Page principale : réseau d'abord, comme TRIGONE compte-rendu — la dernière version dès qu'il y a du
 // réseau, secours sur le cache sinon (hors ligne, ou réseau trop lent après 3 s).
 var DELAI_RESEAU_MS = 3000;
+var RACINE_TRIGONE = self.registration.scope;
+// Numéro de publication (build.json à la racine, lu en direct) ajouté à l'adresse du code de l'appli : GitHub Pages
+// garde ses fichiers jusqu'à 10 minutes en mémoire après une publication ; une adresse nouvelle l'oblige à servir
+// la version qui vient d'être publiée. La mise à jour est ainsi immédiate, comme sur Cloudflare.
+var PUBLICATION = { n: null, lu: 0 };
+function numeroPublication() {
+  if (PUBLICATION.n && Date.now() - PUBLICATION.lu < 5000) return Promise.resolve(PUBLICATION.n);
+  var u = new URL('build.json', RACINE_TRIGONE);
+  u.searchParams.set('t', Date.now());
+  var lecture = fetch(u.href, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+    if (d && d.build) { PUBLICATION.n = d.build; PUBLICATION.lu = Date.now(); }
+    return PUBLICATION.n;
+  }).catch(function() { return PUBLICATION.n; });
+  var delai = new Promise(function(resolve) { setTimeout(function() { resolve(PUBLICATION.n); }, 1500); });
+  return Promise.race([lecture, delai]);
+}
+function chargerPublication(request) {
+  return numeroPublication().then(function(n) {
+    if (!n) return fetch(request, { cache: 'no-cache' });
+    var u = new URL(request.url);
+    u.searchParams.set('pub', n);
+    return fetch(u.href, { cache: 'no-cache', credentials: 'same-origin' }).then(function(r) {
+      // une réponse redirigée ne peut pas servir une navigation : on refait la requête d'origine
+      return r.redirected ? fetch(request, { cache: 'no-cache' }) : r;
+    });
+  });
+}
+
 
 function reseauDAbord(request, fin) {
   return caches.open(CACHE_NAME).then(function(cache) {
@@ -91,7 +119,7 @@ function reseauDAbord(request, fin) {
         return cache.match('./', { ignoreSearch: true }).then(function(c) { repondre(c || defaut); });
       }
       minuteur = setTimeout(function() { replier(null); }, DELAI_RESEAU_MS);
-      fetch(request, { cache: 'no-cache' }).then(function(response) {
+      chargerPublication(request).then(function(response) {
         if (response && response.ok) {
           cache.put('./', response.clone()).catch(function() {});
           repondre(response);
@@ -124,13 +152,16 @@ self.addEventListener('fetch', function(event) {
   // Code et données de l'appli (app.js, codier.json…) : réseau d'abord, pour qu'une mise à jour soit
   // visible dès la première ouverture ; le cache ne sert que hors ligne.
   if (/\.(js|json)$/.test(url.pathname) && !/\/vendor\//.test(url.pathname)) {
+    if (url.searchParams.has('t')) return;   // vérifications de mise à jour (build.json?t=…) : jamais en cache
+    // app.js?v=N : la page appelle ses scripts avec le numéro de publication, l'adresse change à chaque version.
+    var cle = url.origin + url.pathname;
     event.respondWith(
       caches.open(CACHE_NAME).then(function(cache) {
-        return fetch(event.request, { cache: 'no-cache' }).then(function(response) {
-          if (response && response.ok && !url.search) cache.put(event.request, response.clone());
+        return (url.searchParams.has('v') ? fetch(event.request, { cache: 'no-cache' }) : chargerPublication(event.request)).then(function(response) {
+          if (response && response.ok) cache.put(cle, response.clone());
           return response;
         }).catch(function() {
-          return cache.match(event.request, { ignoreSearch: true }).then(function(c) { return c || Response.error(); });
+          return cache.match(cle, { ignoreSearch: true }).then(function(c) { return c || Response.error(); });
         });
       })
     );
