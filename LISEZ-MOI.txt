@@ -148,3 +148,9 @@ JUMELAGE AVEC TRIGONE COMPTE-RENDU DE MISSION
   code non redemandé, thème commun, présentation non rejouée, unité pré-remplie, identité
   partagée, « À partir d'une mise en route », M.MER_HORAIRES dans Frais > Trajets) et de cr/sw.js
   (caches « trigone-cr-… », ../jumelage.js et ../logo_mer.webp mis en cache).
+
+NUMÉRO DE VERSION
+- Affiché « V1, V2… » dans les deux parties (APP_VERSION_AFFICHEE), à partir du lancement de
+  TRIGONE jumelé. APP_CODE_VERSION reste le compteur interne des mises à jour : à chaque
+  publication, l'augmenter (jamais le faire redescendre) avec appCodeVersion du manifeste
+  correspondant (updates-manifest.json à la racine, cr/updates-manifest.json pour Compte-rendu).

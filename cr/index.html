@@ -9358,10 +9358,10 @@ function GET_LABEL_ECRAN_ACTUEL() {
 }
 
 function SIGNALER_PROBLEME() {
-    var sujet = 'TRIGONE - Signalement (V' + APP_CODE_VERSION + ')';
+    var sujet = 'TRIGONE - Signalement (V' + APP_VERSION_AFFICHEE + ')';
     var corps = 'Décrivez ici ce qui s\'est passé :\n\n\n\n'
         + '---\n'
-        + 'Version TRIGONE : V' + APP_CODE_VERSION + '\n'
+        + 'Version TRIGONE : V' + APP_VERSION_AFFICHEE + '\n'
         + 'Écran concerné : ' + GET_LABEL_ECRAN_ACTUEL() + '\n'
         + 'Connecté à internet : ' + (navigator.onLine ? 'oui' : 'non');
     window.location.href = 'mailto:' + TRIGONE_SUPPORT_MAIL + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
@@ -11413,7 +11413,10 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 98;
+var APP_CODE_VERSION = 99;
+// Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
+// (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
+var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
 var MAJ_DERNIERE_VERIF = 0;              // instant de la dernière vérification aboutie
 var MAJ_A_REESSAYER = false;             // vrai si une vérification automatique a échoué faute de réseau
 var MAJ_DELAI_MIN_MS = 10 * 60 * 1000;   // délai minimum entre deux vérifications automatiques
@@ -13200,7 +13203,7 @@ window.onload = function() {
     INIT_VERIF_MAJ_AUTO();
     INIT_TITRES_AUTO();
     var versionTagEl = document.getElementById('APP-VERSION-TAG');
-    if (versionTagEl) versionTagEl.textContent = '- V' + APP_CODE_VERSION;
+    if (versionTagEl) versionTagEl.textContent = '- V' + APP_VERSION_AFFICHEE;
     if (PIN_EST_DEFINI() && window.JUMELAGE_DEVERROUILLE && JUMELAGE_DEVERROUILLE()) {
         PIN_UI.deverrouille = true;
         FINALISER_DEMARRAGE();
