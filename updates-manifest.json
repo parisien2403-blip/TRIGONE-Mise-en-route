@@ -1,7 +1,7 @@
 {
-  "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 49,
-  "appCodeMessage": "TRIGONE passe en version 1 : Mise en route et Compte-rendu de mission réunis dans une seule appli.",
+  "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
+  "appCodeVersion": 50,
+  "appCodeMessage": "Version 2 : barre du bas simplifiée (4 onglets, comme le Compte-rendu) ; l'assistant Chorus DT passe par « Espace valideur & Chorus DT » ; import Excel / Calc / CSV fiabilisé ; TRIGONE se met désormais à jour tout seul dès l'ouverture.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

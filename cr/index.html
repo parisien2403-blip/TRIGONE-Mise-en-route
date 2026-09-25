@@ -170,16 +170,14 @@ body.dark-mode #INTRO-SPLASH { background: #1a1a1a; }
   inset: 0;
   z-index: 99998;
   background: rgba(20, 20, 20, 0);
-  backdrop-filter: blur(0px);
-  -webkit-backdrop-filter: blur(0px);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 24px;
-  transition: background 0.35s ease, backdrop-filter 0.35s ease, -webkit-backdrop-filter 0.35s ease;
+  transition: background 0.3s ease;
 }
 .MEDAILLE-OVERLAY.HIDDEN { display: none; }
-.MEDAILLE-OVERLAY.medaille-in { background: rgba(20, 20, 20, 0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.MEDAILLE-OVERLAY.medaille-in { background: rgba(20, 20, 20, 0.76); }
 .medaille-card { opacity: 1; }
 .medaille-card {
   position: relative;
@@ -605,7 +603,6 @@ html { min-height: 100%; min-height: 100dvh; background: #E8F0F6; }
 body.sm2-app {
   font-family: var(--sm2-font);
   background: var(--app-bg);
-  background-attachment: fixed;
   padding: calc(16px + var(--safe-top)) calc(16px + var(--safe-right)) calc(16px + var(--safe-bottom)) calc(16px + var(--safe-left));
   margin: 0;
   color: var(--sm2-text);
@@ -753,7 +750,6 @@ body.dark-mode .P0-REF-BTN { background: rgba(36, 36, 36, 0.9); border-color: #4
   align-items: center;
   justify-content: center;
   background: rgba(20, 20, 20, 0.45);
-  backdrop-filter: blur(2px);
   animation: welcomeFadeIn 0.25s ease;
   padding: 24px;
   box-sizing: border-box;
@@ -1158,7 +1154,7 @@ h2 {
   background: #e2e8f0;
   color: #94a3b8;
   border: 2px solid transparent;
-  transition: all 0.25s;
+  transition: background-color 0.25s, border-color 0.25s, color 0.25s, box-shadow 0.25s;
 }
 .STEP-NODE small {
   font-size: 0.58em;
@@ -1891,9 +1887,7 @@ body.dark-mode .BTN-HOME { background: #475569; }
   height: 40px;
   border-radius: 50%;
   border: 1px solid rgba(15, 23, 42, 0.12);
-  background: rgba(255, 255, 255, 0.92);
-  -webkit-backdrop-filter: blur(8px);
-  backdrop-filter: blur(8px);
+  background: rgba(255, 255, 255, 0.97);
   font-size: 1.15em;
   cursor: pointer;
   padding: 0;
@@ -2053,8 +2047,6 @@ h2.section-subtitle {
   border: 1px solid #c7d2e0;
   box-shadow: 0 6px 22px rgba(15, 23, 42, 0.14);
   opacity: 1;
-  -webkit-backdrop-filter: none;
-  backdrop-filter: none;
 }
 .days-stack .DAY-BOX.day-experience {
   background: #fffbeb !important;
@@ -2269,8 +2261,6 @@ body.dark-mode .pj-check-item.pj-is-strict { background: rgba(248, 113, 113, 0.1
   justify-content: center;
   padding: 12px;
   background: rgba(15, 23, 42, 0.62);
-  backdrop-filter: blur(3px);
-  -webkit-backdrop-filter: blur(3px);
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
@@ -4178,7 +4168,7 @@ body.dark-mode .NOTICE-PAGE-NOTIF-BTN { background: rgba(37, 99, 235, 0.12); bor
 .MZ-TAB {
   flex: 1; padding: 12px 8px; border: 2px solid #e2e8f0; border-radius: var(--sm2-radius-sm);
   background: #f8fafc; color: var(--sm2-text); font-weight: 700; font-size: 0.82em;
-  cursor: pointer; text-transform: none; transition: all 0.2s;
+  cursor: pointer; text-transform: none; transition: background-color 0.2s, border-color 0.2s, color 0.2s;
 }
 .MZ-TAB.active { background: #1a1a1a; border-color: #1a1a1a; color: #fff; box-shadow: 0 2px 10px rgba(0,0,0,0.15); }
 body.dark-mode .MZ-TAB { background: rgba(255,255,255,0.05); border-color: #334155; color: #cbd5e1; }
@@ -4495,13 +4485,6 @@ body.pax-mode .BTN-SITE:disabled, body.pax-mode .BTN-DAY:disabled { background: 
 .VALIDATION-MODAL, .NOTICE-MODAL {
   position: fixed; inset: 0; background: rgba(11, 22, 40, 0.75); z-index: 1002;
   display: flex; align-items: center; justify-content: center; padding: 15px; box-sizing: border-box;
-}
-@supports (backdrop-filter: blur(4px)) or (-webkit-backdrop-filter: blur(4px)) {
-  .VALIDATION-MODAL, .NOTICE-MODAL {
-    background: rgba(11, 22, 40, 0.6);
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
 }
 .VALIDATION-BOX, .NOTICE-BOX {
   background: white; border-radius: var(--sm2-radius); padding: 22px;
@@ -4867,7 +4850,6 @@ body.dark-mode .DEMO-BULLE::before { border-color: transparent rgba(28,28,28,0.9
   position: fixed; bottom: 0; left: 0; right: 0; z-index: 99991;
   display: flex; align-items: center; gap: 8px; padding: 8px 10px calc(8px + var(--safe-bottom, 0px));
   background: rgba(255,255,255,0.97); border-top: 1px solid rgba(0,0,0,0.08);
-  backdrop-filter: blur(6px);
 }
 body.dark-mode .DEMO-CONTROLES { background: rgba(20,20,20,0.97); border-top-color: rgba(255,255,255,0.1); }
 .DEMO-BTN {
@@ -5125,7 +5107,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
     s.style.animationDelay = (reduceMotion ? 0 : (0.75 + i * 0.055)) + 's';
     el.appendChild(s);
   });
-  var dismissDelay = isMontre ? 60 : (reduceMotion ? 900 : (premierLancement ? 1500 : 2900));
+  var dismissDelay = isMontre ? 60 : (reduceMotion ? 900 : (premierLancement ? 1500 : 1900));
   setTimeout(function() {
     var splash = document.getElementById('INTRO-SPLASH');
     if (!splash) return;
@@ -7161,6 +7143,11 @@ function RESET_OM_FIELDS() {
 
 // Publication silencieuse (jumelage.js) : la mission est enregistrée juste avant le rechargement.
 window.JUMELAGE_AVANT_RECHARGE = function() { if (!DEMO_MODE_ACTIF) SAVE_STATE(); };
+// Mise à jour forcée (jumelage.js) : seulement sur l'accueil, sans fenêtre ouverte.
+window.JUMELAGE_PEUT_RECHARGER = function() {
+    var visible = function(id) { var el = document.getElementById(id); return el && !el.classList.contains('HIDDEN'); };
+    return visible('P0') && ECRAN_LIBRE() && !visible('PIN-OVERLAY') && !visible('MER-LISTE-OVERLAY') && !DEMO_MODE_ACTIF;
+};
 function SAVE_STATE() {
     // Filet de sécurité absolu : pendant la démonstration, M contient des données d'exemple, jamais
     // les vraies. Tant que ce drapeau est actif, aucune écriture ne doit atteindre le stockage réel.
@@ -11431,7 +11418,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 99;
+var APP_CODE_VERSION = 100;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -11516,6 +11503,8 @@ function CHECK_UPDATES_MANIFEST(manuel, auto) {
             if (data.ikVersion > 0 && data.ikVersion !== seen.ik) {
                 UPDATE_QUEUE.push({ cle: 'ik', version: data.ikVersion, texte: data.ikMessage, fichier: data.ikFile, type: 'ik' });
             }
+            // Code en retard : mise à jour automatique (jumelage.js), les messages suivront après le rechargement.
+            if (data.appCodeVersion > APP_CODE_VERSION && window.JUMELAGE_MAJ_DISPONIBLE) { UPDATE_QUEUE = []; window.JUMELAGE_MAJ_DISPONIBLE(); return; }
             if (data.appCodeVersion > 0 && data.appCodeVersion !== seen.appCode) {
                 // Déjà à jour (la version du code est ≥ à celle annoncée) : simple message de nouveautés
                 UPDATE_QUEUE.push({ cle: 'appCode', version: data.appCodeVersion, texte: data.appCodeMessage, type: (APP_CODE_VERSION >= data.appCodeVersion ? 'nouveautes' : 'appCode') });

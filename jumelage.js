@@ -69,6 +69,10 @@
         /* repli sans transition native : la nouvelle page apparaît en fondu, sans flash blanc */
         'html.jum-entree body { opacity: 0; transform: scale(0.97); }' +
         'html.jum-entree-go body { opacity: 1; transform: none; transition: opacity 0.38s ease, transform 0.45s cubic-bezier(0.22,0.8,0.24,1); }' +
+        '.JUM-MAJ { position: fixed; inset: 0; z-index: 2147483000; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px;' +
+            ' background: rgba(15,15,15,0.72); color: #fff; font: 700 0.9rem/1.3 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.02em; }' +
+        '.JUM-MAJ-ROND { width: 34px; height: 34px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.25); border-top-color: #d6a756; animation: jum-tourne 0.8s linear infinite; }' +
+        '@keyframes jum-tourne { to { transform: rotate(360deg); } }' +
         '.JUM-LOGO-CHOIX { cursor: pointer; -webkit-tap-highlight-color: transparent; }' +
         '.JUM-LOGO-CHOIX:active { transform: scale(0.97); }' +
         /* Écran de choix : deux triangles, coupe de la diagonale haut-droite → bas-gauche */
@@ -104,29 +108,55 @@
     style.textContent = css;
     (document.head || document.documentElement).appendChild(style);
 
-    // ---------- Publication silencieuse ----------
-    // À chaque publication, augmenter BUILD ici ET dans build.json (même numéro). Une appli restée ouverte en
-    // arrière-plan se recharge alors d'elle-même au retour, sans message et sans changer la version affichée.
-    // Seulement après au moins une minute hors de l'appli : choisir une pièce jointe ou ouvrir le mail fait aussi
-    // quitter l'appli un instant, et ne doit jamais provoquer de rechargement.
-    var BUILD = 2, CACHE_DEPUIS = 0, NOUVELLE_PUBLICATION = false, ABSENCE_MIN_MS = 60000;
+    // ---------- Mise à jour forcée ----------
+    // À chaque publication, augmenter BUILD ici ET dans build.json (même numéro), avec la version de chaque appli.
+    // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
+    // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
+    // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
+    var BUILD = 3, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    function peutRecharger() {
+        if (document.visibilityState === 'hidden') return false;
+        if (document.body && document.body.classList.contains('demo-active')) return false;
+        if (ecran && !ecran.classList.contains('choisi')) return true;     // écran de choix affiché
+        try { return !!(window.JUMELAGE_PEUT_RECHARGER && window.JUMELAGE_PEUT_RECHARGER()); } catch (e) { return false; }
+    }
+    function tenterMaj() {
+        if (!MAJ_DISPO || !peutRecharger()) return;
+        // Garde-fou : le serveur peut encore servir l'ancienne version quelques minutes après une publication ;
+        // on ne relance pas en boucle, au plus une tentative toutes les 3 minutes.
+        try {
+            var t = +sessionStorage.getItem(CLE_RECHARGE) || 0;
+            if (Date.now() - t < 180000) return;
+            sessionStorage.setItem(CLE_RECHARGE, String(Date.now()));
+        } catch (e) {}
+        try { if (window.JUMELAGE_AVANT_RECHARGE) window.JUMELAGE_AVANT_RECHARGE(); } catch (e) {}
+        if (!ecran) { try { sessionStorage.setItem(CLE_CHOIX_FAIT, '1'); } catch (e) {} }
+        var voile = document.createElement('div');
+        voile.className = 'JUM-MAJ';
+        voile.innerHTML = '<div class="JUM-MAJ-ROND"></div><div>Mise à jour de TRIGONE…</div>';
+        document.body.appendChild(voile);
+        var fin = function() { location.reload(); };
+        if (navigator.serviceWorker && navigator.serviceWorker.getRegistration) {
+            navigator.serviceWorker.getRegistration().then(function(r) { return r && r.update(); }).catch(function() {}).then(function() { setTimeout(fin, 150); });
+            setTimeout(fin, 2500);
+        } else setTimeout(fin, 300);
+    }
+    window.JUMELAGE_MAJ_DISPONIBLE = function() { MAJ_DISPO = true; tenterMaj(); };
     function verifierPublication() {
-        if (!navigator.onLine || NOUVELLE_PUBLICATION) return;
+        if (!navigator.onLine) return;
+        if (MAJ_DISPO) { tenterMaj(); return; }
         var url = (/\/cr\/(index\.html)?$/.test(location.pathname) ? '../' : '') + 'build.json?t=' + Date.now();
         fetch(url, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
-            if (d && d.build > BUILD) NOUVELLE_PUBLICATION = true;
+            if (d && d.build > BUILD) window.JUMELAGE_MAJ_DISPONIBLE();
         }).catch(function() {});
     }
     document.addEventListener('visibilitychange', function() {
-        if (document.visibilityState === 'hidden') { CACHE_DEPUIS = Date.now(); verifierPublication(); return; }
-        var absence = CACHE_DEPUIS ? Date.now() - CACHE_DEPUIS : 0;
-        CACHE_DEPUIS = 0;
-        if (!NOUVELLE_PUBLICATION || absence < ABSENCE_MIN_MS) { verifierPublication(); return; }
-        if (document.body && document.body.classList.contains('demo-active')) return;
-        try { if (window.JUMELAGE_AVANT_RECHARGE) window.JUMELAGE_AVANT_RECHARGE(); } catch (e) {}
-        try { sessionStorage.setItem(CLE_CHOIX_FAIT, '1'); } catch (e) {}
-        location.reload();
+        if (document.visibilityState === 'visible') verifierPublication();
     });
+    window.addEventListener('online', verifierPublication);
+    window.addEventListener('load', function() { setTimeout(verifierPublication, 800); });
+    // Une mise à jour en attente s'applique dès que l'on revient sur l'accueil.
+    setInterval(function() { if (MAJ_DISPO) tenterMaj(); }, 2000);
 
     // ---------- Écran de choix ----------
     var DANS_CR = /\/cr\/(index\.html)?$/.test(location.pathname);
