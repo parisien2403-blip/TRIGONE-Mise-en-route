@@ -17,10 +17,14 @@ CE QUI EST FAIT DANS CETTE VERSION
   officielle, et d'un fichier .json qui portera la demande d'un signataire à l'autre.
 - Relecture avant envoi (comme sur TRIGONE compte-rendu) : rappel de ce qu'il faut
   joindre au mail avant de l'envoyer.
-- Noms des fichiers .json (grade et nom du 1er missionnaire) : « GRADE NOM - Demande d'OMR »
-  (demandeur), « GRADE NOM - OMR Validation 1 » (1er valideur), « GRADE NOM - OMR Validation 2 »
-  (2e valideur), « GRADE NOM - OMR Refus » (refus).
-  À côté de « OMR » : INDIVIDUEL (un seul missionnaire) ou COLLECTIF (plusieurs).
+- Noms des fichiers : on voit tout de suite qui a produit le fichier, et le numéro les range dans
+  l'ordre du circuit :
+    1-DEMANDE MISSIONNAIRE - GRADE NOM - OMR INDIVIDUEL.json  (missionnaire -> 1er valideur)
+    2-SIGNE VALIDEUR 1 - GRADE NOM - OMR INDIVIDUEL.json      (1er valideur -> 2e valideur)
+    3-SIGNE VALIDEUR 2 - GRADE NOM - OMR INDIVIDUEL.json      (2e valideur -> assistant Chorus DT)
+    4-OMR VALIDE - GRADE NOM - OMR INDIVIDUEL.pdf             (PDF généré par l'assistant Chorus DT)
+    REFUS VALIDEUR 1 (ou 2) - GRADE NOM - OMR INDIVIDUEL.json (refus -> missionnaire)
+  COLLECTIF à la place de INDIVIDUEL quand la demande compte plusieurs missionnaires.
 - Onglet Alim./Héb. : réservation ABT (oui / non), reprise sur le PDF.
 - Demande non terminée : à la réouverture, écran « Demande en cours » (continuer ou revenir à
   l'accueil, la saisie reste enregistrée), comme la reprise de mission de TRIGONE compte-rendu.
