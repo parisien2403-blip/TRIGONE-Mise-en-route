@@ -29,6 +29,9 @@ CE QUI EST FAIT DANS CETTE VERSION
 - Demande non terminée : à la réouverture, écran « Demande en cours » (continuer ou revenir à
   l'accueil, la saisie reste enregistrée), comme la reprise de mission de TRIGONE compte-rendu.
 - Mises à jour recherchées aussi à la fermeture de l'appli, et installées au retour.
+- « 🎬 Voir une démonstration » (accueil et Notice), comme TRIGONE compte-rendu : la mascotte
+  montre en 11 étapes comment remplir et envoyer une demande d'exemple ; rien n'est enregistré,
+  « Quitter » retrouve les vraies données intactes.
 - Envoi en deux temps, pour le demandeur comme pour les valideurs (validation ou refus) :
   « 1. Enregistrer le .json » (sur PC, on choisit où le ranger), puis « 2. Envoyer »,
   qui ne s'active qu'une fois le fichier enregistré, ouvre le mail auquel on le joint.

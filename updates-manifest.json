@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 39,
-  "appCodeMessage": "Nouvel onglet « Chorus DT » en bas à droite de l'accueil, réservé à l'assistant Chorus DT (il quitte l'Espace valideur ; un fichier sans les deux signatures y est refusé). Bibliothèque : « 💾 .json » réenregistre le fichier envoyé, pièces jointes comprises.",
+  "appCodeVersion": 40,
+  "appCodeMessage": "Nouveau : « 🎬 Voir une démonstration » sur l'accueil. La mascotte montre, étape par étape, comment remplir et envoyer une demande de mise en route (rien n'est enregistré).",
   "appMessageVersion": 0,
   "appMessage": ""
 }
