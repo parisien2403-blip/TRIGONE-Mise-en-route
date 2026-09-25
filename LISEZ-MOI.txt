@@ -110,3 +110,23 @@ MISES À JOUR
 INSTALLATION
 Comme TRIGONE : déposez tous les fichiers (index.html, app.js, manifest.json, le
 dossier vendor/) à la racine d'un même espace d'hébergement.
+
+JUMELAGE AVEC TRIGONE COMPTE-RENDU DE MISSION
+- Le dossier cr/ contient une copie complète de TRIGONE Compte-rendu de mission (dépôt
+  trigone-cr-cloudflare), sans impact sur le dépôt ni sur l'appli d'origine. Une seule appli
+  installée (manifest.json de la racine), deux parties.
+- Accueil de chaque partie : le logo de l'autre en petit, « au loin ». Glisser le doigt, toucher
+  ce logo ou le bouton de l'indicateur (Mise en route / Compte-rendu) fait passer de l'une à
+  l'autre, avec une animation de profondeur (jumelage.js, commun aux deux).
+- Au changement de partie : pas de nouvel écran d'ouverture, code à 4 chiffres non redemandé
+  (même session), thème clair / sombre commun. Les données de chaque partie restent séparées.
+- Présentation de première ouverture commune (« Vous partez en mission. TRIGONE s'occupe de
+  tout. ») ; celle de Compte-rendu n'est plus rejouée. L'unité de Mise en route pré-remplit la
+  configuration initiale de Compte-rendu.
+- Hors ligne : les deux service workers sont installés dès la première ouverture ; chacun ne
+  vide que ses propres caches (« trigone-mise-en-route-… » et « trigone-cr-… »).
+- Mettre à jour la copie de Compte-rendu : recopier les fichiers du dépôt d'origine dans cr/,
+  puis refaire les adaptations de cr/index.html (lien vers ../manifest.json et ../jumelage.js,
+  écran d'ouverture sauté à l'arrivée, logo ../logo_mer.webp « JUM-LOIN » + indicateur,
+  code non redemandé, thème commun, présentation non rejouée, unité pré-remplie) et de cr/sw.js
+  (caches « trigone-cr-… », ../jumelage.js et ../logo_mer.webp mis en cache).

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 40;
+var APP_CODE_VERSION = 41;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -113,11 +113,14 @@ function TOGGLE_THEME() {
     document.body.classList.toggle('dark-mode');
     var dark = document.body.classList.contains('dark-mode');
     try { localStorage.setItem('mer_dark', dark ? '1' : '0'); } catch (e) {}
+    if (window.JUMELAGE_THEME) JUMELAGE_THEME(dark);
     document.getElementById('THEME-TOGGLE-BTN').textContent = dark ? '☀️' : '🌙';
 }
 function APPLIQUER_THEME_INITIAL() {
     var dark = false;
     try { dark = localStorage.getItem('mer_dark') === '1'; } catch (e) {}
+    var commun = window.JUMELAGE_THEME ? JUMELAGE_THEME() : null;   // choix fait dans l'une ou l'autre appli
+    if (commun !== null) dark = commun;
     if (dark) { document.body.classList.add('dark-mode'); document.getElementById('THEME-TOGGLE-BTN').textContent = '☀️'; }
 }
 
@@ -160,7 +163,9 @@ function TPL_ACCUEIL() {
         '<button type="button" id="BTN-REFERENCES" class="P0-REF-BTN" onclick="SHOW_PAGE(\'REFERENCES\')" title="Référentiels utilisés par TRIGONE Mise en route">Références</button>' +
         '<button type="button" id="BTN-CHECK-UPDATE" class="P0-REF-BTN P0-CHECK-UPDATE-BTN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()" title="Vérifier si une mise à jour est disponible">🔄 Mise à jour</button>' +
         '<div class="MER-P0-INNER">' +
-          '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG" src="logo_mer.webp" alt="TRIGONE — Mise en route"></div>' +
+          '<div class="MER-LOGO-WRAP JUM-SCENE JUM-ZONE"><img class="MER-LOGO-IMG JUM-PRINCIPAL" src="logo_mer.webp" alt="TRIGONE — Mise en route">' +
+            '<img class="JUM-LOIN" src="logo_cr_loin.png" data-vers="cr/" alt="Passer à TRIGONE Compte-rendu de mission" title="Passer à TRIGONE Compte-rendu de mission" onclick="JUMELAGE_BASCULER()"></div>' +
+          '<div class="JUM-INDIC JUM-ZONE"><button type="button" class="actif">Mise en route</button><button type="button" onclick="JUMELAGE_BASCULER()">Compte-rendu ›</button></div>' +
         '</div>' +
         '<div class="MER-P0-HERO">' +
           (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
@@ -1057,6 +1062,7 @@ function PIN_VALIDER() {
             return;
         }
         PIN_UI.verrouillage = false;
+        if (window.JUMELAGE_MARQUER_DEVERROUILLE) JUMELAGE_MARQUER_DEVERROUILLE();
         FERMER_ECRAN_PIN();
         if (PIN_UI.apres) PIN_UI.apres();
     });
@@ -1071,7 +1077,7 @@ function PIN_CODE_OUBLIE() {
 }
 
 // ===================== PAGE DE PRÉSENTATION (première ouverture) =====================
-var STORAGE_POURQUOI = 'mer_presentation_vue';
+var STORAGE_POURQUOI = 'trigone_presentation_jumelage_vue';   // présentation commune Mise en route + Compte-rendu
 var POURQUOI_APRES = null;
 function AFFICHER_POURQUOI(apres) {
     POURQUOI_APRES = apres || null;
@@ -1238,6 +1244,10 @@ function TPL_NOTICE() {
             '<li>Dans <b>Mon espace</b>, activez un code à 4 chiffres demandé à <b>chaque ouverture</b> de TRIGONE Mise en route.</li>' +
             '<li>Le code ne quitte jamais votre appareil.</li>' +
             '<li><b>Code oublié</b> : le lien « Code oublié ? » efface toutes les données de l\'appli sur cet appareil. Il n\'existe aucun autre moyen.</li></ul></details>' +
+        '<details class="notice-fold"><summary>🔁 Mise en route &amp; Compte-rendu</summary><ul>' +
+            '<li>TRIGONE réunit les deux applis : la <b>mise en route</b> avant de partir, le <b>compte-rendu de mission</b> au retour.</li>' +
+            '<li>Sur l\'accueil, le logo de l\'autre appli est affiché en petit, au loin : <b>glissez le doigt</b> sur l\'accueil, touchez ce petit logo ou le bouton « Compte-rendu › » pour passer de l\'une à l\'autre.</li>' +
+            '<li>Le code à 4 chiffres n\'est pas redemandé en passant d\'une appli à l\'autre ; chaque partie garde ses propres données.</li></ul></details>' +
         '<details class="notice-fold"><summary>🔄 Mises à jour</summary><ul>' +
             '<li>L\'appli recherche une nouvelle version à l\'ouverture et à la fermeture ; trouvée à la fermeture, elle s\'installe d\'elle-même au retour dans l\'appli.</li>' +
             '<li>L\'appli se met à jour toute seule dès qu\'il y a du réseau ; un message « Mise à jour » s\'affiche quand une nouvelle version est prête.</li>' +
@@ -1278,6 +1288,9 @@ function TPL_REFERENCES() {
         MER_FOLD('<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>', 'Valideurs habilités', [
             'La liste des valideurs habilités (1er et 2e valideur) est publiée avec l\'appli et relue à chaque ouverture de l\'Espace valideur : un changement de code s\'applique automatiquement.',
             'Chaque validation est une <b>signature électronique</b> du contenu exact de la demande et de ses pièces jointes : toute modification ultérieure est détectée.']) +
+        MER_FOLD('<svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>', 'Compte-rendu de mission', [
+            'TRIGONE Compte-rendu de mission est intégré : on y passe depuis l\'accueil (glisser, petit logo ou bouton « Compte-rendu › »).',
+            'Il garde ses propres références (repas, hébergement, étranger, indemnité kilométrique), consultables depuis son propre bouton « Références ».']) +
         MER_FOLD('<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>', 'Mises à jour de l\'application', [
             'L\'appli vérifie à chaque ouverture si une nouvelle version existe ; le bouton « Mise à jour » de l\'accueil permet de le faire à la main.',
             'Votre saisie en cours, votre panier et votre bibliothèque sont conservés.',
@@ -2447,7 +2460,7 @@ function AFFICHER_MAJ(liste) {
 function APPLIQUER_MISE_A_JOUR() {
     AFFICHER_MSG_CENTRE({ titre: 'Mise à jour en cours…', texte: 'Merci de patienter quelques instants.', icone: '⏳', mascotte: 'mascotte-maj.webp', boutons: [] });
     var etapes = [];
-    if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.map(function(c) { return caches.delete(c); })); }));
+    if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.filter(function(c) { return c.indexOf('trigone-mise-en-route') === 0; }).map(function(c) { return caches.delete(c); })); }));
     if (navigator.serviceWorker) etapes.push(navigator.serviceWorker.getRegistration().then(function(r) { return r && r.update(); }));
     Promise.all(etapes).catch(function() {}).then(function() { setTimeout(function() { location.reload(); }, 400); });
 }
@@ -2472,7 +2485,7 @@ function PREPARER_MAJ_A_LA_FERMETURE() {
 function REDEMARRER_SUR_NOUVELLE_VERSION() {
     SAVE_BROUILLON();
     var etapes = [];
-    if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.map(function(c) { return caches.delete(c); })); }));
+    if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.filter(function(c) { return c.indexOf('trigone-mise-en-route') === 0; }).map(function(c) { return caches.delete(c); })); }));
     Promise.all(etapes).catch(function() {}).then(function() { location.reload(); });
 }
 function INIT_VERIF_MAJ_AUTO() {
@@ -2495,6 +2508,8 @@ function INIT_VERIF_MAJ_AUTO() {
 }
 function REGISTER_SERVICE_WORKER() {
     if (!('serviceWorker' in navigator)) return;
+    // Compte-rendu de mission (dossier cr/) : enregistré dès ici pour être disponible hors ligne.
+    window.addEventListener('load', function() { navigator.serviceWorker.register('./cr/sw.js', { scope: './cr/' }).catch(function() {}); });
     navigator.serviceWorker.register('./sw.js').then(function(reg) {
         document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') reg.update().catch(function() {}); });
     }).catch(function(e) { console.warn('Service Worker:', e); });
@@ -2504,12 +2519,13 @@ window.addEventListener('DOMContentLoaded', function() {
     APPLIQUER_THEME_INITIAL();
     LOAD_BROUILLON();
     SHOW_PAGE(BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
+    if (window.JUMELAGE_ANIMER_ARRIVEE) setTimeout(JUMELAGE_ANIMER_ARRIVEE, 30);
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
     try { vue = localStorage.getItem(STORAGE_POURQUOI) === '1'; } catch (e) {}
     var suite = function() { if (!CONFIG_FAITE()) AFFICHER_CONFIG_INITIALE(); PROPOSER_INSTALLATION_PREMIERE_FOIS(); };
     if (!vue) AFFICHER_POURQUOI(suite);
-    else if (PIN_EST_DEFINI()) OUVRIR_ECRAN_PIN('verif', suite);
+    else if (PIN_EST_DEFINI() && !(window.JUMELAGE_DEVERROUILLE && JUMELAGE_DEVERROUILLE())) OUVRIR_ECRAN_PIN('verif', suite);
     else suite();
     REGISTER_SERVICE_WORKER();
     INIT_VERIF_MAJ_AUTO();
