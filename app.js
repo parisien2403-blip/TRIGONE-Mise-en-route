@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 33;
+var APP_CODE_VERSION = 34;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -41,7 +41,7 @@ function VIDE_DEMANDE() {
             intermediaireRetourActif: false, intermediaireRetour: VIDE_TRAJET(),
             retourAuto: true      // le retour reprend l'aller inversé tant que le missionnaire ne le modifie pas
         },
-        nourriDeplacement: false, transportCommun: false, autresDeplacement: false, autresDeplacementTexte: '',
+        reservationABT: false, nourriDeplacement: false, transportCommun: false, autresDeplacement: false, autresDeplacementTexte: '',
         nourriMission: false, logeMission: false,
         demandeAvance: false,
         missionImputee: true,
@@ -554,6 +554,7 @@ function TPL_ONGLET_RETOUR() {
 
 function TPL_ONGLET_CONDITIONS() {
     return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Durant le déplacement</div>' +
+      TOGGLE_OUI_NON('Réservation ABT', 'reservationABT') +
       TOGGLE_OUI_NON('Nourri à titre onéreux', 'nourriDeplacement') +
       TOGGLE_OUI_NON('Transport en commun', 'transportCommun') +
       '<div class="MER-SECTION-TITLE">Durant la mission</div>' +
@@ -809,7 +810,8 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
     y = PDF_SECTION(doc, 'ALIMENTATION & HÉBERGEMENT', X, y, P);
     y = PDF_TABLEAU(doc, y, M, L, P, {
         head: [['Durant le déplacement', ''], ],
-        body: [['Nourri à titre onéreux', PDF_OUI_NON(d.nourriDeplacement)],
+        body: [['Réservation ABT', PDF_OUI_NON(d.reservationABT)],
+               ['Nourri à titre onéreux', PDF_OUI_NON(d.nourriDeplacement)],
                ['Transport en commun', PDF_OUI_NON(d.transportCommun)]],
         columnStyles: { 1: { halign: 'right', fontStyle: 'bold', cellWidth: 30 } }
     }) - P.ecart + 1;
@@ -1142,14 +1144,15 @@ var MER_NOTICES = {
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
             '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), moyen de transport, ville (code postal automatique) ou pays étranger, dates et heures. Selon le moyen, TRIGONE demande la <b>gare</b> (voie ferrée), l\'<b>aéroport</b> (voie aérienne) ou le <b>port</b> (voie maritime) de départ et d\'arrivée. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
             '<b>Voie routière civile (VRC)</b> : joignez la <b>demande d\'autorisation VRC</b>, la <b>carte grise</b> et l\'<b>attestation d\'assurance</b> du véhicule ; un rappel s\'affiche jusqu\'à l\'envoi.',
+            '<b>Alim./Héb.</b> : indiquez notamment si une <b>réservation ABT</b> est demandée (oui / non).',
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
-            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises) et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
+            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises, nommé « GRADE NOM - Demande d\'OMR ») et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
             'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
-            '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
+            '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le fichier porte le grade et le nom du missionnaire : « GRADE NOM - OMR Validation 1 » après le 1er valideur, « GRADE NOM - OMR Validation 2 » après le 2e. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
             'Terminez par « Terminé » une fois tous les mails envoyés : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier le .json et générer le PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['Ouvrez <b>Espace valideur</b> puis <b>Vérifier une mise en route</b> (aucun code n\'est nécessaire).',
@@ -1296,10 +1299,12 @@ function GENERER_JSON(demandes, etape) {
         creeLe: new Date().toISOString(), demandes: demandes
     }, null, 2);
 }
-function NOM_FICHIER_BASE(panier) {
-    var p0 = panier[0].personnes[0];
-    var nom = (p0.nom || 'DEMANDE').replace(/[^a-zA-Z0-9_-]/g, '_');
-    return 'MISE_EN_ROUTE_' + nom + '_' + panier.length + (panier.length > 1 ? '-demandes' : '-demande');
+// Nom des fichiers : « GRADE NOM - <étape> » (grade et nom du 1er missionnaire), p. ex. « ADJ BOUQUET - Demande d'OMR ».
+var MER_ETAPES_FICHIER = { DEMANDE: 'Demande d\'OMR', VALIDATION_1: 'OMR Validation 1', VALIDATION_2: 'OMR Validation 2', REFUS: 'OMR Refus' };
+function NOM_FICHIER_BASE(panier, etape) {
+    var n = panier.length - 1;
+    var qui = (SUJET_DEMANDEUR(panier[0]) || 'DEMANDE') + (n > 0 ? ' (+' + n + ')' : '');
+    return (qui + ' - ' + MER_ETAPES_FICHIER[etape || 'DEMANDE']).replace(/[\\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim();
 }
 
 function TELECHARGER_TEXTE(nomFichier, contenu, type) {
@@ -1399,7 +1404,7 @@ function ENREGISTRER_PANIER() {
 function ENVOYER_PANIER() {
     if (!MER_PANIER_ENREGISTRE) return;
     var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER();
-    var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
+    var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier « ' + NOM_FICHIER_BASE(panier, 'DEMANDE') + '.json » (pièces jointes NDS / DAF incluses).\n' +
         'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.';
     ARCHIVER_ENVOI(panier, reg.mailSignataire);
     FERMER_MODALE();
@@ -2046,13 +2051,13 @@ function PREPARER_TRANSMISSION() {
 
     MER_ENVOIS = [];
     if (vers2.length) MER_ENVOIS.push({ type: 'VALIDATION_1', demandes: vers2, mail: v.mailValideur2,
-        titre: 'Au 2e valideur', pj: NOM_FICHIER_BASE(vers2) + '_VALIDATION-1.json' });
+        titre: 'Au 2e valideur', pj: NOM_FICHIER_BASE(vers2, 'VALIDATION_1') + '.json' });
     if (versChorus.length) MER_ENVOIS.push({ type: 'CHORUS', demandes: versChorus, mail: v.mailChorus,
-        titre: 'À l\'assistant Chorus DT', pj: NOM_FICHIER_BASE(versChorus) + '_VALIDEE.json' });
+        titre: 'À l\'assistant Chorus DT', pj: NOM_FICHIER_BASE(versChorus, 'VALIDATION_2') + '.json' });
     Object.keys(refusParMail).forEach(function(m) {
         var ds = refusParMail[m];
         MER_ENVOIS.push({ type: 'REFUS', demandes: ds, mail: m,
-            titre: 'Refus au demandeur' + (m ? '' : ' (adresse inconnue : à saisir dans le mail)'), pj: NOM_FICHIER_BASE(ds) + '_REFUS.json' });
+            titre: 'Refus au demandeur' + (m ? '' : ' (adresse inconnue : à saisir dans le mail)'), pj: NOM_FICHIER_BASE(ds, 'REFUS') + '.json' });
     });
     AFFICHER_TRANSMISSION();
 }
@@ -2081,15 +2086,15 @@ function AFFICHER_TRANSMISSION() {
 function CONTENU_ENVOI(env) {
     var n = env.demandes.length;
     if (env.type === 'CHORUS') return { etape: 'VALIDATION_2', sujet: SUJET_MAIL('CHORUS', env.demandes),
-        corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier .json (pièces jointes NDS / DAF incluses).\n' +
+        corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
             'Ouvrez TRIGONE Mise en route > Espace valideur > Vérifier une mise en route, importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.' };
     if (env.type === 'VALIDATION_1') return { etape: 'VALIDATION_1', sujet: SUJET_MAIL('VALIDATION_1', env.demandes),
-        corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation (pièces jointes NDS / DAF incluses dans le fichier).\n' +
-            'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez le fichier .json joint.\n\nCordialement.' };
+        corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
+            'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.' };
     return { etape: 'REFUS', sujet: SUJET_MAIL('REFUS', env.demandes),
         corps: 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
-        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Panier > Importer une demande refusée, puis importez le fichier .json joint.\n\nCordialement.' };
+        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Panier > Importer une demande refusée, puis importez le fichier « ' + env.pj + ' » joint.\n\nCordialement.' };
 }
 // 1. Enregistrer le .json (un seul fichier : demandes signées + NDS / DAF), 2. Envoyer : s'active une fois le fichier enregistré.
 function ENREGISTRER_ENVOI(i) {
@@ -2186,7 +2191,7 @@ function TELECHARGER_PDF_VERIFIE(indices) {
     AFFICHER_MSG_CENTRE({ titre: 'Génération du PDF…', texte: 'Assemblage de la demande et des pièces jointes.', icone: '⏳', mascotte: false, boutons: [] });
     GENERER_PDF_FINAL(demandes).then(function(octets) {
         FERMER_MSG();
-        TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes) + '_VALIDEE.pdf', octets, 'application/pdf');
+        TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes, 'VALIDATION_2') + '.pdf', octets, 'application/pdf');
     }).catch(function(e) { FERMER_MSG(); setTimeout(function() { MSG_ERREUR('PDF impossible', e.message || String(e)); }, 350); });
 }
 

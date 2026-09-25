@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 33,
-  "appCodeMessage": "Mise en page revue pour toutes les tailles de téléphone (du petit iPhone SE aux grands écrans, tablette et affichage à l'horizontale) : plus de texte coupé ni superposé.",
+  "appCodeVersion": 34,
+  "appCodeMessage": "Nouveau : « Réservation ABT » (oui / non) dans l'onglet Alim./Héb. Les fichiers .json portent le grade et le nom du missionnaire : « GRADE NOM - Demande d'OMR », puis « OMR Validation 1 » et « OMR Validation 2 » ; les mails indiquent le fichier à joindre.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
