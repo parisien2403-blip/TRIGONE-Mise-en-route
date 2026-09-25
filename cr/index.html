@@ -4936,6 +4936,24 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="vendor/jspdf.plugin.autotable.min.js"></script>
 <script src="vendor/qrcode.min.js"></script>
+<style>
+/* ===== Jumelage : démarrer le compte-rendu à partir d'une mise en route ===== */
+#BTN-DEPUIS-MER { margin-top: 2px; }
+.MER-LISTE { position: fixed; inset: 0; z-index: 99980; background: rgba(15,23,42,0.55); display: flex; align-items: center; justify-content: center; padding: 14px; }
+.MER-LISTE.HIDDEN { display: none; }
+.MER-LISTE-CARTE { width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; background: var(--sm2-surface, #fff); border-radius: 18px; padding: 18px 16px 14px; box-shadow: 0 18px 50px rgba(0,0,0,0.3); }
+.MER-LISTE-TITRE { margin: 0 0 6px; font-size: 1.1em; }
+.MER-LISTE-SOUS { margin: 0 0 14px; font-size: 0.8em; color: #64748b; line-height: 1.45; }
+.MER-LISTE-ITEM { display: block; width: 100%; text-align: left; border: 1.5px solid rgba(90,122,148,0.28); background: rgba(90,122,148,0.05); border-radius: 12px; padding: 11px 12px; margin-bottom: 9px; font-family: inherit; color: inherit; cursor: pointer; }
+.MER-LISTE-ITEM:active { transform: scale(0.99); }
+.MER-LISTE-ITEM b { display: block; font-size: 0.9em; margin-bottom: 3px; overflow-wrap: anywhere; }
+.MER-LISTE-ITEM span { display: block; font-size: 0.76em; color: #64748b; line-height: 1.4; overflow-wrap: anywhere; }
+.MER-LISTE-BADGE { display: inline-block !important; font-size: 0.68em !important; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #5a7a94 !important; margin-bottom: 4px; }
+.MER-LISTE-VIDE { text-align: center; color: #64748b; font-size: 0.86em; padding: 18px 6px; line-height: 1.5; }
+.MER-LISTE-FERMER { display: block; margin: 8px auto 0; background: none; border: none; font-family: inherit; font-weight: 700; font-size: 0.8em; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: underline; color: inherit; cursor: pointer; padding: 8px 14px; }
+body.dark-mode .MER-LISTE-CARTE { background: #1f1f1f; color: #e5e5e5; }
+body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
+</style>
 </head>
 <body class="sm2-app">
 
@@ -5100,6 +5118,15 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 
 
 
+<div id="MER-LISTE-OVERLAY" class="MER-LISTE HIDDEN" onclick="if(event.target===this)FERMER_LISTE_MISES_EN_ROUTE()">
+<div class="MER-LISTE-CARTE">
+<h3 class="MER-LISTE-TITRE">À partir d'une mise en route</h3>
+<p class="MER-LISTE-SOUS">Choisissez votre demande : identité, libellé, lieux de départ et de retour, transports, gares et horaires sont repris automatiquement.</p>
+<div id="MER-LISTE-ITEMS"></div>
+<button type="button" class="MER-LISTE-FERMER" onclick="FERMER_LISTE_MISES_EN_ROUTE()">Annuler</button>
+</div>
+</div>
+
 <div id="DEMO-OVERLAY" class="HIDDEN">
 <div class="DEMO-RUBAN">
 <span class="DEMO-RUBAN-BAND DEMO-RUBAN-TOP"></span>
@@ -5153,6 +5180,7 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 <h1 class="HIDDEN" aria-hidden="true">Compte-rendu de mission</h1>
 <div class="P0-HERO">
 <button class="BTN-ACCUEIL" onclick="ENTRER()">LA MISSION COMMENCE ICI</button>
+<button type="button" id="BTN-DEPUIS-MER" class="BTN BTN-CONTINUE HIDDEN" onclick="OUVRIR_LISTE_MISES_EN_ROUTE()">📋 À partir d'une mise en route</button>
 <button type="button" class="P0-SIMU-LINK" onclick="SHOW_PAGE('P-SIMU')">Simuler une mission à venir</button>
 <button type="button" class="P0-SIMU-LINK" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>
 <button id="BTN-RESTORE-BACKUP" class="BTN BTN-CONTINUE HIDDEN" onclick="RESTORER_DERNIERE_MISSION()">↩ Reprendre ma mission en cours</button>
@@ -6687,6 +6715,27 @@ var SAVED_CIE_CACHE = null;
 var SAVED_CIE_PAX_CACHE = null;
 var SAVED_GRADE_CACHE = null;
 var SAVED_NID_CACHE = null;
+// Jumelage : l'identité saisie une fois dans TRIGONE Mise en route sert ici (et inversement, voir
+// SAVE_USER_PROFILE). Le matricule 067 50 10 191 devient le NID 06 750 101 91.
+function NID_DEPUIS_CHIFFRES(ch) {
+    ch = String(ch || '').replace(/\D/g, '').slice(0, 10);
+    return [ch.slice(0, 2), ch.slice(2, 5), ch.slice(5, 8), ch.slice(8, 10)].filter(Boolean).join(' ');
+}
+function MATRICULE_DEPUIS_CHIFFRES(ch) {
+    ch = String(ch || '').replace(/\D/g, '').slice(0, 10);
+    return [ch.slice(0, 3), ch.slice(3, 5), ch.slice(5, 7), ch.slice(7, 10)].filter(Boolean).join(' ');
+}
+function IDENTITE_MISE_EN_ROUTE() {
+    try { return (JSON.parse(localStorage.getItem('mer_reglages') || '{}').identite) || {}; } catch (e) { return {}; }
+}
+(function IDENTITE_DEPUIS_MISE_EN_ROUTE() {
+    var id = IDENTITE_MISE_EN_ROUTE();
+    function si(cle, val) { try { if (val && !(localStorage.getItem(cle) || '').trim()) localStorage.setItem(cle, val); } catch (e) {} }
+    si('mission_saved_user', [(id.nom || '').trim().toUpperCase(), (id.prenom || '').trim()].filter(Boolean).join(' '));
+    si('mission_saved_grade', (id.grade || '').trim());
+    si('mission_saved_nid', NID_DEPUIS_CHIFFRES(id.matricule));
+    si('mission_saved_cie', (id.cie || '').trim());
+})();
 (function LOAD_SAVED_PROFILE_ON_BOOT() {
     try { SAVED_USER_CACHE = (localStorage.getItem(SAVED_USER_KEY) || '').trim(); } catch (e) { SAVED_USER_CACHE = ''; }
     try { SAVED_GRADE_CACHE = (localStorage.getItem(SAVED_GRADE_KEY) || '').trim(); } catch (e) { SAVED_GRADE_CACHE = ''; }
@@ -9596,6 +9645,7 @@ function SAVE_USER_NAME_FIELDS() {
 }
 
 function SAVE_USER_PROFILE(name, cie, grade, nid) {
+    IDENTITE_VERS_MISE_EN_ROUTE(name, cie, grade, nid);
     name = (name || '').trim();
     if (name && name !== 'MILITAIRE') {
         SAVED_USER_CACHE = name;
@@ -9619,6 +9669,23 @@ function SAVE_USER_PROFILE(name, cie, grade, nid) {
             try { localStorage.setItem(SAVED_CIE_KEY, c); } catch (e) {}
         }
     }
+}
+
+function IDENTITE_VERS_MISE_EN_ROUTE(name, cie, grade, nid) {
+    if (M.IS_PAX === undefined) return;
+    try {
+        var r = JSON.parse(localStorage.getItem('mer_reglages') || '{}');
+        var id = r.identite || {}, change = false;
+        var nomEl = document.getElementById('NOM-USER'), prenomEl = document.getElementById('PRENOM-USER');
+        var nom = nomEl && (nomEl.value || '').trim(), prenom = prenomEl && (prenomEl.value || '').trim();
+        if (!nom && name && name !== 'MILITAIRE') { var morceaux = name.trim().split(/\s+/); nom = morceaux[0]; prenom = morceaux.slice(1).join(' '); }
+        function maj(cle, val) { if (val && val !== id[cle]) { id[cle] = val; change = true; } }
+        maj('nom', nom ? nom.toUpperCase() : ''); maj('prenom', prenom);
+        maj('grade', grade ? String(grade).trim() : '');
+        maj('matricule', nid && String(nid).replace(/\D/g, '').length === 10 ? MATRICULE_DEPUIS_CHIFFRES(nid) : '');
+        maj('cie', cie && cie.trim ? cie.trim() : '');
+        if (change) { r.identite = id; localStorage.setItem('mer_reglages', JSON.stringify(r)); }
+    } catch (e) {}
 }
 
 function FORMAT_NID_INPUT(el) {
@@ -12733,6 +12800,7 @@ function INIT_TITRES_AUTO() {
 
 function AFTER_SHOW_PAGE(page) {
     M.PAGE = page;
+    if (page === 'P0') MAJ_BOUTON_DEPUIS_MER();
     AJUSTER_TITRES();
     document.body.classList.toggle('p0-active', page === 'P0');
     document.body.classList.toggle('bib-active', page === 'P-BIB');
@@ -13461,6 +13529,117 @@ function DEMO_QUITTER() {
     location.reload();
 }
 
+// ===================== JUMELAGE : COMPTE-RENDU À PARTIR D'UNE MISE EN ROUTE =====================
+// La bibliothèque de TRIGONE Mise en route (demandes envoyées) propose ses demandes : identité, libellé, lieux
+// de départ et de retour, transports (et transport complémentaire), gares / aéroports / ports, horaires des
+// billets et ABT sont recopiés dans la mission, par les mêmes champs que la reprise d'une mission.
+var MER_MOYEN_VERS_CR = { SERVICE: 'VRM', CIVILE: 'VRC', FERREE: 'VF', AERIENNE: 'AVION', MARITIME: 'BATEAUX' };
+var MER_RESIDENCE_VERS_CR = { ADMINISTRATIVE: 'GARNISON', FAMILIALE: 'DOMICILE' };
+var MER_LISTE_DEMANDES = [];
+function LIRE_MISES_EN_ROUTE() {
+    var l = [];
+    try { l = JSON.parse(localStorage.getItem('mer_bibliotheque') || '[]'); } catch (e) {}
+    var res = [];
+    (l || []).forEach(function(e) { (e.demandes || []).forEach(function(d) { res.push({ d: d, envoyeLe: e.envoyeLe }); }); });
+    return res;
+}
+function MAJ_BOUTON_DEPUIS_MER() {
+    var b = document.getElementById('BTN-DEPUIS-MER');
+    if (b) b.classList.toggle('HIDDEN', !!(M.IS_PAX || M.DEBUT || M.ARR_SITE || M.MAIL_SENT) || !LIRE_MISES_EN_ROUTE().length);
+}
+function MER_LIEU(nom, cp, pays) {
+    nom = (nom || '').trim();
+    if (!nom) return '';
+    return nom.toUpperCase() + (!pays && cp ? ' (' + cp + ')' : '');
+}
+function MER_DATE_COURTE(v) { try { return v ? new Date(v).toLocaleDateString('fr-FR') : ''; } catch (e) { return ''; } }
+function OUVRIR_LISTE_MISES_EN_ROUTE() {
+    MER_LISTE_DEMANDES = LIRE_MISES_EN_ROUTE();
+    var zone = document.getElementById('MER-LISTE-ITEMS');
+    zone.innerHTML = MER_LISTE_DEMANDES.length ? MER_LISTE_DEMANDES.map(function(x, i) {
+        var d = x.d, t = d.trajets || {}, a = t.aller || {}, r = t.retour || {};
+        var qui = (d.personnes || []).map(function(p) { return ((p.grade || '') + ' ' + (p.nom || '') + ' ' + (p.prenom || '')).trim(); }).join(', ');
+        var dates = MER_DATE_COURTE(a.dateDep) + (r.dateArr ? ' → ' + MER_DATE_COURTE(r.dateArr) : '');
+        var trajet = [a.lieuDep, a.paysArr || a.lieuArr].filter(Boolean).join(' → ');
+        return '<button type="button" class="MER-LISTE-ITEM" onclick="CHOISIR_MISE_EN_ROUTE(' + i + ')">' +
+            '<span class="MER-LISTE-BADGE">Envoyée le ' + ESC_HTML(MER_DATE_COURTE(x.envoyeLe)) + ((d.personnes || []).length > 1 ? ' · collective' : '') + '</span>' +
+            '<b>' + ESC_HTML(d.objet || 'Mise en route') + '</b>' +
+            '<span>' + ESC_HTML(qui) + '</span>' +
+            '<span>' + ESC_HTML([trajet, dates].filter(Boolean).join(' · ')) + '</span></button>';
+    }).join('') : '<div class="MER-LISTE-VIDE">Aucune mise en route envoyée pour l\'instant.<br>Faites d\'abord votre demande dans TRIGONE Mise en route.</div>';
+    document.getElementById('MER-LISTE-OVERLAY').classList.remove('HIDDEN');
+}
+function FERMER_LISTE_MISES_EN_ROUTE() { document.getElementById('MER-LISTE-OVERLAY').classList.add('HIDDEN'); }
+function CHOISIR_MISE_EN_ROUTE(i) {
+    var x = MER_LISTE_DEMANDES[i];
+    if (!x) return;
+    FERMER_LISTE_MISES_EN_ROUTE();
+    if (M.DEBUT || M.ARR_SITE) { MSG_INFO('Mission déjà commencée', 'Une mission est déjà en cours : terminez-la avant d\'en commencer une autre.', '⛔'); return; }
+    if (HAS_ACTIVE_MISSION_DATA(M)) {
+        MSG_CONFIRM('Remplacer la mission préparée ?', 'Une mission est déjà préparée (pas encore commencée). Elle sera remplacée par cette mise en route.', 'Remplacer', function() { APPLIQUER_MISE_EN_ROUTE(x.d); }, '⚠️');
+        return;
+    }
+    APPLIQUER_MISE_EN_ROUTE(x.d);
+}
+function APPLIQUER_MISE_EN_ROUTE(d) {
+    // La personne concernée : celle dont le nom est l'identité enregistrée, sinon la première de la demande.
+    var id = IDENTITE_MISE_EN_ROUTE(), moi = (id.nom || '').trim().toUpperCase();
+    var pers = (d.personnes || []).filter(function(p) { return moi && (p.nom || '').trim().toUpperCase() === moi; })[0] || (d.personnes || [])[0] || {};
+    M.COLLECTIVE = false;
+    var cb = document.getElementById('IS-COLLECTIVE');
+    if (cb) { cb.checked = false; TOGGLE_CHEF_MAIL(); }
+    RESET_OM_FIELDS();
+    RESET_ABT_FIELDS(true);
+    CLEAR_TRANSPORT_FIELDS_M();
+    M.USER = [(pers.nom || '').trim().toUpperCase(), (pers.prenom || '').trim()].filter(Boolean).join(' ');
+    M.GRADE = (pers.grade || '').trim();
+    M.NID = NID_DEPUIS_CHIFFRES(pers.matricule);
+    M.CIE = (pers.cie || '').trim();
+    M.LIBELLE_MISSION = (d.objet || '').trim();
+    var t = d.trajets || {}, a = t.aller || {}, r = t.retour || {};
+    M.LIEU_DEP = MER_RESIDENCE_VERS_CR[a.residenceDep] || '';
+    M.LIEU_RET = MER_RESIDENCE_VERS_CR[r.residenceArr] || '';
+    M.MISSION_ETRANGER = !!a.paysArr;
+    M.PAYS_MISSION = a.paysArr || '';
+    // Horaires des billets : proposés par défaut dans Frais > Trajets (où Compte-rendu les saisit).
+    M.MER_HORAIRES = {};
+    var abt = [];
+    function trajet(pk, tr, retour) {
+        var type = tr && MER_MOYEN_VERS_CR[tr.moyen];
+        if (!type) return;
+        M['T_' + pk] = type;
+        if (retour && TRANSPORT_RETOUR_USES_LIEU_ARRIVEE(type)) return;
+        var dep = MER_LIEU(tr.lieuDep, tr.cpDep, tr.paysDep), arr = MER_LIEU(tr.lieuArr, tr.cpArr, tr.paysArr);
+        if (IS_ROUTE_TRANSPORT(type)) {
+            M['G_' + pk + '_DEP'] = dep; M['G_' + pk + '_ARR'] = arr; M['G_' + pk] = arr || dep;
+            M.MER_HORAIRES[pk + '_DEP'] = LOCAL_INPUT_TO_FR_DATETIME(tr.dateDep);
+            M.MER_HORAIRES[pk + '_ARR'] = LOCAL_INPUT_TO_FR_DATETIME(tr.dateArr);
+            if (d.reservationABT) abt.push(pk);
+        } else {
+            M['G_' + pk] = arr;
+        }
+    }
+    trajet('A', a, false);
+    if (t.intermediaireAllerActif) trajet('A_ANX', t.intermediaireAller, false);
+    trajet('R', r, true);
+    if (t.intermediaireRetourActif) trajet('R_ANX', t.intermediaireRetour, false);
+    // Champs d'identité : réécrits explicitement (le formulaire ne complète que les champs vides).
+    var champs = { 'GRADE-USER': M.GRADE, 'NID-USER': M.NID, 'NOM-USER': (pers.nom || '').trim().toUpperCase(), 'PRENOM-USER': (pers.prenom || '').trim(), 'CIE-INPUT': M.CIE };
+    Object.keys(champs).forEach(function(k) { var el = document.getElementById(k); if (el) el.value = champs[k]; });
+    SAVE_USER_PROFILE(M.USER, M.CIE, M.GRADE, M.NID);
+    SAVE_STATE();
+    RESTORE_FIELDS();
+    SHOW_PAGE('P1');
+    SWITCH_P1_TAB('IDENT');
+    ['A', 'A-ANX', 'R', 'R-ANX'].forEach(function(suf) { try { SYNC_P1_ANX_FOLD_FOR(suf); } catch (e) {} });
+    // Case ABT (réservation ABT de la mise en route) : cochée une fois le formulaire affiché.
+    abt.forEach(function(pk) { M['ABT_' + pk] = true; });
+    WRITE_ABT_TO_DOM();
+    SAVE_STATE();
+    UPDATE_BOUTON_LANCER_P1();
+    AFFICHER_WELCOME_TOAST('✓ Mission pré-remplie depuis votre mise en route.\nVérifiez, puis « Départ en mission » le jour J.');
+}
+
 function ENTRER() {
     if (M.IS_PAX) { SHOW_PAGE(GET_PAX_PAGE()); return; }
     // Une mission déjà préparée (identité, trajets...) mais pas encore lancée (pas d'horodatage de
@@ -13475,6 +13654,7 @@ function ENTRER() {
         return;
     }
     M.COLLECTIVE = false;
+    M.MER_HORAIRES = null;
     var cb = document.getElementById('IS-COLLECTIVE');
     if (cb) {
         cb.checked = false;
@@ -14782,8 +14962,9 @@ function RENDER_FRAIS_TRAJETS() {
             }
             var s = seg[t.dir] || {};
             var pk = t.dir;
-            var defDtDep = s.dtDep || leg['DT_' + pk + '_DEP'] || leg['H_' + pk + '_DEP'] || '';
-            var defDtArr = s.dtArr || leg['DT_' + pk + '_ARR'] || leg['H_' + pk + '_ARR'] || '';
+            var horairesMer = (li === 0 && M.MER_HORAIRES) || {};
+            var defDtDep = s.dtDep || leg['DT_' + pk + '_DEP'] || leg['H_' + pk + '_DEP'] || horairesMer[pk + '_DEP'] || '';
+            var defDtArr = s.dtArr || leg['DT_' + pk + '_ARR'] || leg['H_' + pk + '_ARR'] || horairesMer[pk + '_ARR'] || '';
             var pl = PLACE_LABEL(t.type);
             var dirLabel = t.isRetour ? 'Retour' : 'Aller';
             var typeIcons = { 'VF': '🚆', 'AVION': '✈', 'BATEAUX': '⛴' };
