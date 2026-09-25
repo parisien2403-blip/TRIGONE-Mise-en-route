@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 47,
-  "appCodeMessage": "Écrans pliables (Galaxy Z Fold…) : l'accueil suit désormais la vraie hauteur de l'écran, la barre du bas n'est plus coupée.",
+  "appCodeVersion": 48,
+  "appCodeMessage": "Passage entre Mise en route et Compte-rendu sans écran blanc : la nouvelle interface se déplie depuis le centre, comme un écran pliable qui s'ouvre.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

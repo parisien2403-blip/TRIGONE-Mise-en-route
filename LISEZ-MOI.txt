@@ -123,6 +123,9 @@ JUMELAGE AVEC TRIGONE COMPTE-RENDU DE MISSION
 - Accueil de chaque partie : le logo de l'autre en petit, « au loin ». Glisser le doigt, toucher
   ce logo ou le bouton de l'indicateur (Mise en route / Compte-rendu) fait passer de l'une à
   l'autre, avec une animation de profondeur (jumelage.js, commun aux deux).
+- Passage d'une partie à l'autre : transition native entre pages (View Transitions, Chrome /
+  Samsung Internet récents, Safari 18.2+), effet « pliable qui s'ouvre » (la nouvelle interface
+  se déplie depuis le centre) ; ailleurs, fondu doux. Jamais d'écran blanc.
 - Au changement de partie : pas de nouvel écran d'ouverture, code à 4 chiffres non redemandé
   (même session), thème clair / sombre commun. Les données de chaque partie restent séparées.
 - Présentation de première ouverture commune (« Vous partez en mission. TRIGONE s'occupe de
