@@ -113,7 +113,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 6, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 7, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -190,6 +190,14 @@
             setTimeout(function() { location.replace(APPLIS[cle].url); }, 480);
         }
     }
+
+    // Passage direct à l'autre appli (menu PC) : sans écran de choix ni entrée d'historique.
+    window.JUMELAGE_ALLER = function(cle) {
+        if (!APPLIS[cle]) return;
+        if (cle === ICI) return;
+        try { sessionStorage.setItem(CLE_BASCULE, '1'); sessionStorage.setItem(CLE_CHOIX_FAIT, '1'); } catch (e) {}
+        location.replace(APPLIS[cle].url);
+    };
 
     window.JUMELAGE_CHOIX = function() {
         if (ecran || !document.body) return;
