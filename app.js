@@ -2713,6 +2713,7 @@ function PREPARER_MAJ_A_LA_FERMETURE() {
         if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(function(r) { if (r) r.update(); }).catch(function() {});
     }).catch(function() {});
 }
+window.JUMELAGE_AVANT_RECHARGE = function() { if (PAGE_ACTUELLE === 'FORMULAIRE') SAVE_BROUILLON(); };
 function REDEMARRER_SUR_NOUVELLE_VERSION() {
     SAVE_BROUILLON();
     var etapes = [];

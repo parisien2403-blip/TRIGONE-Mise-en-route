@@ -7159,6 +7159,8 @@ function RESET_OM_FIELDS() {
     M.OM_EN_POSSESSION = true;
 }
 
+// Publication silencieuse (jumelage.js) : la mission est enregistrée juste avant le rechargement.
+window.JUMELAGE_AVANT_RECHARGE = function() { if (!DEMO_MODE_ACTIF) SAVE_STATE(); };
 function SAVE_STATE() {
     // Filet de sécurité absolu : pendant la démonstration, M contient des données d'exemple, jamais
     // les vraies. Tant que ce drapeau est actif, aucune écriture ne doit atteindre le stockage réel.
