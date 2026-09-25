@@ -20,6 +20,7 @@ CE QUI EST FAIT DANS CETTE VERSION
 - Noms des fichiers .json (grade et nom du 1er missionnaire) : « GRADE NOM - Demande d'OMR »
   (demandeur), « GRADE NOM - OMR Validation 1 » (1er valideur), « GRADE NOM - OMR Validation 2 »
   (2e valideur), « GRADE NOM - OMR Refus » (refus).
+  À côté de « OMR » : INDIVIDUEL (un seul missionnaire) ou COLLECTIF (plusieurs).
 - Onglet Alim./Héb. : réservation ABT (oui / non), reprise sur le PDF.
 - Envoi en deux temps, pour le demandeur comme pour les valideurs (validation ou refus) :
   « 1. Enregistrer le .json » (sur PC, on choisit où le ranger), puis « 2. Envoyer »,

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 35;
+var APP_CODE_VERSION = 36;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -1148,13 +1148,13 @@ var MER_NOTICES = {
             '<b>Voie routière civile (VRC)</b> : joignez la <b>demande d\'autorisation VRC</b>, la <b>carte grise</b> et l\'<b>attestation d\'assurance</b> du véhicule ; un rappel s\'affiche jusqu\'à l\'envoi.',
             '<b>Alim./Héb.</b> : indiquez notamment si une <b>réservation ABT</b> est demandée (oui / non).',
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
-            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises, nommé « GRADE NOM - Demande d\'OMR ») et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
+            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises, nommé « GRADE NOM - Demande d\'OMR INDIVIDUEL » ou « … COLLECTIF » selon le nombre de missionnaires) et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
             'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
-            '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le fichier porte le grade et le nom du missionnaire : « GRADE NOM - OMR Validation 1 » après le 1er valideur, « GRADE NOM - OMR Validation 2 » après le 2e. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
+            '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le fichier porte le grade et le nom du missionnaire : « GRADE NOM - OMR INDIVIDUEL (ou COLLECTIF) Validation 1 » après le 1er valideur, « … Validation 2 » après le 2e. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
             'Terminez par « Terminé » une fois tous les mails envoyés : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier le .json et générer le PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['Ouvrez <b>Espace valideur</b> puis <b>Vérifier une mise en route</b> (aucun code n\'est nécessaire).',
@@ -1301,12 +1301,13 @@ function GENERER_JSON(demandes, etape) {
         creeLe: new Date().toISOString(), demandes: demandes
     }, null, 2);
 }
-// Nom des fichiers : « GRADE NOM - <étape> » (grade et nom du 1er missionnaire), p. ex. « ADJ BOUQUET - Demande d'OMR ».
-var MER_ETAPES_FICHIER = { DEMANDE: 'Demande d\'OMR', VALIDATION_1: 'OMR Validation 1', VALIDATION_2: 'OMR Validation 2', REFUS: 'OMR Refus' };
+// Nom des fichiers : « GRADE NOM - <étape> » (grade et nom du 1er missionnaire), avec INDIVIDUEL ou COLLECTIF
+// à côté de « OMR », p. ex. « ADJ BOUQUET - Demande d'OMR INDIVIDUEL », « ADJ BOUQUET - OMR COLLECTIF Validation 1 ».
+var MER_ETAPES_FICHIER = { DEMANDE: 'Demande d\'OMR #', VALIDATION_1: 'OMR # Validation 1', VALIDATION_2: 'OMR # Validation 2', REFUS: 'OMR # Refus' };
 function NOM_FICHIER_BASE(panier, etape) {
     var n = panier.length - 1;
     var qui = (SUJET_DEMANDEUR(panier[0]) || 'DEMANDE') + (n > 0 ? ' (+' + n + ')' : '');
-    return (qui + ' - ' + MER_ETAPES_FICHIER[etape || 'DEMANDE']).replace(/[\\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim();
+    return (qui + ' - ' + MER_ETAPES_FICHIER[etape || 'DEMANDE'].replace('#', SUJET_NATURE(panier[0]))).replace(/[\\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim();
 }
 
 function TELECHARGER_TEXTE(nomFichier, contenu, type) {
