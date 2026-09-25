@@ -1,8 +1,8 @@
 // ===================== JUMELAGE TRIGONE : Mise en route ⇄ Compte-rendu de mission =====================
-// Chargé par les deux applis (index.html à la racine, cr/index.html). Sur l'accueil, le logo de l'autre appli
-// est affiché en petit, en retrait, « au loin » : le toucher, ou glisser le doigt sur l'accueil, fait passer
-// d'une appli à l'autre avec une animation de profondeur. Au changement d'appli : pas de nouvel écran
-// d'ouverture, et le code à 4 chiffres n'est pas redemandé (même onglet, même session).
+// Chargé par les deux applis (index.html à la racine, cr/index.html). À l'ouverture de TRIGONE, un écran de
+// choix coupé en diagonale : Mise en route en haut à gauche, Compte-rendu de mission en bas à droite. Toucher
+// un côté ouvre cette appli, avec son propre accueil. Toucher le logo d'un accueil ramène à l'écran de choix.
+// Au changement d'appli : pas de nouvel écran d'ouverture, et le code à 4 chiffres n'est pas redemandé.
 (function() {
     var CLE_BASCULE = 'trigone_bascule', CLE_DEVERROUILLE = 'trigone_deverrouille', CLE_THEME = 'trigone_theme';
     var arrivee = false;
@@ -69,128 +69,109 @@
         /* repli sans transition native : la nouvelle page apparaît en fondu, sans flash blanc */
         'html.jum-entree body { opacity: 0; transform: scale(0.97); }' +
         'html.jum-entree-go body { opacity: 1; transform: none; transition: opacity 0.38s ease, transform 0.45s cubic-bezier(0.22,0.8,0.24,1); }' +
-        '.JUM-SCENE { position: relative; }' +
-        '.JUM-PRINCIPAL { position: relative; z-index: 1; pointer-events: none; }' +
-        '.JUM-LOIN { position: absolute; z-index: 0; right: 4%; top: 4%; width: 30%; max-width: 132px; height: auto; opacity: 0.34;' +
-            ' filter: grayscale(1) blur(0.6px); cursor: pointer; transition: opacity 0.2s ease; -webkit-tap-highlight-color: transparent; }' +
-        '.JUM-LOIN:active { opacity: 0.5; }' +
-        'body.dark-mode .JUM-LOIN { filter: grayscale(1) invert(1) blur(0.6px); opacity: 0.32; }' +
-        '.JUM-INDIC { display: flex; align-items: center; justify-content: center; gap: 6px; margin: 6px auto 2px; flex-shrink: 0; }' +
-        '.JUM-INDIC button { border: 1.5px solid rgba(90,122,148,0.35); background: transparent; color: #64748b; border-radius: 999px;' +
-            ' padding: 4px 10px; font-family: inherit; font-size: 0.58rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }' +
-        '.JUM-INDIC button.actif { background: #1a1a1a; border-color: #1a1a1a; color: #fff; cursor: default; }' +
-        'body.dark-mode .JUM-INDIC button { color: #a3a3a3; border-color: #404040; }' +
-        'body.dark-mode .JUM-INDIC button.actif { background: #f5f5f5; border-color: #f5f5f5; color: #141414; }' +
-        '.JUM-FLECHE { color: #94a3b8; font-size: 0.75rem; font-weight: 800; }' +
-        /* Bouton ⋯ de l'accueil : regroupe « Références » et « Mise à jour » */
-        '.JUM-PLUS { position: absolute; top: 10px; right: 10px; z-index: 6; }' +
-        '.JUM-PLUS-BTN { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid rgba(90,122,148,0.35); background: rgba(255,255,255,0.9);' +
-            ' color: #64748b; font-family: inherit; font-size: 1.1rem; font-weight: 800; line-height: 1; letter-spacing: 1px; cursor: pointer;' +
-            ' display: flex; align-items: center; justify-content: center; padding: 0 0 6px; -webkit-tap-highlight-color: transparent; }' +
-        '.JUM-PLUS-BTN:active { transform: scale(0.94); }' +
-        '.JUM-PLUS-MENU { display: none; position: absolute; top: 40px; right: 0; min-width: 190px; padding: 6px; border-radius: 14px;' +
-            ' background: #fff; border: 1px solid rgba(90,122,148,0.25); box-shadow: 0 12px 30px rgba(15,23,42,0.16); }' +
-        '.JUM-PLUS.ouvert .JUM-PLUS-MENU { display: block; }' +
-        '.JUM-PLUS-ITEM { display: block; width: 100%; text-align: left; border: 0; background: transparent; border-radius: 10px; padding: 11px 12px;' +
-            ' font-family: inherit; font-size: 0.8rem; font-weight: 700; color: #1e293b; cursor: pointer; }' +
-        '.JUM-PLUS-ITEM:active { background: rgba(90,122,148,0.12); }' +
-        'body.dark-mode .JUM-PLUS-BTN { background: rgba(36,36,36,0.9); border-color: #404040; color: #94a3b8; }' +
-        'body.dark-mode .JUM-PLUS-MENU { background: #242424; border-color: #404040; }' +
-        'body.dark-mode .JUM-PLUS-ITEM { color: #f1f5f9; }' +
-        '.JUM-ANIM { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease, filter 0.5s ease !important; }' +
-        '.JUM-SORTIE { transition: opacity 0.28s ease, transform 0.32s ease; opacity: 0; transform: scale(0.98); }' +
-        '@media (prefers-reduced-motion: reduce) { .JUM-ANIM { transition-duration: 0.01s !important; } }';
+        '.JUM-LOGO-CHOIX { cursor: pointer; -webkit-tap-highlight-color: transparent; }' +
+        '.JUM-LOGO-CHOIX:active { transform: scale(0.97); }' +
+        /* Écran de choix : deux triangles, coupe de la diagonale haut-droite → bas-gauche */
+        '.JUM-CHOIX { position: fixed; inset: 0; z-index: 99985; overflow: hidden; background: #0f0f0f; -webkit-tap-highlight-color: transparent;' +
+            ' user-select: none; -webkit-user-select: none; transition: opacity 0.32s ease; }' +
+        '.JUM-CHOIX.sortie { opacity: 0; pointer-events: none; }' +
+        '.JUM-PAN { position: absolute; inset: 0; cursor: pointer; transition: clip-path 0.5s cubic-bezier(0.65,0,0.25,1), filter 0.2s ease; }' +
+        '.JUM-PAN-MER { background: linear-gradient(150deg, #ffffff 0%, #eef2f6 55%, #dde5ee 100%); clip-path: polygon(0 0, 100% 0, 100% 0, 0 100%); }' +
+        '.JUM-PAN-CR { background: linear-gradient(150deg, #2a2a2a 0%, #161616 60%, #0b0b0b 100%); clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 100%); }' +
+        '.JUM-PAN.plein { clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%); z-index: 2; }' +
+        '.JUM-PAN-CR.plein { clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 0); }' +
+        '.JUM-PAN.appuye { filter: brightness(0.94); }' +
+        '.JUM-PAN-CR.appuye { filter: brightness(1.25); }' +
+        '.JUM-BLOC { position: absolute; display: flex; flex-direction: column; align-items: center; gap: 1.6vh; transform: translate(-50%, -50%);' +
+            ' transition: transform 0.5s cubic-bezier(0.65,0,0.25,1), opacity 0.3s ease; }' +
+        '.JUM-PAN-MER .JUM-BLOC { left: 36%; top: 29%; }' +
+        '.JUM-PAN-CR .JUM-BLOC { left: 64%; top: 71%; }' +
+        '.JUM-PAN.plein .JUM-BLOC { left: 50%; top: 50%; }' +
+        '.JUM-BLOC img { display: block; height: auto; pointer-events: none; }' +
+        '.JUM-PAN-MER img { width: min(40vw, 26vh, 230px); }' +
+        /* même largeur de « TRIGONE » dans les deux logos */
+        '.JUM-PAN-CR img { width: calc(min(40vw, 26vh, 230px) * 1.246); filter: brightness(0) invert(1); }' +
+        '@media (orientation: landscape) { .JUM-PAN-MER img { width: min(22vw, 38vh, 230px); } .JUM-PAN-CR img { width: calc(min(22vw, 38vh, 230px) * 1.246); }' +
+            ' .JUM-PAN-MER .JUM-BLOC { left: 30%; top: 34%; } .JUM-PAN-CR .JUM-BLOC { left: 70%; top: 66%; } }' +
+        '.JUM-SOUS { font: 800 0.62rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }' +
+        '.JUM-PAN-MER .JUM-SOUS { color: #5a7a94; }' +
+        '.JUM-PAN-CR .JUM-SOUS { color: #d6a756; }' +
+        '.JUM-TRAIT { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; transition: opacity 0.2s ease; }' +
+        '.JUM-CHOIX.choisi .JUM-TRAIT { opacity: 0; }' +
+        '@media (prefers-reduced-motion: reduce) { .JUM-PAN, .JUM-BLOC { transition-duration: 0.01s; } }' +
+        '';
     var style = document.createElement('style');
     style.textContent = css;
     (document.head || document.documentElement).appendChild(style);
 
-    function visible(el) { if (!el) return false; var r = el.getBoundingClientRect(); return r.width > 0 && r.height > 0; }
-    // Le petit logo se cale sur le logo principal (qui rétrécit sur les petits écrans) : environ un tiers de sa
-    // taille, en retrait en haut à droite. data-contenu : part utile de l'image principale si elle a des marges.
-    function placer() {
-        Array.prototype.forEach.call(document.querySelectorAll('.JUM-SCENE'), function(scene) {
-            var main = scene.querySelector('.JUM-PRINCIPAL'), loin = scene.querySelector('.JUM-LOIN');
-            if (!main || !loin || !visible(main) || loin.classList.contains('JUM-ANIM')) return;
-            var boite = main.getBoundingClientRect(), sc = scene.getBoundingClientRect();
-            // Taille réellement dessinée (l'image est réduite « dans » sa boîte, object-fit: contain).
-            var ratio = (main.naturalWidth && main.naturalHeight) ? main.naturalWidth / main.naturalHeight : boite.width / boite.height;
-            var dw = Math.min(boite.width, boite.height * ratio), dh = dw / ratio;
-            var m = { left: boite.left + (boite.width - dw) / 2, top: boite.top + (boite.height - dh) / 2, width: dw, height: dh };
-            var part = parseFloat(main.getAttribute('data-contenu') || '1');
-            var utile = m.width * part, w = Math.max(26, Math.min(120, utile * 0.38));
-            var aGauche = loin.getAttribute('data-cote') === 'gauche';
-            var x = aGauche ? (m.left - sc.left) + m.width * (0.5 - part / 2) - w * 0.68
-                            : (m.left - sc.left) + m.width * (0.5 + part / 2) - w * 0.32;
-            loin.style.width = w + 'px'; loin.style.maxWidth = 'none'; loin.style.right = 'auto';
-            // Reste dans la partie réellement visible (les conteneurs parents peuvent rogner la scène).
-            var gauche = 0, droite = sc.width;
-            for (var e = scene; e && e !== document.body; e = e.parentElement) {
-                if (getComputedStyle(e).overflowX === 'visible') continue;
-                var q = e.getBoundingClientRect();
-                gauche = Math.max(gauche, q.left - sc.left); droite = Math.min(droite, q.right - sc.left);
-            }
-            loin.style.left = Math.max(gauche + 4, Math.min(droite - w - 4, x)) + 'px';
-            loin.style.top = Math.max(2, (m.top - sc.top) + m.height * (0.5 - 0.5 * part) * 0.9) + 'px';
-        });
-    }
-    window.JUMELAGE_PLACER = placer;
-    // Menu ⋯ de l'accueil : s'ouvre au toucher, se ferme au choix d'une option ou en touchant ailleurs.
-    window.JUMELAGE_MENU_PLUS = function(e) {
-        if (e) e.stopPropagation();
-        var m = e && e.currentTarget && e.currentTarget.closest('.JUM-PLUS');
-        if (m) m.classList.toggle('ouvert');
+    // ---------- Écran de choix ----------
+    var DANS_CR = /\/cr\/(index\.html)?$/.test(location.pathname);
+    var APPLIS = {
+        mer: { url: DANS_CR ? '../' : './', logo: (DANS_CR ? '../' : '') + 'logo_mer.webp', nom: 'TRIGONE Mise en route', sous: 'Avant le départ' },
+        cr: { url: DANS_CR ? './' : 'cr/', logo: (DANS_CR ? '' : 'cr/') + 'logo_cr_accueil.png', nom: 'TRIGONE Compte-rendu de mission', sous: 'Au retour de mission' }
     };
-    document.addEventListener('click', function(e) {
-        Array.prototype.forEach.call(document.querySelectorAll('.JUM-PLUS.ouvert'), function(m) {
-            if (!m.contains(e.target) || e.target.closest('.JUM-PLUS-ITEM')) m.classList.remove('ouvert');
-        });
-    });
-    var prevu = false;
-    function placerBientot() { if (prevu) return; prevu = true; requestAnimationFrame(function() { prevu = false; mesurerHauteur(); placer(); }); }
-    window.addEventListener('resize', placerBientot);
-    window.addEventListener('load', placerBientot);
-    document.addEventListener('load', function(e) { if (e.target && e.target.classList && e.target.classList.contains('JUM-PRINCIPAL')) placerBientot(); }, true);
-    document.addEventListener('DOMContentLoaded', function() {
-        placerBientot();
-        new MutationObserver(placerBientot).observe(document.body, { childList: true, subtree: true });
-    });
-    function paire() {
-        placer();
-        var loin = Array.prototype.filter.call(document.querySelectorAll('.JUM-LOIN'), visible)[0];
-        var principal = Array.prototype.filter.call(document.querySelectorAll('.JUM-PRINCIPAL'), visible)[0];
-        return loin && principal ? { loin: loin, principal: principal } : null;
-    }
-    // Transformation qui amène l'élément « de » sur la place et la taille de l'élément « vers ».
-    function versPlace(de, vers) {
-        var a = de.getBoundingClientRect(), b = vers.getBoundingClientRect();
-        var dx = (b.left + b.width / 2) - (a.left + a.width / 2), dy = (b.top + b.height / 2) - (a.top + a.height / 2);
-        return 'translate(' + dx + 'px,' + dy + 'px) scale(' + (b.width / a.width) + ')';
-    }
+    var ICI = DANS_CR ? 'cr' : 'mer', CLE_CHOIX = 'trigone_choix_fait';
+    var ecran = null;
 
-    var enCours = false;
-    window.JUMELAGE_BASCULER = function() {
-        var p = paire();
-        if (enCours || !p) return;
-        if (document.body.classList.contains('demo-active')) return;
-        enCours = true;
-        var destination = p.loin.getAttribute('data-vers');
-        var tLoin = versPlace(p.loin, p.principal), tPrincipal = versPlace(p.principal, p.loin);
-        [p.loin, p.principal].forEach(function(el) { el.classList.add('JUM-ANIM'); });
-        void p.loin.offsetWidth;
-        p.loin.style.transform = tLoin; p.loin.style.opacity = '1'; p.loin.style.filter = 'none'; p.loin.style.zIndex = '2';
-        p.principal.style.transform = tPrincipal; p.principal.style.opacity = '0.2'; p.principal.style.filter = 'blur(1px)';
-        try { sessionStorage.setItem(CLE_BASCULE, '1'); } catch (e) {}
-        if (TRANSITION_NATIVE) {
-            // les logos amorcent le mouvement, puis la transition native déplie la nouvelle interface
-            setTimeout(function() { location.href = destination; }, 280);
+    function panneau(cle) {
+        var a = APPLIS[cle];
+        return '<div class="JUM-PAN JUM-PAN-' + cle.toUpperCase() + '" data-app="' + cle + '" role="button" tabindex="0" aria-label="Ouvrir ' + a.nom + '">' +
+            '<div class="JUM-BLOC"><img src="' + a.logo + '" alt="' + a.nom + '"><span class="JUM-SOUS">' + a.sous + '</span></div></div>';
+    }
+    // Côté touché : au-dessus ou au-dessous de la diagonale haut-droite → bas-gauche.
+    function coteDuPoint(x, y) { return (x / window.innerWidth + y / window.innerHeight) < 1 ? 'mer' : 'cr'; }
+
+    function choisir(cle) {
+        if (!ecran || ecran.classList.contains('choisi')) return;
+        ecran.classList.add('choisi');
+        try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {}
+        var pan = ecran.querySelector('.JUM-PAN-' + cle.toUpperCase());
+        pan.classList.remove('appuye'); pan.classList.add('plein');
+        if (cle === ICI) {
+            setTimeout(function() { ecran.classList.add('sortie'); }, 420);
+            setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 800);
         } else {
-            setTimeout(function() { document.body.classList.add('JUM-SORTIE'); }, 240);
-            setTimeout(function() { location.href = destination; }, 520);
+            try { sessionStorage.setItem(CLE_BASCULE, '1'); } catch (e) {}
+            setTimeout(function() { location.href = APPLIS[cle].url; }, 480);
         }
-        setTimeout(function() { enCours = false; }, 3000);
+    }
+
+    window.JUMELAGE_CHOIX = function() {
+        if (ecran || !document.body) return;
+        if (document.body.classList.contains('demo-active')) return;
+        ecran = document.createElement('div');
+        ecran.className = 'JUM-CHOIX';
+        ecran.setAttribute('role', 'dialog');
+        ecran.setAttribute('aria-label', 'Choisir une application TRIGONE');
+        ecran.innerHTML = panneau('mer') + panneau('cr') +
+            '<svg class="JUM-TRAIT" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
+            '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>';
+        ecran.addEventListener('click', function(e) { choisir(coteDuPoint(e.clientX, e.clientY)); });
+        ecran.addEventListener('pointerdown', function(e) {
+            var p = ecran.querySelector('.JUM-PAN-' + coteDuPoint(e.clientX, e.clientY).toUpperCase());
+            if (p) p.classList.add('appuye');
+        });
+        ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(t) {
+            ecran.addEventListener(t, function() { Array.prototype.forEach.call(ecran ? ecran.querySelectorAll('.appuye') : [], function(p) { p.classList.remove('appuye'); }); });
+        });
+        ecran.addEventListener('keydown', function(e) {
+            var p = e.target.closest && e.target.closest('.JUM-PAN');
+            if (p && (e.key === 'Enter' || e.key === ' ')) { e.preventDefault(); choisir(p.getAttribute('data-app')); }
+        });
+        document.body.appendChild(ecran);
+        document.documentElement.classList.add('jum-choix');
     };
 
-    // À l'arrivée : le logo principal part de la place du petit logo de l'autre côté et vient au premier plan.
+    // À l'ouverture de TRIGONE (pas en passant d'une appli à l'autre) : l'écran de choix, sous l'animation
+    // d'ouverture, la présentation, le code d'accès et « Avant de commencer », qui gardent la priorité.
+    var dejaChoisi = false;
+    try { dejaChoisi = sessionStorage.getItem(CLE_CHOIX) === '1'; } catch (e) {}
+    if (!arrivee && !dejaChoisi) {
+        if (document.body) window.JUMELAGE_CHOIX();
+        else document.addEventListener('DOMContentLoaded', window.JUMELAGE_CHOIX);
+    }
+
+    // À l'arrivée dans l'autre appli (repli sans transition native) : la page apparaît en fondu.
     window.JUMELAGE_ANIMER_ARRIVEE = function() {
         if (!arrivee) return;
         arrivee = false;
@@ -200,44 +181,12 @@
             requestAnimationFrame(function() { racine.classList.add('jum-entree-go'); racine.classList.remove('jum-entree');
                 setTimeout(function() { racine.classList.remove('jum-entree-go'); }, 600); });
         }
-        var p = paire();
-        if (!p) return;
-        var tPrincipal = versPlace(p.principal, p.loin), tLoin = versPlace(p.loin, p.principal);
-        p.principal.style.transform = tPrincipal; p.principal.style.opacity = '0.3';
-        p.loin.style.transform = tLoin; p.loin.style.opacity = '0';
-        void p.principal.offsetWidth;
-        [p.loin, p.principal].forEach(function(el) { el.classList.add('JUM-ANIM'); });
-        requestAnimationFrame(function() {
-            p.principal.style.transform = ''; p.principal.style.opacity = '';
-            p.loin.style.transform = ''; p.loin.style.opacity = '';
-            setTimeout(function() { [p.loin, p.principal].forEach(function(el) { el.classList.remove('JUM-ANIM'); }); }, 600);
-        });
     };
 
-    // Glissement horizontal sur l'accueil (zone .JUM-ZONE), en évitant le bord gauche réservé au geste
-    // « retour » d'iOS. Souris : cliquer-glisser, pour l'ordinateur.
-    var depart = null;
-    function debut(x, y, cible) {
-        depart = (cible && cible.closest && cible.closest('.JUM-ZONE') && x > 24) ? { x: x, y: y } : null;
-    }
-    function fin(x, y) {
-        if (!depart) return;
-        var dx = x - depart.x, dy = y - depart.y;
-        depart = null;
-        if (Math.abs(dx) > 60 && Math.abs(dy) < Math.abs(dx) * 0.6) window.JUMELAGE_BASCULER();
-    }
-    document.addEventListener('touchstart', function(e) { var t = e.touches[0]; debut(t.clientX, t.clientY, e.target); }, { passive: true });
-    document.addEventListener('touchend', function(e) { var t = e.changedTouches[0]; fin(t.clientX, t.clientY); }, { passive: true });
-    document.addEventListener('mousedown', function(e) { debut(e.clientX, e.clientY, e.target); });
-    document.addEventListener('mouseup', function(e) { fin(e.clientX, e.clientY); });
-
-    // Revenir sur une page restée en mémoire (bouton retour) : on retire les traces de l'animation.
+    // Revenir sur une page restée en mémoire (bouton retour) : l'écran de choix n'y reste pas figé.
     window.addEventListener('pageshow', function(e) {
-        if (!e.persisted) return;
-        enCours = false;
-        document.body.classList.remove('JUM-SORTIE');
-        document.querySelectorAll('.JUM-LOIN, .JUM-PRINCIPAL').forEach(function(el) {
-            el.classList.remove('JUM-ANIM'); el.style.transform = ''; el.style.opacity = ''; el.style.filter = ''; el.style.zIndex = '';
-        });
+        if (!e.persisted || !ecran) return;
+        ecran.remove(); ecran = null;
+        document.documentElement.classList.remove('jum-choix');
     });
 })();
