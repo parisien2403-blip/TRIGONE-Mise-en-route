@@ -161,12 +161,11 @@ body.dark-mode .P0-TAB.has-badge::after { border-color: #1f1f1f; }
 /* Message centré avec mascotte, repris de TRIGONE compte-rendu (remplace alert / confirm) */
 .MSG-OVERLAY {
   position: fixed; inset: 0; z-index: 99998; background: rgba(20,20,20,0);
-  backdrop-filter: blur(0px); -webkit-backdrop-filter: blur(0px);
   display: flex; align-items: center; justify-content: center; padding: 24px;
-  transition: background 0.35s ease, backdrop-filter 0.35s ease, -webkit-backdrop-filter 0.35s ease;
+  transition: background 0.3s ease;
 }
 .MSG-OVERLAY.HIDDEN { display: none; }
-.MSG-OVERLAY.msg-in { background: rgba(20,20,20,0.72); backdrop-filter: blur(3px); -webkit-backdrop-filter: blur(3px); }
+.MSG-OVERLAY.msg-in { background: rgba(20,20,20,0.76); }
 .msg-wrap { position: relative; width: 100%; max-width: 340px; display: block; }
 .msg-wrap.has-mascotte { max-width: 252px; }
 .msg-card {
@@ -617,7 +616,7 @@ body.dark-mode .DEMO-CONTROLES { background: rgba(20,20,20,0.97); border-top-col
     if (!splash) return;
     splash.classList.add('intro-out');
     setTimeout(function() { splash.remove(); }, 550);
-  }, reduit ? 900 : 2900);
+  }, reduit ? 900 : 1900);
 })();
 </script>
 <button type="button" class="THEME-TOGGLE" id="THEME-TOGGLE-BTN" onclick="TOGGLE_THEME()" aria-label="Mode sombre">🌙</button>
