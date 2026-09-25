@@ -4943,6 +4943,13 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 <script src="vendor/jspdf.plugin.autotable.min.js"></script>
 <script src="vendor/qrcode.min.js"></script>
 <style>
+/* ===== Jumelage : barre du bas comme dans Mise en route — libellés entiers, sur deux lignes au besoin,
+   abrégés sur les écrans étroits (« Biblio », « Rembours. ») au lieu d'être coupés par « … » ===== */
+.P0-TAB { font-size: 0.6rem; letter-spacing: 0.02em; padding: 10px 3px; }
+.P0-TAB-LBL { white-space: normal; overflow: visible; text-overflow: clip; text-align: center; line-height: 1.2; overflow-wrap: normal; }
+.P0-LBL-COURT { display: none; }
+.JUM-LBL-COURT .P0-LBL-LONG { display: none; } .JUM-LBL-COURT .P0-LBL-COURT { display: inline; }
+.JUM-DOCK-PETIT .P0-TAB { font-size: 0.5rem; letter-spacing: 0; padding: 9px 0; }
 /* ===== Jumelage : démarrer le compte-rendu à partir d'une mise en route ===== */
 #BTN-DEPUIS-MER { margin-top: 2px; }
 .MER-LISTE { position: fixed; inset: 0; z-index: 99980; background: rgba(15,23,42,0.55); display: flex; align-items: center; justify-content: center; padding: 14px; }
@@ -12809,6 +12816,7 @@ function INIT_TITRES_AUTO() {
 function AFTER_SHOW_PAGE(page) {
     M.PAGE = page;
     if (page === 'P0') MAJ_BOUTON_DEPUIS_MER();
+    requestAnimationFrame(AJUSTER_DOCKS);
     AJUSTER_TITRES();
     document.body.classList.toggle('p0-active', page === 'P0');
     document.body.classList.toggle('bib-active', page === 'P-BIB');
@@ -13541,6 +13549,31 @@ function DEMO_QUITTER() {
 // La bibliothèque de TRIGONE Mise en route (demandes envoyées) propose ses demandes : identité, libellé, lieux
 // de départ et de retour, transports (et transport complémentaire), gares / aéroports / ports, horaires des
 // billets et ABT sont recopiés dans la mission, par les mêmes champs que la reprise d'une mission.
+var MER_LIBELLES_COURTS = { 'Bibliothèque': 'Biblio', 'Remboursement': 'Rembours.' };
+function LIBELLES_COURTS_DOCK() {
+    document.querySelectorAll('.P0-TAB-LBL').forEach(function(el) {
+        var t = (el.textContent || '').trim(), court = MER_LIBELLES_COURTS[t];
+        if (!court || el.querySelector('.P0-LBL-LONG')) return;
+        el.innerHTML = '<span class="P0-LBL-LONG">' + ESC_HTML(t) + '</span><span class="P0-LBL-COURT">' + ESC_HTML(court) + '</span>';
+    });
+}
+// Chaque barre du bas essaie les libellés entiers, puis abrégés, puis abrégés en plus petit : jamais de « … ».
+function AJUSTER_DOCKS() {
+    function deborde(l) {
+        return l.scrollWidth > l.clientWidth + 1 || Array.prototype.some.call(l.querySelectorAll('span'), function(sp) { return sp.offsetWidth && sp.scrollWidth > l.clientWidth + 1; });
+    }
+    document.querySelectorAll('.P0-DOCK-INNER').forEach(function(dock) {
+        if (!dock.getBoundingClientRect().width) return;
+        var libelles = dock.querySelectorAll('.P0-TAB-LBL');
+        dock.classList.remove('JUM-DOCK-PETIT');
+        // libellé par libellé : entier s'il tient, sinon abrégé ; en dernier recours, texte un peu plus petit
+        libelles.forEach(function(l) { l.classList.remove('JUM-LBL-COURT'); if (l.querySelector('.P0-LBL-COURT') && deborde(l)) l.classList.add('JUM-LBL-COURT'); });
+        if (Array.prototype.some.call(libelles, deborde)) dock.classList.add('JUM-DOCK-PETIT');
+    });
+}
+document.addEventListener('DOMContentLoaded', function() { LIBELLES_COURTS_DOCK(); AJUSTER_DOCKS(); });
+window.addEventListener('load', AJUSTER_DOCKS);
+window.addEventListener('resize', function() { requestAnimationFrame(AJUSTER_DOCKS); });
 var MER_MOYEN_VERS_CR = { SERVICE: 'VRM', CIVILE: 'VRC', FERREE: 'VF', AERIENNE: 'AVION', MARITIME: 'BATEAUX' };
 var MER_RESIDENCE_VERS_CR = { ADMINISTRATIVE: 'GARNISON', FAMILIALE: 'DOMICILE' };
 var MER_LISTE_DEMANDES = [];
