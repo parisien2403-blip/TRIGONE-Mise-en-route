@@ -1,31 +1,37 @@
-const CACHE_NAME = 'trigone-mise-en-route-v41';
+// Copie jumelée dans TRIGONE Mise en route (dossier cr/) : caches préfixés « trigone-cr- » ; ceux de
+// Mise en route (« trigone-mise-en-route- ») ne sont jamais effacés d'ici.
+const CACHE_NAME = 'trigone-cr-v379';
 const ASSETS = [
   './',
   './manifest.json',
-  './app.js',
-  './logo_mer.webp',
-  './jumelage.js',
-  './logo_cr_loin.png',
-  './codier.json',
   './mascotte.webp',
-  './demo-mascotte.webp',
-  './phoenix-icon.png',
-  './mascotte-erreur.webp',
-  './mascotte-ok.webp',
   './mascotte-pouce.webp',
   './mascotte-poubelle.webp',
+  './mascotte-ok.webp',
   './mascotte-maj.webp',
+  './demo-mascotte.webp',
+  './mascotte-simulateur.webp',
+  './mascotte-erreur.webp',
+  './mascotte-sauvegarde.webp',
   './mascotte-code.webp',
   './icon-192.png',
   './icon-512.png',
   './icon-512-maskable.png',
   './apple-touch-icon.png',
-  './favicon-32.png',
+  './logo_cr.png',
+  './phoenix-icon.png',
+  './medaille-bronze.webp',
+  './medaille-argent.webp',
+  './medaille-or.webp',
+  './medaille-bronze-icone.webp',
+  './medaille-argent-icone.webp',
+  './medaille-or-icone.webp',
   './vendor/jspdf.umd.min.js',
   './vendor/jspdf.plugin.autotable.min.js',
   './vendor/qrcode.min.js',
-  './vendor/pdf-lib.min.js',
-  './sw.js'
+  './sw.js',
+  '../jumelage.js',
+  '../logo_mer.webp'
 ];
 
 function cacheOne(cache, url, attempt) {
@@ -51,7 +57,7 @@ self.addEventListener('install', function(event) {
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(keys.filter(function(k) { return k.indexOf('trigone-mise-en-route') === 0 && k !== CACHE_NAME; }).map(function(k) { return caches.delete(k); }));
+      return Promise.all(keys.filter(function(k) { return k.indexOf('trigone-cr-') === 0 && k !== CACHE_NAME; }).map(function(k) { return caches.delete(k); }));
     }).then(function() { return self.clients.claim(); })
   );
 });
@@ -62,8 +68,10 @@ self.addEventListener('message', function(event) {
   }
 });
 
-// Page principale : réseau d'abord, comme TRIGONE compte-rendu — la dernière version dès qu'il y a du
-// réseau, secours sur le cache sinon (hors ligne, ou réseau trop lent après 3 s).
+// Page principale : réseau d'abord. Avec du réseau, le missionnaire reçoit toujours la dernière version
+// dès l'ouverture ; sans réseau, ou si le réseau met plus de 3 s à répondre, ou en cas d'erreur serveur,
+// on retombe sur la version en cache. La page est toujours rangée sous la même clé ('./'), quels que
+// soient les paramètres de l'adresse d'ouverture (lien de QR, montre...).
 var DELAI_RESEAU_MS = 3000;
 
 function reseauDAbord(request, fin) {
@@ -81,8 +89,10 @@ function reseauDAbord(request, fin) {
         return cache.match('./', { ignoreSearch: true }).then(function(c) { repondre(c || defaut); });
       }
       minuteur = setTimeout(function() { replier(null); }, DELAI_RESEAU_MS);
+      // no-cache : on revalide toujours auprès du serveur (304 très léger si rien n'a changé)
       fetch(request, { cache: 'no-cache' }).then(function(response) {
         if (response && response.ok) {
+          // gardée pour la prochaine ouverture, même si le cache a déjà répondu entre-temps
           cache.put('./', response.clone()).catch(function() {});
           repondre(response);
         } else if (response && response.type === 'opaqueredirect') {
@@ -101,29 +111,13 @@ self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
-  // Pages de TRIGONE Compte-rendu (dossier cr/) : elles ont leur propre service worker, on ne s'en mêle pas
-  // (sinon la page CR serait rangée à la place de celle de Mise en route).
-  if (event.request.mode === 'navigate' && url.href.indexOf(self.registration.scope + 'cr/') === 0) return;
+  // Vérifications de mise à jour (updates-manifest.json?t=..., taux, IK) : jamais mises en cache
+  if (url.searchParams.has('t') || url.pathname.endsWith('updates-manifest.json')) return;
   if (event.request.mode === 'navigate') {
+    // le service worker reste actif jusqu'à la fin de la requête réseau, pour mettre le cache à jour
     var fin;
     event.waitUntil(new Promise(function(resolve) { fin = resolve; }));
     event.respondWith(reseauDAbord(event.request, fin));
-    return;
-  }
-
-  // Code et données de l'appli (app.js, codier.json…) : réseau d'abord, pour qu'une mise à jour soit
-  // visible dès la première ouverture ; le cache ne sert que hors ligne.
-  if (/\.(js|json)$/.test(url.pathname) && !/\/vendor\//.test(url.pathname)) {
-    event.respondWith(
-      caches.open(CACHE_NAME).then(function(cache) {
-        return fetch(event.request, { cache: 'no-cache' }).then(function(response) {
-          if (response && response.ok && !url.search) cache.put(event.request, response.clone());
-          return response;
-        }).catch(function() {
-          return cache.match(event.request, { ignoreSearch: true }).then(function(c) { return c || Response.error(); });
-        });
-      })
-    );
     return;
   }
 
@@ -144,6 +138,16 @@ self.addEventListener('fetch', function(event) {
         });
         return cached || network;
       });
+    })
+  );
+});
+
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
+      if (list.length) return list[0].focus();
+      return clients.openWindow('./');
     })
   );
 });

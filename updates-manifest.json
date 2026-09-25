@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 40,
-  "appCodeMessage": "Nouveau : « 🎬 Voir une démonstration » sur l'accueil. La mascotte montre, étape par étape, comment remplir et envoyer une demande de mise en route (rien n'est enregistré).",
+  "appCodeVersion": 41,
+  "appCodeMessage": "TRIGONE réunit maintenant la mise en route ET le compte-rendu de mission : sur l'accueil, glissez le doigt ou touchez le petit logo au loin pour passer de l'un à l'autre.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

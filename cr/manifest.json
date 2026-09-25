@@ -1,6 +1,6 @@
 {
-  "id": "trigone-mise-en-route",
-  "name": "TRIGONE — Mise en route & Compte-rendu de mission",
+  "id": "suivi-mission-2-riisc",
+  "name": "TRIGONE — Compte-rendu de mission",
   "short_name": "TRIGONE",
   "start_url": "./",
   "scope": "./",
