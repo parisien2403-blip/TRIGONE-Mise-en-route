@@ -4,7 +4,7 @@
 // un côté ouvre cette appli, avec son propre accueil. Toucher le logo d'un accueil ramène à l'écran de choix.
 // Au changement d'appli : pas de nouvel écran d'ouverture, et le code à 4 chiffres n'est pas redemandé.
 (function() {
-    var CLE_BASCULE = 'trigone_bascule', CLE_DEVERROUILLE = 'trigone_deverrouille', CLE_THEME = 'trigone_theme';
+    var CLE_BASCULE = 'trigone_bascule', CLE_DEVERROUILLE = 'trigone_deverrouille', CLE_THEME = 'trigone_theme', CLE_CHOIX_FAIT = 'trigone_choix_fait';
     var arrivee = false;
     try { arrivee = sessionStorage.getItem(CLE_BASCULE) === '1'; sessionStorage.removeItem(CLE_BASCULE); } catch (e) {}
 
@@ -103,6 +103,30 @@
     var style = document.createElement('style');
     style.textContent = css;
     (document.head || document.documentElement).appendChild(style);
+
+    // ---------- Publication silencieuse ----------
+    // À chaque publication, augmenter BUILD ici ET dans build.json (même numéro). Une appli restée ouverte en
+    // arrière-plan se recharge alors d'elle-même au retour, sans message et sans changer la version affichée.
+    // Seulement après au moins une minute hors de l'appli : choisir une pièce jointe ou ouvrir le mail fait aussi
+    // quitter l'appli un instant, et ne doit jamais provoquer de rechargement.
+    var BUILD = 2, CACHE_DEPUIS = 0, NOUVELLE_PUBLICATION = false, ABSENCE_MIN_MS = 60000;
+    function verifierPublication() {
+        if (!navigator.onLine || NOUVELLE_PUBLICATION) return;
+        var url = (/\/cr\/(index\.html)?$/.test(location.pathname) ? '../' : '') + 'build.json?t=' + Date.now();
+        fetch(url, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+            if (d && d.build > BUILD) NOUVELLE_PUBLICATION = true;
+        }).catch(function() {});
+    }
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') { CACHE_DEPUIS = Date.now(); verifierPublication(); return; }
+        var absence = CACHE_DEPUIS ? Date.now() - CACHE_DEPUIS : 0;
+        CACHE_DEPUIS = 0;
+        if (!NOUVELLE_PUBLICATION || absence < ABSENCE_MIN_MS) { verifierPublication(); return; }
+        if (document.body && document.body.classList.contains('demo-active')) return;
+        try { if (window.JUMELAGE_AVANT_RECHARGE) window.JUMELAGE_AVANT_RECHARGE(); } catch (e) {}
+        try { sessionStorage.setItem(CLE_CHOIX_FAIT, '1'); } catch (e) {}
+        location.reload();
+    });
 
     // ---------- Écran de choix ----------
     var DANS_CR = /\/cr\/(index\.html)?$/.test(location.pathname);
