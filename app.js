@@ -190,19 +190,16 @@ function TPL_ACCUEIL() {
     return '' +
     '<div id="MER-P0">' +
       '<div class="MER-P0-SHELL">' +
-        '<div class="JUM-PLUS"><button type="button" class="JUM-PLUS-BTN" onclick="JUMELAGE_MENU_PLUS(event)" aria-label="Plus d\'options" title="Références et mise à jour">⋯</button>' +
-          '<div class="JUM-PLUS-MENU">' +
-            '<button type="button" id="BTN-REFERENCES" class="JUM-PLUS-ITEM" onclick="SHOW_PAGE(\'REFERENCES\')">📚 Références</button>' +
-            '<button type="button" id="BTN-CHECK-UPDATE" class="JUM-PLUS-ITEM" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()">🔄 Mise à jour</button>' +
-          '</div></div>' +
+        '<button type="button" id="BTN-REFERENCES" class="P0-REF-BTN" onclick="SHOW_PAGE(\'REFERENCES\')" title="Référentiels utilisés par TRIGONE Mise en route">Références</button>' +
+        '<button type="button" id="BTN-CHECK-UPDATE" class="P0-REF-BTN P0-CHECK-UPDATE-BTN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()" title="Vérifier si une mise à jour est disponible">🔄 Mise à jour</button>' +
         '<div class="MER-P0-INNER">' +
-          '<div class="MER-LOGO-WRAP JUM-SCENE JUM-ZONE"><img class="MER-LOGO-IMG JUM-PRINCIPAL" src="logo_mer.webp" alt="TRIGONE — Mise en route">' +
-            '<img class="JUM-LOIN" src="logo_cr_loin.png" data-vers="cr/" alt="Passer à TRIGONE Compte-rendu de mission" title="Passer à TRIGONE Compte-rendu de mission" onclick="JUMELAGE_BASCULER()"></div>' +
+          '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG JUM-LOGO-CHOIX" src="logo_mer.webp" alt="TRIGONE — Mise en route" title="Revenir au choix Mise en route / Compte-rendu" onclick="JUMELAGE_CHOIX()"></div>' +
         '</div>' +
         '<div class="MER-P0-HERO">' +
           (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
           '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur</button>' +
+          '<button type="button" class="P0-LIEN" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
         '</div>' +
         '<div class="MER-P0-ESPACE"></div>' +
         '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_VERSION_AFFICHEE + '</span></p>' +
@@ -1433,7 +1430,7 @@ function TPL_NOTICE() {
             '<li><b>Code oublié</b> : le lien « Code oublié ? » efface toutes les données de l\'appli sur cet appareil. Il n\'existe aucun autre moyen.</li></ul></details>' +
         '<details class="notice-fold"><summary>🔁 Mise en route &amp; Compte-rendu</summary><ul>' +
             '<li>TRIGONE réunit les deux applis : la <b>mise en route</b> avant de partir, le <b>compte-rendu de mission</b> au retour.</li>' +
-            '<li>Sur l\'accueil, le logo de l\'autre appli est affiché en petit, au loin : <b>glissez le doigt</b> sur l\'accueil, ou touchez ce petit logo pour passer de l\'une à l\'autre.</li>' +
+            '<li>À l\'ouverture, l\'écran est coupé en deux en diagonale : touchez <b>Mise en route</b> (en haut à gauche) ou <b>Compte-rendu</b> (en bas à droite). Pour changer ensuite, <b>touchez le logo</b> de l\'accueil : l\'écran de choix revient.</li>' +
             '<li>Votre <b>identité</b> (grade, nom, prénom, matricule, CIE) n\'est saisie qu\'<b>une fois</b> : toute modification dans l\'une est reprise dans l\'autre.</li>' +
             '<li>Dans Compte-rendu, <b>« 📋 À partir d\'une mise en route »</b> liste vos demandes envoyées : en choisir une remplit la mission (identité, libellé, lieux de départ et de retour, transports, gares, ABT, et les horaires des billets dans Frais › Trajets).</li>' +
             '<li>Le code à 4 chiffres n\'est pas redemandé en passant d\'une appli à l\'autre ; chaque partie garde ses propres données.</li></ul></details>' +
@@ -1478,10 +1475,10 @@ function TPL_REFERENCES() {
             'La liste des valideurs habilités (1er et 2e valideur) est publiée avec l\'appli et relue à chaque ouverture de l\'Espace valideur : un changement de code s\'applique automatiquement.',
             'Chaque validation est une <b>signature électronique</b> du contenu exact de la demande et de ses pièces jointes : toute modification ultérieure est détectée.']) +
         MER_FOLD('<svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>', 'Compte-rendu de mission', [
-            'TRIGONE Compte-rendu de mission est intégré : on y passe depuis l\'accueil (glisser ou toucher le petit logo).',
+            'TRIGONE Compte-rendu de mission est intégré : on le choisit sur l\'écran d\'ouverture coupé en diagonale, ou en touchant le logo de l\'accueil.',
             'Il garde ses propres références (repas, hébergement, étranger, indemnité kilométrique), consultables depuis son propre bouton « Références ».']) +
         MER_FOLD('<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>', 'Mises à jour de l\'application', [
-            'L\'appli vérifie à chaque ouverture si une nouvelle version existe ; le bouton ⋯ puis « Mise à jour » de l\'accueil permet de le faire à la main.',
+            'L\'appli vérifie à chaque ouverture si une nouvelle version existe ; le bouton « Mise à jour » de l\'accueil permet de le faire à la main.',
             'Votre saisie en cours, votre panier et votre bibliothèque sont conservés.',
             'Version actuelle : <b>V' + APP_VERSION_AFFICHEE + '</b>.']) +
         '<button type="button" class="BTN BTN-SECONDARY" style="margin-top:6px;" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
