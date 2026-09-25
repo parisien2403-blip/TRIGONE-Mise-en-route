@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 41;
+var APP_CODE_VERSION = 42;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -62,7 +62,34 @@ function GET_REGLAGES() {
     if (DEMO_ACTIF) return DEMO_REGLAGES;
     try { return JSON.parse(localStorage.getItem(STORAGE_REGLAGES) || '{}'); } catch (e) { return {}; }
 }
-function SAVE_REGLAGES(r) { if (DEMO_ACTIF) return; try { localStorage.setItem(STORAGE_REGLAGES, JSON.stringify(r)); } catch (e) {} }
+function SAVE_REGLAGES(r) {
+    if (DEMO_ACTIF) return;
+    try { localStorage.setItem(STORAGE_REGLAGES, JSON.stringify(r)); } catch (e) {}
+    if (r && r.identite) IDENTITE_VERS_COMPTE_RENDU(r.identite);
+}
+// Jumelage : l'identité est saisie une seule fois. Chaque modification ici est reportée dans TRIGONE
+// Compte-rendu de mission (dossier cr/), qui fait de même dans l'autre sens. Matricule 067 50 10 191 → NID 06 750 101 91.
+function IDENTITE_VERS_COMPTE_RENDU(id) {
+    function ecrire(cle, val) { try { if (val) localStorage.setItem(cle, val); } catch (e) {} }
+    var ch = String(id.matricule || '').replace(/\D/g, '');
+    ecrire('mission_saved_user', [(id.nom || '').trim().toUpperCase(), (id.prenom || '').trim()].filter(Boolean).join(' '));
+    ecrire('mission_saved_grade', (id.grade || '').trim());
+    if (ch.length === 10) ecrire('mission_saved_nid', [ch.slice(0, 2), ch.slice(2, 5), ch.slice(5, 8), ch.slice(8)].join(' '));
+    ecrire('mission_saved_cie', (id.cie || '').trim());
+}
+// Identité déjà saisie dans Compte-rendu mais pas encore ici : reprise au démarrage.
+function IDENTITE_DEPUIS_COMPTE_RENDU() {
+    var r = GET_REGLAGES(), id = r.identite || {};
+    if (id.nom || id.grade || id.matricule) return;
+    function lire(cle) { try { return (localStorage.getItem(cle) || '').trim(); } catch (e) { return ''; } }
+    var nomComplet = lire('mission_saved_user'), grade = lire('mission_saved_grade'), nid = lire('mission_saved_nid').replace(/\D/g, ''), cie = lire('mission_saved_cie');
+    if (!nomComplet && !grade && !nid) return;
+    var morceaux = nomComplet.split(/\s+/);
+    id = { nom: (morceaux[0] || '').toUpperCase(), prenom: morceaux.slice(1).join(' '), grade: grade, cie: cie,
+        matricule: nid.length === 10 ? FORMAT_MATRICULE(nid) : '' };
+    r.identite = id;
+    try { localStorage.setItem(STORAGE_REGLAGES, JSON.stringify(r)); } catch (e) {}
+}
 
 function GET_PANIER() {
     if (DEMO_ACTIF) return DEMO_PANIER;
@@ -1247,6 +1274,8 @@ function TPL_NOTICE() {
         '<details class="notice-fold"><summary>🔁 Mise en route &amp; Compte-rendu</summary><ul>' +
             '<li>TRIGONE réunit les deux applis : la <b>mise en route</b> avant de partir, le <b>compte-rendu de mission</b> au retour.</li>' +
             '<li>Sur l\'accueil, le logo de l\'autre appli est affiché en petit, au loin : <b>glissez le doigt</b> sur l\'accueil, touchez ce petit logo ou le bouton « Compte-rendu › » pour passer de l\'une à l\'autre.</li>' +
+            '<li>Votre <b>identité</b> (grade, nom, prénom, matricule, CIE) n\'est saisie qu\'<b>une fois</b> : toute modification dans l\'une est reprise dans l\'autre.</li>' +
+            '<li>Dans Compte-rendu, <b>« 📋 À partir d\'une mise en route »</b> liste vos demandes envoyées : en choisir une remplit la mission (identité, libellé, lieux de départ et de retour, transports, gares, ABT, et les horaires des billets dans Frais › Trajets).</li>' +
             '<li>Le code à 4 chiffres n\'est pas redemandé en passant d\'une appli à l\'autre ; chaque partie garde ses propres données.</li></ul></details>' +
         '<details class="notice-fold"><summary>🔄 Mises à jour</summary><ul>' +
             '<li>L\'appli recherche une nouvelle version à l\'ouverture et à la fermeture ; trouvée à la fermeture, elle s\'installe d\'elle-même au retour dans l\'appli.</li>' +
@@ -2517,6 +2546,7 @@ function REGISTER_SERVICE_WORKER() {
 
 window.addEventListener('DOMContentLoaded', function() {
     APPLIQUER_THEME_INITIAL();
+    IDENTITE_DEPUIS_COMPTE_RENDU();
     LOAD_BROUILLON();
     SHOW_PAGE(BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
     if (window.JUMELAGE_ANIMER_ARRIVEE) setTimeout(JUMELAGE_ANIMER_ARRIVEE, 30);

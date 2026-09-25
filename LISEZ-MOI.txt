@@ -125,8 +125,18 @@ JUMELAGE AVEC TRIGONE COMPTE-RENDU DE MISSION
   configuration initiale de Compte-rendu.
 - Hors ligne : les deux service workers sont installés dès la première ouverture ; chacun ne
   vide que ses propres caches (« trigone-mise-en-route-… » et « trigone-cr-… »).
+- Identité saisie une seule fois : Mise en route (Mon espace, « Avant de commencer ») écrit
+  aussi l'identité de Compte-rendu (mission_saved_user / _grade / _nid / _cie), et Compte-rendu
+  (SAVE_USER_PROFILE) renvoie ses modifications dans mer_reglages.identite. Matricule
+  067 50 10 191 <-> NID 06 750 101 91.
+- Compte-rendu « 📋 À partir d'une mise en route » (accueil, si aucune mission n'est commencée) :
+  liste la bibliothèque de Mise en route ; la demande choisie remplit la mission (identité de la
+  personne concernée, libellé, lieux de départ / retour, transports et transport complémentaire,
+  gares / aéroports / ports, pays à l'étranger, ABT) ; les horaires des billets sont proposés
+  dans Frais > Trajets (M.MER_HORAIRES).
 - Mettre à jour la copie de Compte-rendu : recopier les fichiers du dépôt d'origine dans cr/,
   puis refaire les adaptations de cr/index.html (lien vers ../manifest.json et ../jumelage.js,
   écran d'ouverture sauté à l'arrivée, logo ../logo_mer.webp « JUM-LOIN » + indicateur,
-  code non redemandé, thème commun, présentation non rejouée, unité pré-remplie) et de cr/sw.js
+  code non redemandé, thème commun, présentation non rejouée, unité pré-remplie, identité
+  partagée, « À partir d'une mise en route », M.MER_HORAIRES dans Frais > Trajets) et de cr/sw.js
   (caches « trigone-cr-… », ../jumelage.js et ../logo_mer.webp mis en cache).
