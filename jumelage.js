@@ -9,6 +9,24 @@
     try { arrivee = sessionStorage.getItem(CLE_BASCULE) === '1'; sessionStorage.removeItem(CLE_BASCULE); } catch (e) {}
 
     window.JUMELAGE_ARRIVEE = function() { return arrivee; };
+
+    // Passage d'une appli à l'autre sans écran blanc : transition native entre les deux pages (Chrome / Samsung
+    // Internet récents, Safari 18.2+). Effet « pliable qui s'ouvre » : la nouvelle interface se déplie depuis la
+    // ligne centrale vers les bords, l'ancienne recule et s'estompe. Ailleurs : fondu doux (repli).
+    var TRANSITION_NATIVE = 'onpagereveal' in window;
+    window.addEventListener('pageswap', function(e) {
+        var nous = false;
+        try { nous = sessionStorage.getItem(CLE_BASCULE) === '1'; } catch (err) {}
+        if (e.viewTransition && !nous) e.viewTransition.skipTransition();
+    });
+    window.addEventListener('pagereveal', function(e) {
+        if (e.viewTransition && !arrivee) e.viewTransition.skipTransition();
+    });
+    if (arrivee && !TRANSITION_NATIVE) {
+        document.documentElement.classList.add('jum-entree');
+        // filet de sécurité : la page ne reste jamais invisible
+        setTimeout(function() { document.documentElement.classList.remove('jum-entree'); }, 1500);
+    }
     window.JUMELAGE_DEVERROUILLE = function() { try { return sessionStorage.getItem(CLE_DEVERROUILLE) === '1'; } catch (e) { return false; } };
     window.JUMELAGE_MARQUER_DEVERROUILLE = function() { try { sessionStorage.setItem(CLE_DEVERROUILLE, '1'); } catch (e) {} };
     // Thème clair / sombre commun aux deux applis : null tant qu'aucun choix n'a été fait.
@@ -40,6 +58,17 @@
     if (window.screen && screen.orientation && screen.orientation.addEventListener) screen.orientation.addEventListener('change', mesurerPlusTard);
 
     var css = '' +
+        '@view-transition { navigation: auto; }' +
+        '::view-transition-group(root) { animation-duration: 0.62s; }' +
+        '::view-transition-old(root) { animation: jum-reculer 0.5s cubic-bezier(0.4,0,0.2,1) both; }' +
+        '::view-transition-new(root) { animation: jum-deplier 0.62s cubic-bezier(0.22,0.8,0.24,1) both; }' +
+        '@keyframes jum-deplier { 0% { clip-path: inset(0 50% 0 50% round 28px); transform: scale(0.96); filter: brightness(0.85); }' +
+            ' 60% { clip-path: inset(0 4% 0 4% round 22px); filter: brightness(1); } 100% { clip-path: inset(0 0 0 0 round 0); transform: none; filter: none; } }' +
+        '@keyframes jum-reculer { to { transform: scale(0.9); opacity: 0; filter: blur(3px) brightness(0.9); } }' +
+        '@media (prefers-reduced-motion: reduce) { ::view-transition-old(root), ::view-transition-new(root) { animation-duration: 0.01s; } }' +
+        /* repli sans transition native : la nouvelle page apparaît en fondu, sans flash blanc */
+        'html.jum-entree body { opacity: 0; transform: scale(0.97); }' +
+        'html.jum-entree-go body { opacity: 1; transform: none; transition: opacity 0.38s ease, transform 0.45s cubic-bezier(0.22,0.8,0.24,1); }' +
         '.JUM-SCENE { position: relative; }' +
         '.JUM-PRINCIPAL { position: relative; z-index: 1; pointer-events: none; }' +
         '.JUM-LOIN { position: absolute; z-index: 0; right: 4%; top: 4%; width: 30%; max-width: 132px; height: auto; opacity: 0.34;' +
@@ -54,8 +83,7 @@
         'body.dark-mode .JUM-INDIC button.actif { background: #f5f5f5; border-color: #f5f5f5; color: #141414; }' +
         '.JUM-FLECHE { color: #94a3b8; font-size: 0.75rem; font-weight: 800; }' +
         '.JUM-ANIM { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease, filter 0.5s ease !important; }' +
-        '.JUM-VOILE { position: fixed; inset: 0; z-index: 100000; background: var(--sm2-surface, #fff); opacity: 0; pointer-events: none; transition: opacity 0.22s ease 0.3s; }' +
-        'body.dark-mode .JUM-VOILE { background: #141414; }' +
+        '.JUM-SORTIE { transition: opacity 0.28s ease, transform 0.32s ease; opacity: 0; transform: scale(0.98); }' +
         '@media (prefers-reduced-motion: reduce) { .JUM-ANIM { transition-duration: 0.01s !important; } }';
     var style = document.createElement('style');
     style.textContent = css;
@@ -115,15 +143,17 @@
         var destination = p.loin.getAttribute('data-vers');
         var tLoin = versPlace(p.loin, p.principal), tPrincipal = versPlace(p.principal, p.loin);
         [p.loin, p.principal].forEach(function(el) { el.classList.add('JUM-ANIM'); });
-        var voile = document.createElement('div');
-        voile.className = 'JUM-VOILE';
-        document.body.appendChild(voile);
         void p.loin.offsetWidth;
         p.loin.style.transform = tLoin; p.loin.style.opacity = '1'; p.loin.style.filter = 'none'; p.loin.style.zIndex = '2';
         p.principal.style.transform = tPrincipal; p.principal.style.opacity = '0.2'; p.principal.style.filter = 'blur(1px)';
-        voile.style.opacity = '1';
         try { sessionStorage.setItem(CLE_BASCULE, '1'); } catch (e) {}
-        setTimeout(function() { location.href = destination; }, 560);
+        if (TRANSITION_NATIVE) {
+            // les logos amorcent le mouvement, puis la transition native déplie la nouvelle interface
+            setTimeout(function() { location.href = destination; }, 280);
+        } else {
+            setTimeout(function() { document.body.classList.add('JUM-SORTIE'); }, 240);
+            setTimeout(function() { location.href = destination; }, 520);
+        }
         setTimeout(function() { enCours = false; }, 3000);
     };
 
@@ -131,6 +161,12 @@
     window.JUMELAGE_ANIMER_ARRIVEE = function() {
         if (!arrivee) return;
         arrivee = false;
+        if (TRANSITION_NATIVE) return;
+        var racine = document.documentElement;
+        if (racine.classList.contains('jum-entree')) {
+            requestAnimationFrame(function() { racine.classList.add('jum-entree-go'); racine.classList.remove('jum-entree');
+                setTimeout(function() { racine.classList.remove('jum-entree-go'); }, 600); });
+        }
         var p = paire();
         if (!p) return;
         var tPrincipal = versPlace(p.principal, p.loin), tLoin = versPlace(p.loin, p.principal);
@@ -166,7 +202,7 @@
     window.addEventListener('pageshow', function(e) {
         if (!e.persisted) return;
         enCours = false;
-        document.querySelectorAll('.JUM-VOILE').forEach(function(v) { v.remove(); });
+        document.body.classList.remove('JUM-SORTIE');
         document.querySelectorAll('.JUM-LOIN, .JUM-PRINCIPAL').forEach(function(el) {
             el.classList.remove('JUM-ANIM'); el.style.transform = ''; el.style.opacity = ''; el.style.filter = ''; el.style.zIndex = '';
         });
