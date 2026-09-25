@@ -54,9 +54,10 @@ SAISIE D'UNE DEMANDE
   DEVERSEMENT).
 
 ACCUEIL
-- Bouton principal « Nouvelle demande », liens « Importer une demande refusée », « Espace valideur »
-  et « Vérifier une mise en route », et en bas les onglets Bibliothèque (demandes envoyées),
-  Panier et Mon espace (identité et mails pré-remplis).
+- Boutons « Nouvelle demande » et « Espace valideur » (1er et 2e valideur), et en bas les onglets
+  Bibliothèque (demandes envoyées, avec « 💾 .json » pour réenregistrer le fichier envoyé et ses
+  pièces jointes), Panier, Notice, Mon espace et, tout à droite, « Chorus DT » (réservé à
+  l'assistant Chorus DT : un fichier sans les deux signatures y est refusé).
 
 UN SEUL FICHIER QUI CIRCULE
 - Le missionnaire joint sa NDS ou sa DAF (PDF, JPEG ou PNG, 10 Mo maximum) dans l'onglet
@@ -65,7 +66,7 @@ UN SEUL FICHIER QUI CIRCULE
 - Le 1er valideur importe ce .json, consulte l'aperçu et les pièces (📎), signe, et renvoie un
   seul .json au 2e valideur.
 - Le 2e valideur ne voit lui aussi qu'un aperçu et envoie à l'assistant Chorus DT un seul .json.
-- L'assistant Chorus DT l'importe dans « Vérifier une mise en route » : signatures et pièces
+- L'assistant Chorus DT l'importe dans l'onglet « Chorus DT » : signatures et pièces
   contrôlées, puis « PDF avec NDS / DAF » génère le PDF à traiter (chaque demande signée suivie
   des pages de ses pièces jointes, assemblées avec vendor/pdf-lib.min.js).
 - L'empreinte SHA-256 de chaque pièce fait partie de la demande signée : une pièce remplacée en
@@ -89,10 +90,10 @@ CIRCUIT DE VALIDATION SÉCURISÉ
   1er valideur -> .json au 2e valideur ; 2e valideur -> .json à l'assistant Chorus DT ;
   refus -> .json au demandeur, qui l'importe, corrige et renvoie.
 - Toute validation faite par un valideur non habilité, ou toute demande modifiée après
-  validation, est signalée en rouge (au 2e valideur et sur « Vérifier une mise en route »).
+  validation, est signalée en rouge (au 2e valideur et sur l'onglet « Chorus DT »).
 - Le PDF porte deux cases (1er valideur à gauche, 2e à droite) : nom, fonction, date, heure et
   empreinte de la signature. Les données signées sont intégrées au PDF : l'assistant Chorus DT
-  le glisse dans « Vérifier une mise en route » pour contrôler les signatures.
+  le glisse dans l'onglet « Chorus DT » pour contrôler les signatures.
 - Code perdu ou divulgué, changement de valideur : créer un nouveau code pour ce rôle.
 
 MISES À JOUR

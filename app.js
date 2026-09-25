@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 38;
+var APP_CODE_VERSION = 39;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -139,11 +139,14 @@ var MER_ICONES = {
     BIBLIOTHEQUE: '<svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg>',
     PANIER: '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>',
     ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>',
-    NOTICE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 15.7v-5M12 8h.01"/></svg>'
+    NOTICE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 15.7v-5M12 8h.01"/></svg>',
+    CHORUS: '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14.5l2 2 4-4"/></svg>'
 };
-function TPL_ONGLET_DOCK(page, icone, libelle, pastille) {
-    return '<button type="button" class="P0-TAB' + (pastille ? ' has-badge' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')">' +
-        '<span class="P0-TAB-ICON" aria-hidden="true">' + icone + '</span><span class="P0-TAB-LBL">' + libelle + '</span></button>';
+// court : libellé abrégé pour les écrans étroits (5 onglets sur 320 px).
+function TPL_ONGLET_DOCK(page, icone, libelle, pastille, court) {
+    return '<button type="button" class="P0-TAB' + (pastille ? ' has-badge' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')" aria-label="' + libelle + '">' +
+        '<span class="P0-TAB-ICON" aria-hidden="true">' + icone + '</span><span class="P0-TAB-LBL">' +
+        (court ? '<span class="P0-LBL-LONG">' + libelle + '</span><span class="P0-LBL-COURT">' + court + '</span>' : libelle) + '</span></button>';
 }
 function TPL_ACCUEIL() {
     var n = GET_PANIER().length;
@@ -163,10 +166,11 @@ function TPL_ACCUEIL() {
         '<div class="MER-P0-ESPACE"></div>' +
         '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_CODE_VERSION + '</span></p>' +
         '<nav class="P0-TAB-BAR" aria-label="Navigation accueil"><div class="P0-DOCK-INNER">' +
-          TPL_ONGLET_DOCK('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
+          TPL_ONGLET_DOCK('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque', false, 'Biblio') +
           TPL_ONGLET_DOCK('PANIER', MER_ICONES.PANIER, 'Panier' + (n ? ' (' + n + ')' : ''), n > 0) +
           TPL_ONGLET_DOCK('NOTICE', MER_ICONES.NOTICE, 'Notice') +
           TPL_ONGLET_DOCK('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
+          TPL_ONGLET_DOCK('VERIFIER', MER_ICONES.CHORUS, 'Chorus DT') +
         '</div></nav>' +
       '</div>' +
     '</div>';
@@ -193,13 +197,14 @@ function TPL_BIBLIOTHEQUE() {
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(objets) + (e.destinataire ? '<br>À ' + ESC(e.destinataire) : '') + '</div>' +
             '<div class="MER-VAL-ACTIONS">' +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_JSON(\'' + e.id + '\')">💾 .json</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_SUPPRIMER(\'' + e.id + '\')">Supprimer</button>' +
             '</div></div></div>';
     }).join('');
     return '<div class="CARD"><h2>Bibliothèque</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées.</p>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées. « 💾 .json » réenregistre le fichier envoyé (pièces jointes comprises) pour le renvoyer si besoin.</p>' +
         (items || '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
@@ -208,6 +213,21 @@ function BIB_PDF(id) {
     var e = BIB_TROUVER(id); if (!e) return;
     try { GENERER_PDF(e.demandes).save(NOM_FICHIER_BASE(e.demandes) + '.pdf'); }
     catch (err) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + err.message); }
+}
+// Réenregistre le .json envoyé (pièces jointes comprises) pour le renvoyer si besoin.
+function BIB_JSON(id) {
+    var e = BIB_TROUVER(id); if (!e) return;
+    var metas = [].concat.apply([], e.demandes.map(function(d) { return d.pieces || []; }));
+    Promise.all(metas.map(function(m) { return PJ_LIRE(m.id).then(function(p) { return p ? null : m.nom; }); })).then(function(manq) {
+        manq = manq.filter(Boolean);
+        var go = function() {
+            ENREGISTRER_JSON(NOM_FICHIER_BASE(e.demandes, 'DEMANDE') + '.json', function() { return GENERER_JSON_COMPLET(e.demandes, 'DEMANDE_INITIALE'); })
+                .then(function(ok) { if (ok) MSG_INFO('Fichier enregistré', 'Le fichier .json de votre demande (pièces jointes comprises) est enregistré : vous pouvez le joindre à un nouveau mail.', '✅', 'mascotte-ok.webp'); })
+                .catch(function(err) { MSG_ERREUR('Enregistrement impossible', err.message || String(err)); });
+        };
+        if (!manq.length) { go(); return; }
+        MSG_CONFIRM('Pièce(s) jointe(s) introuvable(s)', 'Ces fichiers ne sont plus sur cet appareil : ' + manq.join(', ') + '.\n\nEnregistrer quand même le .json sans eux ?', 'Enregistrer', go, '⚠️');
+    });
 }
 // Repart d'une demande envoyée (même objet, mêmes personnes) pour en créer une nouvelle.
 function BIB_REUTILISER(id) { PROTEGER_BROUILLON(function() { BIB_REUTILISER_OK(id); }, 'Refaire la demande'); }
@@ -1178,7 +1198,7 @@ var MER_NOTICES = {
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
             '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises, nommé « 1-DEMANDE MISSIONNAIRE - GRADE NOM - OMR INDIVIDUEL » ou « … COLLECTIF » selon le nombre de missionnaires) et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
             'Appli fermée avant la fin ? À la réouverture, l\'écran <b>Demande en cours</b> propose de <b>continuer</b> la saisie ou de revenir à l\'accueil (la demande reste enregistrée, bouton « ↩ Reprendre ma demande en cours »).',
-            'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
+            'La demande est rangée dans la <b>Bibliothèque</b> : « 💾 .json » y réenregistre le fichier envoyé (pièces jointes comprises) pour le renvoyer si besoin. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
@@ -1186,7 +1206,7 @@ var MER_NOTICES = {
             '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le nom du fichier dit qui l\'a produit : « 2-SIGNE VALIDEUR 1 - GRADE NOM - OMR … » après le 1er valideur, « 3-SIGNE VALIDEUR 2 - … » après le 2e, « REFUS VALIDEUR 1 (ou 2) - … » pour un refus. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
             'Terminez par « Terminé » une fois tous les mails envoyés : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier le .json et générer le PDF', icone: MER_ICONES_NOTICE_CHECK(),
-        etapes: ['Ouvrez <b>Espace valideur</b> puis <b>Vérifier une mise en route</b> (aucun code n\'est nécessaire).',
+        etapes: ['Ouvrez l\'onglet <b>Chorus DT</b>, en bas à droite de l\'accueil (aucun code n\'est nécessaire). Il ne sert qu\'à l\'assistant : un fichier qui n\'a pas les deux signatures y est refusé.',
             'Enregistrez le fichier <b>.json</b> reçu du 2e valideur, puis choisissez-le : TRIGONE contrôle les signatures électroniques et les pièces jointes.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).'] }
@@ -1943,7 +1963,7 @@ function TPL_ESPACE_VALIDATION(v, h) {
         (h.role === 1
             ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>'
             : '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
-              '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF dans « Vérifier une mise en route ».</p></div>') +
+              '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF depuis l\'onglet « Chorus DT » de l\'accueil.</p></div>') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
     return html;
 }
@@ -1957,8 +1977,6 @@ function TPL_VALIDATION() {
     return '<div class="CARD">' +
         '<h2>Espace valideur</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 16px;">' + sous + '</p>' + corps +
-        '<div class="MER-SECTION-TITLE">Assistant Chorus DT</div>' +
-        '<button type="button" class="BTN BTN-GHOST" onclick="SHOW_PAGE(\'VERIFIER\')">✔ Vérifier une mise en route</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
@@ -2126,7 +2144,7 @@ function CONTENU_ENVOI(env) {
     var n = env.demandes.length;
     if (env.type === 'CHORUS') return { etape: 'VALIDATION_2', sujet: SUJET_MAIL('CHORUS', env.demandes),
         corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez TRIGONE Mise en route > Espace valideur > Vérifier une mise en route, importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.' };
+            'Ouvrez TRIGONE Mise en route > onglet « Chorus DT » (en bas de l\'accueil), importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.' };
     if (env.type === 'VALIDATION_1') return { etape: 'VALIDATION_1', sujet: SUJET_MAIL('VALIDATION_1', env.demandes),
         corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
             'Ouvrez TRIGONE Mise en route > Espace valideur, puis importez ce fichier.\n\nCordialement.' };
@@ -2166,8 +2184,8 @@ function EST_CONFORME(x) {
 }
 function TPL_VERIFIER() {
     var res = MER_RESULTATS_VERIF;
-    var html = '<div class="CARD"><h2>Vérifier une mise en route</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Importez le fichier .json reçu du 2e valideur : TRIGONE contrôle les signatures et les pièces jointes, puis génère le PDF à traiter (demande + NDS / DAF). Un PDF TRIGONE peut aussi être contrôlé.</p>' +
+    var html = '<div class="CARD"><h2>Assistant Chorus DT</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Réservé à l\'assistant Chorus DT. Importez le fichier « 3-SIGNE VALIDEUR 2 … .json » reçu du 2e valideur : TRIGONE contrôle les signatures et les pièces jointes, puis génère le PDF à traiter (demande + NDS / DAF). Un PDF TRIGONE peut aussi être contrôlé.</p>' +
         '<label class="BTN BTN-PRIMARY" style="margin-bottom:16px;">📥 Choisir le fichier .json (ou le PDF)' +
         '<input type="file" accept=".json,application/json,.pdf,application/pdf" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
     if (res) {
@@ -2198,7 +2216,7 @@ function TPL_VERIFIER() {
             html += '<button type="button" class="BTN BTN-PRIMARY" onclick="TELECHARGER_PDF_VERIFIE(null)">📄 Un seul PDF pour les ' + conformes.length + ' demandes conformes</button>';
         }
     }
-    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'VALIDATION\')">← Espace valideur</button></div>';
+    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 function VERIFIER_FICHIERS(input) {
     LIRE_FICHIERS(input, function(contenu, f) {
@@ -2216,6 +2234,16 @@ function VERIFIER_FICHIERS(input) {
                 });
             }));
         }).then(function(res) {
+            // Fichier du missionnaire ou du 1er valideur : pas encore les deux signatures, rien à traiter ici.
+            if (res.length && res.every(function(x) { return (x.d.validations || []).length < 2; })) {
+                MER_RESULTATS_VERIF = null; SHOW_PAGE('VERIFIER');
+                var une = res.some(function(x) { return (x.d.validations || []).length === 1; });
+                AFFICHER_MSG_CENTRE({ titre: 'Fichier non validé', icone: '⛔', mascotte: 'mascotte-erreur.webp',
+                    texte: (une ? 'Ce fichier ne porte que la signature du 1er valideur.' : 'Ce fichier n\'a encore aucune signature de valideur.') +
+                        ' Cet onglet est réservé à l\'assistant Chorus DT, qui traite le fichier « 3-SIGNE VALIDEUR 2 … » signé par les deux valideurs.',
+                    boutons: [{ label: 'J\'ai compris' }] });
+                return;
+            }
             MER_RESULTATS_VERIF = res;
             SHOW_PAGE('VERIFIER');
         });

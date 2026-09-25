@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 38,
-  "appCodeMessage": "Noms de fichiers plus clairs, dans l'ordre du circuit : « 1-DEMANDE MISSIONNAIRE », « 2-SIGNE VALIDEUR 1 », « 3-SIGNE VALIDEUR 2 », puis le PDF « 4-OMR VALIDE » (et « REFUS VALIDEUR 1 / 2 » en cas de refus), suivis du grade, du nom et de INDIVIDUEL / COLLECTIF.",
+  "appCodeVersion": 39,
+  "appCodeMessage": "Nouvel onglet « Chorus DT » en bas à droite de l'accueil, réservé à l'assistant Chorus DT (il quitte l'Espace valideur ; un fichier sans les deux signatures y est refusé). Bibliothèque : « 💾 .json » réenregistre le fichier envoyé, pièces jointes comprises.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
