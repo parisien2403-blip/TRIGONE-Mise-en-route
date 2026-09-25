@@ -1,6 +1,6 @@
 // Copie jumelée dans TRIGONE Mise en route (dossier cr/) : caches préfixés « trigone-cr- » ; ceux de
 // Mise en route (« trigone-mise-en-route- ») ne sont jamais effacés d'ici.
-const CACHE_NAME = 'trigone-cr-v392';
+const CACHE_NAME = 'trigone-cr-v393';
 const ASSETS = [
   './',
   './manifest.json',
@@ -59,8 +59,18 @@ self.addEventListener('install', function(event) {
 self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(keys) {
-      return Promise.all(keys.filter(function(k) { return k.indexOf('trigone-cr-') === 0 && k !== CACHE_NAME; }).map(function(k) { return caches.delete(k); }));
-    }).then(function() { return self.clients.claim(); })
+      var anciens = keys.filter(function(k) { return k.indexOf('trigone-cr-') === 0 && k !== CACHE_NAME; });
+      return Promise.all(anciens.map(function(k) { return caches.delete(k); })).then(function() { return anciens.length > 0; });
+    }).then(function(miseAJour) {
+      return self.clients.claim().then(function() {
+        // Nouvelle version installée par-dessus une ancienne : les écrans ouverts sont rechargés tout de suite,
+        // quelle que soit la version du code qu'ils font tourner (mise à jour forcée, même depuis une très vieille version).
+        if (!miseAJour) return;
+        return self.clients.matchAll({ type: 'window' }).then(function(fenetres) {
+          fenetres.forEach(function(f) { if (f.navigate) f.navigate(f.url).catch(function() {}); });
+        });
+      });
+    })
   );
 });
 
