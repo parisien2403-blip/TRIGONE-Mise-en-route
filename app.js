@@ -2248,11 +2248,15 @@ function TPL_ESPACE_VALIDATION(v, h) {
             '<button type="button" class="BTN BTN-SECONDARY BTN-SMALL" onclick="COCHER_TOUT_VALIDATION()">Tout cocher</button>' +
             '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_SELECTION()">✔ Valider la sélection</button></div>';
     }
+    // Champs de mail : celui du rôle connecté, plus celui qu'exigent les décisions déjà présentes dans la liste
+    // (ex. : un même appareil utilisé en 1er puis en 2e valideur). Sans cela, « Transmettre » restait bloqué
+    // sur un mail impossible à saisir.
+    var dest = DESTINATIONS_DECISIONS(liste);
+    var champ2 = h.role === 1 || dest.vers2, champChorus = h.role !== 1 || dest.versChorus;
     html += '<div class="MER-SECTION-TITLE">Transmission</div>' +
-        (h.role === 1
-            ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>'
-            : '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
-              '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF depuis l\'onglet « Chorus DT » de l\'accueil.</p></div>') +
+        (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
+        (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
+              '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF depuis l\'onglet « Chorus DT » de l\'accueil.</p></div>' : '') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
     return html;
 }
@@ -2267,6 +2271,15 @@ function TPL_VALIDATION() {
         '<h2>Espace valideur</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 16px;">' + sous + '</p>' + corps +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+// Où partent les décisions prises : au 2e valideur (1re validation) ou à l'assistant Chorus DT (2e validation).
+function DESTINATIONS_DECISIONS(liste) {
+    var r = { vers2: false, versChorus: false };
+    liste.forEach(function(e) {
+        if (e.decision !== 'VALIDEE') return;
+        if ((e.d.validations || []).length + 1 === 1) r.vers2 = true; else r.versChorus = true;
+    });
+    return r;
 }
 function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
 
