@@ -82,6 +82,21 @@
         'body.dark-mode .JUM-INDIC button { color: #a3a3a3; border-color: #404040; }' +
         'body.dark-mode .JUM-INDIC button.actif { background: #f5f5f5; border-color: #f5f5f5; color: #141414; }' +
         '.JUM-FLECHE { color: #94a3b8; font-size: 0.75rem; font-weight: 800; }' +
+        /* Bouton ⋯ de l'accueil : regroupe « Références » et « Mise à jour » */
+        '.JUM-PLUS { position: absolute; top: 10px; right: 10px; z-index: 6; }' +
+        '.JUM-PLUS-BTN { width: 34px; height: 34px; border-radius: 50%; border: 1.5px solid rgba(90,122,148,0.35); background: rgba(255,255,255,0.9);' +
+            ' color: #64748b; font-family: inherit; font-size: 1.1rem; font-weight: 800; line-height: 1; letter-spacing: 1px; cursor: pointer;' +
+            ' display: flex; align-items: center; justify-content: center; padding: 0 0 6px; -webkit-tap-highlight-color: transparent; }' +
+        '.JUM-PLUS-BTN:active { transform: scale(0.94); }' +
+        '.JUM-PLUS-MENU { display: none; position: absolute; top: 40px; right: 0; min-width: 190px; padding: 6px; border-radius: 14px;' +
+            ' background: #fff; border: 1px solid rgba(90,122,148,0.25); box-shadow: 0 12px 30px rgba(15,23,42,0.16); }' +
+        '.JUM-PLUS.ouvert .JUM-PLUS-MENU { display: block; }' +
+        '.JUM-PLUS-ITEM { display: block; width: 100%; text-align: left; border: 0; background: transparent; border-radius: 10px; padding: 11px 12px;' +
+            ' font-family: inherit; font-size: 0.8rem; font-weight: 700; color: #1e293b; cursor: pointer; }' +
+        '.JUM-PLUS-ITEM:active { background: rgba(90,122,148,0.12); }' +
+        'body.dark-mode .JUM-PLUS-BTN { background: rgba(36,36,36,0.9); border-color: #404040; color: #94a3b8; }' +
+        'body.dark-mode .JUM-PLUS-MENU { background: #242424; border-color: #404040; }' +
+        'body.dark-mode .JUM-PLUS-ITEM { color: #f1f5f9; }' +
         '.JUM-ANIM { transition: transform 0.5s cubic-bezier(0.4,0,0.2,1), opacity 0.5s ease, filter 0.5s ease !important; }' +
         '.JUM-SORTIE { transition: opacity 0.28s ease, transform 0.32s ease; opacity: 0; transform: scale(0.98); }' +
         '@media (prefers-reduced-motion: reduce) { .JUM-ANIM { transition-duration: 0.01s !important; } }';
@@ -112,6 +127,17 @@
         });
     }
     window.JUMELAGE_PLACER = placer;
+    // Menu ⋯ de l'accueil : s'ouvre au toucher, se ferme au choix d'une option ou en touchant ailleurs.
+    window.JUMELAGE_MENU_PLUS = function(e) {
+        if (e) e.stopPropagation();
+        var m = e && e.currentTarget && e.currentTarget.closest('.JUM-PLUS');
+        if (m) m.classList.toggle('ouvert');
+    };
+    document.addEventListener('click', function(e) {
+        Array.prototype.forEach.call(document.querySelectorAll('.JUM-PLUS.ouvert'), function(m) {
+            if (!m.contains(e.target) || e.target.closest('.JUM-PLUS-ITEM')) m.classList.remove('ouvert');
+        });
+    });
     var prevu = false;
     function placerBientot() { if (prevu) return; prevu = true; requestAnimationFrame(function() { prevu = false; mesurerHauteur(); placer(); }); }
     window.addEventListener('resize', placerBientot);

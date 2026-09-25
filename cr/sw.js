@@ -1,6 +1,6 @@
 // Copie jumelée dans TRIGONE Mise en route (dossier cr/) : caches préfixés « trigone-cr- » ; ceux de
 // Mise en route (« trigone-mise-en-route- ») ne sont jamais effacés d'ici.
-const CACHE_NAME = 'trigone-cr-v386';
+const CACHE_NAME = 'trigone-cr-v387';
 const ASSETS = [
   './',
   './manifest.json',
@@ -19,6 +19,7 @@ const ASSETS = [
   './icon-512-maskable.png',
   './apple-touch-icon.png',
   './logo_cr.png',
+  './logo_cr_accueil.png',
   './phoenix-icon.png',
   './medaille-bronze.webp',
   './medaille-argent.webp',
