@@ -4957,19 +4957,21 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 .JUM-DOCK-PETIT .P0-TAB { font-size: 0.5rem; letter-spacing: 0; padding: 9px 0; }
 /* ===== Jumelage : démarrer le compte-rendu à partir d'une mise en route ===== */
 #BTN-DEPUIS-MER { margin-top: 2px; }
-.MER-LISTE { position: fixed; inset: 0; z-index: 99980; background: rgba(15,23,42,0.55); display: flex; align-items: center; justify-content: center; padding: 14px; }
 .MER-LISTE.HIDDEN { display: none; }
-.MER-LISTE-CARTE { width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; background: var(--sm2-surface, #fff); border-radius: 18px; padding: 18px 16px 14px; box-shadow: 0 18px 50px rgba(0,0,0,0.3); }
-.MER-LISTE-TITRE { margin: 0 0 6px; font-size: 1.1em; }
-.MER-LISTE-SOUS { margin: 0 0 14px; font-size: 0.8em; color: #64748b; line-height: 1.45; }
+/* Même fenêtre que les autres messages de l'appli (fond flouté, carte, mascotte), en plus large pour la liste */
+.MER-LISTE-WRAP { max-width: 400px; padding-top: 58px; }
+.MER-LISTE-MASCOTTE { position: absolute; top: 0; right: 14px; width: 92px; height: auto; z-index: 3; pointer-events: none;
+  filter: drop-shadow(-4px 4px 10px rgba(0,0,0,0.25)); animation: mer-liste-mascotte 0.5s cubic-bezier(0.2,0.8,0.2,1) both; }
+@keyframes mer-liste-mascotte { from { opacity: 0; transform: translateY(24px) rotate(-6deg); } to { opacity: 1; transform: translateY(0) rotate(-6deg); } }
+@media (prefers-reduced-motion: reduce) { .MER-LISTE-MASCOTTE { animation: none; } }
+.MER-LISTE-CARTE { max-height: calc(88vh - 58px); overflow-y: auto; text-align: center; }
+.MER-LISTE-SOUS { margin-bottom: 14px !important; }
+#MER-LISTE-ITEMS { text-align: left; margin-bottom: 6px; }
 .MER-LISTE-ITEM { display: block; width: 100%; text-align: left; border: 1.5px solid rgba(90,122,148,0.28); background: rgba(90,122,148,0.05); border-radius: 12px; padding: 11px 12px; margin-bottom: 9px; font-family: inherit; color: inherit; cursor: pointer; }
 .MER-LISTE-ITEM:active { transform: scale(0.99); }
 .MER-LISTE-ITEM b { display: block; font-size: 0.9em; margin-bottom: 3px; overflow-wrap: anywhere; }
 .MER-LISTE-ITEM span { display: block; font-size: 0.76em; color: #64748b; line-height: 1.4; overflow-wrap: anywhere; }
 .MER-LISTE-BADGE { display: inline-block !important; font-size: 0.68em !important; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #5a7a94 !important; margin-bottom: 4px; }
-.MER-LISTE-VIDE { text-align: center; color: #64748b; font-size: 0.86em; padding: 18px 6px; line-height: 1.5; }
-.MER-LISTE-FERMER { display: block; margin: 8px auto 0; background: none; border: none; font-family: inherit; font-weight: 700; font-size: 0.8em; letter-spacing: 0.06em; text-transform: uppercase; text-decoration: underline; color: inherit; cursor: pointer; padding: 8px 14px; }
-body.dark-mode .MER-LISTE-CARTE { background: #1f1f1f; color: #e5e5e5; }
 body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </style>
 </head>
@@ -5135,12 +5137,16 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 
 
 
-<div id="MER-LISTE-OVERLAY" class="MER-LISTE HIDDEN" onclick="if(event.target===this)FERMER_LISTE_MISES_EN_ROUTE()">
-<div class="MER-LISTE-CARTE">
-<h3 class="MER-LISTE-TITRE">À partir d'une mise en route</h3>
-<p class="MER-LISTE-SOUS">Choisissez votre demande : identité, libellé, lieux de départ et de retour, transports, gares et horaires sont repris automatiquement.</p>
+<div id="MER-LISTE-OVERLAY" class="MEDAILLE-OVERLAY MER-LISTE HIDDEN" onclick="if(event.target===this)FERMER_LISTE_MISES_EN_ROUTE()">
+<div class="msg-wrap MER-LISTE-WRAP">
+<img class="MER-LISTE-MASCOTTE" src="mascotte.webp" alt="" aria-hidden="true">
+<div class="medaille-card MER-LISTE-CARTE">
+<div class="msg-icone">📋</div>
+<h2 class="medaille-titre">À partir d'une mise en route</h2>
+<p class="medaille-texte MER-LISTE-SOUS">Choisissez votre demande : identité, libellé, lieux, transports, gares et horaires sont repris automatiquement.</p>
 <div id="MER-LISTE-ITEMS"></div>
-<button type="button" class="MER-LISTE-FERMER" onclick="FERMER_LISTE_MISES_EN_ROUTE()">Annuler</button>
+<div class="msg-boutons"><button type="button" class="BTN-ADMIN-CLOSE" onclick="FERMER_LISTE_MISES_EN_ROUTE()">Annuler</button></div>
+</div>
 </div>
 </div>
 
@@ -13621,20 +13627,45 @@ function OUVRIR_LISTE_MISES_EN_ROUTE() {
             '<b>' + ESC_HTML(d.objet || 'Mise en route') + '</b>' +
             '<span>' + ESC_HTML(qui) + '</span>' +
             '<span>' + ESC_HTML([trajet, dates].filter(Boolean).join(' · ')) + '</span></button>';
-    }).join('') : '<div class="MER-LISTE-VIDE">Aucune mise en route envoyée pour l\'instant.<br>Faites d\'abord votre demande dans TRIGONE Mise en route.</div>';
-    document.getElementById('MER-LISTE-OVERLAY').classList.remove('HIDDEN');
+    }).join('') : '';
+    if (!MER_LISTE_DEMANDES.length) {
+        AFFICHER_MSG_CENTRE({
+            titre: 'Aucune mise en route',
+            texte: 'Aucune demande envoyée pour l\'instant. Faites-la d\'abord dans TRIGONE Mise en route.',
+            icone: '📋',
+            boutons: [
+                { label: 'Ouvrir Mise en route', style: 'BTN BTN-START', action: ALLER_VERS_MISE_EN_ROUTE },
+                { label: 'Fermer', style: 'BTN-ADMIN-CLOSE' }
+            ]
+        });
+        return;
+    }
+    var overlay = document.getElementById('MER-LISTE-OVERLAY');
+    overlay.classList.remove('HIDDEN');
+    requestAnimationFrame(function() { requestAnimationFrame(function() { overlay.classList.add('medaille-in'); }); });
 }
-function FERMER_LISTE_MISES_EN_ROUTE() { document.getElementById('MER-LISTE-OVERLAY').classList.add('HIDDEN'); }
+function FERMER_LISTE_MISES_EN_ROUTE() {
+    var overlay = document.getElementById('MER-LISTE-OVERLAY');
+    overlay.classList.remove('medaille-in');
+    setTimeout(function() { overlay.classList.add('HIDDEN'); }, 300);
+}
+function ALLER_VERS_MISE_EN_ROUTE() {
+    try { sessionStorage.setItem('trigone_bascule', '1'); sessionStorage.setItem('trigone_choix_fait', '1'); } catch (e) {}
+    location.href = '../';
+}
 function CHOISIR_MISE_EN_ROUTE(i) {
     var x = MER_LISTE_DEMANDES[i];
     if (!x) return;
     FERMER_LISTE_MISES_EN_ROUTE();
-    if (M.DEBUT || M.ARR_SITE) { MSG_INFO('Mission déjà commencée', 'Une mission est déjà en cours : terminez-la avant d\'en commencer une autre.', '⛔'); return; }
-    if (HAS_ACTIVE_MISSION_DATA(M)) {
-        MSG_CONFIRM('Remplacer la mission préparée ?', 'Une mission est déjà préparée (pas encore commencée). Elle sera remplacée par cette mise en route.', 'Remplacer', function() { APPLIQUER_MISE_EN_ROUTE(x.d); }, '⚠️');
-        return;
-    }
-    APPLIQUER_MISE_EN_ROUTE(x.d);
+    // Les messages s'enchaînent après la fermeture animée de la liste.
+    setTimeout(function() {
+        if (M.DEBUT || M.ARR_SITE) { MSG_INFO('Mission déjà commencée', 'Une mission est déjà en cours : terminez-la avant d\'en commencer une autre.', '⛔'); return; }
+        if (HAS_ACTIVE_MISSION_DATA(M)) {
+            MSG_CONFIRM('Remplacer la mission préparée ?', 'Une mission est déjà préparée (pas encore commencée). Elle sera remplacée par cette mise en route.', 'Remplacer', function() { APPLIQUER_MISE_EN_ROUTE(x.d); }, '⚠️', 'mascotte-poubelle.webp', true);
+            return;
+        }
+        APPLIQUER_MISE_EN_ROUTE(x.d);
+    }, 320);
 }
 function APPLIQUER_MISE_EN_ROUTE(d) {
     // La personne concernée : celle dont le nom est l'identité enregistrée, sinon la première de la demande.
@@ -13692,7 +13723,13 @@ function APPLIQUER_MISE_EN_ROUTE(d) {
     WRITE_ABT_TO_DOM();
     SAVE_STATE();
     UPDATE_BOUTON_LANCER_P1();
-    AFFICHER_WELCOME_TOAST('✓ Mission pré-remplie depuis votre mise en route.\nVérifiez, puis « Départ en mission » le jour J.');
+    AFFICHER_MSG_CENTRE({
+        titre: 'Mission pré-remplie',
+        texte: 'Tout est repris de votre mise en route. Vérifiez, puis « Départ en mission » le jour J.',
+        icone: '✅',
+        mascotteImage: 'mascotte-ok.webp',
+        boutons: [{ label: 'C\'est noté', style: 'BTN BTN-START' }]
+    });
 }
 
 function ENTRER() {
