@@ -154,3 +154,18 @@ NUMÉRO DE VERSION
   TRIGONE jumelé. APP_CODE_VERSION reste le compteur interne des mises à jour : à chaque
   publication, l'augmenter (jamais le faire redescendre) avec appCodeVersion du manifeste
   correspondant (updates-manifest.json à la racine, cr/updates-manifest.json pour Compte-rendu).
+
+FORMAT PC (écran d'au moins 1100 px de large)
+- Menu à gauche à la place de la barre du bas (Accueil, Bibliothèque, Panier / Remboursement, Notice,
+  Mon espace, Espace valideur & Chorus DT, passage à l'autre appli, Références, Mise à jour).
+- Mise en route : accueil en tableau de bord (dernières demandes envoyées, panier), formulaire avec
+  récapitulatif à droite, Espace valideur en tableau avec le détail de la demande à côté ; les .json
+  reçus par mail peuvent être glissés-déposés dans la fenêtre (Espace valideur, assistant Chorus DT).
+- Compte-rendu : même menu à gauche, page « Départ mission » sur deux colonnes.
+- En dessous de 1100 px (téléphones, tablettes) et pendant la démonstration : affichage inchangé.
+
+PUBLIER UNE NOUVELLE VERSION
+Augmenter ensemble : APP_CODE_VERSION (app.js et cr/index.html) et appCodeVersion (les deux
+updates-manifest.json, avec appCodeMessage), BUILD (jumelage.js) et build.json, les ?v= des scripts
+(index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), et les noms de cache
+des deux sw.js. Les applis ouvertes se mettent alors à jour d'elles-mêmes en quelques secondes.

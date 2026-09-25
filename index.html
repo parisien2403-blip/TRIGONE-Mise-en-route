@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=6"></script>
+<script src="jumelage.js?v=7"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -585,6 +585,92 @@ body.dark-mode .DEMO-CONTROLES { background: rgba(20,20,20,0.97); border-top-col
 .MER-CHECKBOX-ROW { display: flex; align-items: center; gap: 10px; margin: 16px 0 4px; padding: 12px 14px; background: rgba(90,122,148,0.06); border-radius: 10px; cursor: pointer; }
 .MER-CHECKBOX-ROW input { width: 18px; height: 18px; flex-shrink: 0; }
 .MER-CHECKBOX-ROW span { font-size: 0.82em; font-weight: 700; }
+
+/* ===================== FORMAT PC (écran large, ≥ 1100 px) =====================
+   Menu à gauche à la place de la barre du bas ; pages plus larges ; tableau de bord, récapitulatif, tableau des
+   demandes à valider. En dessous de 1100 px (téléphones, tablettes) : rien ne change. */
+.PC-MENU { display: none; }
+@media (min-width: 1100px) {
+  body:not(.demo-active) { padding-left: 284px; padding-right: 36px; }
+  body:not(.demo-active) .PC-MENU { display: flex; }
+  .PC-MENU { position: fixed; left: 0; top: 0; bottom: 0; width: 248px; z-index: 50; flex-direction: column; gap: 4px;
+    padding: 22px 16px 16px; background: var(--sm2-surface); border-right: 1px solid var(--sm2-border); overflow-y: auto; }
+  body:not(.demo-active) .PAGE-STAGE { max-width: 1180px; }
+  body:not(.demo-active) .PAGE-STAGE.avec-marge { padding-top: 28px; }
+  body:not(.demo-active) .PAGE-STAGE .CARD { max-width: 780px; }
+  body:not(.demo-active) .PAGE-STAGE .CARD.PC-LARGE { max-width: none; }
+  .PC-FORM .CARD { max-width: none !important; margin: 0; }
+  /* bouton mode sombre : dans le menu, à côté du logo, plus par-dessus les cartes */
+  body:not(.demo-active) .THEME-TOGGLE { left: 200px; right: auto; top: 12px; width: 36px; height: 36px; }
+}
+.PC-MARQUE { display: flex; justify-content: center; border: 0; background: none; padding: 4px 0 18px; margin-bottom: 10px; border-bottom: 1px solid var(--tg-border); cursor: pointer; }
+.PC-MARQUE img { width: 104px; height: auto; }
+body.dark-mode .PC-MARQUE img { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+.PC-NAV { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0; border-radius: 12px; background: none; text-align: left;
+  font-family: inherit; font-size: 0.84rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; line-height: 1.25; }
+.PC-NAV svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.PC-NAV:hover { background: rgba(90,122,148,0.08); }
+.PC-NAV.actif { background: #1a1a1a; color: #fff; }
+body.dark-mode .PC-NAV.actif { background: #f5f5f5; color: #141414; }
+.PC-PASTILLE { margin-left: auto; background: #dc2626; color: #fff; font-size: 0.66rem; font-weight: 800; border-radius: 999px; padding: 2px 7px; }
+.PC-SEP { height: 1px; background: var(--tg-border); margin: 10px 4px; }
+.PC-BAS { margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 16px; }
+.PC-BASCULE { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; border: 1.5px solid var(--tg-border); border-radius: 12px; background: none;
+  font-family: inherit; font-size: 0.76rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; text-align: left; margin-bottom: 6px; }
+.PC-BASCULE:hover { border-color: var(--tg-accent-light); }
+.PC-BASCULE img { width: 54px; height: 40px; object-fit: contain; filter: grayscale(1); opacity: 0.6; }
+body.dark-mode .PC-BASCULE img { filter: grayscale(1) invert(1); }
+.PC-LIEN { border: 0; background: none; text-align: left; padding: 7px 12px; border-radius: 10px; font-family: inherit; font-size: 0.76rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; }
+.PC-LIEN:hover { background: rgba(90,122,148,0.08); }
+.PC-PIED { display: flex; justify-content: space-between; font-size: 0.66rem; color: #94a3b8; padding: 8px 12px 0; }
+.PC-PAGE { padding: 28px 0 40px; }
+.PC-TITRE { font-size: 1.5rem; margin: 0 0 4px; }
+.PC-SOUS { color: #64748b; font-size: 0.84rem; margin: 0 0 22px; }
+.PC-CARTE { background: var(--sm2-surface); border: 1px solid var(--sm2-border); border-radius: 16px; padding: 20px; box-shadow: var(--sm2-shadow); }
+.PC-CARTE-TITRE { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
+.PC-HERO { display: flex; align-items: center; gap: 30px; padding: 26px 30px; }
+.PC-HERO-LOGO { width: 160px; height: auto; flex-shrink: 0; }
+body.dark-mode .PC-HERO-LOGO { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+.PC-HERO-TXT { flex: 1; min-width: 0; }
+.PC-HERO-TITRE { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; }
+.PC-HERO-TXT p { margin: 0; font-size: 0.84rem; color: #64748b; line-height: 1.55; }
+.PC-HERO-ACTIONS { display: flex; flex-direction: column; gap: 10px; width: 300px; flex-shrink: 0; }
+.PC-HERO-ACTIONS .BTN { margin: 0; }
+.PC-GRILLE2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; margin-top: 18px; align-items: start; }
+.PC-LIGNE { display: flex; align-items: center; gap: 12px; width: 100%; padding: 12px 4px; border: 0; border-top: 1px solid rgba(90,122,148,0.12); background: none;
+  font-family: inherit; font-size: 0.82rem; color: var(--sm2-text); text-align: left; cursor: pointer; }
+.PC-LIGNE:first-of-type { border-top: 0; }
+.PC-LIGNE:hover b { text-decoration: underline; }
+.PC-LIGNE b { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.PC-LIGNE-DROITE { margin-left: auto; color: #64748b; white-space: nowrap; font-size: 0.78rem; }
+.PC-BADGE { flex-shrink: 0; white-space: nowrap; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; text-transform: uppercase; padding: 3px 8px; border-radius: 999px; background: #eef2f6; color: #5a7a94; }
+.PC-BADGE-OK { background: #dcfce7; color: #15803d; } .PC-BADGE-KO { background: #fee2e2; color: #b91c1c; } .PC-BADGE-GRIS { background: #f1f5f9; color: #64748b; }
+.PC-VIDE { color: #94a3b8; font-size: 0.82rem; padding: 10px 0; }
+.PC-GRIS { color: #94a3b8; }
+.PC-FORM { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: 22px; align-items: start; }
+.PC-RECAP { position: sticky; top: 20px; }
+.PC-KV { display: grid; grid-template-columns: 84px 1fr; gap: 10px; padding: 9px 0; border-top: 1px solid rgba(90,122,148,0.12); font-size: 0.8rem; line-height: 1.45; }
+.PC-KV:first-of-type { border-top: 0; }
+.PC-KV > span { color: #64748b; }
+.PC-TABLE { width: 100%; border-collapse: collapse; font-size: 0.8rem; }
+.PC-TABLE th { text-align: left; font-size: 0.62rem; letter-spacing: 0.07em; text-transform: uppercase; color: #64748b; padding: 10px; border-bottom: 1.5px solid var(--tg-border); }
+.PC-TABLE td { padding: 11px 10px; border-bottom: 1px solid rgba(90,122,148,0.1); }
+.PC-TABLE-PETITE { margin-top: 12px; font-size: 0.74rem; }
+.PC-CARTE-TABLE { padding: 6px 8px; }
+.PC-VAL-LIGNE { cursor: pointer; }
+.PC-VAL-LIGNE:hover td { background: rgba(90,122,148,0.05); }
+.PC-VAL-LIGNE.sel td { background: rgba(90,122,148,0.1); }
+.PC-VAL-LIGNE.sel td:first-child { box-shadow: inset 3px 0 0 var(--tg-ink); }
+.PC-VAL-LIGNE input { width: 17px; height: 17px; }
+.PC-VAL-ENTETE { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; font-size: 0.84rem; margin-bottom: 14px; }
+.PC-DEPOT { display: block; border: 2px dashed var(--tg-accent-light); border-radius: 14px; padding: 16px; text-align: center; color: var(--tg-accent);
+  font-size: 0.8rem; font-weight: 700; background: rgba(122,157,181,0.06); margin-bottom: 16px; cursor: pointer; }
+body.pc-depot .PC-DEPOT { background: rgba(122,157,181,0.2); border-color: var(--tg-accent); }
+body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; position: fixed; inset: 12px; z-index: 99990; border: 3px dashed var(--tg-accent);
+  border-radius: 20px; background: rgba(90,122,148,0.12); display: flex; align-items: center; justify-content: center; font-weight: 800; color: var(--tg-accent); pointer-events: none; }
+.PC-VAL { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
+.PC-VAL-DETAIL { position: sticky; top: 20px; }
+.PC-VAL-DETAIL .MER-PANIER-ITEM { border: 0; padding: 12px 0 0; margin: 0; box-shadow: none; background: none; }
 </style>
 </head>
 <body>
@@ -633,6 +719,7 @@ body.dark-mode .DEMO-CONTROLES { background: rgba(20,20,20,0.97); border-top-col
     <button type="button" id="DEMO-SUIV" class="DEMO-BTN" onclick="DEMO_SUIVANT()">Suivant →</button>
   </div>
 </div>
+<nav class="PC-MENU" id="PC-MENU" aria-label="Menu principal"></nav>
 <div class="PAGE-STAGE" id="PAGE-STAGE"></div>
 <div id="CONFIG-INITIALE-OVERLAY" class="config-page HIDDEN">
   <div class="config-scroll">
@@ -717,6 +804,6 @@ body.dark-mode .DEMO-CONTROLES { background: rgba(20,20,20,0.97); border-top-col
     </div>
   </div>
 </div>
-<script src="app.js?v=6"></script>
+<script src="app.js?v=7"></script>
 </body>
 </html>

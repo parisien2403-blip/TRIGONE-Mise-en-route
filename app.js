@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 53;
+var APP_CODE_VERSION = 54;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -160,7 +160,7 @@ function SHOW_PAGE(page) {
     var zone = document.getElementById('PAGE-STAGE');
     zone.classList.toggle('avec-marge', page !== 'ACCUEIL');
     if (page === 'ACCUEIL') zone.innerHTML = TPL_ACCUEIL();
-    else if (page === 'FORMULAIRE') zone.innerHTML = TPL_FORMULAIRE();
+    else if (page === 'FORMULAIRE') zone.innerHTML = TPL_PAGE_FORMULAIRE();
     else if (page === 'PANIER') zone.innerHTML = TPL_PANIER();
     else if (page === 'VALIDATION') { OUVRIR_VALIDATION(); return; }
     else if (page === 'VERIFIER') zone.innerHTML = TPL_VERIFIER();
@@ -169,6 +169,7 @@ function SHOW_PAGE(page) {
     else if (page === 'NOTICE') zone.innerHTML = TPL_NOTICE();
     else if (page === 'REPRISE') zone.innerHTML = TPL_REPRISE();
     else if (page === 'REFERENCES') { zone.innerHTML = TPL_REFERENCES(); CHARGER_CODIER().then(function(c) { if (c && PAGE_ACTUELLE === 'REFERENCES') zone.innerHTML = TPL_REFERENCES(); }); }
+    RENDRE_MENU_PC();
     window.scrollTo(0, 0);
 }
 
@@ -179,6 +180,209 @@ var MER_ICONES = {
     NOTICE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 15.7v-5M12 8h.01"/></svg>',
     CHORUS: '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14.5l2 2 4-4"/></svg>'
 };
+// ===================== FORMAT PC (écran large) =====================
+// À partir de 1100 px de large : menu à gauche à la place de la barre du bas, accueil en tableau de bord,
+// formulaire accompagné d'un récapitulatif, Espace valideur en tableau avec le détail à côté, dépôt des .json
+// par glisser-déposer. En dessous (téléphones, tablettes), rien ne change. La démonstration garde l'affichage
+// téléphone.
+var MER_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
+function EST_PC() { return !!(MER_PC_MQ && MER_PC_MQ.matches) && !DEMO_ACTIF; }
+MER_ICONES.ACCUEIL = '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>';
+MER_ICONES.VALIDEUR = '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+
+function TPL_MENU_PC() {
+    var actif = { ACCUEIL: 'ACCUEIL', REPRISE: 'ACCUEIL', BIBLIOTHEQUE: 'BIBLIOTHEQUE', PANIER: 'PANIER', NOTICE: 'NOTICE', ESPACE: 'ESPACE', VALIDATION: 'VALIDATION', VERIFIER: 'VALIDATION' }[PAGE_ACTUELLE] || '';
+    var n = GET_PANIER().length;
+    function item(page, icone, libelle, pastille) {
+        return '<button type="button" class="PC-NAV' + (actif === page ? ' actif' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')">' + icone +
+            '<span>' + libelle + '</span>' + (pastille ? '<span class="PC-PASTILLE">' + pastille + '</span>' : '') + '</button>';
+    }
+    return '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_mer.webp" alt="TRIGONE Mise en route"></button>' +
+        item('ACCUEIL', MER_ICONES.ACCUEIL, 'Accueil') +
+        item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
+        item('PANIER', MER_ICONES.PANIER, 'Panier', n || '') +
+        item('NOTICE', MER_ICONES.NOTICE, 'Notice') +
+        item('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
+        '<div class="PC-SEP"></div>' +
+        item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur &amp; Chorus DT') +
+        '<div class="PC-BAS">' +
+            '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
+            '<button type="button" class="PC-LIEN" onclick="SHOW_PAGE(\'REFERENCES\')">📚 Références</button>' +
+            '<button type="button" class="PC-LIEN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()">🔄 Mise à jour</button>' +
+            '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
+        '</div>';
+}
+function RENDRE_MENU_PC() {
+    var m = document.getElementById('PC-MENU');
+    if (m) m.innerHTML = EST_PC() ? TPL_MENU_PC() : '';
+}
+// Passage téléphone ⇄ PC (fenêtre redimensionnée, écran pliable) : l'affichage suit.
+if (MER_PC_MQ) {
+    var MER_PC_CHANGE = function() {
+        RENDRE_MENU_PC();
+        if (PAGE_ACTUELLE === 'ACCUEIL') SHOW_PAGE('ACCUEIL');
+        else if (PAGE_ACTUELLE === 'FORMULAIRE') RENDER_FORMULAIRE_INPLACE();
+        else if (PAGE_ACTUELLE === 'VALIDATION') RENDER_VALIDATION_INPLACE();
+    };
+    if (MER_PC_MQ.addEventListener) MER_PC_MQ.addEventListener('change', MER_PC_CHANGE); else if (MER_PC_MQ.addListener) MER_PC_MQ.addListener(MER_PC_CHANGE);
+}
+
+// ---------- Accueil PC ----------
+function TPL_ACCUEIL_PC() {
+    var id = GET_REGLAGES().identite || {}, panier = GET_PANIER(), bib = GET_BIBLIOTHEQUE().slice(0, 5);
+    var qui = [id.grade, id.nom].filter(Boolean).join(' ');
+    function ligne(badge, classe, titre, droite, action) {
+        return '<button type="button" class="PC-LIGNE" onclick="' + action + '"><span class="PC-BADGE ' + classe + '">' + badge + '</span>' +
+            '<b>' + ESC(titre) + '</b><span class="PC-LIGNE-DROITE">' + ESC(droite) + '</span></button>';
+    }
+    var envois = bib.length ? bib.map(function(e) {
+        var d = e.demandes[0] || {}, a = (d.trajets && d.trajets.aller) || {};
+        var objet = e.demandes.map(function(x) { return x.objet || 'Mise en route'; }).join(' · ');
+        return ligne('Envoyée le ' + new Date(e.envoyeLe).toLocaleDateString('fr-FR'), '', objet,
+            [a.lieuArr || a.paysArr || '', a.dateDep ? FORMAT_DATE_COURT(a.dateDep) : ''].filter(Boolean).join(' · '), 'SHOW_PAGE(\'BIBLIOTHEQUE\')');
+    }).join('') : '<div class="PC-VIDE">Aucune demande envoyée pour l\'instant.</div>';
+    var attente = panier.length ? panier.map(function(d) {
+        var n = (d.personnes || []).length, a = (d.trajets && d.trajets.aller) || {};
+        return ligne(n > 1 ? 'Collective · ' + n + ' pers.' : 'Individuelle', 'PC-BADGE-GRIS', d.objet || 'Mise en route',
+            a.dateDep ? FORMAT_DATE_COURT(a.dateDep) : '', 'SHOW_PAGE(\'PANIER\')');
+    }).join('') + '<button type="button" class="BTN BTN-PRIMARY" style="margin-top:14px;" onclick="SHOW_PAGE(\'PANIER\')">📧 Ouvrir le panier et transmettre</button>'
+        : '<div class="PC-VIDE">Aucune demande en attente d\'envoi.</div>';
+    return '<div class="PC-PAGE">' +
+        '<h1 class="PC-TITRE">' + (qui ? 'Bonjour, ' + ESC(qui) : 'Bienvenue') + '</h1>' +
+        '<p class="PC-SOUS">Mise en route — préparez votre ordre de mission avant le départ.</p>' +
+        '<div class="PC-CARTE PC-HERO">' +
+            '<img src="logo_mer.webp" class="PC-HERO-LOGO JUM-LOGO-CHOIX" alt="TRIGONE Mise en route" title="Revenir au choix Mise en route / Compte-rendu" onclick="JUMELAGE_CHOIX()">' +
+            '<div class="PC-HERO-TXT"><div class="PC-HERO-TITRE">Demande d\'ordre de mise en route</div>' +
+                '<p>Individuelle ou collective (import Excel, Calc ou CSV). Le circuit 1er valideur → 2e valideur → assistant Chorus DT est préparé automatiquement.</p></div>' +
+            '<div class="PC-HERO-ACTIONS">' +
+                (BROUILLON_EN_COURS() ? '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
+                '<button type="button" class="BTN BTN-PRIMARY" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
+                '<button type="button" class="BTN BTN-GHOST" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
+            '</div></div>' +
+        '<div class="PC-GRILLE2">' +
+            '<div class="PC-CARTE"><div class="PC-CARTE-TITRE">Dernières demandes envoyées</div>' + envois + '</div>' +
+            '<div class="PC-CARTE"><div class="PC-CARTE-TITRE">Panier' + (panier.length ? ' — ' + panier.length + ' demande(s) à envoyer' : '') + '</div>' + attente + '</div>' +
+        '</div>' +
+        '<p class="app-credit" style="margin-top:22px;">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_VERSION_AFFICHEE + '</span></p>' +
+    '</div>';
+}
+
+// ---------- Formulaire PC : récapitulatif à droite ----------
+function TPL_PAGE_FORMULAIRE() {
+    if (!EST_PC()) return TPL_FORMULAIRE();
+    return '<div class="PC-FORM"><div class="PC-FORM-MAIN">' + TPL_FORMULAIRE() + '</div>' +
+        '<aside class="PC-CARTE PC-RECAP" id="PC-RECAP">' + TPL_RECAP_PC() + '</aside></div>';
+}
+function TPL_RECAP_PC() {
+    var t = D.trajets || {}, a = t.aller || {}, r = t.retour || {};
+    var pers = (D.personnes || []).filter(function(p) { return p.nom || p.prenom; });
+    function quand(x, sens) {
+        var d = sens === 'aller' ? x.dateDep : x.dateDep;
+        if (!d) return '';
+        var dt = new Date(d);
+        return isNaN(dt) ? '' : dt.toLocaleDateString('fr-FR') + ' · ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    }
+    function trajet(x) {
+        var lieux = [x.lieuDep, x.paysArr || x.lieuArr].filter(Boolean).join(' → ');
+        var info = [quand(x), x.moyen ? MOYENS[x.moyen] : ''].filter(Boolean).join(' · ');
+        return lieux || info ? ESC(lieux) + (info ? '<br><span class="PC-GRIS">' + ESC(info) + '</span>' : '') : '<span class="PC-GRIS">à compléter</span>';
+    }
+    function kv(k, v) { return '<div class="PC-KV"><span>' + k + '</span><div>' + v + '</div></div>'; }
+    return '<div class="PC-CARTE-TITRE">Récapitulatif</div>' +
+        kv('Type', D.type === 'MISSION' ? 'Mission' : 'Formation / stage') +
+        kv('Objet', D.objet ? '<b>' + ESC(D.objet) + '</b>' : '<span class="PC-GRIS">à compléter</span>') +
+        kv('Personnel', pers.length ? '<b>' + pers.length + ' personne' + (pers.length > 1 ? 's' : '') + '</b>' : '<span class="PC-GRIS">à compléter</span>') +
+        kv('Aller', trajet(a)) + kv('Retour', trajet(r)) +
+        (pers.length ? '<table class="PC-TABLE PC-TABLE-PETITE"><thead><tr><th>Grade</th><th>Nom</th><th>NID</th></tr></thead><tbody>' +
+            pers.slice(0, 8).map(function(p) { return '<tr><td>' + ESC(p.grade || '') + '</td><td>' + ESC((p.nom || '') + ' ' + (p.prenom || '')) + '</td><td>' + ESC(p.matricule || '') + '</td></tr>'; }).join('') +
+            (pers.length > 8 ? '<tr><td colspan="3" class="PC-GRIS">+ ' + (pers.length - 8) + ' autre(s)…</td></tr>' : '') + '</tbody></table>' : '');
+}
+function MAJ_RECAP_PC() { var el = document.getElementById('PC-RECAP'); if (el) el.innerHTML = TPL_RECAP_PC(); }
+
+// ---------- Espace valideur PC : tableau + détail ----------
+var MER_VAL_SEL = null;
+function TPL_ESPACE_VALIDATION_PC(v, h) {
+    var liste = GET_A_VALIDER();
+    var entete = '<div class="PC-VAL-ENTETE"><span class="MER-BADGE">🔒 Connecté — ' + LIBELLE_ROLE(h.role) + '</span>' +
+        '<b>' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</b><span class="PC-GRIS">' + ESC(h.fonction) + '</span>' +
+        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin-left:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>';
+    var depot = '<label class="PC-DEPOT">📥 Glissez ici les fichiers .json reçus par mail, ou cliquez pour les choisir' +
+        '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>';
+    if (!liste.length) return entete + depot + '<div class="MER-EMPTY">Aucune demande à valider.<br>Déposez le fichier .json reçu par mail.</div>';
+    // Détail affiché d'office : la première demande que la personne connectée peut valider, sinon la première.
+    if (!MER_VAL_SEL || !liste.some(function(e) { return e.id === MER_VAL_SEL; })) {
+        var aTraiter = liste.filter(function(e) {
+            return !e.decision && NIVEAU_VALIDATION(e.d) === h.role && !(MER_VERIF[e.id] || []).some(function(x) { return !x.ok; }) && !(e.pjAlterees || []).length;
+        })[0];
+        MER_VAL_SEL = (aTraiter || liste[0]).id;
+    }
+    var cochables = 0;
+    var lignes = liste.map(function(e) {
+        var d = e.d, niveau = NIVEAU_VALIDATION(d), verif = MER_VERIF[e.id] || [];
+        var ko = verif.some(function(x) { return !x.ok; }) || (e.pjAlterees || []).length;
+        var pourMoi = niveau === h.role && !ko, cochable = !e.decision && pourMoi;
+        if (cochable) cochables++;
+        var etat = e.decision === 'VALIDEE' ? ['Validée', 'PC-BADGE-OK'] : e.decision === 'REFUSEE' ? ['Refusée', 'PC-BADGE-KO']
+            : niveau > 2 ? ['Déjà validée', 'PC-BADGE-OK'] : ko ? ['Non conforme', 'PC-BADGE-KO'] : pourMoi ? ['À valider', ''] : ['Autre niveau', 'PC-BADGE-GRIS'];
+        var p0 = (d.personnes || [])[0] || {}, n = (d.personnes || []).length;
+        var a = (d.trajets && d.trajets.aller) || {}, r = (d.trajets && d.trajets.retour) || {};
+        var dates = (a.dateDep ? FORMAT_DATE_COURT(a.dateDep) : '') + (r.dateArr ? ' → ' + FORMAT_DATE_COURT(r.dateArr) : '');
+        return '<tr class="PC-VAL-LIGNE' + (e.id === MER_VAL_SEL ? ' sel' : '') + '" data-id="' + e.id + '" onclick="PC_VAL_CHOISIR(\'' + e.id + '\')">' +
+            '<td>' + (cochable ? '<input type="checkbox" class="MER-VAL-SEL" value="' + e.id + '" onclick="event.stopPropagation()">' : '') + '</td>' +
+            '<td><b>' + ESC(((p0.grade || '') + ' ' + (p0.nom || '')).trim()) + '</b>' + (n > 1 ? ' +' + (n - 1) : '') + '</td>' +
+            '<td>' + ESC(d.objet || '') + '</td><td>' + ESC(dates) + '</td>' +
+            '<td>' + ((d.pieces || []).length ? '📎 ' + d.pieces.length : '—') + '</td>' +
+            '<td><span class="PC-BADGE ' + etat[1] + '">' + etat[0] + '</span></td></tr>';
+    }).join('');
+    var sel = liste.filter(function(e) { return e.id === MER_VAL_SEL; })[0];
+    return entete + depot +
+        '<div class="PC-VAL"><div class="PC-VAL-LISTE">' +
+            '<div class="PC-CARTE PC-CARTE-TABLE"><table class="PC-TABLE"><thead><tr><th></th><th>Demandeur</th><th>Objet</th><th>Dates</th><th>Pièces</th><th>État</th></tr></thead><tbody>' + lignes + '</tbody></table></div>' +
+            (cochables > 1 ? '<div class="MER-ACTIONS" style="margin:12px 0 4px;"><button type="button" class="BTN BTN-SECONDARY BTN-SMALL" onclick="COCHER_TOUT_VALIDATION()">Tout cocher</button>' +
+                '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_SELECTION()">✔ Valider la sélection</button></div>' : '') +
+            TPL_TRANSMISSION_VALIDATION(v, h, liste) +
+        '</div><aside class="PC-VAL-DETAIL" id="PC-VAL-DETAIL">' + TPL_DETAIL_VALIDATION_PC(sel, h) + '</aside></div>';
+}
+function TPL_DETAIL_VALIDATION_PC(e, h) {
+    if (!e) return '';
+    var d = e.d, a = (d.trajets && d.trajets.aller) || {}, r = (d.trajets && d.trajets.retour) || {};
+    function kv(k, v) { return v ? '<div class="PC-KV"><span>' + k + '</span><div>' + ESC(v) + '</div></div>' : ''; }
+    return '<div class="PC-CARTE"><div class="PC-CARTE-TITRE">Détail de la demande</div>' +
+        kv('Type', ((d.personnes || []).length > 1 ? 'OMR collectif' : 'OMR individuel') + ' — ' + (d.type === 'MISSION' ? 'mission' : 'formation / stage')) +
+        kv('Aller', [a.lieuDep, a.paysArr || a.lieuArr].filter(Boolean).join(' → ') + (a.moyen ? ' · ' + MOYENS[a.moyen] : '')) +
+        kv('Retour', [r.lieuDep, r.lieuArr].filter(Boolean).join(' → ') + (r.moyen ? ' · ' + MOYENS[r.moyen] : '')) +
+        TPL_ENTREE_VALIDATION(e, h, true) + '</div>';
+}
+function PC_VAL_CHOISIR(id) {
+    MER_VAL_SEL = id;
+    Array.prototype.forEach.call(document.querySelectorAll('.PC-VAL-LIGNE'), function(tr) { tr.classList.toggle('sel', tr.getAttribute('data-id') === id); });
+    var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0], el = document.getElementById('PC-VAL-DETAIL');
+    if (el && e) el.innerHTML = TPL_DETAIL_VALIDATION_PC(e, HABILITATION_COURANTE());
+}
+
+// ---------- Glisser-déposer des fichiers (Espace valideur, assistant Chorus DT) ----------
+function DEPOT_POSSIBLE() {
+    if (PAGE_ACTUELLE === 'VERIFIER') return true;
+    var h = PAGE_ACTUELLE === 'VALIDATION' && HABILITATION_COURANTE();
+    return !!(h && !h.retire);
+}
+function AVEC_FICHIERS(e) { return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0; }
+document.addEventListener('dragover', function(e) {
+    if (!AVEC_FICHIERS(e)) return;
+    e.preventDefault();   // jamais d'ouverture du fichier à la place de l'appli
+    e.dataTransfer.dropEffect = DEPOT_POSSIBLE() ? 'copy' : 'none';
+    document.body.classList.toggle('pc-depot', DEPOT_POSSIBLE());
+});
+document.addEventListener('dragleave', function(e) { if (!e.relatedTarget) document.body.classList.remove('pc-depot'); });
+document.addEventListener('drop', function(e) {
+    if (!AVEC_FICHIERS(e)) return;
+    e.preventDefault();
+    document.body.classList.remove('pc-depot');
+    if (!DEPOT_POSSIBLE() || !e.dataTransfer.files.length) return;
+    var faux = { files: e.dataTransfer.files, value: '' };
+    if (PAGE_ACTUELLE === 'VERIFIER') VERIFIER_FICHIERS(faux); else IMPORTER_A_VALIDER(faux);
+});
+
 // court : libellé abrégé pour les écrans étroits (5 onglets sur 320 px).
 function TPL_ONGLET_DOCK(page, icone, libelle, pastille, court) {
     return '<button type="button" class="P0-TAB' + (pastille ? ' has-badge' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')" aria-label="' + libelle + '">' +
@@ -186,6 +390,7 @@ function TPL_ONGLET_DOCK(page, icone, libelle, pastille, court) {
         (court ? '<span class="P0-LBL-LONG">' + libelle + '</span><span class="P0-LBL-COURT">' + court + '</span>' : libelle) + '</span></button>';
 }
 function TPL_ACCUEIL() {
+    if (EST_PC()) return TPL_ACCUEIL_PC();
     var n = GET_PANIER().length;
     return '' +
     '<div id="MER-P0">' +
@@ -355,6 +560,7 @@ function ON_CHAMP_INPUT(path, val) {
     if (/^trajets\.retour\.(lieu|cp|pays|residence)/.test(path)) D.trajets.retourAuto = false;
     if (/^trajets\.aller\./.test(path)) SYNCHRO_RETOUR();
     SAVE_BROUILLON();
+    MAJ_RECAP_PC();
     if (/\.moyen$/.test(path)) RENDER_FORMULAIRE_INPLACE();   // libellés gare / aéroport / port
 }
 // Retour = aller inversé (lieux, codes postaux, pays, moyen), tant que le missionnaire n'a pas touché au retour.
@@ -378,7 +584,7 @@ function GET_CHAMP(path) { var n = NAV_CHAMP(path); return n.obj[n.key]; }
 
 function RENDER_FORMULAIRE_INPLACE() {
     var scroll = window.scrollY;
-    document.getElementById('PAGE-STAGE').innerHTML = TPL_FORMULAIRE();
+    document.getElementById('PAGE-STAGE').innerHTML = TPL_PAGE_FORMULAIRE();
     window.scrollTo(0, scroll);
 }
 
@@ -2142,6 +2348,7 @@ function HABILITATION_COURANTE() {
 // Recharge la liste des habilités et revérifie les validations reçues avant d'afficher la page.
 function OUVRIR_VALIDATION() {
     PAGE_ACTUELLE = 'VALIDATION';
+    RENDRE_MENU_PC();
     var zone = document.getElementById('PAGE-STAGE');
     zone.classList.add('avec-marge');
     zone.innerHTML = '<div class="CARD"><div class="MER-EMPTY">Chargement…</div></div>';
@@ -2215,7 +2422,7 @@ function COPIER_TEXTE(t, btn) {
 }
 
 // ---- 4. Espace de validation ----
-function TPL_ENTREE_VALIDATION(e, h) {
+function TPL_ENTREE_VALIDATION(e, h, sansCoche) {
     var d = e.d, r = RESUME_DEMANDE(d), niveau = NIVEAU_VALIDATION(d);
     var verif = MER_VERIF[e.id] || [];
     var precedenteKo = verif.filter(function(x) { return !x.ok; })[0] || ((e.pjAlterees || []).length ? { message: 'pièce jointe modifiée' } : null);
@@ -2238,7 +2445,7 @@ function TPL_ENTREE_VALIDATION(e, h) {
         else etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">' + ((e.pjAlterees || []).length ? 'Demande non conforme' : 'Validation précédente non conforme') + ' : refusez cette demande.</div>';
         actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">Refuser</button>';
     }
-    var coche = !e.decision && pourMoi ? '<input type="checkbox" class="MER-VAL-SEL" value="' + e.id + '" style="width:18px; height:18px; flex-shrink:0;">' : '';
+    var coche = !sansCoche && !e.decision && pourMoi ? '<input type="checkbox" class="MER-VAL-SEL" value="' + e.id + '" style="width:18px; height:18px; flex-shrink:0;">' : '';
     return '<div class="MER-PANIER-ITEM" style="align-items:flex-start;">' + coche +
         '<div class="MER-PANIER-ITEM-TXT">' +
             '<span class="MER-BADGE">' + badge + '</span>' +
@@ -2254,6 +2461,7 @@ function TPL_ENTREE_VALIDATION(e, h) {
 }
 
 function TPL_ESPACE_VALIDATION(v, h) {
+    if (EST_PC()) return TPL_ESPACE_VALIDATION_PC(v, h);
     var liste = GET_A_VALIDER();
     var html = '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
             '<span class="MER-BADGE">🔒 Connecté — ' + LIBELLE_ROLE(h.role) + '</span>' +
@@ -2275,17 +2483,22 @@ function TPL_ESPACE_VALIDATION(v, h) {
             '<button type="button" class="BTN BTN-SECONDARY BTN-SMALL" onclick="COCHER_TOUT_VALIDATION()">Tout cocher</button>' +
             '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_SELECTION()">✔ Valider la sélection</button></div>';
     }
+    html += TPL_TRANSMISSION_VALIDATION(v, h, liste);
+    return html;
+}
+
+function TPL_TRANSMISSION_VALIDATION(v, h, liste) {
     // Champs de mail : celui du rôle connecté, plus celui qu'exigent les décisions déjà présentes dans la liste
     // (ex. : un même appareil utilisé en 1er puis en 2e valideur). Sans cela, « Transmettre » restait bloqué
     // sur un mail impossible à saisir.
     var dest = DESTINATIONS_DECISIONS(liste);
     var champ2 = h.role === 1 || dest.vers2, champChorus = h.role !== 1 || dest.versChorus;
-    html += '<div class="MER-SECTION-TITLE">Transmission</div>' +
+    var decidees = liste.filter(function(e) { return e.decision; }).length;
+    return '<div class="MER-SECTION-TITLE">Transmission</div>' +
         (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
         (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
               '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF depuis « Espace valideur &amp; Chorus DT » sur l\'accueil.</p></div>' : '') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
-    return html;
 }
 
 function TPL_VALIDATION() {
@@ -2299,7 +2512,7 @@ function TPL_VALIDATION() {
     var connecte = h && !h.retire;
     if (!connecte) { sous = 'Valideurs : connexion · Assistant Chorus DT : accès direct'; corps = chorus + '<div class="MER-SECTION-TITLE">Connexion valideur</div>' + TPL_CONNEXION(v); }
     else { sous = 'Validation des demandes reçues'; corps = TPL_ESPACE_VALIDATION(v, h); }
-    return '<div class="CARD">' +
+    return '<div class="CARD' + (connecte && EST_PC() ? ' PC-LARGE' : '') + '">' +
         '<h2>Espace valideur &amp; Chorus DT</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 16px;">' + sous + '</p>' + corps +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';

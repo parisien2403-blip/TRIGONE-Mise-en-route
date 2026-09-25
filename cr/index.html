@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=6"></script>
+<script src="../jumelage.js?v=7"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4937,6 +4937,40 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 .P0-LBL-COURT { display: none; }
 .JUM-LBL-COURT .P0-LBL-LONG { display: none; } .JUM-LBL-COURT .P0-LBL-COURT { display: inline; }
 .JUM-DOCK-PETIT .P0-TAB { font-size: 0.5rem; letter-spacing: 0; padding: 9px 0; }
+
+/* ===================== FORMAT PC (écran large, ≥ 1100 px) ===================== */
+.PC-MENU { display: none; }
+@media (min-width: 1100px) {
+  body.sm2-app:not(.demo-active) { padding-left: 284px; padding-right: 36px; }
+  body:not(.demo-active) .PC-MENU { display: flex; }
+  .PC-MENU { position: fixed; left: 0; top: 0; bottom: 0; width: 248px; z-index: 50; flex-direction: column; gap: 4px;
+    padding: 22px 16px 16px; background: var(--sm2-surface-solid, #fff); border-right: 1px solid rgba(15,23,42,0.08); overflow-y: auto; }
+  body:not(.demo-active) .P0-TAB-BAR, body:not(.demo-active) .P0-REF-BTN { display: none !important; }
+  body:not(.demo-active) .THEME-TOGGLE { left: 200px; right: auto; top: 12px; width: 36px; height: 36px; }
+  body:not(.demo-active) .page-stage { max-width: 1100px; }
+  /* Départ mission : identité à gauche, mission et lieux à droite */
+  body:not(.demo-active) #P1-PANEL-IDENT:not(.HIDDEN) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: start; }
+  body:not(.demo-active) #P1-PANEL-IDENT > #P1-IDENTITY-ZONE { grid-column: 1; grid-row: 1 / span 20; }
+  body:not(.demo-active) #P1-PANEL-IDENT > :not(#P1-IDENTITY-ZONE) { grid-column: 2; }
+  body:not(.demo-active) #P1-PANEL-IDENT > .P1-TAB-NEXT { grid-column: 1 / -1; grid-row: auto; }
+}
+.PC-MARQUE { display: flex; justify-content: center; border: 0; background: none; padding: 4px 0 18px; margin-bottom: 10px; border-bottom: 1px solid rgba(15,23,42,0.08); cursor: pointer; }
+.PC-MARQUE img { width: 136px; height: auto; }
+body.dark-mode .PC-MARQUE img { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+.PC-NAV { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0; border-radius: 12px; background: none; text-align: left;
+  font-family: inherit; font-size: 0.84rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; line-height: 1.25; text-transform: none; letter-spacing: 0; box-shadow: none; }
+.PC-NAV svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.PC-NAV:hover { background: rgba(90,122,148,0.08); }
+.PC-NAV.actif { background: #1a1a1a; color: #fff; }
+body.dark-mode .PC-NAV.actif { background: #f5f5f5; color: #141414; }
+.PC-BAS { margin-top: auto; display: flex; flex-direction: column; gap: 4px; padding-top: 16px; }
+.PC-BASCULE { display: flex; align-items: center; gap: 10px; width: 100%; padding: 10px; border: 1.5px solid rgba(15,23,42,0.1); border-radius: 12px; background: none;
+  font-family: inherit; font-size: 0.76rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; text-align: left; margin-bottom: 6px; text-transform: none; letter-spacing: 0; }
+.PC-BASCULE img { width: 44px; height: 44px; object-fit: contain; filter: grayscale(1); opacity: 0.6; }
+body.dark-mode .PC-BASCULE img { filter: grayscale(1) invert(1); }
+.PC-LIEN { border: 0; background: none; text-align: left; padding: 7px 12px; border-radius: 10px; font-family: inherit; font-size: 0.76rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; text-transform: none; letter-spacing: 0; }
+.PC-LIEN:hover { background: rgba(90,122,148,0.08); }
+.PC-PIED { display: flex; justify-content: space-between; font-size: 0.66rem; color: #94a3b8; padding: 8px 12px 0; }
 /* ===== Jumelage : démarrer le compte-rendu à partir d'une mise en route ===== */
 #BTN-DEPUIS-MER { margin-top: 2px; }
 .MER-LISTE.HIDDEN { display: none; }
@@ -5150,6 +5184,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <button type="button" id="DEMO-BTN-SUIVANT" class="DEMO-BTN DEMO-BTN-SUIVANT" onclick="DEMO_SUIVANT()">Suivant →</button>
 </div>
 </div>
+<nav class="PC-MENU" id="PC-MENU" aria-label="Menu principal"></nav>
 <div id="PAGE-STAGE" class="page-stage">
 
 <div class="CARD" id="P0">
@@ -11418,7 +11453,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 103;
+var APP_CODE_VERSION = 104;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12816,6 +12851,7 @@ function INIT_TITRES_AUTO() {
 function AFTER_SHOW_PAGE(page) {
     M.PAGE = page;
     if (page === 'P0') MAJ_BOUTON_DEPUIS_MER();
+    RENDRE_MENU_PC_CR(page);
     requestAnimationFrame(AJUSTER_DOCKS);
     AJUSTER_TITRES();
     document.body.classList.toggle('p0-active', page === 'P0');
@@ -13549,6 +13585,43 @@ function DEMO_QUITTER() {
 // La bibliothèque de TRIGONE Mise en route (demandes envoyées) propose ses demandes : identité, libellé, lieux
 // de départ et de retour, transports (et transport complémentaire), gares / aéroports / ports, horaires des
 // billets et ABT sont recopiés dans la mission, par les mêmes champs que la reprise d'une mission.
+
+// ===================== FORMAT PC (écran large, ≥ 1100 px) =====================
+// Menu à gauche à la place de la barre du bas (même menu que TRIGONE Mise en route) ; page « Départ mission »
+// sur deux colonnes. En dessous de 1100 px, rien ne change.
+var CR_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
+var CR_ICONES_PC = {
+    ACCUEIL: '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
+    BIB: '<svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg>',
+    EUR: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5a4 4 0 1 0 0 7M7 11h6M7 13.5h6"/></svg>',
+    NOTICE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 15.7v-5M12 8h.01"/></svg>',
+    ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>'
+};
+function RENDRE_MENU_PC_CR(page) {
+    var m = document.getElementById('PC-MENU');
+    if (!m) return;
+    if (!(CR_PC_MQ && CR_PC_MQ.matches)) { m.innerHTML = ''; return; }
+    var actif = { P0: 'P0', 'P-BIB': 'P-BIB', 'P-STAT': 'P-STAT', 'P-NOTICE': 'P-NOTICE' }[page || M.PAGE] || '';
+    function item(cle, icone, libelle, action) {
+        return '<button type="button" class="PC-NAV' + (actif === cle ? ' actif' : '') + '" onclick="' + action + '">' + icone + '<span>' + libelle + '</span></button>';
+    }
+    m.innerHTML = '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_cr_accueil.png" alt="TRIGONE Compte-rendu de mission"></button>' +
+        item('P0', CR_ICONES_PC.ACCUEIL, 'Accueil', "SHOW_PAGE('P0')") +
+        item('P-BIB', CR_ICONES_PC.BIB, 'Bibliothèque', 'OUVRIR_BIBLIOTHEQUE()') +
+        item('P-STAT', CR_ICONES_PC.EUR, 'Remboursement', 'OUVRIR_STAT_FORFAIT()') +
+        item('P-NOTICE', CR_ICONES_PC.NOTICE, 'Notice', 'OUVRIR_NOTICE_MENU()') +
+        item('ESPACE', CR_ICONES_PC.ESPACE, 'Mon espace', 'OUVRIR_PARAMETRES()') +
+        '<div class="PC-BAS">' +
+            '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'mer\')"><img src="../logo_mer.webp" alt=""><span>Passer à Mise en route</span></button>' +
+            '<button type="button" class="PC-LIEN" onclick="OUVRIR_REFERENCES()">📚 Références</button>' +
+            '<button type="button" class="PC-LIEN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()">🔄 Mise à jour</button>' +
+            '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
+        '</div>';
+}
+if (CR_PC_MQ) {
+    var CR_PC_CHANGE = function() { RENDRE_MENU_PC_CR(); };
+    if (CR_PC_MQ.addEventListener) CR_PC_MQ.addEventListener('change', CR_PC_CHANGE); else if (CR_PC_MQ.addListener) CR_PC_MQ.addListener(CR_PC_CHANGE);
+}
 var MER_LIBELLES_COURTS = { 'Bibliothèque': 'Biblio', 'Remboursement': 'Rembours.' };
 function LIBELLES_COURTS_DOCK() {
     document.querySelectorAll('.P0-TAB-LBL').forEach(function(el) {
