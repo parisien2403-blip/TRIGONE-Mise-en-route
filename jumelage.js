@@ -122,7 +122,14 @@
             var x = aGauche ? (m.left - sc.left) + m.width * (0.5 - part / 2) - w * 0.68
                             : (m.left - sc.left) + m.width * (0.5 + part / 2) - w * 0.32;
             loin.style.width = w + 'px'; loin.style.maxWidth = 'none'; loin.style.right = 'auto';
-            loin.style.left = Math.max(2, Math.min(sc.width - w - 2, x)) + 'px';
+            // Reste dans la partie réellement visible (les conteneurs parents peuvent rogner la scène).
+            var gauche = 0, droite = sc.width;
+            for (var e = scene; e && e !== document.body; e = e.parentElement) {
+                if (getComputedStyle(e).overflowX === 'visible') continue;
+                var q = e.getBoundingClientRect();
+                gauche = Math.max(gauche, q.left - sc.left); droite = Math.min(droite, q.right - sc.left);
+            }
+            loin.style.left = Math.max(gauche + 4, Math.min(droite - w - 4, x)) + 'px';
             loin.style.top = Math.max(2, (m.top - sc.top) + m.height * (0.5 - 0.5 * part) * 0.9) + 'px';
         });
     }

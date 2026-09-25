@@ -816,7 +816,7 @@ body.dark-mode .WELCOME-TOAST-TEXT { color: #f1f5f9; }
 }
 /* Logo recadré, dimensionné pour que « TRIGONE » ait la même largeur que sur l'accueil Mise en route */
 #P0 .welcome-logo {
-  width: min(374px, 87vw);
+  width: min(374px, calc(100vw - 90px));
   height: auto;
   max-height: 100%;
   margin: 0;
@@ -4908,7 +4908,7 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
     max-height: calc(var(--vh-reel, 100dvh) - var(--safe-top) - var(--safe-bottom) - 48px);
   }
   #P0 .welcome-logo {
-    width: min(374px, 87vw);
+    width: min(374px, calc(100vw - 90px));
   }
   .P0-HERO {
     max-width: 420px;

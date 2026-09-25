@@ -94,7 +94,8 @@ body.dark-mode .CARD:not(#MER-P0) { border-top-color: #525252; }
 }
 .MER-P0-INNER { position: relative; flex: 0 1 auto; min-height: 0; padding-top: 22px; display: flex; flex-direction: column; align-items: center; justify-content: center; overflow: hidden; }
 .MER-LOGO-WRAP { width: calc(100% + 36px); margin: 0 -18px; display: flex; justify-content: center; align-items: center; overflow: hidden; min-height: 0; max-height: min(46vh, 300px); }
-.MER-LOGO-IMG { width: min(300px, 70vw); height: auto; max-height: 100%; object-fit: contain; transition: filter 0.3s ease; }
+/* 0.8025 : même largeur de « TRIGONE » que le logo du compte-rendu, qui doit tenir entier dans la carte */
+.MER-LOGO-IMG { width: min(300px, 70vw, calc((100vw - 90px) * 0.8025)); height: auto; max-height: 100%; object-fit: contain; transition: filter 0.3s ease; }
 body.dark-mode .MER-LOGO-IMG { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
 .MER-P0-HERO { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 360px; margin: 4px auto 0; flex-shrink: 0; }
 /* Accueil : bouton principal, liens et barre d'onglets, repris de TRIGONE compte-rendu */
