@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 42,
-  "appCodeMessage": "Identité saisie une seule fois pour la mise en route et le compte-rendu. Et dans Compte-rendu : « 📋 À partir d'une mise en route » reprend votre demande (identité, libellé, lieux, transports, gares et horaires).",
+  "appCodeVersion": 43,
+  "appCodeMessage": "Demande collective : « 📥 Importer une liste » remplit tout le personnel depuis un tableau Excel, Calc ou CSV (UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID).",
   "appMessageVersion": 0,
   "appMessage": ""
 }
