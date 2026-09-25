@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 36;
+var APP_CODE_VERSION = 37;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -84,6 +84,25 @@ function LOAD_BROUILLON() {
         }
     } catch (e) {}
 }
+// Demande commencée et pas encore mise au panier : l'appli propose de la reprendre (comme TRIGONE compte-rendu).
+function BROUILLON_EN_COURS() {
+    try { if (!localStorage.getItem(STORAGE_BROUILLON)) return false; } catch (e) { return false; }
+    var t = D.trajets || {}, a = t.aller || {};
+    return !!(D.objet || a.lieuDep || a.moyen || a.residenceDep || D.codeFD || (D.pieces || []).length ||
+        D.personnes.length > 1 || MER_ACTIVE_TAB !== 'IDENTITE');
+}
+function TPL_REPRISE() {
+    var r = RESUME_DEMANDE(D), etape = MER_TABS_ORDRE.indexOf(MER_ACTIVE_TAB) + 1;
+    return '<div class="CARD"><h2>Demande en cours</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Reprise de votre demande de mise en route</p>' +
+        '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
+            '<span class="MER-BADGE">Étape ' + etape + ' / 5 — ' + ESC(MER_TABS_LABELS[MER_ACTIVE_TAB]) + '</span>' +
+            '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(r.noms) + '</div>' +
+            '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div></div></div>' +
+        '<p class="MER-HINT" style="margin:0 0 14px;">Votre saisie a été conservée : reprenez là où vous vous étiez arrêté, ou revenez à l\'accueil (la demande reste enregistrée).</p>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="SHOW_PAGE(\'FORMULAIRE\')">Continuer la demande</button>' +
+        '<button type="button" class="BTN BTN-SECONDARY" style="margin-top:8px;" onclick="SHOW_PAGE(\'ACCUEIL\')">Retour à l\'accueil</button></div>';
+}
 function CLEAR_BROUILLON() { try { localStorage.removeItem(STORAGE_BROUILLON); } catch (e) {} D = VIDE_DEMANDE(); MER_ACTIVE_TAB = 'IDENTITE'; }
 
 function TOGGLE_THEME() {
@@ -111,6 +130,7 @@ function SHOW_PAGE(page) {
     else if (page === 'BIBLIOTHEQUE') zone.innerHTML = TPL_BIBLIOTHEQUE();
     else if (page === 'ESPACE') zone.innerHTML = TPL_MON_ESPACE();
     else if (page === 'NOTICE') zone.innerHTML = TPL_NOTICE();
+    else if (page === 'REPRISE') zone.innerHTML = TPL_REPRISE();
     else if (page === 'REFERENCES') { zone.innerHTML = TPL_REFERENCES(); CHARGER_CODIER().then(function(c) { if (c && PAGE_ACTUELLE === 'REFERENCES') zone.innerHTML = TPL_REFERENCES(); }); }
     window.scrollTo(0, 0);
 }
@@ -136,7 +156,8 @@ function TPL_ACCUEIL() {
           '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG" src="logo_mer.webp" alt="TRIGONE — Mise en route"></div>' +
         '</div>' +
         '<div class="MER-P0-HERO">' +
-          '<button type="button" class="BTN-ACCUEIL" onclick="NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
+          (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
+          '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
           '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur</button>' +
         '</div>' +
         '<div class="MER-P0-ESPACE"></div>' +
@@ -189,7 +210,8 @@ function BIB_PDF(id) {
     catch (err) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + err.message); }
 }
 // Repart d'une demande envoyée (même objet, mêmes personnes) pour en créer une nouvelle.
-function BIB_REUTILISER(id) {
+function BIB_REUTILISER(id) { PROTEGER_BROUILLON(function() { BIB_REUTILISER_OK(id); }, 'Refaire la demande'); }
+function BIB_REUTILISER_OK(id) {
     var e = BIB_TROUVER(id); if (!e) return;
     var d = JSON.parse(JSON.stringify(e.demandes[0]));
     d.id = VIDE_DEMANDE().id; d.validations = []; delete d.refus;
@@ -235,6 +257,12 @@ function TPL_MON_ESPACE() {
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 
+// Une demande en cours n'est jamais effacée sans confirmation.
+function PROTEGER_BROUILLON(action, libelle) {
+    if (!BROUILLON_EN_COURS()) { action(); return; }
+    MSG_CONFIRM('Demande en cours', 'Une demande est déjà en cours de saisie.\n\nContinuer effacera celle-ci.', libelle || 'Continuer', action, '⚠️');
+}
+function DEMARRER_NOUVELLE_DEMANDE() { PROTEGER_BROUILLON(NOUVELLE_DEMANDE, 'Nouvelle demande'); }
 function NOUVELLE_DEMANDE() {
     CLEAR_BROUILLON();
     MER_ACTIVE_TAB = 'IDENTITE';
@@ -684,7 +712,7 @@ function TPL_PANIER() {
         return '<div class="CARD">' +
             '<h2>Mon panier</h2>' +
             '<div class="MER-EMPTY">Aucune demande en attente.<br>Créez une nouvelle demande pour commencer.</div>' +
-            '<button type="button" class="BTN BTN-PRIMARY" onclick="NOUVELLE_DEMANDE()">+ Nouvelle demande</button>' +
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Nouvelle demande</button>' +
             '<label class="BTN BTN-GHOST BTN-SMALL" style="margin:6px 0 14px;">📥 Importer une demande refusée' +
             '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
             '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
@@ -705,7 +733,7 @@ function TPL_PANIER() {
         '<h2>Mon panier</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 18px;">' + panier.length + ' demande(s) prête(s) à être envoyée(s) ensemble, en un seul mail.</p>' +
         items +
-        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:8px;" onclick="NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
+        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:8px;" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
         '<label class="BTN BTN-GHOST BTN-SMALL" style="margin:6px 0 14px;">📥 Importer une demande refusée' +
             '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
         '<div class="MER-SECTION-TITLE">Envoi</div>' +
@@ -1149,6 +1177,7 @@ var MER_NOTICES = {
             '<b>Alim./Héb.</b> : indiquez notamment si une <b>réservation ABT</b> est demandée (oui / non).',
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
             '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises, nommé « GRADE NOM - Demande d\'OMR INDIVIDUEL » ou « … COLLECTIF » selon le nombre de missionnaires) et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
+            'Appli fermée avant la fin ? À la réouverture, l\'écran <b>Demande en cours</b> propose de <b>continuer</b> la saisie ou de revenir à l\'accueil (la demande reste enregistrée, bouton « ↩ Reprendre ma demande en cours »).',
             'La demande est rangée dans la <b>Bibliothèque</b>. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
@@ -1185,6 +1214,7 @@ function TPL_NOTICE() {
             '<li>Le code ne quitte jamais votre appareil.</li>' +
             '<li><b>Code oublié</b> : le lien « Code oublié ? » efface toutes les données de l\'appli sur cet appareil. Il n\'existe aucun autre moyen.</li></ul></details>' +
         '<details class="notice-fold"><summary>🔄 Mises à jour</summary><ul>' +
+            '<li>L\'appli recherche une nouvelle version à l\'ouverture et à la fermeture ; trouvée à la fermeture, elle s\'installe d\'elle-même au retour dans l\'appli.</li>' +
             '<li>L\'appli se met à jour toute seule dès qu\'il y a du réseau ; un message « Mise à jour » s\'affiche quand une nouvelle version est prête.</li>' +
             '<li>Votre saisie en cours, votre panier et votre bibliothèque sont conservés.</li></ul></details>' +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="AFFICHER_POURQUOI()">Revoir la présentation</button>' +
@@ -2215,7 +2245,8 @@ function IMPORTER_REFUS(input) {
         SHOW_PAGE('PANIER');
     }); });
 }
-function MODIFIER_DEMANDE(id) {
+function MODIFIER_DEMANDE(id) { PROTEGER_BROUILLON(function() { MODIFIER_DEMANDE_OK(id); }, 'Modifier'); }
+function MODIFIER_DEMANDE_OK(id) {
     var d = GET_PANIER().filter(function(x) { return x.id === id; })[0];
     if (!d) return;
     SAVE_PANIER(GET_PANIER().filter(function(x) { return x.id !== id; }));
@@ -2302,9 +2333,40 @@ function VERIFIER_MISE_A_JOUR_MANUELLE() {
     VERIFIER_MISES_A_JOUR(true);
     setTimeout(function() { if (btn) { btn.textContent = '🔄 Mise à jour'; btn.disabled = false; } }, 1200);
 }
+// À la fermeture (appli mise en arrière-plan ou quittée) : TRIGONE regarde s'il existe une nouvelle version et la
+// télécharge ; au retour, l'appli redémarre d'elle-même sur cette version. La demande en cours est conservée et
+// l'écran « Demande en cours » propose de la reprendre.
+var MER_MAJ_AU_RETOUR = false, MER_CACHE_DEPUIS = 0, MER_DELAI_REPRISE_MS = 45000;
+function PREPARER_MAJ_A_LA_FERMETURE() {
+    if (!navigator.onLine || MER_MAJ_AU_RETOUR) return;
+    fetch('updates-manifest.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(data) {
+        if (!data || !(data.appCodeVersion > APP_CODE_VERSION)) return;
+        MER_MAJ_AU_RETOUR = true;
+        if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(function(r) { if (r) r.update(); }).catch(function() {});
+    }).catch(function() {});
+}
+function REDEMARRER_SUR_NOUVELLE_VERSION() {
+    SAVE_BROUILLON();
+    var etapes = [];
+    if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.map(function(c) { return caches.delete(c); })); }));
+    Promise.all(etapes).catch(function() {}).then(function() { location.reload(); });
+}
 function INIT_VERIF_MAJ_AUTO() {
     VERIFIER_MISES_A_JOUR(false);
-    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') VERIFIER_MISES_A_JOUR(false); });
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'hidden') {
+            MER_CACHE_DEPUIS = Date.now();
+            if (PAGE_ACTUELLE === 'FORMULAIRE') SAVE_BROUILLON();
+            PREPARER_MAJ_A_LA_FERMETURE();
+            return;
+        }
+        if (MER_MAJ_AU_RETOUR) { REDEMARRER_SUR_NOUVELLE_VERSION(); return; }
+        var longtemps = MER_CACHE_DEPUIS && Date.now() - MER_CACHE_DEPUIS > MER_DELAI_REPRISE_MS;
+        MER_CACHE_DEPUIS = 0;
+        if (longtemps && PAGE_ACTUELLE === 'FORMULAIRE' && BROUILLON_EN_COURS() && ECRAN_LIBRE()) SHOW_PAGE('REPRISE');
+        VERIFIER_MISES_A_JOUR(false);
+    });
+    window.addEventListener('pagehide', PREPARER_MAJ_A_LA_FERMETURE);
     window.addEventListener('online', function() { MAJ_DERNIERE_VERIF = 0; VERIFIER_MISES_A_JOUR(false); });
 }
 function REGISTER_SERVICE_WORKER() {
@@ -2317,7 +2379,7 @@ function REGISTER_SERVICE_WORKER() {
 window.addEventListener('DOMContentLoaded', function() {
     APPLIQUER_THEME_INITIAL();
     LOAD_BROUILLON();
-    SHOW_PAGE(D.personnes[0].nom || D.objet ? 'FORMULAIRE' : 'ACCUEIL');
+    SHOW_PAGE(BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
     try { vue = localStorage.getItem(STORAGE_POURQUOI) === '1'; } catch (e) {}

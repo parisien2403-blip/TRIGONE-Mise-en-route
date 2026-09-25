@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro) : l'appli déjà à jour affiche « Nouveautés » avec appCodeMessage, l'appli en retard affiche « Mise à jour obligatoire ». appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 36,
-  "appCodeMessage": "Les fichiers .json indiquent INDIVIDUEL ou COLLECTIF à côté de « OMR », selon le nombre de missionnaires (ex. « ADJ BOUQUET - Demande d'OMR INDIVIDUEL »).",
+  "appCodeVersion": 37,
+  "appCodeMessage": "Demande non terminée : à la réouverture, TRIGONE propose de la continuer ou de revenir à l'accueil. Les mises à jour sont recherchées à la fermeture de l'appli et appliquées à la réouverture.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

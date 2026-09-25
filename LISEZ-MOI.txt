@@ -22,6 +22,9 @@ CE QUI EST FAIT DANS CETTE VERSION
   (2e valideur), « GRADE NOM - OMR Refus » (refus).
   À côté de « OMR » : INDIVIDUEL (un seul missionnaire) ou COLLECTIF (plusieurs).
 - Onglet Alim./Héb. : réservation ABT (oui / non), reprise sur le PDF.
+- Demande non terminée : à la réouverture, écran « Demande en cours » (continuer ou revenir à
+  l'accueil, la saisie reste enregistrée), comme la reprise de mission de TRIGONE compte-rendu.
+- Mises à jour recherchées aussi à la fermeture de l'appli, et installées au retour.
 - Envoi en deux temps, pour le demandeur comme pour les valideurs (validation ou refus) :
   « 1. Enregistrer le .json » (sur PC, on choisit où le ranger), puis « 2. Envoyer »,
   qui ne s'active qu'une fois le fichier enregistré, ouvre le mail auquel on le joint.
