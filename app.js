@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 56;
+var APP_CODE_VERSION = 57;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -187,10 +187,12 @@ var MER_ICONES = {
 var MER_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
 function EST_PC() { return !!(MER_PC_MQ && MER_PC_MQ.matches); }
 MER_ICONES.ACCUEIL = '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>';
+MER_ICONES.REFERENCES = '<svg viewBox="0 0 24 24"><path d="M6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5v-13A2.5 2.5 0 0 1 6.5 3z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H19"/><path d="M8.5 7.5h6M8.5 11h4"/></svg>';
+MER_ICONES.MAJ = '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>';
 MER_ICONES.VALIDEUR = '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 
 function TPL_MENU_PC() {
-    var actif = { ACCUEIL: 'ACCUEIL', REPRISE: 'ACCUEIL', BIBLIOTHEQUE: 'BIBLIOTHEQUE', PANIER: 'PANIER', NOTICE: 'NOTICE', ESPACE: 'ESPACE', VALIDATION: 'VALIDATION', VERIFIER: 'VALIDATION' }[PAGE_ACTUELLE] || '';
+    var actif = { REFERENCES: 'REFERENCES', ACCUEIL: 'ACCUEIL', REPRISE: 'ACCUEIL', BIBLIOTHEQUE: 'BIBLIOTHEQUE', PANIER: 'PANIER', NOTICE: 'NOTICE', ESPACE: 'ESPACE', VALIDATION: 'VALIDATION', VERIFIER: 'VALIDATION' }[PAGE_ACTUELLE] || '';
     var n = GET_PANIER().length;
     function item(page, icone, libelle, pastille) {
         return '<button type="button" class="PC-NAV' + (actif === page ? ' actif' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')">' + icone +
@@ -206,8 +208,8 @@ function TPL_MENU_PC() {
         item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur &amp; Chorus DT') +
         '<div class="PC-BAS">' +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
-            '<button type="button" class="PC-LIEN" onclick="SHOW_PAGE(\'REFERENCES\')">📚 Références</button>' +
-            '<button type="button" class="PC-LIEN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()">🔄 Mise à jour</button>' +
+            '<button type="button" class="PC-NAV' + (actif === 'REFERENCES' ? ' actif' : '') + '" onclick="SHOW_PAGE(\'REFERENCES\')">' + MER_ICONES.REFERENCES + '<span>Références</span></button>' +
+            '<button type="button" class="PC-NAV" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()">' + MER_ICONES.MAJ + '<span>Mise à jour</span></button>' +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';
 }
