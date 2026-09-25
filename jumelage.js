@@ -113,7 +113,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 4, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 5, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -186,7 +186,8 @@
             setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 800);
         } else {
             try { sessionStorage.setItem(CLE_BASCULE, '1'); } catch (e) {}
-            setTimeout(function() { location.href = APPLIS[cle].url; }, 480);
+            // replace : pas d'entrée dans l'historique, la flèche retour du téléphone ne ramène pas à l'autre appli.
+            setTimeout(function() { location.replace(APPLIS[cle].url); }, 480);
         }
     }
 

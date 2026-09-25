@@ -1,4 +1,4 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js (même numéro). Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture, sur l'accueil.",
-  "build": 4
+  "build": 5
 }
