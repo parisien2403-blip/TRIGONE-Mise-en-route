@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=8"></script>
+<script src="jumelage.js?v=9"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -591,17 +591,23 @@ body.dark-mode .DEMO-CONTROLES { background: rgba(20,20,20,0.97); border-top-col
    demandes à valider. En dessous de 1100 px (téléphones, tablettes) : rien ne change. */
 .PC-MENU { display: none; }
 @media (min-width: 1100px) {
-  body:not(.demo-active) { padding-left: 284px; padding-right: 36px; }
-  body:not(.demo-active) .PC-MENU { display: flex; }
+  body { padding-left: 284px; padding-right: 36px; }
+  body .PC-MENU { display: flex; }
   .PC-MENU { position: fixed; left: 0; top: 0; bottom: 0; width: 248px; z-index: 50; flex-direction: column; gap: 4px;
     padding: 22px 16px 16px; background: var(--sm2-surface); border-right: 1px solid var(--sm2-border); overflow-y: auto; }
-  body:not(.demo-active) .PAGE-STAGE { max-width: 1180px; }
-  body:not(.demo-active) .PAGE-STAGE.avec-marge { padding-top: 28px; }
-  body:not(.demo-active) .PAGE-STAGE .CARD { max-width: 780px; }
-  body:not(.demo-active) .PAGE-STAGE .CARD.PC-LARGE { max-width: none; }
+  body .PAGE-STAGE { max-width: 1180px; }
+  body .PAGE-STAGE.avec-marge { padding-top: 28px; }
+  body .PAGE-STAGE .CARD { max-width: 780px; }
+  body .PAGE-STAGE .CARD.PC-LARGE { max-width: none; }
   .PC-FORM .CARD { max-width: none !important; margin: 0; }
   /* bouton mode sombre : dans le menu, à côté du logo, plus par-dessus les cartes */
-  body:not(.demo-active) .THEME-TOGGLE { left: 200px; right: auto; top: 12px; width: 36px; height: 36px; }
+  body .THEME-TOGGLE { left: 200px; right: auto; top: 12px; width: 36px; height: 36px; }
+}
+
+/* Démonstration sur PC : le menu reste visible sous le bandeau et au-dessus des boutons, mais ne se clique pas */
+@media (min-width: 1100px) {
+  body.demo-active .PC-MENU { top: var(--demo-bandeau-h, 70px); bottom: 70px; pointer-events: none; }
+  body.demo-active .PC-PAGE button, body.demo-active .P0-PC button, body.demo-active .PC-VAL button { pointer-events: none !important; }
 }
 .PC-MARQUE { display: flex; justify-content: center; border: 0; background: none; padding: 4px 0 18px; margin-bottom: 10px; border-bottom: 1px solid var(--tg-border); cursor: pointer; }
 .PC-MARQUE img { width: 104px; height: auto; }
@@ -804,6 +810,6 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
     </div>
   </div>
 </div>
-<script src="app.js?v=8"></script>
+<script src="app.js?v=9"></script>
 </body>
 </html>

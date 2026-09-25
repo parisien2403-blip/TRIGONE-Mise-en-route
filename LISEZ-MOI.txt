@@ -162,7 +162,7 @@ FORMAT PC (écran d'au moins 1100 px de large)
   récapitulatif à droite, Espace valideur en tableau avec le détail de la demande à côté ; les .json
   reçus par mail peuvent être glissés-déposés dans la fenêtre (Espace valideur, assistant Chorus DT).
 - Compte-rendu : même menu à gauche, page « Départ mission » sur deux colonnes.
-- En dessous de 1100 px (téléphones, tablettes) et pendant la démonstration : affichage inchangé.
+- En dessous de 1100 px (téléphones, tablettes) : affichage inchangé. La démonstration suit l'écran (format PC sur PC).
 
 PUBLIER UNE NOUVELLE VERSION
 Augmenter ensemble : APP_CODE_VERSION (app.js et cr/index.html) et appCodeVersion (les deux
