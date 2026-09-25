@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 42;
+var APP_CODE_VERSION = 43;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -439,6 +439,158 @@ function TPL_PERSONNE(i) {
         '</div>' +
     '</div>';
 }
+// ===================== IMPORT D'UNE LISTE DE PERSONNES (demande collective) =====================
+// Un tableau Excel (.xlsx), LibreOffice Calc (.ods) ou CSV : UNITÉ / CIE / GRADE / NOM / PRÉNOM / NID. Lu sur
+// l'appareil, sans bibliothèque externe : les .xlsx et .ods sont des archives ZIP de XML, décompressées par le
+// navigateur (DecompressionStream). La ligne d'en-tête est reconnue si elle existe, sinon cet ordre de colonnes.
+function ZIP_LIRE(buf) {
+    var v = new DataView(buf), n = buf.byteLength, fin = -1;
+    for (var i = n - 22; i >= Math.max(0, n - 66000); i--) { if (v.getUint32(i, true) === 0x06054b50) { fin = i; break; } }
+    if (fin < 0) return Promise.reject(new Error('Fichier illisible (archive attendue).'));
+    var total = v.getUint16(fin + 10, true), pos = v.getUint32(fin + 16, true), fichiers = {};
+    var dec = new TextDecoder();
+    for (var k = 0; k < total; k++) {
+        if (v.getUint32(pos, true) !== 0x02014b50) break;
+        var methode = v.getUint16(pos + 10, true), taille = v.getUint32(pos + 20, true);
+        var ln = v.getUint16(pos + 28, true), le = v.getUint16(pos + 30, true), lc = v.getUint16(pos + 32, true);
+        var local = v.getUint32(pos + 42, true), nom = dec.decode(new Uint8Array(buf, pos + 46, ln));
+        fichiers[nom] = { methode: methode, taille: taille, local: local };
+        pos += 46 + ln + le + lc;
+    }
+    return Promise.resolve(function lire(nom) {
+        var f = fichiers[nom];
+        if (!f) return Promise.resolve(null);
+        var debut = f.local + 30 + v.getUint16(f.local + 26, true) + v.getUint16(f.local + 28, true);
+        var octets = new Uint8Array(buf, debut, f.taille);
+        if (f.methode === 0) return Promise.resolve(dec.decode(octets));
+        if (typeof DecompressionStream === 'undefined') return Promise.reject(new Error('Navigateur trop ancien : enregistrez le tableau en CSV.'));
+        var flux = new Blob([octets]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+        return new Response(flux).text();
+    });
+}
+function XML(t) { return new DOMParser().parseFromString(t, 'application/xml'); }
+function ENFANTS(el, nom) { return Array.prototype.filter.call(el.childNodes, function(c) { return c.nodeType === 1 && (c.localName === nom); }); }
+function COLONNE_INDEX(ref) { var m = /^([A-Z]+)/.exec(ref || ''), n = 0; if (!m) return -1; for (var i = 0; i < m[1].length; i++) n = n * 26 + m[1].charCodeAt(i) - 64; return n - 1; }
+function LIRE_XLSX(buf) {
+    return ZIP_LIRE(buf).then(function(lire) {
+        return Promise.all([lire('xl/workbook.xml'), lire('xl/_rels/workbook.xml.rels'), lire('xl/sharedStrings.xml')]).then(function(r) {
+            var chemin = 'xl/worksheets/sheet1.xml';
+            if (r[0] && r[1]) {
+                var feuille = XML(r[0]).getElementsByTagNameNS('*', 'sheet')[0];
+                var rid = feuille && (feuille.getAttribute('r:id') || feuille.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id'));
+                Array.prototype.forEach.call(XML(r[1]).getElementsByTagNameNS('*', 'Relationship'), function(rel) {
+                    if (rel.getAttribute('Id') === rid) { var c = rel.getAttribute('Target'); chemin = c.charAt(0) === '/' ? c.slice(1) : 'xl/' + c; }
+                });
+            }
+            var partages = r[2] ? Array.prototype.map.call(XML(r[2]).getElementsByTagNameNS('*', 'si'), function(si) {
+                return Array.prototype.map.call(si.getElementsByTagNameNS('*', 't'), function(t) { return t.textContent; }).join('');
+            }) : [];
+            return lire(chemin).then(function(xml) {
+                if (!xml) throw new Error('Feuille introuvable dans le fichier.');
+                return Array.prototype.map.call(XML(xml).getElementsByTagNameNS('*', 'row'), function(row) {
+                    var ligne = [];
+                    Array.prototype.forEach.call(row.getElementsByTagNameNS('*', 'c'), function(c, i) {
+                        var idx = c.getAttribute('r') ? COLONNE_INDEX(c.getAttribute('r')) : i, type = c.getAttribute('t');
+                        var vEl = c.getElementsByTagNameNS('*', 'v')[0], val;
+                        if (type === 's') val = partages[+(vEl && vEl.textContent)] || '';
+                        else if (type === 'inlineStr') val = Array.prototype.map.call(c.getElementsByTagNameNS('*', 't'), function(t) { return t.textContent; }).join('');
+                        else val = vEl ? vEl.textContent : '';
+                        if (idx >= 0 && idx < 50) ligne[idx] = val;
+                    });
+                    return ligne;
+                });
+            });
+        });
+    });
+}
+function LIRE_ODS(buf) {
+    return ZIP_LIRE(buf).then(function(lire) { return lire('content.xml'); }).then(function(xml) {
+        if (!xml) throw new Error('Fichier Calc illisible.');
+        var table = XML(xml).getElementsByTagNameNS('*', 'table')[0], lignes = [];
+        if (!table) return lignes;
+        Array.prototype.forEach.call(table.getElementsByTagNameNS('*', 'table-row'), function(row) {
+            var ligne = [];
+            Array.prototype.filter.call(row.childNodes, function(c) { return c.nodeType === 1 && /table-cell$/.test(c.localName); }).forEach(function(c) {
+                var rep = Math.min(+(c.getAttribute('table:number-columns-repeated') || 1), 50);
+                var val = c.getAttribute('office:value') || Array.prototype.map.call(c.getElementsByTagNameNS('*', 'p'), function(p) { return p.textContent; }).join(' ');
+                for (var i = 0; i < rep && ligne.length < 50; i++) ligne.push(val);
+            });
+            var repL = Math.min(+(row.getAttribute('table:number-rows-repeated') || 1), 500);
+            if (ligne.some(function(x) { return String(x || '').trim(); })) for (var j = 0; j < repL; j++) lignes.push(ligne);
+        });
+        return lignes;
+    });
+}
+function LIRE_CSV(texte) {
+    texte = texte.replace(/^\uFEFF/, '');
+    var premiere = texte.split(/\r?\n/)[0] || '';
+    var sep = (premiere.match(/;/g) || []).length >= (premiere.match(/,/g) || []).length ? ';' : ',';
+    if ((premiere.match(/\t/g) || []).length > (premiere.match(new RegExp(sep, 'g')) || []).length) sep = '\t';
+    var lignes = [], ligne = [], champ = '', guill = false;
+    for (var i = 0; i < texte.length; i++) {
+        var ch = texte[i];
+        if (guill) { if (ch === '"') { if (texte[i + 1] === '"') { champ += '"'; i++; } else guill = false; } else champ += ch; continue; }
+        if (ch === '"') guill = true;
+        else if (ch === sep) { ligne.push(champ); champ = ''; }
+        else if (ch === '\n' || ch === '\r') { if (ch === '\r' && texte[i + 1] === '\n') i++; ligne.push(champ); lignes.push(ligne); ligne = []; champ = ''; }
+        else champ += ch;
+    }
+    if (champ || ligne.length) { ligne.push(champ); lignes.push(ligne); }
+    return lignes;
+}
+var MER_COLONNES_LISTE = ['unite', 'cie', 'grade', 'nom', 'prenom', 'matricule'];
+function COLONNE_DEPUIS_ENTETE(t) {
+    t = String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z]/g, '');
+    if (/^(unite|entite|uniteentite|formation|regiment)/.test(t)) return 'unite';
+    if (/^(cie|compagnie|cieappartenance)/.test(t)) return 'cie';
+    if (/^grade/.test(t)) return 'grade';
+    if (/^(prenom|prenoms)/.test(t)) return 'prenom';
+    if (/^(nom|nomdefamille|nomusage)$/.test(t)) return 'nom';
+    if (/^(nid|matricule|numeroid|numid|identifiant|nia)/.test(t)) return 'matricule';
+    return null;
+}
+function PERSONNES_DEPUIS_LIGNES(lignes) {
+    lignes = lignes.filter(function(l) { return l && l.some(function(x) { return String(x == null ? '' : x).trim(); }); });
+    if (!lignes.length) return [];
+    var entete = lignes[0].map(COLONNE_DEPUIS_ENTETE), reconnues = entete.filter(Boolean).length;
+    var colonnes = reconnues >= 3 ? entete : MER_COLONNES_LISTE;
+    return (reconnues >= 3 ? lignes.slice(1) : lignes).map(function(l) {
+        var p = VIDE_PERSONNE();
+        colonnes.forEach(function(k, i) { if (k) p[k] = String(l[i] == null ? '' : l[i]).trim(); });
+        var chiffres = p.matricule.replace(/\D/g, '');
+        if (chiffres.length === 9 && /^\d+(\.0+)?$/.test(p.matricule)) chiffres = '0' + chiffres;   // zéro de tête perdu par le tableur (cellule nombre)
+        p.matricule = chiffres ? FORMAT_MATRICULE(chiffres) : '';
+        p.nom = p.nom.toUpperCase(); p.grade = p.grade.toUpperCase();
+        return p;
+    }).filter(function(p) { return p.nom || p.prenom; });
+}
+function IMPORTER_LISTE_PERSONNES(input) {
+    var f = input.files && input.files[0];
+    input.value = '';
+    if (!f) return;
+    var nom = f.name.toLowerCase();
+    if (/\.xls$/.test(nom)) { MSG_ERREUR('Format non pris en charge', 'Ancien format Excel (.xls) : enregistrez le tableau en .xlsx (ou .csv) puis importez-le.'); return; }
+    var lecture = /\.csv$|\.txt$/.test(nom) ? f.text().then(LIRE_CSV)
+        : f.arrayBuffer().then(function(b) { return /\.ods$/.test(nom) ? LIRE_ODS(b) : LIRE_XLSX(b); });
+    lecture.then(PERSONNES_DEPUIS_LIGNES).then(function(liste) {
+        if (!liste.length) { MSG_ERREUR('Aucune personne trouvée', 'Le tableau doit contenir les colonnes UNITÉ, CIE, GRADE, NOM, PRÉNOM, NID (une personne par ligne).'); return; }
+        var cle = function(p) { var m = (p.matricule || '').replace(/\D/g, ''); return m.length === 10 ? m : (p.nom + '|' + p.prenom).toUpperCase(); };
+        var actuelles = D.personnes.filter(function(p) { return p.nom || p.prenom || p.matricule; });
+        var vues = {}; actuelles.forEach(function(p) { vues[cle(p)] = true; });
+        var ajout = liste.filter(function(p) { var k = cle(p); if (vues[k]) return false; vues[k] = true; return true; });
+        D.personnes = actuelles.concat(ajout);
+        if (!D.personnes.length) D.personnes = [VIDE_PERSONNE()];
+        SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE();
+        var douteux = ajout.filter(function(p) { return p.matricule.replace(/\D/g, '').length !== 10 || !p.grade || !p.nom || !p.prenom; }).length;
+        MSG_INFO('Liste importée', ajout.length + ' personne(s) ajoutée(s)' + (liste.length - ajout.length ? ', ' + (liste.length - ajout.length) + ' déjà présente(s)' : '') +
+            '. La demande compte maintenant ' + D.personnes.length + ' personne(s).' +
+            (douteux ? '\n\n⚠ ' + douteux + ' ligne(s) incomplète(s) ou matricule sans 10 chiffres : vérifiez-les (en rouge à l\'étape suivante).' : ''), '✅', 'mascotte-ok.webp');
+    }).catch(function(e) { MSG_ERREUR('Import impossible', e.message || String(e)); });
+}
+function TELECHARGER_MODELE_LISTE() {
+    var csv = '\uFEFFUNITÉ;CIE;GRADE;NOM;PRÉNOM;NID\r\n4°RIISC;4CIE;ADJUDANT;DUPONT;Jean;067 50 10 191\r\n';
+    TELECHARGER_TEXTE('modele_liste_personnel.csv', csv, 'text/csv;charset=utf-8');
+}
 function AJOUTER_PERSONNE() { D.personnes.push(VIDE_PERSONNE()); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
 function RETIRER_PERSONNE(i) { D.personnes.splice(i, 1); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
 
@@ -609,7 +761,10 @@ function TPL_ONGLET_IDENTITE() {
       '<div class="MER-FIELD"><label>Objet</label><textarea rows="2" data-path="objet" oninput="ON_CHAMP_INPUT(\'objet\', this.value)" placeholder="EX : Formation conseiller facteur humain">' + ESC(D.objet || '') + '</textarea></div>' +
       '<div class="MER-SECTION-TITLE">Personnel concerné</div>' +
       D.personnes.map(function(_, i) { return TPL_PERSONNE(i); }).join('') +
-      '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_PERSONNE()">+ Ajouter une personne (demande collective)</button>';
+      '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_PERSONNE()">+ Ajouter une personne (demande collective)</button>' +
+      '<label class="BTN BTN-GHOST BTN-SMALL" style="margin-top:8px;">📥 Importer une liste (Excel, Calc ou CSV)' +
+        '<input type="file" accept=".xlsx,.ods,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,text/csv" style="display:none;" onchange="IMPORTER_LISTE_PERSONNES(this)"></label>' +
+      '<p class="MER-HINT" style="text-align:center;">Colonnes : UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID. <a href="#" onclick="TELECHARGER_MODELE_LISTE(); return false;">Télécharger le modèle</a></p>';
 }
 
 function SELECT_RESIDENCE(label, path) {
@@ -1230,6 +1385,7 @@ var MER_NOTICES = {
     DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · panier · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
         etapes: ['<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
+            '<b>Demande collective</b> : « + Ajouter une personne », ou <b>« 📥 Importer une liste »</b> depuis un tableau Excel (.xlsx), Calc (.ods) ou CSV aux colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID (« Télécharger le modèle »). Les personnes déjà présentes ne sont pas dupliquées.',
             '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), moyen de transport, ville (code postal automatique) ou pays étranger, dates et heures. Selon le moyen, TRIGONE demande la <b>gare</b> (voie ferrée), l\'<b>aéroport</b> (voie aérienne) ou le <b>port</b> (voie maritime) de départ et d\'arrivée. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
             '<b>Voie routière civile (VRC)</b> : joignez la <b>demande d\'autorisation VRC</b>, la <b>carte grise</b> et l\'<b>attestation d\'assurance</b> du véhicule ; un rappel s\'affiche jusqu\'à l\'envoi.',
             '<b>Alim./Héb.</b> : indiquez notamment si une <b>réservation ABT</b> est demandée (oui / non).',

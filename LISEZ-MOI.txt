@@ -11,6 +11,11 @@ CE QUI EST FAIT DANS CETTE VERSION
   trois trajets, nourri/logé à titre onéreux, demande d'avance, imputation, code
   FD@LIGNE, notes de service à joindre).
 - Demande collective : possibilité d'ajouter plusieurs personnes sur une même demande.
+- Import d'une liste de personnes (onglet Identité) : tableau Excel (.xlsx), LibreOffice Calc
+  (.ods) ou CSV, colonnes UNITÉ / CIE / GRADE / NOM / PRÉNOM / NID (en-tête reconnu, sinon cet
+  ordre). Lu sur l'appareil sans bibliothèque externe (archive ZIP + XML, DecompressionStream).
+  Doublons ignorés, zéro de tête du matricule rétabli, lignes incomplètes signalées. Ancien
+  format .xls non lu (l'enregistrer en .xlsx). Modèle CSV téléchargeable.
 - Panier : plusieurs demandes peuvent être préparées puis envoyées ensemble en un
   seul mail, pour ne pas multiplier les messages au premier signataire.
 - Génération d'un PDF (une page par demande) reprenant les informations de la DOMR
