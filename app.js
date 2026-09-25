@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 39;
+var APP_CODE_VERSION = 40;
 var STORAGE_PANIER = 'mer_panier';
 var STORAGE_BROUILLON = 'mer_brouillon';
 var STORAGE_REGLAGES = 'mer_reglages';
@@ -59,18 +59,21 @@ var MER_RESIDENCES = { ADMINISTRATIVE: 'Résidence administrative', FAMILIALE: '
 var MER_ACTIVE_TAB = 'IDENTITE';
 
 function GET_REGLAGES() {
+    if (DEMO_ACTIF) return DEMO_REGLAGES;
     try { return JSON.parse(localStorage.getItem(STORAGE_REGLAGES) || '{}'); } catch (e) { return {}; }
 }
-function SAVE_REGLAGES(r) { try { localStorage.setItem(STORAGE_REGLAGES, JSON.stringify(r)); } catch (e) {} }
+function SAVE_REGLAGES(r) { if (DEMO_ACTIF) return; try { localStorage.setItem(STORAGE_REGLAGES, JSON.stringify(r)); } catch (e) {} }
 
 function GET_PANIER() {
+    if (DEMO_ACTIF) return DEMO_PANIER;
     try { return JSON.parse(localStorage.getItem(STORAGE_PANIER) || '[]'); } catch (e) { return []; }
 }
-function SAVE_PANIER(liste) { try { localStorage.setItem(STORAGE_PANIER, JSON.stringify(liste)); } catch (e) {} }
+function SAVE_PANIER(liste) { if (DEMO_ACTIF) return; try { localStorage.setItem(STORAGE_PANIER, JSON.stringify(liste)); } catch (e) {} }
 
 // Le brouillon en cours est sauvegardé à chaque frappe, exactement comme TRIGONE compte-rendu : fermer
 // l'application en pleine saisie ne doit rien faire perdre.
 function SAVE_BROUILLON() {
+    if (DEMO_ACTIF) return;
     try { localStorage.setItem(STORAGE_BROUILLON, JSON.stringify({ demande: D, onglet: MER_ACTIVE_TAB })); } catch (e) {}
 }
 function LOAD_BROUILLON() {
@@ -86,6 +89,7 @@ function LOAD_BROUILLON() {
 }
 // Demande commencée et pas encore mise au panier : l'appli propose de la reprendre (comme TRIGONE compte-rendu).
 function BROUILLON_EN_COURS() {
+    if (DEMO_ACTIF) return false;
     try { if (!localStorage.getItem(STORAGE_BROUILLON)) return false; } catch (e) { return false; }
     var t = D.trajets || {}, a = t.aller || {};
     return !!(D.objet || a.lieuDep || a.moyen || a.residenceDep || D.codeFD || (D.pieces || []).length ||
@@ -162,6 +166,7 @@ function TPL_ACCUEIL() {
           (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
           '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur</button>' +
+          '<button type="button" class="P0-LIEN" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
         '</div>' +
         '<div class="MER-P0-ESPACE"></div>' +
         '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_CODE_VERSION + '</span></p>' +
@@ -181,7 +186,7 @@ var STORAGE_BIBLIOTHEQUE = 'mer_bibliotheque';
 function GET_BIBLIOTHEQUE() {
     try { return JSON.parse(localStorage.getItem(STORAGE_BIBLIOTHEQUE) || '[]'); } catch (e) { return []; }
 }
-function SAVE_BIBLIOTHEQUE(l) { try { localStorage.setItem(STORAGE_BIBLIOTHEQUE, JSON.stringify(l.slice(0, 50))); } catch (e) {} }
+function SAVE_BIBLIOTHEQUE(l) { if (DEMO_ACTIF) return; try { localStorage.setItem(STORAGE_BIBLIOTHEQUE, JSON.stringify(l.slice(0, 50))); } catch (e) {} }
 function ARCHIVER_ENVOI(demandes, destinataire) {
     var l = GET_BIBLIOTHEQUE();
     l.unshift({ id: 'e' + Date.now(), envoyeLe: new Date().toISOString(), destinataire: destinataire, demandes: demandes });
@@ -367,7 +372,7 @@ function MAJ_CHAMP_DOM(path) {
 function TOGGLE_OUI_NON(label, path, hintOui, hintNon) {
     var v = !!GET_CHAMP(path);
     var hint = v ? (hintOui || '') : (hintNon || '');
-    return '<div class="MER-FIELD"><label>' + label + '</label>' +
+    return '<div class="MER-FIELD" data-champ="' + path + '"><label>' + label + '</label>' +
         '<div class="MER-TOGGLE-PAIR">' +
         '<button type="button" class="MER-TOGGLE-BTN' + (v ? ' actif' : '') + '" onclick="ON_CHAMP_BOOL(\'' + path + '\', true)">OUI</button>' +
         '<button type="button" class="MER-TOGGLE-BTN' + (!v ? ' actif' : '') + '" onclick="ON_CHAMP_BOOL(\'' + path + '\', false)">NON</button>' +
@@ -1237,6 +1242,7 @@ function TPL_NOTICE() {
             '<li>L\'appli recherche une nouvelle version à l\'ouverture et à la fermeture ; trouvée à la fermeture, elle s\'installe d\'elle-même au retour dans l\'appli.</li>' +
             '<li>L\'appli se met à jour toute seule dès qu\'il y a du réseau ; un message « Mise à jour » s\'affiche quand une nouvelle version est prête.</li>' +
             '<li>Votre saisie en cours, votre panier et votre bibliothèque sont conservés.</li></ul></details>' +
+        '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="AFFICHER_POURQUOI()">Revoir la présentation</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
@@ -1278,6 +1284,90 @@ function TPL_REFERENCES() {
             'Version actuelle : <b>V' + APP_CODE_VERSION + '</b>.']) +
         '<button type="button" class="BTN BTN-SECONDARY" style="margin-top:6px;" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
+
+// ===================== DÉMONSTRATION (comme TRIGONE compte-rendu) =====================
+// Une demande d'exemple est remplie étape par étape, la mascotte explique chaque écran et la zone concernée
+// est mise en évidence. Pendant la démo, rien n'est enregistré (brouillon, panier, réglages, bibliothèque) :
+// « Quitter » recharge l'appli, qui retrouve exactement les vraies données.
+var DEMO_ACTIF = false, DEMO_IDX = 0, DEMO_PANIER = [];
+var DEMO_REGLAGES = { mailSignataire: 'chef.service@interieur.gouv.fr', mailDemandeur: 'jean.dupont@interieur.gouv.fr' };
+function DEMO_DEMANDE() {
+    var d = VIDE_DEMANDE();
+    d.type = 'FORMATION'; d.objet = 'Formation conseiller facteur humain';
+    d.personnes = [{ unite: '4°RIISC', cie: '4CIE', grade: 'ADJUDANT', nom: 'DUPONT', prenom: 'Jean', matricule: '067 50 10 191' }];
+    d.trajets.aller = { residenceDep: 'ADMINISTRATIVE', moyen: 'FERREE', lieuDep: 'BORDEAUX', cpDep: '33000', paysDep: '', dateDep: '2026-10-12T07:30',
+        lieuArr: 'PARIS', cpArr: '75001', paysArr: '', dateArr: '2026-10-12T11:40' };
+    d.trajets.retour = { residenceArr: 'ADMINISTRATIVE', moyen: 'FERREE', lieuDep: 'PARIS', cpDep: '75001', paysDep: '', dateDep: '2026-10-16T16:00',
+        lieuArr: 'BORDEAUX', cpArr: '33000', paysArr: '', dateArr: '2026-10-16T20:10' };
+    d.reservationABT = true; d.nourriMission = true; d.logeMission = true;
+    d.codeFD = 'FD1ADNK11F';
+    d.pieces = [{ id: 'demo-nds', nom: 'NDS_formation_facteur_humain.pdf', type: 'application/pdf', taille: 184320, sha256: '' }];
+    return d;
+}
+var DEMO_ETAPES = [
+    { page: 'ACCUEIL', texte: 'Page d\'accueil : le missionnaire appuie sur « Nouvelle demande » pour remplir sa demande de mise en route.', zones: ['.BTN-ACCUEIL:not(.BTN-ACCUEIL-PETIT)'] },
+    { page: 'FORMULAIRE', onglet: 'IDENTITE', texte: 'Étape 1 — Identité : mission ou formation, l\'objet, puis le personnel concerné (grade, nom, prénom, matricule). « Ajouter une personne » en fait une demande collective.',
+      zones: ['.MER-TOGGLE-PAIR', '[data-path="objet"]', '.MER-PERSONNE-CARD'] },
+    { page: 'FORMULAIRE', onglet: 'IDENTITE', texte: 'Les 5 étapes sont en haut : une étape doit être complète (coche verte) pour passer à la suivante avec « Étape suivante ».',
+      zones: ['.MER-TABS', '.MER-BOTTOM-BAR .BTN-PRIMARY'] },
+    { page: 'FORMULAIRE', onglet: 'ALLER', texte: 'Étape 2 — Aller : lieu de départ de mission, moyen de transport (ici le train), puis gare de départ et gare d\'arrivée — la ville suffit, le code postal est automatique — avec dates et heures.',
+      zones: ['[data-path="trajets.aller.residenceDep"]', '[data-path="trajets.aller.moyen"]', '[data-path="trajets.aller.lieuDep"]', '[data-path="trajets.aller.lieuArr"]'] },
+    { page: 'FORMULAIRE', onglet: 'RETOUR', texte: 'Étape 3 — Retour : il est pré-rempli avec l\'aller inversé ; il ne reste qu\'à indiquer les dates et heures du retour.',
+      zones: ['[data-path="trajets.retour.dateDep"]', '[data-path="trajets.retour.dateArr"]'] },
+    { page: 'FORMULAIRE', onglet: 'CONDITIONS', texte: 'Étape 4 — Alim./Héb. : réservation ABT, repas et hébergement pendant le déplacement et la mission. Un OUI à l\'ABT ressort en rouge sur le PDF.',
+      zones: ['[data-champ="reservationABT"]', '[data-champ="nourriMission"]', '[data-champ="logeMission"]'] },
+    { page: 'FORMULAIRE', onglet: 'IMPUTATION', texte: 'Étape 5 — Imputation : le code FD suffit, TRIGONE affiche le centre financier, le centre de coût et le code activité. On joint ensuite la NDS ou la DAF (PDF ou photo).',
+      zones: ['[data-path="codeFD"]', '#MER-FD-INFO', '.MER-PANIER-ITEM'] },
+    { page: 'PANIER', texte: 'Panier : la demande y est rangée (plusieurs demandes peuvent partir ensemble). On vérifie le mail du 1er valideur, puis « Envoyer le panier ».',
+      zones: ['.MER-PANIER-ITEM', '#MER-MAIL-DEST', '.CARD > .BTN-PRIMARY'] },
+    { page: 'PANIER', envoi: true, texte: 'Avant d\'envoyer : aperçu du PDF, puis 1. « Enregistrer le .json » (un seul fichier, pièces jointes comprises) et 2. « Envoyer », qui ouvre le mail au 1er valideur.',
+      zones: ['#MER-BTN-ENREGISTRER', '#MER-BTN-ENVOYER'] },
+    { page: 'ACCUEIL', texte: 'Ensuite : le 1er valideur signe, puis le 2e valideur, et l\'assistant Chorus DT génère le PDF final. La demande envoyée reste dans la Bibliothèque.',
+      zones: ['.P0-TAB-BAR'] },
+    { page: 'ACCUEIL', derniere: true, texte: 'C\'était une démonstration : aucune donnée n\'a été enregistrée ni envoyée. À vous de jouer avec « Nouvelle demande » !' }
+];
+function LANCER_DEMO() {
+    DEMO_ACTIF = true;
+    D = DEMO_DEMANDE(); DEMO_PANIER = [D];
+    MER_ACTIVE_TAB = 'IDENTITE';
+    document.body.classList.add('demo-active');
+    document.getElementById('DEMO-OVERLAY').classList.remove('HIDDEN');
+    document.getElementById('DEMO-PROGRESSION').innerHTML = DEMO_ETAPES.map(function() { return '<span class="DEMO-POINT"></span>'; }).join('');
+    DEMO_ETAPE(0);
+}
+function DEMO_ETAPE(i) {
+    var e = DEMO_ETAPES[i]; if (!e) return;
+    DEMO_IDX = i;
+    FERMER_MODALE();
+    if (e.onglet) MER_ACTIVE_TAB = e.onglet;
+    SHOW_PAGE(e.page);
+    if (e.envoi) PREPARER_ENVOI();
+    if (e.onglet === 'IMPUTATION') CHARGER_CODIER().then(function() { if (DEMO_ACTIF && DEMO_IDX === i) { AFFICHER_CODE_FD(); DEMO_ZONES(e); } });
+    document.getElementById('DEMO-TEXTE').textContent = (i + 1) + '/' + DEMO_ETAPES.length + ' — ' + e.texte;
+    document.querySelectorAll('#DEMO-PROGRESSION .DEMO-POINT').forEach(function(p, k) { p.classList.toggle('actif', k === i); });
+    document.getElementById('DEMO-PREC').disabled = i === 0;
+    document.getElementById('DEMO-SUIV').textContent = e.derniere ? 'Recommencer ↻' : 'Suivant →';
+    DEMO_ZONES(e);
+    requestAnimationFrame(function() {
+        var h = Math.ceil(document.querySelector('.DEMO-BANDEAU').getBoundingClientRect().height) + 8;
+        document.documentElement.style.setProperty('--demo-bandeau-h', h + 'px');
+        var z = document.querySelector('.demo-zone');
+        if (z && !e.envoi) z.scrollIntoView({ block: 'center', behavior: 'smooth' }); else window.scrollTo(0, 0);
+    });
+}
+function DEMO_ZONES(e) {
+    document.querySelectorAll('.demo-zone').forEach(function(el) { el.classList.remove('demo-zone'); });
+    (e.zones || []).forEach(function(sel) { document.querySelectorAll(sel).forEach(function(el) { el.classList.add('demo-zone'); }); });
+}
+function DEMO_PRECEDENT() { if (DEMO_IDX > 0) DEMO_ETAPE(DEMO_IDX - 1); }
+function DEMO_SUIVANT() { DEMO_ETAPE(DEMO_IDX < DEMO_ETAPES.length - 1 ? DEMO_IDX + 1 : 0); }
+// Rechargement : l'appli repart de ses vraies données, jamais modifiées pendant la démo.
+function DEMO_QUITTER() { location.reload(); }
+window.addEventListener('resize', function() {
+    if (!DEMO_ACTIF) return;
+    var b = document.querySelector('.DEMO-BANDEAU');
+    if (b) document.documentElement.style.setProperty('--demo-bandeau-h', Math.ceil(b.getBoundingClientRect().height) + 8 + 'px');
+});
 
 // ===================== MESSAGE CENTRÉ (comme TRIGONE compte-rendu) =====================
 // Remplace alert / confirm : carte centrée, icône, titre, texte et mascotte à droite.
@@ -2300,7 +2390,7 @@ var MAJ_DERNIERE_VERIF = 0, MAJ_DELAI_MIN_MS = 10 * 60 * 1000, MAJ_EN_ATTENTE = 
 function GET_MAJ_VUES() { try { return JSON.parse(localStorage.getItem(STORAGE_MAJ_VUES) || '{}'); } catch (e) { return {}; } }
 function SET_MAJ_VUE(cle, v) { var m = GET_MAJ_VUES(); m[cle] = v; try { localStorage.setItem(STORAGE_MAJ_VUES, JSON.stringify(m)); } catch (e) {} }
 function ECRAN_LIBRE() {
-    if (document.getElementById('INTRO-SPLASH')) return false;
+    if (DEMO_ACTIF || document.getElementById('INTRO-SPLASH')) return false;
     return ['MSG-OVERLAY', 'PIN-OVERLAY', 'POURQUOI-OVERLAY', 'CONFIG-INITIALE-OVERLAY'].every(function(id) {
         var el = document.getElementById(id); return !el || el.classList.contains('HIDDEN');
     });
@@ -2397,7 +2487,7 @@ function INIT_VERIF_MAJ_AUTO() {
         if (MER_MAJ_AU_RETOUR) { REDEMARRER_SUR_NOUVELLE_VERSION(); return; }
         var longtemps = MER_CACHE_DEPUIS && Date.now() - MER_CACHE_DEPUIS > MER_DELAI_REPRISE_MS;
         MER_CACHE_DEPUIS = 0;
-        if (longtemps && PAGE_ACTUELLE === 'FORMULAIRE' && BROUILLON_EN_COURS() && ECRAN_LIBRE()) SHOW_PAGE('REPRISE');
+        if (longtemps && !DEMO_ACTIF && PAGE_ACTUELLE === 'FORMULAIRE' && BROUILLON_EN_COURS() && ECRAN_LIBRE()) SHOW_PAGE('REPRISE');
         VERIFIER_MISES_A_JOUR(false);
     });
     window.addEventListener('pagehide', PREPARER_MAJ_A_LA_FERMETURE);
