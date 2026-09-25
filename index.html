@@ -79,6 +79,9 @@ body.dark-mode .CARD:not(#MER-P0) { border-top-color: #525252; }
   max-width: 480px; margin: 0 auto;
   height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
   max-height: calc(100dvh - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
+  /* hauteur réelle mesurée par jumelage.js (écrans pliables, clavier) ; 100dvh sinon */
+  height: calc(var(--vh-reel, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
+  max-height: calc(var(--vh-reel, 100dvh) - env(safe-area-inset-top, 0px) - env(safe-area-inset-bottom, 0px) - 32px);
   min-height: 0; display: flex; flex-direction: column; align-items: stretch; justify-content: stretch;
   overflow: hidden;
 }
