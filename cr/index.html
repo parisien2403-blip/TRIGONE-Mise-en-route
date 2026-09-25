@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=9"></script>
+<script src="../jumelage.js?v=10"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11509,7 +11509,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 106;
+var APP_CODE_VERSION = 107;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13652,7 +13652,9 @@ var CR_ICONES_PC = {
     BIB: '<svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg>',
     EUR: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M15.5 8.5a4 4 0 1 0 0 7M7 11h6M7 13.5h6"/></svg>',
     NOTICE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 15.7v-5M12 8h.01"/></svg>',
-    ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>'
+    ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>',
+    REFERENCES: '<svg viewBox="0 0 24 24"><path d="M6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5v-13A2.5 2.5 0 0 1 6.5 3z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H19"/><path d="M8.5 7.5h6M8.5 11h4"/></svg>',
+    MAJ: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>'
 };
 function RENDRE_MENU_PC_CR(page) {
     var m = document.getElementById('PC-MENU');
@@ -13670,8 +13672,8 @@ function RENDRE_MENU_PC_CR(page) {
         item('ESPACE', CR_ICONES_PC.ESPACE, 'Mon espace', 'OUVRIR_PARAMETRES()') +
         '<div class="PC-BAS">' +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'mer\')"><img src="../logo_mer.webp" alt=""><span>Passer à Mise en route</span></button>' +
-            '<button type="button" class="PC-LIEN" onclick="OUVRIR_REFERENCES()">📚 Références</button>' +
-            '<button type="button" class="PC-LIEN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()">🔄 Mise à jour</button>' +
+            item('REF', CR_ICONES_PC.REFERENCES, 'Références', 'OUVRIR_REFERENCES()') +
+            item('MAJ', CR_ICONES_PC.MAJ, 'Mise à jour', 'VERIFIER_MISE_A_JOUR_MANUELLE()') +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';
 }
