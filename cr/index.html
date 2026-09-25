@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=8"></script>
+<script src="../jumelage.js?v=9"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -4941,18 +4941,18 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 /* ===================== FORMAT PC (écran large, ≥ 1100 px) ===================== */
 .PC-MENU { display: none; }
 @media (min-width: 1100px) {
-  body.sm2-app:not(.demo-active) { padding-left: 284px; padding-right: 36px; }
-  body:not(.demo-active) .PC-MENU { display: flex; }
+  body.sm2-app { padding-left: 284px; padding-right: 36px; }
+  body .PC-MENU { display: flex; }
   .PC-MENU { position: fixed; left: 0; top: 0; bottom: 0; width: 248px; z-index: 50; flex-direction: column; gap: 4px;
     padding: 22px 16px 16px; background: var(--sm2-surface-solid, #fff); border-right: 1px solid rgba(15,23,42,0.08); overflow-y: auto; }
-  body:not(.demo-active) .P0-TAB-BAR, body:not(.demo-active) .P0-REF-BTN { display: none !important; }
-  body:not(.demo-active) .THEME-TOGGLE { left: 200px; right: auto; top: 12px; width: 36px; height: 36px; }
-  body:not(.demo-active) .page-stage { max-width: 1100px; }
+  body .P0-TAB-BAR, body .P0-REF-BTN { display: none !important; }
+  body .THEME-TOGGLE { left: 200px; right: auto; top: 12px; width: 36px; height: 36px; }
+  body .page-stage { max-width: 1100px; }
   /* Départ mission : identité à gauche, mission et lieux à droite */
-  body:not(.demo-active) #P1-PANEL-IDENT:not(.HIDDEN) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: start; }
-  body:not(.demo-active) #P1-PANEL-IDENT > #P1-IDENTITY-ZONE { grid-column: 1; grid-row: 1 / span 20; }
-  body:not(.demo-active) #P1-PANEL-IDENT > :not(#P1-IDENTITY-ZONE) { grid-column: 2; }
-  body:not(.demo-active) #P1-PANEL-IDENT > .P1-TAB-NEXT { grid-column: 1 / -1; grid-row: auto; }
+  body #P1-PANEL-IDENT:not(.HIDDEN) { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: start; }
+  body #P1-PANEL-IDENT > #P1-IDENTITY-ZONE { grid-column: 1; grid-row: 1 / span 20; }
+  body #P1-PANEL-IDENT > :not(#P1-IDENTITY-ZONE) { grid-column: 2; }
+  body #P1-PANEL-IDENT > .P1-TAB-NEXT { grid-column: 1 / -1; grid-row: auto; }
 }
 .PC-MARQUE { display: flex; justify-content: center; border: 0; background: none; padding: 4px 0 18px; margin-bottom: 10px; border-bottom: 1px solid rgba(15,23,42,0.08); cursor: pointer; }
 .PC-MARQUE img { width: 136px; height: auto; }
@@ -4975,21 +4975,21 @@ body.dark-mode .PC-BASCULE img { filter: grayscale(1) invert(1); }
 .P0-PC { display: none; }
 @media (min-width: 1100px) {
   /* Accueil : tableau de bord à la place de la carte téléphone */
-  body:not(.demo-active) #P0 { max-width: none !important; height: auto !important; max-height: none !important; min-height: 0 !important;
+  body #P0 { max-width: none !important; height: auto !important; max-height: none !important; min-height: 0 !important;
     background: transparent !important; border: 0 !important; box-shadow: none !important; padding: 0 !important; overflow: visible !important; display: block !important; }
-  body:not(.demo-active) #P0.HIDDEN { display: none !important; }
-  body:not(.demo-active) #P0 > .P0-SHELL { display: none !important; }
-  body:not(.demo-active) .P0-PC { display: block; padding: 10px 0 40px; text-align: left; }
+  body #P0.HIDDEN { display: none !important; }
+  body #P0 > .P0-SHELL { display: none !important; }
+  body .P0-PC { display: block; padding: 10px 0 40px; text-align: left; }
   /* Bibliothèque, Notice, Remboursement, Simulateur : pleine largeur, listes en grille */
-  body:not(.demo-active) #P-BIB, body:not(.demo-active) #P-NOTICE, body:not(.demo-active) #P-STAT, body:not(.demo-active) #P-SIMU { max-width: none !important; min-height: 0; }
-  body:not(.demo-active) .BIB-LIST { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  body:not(.demo-active) .NOTICE-MENU-LIST { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
-  body:not(.demo-active) .NOTICE-MENU-EXTRA { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; align-items: start; }
-  body:not(.demo-active) #P-SIMU .BIB-VIEW { max-width: 760px; }
+  body #P-BIB, body #P-NOTICE, body #P-STAT, body #P-SIMU { max-width: none !important; min-height: 0; }
+  body .BIB-LIST { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  body .NOTICE-MENU-LIST { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  body .NOTICE-MENU-EXTRA { display: grid; grid-template-columns: 1fr 1fr; gap: 0 14px; align-items: start; }
+  body #P-SIMU .BIB-VIEW { max-width: 760px; }
   /* Trajets aller / retour : mode de transport à gauche, gares à droite */
-  body:not(.demo-active) .P1-TRANS-BLOCK { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: start; }
-  body:not(.demo-active) .P1-TRANS-BLOCK > * { grid-column: 1; }
-  body:not(.demo-active) .P1-TRANS-BLOCK > #SPEC-A, body:not(.demo-active) .P1-TRANS-BLOCK > #SPEC-R { grid-column: 2; grid-row: 1 / span 12; margin-top: 0; }
+  body .P1-TRANS-BLOCK { display: grid; grid-template-columns: 1fr 1fr; column-gap: 32px; align-items: start; }
+  body .P1-TRANS-BLOCK > * { grid-column: 1; }
+  body .P1-TRANS-BLOCK > #SPEC-A, body .P1-TRANS-BLOCK > #SPEC-R { grid-column: 2; grid-row: 1 / span 12; margin-top: 0; }
 }
 .PC-TITRE { font-size: 1.5rem; margin: 0 0 4px; color: var(--sm2-text); }
 .PC-SOUS { color: #64748b; font-size: 0.84rem; margin: 0 0 22px; }
@@ -5020,6 +5020,12 @@ body.dark-mode .PC-HERO-LOGO { filter: brightness(0) saturate(100%) invert(48%) 
 .PC-KV:first-of-type { border-top: 0; }
 .PC-KV > span { color: #64748b; }
 .PC-CREDIT { text-align: center; font-size: 0.72rem; color: #64748b; margin-top: 22px; }
+
+/* Démonstration sur PC : le menu reste visible sous le bandeau et au-dessus des boutons, mais ne se clique pas */
+@media (min-width: 1100px) {
+  body.demo-active .PC-MENU { top: var(--demo-bandeau-h, 70px); bottom: 70px; pointer-events: none; }
+  body.demo-active .PC-PAGE button, body.demo-active .P0-PC button, body.demo-active .PC-VAL button { pointer-events: none !important; }
+}
 /* ===== Jumelage : démarrer le compte-rendu à partir d'une mise en route ===== */
 #BTN-DEPUIS-MER { margin-top: 2px; }
 .MER-LISTE.HIDDEN { display: none; }
@@ -11503,7 +11509,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 105;
+var APP_CODE_VERSION = 106;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13424,7 +13430,8 @@ var DEMO_BACKUP_KEY = 'trigone_demo_backup';
 var DEMO_ETAPE_IDX = 0;
 
 var DEMO_STEPS = [
-    { page: 'P0', texte: "Page d'accueil : le missionnaire appuie sur « La mission commence ici » pour démarrer son compte-rendu." },
+    { page: 'P0', texte: "Page d'accueil : le missionnaire appuie sur « La mission commence ici » pour démarrer son compte-rendu.",
+      spotlight: ['.P0-PC .PC-HERO-ACTIONS .BTN-START'] },
     { page: 'P1', tab: 'IDENT', texte: 'Identification : grade, nom, prénom, NID, compagnie, libellé de la mission, et le lieu de départ / retour (résidence administrative ou familiale).',
       spotlight: ['#GRADE-USER', '#NOM-USER', '#PRENOM-USER', '#NID-USER', '#CIE-INPUT', '#LIBELLE-MISSION', '#LIEU-DEP', '#LIEU-RET'] },
     { page: 'P1', tab: 'ALLER', texte: 'Trajet aller : le mode de transport — ici le train — puis la gare de départ et la gare d\'arrivée.',
@@ -13677,10 +13684,11 @@ if (CR_PC_MQ) {
 function RENDRE_P0_PC() {
     var z = document.getElementById('P0-PC');
     if (!z) return;
-    if (!(CR_PC_MQ && CR_PC_MQ.matches) || DEMO_MODE_ACTIF) { z.innerHTML = ''; return; }
+    if (!(CR_PC_MQ && CR_PC_MQ.matches)) { z.innerHTML = ''; return; }
     var lire = function(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
     var qui = [lire('mission_saved_grade'), lire('mission_saved_user')].filter(Boolean).join(' ');
-    var enCours = !M.IS_PAX && !M.MAIL_SENT && HAS_ACTIVE_MISSION_DATA(M);
+    // Démonstration : l'accueil montre le point de départ, « La mission commence ici ».
+    var enCours = !DEMO_MODE_ACTIF && !M.IS_PAX && !M.MAIL_SENT && HAS_ACTIVE_MISSION_DATA(M);
     var btnMer = document.getElementById('BTN-DEPUIS-MER');
     var depuisMer = !enCours && btnMer && !btnMer.classList.contains('HIDDEN');
     var esc = function(t) { return ESC_HTML(String(t == null ? '' : t)); };

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 55;
+var APP_CODE_VERSION = 56;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -183,10 +183,9 @@ var MER_ICONES = {
 // ===================== FORMAT PC (écran large) =====================
 // À partir de 1100 px de large : menu à gauche à la place de la barre du bas, accueil en tableau de bord,
 // formulaire accompagné d'un récapitulatif, Espace valideur en tableau avec le détail à côté, dépôt des .json
-// par glisser-déposer. En dessous (téléphones, tablettes), rien ne change. La démonstration garde l'affichage
-// téléphone.
+// par glisser-déposer. En dessous (téléphones, tablettes), rien ne change. La démonstration suit l'écran.
 var MER_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
-function EST_PC() { return !!(MER_PC_MQ && MER_PC_MQ.matches) && !DEMO_ACTIF; }
+function EST_PC() { return !!(MER_PC_MQ && MER_PC_MQ.matches); }
 MER_ICONES.ACCUEIL = '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>';
 MER_ICONES.VALIDEUR = '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 
@@ -229,7 +228,7 @@ if (MER_PC_MQ) {
 
 // ---------- Accueil PC ----------
 function TPL_ACCUEIL_PC() {
-    var id = GET_REGLAGES().identite || {}, panier = GET_PANIER(), bib = GET_BIBLIOTHEQUE().slice(0, 5);
+    var id = GET_REGLAGES().identite || {}, panier = GET_PANIER(), bib = DEMO_ACTIF ? [] : GET_BIBLIOTHEQUE().slice(0, 5);
     var qui = [id.grade, id.nom].filter(Boolean).join(' ');
     function ligne(badge, classe, titre, droite, action) {
         return '<button type="button" class="PC-LIGNE" onclick="' + action + '"><span class="PC-BADGE ' + classe + '">' + badge + '</span>' +
@@ -1737,7 +1736,7 @@ function DEMO_DEMANDE() {
     return d;
 }
 var DEMO_ETAPES = [
-    { page: 'ACCUEIL', texte: 'Page d\'accueil : le missionnaire appuie sur « Nouvelle demande » pour remplir sa demande de mise en route.', zones: ['.BTN-ACCUEIL:not(.BTN-ACCUEIL-PETIT)'] },
+    { page: 'ACCUEIL', texte: 'Page d\'accueil : le missionnaire appuie sur « Nouvelle demande » pour remplir sa demande de mise en route.', zones: ['.BTN-ACCUEIL:not(.BTN-ACCUEIL-PETIT)', '.PC-HERO-ACTIONS .BTN-PRIMARY'] },
     { page: 'FORMULAIRE', onglet: 'IDENTITE', texte: 'Étape 1 — Identité : mission ou formation, l\'objet, puis le personnel concerné (grade, nom, prénom, matricule). « Ajouter une personne » en fait une demande collective.',
       zones: ['.MER-TOGGLE-PAIR', '[data-path="objet"]', '.MER-PERSONNE-CARD'] },
     { page: 'FORMULAIRE', onglet: 'IDENTITE', texte: 'Les 5 étapes sont en haut : une étape doit être complète (coche verte) pour passer à la suivante avec « Étape suivante ».',
@@ -1755,7 +1754,7 @@ var DEMO_ETAPES = [
     { page: 'PANIER', envoi: true, texte: 'Avant d\'envoyer : aperçu du PDF, puis 1. « Enregistrer le .json » (un seul fichier, pièces jointes comprises) et 2. « Envoyer », qui ouvre le mail au 1er valideur.',
       zones: ['#MER-BTN-ENREGISTRER', '#MER-BTN-ENVOYER'] },
     { page: 'ACCUEIL', texte: 'Ensuite : le 1er valideur signe, puis le 2e valideur, et l\'assistant Chorus DT génère le PDF final. La demande envoyée reste dans la Bibliothèque.',
-      zones: ['.P0-TAB-BAR'] },
+      zones: ['.P0-TAB-BAR', '.PC-MENU'] },
     { page: 'ACCUEIL', derniere: true, texte: 'C\'était une démonstration : aucune donnée n\'a été enregistrée ni envoyée. À vous de jouer avec « Nouvelle demande » !' }
 ];
 function LANCER_DEMO() {
