@@ -472,33 +472,42 @@ function ZIP_LIRE(buf) {
 function XML(t) { return new DOMParser().parseFromString(t, 'application/xml'); }
 function ENFANTS(el, nom) { return Array.prototype.filter.call(el.childNodes, function(c) { return c.nodeType === 1 && (c.localName === nom); }); }
 function COLONNE_INDEX(ref) { var m = /^([A-Z]+)/.exec(ref || ''), n = 0; if (!m) return -1; for (var i = 0; i < m[1].length; i++) n = n * 26 + m[1].charCodeAt(i) - 64; return n - 1; }
+// Renvoie toutes les feuilles du classeur (dans l'ordre), chacune sous forme de lignes de cellules.
 function LIRE_XLSX(buf) {
     return ZIP_LIRE(buf).then(function(lire) {
         return Promise.all([lire('xl/workbook.xml'), lire('xl/_rels/workbook.xml.rels'), lire('xl/sharedStrings.xml')]).then(function(r) {
-            var chemin = 'xl/worksheets/sheet1.xml';
+            var chemins = [];
             if (r[0] && r[1]) {
-                var feuille = XML(r[0]).getElementsByTagNameNS('*', 'sheet')[0];
-                var rid = feuille && (feuille.getAttribute('r:id') || feuille.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id'));
+                var cibles = {};
                 Array.prototype.forEach.call(XML(r[1]).getElementsByTagNameNS('*', 'Relationship'), function(rel) {
-                    if (rel.getAttribute('Id') === rid) { var c = rel.getAttribute('Target'); chemin = c.charAt(0) === '/' ? c.slice(1) : 'xl/' + c; }
+                    var c = rel.getAttribute('Target') || '';
+                    cibles[rel.getAttribute('Id')] = c.charAt(0) === '/' ? c.slice(1) : 'xl/' + c;
+                });
+                Array.prototype.forEach.call(XML(r[0]).getElementsByTagNameNS('*', 'sheet'), function(feuille) {
+                    var rid = feuille.getAttribute('r:id') || feuille.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id');
+                    if (cibles[rid]) chemins.push(cibles[rid]);
                 });
             }
+            if (!chemins.length) chemins = ['xl/worksheets/sheet1.xml'];
             var partages = r[2] ? Array.prototype.map.call(XML(r[2]).getElementsByTagNameNS('*', 'si'), function(si) {
                 return Array.prototype.map.call(si.getElementsByTagNameNS('*', 't'), function(t) { return t.textContent; }).join('');
             }) : [];
-            return lire(chemin).then(function(xml) {
-                if (!xml) throw new Error('Feuille introuvable dans le fichier.');
-                return Array.prototype.map.call(XML(xml).getElementsByTagNameNS('*', 'row'), function(row) {
-                    var ligne = [];
-                    Array.prototype.forEach.call(row.getElementsByTagNameNS('*', 'c'), function(c, i) {
-                        var idx = c.getAttribute('r') ? COLONNE_INDEX(c.getAttribute('r')) : i, type = c.getAttribute('t');
-                        var vEl = c.getElementsByTagNameNS('*', 'v')[0], val;
-                        if (type === 's') val = partages[+(vEl && vEl.textContent)] || '';
-                        else if (type === 'inlineStr') val = Array.prototype.map.call(c.getElementsByTagNameNS('*', 't'), function(t) { return t.textContent; }).join('');
-                        else val = vEl ? vEl.textContent : '';
-                        if (idx >= 0 && idx < 50) ligne[idx] = val;
+            return Promise.all(chemins.map(lire)).then(function(xmls) {
+                xmls = xmls.filter(Boolean);
+                if (!xmls.length) throw new Error('Feuille introuvable dans le fichier.');
+                return xmls.map(function(xml) {
+                    return Array.prototype.map.call(XML(xml).getElementsByTagNameNS('*', 'row'), function(row) {
+                        var ligne = [];
+                        Array.prototype.forEach.call(row.getElementsByTagNameNS('*', 'c'), function(c, i) {
+                            var idx = c.getAttribute('r') ? COLONNE_INDEX(c.getAttribute('r')) : i, type = c.getAttribute('t');
+                            var vEl = c.getElementsByTagNameNS('*', 'v')[0], val;
+                            if (type === 's') val = partages[+(vEl && vEl.textContent)] || '';
+                            else if (type === 'inlineStr') val = Array.prototype.map.call(c.getElementsByTagNameNS('*', 't'), function(t) { return t.textContent; }).join('');
+                            else val = vEl ? vEl.textContent : '';
+                            if (idx >= 0 && idx < 50) ligne[idx] = val;
+                        });
+                        return ligne;
                     });
-                    return ligne;
                 });
             });
         });
@@ -507,8 +516,8 @@ function LIRE_XLSX(buf) {
 function LIRE_ODS(buf) {
     return ZIP_LIRE(buf).then(function(lire) { return lire('content.xml'); }).then(function(xml) {
         if (!xml) throw new Error('Fichier Calc illisible.');
-        var table = XML(xml).getElementsByTagNameNS('*', 'table')[0], lignes = [];
-        if (!table) return lignes;
+        return Array.prototype.filter.call(XML(xml).getElementsByTagNameNS('*', 'table'), function(t) { return t.localName === 'table'; }).map(function(table) {
+        var lignes = [];
         Array.prototype.forEach.call(table.getElementsByTagNameNS('*', 'table-row'), function(row) {
             var ligne = [];
             Array.prototype.filter.call(row.childNodes, function(c) { return c.nodeType === 1 && /table-cell$/.test(c.localName); }).forEach(function(c) {
@@ -520,7 +529,13 @@ function LIRE_ODS(buf) {
             if (ligne.some(function(x) { return String(x || '').trim(); })) for (var j = 0; j < repL; j++) lignes.push(ligne);
         });
         return lignes;
+        });
     });
+}
+// CSV : UTF-8, ou Windows-1252 (« Enregistrer sous… CSV » d'Excel sur un PC français) si le texte n'est pas de l'UTF-8.
+function DECODER_TEXTE(buf) {
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(buf); }
+    catch (e) { return new TextDecoder('windows-1252').decode(buf); }
 }
 function LIRE_CSV(texte) {
     texte = texte.replace(/^\uFEFF/, '');
@@ -546,16 +561,21 @@ function COLONNE_DEPUIS_ENTETE(t) {
     if (/^(cie|compagnie|cieappartenance)/.test(t)) return 'cie';
     if (/^grade/.test(t)) return 'grade';
     if (/^(prenom|prenoms)/.test(t)) return 'prenom';
-    if (/^(nom|nomdefamille|nomusage)$/.test(t)) return 'nom';
-    if (/^(nid|matricule|numeroid|numid|identifiant|nia)/.test(t)) return 'matricule';
+    if (/^(nom|noms|nomdefamille|nomusage|nomusuel|nomdenaissance)$/.test(t)) return 'nom';
+    if (/^(n|no|num|numero)?d?(nid|matricule|id$|identifiant|nia)/.test(t)) return 'matricule';   // « N° NID », « Numéro d'identifiant »…
     return null;
 }
 function PERSONNES_DEPUIS_LIGNES(lignes) {
     lignes = lignes.filter(function(l) { return l && l.some(function(x) { return String(x == null ? '' : x).trim(); }); });
     if (!lignes.length) return [];
-    var entete = lignes[0].map(COLONNE_DEPUIS_ENTETE), reconnues = entete.filter(Boolean).length;
-    var colonnes = reconnues >= 3 ? entete : MER_COLONNES_LISTE;
-    return (reconnues >= 3 ? lignes.slice(1) : lignes).map(function(l) {
+    // La ligne d'en-tête peut être précédée d'un titre (« LISTE DU PERSONNEL… ») : on la cherche dans les 15 premières lignes.
+    var iEntete = -1, entete = null;
+    for (var n = 0; n < Math.min(lignes.length, 15) && iEntete < 0; n++) {
+        var e = lignes[n].map(COLONNE_DEPUIS_ENTETE);
+        if (e.filter(Boolean).length >= 3) { iEntete = n; entete = e; }
+    }
+    var colonnes = entete || MER_COLONNES_LISTE;
+    return lignes.slice(iEntete + 1).map(function(l) {
         var p = VIDE_PERSONNE();
         colonnes.forEach(function(k, i) { if (k) p[k] = String(l[i] == null ? '' : l[i]).trim(); });
         var chiffres = p.matricule.replace(/\D/g, '');
@@ -571,9 +591,17 @@ function IMPORTER_LISTE_PERSONNES(input) {
     if (!f) return;
     var nom = f.name.toLowerCase();
     if (/\.xls$/.test(nom)) { MSG_ERREUR('Format non pris en charge', 'Ancien format Excel (.xls) : enregistrez le tableau en .xlsx (ou .csv) puis importez-le.'); return; }
-    var lecture = /\.csv$|\.txt$/.test(nom) ? f.text().then(LIRE_CSV)
+    var lecture = /\.csv$|\.txt$/.test(nom) ? f.arrayBuffer().then(function(b) { return [LIRE_CSV(DECODER_TEXTE(b))]; })
         : f.arrayBuffer().then(function(b) { return /\.ods$/.test(nom) ? LIRE_ODS(b) : LIRE_XLSX(b); });
-    lecture.then(PERSONNES_DEPUIS_LIGNES).then(function(liste) {
+    // Classeur à plusieurs feuilles : d'abord une feuille avec une ligne d'en-têtes, sinon la première qui donne des personnes.
+    lecture.then(function(feuilles) {
+        var avecEntete = feuilles.filter(function(f) {
+            return f.slice(0, 15).some(function(l) { return (l || []).map(COLONNE_DEPUIS_ENTETE).filter(Boolean).length >= 3; });
+        });
+        var ordre = avecEntete.concat(feuilles.filter(function(f) { return avecEntete.indexOf(f) < 0; }));
+        for (var i = 0; i < ordre.length; i++) { var l = PERSONNES_DEPUIS_LIGNES(ordre[i]); if (l.length) return l; }
+        return [];
+    }).then(function(liste) {
         if (!liste.length) { MSG_ERREUR('Aucune personne trouvée', 'Le tableau doit contenir les colonnes UNITÉ, CIE, GRADE, NOM, PRÉNOM, NID (une personne par ligne).'); return; }
         var cle = function(p) { var m = (p.matricule || '').replace(/\D/g, ''); return m.length === 10 ? m : (p.nom + '|' + p.prenom).toUpperCase(); };
         var actuelles = D.personnes.filter(function(p) { return p.nom || p.prenom || p.matricule; });
@@ -764,7 +792,7 @@ function TPL_ONGLET_IDENTITE() {
       D.personnes.map(function(_, i) { return TPL_PERSONNE(i); }).join('') +
       '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_PERSONNE()">+ Ajouter une personne (demande collective)</button>' +
       '<label class="BTN BTN-GHOST BTN-SMALL" style="margin-top:8px;">📥 Importer une liste (Excel, Calc ou CSV)' +
-        '<input type="file" accept=".xlsx,.ods,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,text/csv" style="display:none;" onchange="IMPORTER_LISTE_PERSONNES(this)"></label>' +
+        '<input type="file" accept=".xlsx,.ods,.csv,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel" style="display:none;" onchange="IMPORTER_LISTE_PERSONNES(this)"></label>' +
       '<p class="MER-HINT" style="text-align:center;">Colonnes : UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID. <a href="#" onclick="TELECHARGER_MODELE_LISTE(); return false;">Télécharger le modèle</a></p>';
 }
 
