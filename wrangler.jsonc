@@ -9,7 +9,7 @@
   "assets": { "directory": ".", "binding": "ASSETS" },
   "kv_namespaces": [{ "binding": "TRIGONE_KV" }],
   "vars": {
-    "DOMAINES_AUTORISES": "interieur.gouv.fr",
+    "DOMAINES_AUTORISES": "",
     "EXPEDITEUR_MAIL": "parisien2403@msn.com",
     "BREVO_SMTP_UTILISATEUR": "bb488f001@smtp-brevo.com"
   },

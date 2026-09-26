@@ -293,3 +293,5 @@ Version 43 : BOÎTE AUX LETTRES TRIGONE (envois directs d'appli à appli, chiffr
 
 Serveur : envoi des codes par Brevo (BREVO_CLE) ou, à défaut, par Mailjet (secrets MAILJET_CLE + MAILJET_SECRET), avec EXPEDITEUR_MAIL validé chez le fournisseur choisi.
 Serveur : envoi possible aussi par le SMTP Brevo (BREVO_SMTP_UTILISATEUR en texte, BREVO_SMTP_CLE en secret), port 465 chiffré.
+
+Version 44 : DOMAINES_AUTORISES vide (wrangler.jsonc) : toute adresse mail peut ouvrir un compte TRIGONE. Pour limiter de nouveau, y remettre par ex. « interieur.gouv.fr,msn.com ».
