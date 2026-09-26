@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=41"></script>
+<script src="../jumelage.js?v=42"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -11514,7 +11514,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 138;
+var APP_CODE_VERSION = 139;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -11871,6 +11871,8 @@ function TELECHARGER_FICHIER(nom, contenu, type) {
 }
 
 function SAUVEGARDER_TOUTES_DONNEES() {
+    // Sauvegarde commune de TRIGONE (jumelage.js) : Compte-rendu ET Mise en route, pièces jointes comprises.
+    if (window.JUMELAGE_SAUVEGARDER) { JUMELAGE_SAUVEGARDER(); return; }
     var sauvegarde = { app: 'TRIGONE', version: 1, date: new Date().toISOString(), donnees: {} };
     BACKUP_KEYS.forEach(function(k) {
         var v = null;
@@ -11887,6 +11889,7 @@ function SAUVEGARDER_TOUTES_DONNEES() {
 function RESTAURER_TOUTES_DONNEES(input) {
     var file = input.files && input.files[0];
     if (!file) return;
+    if (window.JUMELAGE_RESTAURER_FICHIER) { JUMELAGE_RESTAURER_FICHIER(file); input.value = ''; return; }
     var reader = new FileReader();
     reader.onload = function(e) {
         var sauvegarde;
@@ -11925,6 +11928,8 @@ function RESTAURER_TOUTES_DONNEES(input) {
     reader.readAsText(file);
 }
 
+// Restauration commune (jumelage.js) : l'enregistrement automatique ne doit pas réécrire l'ancienne mission.
+window.JUMELAGE_AVANT_RESTAURATION = function() { MISSION_FERMETURE_EN_COURS = true; };
 function VERIFIER_RAPPEL_SAUVEGARDE() {
     var crCount = 0;
     try { crCount = parseInt(localStorage.getItem(CR_COUNT_KEY) || '0', 10) || 0; } catch (e) {}

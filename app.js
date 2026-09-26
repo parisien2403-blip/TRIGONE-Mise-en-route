@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 88;
+var APP_CODE_VERSION = 89;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -103,7 +103,7 @@ function SAVE_PANIER(liste) { if (DEMO_ACTIF) return; try { localStorage.setItem
 // Le brouillon en cours est sauvegardé à chaque frappe, exactement comme TRIGONE compte-rendu : fermer
 // l'application en pleine saisie ne doit rien faire perdre.
 function SAVE_BROUILLON() {
-    if (DEMO_ACTIF) return;
+    if (DEMO_ACTIF || window.JUMELAGE_RESTAURATION_EN_COURS) return;
     try { localStorage.setItem(STORAGE_BROUILLON, JSON.stringify({ demande: D, onglet: MER_ACTIVE_TAB })); } catch (e) {}
 }
 function LOAD_BROUILLON() {
@@ -515,7 +515,25 @@ function TPL_MON_ESPACE() {
         '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_REGLAGES()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>' +
             '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Réglages TRIGONE</span><span class="NOTICE-CARD-SUB">Identité, mails (1er valideur, assistant Chorus DT) et code d\'accès — communs aux deux applis</span></span>' +
             '<span class="NOTICE-CARD-CHEV">›</span></button>' +
+        '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_SAUVEGARDER()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 1-2Z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg></span>' +
+            '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Sauvegarder mes données</span><span class="NOTICE-CARD-SUB">Un seul fichier pour tout TRIGONE (Mise en route et Compte-rendu, pièces jointes comprises)' + (MER_DATE_SAUVEGARDE() ? ' — dernière : ' + MER_DATE_SAUVEGARDE() : ' — jamais faite') + '</span></span>' +
+            '<span class="NOTICE-CARD-CHEV">›</span></button>' +
+        '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_RESTAURER()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"/></svg></span>' +
+            '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Restaurer une sauvegarde</span><span class="NOTICE-CARD-SUB">Remettre en place un fichier « TRIGONE - sauvegarde », sur cet appareil ou un nouveau</span></span>' +
+            '<span class="NOTICE-CARD-CHEV">›</span></button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+function MER_DATE_SAUVEGARDE() {
+    var t = 0; try { t = +localStorage.getItem('trigone_derniere_sauvegarde') || 0; } catch (e) {}
+    return t ? new Date(t).toLocaleDateString('fr-FR') : '';
+}
+// Rappel de sauvegarde (commun aux deux applis) : dès qu'il y a des demandes envoyées dans la Bibliothèque.
+function MER_RAPPEL_SAUVEGARDE() {
+    if (DEMO_ACTIF || PAGE_ACTUELLE !== 'ACCUEIL' || !ECRAN_LIBRE() || !GET_BIBLIOTHEQUE().length || !window.JUMELAGE_SAUVEGARDE_A_RAPPELER) return;
+    var texte = JUMELAGE_SAUVEGARDE_A_RAPPELER();
+    if (!texte) return;
+    AFFICHER_MSG_CENTRE({ titre: 'Pensez à sauvegarder', texte: texte, icone: '💾', mascotte: 'mascotte-maj.webp',
+        boutons: [{ label: 'Plus tard', style: 'BTN-MSG-ANNULER' }, { label: 'Sauvegarder maintenant', action: function() { JUMELAGE_SAUVEGARDER(); } }] });
 }
 
 // Une demande en cours n'est jamais effacée sans confirmation.
@@ -3086,6 +3104,7 @@ window.addEventListener('DOMContentLoaded', function() {
     else if (PIN_EST_DEFINI() && !window.JUMELAGE_DEVERROUILLE) OUVRIR_ECRAN_PIN('verif', suite);
     else suite();
     REGISTER_SERVICE_WORKER();
+    setTimeout(MER_RAPPEL_SAUVEGARDE, 6000);
     INIT_VERIF_MAJ_AUTO();
     MER_RECEPTION_INIT();
 });
