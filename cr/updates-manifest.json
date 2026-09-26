@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 120,
-  "appCodeMessage": "Version 22 : avec Outlook sur ordinateur, « Copier » sur la pièce jointe puis Ctrl+V dans TRIGONE (ou glisser la pièce jointe n'importe où dans TRIGONE) : la demande s'ouvre, prête à signer.",
+  "appCodeVersion": 121,
+  "appCodeMessage": "Version 23 : sur Android, TRIGONE apparaît dans « Partager » pour tous les types de pièces jointes (les messageries n'annoncent pas toujours un .json comme tel). Réinstallez TRIGONE depuis Chrome pour en profiter.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 70;
+var APP_CODE_VERSION = 71;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2002,7 +2002,7 @@ function ENVOYER_PANIER() {
     if (!MER_PANIER_ENREGISTRE) return;
     var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER();
     var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier « ' + NOM_FICHIER_BASE(panier, 'DEMANDE') + '.json » (pièces jointes NDS / DAF incluses).\n' +
-        'Ouvrez-le dans TRIGONE Mise en route (« Espace valideur & Chorus DT »). Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : touchez-la puis Ouvrir avec / Partager > TRIGONE.\n\nCordialement.';
+        'Ouvrez-le dans TRIGONE Mise en route (« Espace valideur & Chorus DT »). Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : ouvrez-la puis Partager > TRIGONE.\n\nCordialement.';
     ARCHIVER_ENVOI(panier, reg.mailSignataire);
     FERMER_MODALE();
     OUVRIR_MAIL(reg.mailSignataire, SUJET_MAIL('DEMANDE', panier), corps);
@@ -2710,10 +2710,10 @@ function CONTENU_ENVOI(env) {
     var n = env.demandes.length;
     if (env.type === 'CHORUS') return { etape: 'VALIDATION_2', sujet: SUJET_MAIL('CHORUS', env.demandes),
         corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez-le dans TRIGONE Mise en route : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré. Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : touchez-la puis Ouvrir avec / Partager > TRIGONE.\n\nCordialement.' };
+            'Ouvrez-le dans TRIGONE Mise en route : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré. Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : ouvrez-la puis Partager > TRIGONE.\n\nCordialement.' };
     if (env.type === 'VALIDATION_1') return { etape: 'VALIDATION_1', sujet: SUJET_MAIL('VALIDATION_1', env.demandes),
         corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez-le dans TRIGONE Mise en route (« Espace valideur & Chorus DT »). Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : touchez-la puis Ouvrir avec / Partager > TRIGONE.\n\nCordialement.' };
+            'Ouvrez-le dans TRIGONE Mise en route (« Espace valideur & Chorus DT »). Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : ouvrez-la puis Partager > TRIGONE.\n\nCordialement.' };
     return { etape: 'REFUS', sujet: SUJET_MAIL('REFUS', env.demandes),
         corps: 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
@@ -3128,7 +3128,7 @@ function TPL_AIDE_RECEPTION() {
         : EST_PC()
         ? '<li>Dans Outlook, sur la pièce jointe <b>.json</b> : <b>Copier</b>, puis ici <b>Ctrl + V</b>. La demande s\'ouvre, prête à signer.</li>' +
           '<li>Ou faites glisser la pièce jointe dans TRIGONE, ou clic droit sur le fichier › <b>Ouvrir avec › TRIGONE</b>.</li>'
-        : '<li>Dans votre messagerie, touchez la pièce jointe <b>.json</b>, puis <b>Ouvrir avec</b> (ou <b>Partager</b>) › <b>TRIGONE</b>.</li>' +
+        : '<li>Dans votre messagerie, ouvrez la pièce jointe <b>.json</b>, puis <b>Partager</b> › <b>TRIGONE</b>.</li>' +
           '<li>La demande s\'ouvre directement ici, prête à signer. Sinon, touchez <b>« Importer la demande reçue »</b>.</li>';
     return '<div class="MER-AIDE-RECEPTION"><div class="MER-AIDE-RECEPTION-TETE"><span>📥</span><div><b>Une demande à signer ?</b><small>Elle arrive par mail, en pièce jointe .json</small></div></div>' +
         '<ol>' + etapes + '</ol>' +
