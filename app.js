@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 87;
+var APP_CODE_VERSION = 88;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -863,12 +863,37 @@ function TPL_TRAJET(titre, path, optionnel) {
 // Communes françaises : même service que TRIGONE compte-rendu (Base adresse nationale, api-adresse.data.gouv.fr).
 var MER_API_COMMUNES = 'https://api-adresse.data.gouv.fr/search/?type=municipality&autocomplete=1&limit=6&q=';
 var MER_MINUTEUR_VILLES = null;
+// Hors ligne : les villes déjà trouvées sur cet appareil restent proposées, avec leur code postal.
+var STORAGE_VILLES_CONNUES = 'mer_villes_connues';
+function VILLES_CONNUES() { try { return JSON.parse(localStorage.getItem(STORAGE_VILLES_CONNUES) || '{}'); } catch (e) { return {}; } }
+function RETENIR_VILLES(communes) {
+    var v = VILLES_CONNUES();
+    communes.forEach(function(c) { v[c.ville] = c.cp; });
+    var cles = Object.keys(v);
+    if (cles.length > 400) cles.slice(0, cles.length - 400).forEach(function(k) { delete v[k]; });
+    try { localStorage.setItem(STORAGE_VILLES_CONNUES, JSON.stringify(v)); } catch (e) {}
+}
 function CHERCHER_COMMUNES(q) {
     return fetch(MER_API_COMMUNES + encodeURIComponent(q)).then(function(r) { return r.json(); }).then(function(d) {
-        return (d.features || []).map(function(f) {
+        var communes = (d.features || []).map(function(f) {
             return { ville: (f.properties.city || f.properties.name || '').toUpperCase(), cp: f.properties.postcode || '' };
         }).filter(function(c) { return c.ville && c.cp; });
+        RETENIR_VILLES(communes);
+        return communes;
+    }).catch(function() {
+        var v = VILLES_CONNUES(), debut = q.toUpperCase();
+        return Object.keys(v).filter(function(k) { return k.indexOf(debut) === 0; }).slice(0, 6).map(function(k) { return { ville: k, cp: v[k] }; });
     });
+}
+// Code postal introuvable (hors ligne, ville jamais saisie sur cet appareil) : on invite à le taper, une fois par session.
+var MER_AVIS_CP_HORS_LIGNE = false;
+function SIGNALER_CP_A_SAISIR(path, cote) {
+    var cp = document.querySelector('[data-path="' + path + '.cp' + cote + '"]');
+    if (!cp || cp.value) return;
+    cp.classList.add('MER-ERREUR');
+    if (navigator.onLine || MER_AVIS_CP_HORS_LIGNE) return;
+    MER_AVIS_CP_HORS_LIGNE = true;
+    MSG_INFO('Hors connexion', 'Sans réseau, TRIGONE ne peut pas trouver le code postal tout seul (sauf pour les villes déjà saisies sur cet appareil). Tapez-le dans la case « CP » à droite de la ville : la demande se remplit normalement hors ligne.', '📴');
 }
 function SUGGERER_VILLES(input, listeId) {
     clearTimeout(MER_MINUTEUR_VILLES);
@@ -893,7 +918,8 @@ function CHOISIR_VILLE(path, cote, input) {
     CHERCHER_COMMUNES(brut).then(function(c) {
         if (c[0] && c[0].ville.toUpperCase() === brut.toUpperCase()) poser(c[0].ville, c[0].cp);
         else if (c[0] && !GET_CHAMP(path + '.cp' + cote)) poser(c[0].ville, c[0].cp);
-    }).catch(function() {});
+        else SIGNALER_CP_A_SAISIR(path, cote);
+    }).catch(function() { SIGNALER_CP_A_SAISIR(path, cote); });
 }
 
 // ===================== ONGLETS DU FORMULAIRE =====================
@@ -2276,10 +2302,16 @@ function CHARGER_LISTE_VALIDEURS() {
         try { localStorage.setItem(STORAGE_LISTE_VALIDEURS, JSON.stringify(liste)); } catch (e) {}
         return liste;
     }).catch(function() {
-        // Hors ligne : dernière liste connue.
+        // Hors ligne : dernière liste connue, sinon celle rangée par l'appli à son installation (service worker) :
+        // un valideur ou l'assistant Chorus DT qui ne s'est encore jamais connecté peut ainsi travailler sans réseau.
         try { MER_LISTE_VALIDEURS = JSON.parse(localStorage.getItem(STORAGE_LISTE_VALIDEURS) || 'null'); } catch (e) {}
-        MER_LISTE_VALIDEURS = MER_LISTE_VALIDEURS || { valideurs: [] };
-        return MER_LISTE_VALIDEURS;
+        if (MER_LISTE_VALIDEURS) return MER_LISTE_VALIDEURS;
+        return (window.caches ? caches.match('valideurs.json', { ignoreSearch: true }) : Promise.resolve(null)).then(function(r) {
+            return r ? r.json() : null;
+        }).catch(function() { return null; }).then(function(liste) {
+            MER_LISTE_VALIDEURS = liste || { valideurs: [] };
+            return MER_LISTE_VALIDEURS;
+        });
     });
 }
 function HABILITATION(cle) {
