@@ -178,6 +178,7 @@
         '.JUM-R-AIDE { font-size: 0.76rem; color: #64748b; margin: 0 0 10px; line-height: 1.45; }' +
         '.JUM-R-ERREUR { color: #b91c1c; font-size: 0.8rem; font-weight: 700; margin: 12px 0 0; min-height: 1em; }' +
         '.JUM-R-PIED { display: flex; align-items: center; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid #eef2f6; }' +
+        '.JUM-R-PIED > .JUM-R-PRINCIPAL:only-child { flex: 1; padding: 15px 22px; }' +
         '.JUM-R-PRINCIPAL { margin-left: auto; border: 0; border-radius: 12px; padding: 13px 22px; background: #1a1a1a; color: #fff; font: 800 0.78rem Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-R-SECOND { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 18px; background: #fff; color: #1a1a1a; font: 800 0.74rem Montserrat, system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-R-LIEN { border: 0; background: none; padding: 8px 0; color: #5a7a94; font: 700 0.74rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; text-align: left; }' +
@@ -215,7 +216,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 15, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 16, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -380,8 +381,8 @@
                 '<p class="JUM-R-ERREUR" id="JUM-R-ERREUR"></p>' +
             '</div>' +
             '<div class="JUM-R-PIED">' +
-                (premiere ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_PASSER_REGLAGES()">Je suis valideur ou assistant Chorus DT : passer</button>'
-                          : '<button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_REGLAGES()">Annuler</button>') +
+                // Inscription obligatoire pour tous à la première ouverture (valideurs et assistant Chorus DT compris).
+                (premiere ? '' : '<button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_REGLAGES()">Annuler</button>') +
                 '<button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_ENREGISTRER_REGLAGES(' + (premiere ? 'true' : 'false') + ')">' + (premiere ? 'Continuer →' : 'Enregistrer') + '</button>' +
             '</div></div>';
         document.body.appendChild(reglages);
