@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 59;
+var APP_CODE_VERSION = 60;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1490,6 +1490,8 @@ function PIN_CODE_OUBLIE() {
 var STORAGE_POURQUOI = 'trigone_presentation_jumelage_vue';   // présentation commune Mise en route + Compte-rendu
 var POURQUOI_APRES = null;
 function AFFICHER_POURQUOI(apres) {
+    // Présentation unique de TRIGONE (jumelage.js), commune aux deux applis.
+    if (window.JUMELAGE_PRESENTATION) { window.JUMELAGE_PRESENTATION({ premiere: true, apres: apres }); return; }
     POURQUOI_APRES = apres || null;
     var o = document.getElementById('POURQUOI-OVERLAY'), mot = document.getElementById('POURQUOI-WORDMARK');
     mot.innerHTML = '';
@@ -1654,7 +1656,7 @@ function TPL_NOTICE() {
                 '<span class="NOTICE-CARD-CHEV">›</span></button>';
         }).join('') +
         '<details class="notice-fold"><summary>🔒 Code d\'accès de l\'appli (4 chiffres)</summary><ul>' +
-            '<li>Dans <b>Mon espace</b>, activez un code à 4 chiffres demandé à <b>chaque ouverture</b> de TRIGONE Mise en route.</li>' +
+            '<li>Avec la <b>roue crantée</b> de l\'écran de choix (Réglages TRIGONE), activez un code à 4 chiffres demandé à <b>chaque ouverture</b> de TRIGONE, pour les deux applis.</li>' +
             '<li>Le code ne quitte jamais votre appareil.</li>' +
             '<li><b>Code oublié</b> : le lien « Code oublié ? » efface toutes les données de l\'appli sur cet appareil. Il n\'existe aucun autre moyen.</li></ul></details>' +
         '<details class="notice-fold"><summary>🔁 Mise en route &amp; Compte-rendu</summary><ul>' +
@@ -1668,7 +1670,7 @@ function TPL_NOTICE() {
             '<li>L\'appli se met à jour toute seule dès qu\'il y a du réseau ; un message « Mise à jour » s\'affiche quand une nouvelle version est prête.</li>' +
             '<li>Votre saisie en cours, votre panier et votre bibliothèque sont conservés.</li></ul></details>' +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
-        '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="AFFICHER_POURQUOI()">Revoir la présentation</button>' +
+        '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="JUMELAGE_PRESENTATION()">Découvrir TRIGONE (présentation)</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 
