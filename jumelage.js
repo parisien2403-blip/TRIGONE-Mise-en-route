@@ -129,6 +129,10 @@
         '.JUM-QR-CHOIX button.actif { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }' +
         '.JUM-QR-CADRE { margin: 16px auto 12px; width: min(300px, 100%); aspect-ratio: 1; padding: 14px; border-radius: 16px; border: 1px solid #e8e8e8; background: #fff; }' +
         '.JUM-QR-CODE, .JUM-QR-CODE canvas, .JUM-QR-CODE img { width: 100% !important; height: 100% !important; display: block; image-rendering: pixelated; }' +
+        '.JUM-QR-ACTIONS { display: flex; gap: 8px; justify-content: center; margin: 0 0 14px; flex-wrap: wrap; }' +
+        '.JUM-QR-ACTIONS button { border: 1px solid #e2e8f0; background: #fff; border-radius: 12px; padding: 10px 14px; font: 700 0.76rem Montserrat, system-ui, sans-serif; color: #1a1a1a; cursor: pointer; }' +
+        '.JUM-QR-ACTIONS button:hover { background: #f1f5f9; } .JUM-QR-ACTIONS .HIDDEN-JUM { display: none; }' +
+        '.JUM-SCAN-PHOTO { position: absolute; left: 50%; bottom: calc(max(30px, env(safe-area-inset-bottom, 0px)) + 62px); transform: translateX(-50%); border: 1.5px solid rgba(255,255,255,0.7); border-radius: 14px; padding: 12px 22px; background: rgba(0,0,0,0.35); color: #fff; font: 700 0.8rem Montserrat, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }' +
         '.JUM-QR-ETAPES { margin: 0; padding: 0 0 0 20px; font-size: 0.8rem; line-height: 1.5; color: #404040; } .JUM-QR-ETAPES li { margin: 3px 0; }' +
         '.JUM-QR-NOTE { display: flex; gap: 8px; align-items: center; margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: #F8FBFD; font-size: 0.72rem; color: #525252; }' +
         '.JUM-QR-NOTE svg { width: 18px; height: 18px; flex-shrink: 0; }' +
@@ -240,7 +244,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 17, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 18, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -555,10 +559,17 @@
         return new Response(flux).arrayBuffer().then(function(b) { return new Uint8Array(b); });
     }
     // Demande de Mise en route → adresse du QR code (promesse).
+    // Toutes les personnes de la demande (le téléphone retrouve la sienne par son nom) ; pour une grande
+    // collective, seulement la personne des réglages, afin que le QR code reste facile à lire.
     window.JUMELAGE_MER_VERS_QR = function(d) {
-        var t = d.trajets || {}, nom = (lireReglages().nom || '').trim().toUpperCase();
-        var pers = (d.personnes || []).filter(function(p) { return nom && (p.nom || '').trim().toUpperCase() === nom; });
-        if (!pers.length) pers = d.personnes || [];
+        var nom = (lireReglages().nom || '').trim().toUpperCase();
+        var moi = (d.personnes || []).filter(function(p) { return nom && (p.nom || '').trim().toUpperCase() === nom; });
+        return construireQr(d, d.personnes || []).then(function(url) {
+            return url.length > 1400 && moi.length && moi.length < (d.personnes || []).length ? construireQr(d, moi) : url;
+        });
+    };
+    function construireQr(d, pers) {
+        var t = d.trajets || {};
         var c = { v: 1, id: d.id || '', o: d.objet || '', p: pers.map(function(p) { return versTableau(p, CHAMPS_PERSONNE); }),
             a: versTableau(t.aller, CHAMPS_TRAJET), r: versTableau(t.retour, CHAMPS_TRAJET) };
         if (d.reservationABT) c.b = 1;
@@ -570,7 +581,7 @@
         if (typeof CompressionStream === 'undefined') return Promise.resolve(adresse('j', octets));
         return fluxVersOctets(octets, new CompressionStream('deflate-raw'))
             .then(function(z) { return adresse('z', z); }, function() { return adresse('j', octets); });
-    };
+    }
     // Texte scanné (adresse « …?mer=… » ou contenu seul) → demande au format Mise en route (promesse).
     window.JUMELAGE_QR_VERS_MER = function(texte) {
         return new Promise(function(ok, ko) {
@@ -601,25 +612,60 @@
         fenetreQr.className = 'JUM-QR';
         fenetreQr.setAttribute('role', 'dialog');
         fenetreQr.innerHTML = '<div class="JUM-QR-CARTE"><button type="button" class="JUM-R-X" aria-label="Fermer">✕</button>' +
-            '<div class="JUM-QR-TETE"><span class="JUM-QR-TEL">' + TEL_SVG + '</span><div><h2>Sur mon téléphone</h2><p>Pour faire le compte-rendu de cette mission sur votre téléphone.</p></div></div>' +
+            '<div class="JUM-QR-TETE"><span class="JUM-QR-TEL">' + TEL_SVG + '</span><div><h2>Sur un téléphone</h2><p>Pour faire le compte-rendu sur votre téléphone, ou l\'envoyer en image au missionnaire concerné.</p></div></div>' +
             (demandes.length > 1 ? '<div class="JUM-QR-CHOIX">' + demandes.map(function(d, i) {
                 return '<button type="button" data-i="' + i + '"' + (i ? '' : ' class="actif"') + '>' + esc(d.objet || ('Demande ' + (i + 1))) + '</button>'; }).join('') + '</div>' : '') +
             '<div class="JUM-QR-CADRE"><div class="JUM-QR-CODE"></div></div>' +
-            '<ol class="JUM-QR-ETAPES"><li>Sur votre téléphone, ouvrez <b>TRIGONE Compte-rendu de mission</b>.</li>' +
-                '<li>Touchez <b>« À partir d\'une mise en route »</b>, puis <b>« Scanner le QR code »</b>.</li>' +
-                '<li>Visez ce QR code : la mission est pré-remplie.</li></ol>' +
-            '<p class="JUM-QR-NOTE">' + ICONES_PRES.cadenas + '<span>Rien ne passe par internet : le QR code va directement de l\'écran au téléphone.</span></p></div>';
+            '<div class="JUM-QR-ACTIONS"><button type="button" data-action="partager" class="JUM-QR-PARTAGER HIDDEN-JUM">📤 Envoyer l\'image</button>' +
+                '<button type="button" data-action="enregistrer">💾 Enregistrer l\'image</button></div>' +
+            '<ol class="JUM-QR-ETAPES"><li>Sur le téléphone, ouvrez <b>TRIGONE Compte-rendu de mission</b>.</li>' +
+                '<li>Touchez <b>« À partir d\'une mise en route »</b>, puis <b>« Scanner le QR code »</b> pour viser cet écran, ou <b>« Depuis une photo »</b> pour l\'image reçue.</li>' +
+                '<li>La mission est pré-remplie.</li></ol>' +
+            '<p class="JUM-QR-NOTE">' + ICONES_PRES.cadenas + '<span>Aucun serveur TRIGONE : les informations sont dans le QR code lui-même.</span></p></div>';
         document.body.appendChild(fenetreQr);
-        var f = fenetreQr, zone = f.querySelector('.JUM-QR-CODE');
+        var f = fenetreQr, zone = f.querySelector('.JUM-QR-CODE'), courante = 0;
         function dessiner(i) {
-            zone.innerHTML = '';
+            zone.innerHTML = ''; courante = i;
             window.JUMELAGE_MER_VERS_QR(demandes[i]).then(function(url) {
                 if (typeof QRCode === 'undefined') { zone.textContent = 'QR code indisponible : rechargez la page.'; return; }
-                new QRCode(zone, { text: url, width: 720, height: 720, colorDark: '#1a1a1a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.L });
+                new QRCode(zone, { text: url, width: 720, height: 720, colorDark: '#1a1a1a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
                 zone.setAttribute('data-url', url);
             });
         }
+        // L'image envoyée : QR code net + de quoi reconnaître la mission, prête pour un SMS, WhatsApp ou un mail.
+        function fichierImage() {
+            var qr = zone.querySelector('canvas'), d = demandes[courante] || {}, a = (d.trajets && d.trajets.aller) || {}, r = (d.trajets && d.trajets.retour) || {};
+            if (!qr) return Promise.reject(new Error('qr'));
+            var W = 1080, H = 1400, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+            var x = cv.getContext('2d');
+            x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
+            x.fillStyle = '#E8F0F6'; x.fillRect(0, 0, W, 190);
+            x.textAlign = 'center'; x.fillStyle = '#1a1a1a';
+            x.font = '800 64px Montserrat, system-ui, sans-serif'; x.fillText('T R I G O N E', W / 2, 96);
+            x.fillStyle = '#5a7a94'; x.font = '800 26px Montserrat, system-ui, sans-serif'; x.fillText('MISE EN ROUTE  →  COMPTE-RENDU DE MISSION', W / 2, 150);
+            function ligne(t, y, police, couleur) { x.font = police; x.fillStyle = couleur; var s = String(t || ''); while (s.length > 4 && x.measureText(s).width > W - 120) s = s.slice(0, -2); if (s !== String(t || '')) s += '…'; x.fillText(s, W / 2, y); }
+            var jour = function(v) { try { return v ? new Date(v).toLocaleDateString('fr-FR') : ''; } catch (e) { return ''; } };
+            ligne(d.objet || 'Mise en route', 262, '800 40px Montserrat, system-ui, sans-serif', '#1a1a1a');
+            ligne((d.personnes || []).map(function(p) { return [p.grade, p.nom, p.prenom].filter(Boolean).join(' '); }).join(', '), 314, '600 30px Montserrat, system-ui, sans-serif', '#404040');
+            ligne([[a.lieuDep, a.paysArr || a.lieuArr].filter(Boolean).join(' → '), [jour(a.dateDep), jour(r.dateArr)].filter(Boolean).join(' – ')].filter(Boolean).join('  ·  '), 360, '500 28px Montserrat, system-ui, sans-serif', '#525252');
+            x.imageSmoothingEnabled = false; x.drawImage(qr, 170, 410, 740, 740);
+            ligne('Dans TRIGONE Compte-rendu de mission :', 1232, '700 30px Montserrat, system-ui, sans-serif', '#1a1a1a');
+            ligne('« À partir d\'une mise en route » › « Depuis une photo »', 1280, '600 28px Montserrat, system-ui, sans-serif', '#5a7a94');
+            return new Promise(function(ok, ko) { cv.toBlob(function(b) { b ? ok(new File([b], 'TRIGONE - ' + String(d.objet || 'mise en route').replace(/[\\/:*?"<>|]/g, '').slice(0, 60) + '.png', { type: 'image/png' })) : ko(new Error('image')); }, 'image/png'); });
+        }
+        var boutonPartager = f.querySelector('.JUM-QR-PARTAGER');
+        try { if (navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.png', { type: 'image/png' })] })) boutonPartager.classList.remove('HIDDEN-JUM'); } catch (e) {}
         f.addEventListener('click', function(ev) {
+            var act = ev.target.closest('.JUM-QR-ACTIONS button');
+            if (act) {
+                fichierImage().then(function(fichier) {
+                    if (act.getAttribute('data-action') === 'partager') return navigator.share({ files: [fichier], title: 'TRIGONE — mise en route' }).catch(function() {});
+                    var lien = document.createElement('a'); lien.href = URL.createObjectURL(fichier); lien.download = fichier.name;
+                    document.body.appendChild(lien); lien.click(); setTimeout(function() { URL.revokeObjectURL(lien.href); lien.remove(); }, 1500);
+                    bandeau('Image enregistrée : envoyez-la au missionnaire (SMS, WhatsApp, mail…).');
+                });
+                return;
+            }
             var b = ev.target.closest('.JUM-QR-CHOIX button');
             if (b) { Array.prototype.forEach.call(f.querySelectorAll('.JUM-QR-CHOIX button'), function(x) { x.classList.toggle('actif', x === b); }); dessiner(+b.getAttribute('data-i')); return; }
             if (ev.target === f || ev.target.closest('.JUM-R-X')) { f.remove(); fenetreQr = null; }
@@ -644,6 +690,54 @@
         if (scanner.flux) scanner.flux.getTracks().forEach(function(t) { t.stop(); });
         scanner.el.remove(); scanner = null;
     };
+    // QR code sur une photo (image reçue par message, capture d'écran…) : choisie dans la galerie du téléphone.
+    function lireImage(fichier) {
+        var bitmap = window.createImageBitmap ? createImageBitmap(fichier) : new Promise(function(ok, ko) {
+            var img = new Image(); img.onload = function() { ok(img); }; img.onerror = ko; img.src = URL.createObjectURL(fichier);
+        });
+        return bitmap.then(function(img) {
+            var avecDetecteur = window.BarcodeDetector && BarcodeDetector.getSupportedFormats
+                ? BarcodeDetector.getSupportedFormats().then(function(f) {
+                    return f.indexOf('qr_code') < 0 ? null : new BarcodeDetector({ formats: ['qr_code'] }).detect(img).then(function(r) { return r && r[0] ? r[0].rawValue : null; }, function() { return null; });
+                }, function() { return null; })
+                : Promise.resolve(null);
+            return avecDetecteur.then(function(texte) {
+                if (texte) return texte;
+                return chargerJsQR().then(function() {
+                    var w = img.width || img.naturalWidth, h = img.height || img.naturalHeight;
+                    var tailles = [1400, 2000, 900, 600], cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
+                    for (var i = 0; i < tailles.length; i++) {
+                        var k = Math.min(1, tailles[i] / Math.max(w, h));
+                        cv.width = Math.round(w * k); cv.height = Math.round(h * k);
+                        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
+                        ctx.drawImage(img, 0, 0, cv.width, cv.height);
+                        var px = ctx.getImageData(0, 0, cv.width, cv.height);
+                        var r = window.jsQR(px.data, px.width, px.height, { inversionAttempts: 'attemptBoth' });
+                        if (r && r.data) return r.data;
+                        if (k === 1) break;
+                    }
+                    return null;
+                });
+            });
+        });
+    }
+    window.JUMELAGE_LIRE_QR_PHOTO = function(surTexte, surErreur) {
+        var entree = document.createElement('input');
+        entree.type = 'file'; entree.accept = 'image/*'; entree.style.display = 'none';
+        entree.addEventListener('change', function() {
+            var f = entree.files && entree.files[0];
+            entree.remove();
+            if (!f) return;
+            lireImage(f).then(function(texte) {
+                if (texte) surTexte(texte);
+                else surErreur('Aucun QR code lisible sur cette image. Choisissez l\'image reçue telle quelle (sans la recadrer), ou une photo nette et bien droite de l\'écran.');
+            }, function() { surErreur('Cette image n\'a pas pu être ouverte. Essayez avec une autre image.'); });
+        });
+        document.body.appendChild(entree);
+        entree.click();
+    };
+    window.JUMELAGE_LIRE_QR_IMAGE = lireImage;   // pour les tests
+
     // surTexte(texte) reçoit le contenu du QR code ; surErreur(message) si la caméra est inaccessible.
     window.JUMELAGE_SCANNER_QR = function(surTexte, surErreur) {
         if (scanner || !document.body) return;
@@ -652,11 +746,13 @@
         el.className = 'JUM-SCAN';
         el.innerHTML = '<video playsinline muted></video><div class="JUM-SCAN-VISEUR"><span></span></div>' +
             '<div class="JUM-SCAN-TEXTE">Visez le QR code affiché par<br><b>TRIGONE Mise en route</b> sur l\'ordinateur</div>' +
+            '<button type="button" class="JUM-SCAN-PHOTO">🖼️ Depuis une photo</button>' +
             '<button type="button" class="JUM-SCAN-ANNULER">Annuler</button>';
         document.body.appendChild(el);
         scanner = { el: el, fini: false, flux: null };
         var s = scanner, video = el.querySelector('video');
         el.querySelector('.JUM-SCAN-ANNULER').addEventListener('click', window.JUMELAGE_FERMER_SCANNER);
+        el.querySelector('.JUM-SCAN-PHOTO').addEventListener('click', function() { window.JUMELAGE_FERMER_SCANNER(); window.JUMELAGE_LIRE_QR_PHOTO(surTexte, surErreur); });
         var detecteur = null;
         var pret = (window.BarcodeDetector && BarcodeDetector.getSupportedFormats
             ? BarcodeDetector.getSupportedFormats().then(function(f) { if (f.indexOf('qr_code') >= 0) detecteur = new BarcodeDetector({ formats: ['qr_code'] }); }, function() {})
