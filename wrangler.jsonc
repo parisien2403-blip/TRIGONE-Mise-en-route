@@ -1,14 +1,18 @@
 // Déploiement Cloudflare (Workers) : l'appli (fichiers statiques) + la boîte aux lettres TRIGONE (worker.js, /api/…).
 // Cloudflare le déploie tout seul depuis GitHub à chaque publication. Le stockage TRIGONE_KV est créé
 // automatiquement au premier déploiement. Réglages à faire une fois dans Cloudflare : voir LISEZ-MOI.txt
-// (BREVO_CLE en secret, EXPEDITEUR_MAIL en variable).
+// (secret BREVO_SMTP_CLE — ou BREVO_CLE / MAILJET_CLE + MAILJET_SECRET — à ajouter dans Cloudflare, jamais ici).
 {
   "name": "trigone-mise-en-route",
   "main": "worker.js",
   "compatibility_date": "2025-09-01",
   "assets": { "directory": ".", "binding": "ASSETS" },
   "kv_namespaces": [{ "binding": "TRIGONE_KV" }],
-  "vars": { "DOMAINES_AUTORISES": "interieur.gouv.fr" },
+  "vars": {
+    "DOMAINES_AUTORISES": "interieur.gouv.fr",
+    "EXPEDITEUR_MAIL": "parisien2403@msn.com",
+    "BREVO_SMTP_UTILISATEUR": "bb488f001@smtp-brevo.com"
+  },
   "keep_vars": true,
   "observability": { "enabled": true }
 }
