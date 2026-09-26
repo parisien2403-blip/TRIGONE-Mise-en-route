@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=10"></script>
+<script src="../jumelage.js?v=11"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -6175,6 +6175,9 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <div id="PARAMS-MODAL" class="NOTICE-MODAL HIDDEN" onclick="if(event.target===this)FERMER_PARAMETRES()">
 <div class="ADMIN-BOX">
 <h3>Mon espace</h3>
+<button type="button" class="NOTICE-CARD" style="margin:10px 0 12px;" onclick="FERMER_PARAMETRES(); JUMELAGE_REGLAGES();"><span class="NOTICE-CARD-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>
+<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Réglages TRIGONE</span><span class="NOTICE-CARD-SUB">Identité, unité, mail de l'assistant Chorus DT et code d'accès — communs aux deux applis</span></span>
+<span class="NOTICE-CARD-CHEV" aria-hidden="true">›</span></button>
 <p id="PARAMS-INTRO-TXT">Votre espace personnel — dépliez une section pour la régler. Rien à toucher si les valeurs par défaut vous conviennent.</p>
 <button type="button" class="NOTICE-PAGE-REPORT-BTN" style="margin-bottom:14px;" onclick="SIGNALER_PROBLEME()">🛟 Signaler un problème</button>
 
@@ -6215,7 +6218,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 </details>
 
-<details class="notice-fold">
+<details class="notice-fold HIDDEN" id="PARAM-FOLD-CODE">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Protection par code</summary>
 <div class="ADMIN-SECTION">
 <p style="font-size:0.78em; color:#64748b; margin:0 0 10px;">Demande un code à 4 chiffres à chaque ouverture de TRIGONE — utile si votre téléphone n'est pas verrouillé ou est partagé.</p>
@@ -6225,7 +6228,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 </details>
 
-<details class="notice-fold" id="PARAM-FOLD-UNITE">
+<details class="notice-fold HIDDEN" id="PARAM-FOLD-UNITE">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M8.5 12.5 7 22l5-3 5 3-1.5-9.5"/></svg></span>Identité de l'unité</summary>
 <div class="ADMIN-SECTION">
 <label for="PARAM-UNIT-NAME" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Nom de l'unité (affiché sur l'écran, le PDF, les invitations)</label>
@@ -6237,8 +6240,8 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <details class="notice-fold" id="PARAM-FOLD-ENVOI">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z"/></svg></span>Envoi du compte-rendu</summary>
 <div class="ADMIN-SECTION">
-<label for="PARAM-MAIL-ASSIST" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Adresse mail du destinataire (assistant Chorus DT / gestionnaire)</label>
-<input type="email" id="PARAM-MAIL-ASSIST" placeholder="EX : prenom.nom@interieur.gouv.fr" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em; margin-bottom:14px;">
+<label for="PARAM-MAIL-ASSIST" class="HIDDEN" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Adresse mail du destinataire (assistant Chorus DT / gestionnaire)</label>
+<input type="email" id="PARAM-MAIL-ASSIST" class="HIDDEN" placeholder="EX : prenom.nom@interieur.gouv.fr" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em; margin-bottom:14px;">
 <label for="PARAM-MAIL-BODY" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Texte du corps du mail</label>
 <textarea id="PARAM-MAIL-BODY" data-no-uppercase="1" rows="5" placeholder="EX : Bonjour,&#10;&#10;Veuillez trouver ci-joint le compte-rendu de ma mission.&#10;&#10;Cordialement,&#10;Prénom NOM" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em; font-family:inherit; resize:vertical;"></textarea>
 <p class="CIE-HINT" style="margin:6px 0 0;">Le PDF et les pièces jointes restent à ajouter manuellement dans le mail — ce texte est juste le message qui s'affiche déjà écrit.</p>
@@ -6364,6 +6367,8 @@ var TRANSPORT_SUFFIXES = ['A', 'A-ANX', 'R', 'R-ANX'];
 function SHOULD_AUTO_UPPERCASE(el) {
     if (!el || !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return false;
     if (el.dataset && el.dataset.noUppercase) return false;
+    // Tout en majuscules, sauf le prénom.
+    if (/PRENOM/i.test(el.id || '')) return false;
     var type = (el.type || 'text').toLowerCase();
     if (type === 'email' || type === 'password' || type === 'number' || type === 'date' || type === 'time' || type === 'datetime-local' || type === 'month' || type === 'week' || type === 'file' || type === 'checkbox' || type === 'radio' || type === 'hidden' || type === 'range' || type === 'color') return false;
     var im = (el.getAttribute('inputmode') || '').toLowerCase();
@@ -11509,7 +11514,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 107;
+var APP_CODE_VERSION = 108;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13129,6 +13134,8 @@ function PIN_VALIDER() {
 var POURQUOI_VU_KEY = 'trigone_pourquoi_vu';
 
 function AFFICHER_CONFIG_INITIALE() {
+    // Réglages communs à Mise en route et Compte-rendu (écran de choix, roue crantée).
+    if (window.JUMELAGE_REGLAGES) { if (!(window.JUMELAGE_REGLAGES_FAITS && JUMELAGE_REGLAGES_FAITS())) window.JUMELAGE_REGLAGES({ premiere: true }); else MARQUER_PREMIER_LANCEMENT_FAIT(); return; }
     if (DEMO_MODE_ACTIF) return;
     var mailBodyEl = document.getElementById('CONFIG-MAIL-BODY');
     if (mailBodyEl && !mailBodyEl.value) {
@@ -13646,6 +13653,8 @@ function DEMO_QUITTER() {
 // ===================== FORMAT PC (écran large, ≥ 1100 px) =====================
 // Menu à gauche à la place de la barre du bas (même menu que TRIGONE Mise en route) ; page « Départ mission »
 // sur deux colonnes. En dessous de 1100 px, rien ne change.
+// Après les réglages communs : l'accueil suit (nom du tableau de bord PC).
+window.JUMELAGE_APRES_REGLAGES = function() { if (M.PAGE === 'P0') RENDRE_P0_PC(); };
 var CR_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
 var CR_ICONES_PC = {
     ACCUEIL: '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',

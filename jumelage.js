@@ -100,6 +100,57 @@
         '.JUM-SOUS { font: 800 0.62rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }' +
         '.JUM-PAN-MER .JUM-SOUS { color: #5a7a94; }' +
         '.JUM-PAN-CR .JUM-SOUS { color: #d6a756; }' +
+        /* Roue crantée (réglages) sur l'écran de choix, en bas à droite */
+        '.JUM-ROUE { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: max(18px, env(safe-area-inset-bottom, 0px)); z-index: 3; width: 52px; height: 52px;' +
+            ' border-radius: 50%; border: 1.5px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.08); color: #f5f5f5; display: flex; align-items: center; justify-content: center; cursor: pointer; }' +
+        '.JUM-ROUE svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.4s ease; }' +
+        '.JUM-ROUE:hover svg, .JUM-ROUE:active svg { transform: rotate(60deg); }' +
+        '.JUM-CHOIX.choisi .JUM-ROUE { opacity: 0; pointer-events: none; }' +
+        /* Réglages TRIGONE */
+        '.JUM-REGLAGES { position: fixed; inset: 0; z-index: 99990; background: rgba(15,15,15,0.72); display: flex; align-items: center; justify-content: center; padding: 16px;' +
+            ' font-family: Montserrat, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }' +
+        '.JUM-R-CARTE { width: 100%; max-width: 640px; max-height: calc(100% - 8px); display: flex; flex-direction: column; background: #fff; color: #1a1a1a; border-radius: 20px;' +
+            ' border-top: 3px solid #d6a756; box-shadow: 0 24px 60px rgba(0,0,0,0.35); overflow: hidden; }' +
+        '.JUM-R-TETE { display: flex; align-items: flex-start; gap: 14px; padding: 20px 20px 12px; border-bottom: 1px solid #eef2f6; }' +
+        '.JUM-R-TETE h2 { margin: 0 0 4px; font-size: 1.15rem; }' +
+        '.JUM-R-TETE p { margin: 0; font-size: 0.76rem; color: #64748b; line-height: 1.4; }' +
+        '.JUM-R-ICONE { flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; background: rgba(90,122,148,0.1); color: #5a7a94; display: flex; align-items: center; justify-content: center; }' +
+        '.JUM-R-ICONE svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-R-X { margin-left: auto; border: 0; background: none; font-size: 1.1rem; color: #64748b; cursor: pointer; padding: 4px 6px; }' +
+        '.JUM-R-CORPS { padding: 6px 20px 10px; overflow-y: auto; -webkit-overflow-scrolling: touch; }' +
+        '.JUM-R-TITRE { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin: 16px 0 8px; padding-bottom: 6px; border-bottom: 2px solid #1a1a1a; }' +
+        '.JUM-R-GRILLE { display: grid; grid-template-columns: 1fr 1fr; gap: 10px 12px; }' +
+        '@media (max-width: 520px) { .JUM-R-GRILLE { grid-template-columns: 1fr; } }' +
+        '.JUM-R-CHAMP label { display: block; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 5px; color: #334155; }' +
+        '.JUM-R-CHAMP input { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font: 500 0.9rem Montserrat, system-ui, sans-serif; color: #1a1a1a; background: #fff; }' +
+        '.JUM-R-CHAMP input:focus { outline: none; border-color: #5a7a94; }' +
+        '.JUM-R-AIDE { font-size: 0.76rem; color: #64748b; margin: 0 0 10px; line-height: 1.45; }' +
+        '.JUM-R-ERREUR { color: #b91c1c; font-size: 0.8rem; font-weight: 700; margin: 12px 0 0; min-height: 1em; }' +
+        '.JUM-R-PIED { display: flex; align-items: center; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid #eef2f6; }' +
+        '.JUM-R-PRINCIPAL { margin-left: auto; border: 0; border-radius: 12px; padding: 13px 22px; background: #1a1a1a; color: #fff; font: 800 0.78rem Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }' +
+        '.JUM-R-SECOND { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 18px; background: #fff; color: #1a1a1a; font: 800 0.74rem Montserrat, system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }' +
+        '.JUM-R-LIEN { border: 0; background: none; padding: 8px 0; color: #5a7a94; font: 700 0.74rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; text-align: left; }' +
+        'body.dark-mode .JUM-R-CARTE { background: #1f1f1f; color: #e5e5e5; } body.dark-mode .JUM-R-CHAMP label { color: #cbd5e1; }' +
+        'body.dark-mode .JUM-R-CHAMP input { background: #141414; color: #f5f5f5; border-color: #404040; } body.dark-mode .JUM-R-TITRE { border-bottom-color: #e5e5e5; }' +
+        'body.dark-mode .JUM-R-PRINCIPAL { background: #f5f5f5; color: #141414; } body.dark-mode .JUM-R-SECOND { background: #1f1f1f; color: #f5f5f5; border-color: #404040; }' +
+        '.JUM-BANDEAU { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 99999; background: #15803d; color: #fff; padding: 12px 18px; border-radius: 12px;' +
+            ' font: 700 0.84rem Montserrat, system-ui, sans-serif; box-shadow: 0 10px 30px rgba(0,0,0,0.25); max-width: calc(100% - 32px); transition: opacity 0.4s ease; }' +
+        '.JUM-BANDEAU.sortie { opacity: 0; }' +
+        /* Code d'accès commun */
+        '.JUM-PIN { position: fixed; inset: 0; z-index: 99996; background: #0f0f0f; display: flex; align-items: center; justify-content: center; padding: 16px; font-family: Montserrat, system-ui, sans-serif; }' +
+        '.JUM-PIN-CARTE { width: 100%; max-width: 320px; text-align: center; color: #f5f5f5; }' +
+        '.JUM-PIN-TITRE { font-size: 1.25rem; font-weight: 800; margin-bottom: 6px; }' +
+        '.JUM-PIN-CARTE p { font-size: 0.82rem; color: #a3a3a3; margin: 0 0 22px; }' +
+        '.JUM-PIN-POINTS { display: flex; justify-content: center; gap: 16px; margin-bottom: 10px; }' +
+        '.JUM-PIN-POINT { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #d6a756; }' +
+        '.JUM-PIN-POINT.plein { background: #d6a756; }' +
+        '.JUM-PIN-POINTS.secoue { animation: jum-secoue 0.4s ease; }' +
+        '@keyframes jum-secoue { 25% { transform: translateX(-8px); } 50% { transform: translateX(8px); } 75% { transform: translateX(-4px); } }' +
+        '.JUM-PIN-ERREUR { color: #f87171; font-size: 0.8rem; font-weight: 700; min-height: 1.2em; margin-bottom: 12px; }' +
+        '.JUM-PIN-PAVE { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 16px; }' +
+        '.JUM-PIN-PAVE button { height: 60px; border-radius: 16px; border: 1px solid #333; background: #1c1c1c; color: #f5f5f5; font: 700 1.3rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
+        '.JUM-PIN-PAVE button:active { background: #2a2a2a; }' +
+        '.JUM-PIN .JUM-R-LIEN { color: #a3a3a3; }' +
         '.JUM-TRAIT { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; transition: opacity 0.2s ease; }' +
         '.JUM-CHOIX.choisi .JUM-TRAIT { opacity: 0; }' +
         '@media (prefers-reduced-motion: reduce) { .JUM-PAN, .JUM-BLOC { transition-duration: 0.01s; } }' +
@@ -113,7 +164,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 10, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 11, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -166,6 +217,237 @@
     };
     var ICI = DANS_CR ? 'cr' : 'mer', CLE_CHOIX = 'trigone_choix_fait';
     var ecran = null;
+    var ROUE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg>';
+    // ---------- Réglages TRIGONE communs (roue crantée de l'écran de choix) ----------
+    // Identité, mail du 1er valideur, mon mail, mail de l'assistant Chorus DT et code d'accès : saisis une seule
+    // fois ici, pour Mise en route ET Compte-rendu. Recopiés dans le stockage propre à chaque appli, qui les lit
+    // comme avant. (Le mail du 2e valideur reste réglé par le 1er valideur, dans son espace.)
+    var CLE_REGLAGES = 'trigone_reglages_communs', CLE_CODE = 'trigone_code_commun';
+    function lireJSON(k) { try { return JSON.parse(localStorage.getItem(k) || 'null'); } catch (e) { return null; } }
+    function lireTxt(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+    function ecrireTxt(k, v) { try { localStorage.setItem(k, v); } catch (e) {} }
+    // Toujours relus dans le stockage des applis : une identité modifiée dans l'une d'elles (écran Départ du
+    // compte-rendu, par exemple) apparaît ici à jour. Les réglages communs enregistrés complètent les manques.
+    function lireReglages() {
+        var s = lireJSON(CLE_REGLAGES) || {};
+        var mer = lireJSON('mer_reglages') || {}, id = mer.identite || {}, cr = lireJSON('trigone_app_settings') || {};
+        var nomCr = lireTxt('mission_saved_user').split(/\s+/);
+        var d = {
+            unite: id.unite || mer.derniereUnite || cr.unitName || '', cie: id.cie || mer.derniereCie || lireTxt('mission_saved_cie'),
+            grade: id.grade || lireTxt('mission_saved_grade'), nom: id.nom || nomCr[0] || '', prenom: id.prenom || nomCr.slice(1).join(' '),
+            matricule: id.matricule || lireTxt('mission_saved_nid'),
+            mailVal1: mer.mailSignataire || '', monMail: mer.mailDemandeur || '', mailChorus: cr.mailAssist || ''
+        };
+        Object.keys(s).forEach(function(k) { if (!d[k] && s[k]) d[k] = s[k]; });
+        return d;
+    }
+    function chiffres(v) { return String(v || '').replace(/\D/g, ''); }
+    function formatMatricule(v) { var c = chiffres(v).slice(0, 10); return [c.slice(0, 3), c.slice(3, 5), c.slice(5, 7), c.slice(7)].filter(Boolean).join(' '); }
+    function ecrireReglages(r) {
+        try { localStorage.setItem(CLE_REGLAGES, JSON.stringify(r)); } catch (e) {}
+        // Mise en route
+        var mer = lireJSON('mer_reglages') || {};
+        mer.identite = { unite: r.unite, cie: r.cie, grade: r.grade, nom: r.nom, prenom: r.prenom, matricule: r.matricule };
+        mer.derniereUnite = r.unite; mer.derniereCie = r.cie;
+        mer.mailSignataire = r.mailVal1; mer.mailDemandeur = r.monMail;
+        try { localStorage.setItem('mer_reglages', JSON.stringify(mer)); } catch (e) {}
+        ecrireTxt('mer_config_faite', '1');
+        // Compte-rendu
+        var c = chiffres(r.matricule);
+        ecrireTxt('mission_saved_user', [r.nom, r.prenom].filter(Boolean).join(' '));
+        ecrireTxt('mission_saved_grade', r.grade);
+        ecrireTxt('mission_saved_cie', r.cie);
+        if (c.length === 10) ecrireTxt('mission_saved_nid', [c.slice(0, 2), c.slice(2, 5), c.slice(5, 8), c.slice(8)].join(' '));
+        var cr = lireJSON('trigone_app_settings') || {};
+        if (r.unite) cr.unitName = r.unite;
+        if (r.mailChorus) cr.mailAssist = r.mailChorus;
+        try { localStorage.setItem('trigone_app_settings', JSON.stringify(cr)); } catch (e) {}
+        ecrireTxt('trigone_premier_lancement_fait', '1');
+        // Page Compte-rendu ouverte : ses valeurs en mémoire suivent tout de suite.
+        if (DANS_CR) {
+            if (r.unite && 'UNIT_NAME' in window) window.UNIT_NAME = r.unite;
+            if (r.mailChorus && 'MAIL_ASSIST' in window) window.MAIL_ASSIST = r.mailChorus;
+        }
+    }
+    function codeDefini() { return !!lireTxt(CLE_CODE); }
+    function empreinte(code) {
+        return crypto.subtle.digest('SHA-256', new TextEncoder().encode('TRIGONE:' + code)).then(function(b) {
+            return Array.prototype.map.call(new Uint8Array(b), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+        });
+    }
+    function poserCode(code) {
+        return empreinte(code).then(function(h) {
+            ecrireTxt(CLE_CODE, h);
+            // Le code commun remplace les anciens codes propres à chaque appli.
+            try { localStorage.removeItem('mer_pin_hash'); localStorage.removeItem('trigone_pin_hash'); } catch (e) {}
+            if (window.JUMELAGE_MARQUER_DEVERROUILLE) window.JUMELAGE_MARQUER_DEVERROUILLE();
+        });
+    }
+    window.JUMELAGE_REGLAGES_FAITS = function() { return !!lireJSON(CLE_REGLAGES) || lireTxt('mer_config_faite') === '1'; };
+
+    var reglages = null;
+    function esc(t) { return String(t == null ? '' : t).replace(/[&<>"]/g, function(ch) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[ch]; }); }
+    window.JUMELAGE_REGLAGES = function(opts) {
+        opts = opts || {};
+        if (reglages || !document.body) return;
+        var r = lireReglages(), premiere = !!opts.premiere;
+        var ancienCode = !codeDefini() && (lireTxt('mer_pin_hash') || lireTxt('trigone_pin_hash'));
+        function champ(id, label, val, attrs) {
+            return '<div class="JUM-R-CHAMP"><label for="JUM-R-' + id + '">' + label + '</label><input id="JUM-R-' + id + '" value="' + esc(val) + '" ' + (attrs || 'type="text" autocomplete="off"') + '></div>';
+        }
+        reglages = document.createElement('div');
+        reglages.className = 'JUM-REGLAGES';
+        reglages.setAttribute('role', 'dialog');
+        reglages.innerHTML = '<div class="JUM-R-CARTE">' +
+            '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + ROUE_SVG + '</span><div><h2>' + (premiere ? 'Avant de commencer' : 'Réglages TRIGONE') + '</h2>' +
+                '<p>Communs à Mise en route et Compte-rendu de mission. Enregistrés sur cet appareil uniquement.</p></div>' +
+                (premiere ? '' : '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_REGLAGES()">✕</button>') + '</div>' +
+            '<div class="JUM-R-CORPS">' +
+                '<div class="JUM-R-TITRE">Mon identité</div>' +
+                '<div class="JUM-R-GRILLE">' + champ('UNITE', 'Unité / entité', r.unite, 'type="text" autocomplete="off" placeholder="EX : 4°RIISC"') +
+                    champ('CIE', 'CIE', r.cie, 'type="text" autocomplete="off" placeholder="EX : 4CIE"') +
+                    champ('GRADE', 'Grade', r.grade, 'type="text" autocomplete="off" placeholder="EX : ADJUDANT"') +
+                    champ('MATRICULE', 'Matricule / NID', formatMatricule(r.matricule), 'type="text" inputmode="numeric" autocomplete="off" placeholder="EX : 067 50 10 191"') +
+                    champ('NOM', 'Nom', r.nom, 'type="text" autocomplete="off" placeholder="EX : BOUQUET"') +
+                    champ('PRENOM', 'Prénom', r.prenom, 'type="text" autocomplete="off" data-no-uppercase="1" placeholder="EX : Germain-Pierre"') + '</div>' +
+                '<div class="JUM-R-TITRE">Envois</div>' +
+                '<div class="JUM-R-GRILLE">' + champ('MAILVAL1', 'Mail du 1er valideur (chef de service)', r.mailVal1, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
+                    champ('MONMAIL', 'Mon mail', r.monMail, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
+                    champ('MAILCHORUS', 'Mail de l\'assistant Chorus DT (compte-rendu)', r.mailChorus, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') + '</div>' +
+                '<div class="JUM-R-TITRE">Code d\'accès à 4 chiffres</div>' +
+                '<p class="JUM-R-AIDE">' + (codeDefini() ? '🔒 Code actif : demandé à chaque ouverture de TRIGONE. Pour le changer, saisissez-en un nouveau.'
+                    : ancienCode ? 'Un ancien code est encore actif dans l\'une des applis : définissez le code TRIGONE pour le remplacer.'
+                    : 'Demandé à chaque ouverture de TRIGONE, pour protéger vos données.' + (premiere ? '' : ' Facultatif.')) + '</p>' +
+                '<div class="JUM-R-GRILLE">' + champ('CODE1', codeDefini() ? 'Nouveau code' : 'Code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') +
+                    champ('CODE2', 'Confirmer le code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') + '</div>' +
+                (codeDefini() ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_SUPPRIMER_CODE()">Supprimer le code d\'accès</button>' : '') +
+                '<p class="JUM-R-ERREUR" id="JUM-R-ERREUR"></p>' +
+            '</div>' +
+            '<div class="JUM-R-PIED">' +
+                (premiere ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_PASSER_REGLAGES()">Je suis valideur ou assistant Chorus DT : passer</button>'
+                          : '<button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_REGLAGES()">Annuler</button>') +
+                '<button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_ENREGISTRER_REGLAGES(' + (premiere ? 'true' : 'false') + ')">' + (premiere ? 'Continuer →' : 'Enregistrer') + '</button>' +
+            '</div></div>';
+        document.body.appendChild(reglages);
+        var m = document.getElementById('JUM-R-MATRICULE');
+        m.addEventListener('input', function() { m.value = formatMatricule(m.value); });
+    };
+    window.JUMELAGE_FERMER_REGLAGES = function() { if (reglages) { reglages.remove(); reglages = null; } };
+    window.JUMELAGE_PASSER_REGLAGES = function() {
+        ecrireTxt('mer_config_faite', '1'); ecrireTxt('trigone_premier_lancement_fait', '1');
+        window.JUMELAGE_FERMER_REGLAGES();
+        if (window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
+    };
+    window.JUMELAGE_SUPPRIMER_CODE = function() {
+        if (!window.confirm('Supprimer le code d\'accès ? TRIGONE s\'ouvrira sans code.')) return;
+        try { localStorage.removeItem(CLE_CODE); } catch (e) {}
+        window.JUMELAGE_FERMER_REGLAGES(); window.JUMELAGE_REGLAGES();
+    };
+    window.JUMELAGE_ENREGISTRER_REGLAGES = function(premiere) {
+        function v(id) { var el = document.getElementById('JUM-R-' + id); return el ? el.value.trim() : ''; }
+        var err = document.getElementById('JUM-R-ERREUR');
+        function refuser(t) { err.textContent = '⛔ ' + t; err.scrollIntoView({ block: 'nearest' }); }
+        var r = { unite: v('UNITE').toUpperCase(), cie: v('CIE').toUpperCase(), grade: v('GRADE').toUpperCase(), nom: v('NOM').toUpperCase(), prenom: v('PRENOM'),
+            matricule: formatMatricule(v('MATRICULE')), mailVal1: v('MAILVAL1'), monMail: v('MONMAIL'), mailChorus: v('MAILCHORUS') };
+        var c1 = v('CODE1'), c2 = v('CODE2');
+        if (premiere && (!r.unite || !r.cie || !r.grade || !r.nom || !r.prenom || !r.matricule || !r.mailVal1 || !r.monMail || !r.mailChorus))
+            return refuser('Merci de remplir tous les champs avant de continuer.');
+        if (r.matricule && chiffres(r.matricule).length !== 10) return refuser('Le matricule doit comporter 10 chiffres (ex : 067 50 10 191).');
+        var mails = [r.mailVal1, r.monMail, r.mailChorus].filter(Boolean);
+        if (mails.some(function(m) { return !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m); })) return refuser('Une adresse mail n\'est pas valide.');
+        if (premiere && !codeDefini() && !c1) return refuser('Choisissez un code d\'accès à 4 chiffres.');
+        if (c1 || c2) {
+            if (!/^\d{4}$/.test(c1)) return refuser('Le code doit contenir exactement 4 chiffres.');
+            if (c1 !== c2) return refuser('Les deux codes ne correspondent pas.');
+        }
+        ecrireReglages(r);
+        (c1 ? poserCode(c1) : Promise.resolve()).then(function() {
+            window.JUMELAGE_FERMER_REGLAGES();
+            bandeau(premiere ? 'C\'est prêt : vos informations pré-rempliront Mise en route et Compte-rendu.' : 'Réglages enregistrés.');
+            if (window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
+        });
+    };
+    function bandeau(texte) {
+        var b = document.createElement('div');
+        b.className = 'JUM-BANDEAU'; b.textContent = '✓ ' + texte;
+        document.body.appendChild(b);
+        setTimeout(function() { b.classList.add('sortie'); }, 2600);
+        setTimeout(function() { b.remove(); }, 3100);
+    }
+
+    // ---------- Code d'accès commun : demandé une fois à l'ouverture de TRIGONE ----------
+    var pave = null, saisie = '';
+    function dessinerPoints() {
+        if (!pave) return;
+        Array.prototype.forEach.call(pave.querySelectorAll('.JUM-PIN-POINT'), function(p, i) { p.classList.toggle('plein', i < saisie.length); });
+    }
+    window.JUMELAGE_PIN_TOUCHE = function(ch) {
+        if (!pave) return;
+        if (ch === 'x') saisie = saisie.slice(0, -1); else if (saisie.length < 4) saisie += ch;
+        dessinerPoints();
+        if (saisie.length === 4) empreinte(saisie).then(function(h) {
+            if (h === lireTxt(CLE_CODE)) {
+                if (window.JUMELAGE_MARQUER_DEVERROUILLE) window.JUMELAGE_MARQUER_DEVERROUILLE();
+                pave.remove(); pave = null;
+            } else {
+                saisie = ''; dessinerPoints();
+                var e = pave.querySelector('.JUM-PIN-ERREUR'); e.textContent = 'Code incorrect.';
+                pave.querySelector('.JUM-PIN-POINTS').classList.add('secoue');
+                setTimeout(function() { if (pave) pave.querySelector('.JUM-PIN-POINTS').classList.remove('secoue'); }, 450);
+            }
+        });
+    };
+    window.JUMELAGE_CODE_OUBLIE = function() {
+        if (!window.confirm('Code oublié : la seule solution est d\'effacer toutes les données de TRIGONE sur cet appareil (demandes, comptes-rendus, réglages). Continuer ?')) return;
+        try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+        var fin = function() { location.replace(DANS_CR ? '../' : './'); };
+        if (window.indexedDB && indexedDB.databases) indexedDB.databases().then(function(l) { l.forEach(function(d) { if (d.name) indexedDB.deleteDatabase(d.name); }); }).then(fin, fin);
+        else fin();
+    };
+    function demanderCode() {
+        if (pave || !document.body) return;
+        saisie = '';
+        pave = document.createElement('div');
+        pave.className = 'JUM-PIN';
+        var touches = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'x'].map(function(t) {
+            return t === '' ? '<span></span>' : '<button type="button" onclick="JUMELAGE_PIN_TOUCHE(\'' + t + '\')">' + (t === 'x' ? '⌫' : t) + '</button>';
+        }).join('');
+        pave.innerHTML = '<div class="JUM-PIN-CARTE"><div class="JUM-PIN-TITRE">Code d\'accès</div><p>Entrez votre code à 4 chiffres pour ouvrir TRIGONE.</p>' +
+            '<div class="JUM-PIN-POINTS"><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span></div>' +
+            '<div class="JUM-PIN-ERREUR"></div><div class="JUM-PIN-PAVE">' + touches + '</div>' +
+            '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_CODE_OUBLIE()">Code oublié ?</button></div>';
+        document.body.appendChild(pave);
+        document.addEventListener('keydown', function clavier(e) {
+            if (!pave) { document.removeEventListener('keydown', clavier); return; }
+            if (/^\d$/.test(e.key)) window.JUMELAGE_PIN_TOUCHE(e.key); else if (e.key === 'Backspace') window.JUMELAGE_PIN_TOUCHE('x');
+        });
+    }
+    window.JUMELAGE_CODE_ACTIF = codeDefini;
+    if (codeDefini() && !(window.JUMELAGE_DEVERROUILLE && window.JUMELAGE_DEVERROUILLE())) {
+        if (document.body) demanderCode(); else document.addEventListener('DOMContentLoaded', demanderCode);
+    }
+
+    // ---------- Saisie en majuscules (tout sauf le prénom, les mails et les codes) ----------
+    function enMajuscules(el) {
+        if (!el || !(el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement)) return false;
+        if (el.dataset && el.dataset.noUppercase) return false;
+        if (el instanceof HTMLTextAreaElement && el.getAttribute('data-path') !== 'objet') return false;
+        var type = (el.type || 'text').toLowerCase();
+        if (type !== 'text' && type !== 'search' && el instanceof HTMLInputElement) return false;
+        var nom = [el.id, el.name, el.getAttribute('data-path'), el.getAttribute('autocomplete')].join(' ');
+        if (/pr[ée]nom|mail|code-acces|CODE-ACCES|pin/i.test(nom)) return false;
+        return true;
+    }
+    document.addEventListener('input', function(e) {
+        var el = e.target;
+        if (!enMajuscules(el)) return;
+        var up = el.value.toUpperCase();
+        if (up === el.value) return;
+        var a = el.selectionStart, b = el.selectionEnd;
+        el.value = up;
+        try { el.setSelectionRange(a, b); } catch (err) {}
+    }, true);
+
 
     function panneau(cle) {
         var a = APPLIS[cle];
@@ -208,7 +490,11 @@
         ecran.setAttribute('aria-label', 'Choisir une application TRIGONE');
         ecran.innerHTML = panneau('mer') + panneau('cr') +
             '<svg class="JUM-TRAIT" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
-            '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>';
+            '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
+            '<button type="button" class="JUM-ROUE" aria-label="Réglages TRIGONE" title="Réglages TRIGONE : identité, mails, code d\'accès">' + ROUE_SVG + '</button>';
+        var roue = ecran.querySelector('.JUM-ROUE');
+        ['pointerdown', 'pointerup'].forEach(function(t) { roue.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        roue.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_REGLAGES(); });
         ecran.addEventListener('click', function(e) { choisir(coteDuPoint(e.clientX, e.clientY)); });
         ecran.addEventListener('pointerdown', function(e) {
             var p = ecran.querySelector('.JUM-PAN-' + coteDuPoint(e.clientX, e.clientY).toUpperCase());

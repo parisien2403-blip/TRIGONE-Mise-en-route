@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 57;
+var APP_CODE_VERSION = 58;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -501,20 +501,10 @@ function TPL_MON_ESPACE() {
             'oninput="SET_REGLAGE(\'' + k + '\', this.value)">' + (hint ? '<p class="MER-HINT">' + hint + '</p>' : '') + '</div>';
     }
     return '<div class="CARD"><h2>Mon espace</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Enregistré sur cet appareil uniquement. Utilisé pour pré-remplir vos demandes.</p>' +
-        '<div class="MER-SECTION-TITLE">Mon identité</div>' +
-        '<div class="MER-ROW2">' + champId('unite', 'Unité / entité', 'EX : 4°RIISC') + champId('cie', 'CIE', 'EX : 4CIE') + '</div>' +
-        '<div class="MER-ROW2">' + champId('grade', 'Grade', 'EX : ADJUDANT') + champId('matricule', 'Matricule', 'EX : 067 50 10 191') + '</div>' +
-        '<div class="MER-ROW2">' + champId('nom', 'Nom', 'EX : BOUQUET') + champId('prenom', 'Prénom', 'EX : G-P') + '</div>' +
-        '<div class="MER-SECTION-TITLE">Envoi de mes demandes</div>' +
-        champMail('mailSignataire', 'Mail du 1er valideur (chef de service)') +
-        champMail('mailDemandeur', 'Mon mail', 'Pour vous renvoyer une demande si un valideur la refuse.') +
-        '<div class="MER-SECTION-TITLE">Sécurité — code d\'accès</div>' +
-        (PIN_EST_DEFINI()
-            ? '<p class="MER-HINT" style="margin:0 0 10px;">🔒 Code activé : il est demandé à chaque ouverture de l\'application.</p>' +
-              '<button type="button" class="BTN BTN-GHOST" onclick="OUVRIR_ECRAN_PIN(\'suppression\')">Désactiver le code</button>'
-            : '<p class="MER-HINT" style="margin:0 0 10px;">Protégez l\'application par un code à 4 chiffres, demandé à chaque ouverture. Utile si votre téléphone n\'est pas verrouillé ou est partagé.</p>' +
-              '<button type="button" class="BTN BTN-GHOST" onclick="OUVRIR_ECRAN_PIN(\'creation\')">Activer un code à 4 chiffres</button>') +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Votre identité, vos mails et le code d\'accès se règlent une seule fois pour Mise en route et Compte-rendu, avec la roue crantée de l\'écran de choix.</p>' +
+        '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_REGLAGES()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>' +
+            '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Réglages TRIGONE</span><span class="NOTICE-CARD-SUB">Identité, mails (1er valideur, assistant Chorus DT) et code d\'accès — communs aux deux applis</span></span>' +
+            '<span class="NOTICE-CARD-CHEV">›</span></button>' +
         '<div class="MER-SECTION-TITLE">Application</div>' +
         '<button type="button" class="BTN BTN-GHOST" onclick="PROPOSER_INSTALLATION(true)">📲 Installer l\'application</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
@@ -837,14 +827,17 @@ function TPL_LIEU(label, path, cote) {
     var options = '<option value="">France</option>' + MER_PAYS.map(function(p) {
         return '<option value="' + ESC(p) + '"' + (p === pays ? ' selected' : '') + '>' + ESC(p) + '</option>';
     }).join('');
-    var ville = '<div class="MER-FIELD"><label>' + label + '</label>' +
+    // Ville et code postal dans un seul champ : on tape la ville, le code postal se met à côté (modifiable).
+    var ville = '<div class="MER-FIELD"><label>' + label + (pays ? '' : ' <span class="MER-LABEL-FIN">· code postal automatique</span>') + '</label>' +
+        (pays ? '' : '<div class="MER-VILLE-CP">') +
         '<input type="text" data-path="' + path + '.lieu' + cote + '" value="' + ESC(t['lieu' + cote] || '') + '" ' +
         'placeholder="' + (pays ? 'EX : Berlin' : 'EX : Bordeaux') + '" autocomplete="off"' + (pays ? '' : ' list="' + id + '"') + ' ' +
         'oninput="ON_CHAMP_INPUT(\'' + path + '.lieu' + cote + '\', this.value)' + (pays ? '' : '; SUGGERER_VILLES(this, \'' + id + '\')') + '" ' +
         (pays ? '' : 'onchange="CHOISIR_VILLE(\'' + path + '\', \'' + cote + '\', this)"') + '>' +
+        (pays ? '' : '<input type="text" class="MER-CP-IN" data-path="' + path + '.cp' + cote + '" value="' + ESC(t['cp' + cote] || '') + '" placeholder="CP" inputmode="numeric" maxlength="5" ' +
+            'aria-label="Code postal" oninput="this.value=this.value.replace(/\\D/g, \'\'); ON_CHAMP_INPUT(\'' + path + '.cp' + cote + '\', this.value)"></div>') +
         (pays ? '' : '<datalist id="' + id + '"></datalist>') + '</div>';
-    return '<div class="MER-ROW2">' + ville +
-        (pays ? '' : CHAMP_TXT('Code postal', path + '.cp' + cote, 'Automatique')) + '</div>' +
+    return ville +
         '<div class="MER-FIELD" style="margin-top:-8px;"><label>Pays</label><select data-path="' + path + '.pays' + cote + '" ' +
         'onchange="ON_CHAMP_BOOL(\'' + path + '.pays' + cote + '\', this.value)">' + options + '</select></div>';
 }
@@ -1526,6 +1519,8 @@ var STORAGE_CONFIG_FAITE = 'mer_config_faite';
 function CONFIG_FAITE() { try { return localStorage.getItem(STORAGE_CONFIG_FAITE) === '1'; } catch (e) { return true; } }
 var MER_CONFIG_CHAMPS = { UNITE: 'unite', CIE: 'cie', GRADE: 'grade', MATRICULE: 'matricule', NOM: 'nom', PRENOM: 'prenom' };
 function AFFICHER_CONFIG_INITIALE() {
+    // Réglages communs à Mise en route et Compte-rendu (écran de choix, roue crantée).
+    if (window.JUMELAGE_REGLAGES) { window.JUMELAGE_REGLAGES({ premiere: true }); return; }
     var r = GET_REGLAGES(), id = r.identite || {};
     Object.keys(MER_CONFIG_CHAMPS).forEach(function(k) {
         var c = MER_CONFIG_CHAMPS[k];
@@ -2929,6 +2924,12 @@ function PREPARER_MAJ_A_LA_FERMETURE() {
         if (navigator.serviceWorker) navigator.serviceWorker.getRegistration().then(function(r) { if (r) r.update(); }).catch(function() {});
     }).catch(function() {});
 }
+// Après les réglages communs : la page affichée suit (nom sur l'accueil, Mon espace…).
+var MER_INSTALL_APRES_REGLAGES = false;
+window.JUMELAGE_APRES_REGLAGES = function() {
+    if (['ACCUEIL', 'ESPACE'].indexOf(PAGE_ACTUELLE) >= 0) SHOW_PAGE(PAGE_ACTUELLE);
+    if (MER_INSTALL_APRES_REGLAGES) { MER_INSTALL_APRES_REGLAGES = false; setTimeout(PROPOSER_INSTALLATION_PREMIERE_FOIS, 900); }
+};
 window.JUMELAGE_AVANT_RECHARGE = function() { if (PAGE_ACTUELLE === 'FORMULAIRE') SAVE_BROUILLON(); };
 // Mise à jour forcée (jumelage.js) : seulement sur l'accueil, sans fenêtre ouverte.
 window.JUMELAGE_PEUT_RECHARGER = function() { return PAGE_ACTUELLE === 'ACCUEIL' && ECRAN_LIBRE() && !document.getElementById('MER-MODALE-FOND'); };
@@ -2974,7 +2975,8 @@ window.addEventListener('DOMContentLoaded', function() {
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
     try { vue = localStorage.getItem(STORAGE_POURQUOI) === '1'; } catch (e) {}
-    var suite = function() { if (!CONFIG_FAITE()) AFFICHER_CONFIG_INITIALE(); PROPOSER_INSTALLATION_PREMIERE_FOIS(); };
+    // Première ouverture : la proposition d'installer l'appli attend la fin des réglages communs.
+    var suite = function() { if (!CONFIG_FAITE()) { MER_INSTALL_APRES_REGLAGES = true; AFFICHER_CONFIG_INITIALE(); } else PROPOSER_INSTALLATION_PREMIERE_FOIS(); };
     if (!vue) AFFICHER_POURQUOI(suite);
     else if (PIN_EST_DEFINI() && !(window.JUMELAGE_DEVERROUILLE && JUMELAGE_DEVERROUILLE())) OUVRIR_ECRAN_PIN('verif', suite);
     else suite();
