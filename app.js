@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 81;
+var APP_CODE_VERSION = 82;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2752,7 +2752,9 @@ function TPL_VERIFIER() {
     var res = MER_RESULTATS_VERIF;
     var html = '<div class="CARD"><h2>Assistant Chorus DT</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 16px;">Réservé à l\'assistant Chorus DT. Importez le fichier « 3-SIGNE VALIDEUR 2 … .json » reçu du 2e valideur : TRIGONE contrôle les signatures et les pièces jointes, puis génère le PDF à traiter (demande + NDS / DAF). Un PDF TRIGONE peut aussi être contrôlé.</p>' +
-        '<label class="BTN BTN-PRIMARY" style="margin-bottom:16px;">📥 Choisir le fichier .json (ou le PDF)' +
+        // PC : zone de dépôt (glisser le .json ou le PDF, Ctrl + V, ou clic pour choisir) ; téléphone : bouton.
+        (EST_PC() ? '<label class="PC-DEPOT">📥 Glissez ici le fichier .json (ou le PDF), collez-le (Ctrl + V) ou cliquez pour le choisir'
+                  : '<label class="BTN BTN-PRIMARY" style="margin-bottom:16px;">📥 Choisir le fichier .json (ou le PDF)') +
         '<input type="file" accept=".json,application/json,.pdf,application/pdf" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
     if (res) {
         var conformes = res.filter(function(x) { return x.source === 'json' && EST_CONFORME(x); });
@@ -3129,6 +3131,8 @@ function MER_RECEVOIR_FICHIERS(liste) {
 document.addEventListener('paste', function(e) {
     var cd = e.clipboardData;
     if (!cd || !cd.files || !cd.files.length || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
+    // Sur la page de l'assistant Chorus DT : contrôle direct du .json (ou du PDF) collé.
+    if (PAGE_ACTUELLE === 'VERIFIER') { e.preventDefault(); VERIFIER_FICHIERS({ files: cd.files, value: '' }); return; }
     if (MER_RECEVOIR_FICHIERS(cd.files)) e.preventDefault();
 });
 function MER_BANDEAU_RECU(titre, texte) {
