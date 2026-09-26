@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=49"></script>
+<script src="jumelage.js?v=50"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
@@ -712,6 +712,12 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
 .PC-VAL { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: 22px; align-items: start; }
 .PC-VAL-DETAIL { position: sticky; top: 20px; }
 .PC-VAL-DETAIL .MER-PANIER-ITEM { border: 0; padding: 12px 0 0; margin: 0; box-shadow: none; background: none; }
+/* Bascule VALIDEUR 1 ⇄ VALIDEUR 2 (une personne qui a les deux rôles) */
+.MER-BASCULE-ROLE { display: inline-flex; gap: 4px; padding: 3px; margin: 8px 0 0; border-radius: 999px; background: rgba(90,122,148,0.1); }
+.MER-BASCULE-ROLE button { border: 0; background: transparent; border-radius: 999px; padding: 6px 12px; font: 800 0.7rem Montserrat, system-ui, sans-serif; letter-spacing: 0.04em; color: #5a7a94; cursor: pointer; }
+.MER-BASCULE-ROLE button.actif { background: #1a1a1a; color: #fff; }
+.PC-VAL-ENTETE .MER-BASCULE-ROLE { margin: 0; }
+body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.dark-mode .MER-BASCULE-ROLE button { color: #a9c3d6; } body.dark-mode .MER-BASCULE-ROLE button.actif { background: #ececec; color: #141414; }
 </style>
 </head>
 <body>
@@ -845,6 +851,6 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
     </div>
   </div>
 </div>
-<script src="app.js?v=49"></script>
+<script src="app.js?v=50"></script>
 </body>
 </html>

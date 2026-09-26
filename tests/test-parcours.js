@@ -33,10 +33,10 @@ module.exports = async function(srv, options) {
         }
         return p;
     }
-    async function connecter(p, code) {
+    async function connecter(p, code, nom) {
         await p.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(800);
         await p.fill('#MER-VAL-grade', 'CNE'); await p.fill('#MER-VAL-fonction', 'Chef de service');
-        await p.fill('#MER-VAL-nom', 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
+        await p.fill('#MER-VAL-nom', nom || 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
         await p.fill('#MER-CODE-ACCES', code); await p.click('button:has-text("Se connecter")'); await attendre(2500);
         return p.evaluate(() => !!HABILITATION_COURANTE());
     }
@@ -105,7 +105,7 @@ module.exports = async function(srv, options) {
 
         // ---- 2e valideur ----
         const v2 = await page('V2');
-        verifier(await connecter(v2, code2), '2e valideur connecté');
+        verifier(await connecter(v2, code2, 'Martin'), '2e valideur connecté');
         await v2.evaluate(() => SHOW_PAGE('VALIDATION')); await recevoir(v2, 'IMPORTER_A_VALIDER', [j1]); await attendre(1500);
         await v2.locator('button.BTN-PRIMARY:has-text("Valider")').first().click(); await attendre(800);
         await v2.fill('input[type=email]', 'chorus@test.fr');

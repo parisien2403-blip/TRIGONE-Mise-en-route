@@ -30,9 +30,9 @@ module.exports = async function() {
         verifier(await p.evaluate(() => JUMELAGE_COMPTE_ACTIF()), nom + ' : compte TRIGONE actif (' + MAILS[nom].split('@')[0] + ')');
         return p;
     }
-    async function connecter(p, code) {
+    async function connecter(p, code, nom) {
         await p.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(800);
-        await p.fill('#MER-VAL-grade', 'CNE'); await p.fill('#MER-VAL-fonction', 'Chef'); await p.fill('#MER-VAL-nom', 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
+        await p.fill('#MER-VAL-grade', 'CNE'); await p.fill('#MER-VAL-fonction', 'Chef'); await p.fill('#MER-VAL-nom', nom || 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
         await p.fill('#MER-CODE-ACCES', code); await p.click('button:has-text("Se connecter")'); await attendre(2500);
     }
     async function relever(p) { await p.evaluate(() => JUMELAGE_RELEVER()); await attendre(2500); }
@@ -55,12 +55,18 @@ module.exports = async function() {
     verifier((await v1.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Mes rôles : un mauvais code valideur ne donne pas le rôle');
     await v1.fill('#JUM-R-CODEVAL1', code2); await v1.click('.JUM-R-PRINCIPAL'); await attendre(3000);
     verifier((await v1.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Mes rôles : le code du 2e valideur ne donne pas le rôle de 1er valideur');
-    await v1.fill('#JUM-R-CODEVAL1', code1); await v1.click('.JUM-R-PRINCIPAL'); await attendre(4000);
-    verifier(await v1.evaluate(() => !document.querySelector('.JUM-REGLAGES') && JSON.parse(localStorage.getItem('trigone_roles_locaux')).valideur1 === true),
-        'Mes rôles : 1er valideur activé avec son code');
+    // Une même personne peut cumuler VALIDEUR 1 et VALIDEUR 2 (et ASSIST CHORUS DT).
+    await v1.check('#JUM-R-VAL2'); await v1.fill('#JUM-R-CODEVAL2', code2);
+    await v1.fill('#JUM-R-CODEVAL1', code1); await v1.click('.JUM-R-PRINCIPAL'); await attendre(6000);
+    verifier(await v1.evaluate(() => { const r = JSON.parse(localStorage.getItem('trigone_roles_locaux')); return !document.querySelector('.JUM-REGLAGES') && r.valideur1 === true && r.valideur2 === true; }),
+        'Mes rôles : VALIDEUR 1 et VALIDEUR 2 activés ensemble, chacun avec son code');
     await v1.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(2500);
-    verifier(await v1.evaluate(() => { const h = HABILITATION_COURANTE(); return !!h && h.role === 1 && h.fonction === 'CHEF DE SERVICE'; }), 'Mes rôles : l\'Espace valideur est connecté d\'office (1er valideur)');
-    await connecter(v2, code2); await attendre(1500);
+    verifier(await v1.evaluate(() => { const h = HABILITATION_COURANTE(); return !!h && h.role === 1 && h.fonction === 'CHEF DE SERVICE'; }), 'Mes rôles : l\'Espace valideur est connecté d\'office (VALIDEUR 1)');
+    verifier(await v1.locator('.MER-BASCULE-ROLE button').count() === 2, 'deux rôles valideur : bascule VALIDEUR 1 / VALIDEUR 2 affichée');
+    await v1.click('.MER-BASCULE-ROLE button:has-text("VALIDEUR 2")'); await attendre(1500);
+    verifier(await v1.evaluate(() => HABILITATION_COURANTE().role === 2), 'bascule : passage en VALIDEUR 2 sans ressaisir de code');
+    await v1.click('.MER-BASCULE-ROLE button:has-text("VALIDEUR 1")'); await attendre(1500);
+    await connecter(v2, code2, 'Martin'); await attendre(1500);
     const codeChorus = process.env.TRIGONE_CODE_CHORUS;
     if (codeChorus) {
         await c.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
@@ -116,7 +122,7 @@ module.exports = async function() {
     verifier(await v1.evaluate(() => JUMELAGE_BOITE_NB()) === 1, '1er valideur : l\'envoi arrive dans la boîte de réception');
     await v1.evaluate(() => SHOW_PAGE('ACCUEIL')); await attendre(300);
     verifier((await v1.textContent('.BTN-ACCUEIL-BOITE')).includes('1'), '1er valideur : pastille « 1 » sur le bouton Boîte de réception de l\'accueil');
-    await v1.evaluate(() => { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; return ACCES_MEMO('effacer'); });
+    await v1.evaluate(() => { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; return Promise.all(['valideur', 'valideur1', 'valideur2'].map(k => ACCES_MEMO('effacer', null, k))); });
     await ouvrirBoite(v1);
     verifier((await v1.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Connexion valideur', '1er valideur non connecté : « Ouvrir » demande le code valideur');
     await v1.evaluate(() => FERMER_MSG()); await attendre(300);

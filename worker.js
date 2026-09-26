@@ -28,9 +28,9 @@ const ROLES = ['valideur1', 'valideur2', 'chorus'];
 // mission du missionnaire, pour l'assistant Chorus DT).
 const ROLE_REQUIS = { DEMANDE: 'valideur1', VALIDATION_1: 'valideur2', CHORUS: 'chorus', REFUS: '', CR: 'chorus' };
 const MESSAGE_ROLE = {
-    valideur1: 'n\'est pas enregistré comme 1er valideur dans TRIGONE : vérifiez l\'adresse du 1er valideur. (Un 1er valideur est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)',
-    valideur2: 'n\'est pas enregistré comme 2e valideur dans TRIGONE : vérifiez l\'adresse du 2e valideur. (Un 2e valideur est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)',
-    chorus: 'n\'est pas enregistré comme assistant Chorus DT dans TRIGONE : vérifiez l\'adresse de l\'assistant Chorus DT. (Il est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)'
+    valideur1: 'n\'est pas enregistré comme VALIDEUR 1 dans TRIGONE : vérifiez l\'adresse du 1er valideur. (Un VALIDEUR 1 est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)',
+    valideur2: 'n\'est pas enregistré comme VALIDEUR 2 dans TRIGONE : vérifiez l\'adresse du 2e valideur. (Un VALIDEUR 2 est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)',
+    chorus: 'n\'est pas enregistré comme ASSIST CHORUS DT dans TRIGONE : vérifiez l\'adresse de l\'assistant Chorus DT. (Il est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)'
 };
 const DUREE_MESSAGE = 30 * JOUR;
 const TAILLE_MAX = 24 * 1024 * 1024;   // limite d'une valeur Workers KV : 25 Mo

@@ -411,7 +411,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 49, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 50, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -637,11 +637,11 @@
                 (codeDefini() ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_SUPPRIMER_CODE()">Supprimer le code d\'accès</button>' : '') +
                 // Mes rôles : chacun est missionnaire ; valideurs et assistant Chorus DT cochent en plus leur rôle, avec son code.
                 '<div class="JUM-R-TITRE">Mes rôles</div>' +
-                '<p class="JUM-R-AIDE">Vous êtes missionnaire. Si l\'un de ces rôles vous a été confié, cochez-le : son code, remis par l\'administrateur, vous est demandé une seule fois.</p>' +
-                caseRole('VAL1', 'valideur1', 'Je suis <b>1er valideur</b> (chef de service)', 'Code d\'accès 1er valideur') +
-                caseRole('VAL2', 'valideur2', 'Je suis <b>2e valideur</b>', 'Code d\'accès 2e valideur') +
+                '<p class="JUM-R-AIDE">Vous êtes missionnaire. Si un ou plusieurs de ces rôles vous ont été confiés, cochez-les (vous pouvez les avoir tous) : chaque code, remis par l\'administrateur, est demandé une seule fois.</p>' +
+                caseRole('VAL1', 'valideur1', '<b>VALIDEUR 1</b> (chef de service)', 'Code VALIDEUR 1') +
+                caseRole('VAL2', 'valideur2', '<b>VALIDEUR 2</b>', 'Code VALIDEUR 2') +
                 '<div id="JUM-R-FONCTION-BLOC" style="display:none;">' + champ('FONCTION', 'Ma fonction de valideur', (lireJSON('mer_valideur') || {}).fonction || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE SERVICE"') + '</div>' +
-                caseRole('CHORUS', 'chorus', 'Je suis <b>assistant Chorus DT</b>', 'Code Assistant Chorus DT') +
+                caseRole('CHORUS', 'chorus', '<b>ASSIST CHORUS DT</b>', 'Code ASSIST CHORUS DT') +
                 '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>' +
                 '<p class="JUM-R-ERREUR" id="JUM-R-ERREUR"></p>' +
             '</div>' +
@@ -700,10 +700,12 @@
             r.onsuccess = function() { ok(r.result); }; r.onerror = function() { ko(r.error); };
         });
     }
-    function accesValideur(action, valeur) {
+    // Clés : « valideur » (rôle en cours dans l'Espace valideur), « valideur1 » et « valideur2 » (un rôle chacune).
+    function accesValideur(action, valeur, cle) {
+        cle = cle || 'valideur';
         return baseMer().then(function(db) { return new Promise(function(ok, ko) {
             var tx = db.transaction('acces', action === 'lire' ? 'readonly' : 'readwrite'), st = tx.objectStore('acces');
-            var r = action === 'lire' ? st.get('valideur') : action === 'effacer' ? st.delete('valideur') : st.put(valeur, 'valideur');
+            var r = action === 'lire' ? st.get(cle) : action === 'effacer' ? st.delete(cle) : st.put(valeur, cle);
             tx.oncomplete = function() { db.close(); ok(action === 'lire' ? (r.result || null) : null); };
             tx.onerror = function() { db.close(); ko(tx.error); };
         }); });
@@ -724,14 +726,15 @@
                     }).then(function(k) { return { cle: k, pub: a.cle }; });
                 });
             }, Promise.reject(new Error('code')));
-        }).catch(function() { throw 'Code d\'accès ' + (niveau === 1 ? '1er' : '2e') + ' valideur incorrect.'; });
+        }).catch(function() { throw 'Code VALIDEUR ' + niveau + ' incorrect.'; });
     }
-    // Rôle valideur retiré : sa clé mémorisée est oubliée (si c'est bien celle de ce rôle).
+    // Rôle valideur retiré : sa clé est oubliée ; si c'était le rôle en cours, l'autre rôle (s'il existe) prend la suite.
     function oublierAccesValideur(niveau) {
-        return Promise.all([accesValideur('lire'), listeValideurs()]).then(function(r) {
+        var autre = niveau === 1 ? 2 : 1;
+        return Promise.all([accesValideur('lire'), listeValideurs(), accesValideur('lire', null, 'valideur' + autre), accesValideur('effacer', null, 'valideur' + niveau)]).then(function(r) {
             var m = r[0]; if (!m) return;
             var a = (r[1].valideurs || []).filter(function(x) { return x.cle === m.pub; })[0];
-            if (!a || a.role === niveau) return accesValideur('effacer');
+            if (!a || a.role === niveau) return r[2] ? accesValideur('ecrire', r[2]) : accesValideur('effacer');
         }).catch(function() {});
     }
     window.JUMELAGE_FERMER_REGLAGES = function() { if (reglages) { reglages.remove(); reglages = null; } };
@@ -770,14 +773,14 @@
         var fonction = v('FONCTION').toUpperCase();
         var nouveaux = roles.filter(function(x) { return x.veut && !x.actif; });
         var sansCode = nouveaux.filter(function(x) { return !x.code; })[0];
-        if (sansCode) return refuser('Saisissez le code de votre rôle (' + { VAL1: '1er valideur', VAL2: '2e valideur', CHORUS: 'assistant Chorus DT' }[sansCode.id] + '), ou décochez la case.');
+        if (sansCode) return refuser('Saisissez le code ' + { VAL1: 'VALIDEUR 1', VAL2: 'VALIDEUR 2', CHORUS: 'ASSIST CHORUS DT' }[sansCode.id] + ', ou décochez la case.');
         if (roles.some(function(x) { return x.niveau && x.veut; }) && !fonction) return refuser('Indiquez votre fonction de valideur (ex : CHEF DE SERVICE).');
         if (roles.some(function(x) { return x.niveau && x.veut; }) && (!r.grade || !r.nom || !r.prenom)) return refuser('Un valideur signe avec son grade, son nom et son prénom : renseignez-les.');
-        var acces = null;
+        var acces = {};
         var etapeRole = nouveaux.reduce(function(prec, x) {
             return prec.then(function() {
-                if (x.niveau) return verifierCodeValideur(x.code, x.niveau).then(function(a) { acces = a; });
-                return empreinteCodeChorus(x.code).then(function(h) { if (h !== EMPREINTE_CODE_CHORUS) throw 'Code Assistant Chorus DT incorrect.'; });
+                if (x.niveau) return verifierCodeValideur(x.code, x.niveau).then(function(a) { acces[x.niveau] = a; });
+                return empreinteCodeChorus(x.code).then(function(h) { if (h !== EMPREINTE_CODE_CHORUS) throw 'Code ASSIST CHORUS DT incorrect.'; });
             });
         }, Promise.resolve());
         etapeRole.then(function() {
@@ -791,14 +794,16 @@
             val.grade = r.grade; val.nom = r.nom; val.prenom = r.prenom; val.fonction = fonction;
             ecrireTxt('mer_valideur', JSON.stringify(val));
         }
-        var etapeAcces = acces ? accesValideur('ecrire', acces).catch(function() {}) : Promise.resolve();
+        // Une clé par rôle ; le rôle en cours de l'Espace valideur devient le premier rôle nouvellement activé.
+        var etapeAcces = Promise.all(Object.keys(acces).map(function(n) { return accesValideur('ecrire', acces[n], 'valideur' + n); }))
+            .then(function() { var n = acces[1] ? 1 : acces[2] ? 2 : 0; return n ? accesValideur('ecrire', acces[n]) : null; }).catch(function() {});
         roles.forEach(function(x) { if (x.niveau && x.actif && !x.veut) etapeAcces = etapeAcces.then(function() { return oublierAccesValideur(x.niveau); }); });
         ecrireReglages(r);
         Promise.all([c1 ? poserCode(c1) : Promise.resolve(), etapeAcces]).then(function() {
             window.JUMELAGE_FERMER_REGLAGES();
             if (roleAvant !== veutChorus && ecran) { ecran.remove(); ecran = null; window.JUMELAGE_CHOIX(); }
-            var actives = changes.filter(function(x) { return x.veut; }).map(function(x) { return { VAL1: '1er valideur', VAL2: '2e valideur', CHORUS: 'assistant Chorus DT' }[x.id]; });
-            bandeau(actives.length ? 'Rôle ' + actives.join(' et ') + ' activé' + (roles[2].veut && !roles[2].actif ? ' : votre espace Assistant Chorus DT est au centre de l\'écran de choix.' : ' : votre boîte TRIGONE reçoit les demandes à signer.') :
+            var actives = changes.filter(function(x) { return x.veut; }).map(function(x) { return { VAL1: 'VALIDEUR 1', VAL2: 'VALIDEUR 2', CHORUS: 'ASSIST CHORUS DT' }[x.id]; });
+            bandeau(actives.length ? (actives.length > 1 ? 'Rôles ' : 'Rôle ') + actives.join(' et ') + (actives.length > 1 ? ' activés' : ' activé') + (roles[2].veut && !roles[2].actif ? ' : votre espace Assistant Chorus DT est au centre de l\'écran de choix.' : ' : votre boîte TRIGONE reçoit les demandes à signer.') :
                 premiere ? 'C\'est prêt : vos informations pré-rempliront Mise en route et Compte-rendu.' : 'Réglages enregistrés.');
             if (changes.length && window.JUMELAGE_ROLES_CHANGES) try { window.JUMELAGE_ROLES_CHANGES(); } catch (e) {}
             if (window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
