@@ -117,10 +117,10 @@
         '.JUM-ROUE-MENU .JUM-ROUE-DANGER svg { stroke: #b91c1c; } .JUM-ROUE-MENU .JUM-ROUE-DANGER b { color: #b91c1c; } .JUM-ROUE-MENU .JUM-ROUE-DANGER:hover { background: #fef2f2; }' +
         '.JUM-ROUE-MENU b { display: block; font-size: 0.84rem; } .JUM-ROUE-MENU small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 2px; }' +
         /* Présentation TRIGONE */
-        '.JUM-PRES { position: fixed; inset: 0; z-index: 99992; background: radial-gradient(120% 90% at 50% 0%, #1d1d1d 0%, #0b0b0b 60%); color: #f5f5f5;' +
+        '.JUM-PRES { position: fixed; inset: 0; z-index: 99992; background: linear-gradient(165deg, #F8FBFD 0%, #E8F0F6 100%); color: #1a1a1a;' +
             ' font-family: Montserrat, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; opacity: 0; transition: opacity 0.38s ease; }' +
         '.JUM-PRES.visible { opacity: 1; }' +
-        '.JUM-PRES-TRAIT { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(214,167,86,0.28) 50%, transparent calc(50% + 1px)); }' +
+        '.JUM-PRES-TRAIT { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(90,122,148,0.22) 50%, transparent calc(50% + 1px)); }' +
         '.JUM-PRES-DEFIL { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }' +
         '.JUM-PRES-CONTENU { position: relative; max-width: 960px; margin: 0 auto; padding: max(34px, env(safe-area-inset-top, 0px)) 20px max(34px, env(safe-area-inset-bottom, 0px)); text-align: center; }' +
         '.JUM-PRES-CONTENU > * { opacity: 0; transform: translateY(12px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2,0.8,0.2,1); }' +
@@ -128,34 +128,34 @@
         '.JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(2) { transition-delay: 0.08s; } .JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(3) { transition-delay: 0.14s; }' +
         '.JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(4) { transition-delay: 0.22s; } .JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(5) { transition-delay: 0.3s; }' +
         '.JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(6) { transition-delay: 0.4s; } .JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(n+7) { transition-delay: 0.5s; }' +
-        '.JUM-PRES-LOGO { width: 92px; height: auto; filter: brightness(0) invert(1); }' +
+        '.JUM-PRES-LOGO { width: 92px; height: auto; }' +
         '.JUM-PRES-MARQUE { font-size: 2rem; font-weight: 800; letter-spacing: 0.34em; margin: 10px 0 4px; padding-left: 0.34em; }' +
-        '.JUM-PRES-LIGNE { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #d6a756; }' +
+        '.JUM-PRES-LIGNE { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #5a7a94; }' +
         '.JUM-PRES-LIGNE span { margin: 0 6px; }' +
         '@media (max-width: 440px) { .JUM-PRES-LIGNE { font-size: 0.58rem; letter-spacing: 0.1em; } .JUM-PRES-MARQUE { font-size: 1.7rem; } }' +
         '.JUM-PRES h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: clamp(1.5rem, 4.2vw, 2.3rem); line-height: 1.25; margin: 26px 0 10px; }' +
-        '.JUM-PRES h1 em { font-style: normal; color: #d6a756; }' +
-        '.JUM-PRES-CHAPO { max-width: 620px; margin: 0 auto 26px; font-size: 0.9rem; line-height: 1.6; color: #a3a3a3; }' +
+        '.JUM-PRES h1 em { font-style: normal; color: #5a7a94; }' +
+        '.JUM-PRES-CHAPO { max-width: 620px; margin: 0 auto 26px; font-size: 0.9rem; line-height: 1.6; color: #525252; }' +
         '.JUM-PRES-DUO { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; text-align: left; }' +
         '@media (max-width: 640px) { .JUM-PRES-DUO { grid-template-columns: 1fr; } }' +
         '.JUM-PRES-VOLET { border-radius: 18px; padding: 20px 20px 16px; }' +
-        '.JUM-PRES-CLAIR { background: linear-gradient(150deg, #ffffff 0%, #e6edf3 100%); color: #1a1a1a; }' +
-        '.JUM-PRES-SOMBRE { background: #161616; border: 1px solid rgba(214,167,86,0.45); color: #f5f5f5; }' +
+        '.JUM-PRES-CLAIR { background: #fff; border: 1px solid #e8e8e8; box-shadow: 0 10px 40px rgba(0,0,0,0.06); color: #1a1a1a; }' +
+        '.JUM-PRES-SOMBRE { background: #1a1a1a; box-shadow: 0 10px 40px rgba(0,0,0,0.14); color: #f5f5f5; }' +
         '.JUM-PRES-NUM { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #5a7a94; }' +
-        '.JUM-PRES-SOMBRE .JUM-PRES-NUM { color: #d6a756; }' +
+        '.JUM-PRES-SOMBRE .JUM-PRES-NUM { color: #7a9db5; }' +
         '.JUM-PRES-TITRE { font-size: 1.1rem; font-weight: 800; margin: 6px 0 10px; }' +
         '.JUM-PRES-VOLET ul { margin: 0; padding: 0; list-style: none; }' +
         '.JUM-PRES-VOLET li { position: relative; padding: 7px 0 7px 22px; font-size: 0.82rem; line-height: 1.45; border-top: 1px solid rgba(90,122,148,0.18); }' +
         '.JUM-PRES-SOMBRE li { border-top-color: rgba(255,255,255,0.08); }' +
         '.JUM-PRES-VOLET li:first-child { border-top: 0; }' +
         '.JUM-PRES-VOLET li::before { content: ""; position: absolute; left: 2px; top: 13px; width: 8px; height: 8px; border-radius: 2px; transform: rotate(45deg); background: #5a7a94; }' +
-        '.JUM-PRES-SOMBRE li::before { background: #d6a756; }' +
+        '.JUM-PRES-SOMBRE li::before { background: #7a9db5; }' +
         '.JUM-PRES-GARANTIES { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 26px; }' +
         '@media (max-width: 640px) { .JUM-PRES-GARANTIES { grid-template-columns: 1fr; } }' +
-        '.JUM-PRES-GARANTIES div { display: flex; align-items: center; gap: 10px; justify-content: center; padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.78rem; color: #d4d4d4; }' +
-        '.JUM-PRES-GARANTIES svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #d6a756; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
-        '.JUM-PRES-BTN { border: 0; border-radius: 14px; padding: 15px 44px; background: #d6a756; color: #141414; font: 800 0.84rem Montserrat, system-ui, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }' +
-        '.JUM-PRES-BTN:hover { background: #e2b86c; }' +
+        '.JUM-PRES-GARANTIES div { display: flex; align-items: center; gap: 10px; justify-content: center; padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.7); border: 1px solid #e8e8e8; font-size: 0.78rem; font-weight: 600; color: #404040; }' +
+        '.JUM-PRES-GARANTIES svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-PRES-BTN { border: 0; border-radius: 14px; padding: 15px 44px; background: #1a1a1a; color: #fff; box-shadow: 0 10px 26px rgba(0,0,0,0.18); font: 800 0.84rem Montserrat, system-ui, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }' +
+        '.JUM-PRES-BTN:hover { background: #333; }' +
         '@media (prefers-reduced-motion: reduce) { .JUM-PRES, .JUM-PRES-CONTENU > * { transition: none; } }' +
         /* Réglages TRIGONE */
         '.JUM-REGLAGES { position: fixed; inset: 0; z-index: 99990; background: rgba(15,15,15,0.72); display: flex; align-items: center; justify-content: center; padding: 16px;' +
@@ -215,7 +215,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 14, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 15, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
