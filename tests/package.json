@@ -1,0 +1,11 @@
+{
+  "name": "trigone-tests",
+  "private": true,
+  "description": "Tests automatiques de TRIGONE (Mise en route + Compte-rendu de mission)",
+  "scripts": {
+    "test": "node lancer.js"
+  },
+  "devDependencies": {
+    "playwright": "^1.47.0"
+  }
+}
