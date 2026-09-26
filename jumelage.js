@@ -414,7 +414,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 51, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 52, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1201,6 +1201,65 @@
             });
         });
     };
+    // ---------- Notifications (Web Push) : l'appareil est prévenu de chaque envoi, même TRIGONE fermée ----------
+    // Abonnement par le service worker de Mise en route (portée : tout TRIGONE). iPhone / iPad : seulement pour
+    // TRIGONE installée sur l'écran d'accueil (iOS 16.4 ou plus). La permission se demande sur un geste (bouton).
+    var CLE_NOTIF = 'trigone_notif';
+    function notifPossible() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+    function notifEtat() {
+        if (!notifPossible()) return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'ios' : 'impossible';
+        return Notification.permission === 'granted' ? (lireTxt(CLE_NOTIF) ? 'active' : 'autorisee') : Notification.permission === 'denied' ? 'refusee' : 'a-demander';
+    }
+    function enregistrementRacine() {
+        return navigator.serviceWorker.getRegistration(APPLIS.mer.url).then(function(r) {
+            return r || navigator.serviceWorker.register(APPLIS.mer.url + 'sw.js', { scope: APPLIS.mer.url });
+        }).then(function() { return navigator.serviceWorker.getRegistration(APPLIS.mer.url); }).then(function(r) {
+            if (!r) throw new Error('Service indisponible : rechargez TRIGONE.');
+            return r.active ? r : new Promise(function(ok) { var w = r.installing || r.waiting; if (!w) return ok(r); w.addEventListener('statechange', function() { if (w.state === 'activated') ok(r); }); });
+        });
+    }
+    // Abonne l'appareil et donne l'abonnement au serveur (une fois par appareil et par abonnement).
+    function abonnerNotif() {
+        var c = monCompte(); if (!c) return Promise.reject(new Error('Activez d\'abord votre compte TRIGONE.'));
+        return enregistrementRacine().then(function(reg) {
+            return reg.pushManager.getSubscription().then(function(ab) {
+                if (ab) return ab;
+                return appelApi('push/cle').then(function(r) {
+                    return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: depuisB64(r.cle.replace(/-/g, '+').replace(/_/g, '/') + '==='.slice((r.cle.length + 3) % 4)) });
+                });
+            });
+        }).then(function(ab) {
+            var j = ab.toJSON(), marque = c.appareil + '|' + j.endpoint;
+            if (lireTxt(CLE_NOTIF) === marque) return true;
+            return appelApi('push', { methode: 'POST', corps: { abonnement: { endpoint: j.endpoint, keys: j.keys } } }).then(function() { ecrireTxt(CLE_NOTIF, marque); return true; });
+        });
+    }
+    window.JUMELAGE_ACTIVER_NOTIF = function() {
+        if (!notifPossible()) return Promise.reject(new Error(notifEtat() === 'ios'
+            ? 'Sur iPhone / iPad, installez d\'abord TRIGONE sur l\'écran d\'accueil (Partager › Sur l\'écran d\'accueil), ouvrez-la depuis cette icône, puis activez les notifications.'
+            : 'Ce navigateur ne permet pas les notifications.'));
+        return Notification.requestPermission().then(function(p) {
+            if (p !== 'granted') throw new Error('Notifications refusées. Pour les autoriser : réglages du navigateur (ou du téléphone) › Notifications › TRIGONE.');
+            return abonnerNotif();
+        });
+    };
+    window.JUMELAGE_NOTIF_ETAT = notifEtat;
+    // Déjà autorisées : l'abonnement est tenu à jour à chaque ouverture (nouvel appareil, compte réactivé…).
+    function suivreNotif() { if (monCompte() && notifPossible() && Notification.permission === 'granted' && navigator.onLine) abonnerNotif().catch(function() {}); }
+    if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function(ev) {
+        if (ev.data && ev.data.type === 'trigone-push' && window.JUMELAGE_RELEVER) window.JUMELAGE_RELEVER();
+    });
+    function blocNotif() {
+        var e = notifEtat();
+        if (e === 'active') return '<p class="JUM-R-AIDE">🔔 <b>Notifications activées</b> sur cet appareil : vous êtes prévenu de chaque envoi, même TRIGONE fermée.</p>';
+        if (e === 'impossible') return '<p class="JUM-R-AIDE">🔕 Ce navigateur ne permet pas les notifications : ouvrez TRIGONE pour relever vos envois.</p>';
+        return '<div class="JUM-R-TITRE">Notifications</div><p class="JUM-R-AIDE">' + (e === 'ios'
+            ? 'Sur iPhone / iPad, les notifications demandent TRIGONE <b>installée sur l\'écran d\'accueil</b> (Partager › Sur l\'écran d\'accueil) : ouvrez-la depuis cette icône, puis revenez ici.'
+            : e === 'refusee' ? 'Les notifications sont bloquées pour TRIGONE : autorisez-les dans les réglages du navigateur (ou du téléphone), puis revenez ici.'
+            : 'Soyez prévenu de chaque demande, refus ou compte-rendu reçu, même quand TRIGONE est fermée.') + '</p>' +
+            (e === 'ios' || e === 'refusee' ? '' : '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-NOTIF" style="margin:8px 0 0; width:100%;">🔔 Activer les notifications</button>');
+    }
+
     // ---------- Boîte de réception (sur l'appareil) ----------
     // Chaque envoi reçu est déchiffré, rangé sur l'appareil (Cache « trigone-boite-reception » + index localStorage
     // « trigone_boite »), puis supprimé du serveur. Il reste dans la boîte jusqu'à ce qu'on le traite ou le supprime.
@@ -1220,6 +1279,7 @@
                 dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length };
             var ds = d.demandes || [], p0 = ((ds[0] || {}).personnes || [])[0] || {};
             var nature = ds.some(function(x) { return x.refus; }) ? 'refus'
+                : ds.length && ds.every(function(x) { return x.renvoi && !(x.validations || []).length; }) ? 'renvoi'
                 : ds.length && ds.every(function(x) { return (x.validations || []).length >= 2; }) ? 'chorus'
                 : ds.some(function(x) { return (x.validations || []).length === 1; }) ? 'niveau2' : 'niveau1';
             var a = ((ds[0] || {}).trajets || {}).aller || {}, r = ((ds[0] || {}).trajets || {}).retour || {};
@@ -1289,7 +1349,7 @@
                             var o = JSON.parse(clair), info = resumeEnvoi(o.contenu);
                             // Contenu conforme au type annoncé (demande → non signée, 1er valideur → 1 signature,
                             // Chorus → 2 signatures, refus → refus, CR → compte-rendu) ; sinon l'envoi est écarté.
-                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus', CR: 'cr' }[x.type];
+                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus', CR: 'cr', RENVOI: 'renvoi' }[x.type];
                             if (attendu && info.nature !== attendu) { ecartes++; return appelApi('boite/' + e.id, { methode: 'DELETE' }); }
                             return caches.open(CACHE_BOITE).then(function(c) {
                                 return c.put('__boite__/' + e.id, new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));
@@ -1318,7 +1378,7 @@
     // Relève automatique : à l'ouverture, au retour dans l'appli, puis toutes les 45 secondes tant qu'elle est affichée.
     function releveAuto() { if (document.visibilityState === 'visible' && !document.body.classList.contains('demo-active')) window.JUMELAGE_RELEVER(); }
     if (monCompte()) {
-        var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); setTimeout(declarerRoles, 2500); };
+        var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); setTimeout(declarerRoles, 2500); setTimeout(suivreNotif, 3500); };
         if (document.body) lancerReleve(); else document.addEventListener('DOMContentLoaded', lancerReleve);
     }
     document.addEventListener('visibilitychange', function() { if (monCompte()) releveAuto(); });
@@ -1340,9 +1400,18 @@
             fenCompte.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS">' +
                 '<p class="JUM-R-AIDE" style="margin-top:14px;">✓ <b>Compte actif : ' + esc(c.mail) + '</b><br>Cet appareil reçoit les demandes qui vous sont envoyées ; elles arrivent à l\'ouverture de Mise en route.</p>' +
                 '<p class="JUM-R-AIDE">Sur un autre appareil (PC, téléphone), activez aussi votre compte avec la même adresse : chacun recevra les envois.</p>' +
+                blocNotif() +
                 '<button type="button" class="JUM-R-LIEN" id="JUM-C-DECO">Déconnecter cet appareil</button><p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
                 '<div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_COMPTE()">Fermer</button></div></div>';
             document.body.appendChild(fenCompte);
+            var btnNotif = fenCompte.querySelector('#JUM-C-NOTIF');
+            if (btnNotif) btnNotif.addEventListener('click', function() {
+                var err = fenCompte.querySelector('#JUM-C-ERR');
+                btnNotif.disabled = true; btnNotif.textContent = 'Activation…'; err.textContent = '';
+                window.JUMELAGE_ACTIVER_NOTIF().then(function() {
+                    window.JUMELAGE_FERMER_COMPTE(); bandeau('🔔 Notifications activées : vous serez prévenu de chaque envoi.');
+                }, function(e) { btnNotif.disabled = false; btnNotif.textContent = '🔔 Activer les notifications'; err.textContent = '⛔ ' + (e.message || e); });
+            });
             fenCompte.querySelector('#JUM-C-DECO').addEventListener('click', function() {
                 if (!window.confirm('Déconnecter cet appareil ? Il ne pourra plus envoyer ni recevoir d\'envois TRIGONE.')) return;
                 appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() {
@@ -1401,6 +1470,8 @@
                     try { localStorage.removeItem(CLE_ROLES_DECLARES); } catch (e) {}
                     declarerRoles();
                     window.JUMELAGE_RELEVER();
+                    // Compte actif : la fenêtre se rouvre pour proposer les notifications (sur un geste de l'utilisateur).
+                    if (notifEtat() === 'a-demander' || notifEtat() === 'autorisee') setTimeout(window.JUMELAGE_COMPTE, 600); else suivreNotif();
                 });
             }).catch(function(e) { err.textContent = '⛔ ' + e.message; btnValider.disabled = false; });
         });
@@ -1989,6 +2060,8 @@
     // d'ouverture, la présentation, le code d'accès et « Avant de commencer », qui gardent la priorité.
     var dejaChoisi = false;
     try { dejaChoisi = sessionStorage.getItem(CLE_CHOIX) === '1'; } catch (e) {}
+    // Ouverture depuis une notification (boîte de réception ou espace Assistant Chorus DT) : droit à l'espace visé.
+    if (!DANS_CR && /[?&]espace=(boite|chorus)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
     // Juste après une mise à jour (nouvelle publication chargée, quelle qu'en soit la cause) : retour à l'écran de choix.
     var buildVu = +lireTxt('trigone_build_vu') || 0;
     var apresMaj = false;

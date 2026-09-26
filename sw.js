@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v105';
+const CACHE_NAME = 'trigone-mise-en-route-v106';
 const ASSETS = [
   './',
   './manifest.json',
@@ -139,6 +139,30 @@ function reseauDAbord(request, fin) {
     });
   });
 }
+
+// Notifications TRIGONE (Web Push) : un envoi est arrivé dans la boîte ; les pages ouvertes relèvent aussitôt.
+self.addEventListener('push', function(event) {
+  var d = {};
+  try { d = event.data ? event.data.json() : {}; } catch (e) {}
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(fenetres) {
+    fenetres.forEach(function(f) { f.postMessage({ type: 'trigone-push' }); });
+    return self.registration.showNotification(d.titre || 'TRIGONE', {
+      body: d.texte || 'Nouvel envoi dans votre boîte TRIGONE.',
+      icon: self.registration.scope + 'icon-192.png', badge: self.registration.scope + 'favicon-32.png',
+      tag: 'trigone-' + (d.type || 'boite'), renotify: true,
+      data: { url: new URL((d.url || '/?espace=boite').replace(/^\//, ''), self.registration.scope).href }
+    });
+  }));
+});
+self.addEventListener('notificationclick', function(event) {
+  event.notification.close();
+  var cible = (event.notification.data && event.notification.data.url) || self.registration.scope;
+  event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(fenetres) {
+    var f = fenetres.filter(function(x) { return x.url.indexOf(self.registration.scope) === 0; })[0];
+    if (f && f.navigate) return f.focus().then(function() { return f.navigate(cible); }).catch(function() { return self.clients.openWindow(cible); });
+    return self.clients.openWindow(cible);
+  }));
+});
 
 self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;

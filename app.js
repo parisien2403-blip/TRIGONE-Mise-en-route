@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 98;
+var APP_CODE_VERSION = 99;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -328,7 +328,8 @@ function TPL_ESPACE_VALIDATION_PC(v, h) {
         var ko = verif.some(function(x) { return !x.ok; }) || (e.pjAlterees || []).length;
         var pourMoi = niveau === h.role && !ko, cochable = !e.decision && pourMoi;
         if (cochable) cochables++;
-        var etat = e.decision === 'VALIDEE' ? ['Validée', 'PC-BADGE-OK'] : e.decision === 'REFUSEE' ? ['Refusée', 'PC-BADGE-KO']
+        var etat = e.decision === 'VALIDEE' ? ['Validée', 'PC-BADGE-OK'] : e.decision === 'REFUSEE' ? ['Refusée', 'PC-BADGE-KO'] : e.decision === 'RENVOYEE' ? ['Renvoyée au V1', 'PC-BADGE-KO']
+            : d.renvoi && niveau === 1 && pourMoi ? ['Renvoyée par V2', '']
             : niveau > 2 ? ['Déjà validée', 'PC-BADGE-OK'] : ko ? ['Non conforme', 'PC-BADGE-KO'] : pourMoi ? ['À valider', ''] : ['Autre niveau', 'PC-BADGE-GRIS'];
         var p0 = (d.personnes || [])[0] || {}, n = (d.personnes || []).length;
         var a = (d.trajets && d.trajets.aller) || {}, r = (d.trajets && d.trajets.retour) || {};
@@ -1111,17 +1112,19 @@ function TPL_FORMULAIRE() {
         : TPL_ONGLET_IMPUTATION();
     return '' +
     '<div class="CARD">' +
-      '<h2>Nouvelle demande</h2>' +
-      '<p class="MER-HINT" style="margin:4px 0 16px;">Demande d\'Ordre de Mise en Route (DOMR)</p>' +
-      (D.refus ? '<p class="MER-HINT" style="color:#b91c1c; font-weight:800; margin:-6px 0 16px;">✖ Refusée par ' +
-          ESC(D.refus.grade + ' ' + D.refus.nom) + ' : ' + ESC(D.refus.motif) + '</p>' : '') +
+      '<h2>' + (MER_CORRECTION() ? 'Correction — VALIDEUR 1' : 'Nouvelle demande') + '</h2>' +
+      '<p class="MER-HINT" style="margin:4px 0 16px;">' + (MER_CORRECTION() ? 'Corrigez la demande, puis « Terminer la correction » : elle revient dans votre Espace valideur, à revalider.' : 'Demande d\'Ordre de Mise en Route (DOMR)') + '</p>' +
+      (D.refus && !MER_CORRECTION() ? '<p class="MER-HINT" style="color:#b91c1c; font-weight:800; margin:-6px 0 16px;">✖ Refusée par ' + PAR_QUI(D.refus) + ' (' +
+          ESC(D.refus.grade + ' ' + D.refus.nom) + ') : ' + ESC(D.refus.motif) + '</p>' : '') +
+      (MER_CORRECTION() && D.renvoi ? '<p class="MER-HINT" style="color:#b45309; font-weight:800; margin:-6px 0 16px;">↩ Renvoyée par le VALIDEUR 2 (' +
+          ESC(D.renvoi.grade + ' ' + D.renvoi.nom) + ') : ' + ESC(D.renvoi.motif) + '</p>' : '') +
       TPL_TABS_BAR() +
       contenu +
       '<div class="MER-BOTTOM-BAR">' +
         (idx === 0
-            ? '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="SHOW_PAGE(\'ACCUEIL\')">Annuler</button>'
+            ? '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="' + (MER_CORRECTION() ? 'ANNULER_CORRECTION()' : 'SHOW_PAGE(\'ACCUEIL\')') + '">Annuler</button>'
             : '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="MER_TAB_PRECEDENT()">← Précédent</button>') +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="MER_TAB_SUIVANT()">' + (dernier ? 'Ajouter aux documents →' : 'Étape suivante →') + '</button>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="MER_TAB_SUIVANT()">' + (dernier ? (MER_CORRECTION() ? 'Terminer la correction ✔' : 'Ajouter aux documents →') : 'Étape suivante →') + '</button>' +
       '</div>' +
     '</div>';
 }
@@ -1133,6 +1136,7 @@ function AJOUTER_AU_PANIER() {
     if (!D.objet) { MSG_ERREUR('Objet manquant', 'Merci de renseigner l\'objet de la demande.'); return; }
     var malFormes = D.personnes.filter(function(p) { return p.matricule && p.matricule.replace(/\D/g, '').length !== 10; });
     if (malFormes.length) { MSG_ERREUR('Matricule incorrect', 'Le matricule doit comporter 10 chiffres (ex : 067 50 10 191) : ' + malFormes.map(function(p) { return p.nom || '?'; }).join(', ') + '.'); return; }
+    if (MER_CORRECTION()) { TERMINER_CORRECTION(); return; }
     var reg = GET_REGLAGES();
     reg.derniereUnite = p0.unite; reg.derniereCie = p0.cie;
     SAVE_REGLAGES(reg);
@@ -1144,6 +1148,43 @@ function AJOUTER_AU_PANIER() {
     CLEAR_BROUILLON();
     SHOW_PAGE('PANIER');
     MSG_INFO('Ajoutée à vos Documents', 'La demande de ' + noms + ' est rangée dans Documents, où elle attend son envoi au 1er valideur. Vous pouvez y ajouter d\'autres demandes pour les envoyer ensemble, en un seul mail.', '✅', 'mascotte-ok.webp');
+}
+
+// ---- Correction par le VALIDEUR 1 d'une demande renvoyée par le VALIDEUR 2 ----
+// Le formulaire sert à corriger ; le brouillon personnel éventuel est mis de côté puis rendu à la fin.
+var STORAGE_CORRECTION = 'mer_correction_valideur';
+function MER_CORRECTION() { try { return JSON.parse(localStorage.getItem(STORAGE_CORRECTION) || 'null'); } catch (e) { return null; } }
+function CORRIGER_PAR_VALIDEUR(id) {
+    var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0];
+    if (!e) return;
+    var brouillon = null;
+    try { brouillon = localStorage.getItem(STORAGE_BROUILLON); localStorage.setItem(STORAGE_CORRECTION, JSON.stringify({ id: id, brouillon: brouillon })); } catch (x) {}
+    D = JSON.parse(JSON.stringify(e.d)); D.validations = [];
+    MER_ACTIVE_TAB = 'IDENTITE';
+    SAVE_BROUILLON();
+    SHOW_PAGE('FORMULAIRE');
+}
+function FIN_CORRECTION() {
+    var c = MER_CORRECTION();
+    try { localStorage.removeItem(STORAGE_CORRECTION); } catch (x) {}
+    if (c && c.brouillon) { try { localStorage.setItem(STORAGE_BROUILLON, c.brouillon); } catch (x) {} LOAD_BROUILLON(); }
+    else CLEAR_BROUILLON();
+}
+function TERMINER_CORRECTION() {
+    var c = MER_CORRECTION(), liste = GET_A_VALIDER(), d = JSON.parse(JSON.stringify(D));
+    liste.forEach(function(e) {
+        if (!c || e.id !== c.id) return;
+        d.validations = []; e.d = d; e.decision = null; e.signature = null; e.pjAlterees = []; e.corrigee = true;
+    });
+    SAVE_A_VALIDER(liste);
+    FIN_CORRECTION();
+    SHOW_PAGE('VALIDATION');
+    MSG_INFO('Correction terminée', 'La demande corrigée est dans votre Espace valideur : validez-la pour la renvoyer au VALIDEUR 2, ou refusez-la au demandeur.', '✅', 'mascotte-ok.webp');
+}
+function ANNULER_CORRECTION() {
+    MSG_CONFIRM('Abandonner la correction ?', 'Vos modifications ne seront pas gardées ; la demande reste telle quelle dans votre Espace valideur.', 'Abandonner', function() {
+        FIN_CORRECTION(); SHOW_PAGE('VALIDATION');
+    }, '⚠️');
 }
 
 function RETIRER_DU_PANIER(id) {
@@ -1183,8 +1224,8 @@ function TPL_PANIER() {
     }
     var items = panier.map(function(d) {
         var r = RESUME_DEMANDE(d);
-        var refus = d.refus ? '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée par ' +
-            ESC(d.refus.grade + ' ' + d.refus.nom) + ' : ' + ESC(d.refus.motif) + '<br>Modifiez-la puis renvoyez-la.</div>' : '';
+        var refus = d.refus ? '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée par ' + PAR_QUI(d.refus) + ' (' +
+            ESC(d.refus.grade + ' ' + d.refus.nom) + ') : ' + ESC(d.refus.motif) + '<br>Modifiez-la puis renvoyez-la.</div>' : '';
         return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
             '<div class="MER-PANIER-ITEM-TITRE">' + ESC(r.noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' + refus +
@@ -1643,6 +1684,7 @@ var MER_NOTICE_CLE = null;
 var MER_NOTICES = {
     DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · documents · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
         etapes: ['<b>Compte TRIGONE</b> (roue crantée › Compte TRIGONE) : activez-le une fois avec votre adresse mail, vérifiée par un code. Tous les envois passent par la <b>boîte TRIGONE</b>, chiffrés : plus de fichier à joindre à un mail.',
+            '<b>Notifications</b> : dans Compte TRIGONE, « 🔔 Activer les notifications » vous prévient de chaque envoi reçu (demande à signer, refus, compte-rendu), même TRIGONE fermée — PC, Android, et iPhone / iPad avec TRIGONE installée sur l\'écran d\'accueil.',
             '<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
             '<b>Demande collective</b> : « + Ajouter une personne », ou <b>« 📥 Importer une liste »</b> depuis un tableau Excel (.xlsx), Calc (.ods) ou CSV aux colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID (« Télécharger le modèle »). Les personnes déjà présentes ne sont pas dupliquées.',
@@ -1659,7 +1701,7 @@ var MER_NOTICES = {
             '<b>Les deux rôles valideur ?</b> Dans l\'Espace valideur, la bascule <b>VALIDEUR 1 / VALIDEUR 2</b> choisit le niveau ; une demande ouverte depuis la Boîte de réception passe d\'elle-même au bon niveau. Une personne qui a les deux rôles peut valider les deux niveaux d\'une même demande.',
             'Ou, dans l\'<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Les demandes à signer arrivent dans votre <b>Boîte de réception</b> (pastille rouge) : « Ouvrir et signer » les affiche dans l\'Espace valideur, avec leur <b>aperçu</b> et leurs pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
-            '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
+            '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif : le VALIDEUR 1 refuse au demandeur ; le VALIDEUR 2 choisit de <b>renvoyer au VALIDEUR 1</b> ou directement au demandeur. Une demande renvoyée par le VALIDEUR 2 arrive chez le VALIDEUR 1 (« Renvoyée par le VALIDEUR 2 », avec le motif) : il la <b>✎ Corrige</b> à son niveau puis la revalide, la revalide telle quelle, ou la <b>refuse au demandeur</b>. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
             '<b>Transmettre</b> : pour chaque envoi, <b>« 📨 Envoyer »</b>. Le 1er valideur envoie au 2e valideur, le 2e valideur à l\'assistant Chorus DT ; un refus repart vers le demandeur, avec son motif. Chaque envoi arrive, chiffré, dans le TRIGONE du destinataire ; un destinataire qui n\'a pas encore de compte (ou pas le bon rôle) est signalé et l\'envoi attend.',
             'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
@@ -1667,6 +1709,7 @@ var MER_NOTICES = {
             '<b>Demandes de mise en route validées</b> : elles arrivent des 2e valideurs. « Ouvrir et contrôler » : TRIGONE contrôle les signatures électroniques et les pièces jointes. Un envoi qui n\'a pas les deux signatures est écarté.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).',
+            '<b>↩ Renvoyer au demandeur</b> : sur une demande reçue, renvoyez-la directement au demandeur avec un commentaire, sans repasser par les valideurs ; il la corrige et la renvoie (nouveau circuit de validation).',
             '<b>Comptes-rendus de mission</b> : envoyés par les missionnaires depuis TRIGONE Compte-rendu. « Ouvrir » liste le compte-rendu PDF et les justificatifs : téléchargez-les, puis « ✔ Traité ».'] }
 };
 function MER_ICONES_NOTICE_PERSO() { return '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'; }
@@ -1920,14 +1963,17 @@ function GENERER_JSON(demandes, etape) {
 //   3-SIGNE VALIDEUR 2 - ADJ BOUQUET - OMR INDIVIDUEL.json       (2e valideur → assistant Chorus DT)
 //   4-OMR VALIDE - ADJ BOUQUET - OMR INDIVIDUEL.pdf              (PDF généré par l'assistant Chorus DT)
 //   REFUS VALIDEUR 1 (ou 2) - ADJ BOUQUET - OMR INDIVIDUEL.json   (refus → missionnaire)
-var MER_ETAPES_FICHIER = { DEMANDE: '1-DEMANDE MISSIONNAIRE', VALIDATION_1: '2-SIGNE VALIDEUR 1', VALIDATION_2: '3-SIGNE VALIDEUR 2', PDF_FINAL: '4-OMR VALIDE' };
+var MER_ETAPES_FICHIER = { DEMANDE: '1-DEMANDE MISSIONNAIRE', VALIDATION_1: '2-SIGNE VALIDEUR 1', VALIDATION_2: '3-SIGNE VALIDEUR 2', PDF_FINAL: '4-OMR VALIDE', RENVOI: 'RENVOI VALIDEUR 2' };
 function NOM_FICHIER_BASE(panier, etape) {
     var d = panier[0], n = panier.length - 1;
     var qui = (SUJET_DEMANDEUR(d) || 'DEMANDE') + (n > 0 ? ' (+' + n + ')' : '');
-    var tete = etape === 'REFUS' ? 'REFUS VALIDEUR ' + ((d.refus && d.refus.niveau) || 1) : MER_ETAPES_FICHIER[etape || 'DEMANDE'];
+    var tete = etape === 'REFUS' ? 'REFUS ' + QUI_REFUSE(d.refus) : MER_ETAPES_FICHIER[etape || 'DEMANDE'];
     return (tete + ' - ' + qui + ' - OMR ' + SUJET_NATURE(d)).replace(/[\\\/:*?"<>|]+/g, '-').replace(/\s+/g, ' ').trim();
 }
 
+// Auteur d'un refus : VALIDEUR 1, VALIDEUR 2 ou ASSIST CHORUS DT (niveau 3).
+function QUI_REFUSE(r) { return r && r.niveau === 3 ? 'ASSIST CHORUS DT' : 'VALIDEUR ' + ((r && r.niveau) || 1); }
+function PAR_QUI(r) { return (r && r.niveau === 3 ? 'l\'' : 'le ') + QUI_REFUSE(r); }
 function TELECHARGER_TEXTE(nomFichier, contenu, type) {
     var blob = new Blob([contenu], { type: type });
     var url = URL.createObjectURL(blob);
@@ -1997,7 +2043,7 @@ function PANIER_A_ENVOYER() {
     var reg = GET_REGLAGES(), panier = GET_PANIER();
     // Un refus revient au demandeur, dans sa boîte TRIGONE : l'adresse de son compte.
     var moi = (window.JUMELAGE_COMPTE_MAIL && JUMELAGE_COMPTE_MAIL()) || (reg.mailDemandeur || '').trim();
-    panier.forEach(function(d) { d.mailDemandeur = moi; d.validations = []; delete d.refus; });
+    panier.forEach(function(d) { d.mailDemandeur = moi; d.validations = []; delete d.refus; delete d.renvoi; delete d.mailValideur1; });
     return panier;
 }
 // Envoi direct (compte TRIGONE) : le .json complet, chiffré, déposé dans la boîte du 1er valideur.
@@ -2242,6 +2288,8 @@ function JSON_STABLE(v) {
 function CONTENU_SIGNE(d) {
     var c = JSON.parse(JSON.stringify(d));
     delete c.validations; delete c.refus;
+    // Acheminement seulement (pas le contenu de la demande) : renvoi du VALIDEUR 2, adresse du VALIDEUR 1.
+    delete c.renvoi; delete c.mailValideur1;
     return c;
 }
 function TEXTE_A_SIGNER(d, niveau, signataire, le) {
@@ -2508,13 +2556,20 @@ function TPL_ENTREE_VALIDATION(e, h, sansCoche) {
         etat = '<div class="MER-HINT" style="color:#15803d; font-weight:800;">✔ Validée et signée le ' + ESC(new Date(e.signature.le).toLocaleString('fr-FR')) + '</div>';
         actions = '<button type="button" class="BTN-DANGER-TEXT" onclick="ANNULER_DECISION(\'' + e.id + '\')">Annuler</button>';
     } else if (e.decision === 'REFUSEE') {
-        etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée : ' + ESC(e.signature.motif) + '</div>';
+        etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée (au demandeur) : ' + ESC(e.signature.motif) + '</div>';
+        actions = '<button type="button" class="BTN-DANGER-TEXT" onclick="ANNULER_DECISION(\'' + e.id + '\')">Annuler</button>';
+    } else if (e.decision === 'RENVOYEE') {
+        etat = '<div class="MER-HINT" style="color:#b45309; font-weight:800;">↩ Renvoyée au VALIDEUR 1 : ' + ESC(e.signature.motif) + '</div>';
         actions = '<button type="button" class="BTN-DANGER-TEXT" onclick="ANNULER_DECISION(\'' + e.id + '\')">Annuler</button>';
     } else if (niveau <= 2) {
+        // Demande renvoyée par le VALIDEUR 2 : le VALIDEUR 1 la corrige, la revalide telle quelle, ou la refuse au demandeur.
+        if (d.renvoi && niveau === 1) etat = '<div class="MER-HINT" style="color:#b45309; font-weight:800;">↩ Renvoyée par le VALIDEUR 2 (' + ESC((d.renvoi.grade || '') + ' ' + (d.renvoi.nom || '')) + ') : ' +
+            ESC(d.renvoi.motif) + (e.corrigee ? '<br><span style="color:#15803d;">✔ Corrigée par vous : à revalider</span>' : '') + '</div>';
         if (pourMoi) actions += '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_DEMANDES([\'' + e.id + '\'])">Valider</button>';
-        else if (!precedenteKo) etat = '<div class="MER-HINT">Réservée au ' + LIBELLE_ROLE(niveau) + ' : vous ne pouvez pas la valider.</div>';
-        else etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">' + ((e.pjAlterees || []).length ? 'Demande non conforme' : 'Validation précédente non conforme') + ' : refusez cette demande.</div>';
-        actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">Refuser</button>';
+        if (pourMoi && d.renvoi && niveau === 1) actions += '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CORRIGER_PAR_VALIDEUR(\'' + e.id + '\')">✎ Corriger</button>';
+        else if (!precedenteKo) etat += '<div class="MER-HINT">Réservée au ' + LIBELLE_ROLE(niveau) + ' : vous ne pouvez pas la valider.</div>';
+        else etat += '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">' + ((e.pjAlterees || []).length ? 'Demande non conforme' : 'Validation précédente non conforme') + ' : refusez cette demande.</div>';
+        actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">' + (h.role === 2 ? 'Refuser / renvoyer' : d.renvoi ? 'Refuser au demandeur' : 'Refuser') + '</button>';
     }
     // Mauvaise manipulation (mauvais fichier, doublon) : la demande reçue s'efface sans être validée ni refusée.
     if (!e.decision) actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="EFFACER_RECUE(\'' + e.id + '\')">Effacer</button>';
@@ -2566,6 +2621,7 @@ function TPL_TRANSMISSION_VALIDATION(v, h, liste) {
     var champ2 = h.role === 1 || dest.vers2, champChorus = h.role !== 1 || dest.versChorus;
     var decidees = liste.filter(function(e) { return e.decision; }).length;
     return '<div class="MER-SECTION-TITLE">Transmission</div>' +
+        (dest.vers1 ? '<div class="MER-FIELD"><label>Mail du VALIDEUR 1 (renvoi)</label><input type="email" value="' + ESC(v.mailValideur1 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur1\', this.value)"></div>' : '') +
         (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
         (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
               '<p class="MER-HINT">Il reçoit les demandes validées dans son espace Assistant Chorus DT, qui contrôle les signatures et produit le PDF.</p></div>' : '') +
@@ -2590,8 +2646,9 @@ function TPL_VALIDATION() {
 }
 // Où partent les décisions prises : au 2e valideur (1re validation) ou à l'assistant Chorus DT (2e validation).
 function DESTINATIONS_DECISIONS(liste) {
-    var r = { vers2: false, versChorus: false };
+    var r = { vers2: false, versChorus: false, vers1: false };
     liste.forEach(function(e) {
+        if (e.decision === 'RENVOYEE' && !e.d.mailValideur1) r.vers1 = true;
         if (e.decision !== 'VALIDEE') return;
         if ((e.d.validations || []).length + 1 === 1) r.vers2 = true; else r.versChorus = true;
     });
@@ -2691,22 +2748,28 @@ function EFFACER_RECUE(id) {
 function ANNULER_DECISION(id) { MAJ_ENTREES([id], function(e) { e.decision = null; e.signature = null; }); }
 
 function DEMANDER_REFUS(id) {
-    AFFICHER_MODALE('Refuser la demande',
-        '<div class="MER-FIELD"><label>Motif du refus</label><textarea id="MER-MOTIF-REFUS" rows="4" placeholder="EX : merci de joindre la DAF"></textarea>' +
-        '<p class="MER-HINT">Le demandeur recevra ce motif et pourra corriger puis renvoyer sa demande.</p></div>',
+    var h = HABILITATION_COURANTE(), e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0];
+    var v2 = h && h.role === 2, motifRenvoi = e && e.d.renvoi && h && h.role === 1 ? e.d.renvoi.motif : '';
+    AFFICHER_MODALE(v2 ? 'Refuser / renvoyer' : 'Refuser la demande',
+        (v2 ? '<div class="MER-FIELD"><label>Renvoyer à</label>' +
+            '<label class="MER-CHOIX-RENVOI"><input type="radio" name="MER-RENVOI" value="V1" checked> <span><b>VALIDEUR 1</b> — il corrige à son niveau, ou renvoie au demandeur</span></label>' +
+            '<label class="MER-CHOIX-RENVOI"><input type="radio" name="MER-RENVOI" value="DEMANDEUR"> <span><b>Demandeur</b> — directement, pour qu\'il corrige et renvoie</span></label></div>' : '') +
+        '<div class="MER-FIELD"><label>Motif</label><textarea id="MER-MOTIF-REFUS" rows="4" placeholder="EX : merci de joindre la DAF">' + ESC(motifRenvoi) + '</textarea>' +
+        '<p class="MER-HINT">' + (v2 ? 'Le destinataire reçoit ce motif dans sa boîte TRIGONE (avec une notification).' : 'Le demandeur reçoit ce motif dans sa boîte TRIGONE (avec une notification) : il corrige puis renvoie sa demande.') + '</p></div>',
         '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Annuler</button>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="CONFIRMER_REFUS(\'' + id + '\')">Refuser</button>'
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="CONFIRMER_REFUS(\'' + id + '\')">' + (v2 ? 'Renvoyer' : 'Refuser') + '</button>'
     );
     setTimeout(function() { var t = document.getElementById('MER-MOTIF-REFUS'); if (t) t.focus(); }, 50);
 }
 function CONFIRMER_REFUS(id) {
     var motif = (document.getElementById('MER-MOTIF-REFUS').value || '').trim();
-    if (!motif) { MSG_ERREUR('Motif manquant', 'Merci d\'indiquer le motif du refus.'); return; }
+    if (!motif) { MSG_ERREUR('Motif manquant', 'Merci d\'indiquer le motif.'); return; }
+    var choix = document.querySelector('input[name="MER-RENVOI"]:checked');
     var h = HABILITATION_COURANTE();
     if (!MER_CLE_SESSION || !h) { FERMER_MODALE(); RENDER_VALIDATION_INPLACE(); return; }
     FERMER_MODALE();
     MAJ_ENTREES([id], function(e) {
-        e.decision = 'REFUSEE';
+        e.decision = choix && choix.value === 'V1' ? 'RENVOYEE' : 'REFUSEE';
         e.signature = { grade: h.grade, nom: h.nom, prenom: h.prenom, fonction: h.fonction, le: new Date().toISOString(), motif: motif };
     });
 }
@@ -2715,8 +2778,14 @@ function CONFIRMER_REFUS(id) {
 function DEMANDE_AVEC_DECISION(e) {
     var d = JSON.parse(JSON.stringify(e.d));
     d.validations = d.validations || [];
-    if (e.decision === 'VALIDEE') d.validations.push(e.signature);
-    if (e.decision === 'REFUSEE') { d.refus = e.signature; d.refus.niveau = NIVEAU_VALIDATION(e.d); }
+    if (e.decision === 'VALIDEE') {
+        d.validations.push(e.signature);
+        // Le VALIDEUR 2 saura à qui renvoyer la demande si besoin.
+        if (d.validations.length === 1 && window.JUMELAGE_COMPTE_MAIL && JUMELAGE_COMPTE_MAIL()) d.mailValideur1 = JUMELAGE_COMPTE_MAIL();
+    }
+    if (e.decision === 'REFUSEE') { d.refus = e.signature; d.refus.niveau = NIVEAU_VALIDATION(e.d); delete d.renvoi; }
+    // Renvoi du VALIDEUR 2 au VALIDEUR 1 : la validation du 1er niveau tombe, la demande repart au 1er niveau.
+    if (e.decision === 'RENVOYEE') { d.renvoi = e.signature; d.renvoi.niveau = 2; d.validations = []; }
     return d;
 }
 function VOIR_PDF_VALIDATION(id) {
@@ -2730,10 +2799,13 @@ var MER_ENVOIS = [];
 function PREPARER_TRANSMISSION() {
     var v = GET_VALIDEUR();
     var decidees = GET_A_VALIDER().filter(function(e) { return e.decision; });
-    var vers2 = [], versChorus = [], refusParMail = {};
+    var vers2 = [], versChorus = [], refusParMail = {}, renvoiParMail = {};
     decidees.forEach(function(e) {
         var d = DEMANDE_AVEC_DECISION(e);
-        if (e.decision === 'REFUSEE') {
+        if (e.decision === 'RENVOYEE') {
+            var m1 = d.mailValideur1 || v.mailValideur1 || '';
+            (renvoiParMail[m1] = renvoiParMail[m1] || []).push(d);
+        } else if (e.decision === 'REFUSEE') {
             var m = d.mailDemandeur || '';
             (refusParMail[m] = refusParMail[m] || []).push(d);
         } else if (d.validations.length === 1) vers2.push(d);
@@ -2741,12 +2813,17 @@ function PREPARER_TRANSMISSION() {
     });
     if (vers2.length && !/@/.test(v.mailValideur2 || '')) { MSG_ERREUR('Mail manquant', 'Merci de renseigner le mail du 2e valideur.'); return; }
     if (versChorus.length && !/@/.test(v.mailChorus || '')) { MSG_ERREUR('Mail manquant', 'Merci de renseigner le mail de l\'assistant Chorus DT.'); return; }
+    if (renvoiParMail[''] && !/@/.test(v.mailValideur1 || '')) { MSG_ERREUR('Mail manquant', 'Merci de renseigner le mail du VALIDEUR 1 à qui renvoyer la demande.'); return; }
 
     MER_ENVOIS = [];
     if (vers2.length) MER_ENVOIS.push({ type: 'VALIDATION_1', demandes: vers2, mail: v.mailValideur2,
         titre: 'Au 2e valideur', pj: NOM_FICHIER_BASE(vers2, 'VALIDATION_1') + '.json' });
     if (versChorus.length) MER_ENVOIS.push({ type: 'CHORUS', demandes: versChorus, mail: v.mailChorus,
         titre: 'À l\'assistant Chorus DT', pj: NOM_FICHIER_BASE(versChorus, 'VALIDATION_2') + '.json' });
+    Object.keys(renvoiParMail).forEach(function(m) {
+        var ds = renvoiParMail[m];
+        MER_ENVOIS.push({ type: 'RENVOI', demandes: ds, mail: m, titre: 'Renvoi au VALIDEUR 1', pj: NOM_FICHIER_BASE(ds, 'RENVOI') + '.json' });
+    });
     Object.keys(refusParMail).forEach(function(m) {
         var ds = refusParMail[m];
         MER_ENVOIS.push({ type: 'REFUS', demandes: ds, mail: m,
@@ -2843,8 +2920,10 @@ function TPL_VERIFIER() {
                             LIBELLE_ROLE(n) + ' : ' + ESC((v.validation.grade || '') + ' ' + (v.validation.nom || '') + ' ' + (v.validation.prenom || '')) +
                             (v.validation.le ? ', le ' + ESC(new Date(v.validation.le).toLocaleString('fr-FR')) : '') + ' — ' + ESC(v.message) + '</div>';
                     }).join('') +
-                    (x.source === 'json' && conforme
-                        ? '<div class="MER-VAL-ACTIONS"><button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="TELECHARGER_PDF_VERIFIE([' + i + '])">📄 PDF avec NDS / DAF</button></div>' : '') +
+                    (x.renvoyee ? '<div class="MER-HINT" style="color:#b45309; font-weight:800;">↩ Renvoyée au demandeur : ' + ESC(x.renvoyee) + '</div>' : '') +
+                    (x.source === 'json' ? '<div class="MER-VAL-ACTIONS">' +
+                        (conforme ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="TELECHARGER_PDF_VERIFIE([' + i + '])">📄 PDF avec NDS / DAF</button>' : '') +
+                        (x.renvoyee ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_RENVOYER(' + i + ')">↩ Renvoyer au demandeur</button>') + '</div>' : '') +
                 '</div></div>';
             }).join('');
         if (conformes.length > 1) {
@@ -2896,6 +2975,44 @@ function TELECHARGER_PDF_VERIFIE(indices) {
         TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes, 'PDF_FINAL') + '.pdf', octets, 'application/pdf');
         if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(demandes.map(function(d) { return d.id; }));
     }).catch(function(e) { FERMER_MSG(); setTimeout(function() { MSG_ERREUR('PDF impossible', e.message || String(e)); }, 350); });
+}
+
+// L'assistant Chorus DT renvoie la demande directement au demandeur, avec un commentaire (sans repasser par les valideurs).
+function CHORUS_RENVOYER(i) {
+    var x = (MER_RESULTATS_VERIF || [])[i]; if (!x) return;
+    AFFICHER_MODALE('Renvoyer au demandeur',
+        '<p style="font-size:0.86em; line-height:1.5;">La demande de <b>' + ESC(RESUME_DEMANDE(x.d).noms) + '</b> repart directement au demandeur' + (x.d.mailDemandeur ? ' (' + ESC(x.d.mailDemandeur) + ')' : '') +
+            ', dans sa boîte TRIGONE, avec votre commentaire. Il la corrige puis la renvoie : elle refait tout le circuit de validation.</p>' +
+        '<div class="MER-FIELD"><label>Commentaire</label><textarea id="MER-MOTIF-CHORUS" rows="4" placeholder="EX : le code FD ne correspond pas à la mission"></textarea></div>',
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Annuler</button>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="CHORUS_RENVOYER_OK(' + i + ')">↩ Renvoyer</button>');
+    setTimeout(function() { var t = document.getElementById('MER-MOTIF-CHORUS'); if (t) t.focus(); }, 50);
+}
+function CHORUS_RENVOYER_OK(i) {
+    var x = (MER_RESULTATS_VERIF || [])[i], motif = (document.getElementById('MER-MOTIF-CHORUS').value || '').trim();
+    if (!x) return;
+    if (!motif) { MSG_ERREUR('Commentaire manquant', 'Merci d\'indiquer pourquoi la demande est renvoyée.'); return; }
+    if (!x.d.mailDemandeur) { MSG_ERREUR('Demandeur inconnu', 'Cette demande ne porte pas l\'adresse de son demandeur : prévenez-le directement.'); return; }
+    if (!MER_COMPTE_ACTIF()) { FERMER_MODALE(); JUMELAGE_COMPTE(); return; }
+    var id = (GET_REGLAGES().identite || {}), d = JSON.parse(JSON.stringify(x.d));
+    d.refus = { niveau: 3, grade: id.grade || '', nom: id.nom || '', prenom: id.prenom || '', fonction: 'ASSIST CHORUS DT', le: new Date().toISOString(), motif: motif };
+    d.validations = []; delete d.renvoi;
+    FERMER_MODALE();
+    AFFICHER_MSG_CENTRE({ titre: 'Envoi en cours…', texte: 'Chiffrement et dépôt dans le TRIGONE du demandeur.', icone: '⏳', mascotte: false, boutons: [] });
+    GENERER_JSON_COMPLET([d], 'REFUS').then(function(json) {
+        return JUMELAGE_ENVOYER_DIRECT(d.mailDemandeur, 'REFUS', NOM_FICHIER_BASE([d], 'REFUS') + '.json', json);
+    }).then(function() {
+        FERMER_MSG();
+        x.renvoyee = motif;
+        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES([x.d.id]);
+        SHOW_PAGE(PAGE_ACTUELLE);
+        setTimeout(function() { MSG_INFO('Demande renvoyée', 'La demande est arrivée dans la boîte TRIGONE du demandeur (' + d.mailDemandeur + '), avec votre commentaire.', '✅', 'mascotte-ok.webp'); }, 300);
+    }).catch(function(e) {
+        FERMER_MSG();
+        setTimeout(function() {
+            MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : 'Envoi impossible', e.pasDeCompte ? d.mailDemandeur + ' n\'a pas de compte TRIGONE : prévenez-le directement.' : (e.message || String(e)));
+        }, 350);
+    });
 }
 
 // ===================== RETOUR D'UN REFUS (côté demandeur) =====================
@@ -3082,8 +3199,10 @@ window.addEventListener('DOMContentLoaded', function() {
     LOAD_BROUILLON();
     // Espace Assistant Chorus DT demandé depuis l'écran de choix (autre page) : ouverture directe.
     var versChorus = /[?&]espace=chorus/.test(location.search) && window.JUMELAGE_ROLE_CHORUS && JUMELAGE_ROLE_CHORUS();
-    if (/[?&]espace=chorus/.test(location.search) && history.replaceState) history.replaceState(null, document.title, location.pathname);
-    SHOW_PAGE(versChorus ? 'CHORUS' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
+    // Notification touchée : boîte de réception (demande à signer, renvoi, refus).
+    var versBoite = /[?&]espace=boite/.test(location.search) && MER_COMPTE_ACTIF();
+    if (/[?&]espace=/.test(location.search) && history.replaceState) history.replaceState(null, document.title, location.pathname);
+    SHOW_PAGE(versChorus ? 'CHORUS' : versBoite ? 'RECEPTION' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
     if (window.JUMELAGE_ANIMER_ARRIVEE) setTimeout(JUMELAGE_ANIMER_ARRIVEE, 30);
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
@@ -3106,8 +3225,8 @@ function MER_NB_A_SIGNER() { try { return GET_A_VALIDER().filter(function(e) { r
 var MER_BOITE_A_OUVRIR = null;
 var MER_NATURES_BOITE = {
     niveau1: ['À signer — 1er niveau', 'Ouvrir et signer'], niveau2: ['À signer — 2e niveau', 'Ouvrir et signer'],
-    chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée', 'Corriger dans Documents'],
-    cr: ['Compte-rendu de mission', 'Ouvrir'], inconnu: ['Fichier reçu', 'Ouvrir']
+    chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée — à corriger', 'Corriger dans Documents'],
+    cr: ['Compte-rendu de mission', 'Ouvrir'], renvoi: ['Renvoyée par le VALIDEUR 2', 'Ouvrir et corriger'], inconnu: ['Fichier reçu', 'Ouvrir']
 };
 function MER_EST_CHORUS(x) { return x.nature === 'chorus' || x.nature === 'cr'; }
 // Rôles changés dans les Réglages : la session valideur est reprise de la clé mémorisée (nouveau rôle, ou aucun).
