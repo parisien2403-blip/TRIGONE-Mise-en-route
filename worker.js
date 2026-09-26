@@ -49,6 +49,30 @@ async function baseBoite(env) {
     return env.TRIGONE_DB;
 }
 
+// Remise à zéro des comptes TRIGONE (fin des essais, demandée par l'administrateur) : au premier appel après la
+// publication, une seule fois (garantie par D1), les comptes, codes, limites et envois en attente sont effacés.
+// Chacun réactive ensuite son compte. Pour une nouvelle remise à zéro, changer cette valeur.
+const REMISE_A_ZERO = '2026-09-27';
+let REMISE_FAITE = false;
+async function remiseAZero(env) {
+    if (REMISE_FAITE) return;
+    const db = await baseBoite(env);
+    await db.prepare('CREATE TABLE IF NOT EXISTS reglage (cle TEXT PRIMARY KEY, valeur TEXT)').run();
+    const r = await db.prepare('INSERT INTO reglage (cle, valeur) VALUES (?, ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur WHERE reglage.valeur <> excluded.valeur')
+        .bind('remise', REMISE_A_ZERO).run();
+    REMISE_FAITE = true;
+    if (!r.meta || !r.meta.changes) return;   // déjà faite (par cette requête ou une autre)
+    await db.prepare('DELETE FROM boite').run();
+    for (const prefixe of ['compte:', 'code:', 'limite:', 'msg:']) {
+        let curseur;
+        do {
+            const l = await env.TRIGONE_KV.list({ prefix: prefixe, cursor: curseur });
+            await Promise.all(l.keys.map(k => env.TRIGONE_KV.delete(k.name)));
+            curseur = l.list_complete ? null : l.cursor;
+        } while (curseur);
+    }
+}
+
 function json(corps, statut) {
     return new Response(JSON.stringify(corps), { status: statut || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
 }
@@ -160,6 +184,7 @@ async function envoyerCode(env, mail, code) {
 async function api(requete, env, url) {
     const kv = env.TRIGONE_KV;
     if (!kv || !env.TRIGONE_DB) return erreur(503, 'Boîte aux lettres non configurée.');
+    await remiseAZero(env);
     const chemin = url.pathname.replace(/^\/api\//, '');
     const methode = requete.method;
 
