@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 84;
+var APP_CODE_VERSION = 85;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1643,7 +1643,7 @@ var MER_NOTICES = {
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
-            '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif.',
+            '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif. <b>Effacer</b> (après confirmation) retire une demande importée par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; réimportez le .json pour la retrouver.',
             '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le nom du fichier dit qui l\'a produit : « 2-SIGNE VALIDEUR 1 - GRADE NOM - OMR … » après le 1er valideur, « 3-SIGNE VALIDEUR 2 - … » après le 2e, « REFUS VALIDEUR 1 (ou 2) - … » pour un refus. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
             'Terminez par « Terminé » une fois tous les mails envoyés : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier le .json et générer le PDF', icone: MER_ICONES_NOTICE_CHECK(),
@@ -2471,6 +2471,8 @@ function TPL_ENTREE_VALIDATION(e, h, sansCoche) {
         else etat = '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">' + ((e.pjAlterees || []).length ? 'Demande non conforme' : 'Validation précédente non conforme') + ' : refusez cette demande.</div>';
         actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">Refuser</button>';
     }
+    // Mauvaise manipulation (mauvais fichier, doublon) : la demande reçue s'efface sans être validée ni refusée.
+    if (!e.decision) actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="EFFACER_RECUE(\'' + e.id + '\')">Effacer</button>';
     var coche = !sansCoche && !e.decision && pourMoi ? '<input type="checkbox" class="MER-VAL-SEL" value="' + e.id + '" style="width:18px; height:18px; flex-shrink:0;">' : '';
     return '<div class="MER-PANIER-ITEM" style="align-items:flex-start;">' + coche +
         '<div class="MER-PANIER-ITEM-TXT">' +
@@ -2624,6 +2626,19 @@ function MAJ_ENTREES(ids, maj) {
     liste.forEach(function(e) { if (ids.indexOf(e.id) !== -1) maj(e); });
     SAVE_A_VALIDER(liste);
     RENDER_VALIDATION_INPLACE();
+}
+// Efface une demande reçue sans décision : rien n'est signé ni envoyé, le demandeur n'est pas prévenu.
+function EFFACER_RECUE(id) {
+    var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0];
+    if (!e) return;
+    MSG_CONFIRM('Effacer cette demande ?', 'La demande de ' + RESUME_DEMANDE(e.d).noms + ' sera retirée de votre Espace valideur, sans être validée ni refusée : rien n\'est signé, rien n\'est envoyé et le demandeur n\'est pas prévenu.\n\nPour la traiter plus tard, il suffira de réimporter le fichier .json reçu par mail.',
+        'Effacer', function() {
+            SAVE_A_VALIDER(GET_A_VALIDER().filter(function(x) { return x.id !== id; }));
+            delete MER_VERIF[id];
+            if (MER_VAL_SEL === id) MER_VAL_SEL = null;
+            RENDER_VALIDATION_INPLACE();
+            setTimeout(function() { MSG_INFO('Demande effacée', 'La demande de ' + RESUME_DEMANDE(e.d).noms + ' a été retirée de votre Espace valideur. Réimportez le fichier .json reçu par mail pour la retrouver.', '🗑', 'mascotte-poubelle.webp'); }, 350);
+        }, '⚠️', 'mascotte-poubelle.webp', true);
 }
 function ANNULER_DECISION(id) { MAJ_ENTREES([id], function(e) { e.decision = null; e.signature = null; }); }
 
