@@ -227,3 +227,13 @@ DÉMONSTRATIONS (V20)
 - PC : mascotte en grand + bulle, placée à l'essai (bas droite / bas gauche, en ligne puis en colonne) au premier
   endroit qui ne touche aucune zone mise en avant (ni le récapitulatif PC). Compte-rendu libère une colonne à droite.
 - Étapes (titre + texte) : DEMO_ETAPES dans app.js, DEMO_STEPS dans cr/index.html.
+
+DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE (V21)
+- manifest.json : share_target (POST ./partage-trigone, champ « fichiers ») pour Android ; file_handlers (.json,
+  action ./?fichier=1) + launch_handler pour l'ordinateur (Chrome / Edge, appli installée).
+- sw.js reçoit le partage, range le fichier dans le cache « trigone-partage » et ouvre ./?partage=1.
+- app.js (MER_TRAITER_RECUS) : signé deux fois → assistant Chorus DT ; refusé → panier du demandeur ; sinon →
+  Espace valideur (si le valideur n'est pas connecté, le fichier attend la connexion). Bandeau « Demande reçue ».
+- Pastille « n à signer » (demandes importées sans décision) sur l'accueil et le menu PC.
+- iPhone : Apple ne le permet pas aux applis web → carte d'aide dans l'Espace valideur (Fichiers › Importer).
+- Aucune lecture de la boîte mail, aucun serveur.

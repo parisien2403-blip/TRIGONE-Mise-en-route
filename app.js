@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 68;
+var APP_CODE_VERSION = 69;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -204,7 +204,7 @@ function TPL_MENU_PC() {
         item('NOTICE', MER_ICONES.NOTICE, 'Notice') +
         item('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
         '<div class="PC-SEP"></div>' +
-        item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur &amp; Chorus DT') +
+        item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur &amp; Chorus DT', MER_NB_A_SIGNER() || '') +
         '<div class="PC-BAS">' +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
             '<button type="button" class="PC-NAV' + (actif === 'REFERENCES' ? ' actif' : '') + '" onclick="SHOW_PAGE(\'REFERENCES\')">' + MER_ICONES.REFERENCES + '<span>Références</span></button>' +
@@ -310,7 +310,7 @@ function TPL_ESPACE_VALIDATION_PC(v, h) {
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin-left:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>';
     var depot = '<label class="PC-DEPOT">📥 Glissez ici les fichiers .json reçus par mail, ou cliquez pour les choisir' +
         '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>';
-    if (!liste.length) return entete + depot + '<div class="MER-EMPTY">Aucune demande à valider.<br>Déposez le fichier .json reçu par mail.</div>';
+    if (!liste.length) return entete + depot + TPL_AIDE_RECEPTION();
     // Détail affiché d'office : la première demande que la personne connectée peut valider, sinon la première.
     if (!MER_VAL_SEL || !liste.some(function(e) { return e.id === MER_VAL_SEL; })) {
         var aTraiter = liste.filter(function(e) {
@@ -406,7 +406,8 @@ function TPL_ACCUEIL() {
         '<div class="MER-P0-HERO">' +
           (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
-          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur &amp; Chorus DT</button>' +
+          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur &amp; Chorus DT' +
+            (MER_NB_A_SIGNER() ? '<span class="MER-PASTILLE-SIGNER">' + MER_NB_A_SIGNER() + ' à signer</span>' : '') + '</button>' +
           '<button type="button" class="P0-LIEN" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
         '</div>' +
         '<div class="MER-P0-ESPACE"></div>' +
@@ -2416,7 +2417,10 @@ function SE_CONNECTER(btn) {
     if (!code) { MSG_ERREUR('Code manquant', 'Merci de saisir votre code d\'accès valideur.'); return; }
     var bouton = document.querySelector('#PAGE-STAGE .BTN-PRIMARY');
     if (bouton) { bouton.disabled = true; bouton.textContent = 'Vérification…'; }
-    CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(RENDER_VALIDATION_INPLACE).catch(function() {
+    CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(function() {
+        RENDER_VALIDATION_INPLACE();
+        if (MER_RECUS_ATTENTE) { MER_RECUS_ATTENTE = false; setTimeout(MER_TRAITER_RECUS, 300); }
+    }).catch(function() {
         AFFICHER_MSG_CENTRE({ titre: 'Code incorrect', texte: 'Ce code d\'accès n\'est pas reconnu. Vérifiez-le, en respectant les majuscules et les symboles.', icone: '⛔', mascotte: 'mascotte-code.webp' });
         champ.value = '';
         if (bouton) { bouton.disabled = false; bouton.textContent = 'Se connecter'; }
@@ -2484,7 +2488,7 @@ function TPL_ESPACE_VALIDATION(v, h) {
         '<div class="MER-SECTION-TITLE">Demandes reçues</div>' +
         '<label class="BTN BTN-GHOST" style="margin-bottom:14px;">📥 Importer un ou plusieurs fichiers .json' +
         '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>';
-    if (!liste.length) return html + '<div class="MER-EMPTY">Aucune demande à valider.<br>Importez le fichier .json reçu par mail.</div>';
+    if (!liste.length) return html + TPL_AIDE_RECEPTION();
 
     var decidees = liste.filter(function(e) { return e.decision; }).length;
     var cochables = liste.filter(function(e) {
@@ -2861,6 +2865,8 @@ function GET_MAJ_VUES() { try { return JSON.parse(localStorage.getItem(STORAGE_M
 function SET_MAJ_VUE(cle, v) { var m = GET_MAJ_VUES(); m[cle] = v; try { localStorage.setItem(STORAGE_MAJ_VUES, JSON.stringify(m)); } catch (e) {} }
 function ECRAN_LIBRE() {
     if (DEMO_ACTIF || document.getElementById('INTRO-SPLASH')) return false;
+    // Écrans communs (code d'accès, présentation, réglages, écran de choix) : on attend qu'ils soient fermés.
+    if (document.querySelector('.JUM-PIN, .JUM-PRES, .JUM-REGLAGES, .JUM-CHOIX')) return false;
     return ['MSG-OVERLAY', 'PIN-OVERLAY', 'POURQUOI-OVERLAY', 'CONFIG-INITIALE-OVERLAY'].every(function(id) {
         var el = document.getElementById(id); return !el || el.classList.contains('HIDDEN');
     });
@@ -3007,4 +3013,110 @@ window.addEventListener('DOMContentLoaded', function() {
     else suite();
     REGISTER_SERVICE_WORKER();
     INIT_VERIF_MAJ_AUTO();
+    MER_RECEPTION_INIT();
 });
+
+// ===================== DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE =====================
+// Android : TRIGONE installée apparaît dans « Partager » / « Ouvrir avec » (share_target du manifeste, reçu par
+// le service worker). Ordinateur (Chrome, Edge) : « Ouvrir avec TRIGONE » sur un .json (file_handlers, launchQueue).
+// iPhone : Apple ne le permet pas aux applis web ; l'Espace valideur guide l'import depuis « Fichiers ».
+// Les fichiers reçus attendent dans le cache « trigone-partage » jusqu'à leur traitement : une mise à jour ou une
+// connexion à faire ne les perd pas. Aucune lecture de la boîte mail, aucun serveur.
+var CACHE_RECUS = 'trigone-partage', MER_RECUS_ATTENTE = false;
+function MER_NB_A_SIGNER() { try { return GET_A_VALIDER().filter(function(e) { return !e.decision; }).length; } catch (e) { return 0; } }
+function EST_IPHONE() { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
+function RECUS_LIRE() {
+    if (!window.caches) return Promise.resolve([]);
+    return caches.open(CACHE_RECUS).then(function(c) { return c.keys().then(function(cles) {
+        return Promise.all(cles.map(function(k) { return c.match(k).then(function(r) { return r.blob().then(function(b) {
+            return { cle: k, fichier: new File([b], decodeURIComponent(r.headers.get('X-Nom') || 'demande.json'), { type: b.type || 'application/json' }) };
+        }); }); }));
+    }); }).catch(function() { return []; });
+}
+function RECUS_RANGER(fichiers) {
+    if (!window.caches) return Promise.resolve();
+    return caches.open(CACHE_RECUS).then(function(c) { return Promise.all(fichiers.map(function(f, i) {
+        return c.put(new Request('__recu__/' + Date.now() + '-' + i), new Response(f, { headers: { 'Content-Type': f.type || 'application/json', 'X-Nom': encodeURIComponent(f.name || 'demande.json') } }));
+    })); }).catch(function() {});
+}
+function RECUS_OUBLIER(elements) {
+    if (!window.caches || !elements.length) return Promise.resolve();
+    return caches.open(CACHE_RECUS).then(function(c) { return Promise.all(elements.map(function(x) { return c.delete(x.cle); })); }).catch(function() {});
+}
+function MER_RECEPTION_INIT() {
+    if (/[?&](partage|fichier)=/.test(location.search) && history.replaceState) history.replaceState(null, document.title, location.pathname);
+    if ('launchQueue' in window && window.launchQueue.setConsumer) {
+        window.launchQueue.setConsumer(function(params) {
+            if (!params || !params.files || !params.files.length) return;
+            Promise.all(params.files.map(function(h) { return h.getFile(); })).then(RECUS_RANGER).then(MER_TRAITER_RECUS);
+        });
+    }
+    MER_TRAITER_RECUS();
+}
+// Chaque fichier va où il doit : signé deux fois → assistant Chorus DT ; refusé → panier du demandeur ;
+// sinon → Espace valideur (connexion demandée si besoin, le fichier attend).
+function MER_TRAITER_RECUS() {
+    if (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF) return;
+    RECUS_LIRE().then(function(recus) {
+        if (!recus.length) return;
+        ATTENDRE_ECRAN_LIBRE(function() {
+            Promise.all(recus.map(function(x) { return x.fichier.text().then(function(t) {
+                try { return { x: x, data: LIRE_JSON_MER(t) }; } catch (e) { return { x: x, data: null }; }
+            }); })).then(function(lus) {
+                var inconnus = lus.filter(function(l) { return !l.data; });
+                var refus = lus.filter(function(l) { return l.data && l.data.demandes.some(function(d) { return d.refus; }); });
+                var chorus = lus.filter(function(l) { return l.data && refus.indexOf(l) < 0 && l.data.demandes.every(function(d) { return (d.validations || []).length >= 2; }); });
+                var aValider = lus.filter(function(l) { return l.data && refus.indexOf(l) < 0 && chorus.indexOf(l) < 0; });
+                var faux = function(liste) { return { files: liste.map(function(l) { return l.x.fichier; }), value: '' }; };
+                var cles = function(liste) { return liste.map(function(l) { return l.x; }); };
+                if (inconnus.length) {
+                    RECUS_OUBLIER(cles(inconnus));
+                    MSG_ERREUR('Fichier non reconnu', 'Ce fichier n\'est pas une demande TRIGONE Mise en route : ' + inconnus.map(function(l) { return l.x.fichier.name; }).join(', ') + '.');
+                }
+                if (refus.length) { RECUS_OUBLIER(cles(refus)); IMPORTER_REFUS(faux(refus)); }
+                if (chorus.length) { RECUS_OUBLIER(cles(chorus)); VERIFIER_FICHIERS(faux(chorus)); }
+                if (!aValider.length) return;
+                CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() {
+                    var h = HABILITATION_COURANTE();
+                    if (!h || h.retire) {
+                        MER_RECUS_ATTENTE = true;
+                        SHOW_PAGE('VALIDATION');
+                        AFFICHER_MSG_CENTRE({ titre: 'Demande reçue', icone: '📥', mascotte: 'mascotte-code.webp',
+                            texte: 'Connectez-vous avec votre code valideur : la demande s\'ouvrira aussitôt, prête à signer.', boutons: [{ label: 'Compris' }] });
+                        return;
+                    }
+                    RECUS_OUBLIER(cles(aValider));
+                    SHOW_PAGE('VALIDATION');
+                    IMPORTER_A_VALIDER(faux(aValider));
+                    var d = aValider[0].data.demandes[0] || {}, n = aValider.reduce(function(s, l) { return s + l.data.demandes.length; }, 0);
+                    MER_BANDEAU_RECU(n > 1 ? n + ' demandes reçues — prêtes à signer' : 'Demande reçue — prête à signer',
+                        'Ouverte depuis votre messagerie : ' + [RESUME_DEMANDE(d).noms, d.objet].filter(Boolean).join(' · '));
+                });
+            });
+        });
+    });
+}
+function MER_BANDEAU_RECU(titre, texte) {
+    var b = document.createElement('div');
+    b.className = 'MER-BANDEAU-RECU';
+    b.innerHTML = '<span class="MER-BANDEAU-RECU-IC">📥</span><span><b>' + ESC(titre) + '</b><br>' + ESC(texte) + '</span>';
+    document.body.appendChild(b);
+    requestAnimationFrame(function() { b.classList.add('visible'); });
+    setTimeout(function() { b.classList.remove('visible'); setTimeout(function() { b.remove(); }, 400); }, 6000);
+}
+// Espace valideur vide : comment faire arriver la demande reçue par mail, selon l'appareil.
+function TPL_AIDE_RECEPTION() {
+    var ios = EST_IPHONE();
+    var etapes = ios
+        ? '<li>Dans votre messagerie, touchez la pièce jointe <b>.json</b>, puis <b>Partager › Enregistrer dans Fichiers</b>.</li>' +
+          '<li>Revenez ici et touchez <b>« Importer la demande reçue »</b> : le fichier est en haut des <b>Récents</b>.</li>'
+        : EST_PC()
+        ? '<li>Clic droit sur la pièce jointe <b>.json</b> › <b>Ouvrir avec › TRIGONE</b> : la demande s\'ouvre ici, prête à signer.</li>' +
+          '<li>Ou glissez le fichier dans le cadre ci-dessus.</li>'
+        : '<li>Dans votre messagerie, touchez la pièce jointe <b>.json</b>, puis <b>Ouvrir avec</b> (ou <b>Partager</b>) › <b>TRIGONE</b>.</li>' +
+          '<li>La demande s\'ouvre directement ici, prête à signer. Sinon, touchez <b>« Importer la demande reçue »</b>.</li>';
+    return '<div class="MER-AIDE-RECEPTION"><div class="MER-AIDE-RECEPTION-TETE"><span>📥</span><div><b>Une demande à signer ?</b><small>Elle arrive par mail, en pièce jointe .json</small></div></div>' +
+        '<ol>' + etapes + '</ol>' +
+        (EST_PC() ? '' : '<label class="BTN BTN-PRIMARY" style="margin:12px 0 0;">Importer la demande reçue' +
+            '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>') + '</div>';
+}
