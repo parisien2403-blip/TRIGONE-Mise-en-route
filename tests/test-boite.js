@@ -117,10 +117,24 @@ module.exports = async function() {
     verifier(await v2.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 1, '2e valideur : envoi direct à l\'assistant Chorus DT');
 
     // Assistant Chorus DT
+    // Rôle Assistant Chorus DT (Réglages, code TRIGONE_CODE_CHORUS) : logo au centre de l'écran de choix, espace dédié
+    const codeChorus = process.env.TRIGONE_CODE_CHORUS;
+    if (codeChorus) {
+        await c.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
+        await c.check('#JUM-R-CHORUS'); await c.fill('#JUM-R-CODECHORUS', 'MAUVAIS'); await c.click('.JUM-R-PRINCIPAL'); await attendre(600);
+        verifier((await c.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Chorus DT : un mauvais code ne donne pas le rôle');
+        await c.fill('#JUM-R-CODECHORUS', codeChorus); await c.click('.JUM-R-PRINCIPAL'); await attendre(1000);
+    } else await c.evaluate(() => localStorage.setItem('trigone_role_chorus', '1'));
+    verifier(await c.evaluate(() => JUMELAGE_ROLE_CHORUS()), 'Chorus DT : rôle actif');
     await relever(c);
-    await ouvrirBoite(c);
+    await c.evaluate(() => { document.querySelectorAll('.JUM-CHOIX').forEach(e => e.remove()); JUMELAGE_CHOIX(); }); await attendre(600);
+    verifier(await c.evaluate(() => !!document.querySelector('.JUM-CHORUS') && document.querySelector('.JUM-CHORUS-NB').textContent === '1'), 'Chorus DT : logo au centre de l\'écran de choix, pastille « 1 »');
+    await c.evaluate(() => { const n = document.querySelector('.JUM-NOUV button'); if (n) n.click(); }); await attendre(300);
+    await c.click('.JUM-CHORUS'); await attendre(1500);
+    verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'CHORUS', 'Chorus DT : le logo ouvre l\'espace Assistant Chorus DT');
+    await c.locator('.MER-RECU .BTN-PRIMARY').first().click(); await attendre(2500);
     const cartes = await c.locator('.MER-PANIER-ITEM').allInnerTexts();
-    verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'VERIFIER' && cartes.some(t => t.includes('Conforme : validée par les deux valideurs')),
+    verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'CHORUS' && cartes.some(t => t.includes('Conforme : validée par les deux valideurs')),
         'assistant Chorus DT : la demande arrive, conforme (signatures et NDS vérifiées)');
 
     // Boîtes vides après relève

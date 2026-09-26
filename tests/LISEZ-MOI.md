@@ -33,5 +33,5 @@ Il faut le serveur de TRIGONE en local, en mode test (le code d'inscription est 
 
 ```
 npx wrangler dev --port 8787 --var MODE_TEST:1 --var DOMAINES_AUTORISES:interieur.gouv.fr      # à la racine du projet
-TRIGONE_URL_BOITE=http://localhost:8787/ TRIGONE_CODE_VAL1=… TRIGONE_CODE_VAL2=… node lancer.js boite
+TRIGONE_URL_BOITE=http://localhost:8787/ TRIGONE_CODE_VAL1=… TRIGONE_CODE_VAL2=… TRIGONE_CODE_CHORUS=… node lancer.js boite
 ```

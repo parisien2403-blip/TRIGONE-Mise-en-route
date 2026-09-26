@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 93;
+var APP_CODE_VERSION = 94;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -155,6 +155,7 @@ function APPLIQUER_THEME_INITIAL() {
 
 // ===================== PAGE ACCUEIL =====================
 function SHOW_PAGE(page) {
+    if (page !== 'CHORUS' && page !== 'VERIFIER') MER_ESPACE_CHORUS = false;
     PAGE_ACTUELLE = page;
     var zone = document.getElementById('PAGE-STAGE');
     zone.classList.toggle('avec-marge', page !== 'ACCUEIL');
@@ -162,6 +163,8 @@ function SHOW_PAGE(page) {
     else if (page === 'FORMULAIRE') zone.innerHTML = TPL_PAGE_FORMULAIRE();
     else if (page === 'PANIER') zone.innerHTML = TPL_PANIER();
     else if (page === 'VALIDATION') { OUVRIR_VALIDATION(); return; }
+    else if (page === 'VERIFIER' && MER_ESPACE_CHORUS) { SHOW_PAGE('CHORUS'); return; }
+    else if (page === 'CHORUS') { MER_ESPACE_CHORUS = true; zone.innerHTML = TPL_CHORUS(); }
     else if (page === 'VERIFIER') zone.innerHTML = TPL_VERIFIER();
     else if (page === 'RECEPTION') zone.innerHTML = TPL_RECEPTION();
     else if (page === 'BIBLIOTHEQUE') zone.innerHTML = TPL_BIBLIOTHEQUE();
@@ -193,7 +196,7 @@ MER_ICONES.RECEPTION = '<svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 
 MER_ICONES.VALIDEUR = '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 
 function TPL_MENU_PC() {
-    var actif = { REFERENCES: 'REFERENCES', ACCUEIL: 'ACCUEIL', REPRISE: 'ACCUEIL', BIBLIOTHEQUE: 'BIBLIOTHEQUE', PANIER: 'PANIER', NOTICE: 'NOTICE', ESPACE: 'ESPACE', VALIDATION: 'VALIDATION', VERIFIER: 'VALIDATION', RECEPTION: 'RECEPTION' }[PAGE_ACTUELLE] || '';
+    var actif = { REFERENCES: 'REFERENCES', ACCUEIL: 'ACCUEIL', REPRISE: 'ACCUEIL', BIBLIOTHEQUE: 'BIBLIOTHEQUE', PANIER: 'PANIER', NOTICE: 'NOTICE', ESPACE: 'ESPACE', VALIDATION: 'VALIDATION', VERIFIER: 'VALIDATION', RECEPTION: 'RECEPTION', CHORUS: 'CHORUS' }[PAGE_ACTUELLE] || '';
     var n = GET_PANIER().length;
     function item(page, icone, libelle, pastille) {
         return '<button type="button" class="PC-NAV' + (actif === page ? ' actif' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')">' + icone +
@@ -202,6 +205,7 @@ function TPL_MENU_PC() {
     return '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_mer.webp" alt="TRIGONE Mise en route"></button>' +
         item('ACCUEIL', MER_ICONES.ACCUEIL, 'Accueil') +
         (MER_COMPTE_ACTIF() ? item('RECEPTION', MER_ICONES.RECEPTION, 'Boîte de réception', MER_NB_BOITE() || '') : '') +
+        (MER_ROLE_CHORUS() ? item('CHORUS', MER_ICONES.CHORUS, 'Assistant Chorus DT', MER_NB_CHORUS() || '') : '') +
         item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
         item('PANIER', MER_ICONES.PANIER, 'Documents', n || '') +
         item('NOTICE', MER_ICONES.NOTICE, 'Notice') +
@@ -367,7 +371,7 @@ function PC_VAL_CHOISIR(id) {
 
 // ---------- Glisser-déposer des fichiers (Espace valideur, assistant Chorus DT) ----------
 function DEPOT_POSSIBLE() {
-    if (PAGE_ACTUELLE === 'VERIFIER') return true;
+    if (PAGE_ACTUELLE === 'VERIFIER' || PAGE_ACTUELLE === 'CHORUS') return true;
     var h = PAGE_ACTUELLE === 'VALIDATION' && HABILITATION_COURANTE();
     return !!(h && !h.retire);
 }
@@ -387,7 +391,7 @@ document.addEventListener('drop', function(e) {
     if (!e.dataTransfer.files.length) return;
     if (!DEPOT_POSSIBLE()) { MER_RECEVOIR_FICHIERS(e.dataTransfer.files); return; }
     var faux = { files: e.dataTransfer.files, value: '' };
-    if (PAGE_ACTUELLE === 'VERIFIER') VERIFIER_FICHIERS(faux); else IMPORTER_A_VALIDER(faux);
+    if (PAGE_ACTUELLE === 'VERIFIER' || PAGE_ACTUELLE === 'CHORUS') VERIFIER_FICHIERS(faux); else IMPORTER_A_VALIDER(faux);
 });
 
 // court : libellé abrégé pour les écrans étroits (5 onglets sur 320 px).
@@ -2922,7 +2926,7 @@ function TPL_VERIFIER() {
             html += '<button type="button" class="BTN BTN-PRIMARY" onclick="TELECHARGER_PDF_VERIFIE(null)">📄 Un seul PDF pour les ' + conformes.length + ' demandes conformes</button>';
         }
     }
-    return html + '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'VALIDATION\')">← Retour</button></div>';
+    return html + (MER_ESPACE_CHORUS ? '</div>' : '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'VALIDATION\')">← Retour</button></div>');
 }
 function VERIFIER_FICHIERS(input) {
     LIRE_FICHIERS(input, function(contenu, f) {
@@ -3151,7 +3155,10 @@ window.addEventListener('DOMContentLoaded', function() {
     APPLIQUER_THEME_INITIAL();
     IDENTITE_DEPUIS_COMPTE_RENDU();
     LOAD_BROUILLON();
-    SHOW_PAGE(BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
+    // Espace Assistant Chorus DT demandé depuis l'écran de choix (autre page) : ouverture directe.
+    var versChorus = /[?&]espace=chorus/.test(location.search) && window.JUMELAGE_ROLE_CHORUS && JUMELAGE_ROLE_CHORUS();
+    if (/[?&]espace=chorus/.test(location.search) && history.replaceState) history.replaceState(null, document.title, location.pathname);
+    SHOW_PAGE(versChorus ? 'CHORUS' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
     if (window.JUMELAGE_ANIMER_ARRIVEE) setTimeout(JUMELAGE_ANIMER_ARRIVEE, 30);
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
@@ -3272,7 +3279,10 @@ var MER_NATURES_BOITE = {
     niveau1: ['À signer — 1er niveau', 'Ouvrir et signer'], niveau2: ['À signer — 2e niveau', 'Ouvrir et signer'],
     chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée', 'Corriger dans Documents'], inconnu: ['Fichier reçu', 'Ouvrir']
 };
-function MER_NB_BOITE() { return window.JUMELAGE_BOITE_NB ? JUMELAGE_BOITE_NB() : 0; }
+function MER_ROLE_CHORUS() { return !!(window.JUMELAGE_ROLE_CHORUS && JUMELAGE_ROLE_CHORUS()); }
+// Avec le rôle Assistant Chorus DT, les envois pour Chorus vont dans son espace dédié, pas dans la boîte de Mise en route.
+function MER_NB_BOITE() { return window.JUMELAGE_BOITE_NB ? JUMELAGE_BOITE_NB(MER_ROLE_CHORUS() ? 'autres' : '') : 0; }
+function MER_NB_CHORUS() { return window.JUMELAGE_BOITE_NB ? JUMELAGE_BOITE_NB('chorus') : 0; }
 function MER_COMPTE_ACTIF() { return !!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF()); }
 function TPL_ENVOI_RECU(x) {
     var nat = MER_NATURES_BOITE[x.nature] || MER_NATURES_BOITE.inconnu, traite = x.statut === 'traite';
@@ -3289,7 +3299,7 @@ function TPL_ENVOI_RECU(x) {
 }
 function TPL_RECEPTION() {
     var compte = MER_COMPTE_ACTIF();
-    var l = window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : [];
+    var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return !MER_ROLE_CHORUS() || x.nature !== 'chorus'; });
     var aTraiter = l.filter(function(x) { return x.statut !== 'traite'; }), traites = l.filter(function(x) { return x.statut === 'traite'; });
     return '<div class="CARD"><h2>Boîte de réception</h2>' +
         (compte
@@ -3302,11 +3312,30 @@ function TPL_RECEPTION() {
             (traites.length ? '<details class="MER-RECU-TRAITES"><summary>Traitées (' + traites.length + ')</summary>' + traites.map(TPL_ENVOI_RECU).join('') + '</details>' : '') : '') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
+// ===================== ESPACE ASSISTANT CHORUS DT =====================
+// Ouvert depuis le logo central de l'écran de choix (rôle activé dans les Réglages avec son code) : sa boîte de
+// réception (envois des 2e valideurs) et le contrôle des fichiers reçus par mail, sans passer par l'Espace valideur.
+var MER_ESPACE_CHORUS = false;
+window.MER_OUVRIR_CHORUS = function() { SHOW_PAGE('CHORUS'); };
+function TPL_CHORUS() {
+    var compte = MER_COMPTE_ACTIF();
+    var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return x.nature === 'chorus'; });
+    var aTraiter = l.filter(function(x) { return x.statut !== 'traite'; }), traites = l.filter(function(x) { return x.statut === 'traite'; });
+    return '<div class="CARD MER-CHORUS-TETE"><img class="MER-CHORUS-LOGO" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT">' +
+        '<div class="MER-SECTION-TITLE">Boîte de réception' + (aTraiter.length ? ' (' + aTraiter.length + ')' : '') + '</div>' +
+        (compte ? '<p class="MER-HINT" style="margin:0 0 10px;">Demandes validées par les deux valideurs, envoyées à <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>. « Ouvrir et contrôler » vérifie les signatures et les pièces jointes, puis le PDF est prêt.</p>' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:12px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>' +
+            (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Aucune demande en attente.</div>') +
+            (traites.length ? '<details class="MER-RECU-TRAITES"><summary>Traitées (' + traites.length + ')</summary>' + traites.map(TPL_ENVOI_RECU).join('') + '</details>' : '')
+          : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes des 2e valideurs, sans pièce jointe.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
+        '</div>' + TPL_VERIFIER() +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">← Écran de choix</button>';
+}
 function ACTUALISER_RECEPTION(btn) {
     if (!window.JUMELAGE_RELEVER) return;
     if (btn) { btn.disabled = true; btn.textContent = 'Relève en cours…'; }
     JUMELAGE_RELEVER().then(function(n) {
-        if (PAGE_ACTUELLE === 'RECEPTION') SHOW_PAGE('RECEPTION');
+        if (PAGE_ACTUELLE === 'RECEPTION' || PAGE_ACTUELLE === 'CHORUS') SHOW_PAGE(PAGE_ACTUELLE);
         if (!n) MER_BANDEAU_RECU('Boîte à jour', 'Aucune nouvelle demande pour l\'instant.');
     });
 }
@@ -3340,11 +3369,13 @@ function SUPPRIMER_RECU(id) {
 // Nouveaux envois relevés : bandeau (touchable) et pages à jour.
 window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
     var x = nouveaux[0], n = nouveaux.length;
-    MER_BANDEAU_RECU(n > 1 ? n + ' demandes reçues' : 'Demande reçue', (n > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir la boîte de réception.', function() { SHOW_PAGE('RECEPTION'); });
+    var chorus = MER_ROLE_CHORUS() && nouveaux.every(function(e) { return e.nature === 'chorus'; });
+    MER_BANDEAU_RECU(n > 1 ? n + ' demandes reçues' : 'Demande reçue', (n > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
+        (chorus ? 'l\'espace Assistant Chorus DT.' : 'la boîte de réception.'), function() { SHOW_PAGE(chorus ? 'CHORUS' : 'RECEPTION'); });
 };
 window.addEventListener('trigone-boite', function() {
     if (typeof PAGE_ACTUELLE === 'undefined' || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
-    if (PAGE_ACTUELLE === 'RECEPTION' || PAGE_ACTUELLE === 'ACCUEIL') { var y = window.scrollY; SHOW_PAGE(PAGE_ACTUELLE); window.scrollTo(0, y); }
+    if (PAGE_ACTUELLE === 'RECEPTION' || PAGE_ACTUELLE === 'ACCUEIL' || (PAGE_ACTUELLE === 'CHORUS' && !MER_RESULTATS_VERIF)) { var y = window.scrollY; SHOW_PAGE(PAGE_ACTUELLE); window.scrollTo(0, y); }
     else RENDRE_MENU_PC();
 });
 function MER_RELEVER_BOITE() { if (window.JUMELAGE_RELEVER) JUMELAGE_RELEVER(); }
@@ -3360,7 +3391,7 @@ document.addEventListener('paste', function(e) {
     var cd = e.clipboardData;
     if (!cd || !cd.files || !cd.files.length || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
     // Sur la page de l'assistant Chorus DT : contrôle direct du .json (ou du PDF) collé.
-    if (PAGE_ACTUELLE === 'VERIFIER') { e.preventDefault(); VERIFIER_FICHIERS({ files: cd.files, value: '' }); return; }
+    if (PAGE_ACTUELLE === 'VERIFIER' || PAGE_ACTUELLE === 'CHORUS') { e.preventDefault(); VERIFIER_FICHIERS({ files: cd.files, value: '' }); return; }
     if (MER_RECEVOIR_FICHIERS(cd.files)) e.preventDefault();
 });
 function MER_BANDEAU_RECU(titre, texte, surClic) {
