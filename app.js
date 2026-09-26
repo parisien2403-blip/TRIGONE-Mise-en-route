@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 90;
+var APP_CODE_VERSION = 91;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -514,6 +514,9 @@ function TPL_MON_ESPACE() {
         '<p class="MER-HINT" style="margin:4px 0 16px;">Votre identité, vos mails et le code d\'accès se règlent une seule fois pour Mise en route et Compte-rendu, avec la roue crantée de l\'écran de choix.</p>' +
         '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_REGLAGES()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>' +
             '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Réglages TRIGONE</span><span class="NOTICE-CARD-SUB">Identité, mails (1er valideur, assistant Chorus DT) et code d\'accès — communs aux deux applis</span></span>' +
+            '<span class="NOTICE-CARD-CHEV">›</span></button>' +
+        '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_COMPTE()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg></span>' +
+            '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Compte TRIGONE</span><span class="NOTICE-CARD-SUB">' + (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? 'Actif : ' + ESC(JUMELAGE_COMPTE_MAIL()) + ' — les demandes arrivent directement dans TRIGONE' : 'Envoyer et recevoir les demandes directement dans TRIGONE, chiffrées, sans pièce jointe') + '</span></span>' +
             '<span class="NOTICE-CARD-CHEV">›</span></button>' +
         '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_SAUVEGARDER()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 1-2Z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg></span>' +
             '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Sauvegarder mes données</span><span class="NOTICE-CARD-SUB">Un seul fichier pour tout TRIGONE (Mise en route et Compte-rendu, pièces jointes comprises)' + (MER_DATE_SAUVEGARDE() ? ' — dernière : ' + MER_DATE_SAUVEGARDE() : ' — jamais faite') + '</span></span>' +
@@ -2011,7 +2014,10 @@ function PREPARER_ENVOI() {
         (panier.some(UTILISE_VRC) ? '<div style="font-size:0.86em; line-height:1.5; background:rgba(180,83,9,0.09); border:1.5px solid rgba(180,83,9,0.35); color:#92400e; padding:10px 12px; border-radius:10px; margin:10px 0;">' +
             '🚗 <b>Rappel — voie routière civile (VRC)</b><br>Joignez ' + MER_PIECES_VRC + ' : ajoutez-les en pièces jointes de la demande (onglet Imputation) avant d\'envoyer.</div>' : '') +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:8px;" onclick="VOIR_APERCU_PANIER()">👁 Aperçu du PDF</button>' +
-        '<button type="button" class="BTN BTN-PRIMARY" id="MER-BTN-ENREGISTRER" style="margin-top:8px;" onclick="ENREGISTRER_PANIER()">1. 💾 Enregistrer le .json</button>' +
+        // Compte TRIGONE actif : envoi direct dans la boîte du 1er valideur (chiffré), sans pièce jointe.
+        (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? '<button type="button" class="BTN BTN-PRIMARY" id="MER-BTN-DIRECT" style="margin-top:8px;" onclick="ENVOYER_PANIER_DIRECT()">📨 Envoyer directement dans TRIGONE</button>' +
+            '<p style="font-size:0.8em; color:var(--sm2-muted); margin:4px 0 10px;">Chiffré, il arrive dans le TRIGONE du 1er valideur (' + ESC(mail) + '). Ou, à l\'ancienne, par mail :</p>' : '') +
+        '<button type="button" class="BTN ' + (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? 'BTN-GHOST' : 'BTN-PRIMARY') + '" id="MER-BTN-ENREGISTRER" style="margin-top:8px;" onclick="ENREGISTRER_PANIER()">1. 💾 Enregistrer le .json</button>' +
         '<p style="font-size:0.8em; color:var(--sm2-muted);">Enregistrez d\'abord le fichier .json, puis « Envoyer » ouvre le mail : joignez-y le fichier enregistré.</p>',
         '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="FERMER_MODALE()">Annuler</button>' +
         '<button type="button" class="BTN BTN-PRIMARY" id="MER-BTN-ENVOYER" disabled onclick="ENVOYER_PANIER()">2. Envoyer</button>'
@@ -2056,6 +2062,29 @@ function ENREGISTRER_PANIER() {
         if (b) { b.className = 'BTN BTN-GHOST'; b.textContent = '✔ .json enregistré — enregistrer à nouveau'; }
         if (e) e.disabled = false;
     }).catch(function(e) { MSG_ERREUR('Enregistrement impossible', e.message || String(e)); });
+}
+// Envoi direct (compte TRIGONE) : le .json complet, chiffré, déposé dans la boîte du 1er valideur.
+function ENVOYER_PANIER_DIRECT() {
+    var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER(), b = document.getElementById('MER-BTN-DIRECT');
+    if (b) { b.disabled = true; b.textContent = 'Envoi en cours…'; }
+    GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE').then(function(json) {
+        return JUMELAGE_ENVOYER_DIRECT(reg.mailSignataire, 'DEMANDE', NOM_FICHIER_BASE(panier) + '.json', json);
+    }).then(function() {
+        ARCHIVER_ENVOI(panier, reg.mailSignataire);
+        FERMER_MODALE();
+        SAVE_PANIER([]);
+        setTimeout(function() {
+            SHOW_PAGE('ACCUEIL');
+            MSG_INFO(panier.length > 1 ? 'Demandes envoyées' : 'Demande envoyée', (panier.length > 1 ? 'Vos ' + panier.length + ' demandes sont arrivées' : 'Votre demande est arrivée') +
+                ' directement dans le TRIGONE du 1er valideur (' + reg.mailSignataire + '), chiffrée. ' + (panier.length > 1 ? 'Elles quittent' : 'Elle quitte') + ' Documents et ' +
+                (panier.length > 1 ? 'sont rangées' : 'est rangée') + ' dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
+        }, 300);
+    }).catch(function(e) {
+        if (b) { b.disabled = false; b.textContent = '📨 Envoyer directement dans TRIGONE'; }
+        MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : 'Envoi impossible', e.pasDeCompte
+            ? 'Le 1er valideur (' + reg.mailSignataire + ') n\'a pas encore activé son compte TRIGONE. Envoyez la demande par mail (étapes 1 et 2), et invitez-le à activer son compte : roue crantée › Compte TRIGONE.'
+            : (e.message || String(e)));
+    });
 }
 function ENVOYER_PANIER() {
     if (!MER_PANIER_ENREGISTRE) return;
@@ -2766,20 +2795,24 @@ function PREPARER_TRANSMISSION() {
 }
 function AFFICHER_TRANSMISSION() {
     FERMER_MODALE();
+    var direct = !!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF());
     var lignes = MER_ENVOIS.map(function(env, i) {
         return '<div class="MER-PANIER-ITEM" style="flex-wrap:wrap;"><div class="MER-PANIER-ITEM-TXT" style="flex:1 1 100%;">' +
             '<div class="MER-PANIER-ITEM-TITRE">' + ESC(env.titre) + ' — ' + env.demandes.length + ' demande(s)</div>' +
             '<div class="MER-PANIER-ITEM-SUB" style="word-break:break-all;">' + ESC(env.mail || '') + '<br>📎 ' + ESC(env.pj) + '</div></div>' +
+            (direct && env.mail && !env.fait ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:100%; margin:8px 0 0;" onclick="ENVOYER_ENVOI_DIRECT(' + i + ')">📨 Envoyer directement dans TRIGONE</button>' : '') +
+            (env.direct ? '<div class="MER-HINT" style="width:100%; margin-top:8px; color:#15803d; font-weight:800;">✔ Arrivé dans le TRIGONE du destinataire (chiffré)</div>' :
             '<div style="display:flex; gap:8px; width:100%; margin-top:8px;">' +
-                '<button type="button" class="BTN ' + (env.enregistre ? 'BTN-GHOST' : 'BTN-PRIMARY') + ' BTN-SMALL" style="flex:1; margin:0;" onclick="ENREGISTRER_ENVOI(' + i + ')">' +
+                '<button type="button" class="BTN ' + (env.enregistre ? 'BTN-GHOST' : direct ? 'BTN-GHOST' : 'BTN-PRIMARY') + ' BTN-SMALL" style="flex:1; margin:0;" onclick="ENREGISTRER_ENVOI(' + i + ')">' +
                     (env.enregistre ? '✔ Enregistré' : '1. 💾 Enregistrer') + '</button>' +
                 '<button type="button" class="BTN ' + (env.enregistre && !env.fait ? 'BTN-PRIMARY' : 'BTN-GHOST') + ' BTN-SMALL" style="flex:1; margin:0;"' + (env.enregistre ? '' : ' disabled') +
                     ' onclick="ENVOYER_ENVOI(' + i + ')">' + (env.fait ? '✔ Envoyé' : '2. ✉️ Envoyer') + '</button>' +
-            '</div></div>';
+            '</div>') + '</div>';
     }).join('');
     var tousFaits = MER_ENVOIS.every(function(env) { return env.fait; });
     AFFICHER_MODALE('Transmettre',
-        '<p style="font-size:0.86em; line-height:1.5;">Pour chaque envoi : <b>1. Enregistrer</b> le fichier .json, puis <b>2. Envoyer</b> ouvre le mail : joignez-y le fichier enregistré.</p>' + lignes,
+        '<p style="font-size:0.86em; line-height:1.5;">' + (direct ? 'Pour chaque envoi : <b>« Envoyer directement dans TRIGONE »</b> (chiffré, sans pièce jointe) ; ou par mail : <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b>.' :
+            'Pour chaque envoi : <b>1. Enregistrer</b> le fichier .json, puis <b>2. Envoyer</b> ouvre le mail : joignez-y le fichier enregistré.') + '</p>' + lignes,
         // « Plus tard » ferme sans rien perdre tant qu'un envoi reste à faire ; tout envoyé, seul « Terminé » reste.
         (tousFaits ? '' : '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button>') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (tousFaits ? '' : ' disabled') + ' onclick="TERMINER_TRANSMISSION()">Terminé</button>'
@@ -2813,6 +2846,24 @@ function ENVOYER_ENVOI(i) {
     env.fait = true;
     OUVRIR_MAIL(env.mail, c.sujet, c.corps);
     AFFICHER_TRANSMISSION();
+}
+function ENVOYER_ENVOI_DIRECT(i) {
+    var env = MER_ENVOIS[i], c = CONTENU_ENVOI(env);
+    AFFICHER_MSG_CENTRE({ titre: 'Envoi en cours…', texte: 'Chiffrement et dépôt dans le TRIGONE du destinataire.', icone: '⏳', mascotte: false, boutons: [] });
+    GENERER_JSON_COMPLET(env.demandes, c.etape).then(function(json) {
+        return JUMELAGE_ENVOYER_DIRECT(env.mail, env.type, env.pj, json);
+    }).then(function() {
+        FERMER_MSG();
+        env.fait = env.enregistre = env.direct = true;
+        setTimeout(AFFICHER_TRANSMISSION, 300);
+    }).catch(function(e) {
+        FERMER_MSG();
+        setTimeout(function() {
+            MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : 'Envoi impossible', e.pasDeCompte
+                ? env.mail + ' n\'a pas encore activé son compte TRIGONE : envoyez par mail (1. Enregistrer, 2. Envoyer), et invitez-le à activer son compte (roue crantée › Compte TRIGONE).'
+                : (e.message || String(e)));
+        }, 350);
+    });
 }
 function TERMINER_TRANSMISSION() {
     FERMER_MODALE();
@@ -3107,6 +3158,9 @@ window.addEventListener('DOMContentLoaded', function() {
     setTimeout(MER_RAPPEL_SAUVEGARDE, 6000);
     INIT_VERIF_MAJ_AUTO();
     MER_RECEPTION_INIT();
+    MER_RELEVER_BOITE();
+    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') MER_RELEVER_BOITE(); });
+    setInterval(function() { if (document.visibilityState === 'visible') MER_RELEVER_BOITE(); }, 120000);
 });
 
 // ===================== DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE =====================
@@ -3199,12 +3253,18 @@ function MER_TRAITER_RECUS() {
                     IMPORTER_A_VALIDER(faux(aValider));
                     var d = aValider[0].data.demandes[0] || {}, n = aValider.reduce(function(s, l) { return s + l.data.demandes.length; }, 0);
                     MER_BANDEAU_RECU(n > 1 ? n + ' demandes reçues — prêtes à signer' : 'Demande reçue — prête à signer',
-                        'Ouverte depuis votre messagerie : ' + [RESUME_DEMANDE(d).noms, d.objet].filter(Boolean).join(' · '));
+                        'Reçue : ' + [RESUME_DEMANDE(d).noms, d.objet].filter(Boolean).join(' · '));
                 });
             });
         });
     });
 }
+// Boîte aux lettres TRIGONE (compte actif) : les envois reçus sont déchiffrés puis aiguillés comme un fichier ouvert.
+function MER_RELEVER_BOITE() {
+    if (!window.JUMELAGE_RELEVER || DEMO_ACTIF) return;
+    JUMELAGE_RELEVER(function(fichiers) { return RECUS_RANGER(fichiers); }).then(function(n) { if (n) MER_TRAITER_RECUS(); });
+}
+window.JUMELAGE_APRES_COMPTE = MER_RELEVER_BOITE;
 // Fichiers donnés à TRIGONE depuis la page (déposés ou collés) : même aiguillage que « Ouvrir avec ».
 function MER_RECEVOIR_FICHIERS(liste) {
     var json = Array.prototype.filter.call(liste || [], function(f) { return /\.json$/i.test(f.name || '') || /json/.test(f.type || ''); });

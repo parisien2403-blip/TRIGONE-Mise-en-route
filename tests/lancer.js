@@ -5,7 +5,8 @@ const TESTS = {
     'code-acces': ['Code d\'accès unique à l\'ouverture', require('./test-code-acces')],
     'sauvegarde': ['Sauvegarde et restauration', require('./test-sauvegarde')],
     'hors-ligne': ['Sans réseau', require('./test-hors-ligne')],
-    'demenagement': ['Déménagement vers l\'adresse Cloudflare', require('./test-demenagement')]
+    'demenagement': ['Déménagement vers l\'adresse Cloudflare', require('./test-demenagement')],
+    'boite': ['Boîte aux lettres TRIGONE (envois directs chiffrés)', require('./test-boite')]
 };
 (async () => {
     const choix = process.argv.slice(2);

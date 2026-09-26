@@ -280,3 +280,13 @@ Version 41 : sauvegarde complète commune (jumelage.js : JUMELAGE_SAUVEGARDER / 
 Tests automatiques : dossier tests/ (voir tests/LISEZ-MOI.md) — parcours complet, code d'accès, sauvegarde, hors ligne.
 
 Version 42 : adresse officielle https://trigone-mise-en-route.parisien2403.workers.dev (Cloudflare, déployé depuis GitHub). Sur l'ancienne adresse GitHub Pages : écran « TRIGONE change d'adresse » avec transfert direct de toutes les données (postMessage entre les deux pages, pièces jointes et code compris) ou par fichier de sauvegarde ; ensuite, ou s'il n'y a rien à transférer, renvoi automatique vers la même page à la nouvelle adresse. ?rester=1 garde l'ancienne adresse (maintenance). Test : tests/test-demenagement.js.
+
+Version 43 : BOÎTE AUX LETTRES TRIGONE (envois directs d'appli à appli, chiffrés de bout en bout).
+- Serveur : worker.js (Cloudflare Workers) + wrangler.jsonc ; stockage Workers KV « TRIGONE_KV », créé automatiquement au premier déploiement.
+- Compte = adresse professionnelle (DOMAINES_AUTORISES, par défaut interieur.gouv.fr et ses sous-domaines) vérifiée par un code à 6 chiffres envoyé via Brevo.
+- Chaque appareil a sa clé ECDH P-256 (privée non exportable, IndexedDB « trigone-compte ») ; envoi = AES-GCM + clé enveloppée par appareil destinataire (ECDH éphémère + HKDF). Le nom du fichier est chiffré avec le contenu ; le serveur ne voit que l'expéditeur, le destinataire, le type et la date. Envois supprimés à la réception, au plus tard après 30 jours.
+- Appli : roue crantée › Compte TRIGONE (ou Mon espace) ; « Envoyer directement dans TRIGONE » (demandeur, transmission des valideurs, refus) ; relève à l'ouverture de Mise en route, au retour dans l'appli et toutes les 2 minutes. Le mail reste possible.
+- MISE EN SERVICE (une seule fois, Cloudflare › Workers & Pages › trigone-mise-en-route › Paramètres › Variables et secrets) :
+    BREVO_CLE (type Secret) : clé API Brevo (Brevo › SMTP & API › Clés API).
+    EXPEDITEUR_MAIL (type Texte) : adresse d'expédition validée dans Brevo (Brevo › Expéditeurs).
+- Tests : tests/test-boite.js avec « npx wrangler dev --var MODE_TEST:1 » (voir tests/LISEZ-MOI.md).
