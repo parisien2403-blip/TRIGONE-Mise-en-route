@@ -106,6 +106,55 @@
         '.JUM-ROUE svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.4s ease; }' +
         '.JUM-ROUE:hover svg, .JUM-ROUE:active svg { transform: rotate(60deg); }' +
         '.JUM-CHOIX.choisi .JUM-ROUE { opacity: 0; pointer-events: none; }' +
+        /* Menu de la roue crantée */
+        '.JUM-ROUE-MENU { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 62px); z-index: 4;' +
+            ' background: #fff; border-radius: 16px; padding: 6px; min-width: 250px; box-shadow: 0 18px 44px rgba(0,0,0,0.45); font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; }' +
+        '@keyframes jum-menu { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }' +
+        '.JUM-ROUE-MENU button { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 11px 12px; border-radius: 12px; text-align: left; cursor: pointer; color: #1a1a1a; font-family: inherit; }' +
+        '.JUM-ROUE-MENU button:hover { background: #f1f5f9; }' +
+        '.JUM-ROUE-MENU svg, .JUM-ROUE-MENU img { width: 26px; height: 26px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; object-fit: contain; }' +
+        '.JUM-ROUE-MENU b { display: block; font-size: 0.84rem; } .JUM-ROUE-MENU small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 2px; }' +
+        /* Présentation TRIGONE */
+        '.JUM-PRES { position: fixed; inset: 0; z-index: 99992; background: radial-gradient(120% 90% at 50% 0%, #1d1d1d 0%, #0b0b0b 60%); color: #f5f5f5;' +
+            ' font-family: Montserrat, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; opacity: 0; transition: opacity 0.38s ease; }' +
+        '.JUM-PRES.visible { opacity: 1; }' +
+        '.JUM-PRES-TRAIT { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(214,167,86,0.28) 50%, transparent calc(50% + 1px)); }' +
+        '.JUM-PRES-DEFIL { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }' +
+        '.JUM-PRES-CONTENU { position: relative; max-width: 960px; margin: 0 auto; padding: max(34px, env(safe-area-inset-top, 0px)) 20px max(34px, env(safe-area-inset-bottom, 0px)); text-align: center; }' +
+        '.JUM-PRES-CONTENU > * { opacity: 0; transform: translateY(12px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2,0.8,0.2,1); }' +
+        '.JUM-PRES.visible .JUM-PRES-CONTENU > * { opacity: 1; transform: none; }' +
+        '.JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(2) { transition-delay: 0.08s; } .JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(3) { transition-delay: 0.14s; }' +
+        '.JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(4) { transition-delay: 0.22s; } .JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(5) { transition-delay: 0.3s; }' +
+        '.JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(6) { transition-delay: 0.4s; } .JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(n+7) { transition-delay: 0.5s; }' +
+        '.JUM-PRES-LOGO { width: 92px; height: auto; filter: brightness(0) invert(1); }' +
+        '.JUM-PRES-MARQUE { font-size: 2rem; font-weight: 800; letter-spacing: 0.34em; margin: 10px 0 4px; padding-left: 0.34em; }' +
+        '.JUM-PRES-LIGNE { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #d6a756; }' +
+        '.JUM-PRES-LIGNE span { margin: 0 6px; }' +
+        '@media (max-width: 440px) { .JUM-PRES-LIGNE { font-size: 0.58rem; letter-spacing: 0.1em; } .JUM-PRES-MARQUE { font-size: 1.7rem; } }' +
+        '.JUM-PRES h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: clamp(1.5rem, 4.2vw, 2.3rem); line-height: 1.25; margin: 26px 0 10px; }' +
+        '.JUM-PRES h1 em { font-style: normal; color: #d6a756; }' +
+        '.JUM-PRES-CHAPO { max-width: 620px; margin: 0 auto 26px; font-size: 0.9rem; line-height: 1.6; color: #a3a3a3; }' +
+        '.JUM-PRES-DUO { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; text-align: left; }' +
+        '@media (max-width: 640px) { .JUM-PRES-DUO { grid-template-columns: 1fr; } }' +
+        '.JUM-PRES-VOLET { border-radius: 18px; padding: 20px 20px 16px; }' +
+        '.JUM-PRES-CLAIR { background: linear-gradient(150deg, #ffffff 0%, #e6edf3 100%); color: #1a1a1a; }' +
+        '.JUM-PRES-SOMBRE { background: #161616; border: 1px solid rgba(214,167,86,0.45); color: #f5f5f5; }' +
+        '.JUM-PRES-NUM { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #5a7a94; }' +
+        '.JUM-PRES-SOMBRE .JUM-PRES-NUM { color: #d6a756; }' +
+        '.JUM-PRES-TITRE { font-size: 1.1rem; font-weight: 800; margin: 6px 0 10px; }' +
+        '.JUM-PRES-VOLET ul { margin: 0; padding: 0; list-style: none; }' +
+        '.JUM-PRES-VOLET li { position: relative; padding: 7px 0 7px 22px; font-size: 0.82rem; line-height: 1.45; border-top: 1px solid rgba(90,122,148,0.18); }' +
+        '.JUM-PRES-SOMBRE li { border-top-color: rgba(255,255,255,0.08); }' +
+        '.JUM-PRES-VOLET li:first-child { border-top: 0; }' +
+        '.JUM-PRES-VOLET li::before { content: ""; position: absolute; left: 2px; top: 13px; width: 8px; height: 8px; border-radius: 2px; transform: rotate(45deg); background: #5a7a94; }' +
+        '.JUM-PRES-SOMBRE li::before { background: #d6a756; }' +
+        '.JUM-PRES-GARANTIES { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 26px; }' +
+        '@media (max-width: 640px) { .JUM-PRES-GARANTIES { grid-template-columns: 1fr; } }' +
+        '.JUM-PRES-GARANTIES div { display: flex; align-items: center; gap: 10px; justify-content: center; padding: 12px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.1); font-size: 0.78rem; color: #d4d4d4; }' +
+        '.JUM-PRES-GARANTIES svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #d6a756; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-PRES-BTN { border: 0; border-radius: 14px; padding: 15px 44px; background: #d6a756; color: #141414; font: 800 0.84rem Montserrat, system-ui, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }' +
+        '.JUM-PRES-BTN:hover { background: #e2b86c; }' +
+        '@media (prefers-reduced-motion: reduce) { .JUM-PRES, .JUM-PRES-CONTENU > * { transition: none; } }' +
         /* Réglages TRIGONE */
         '.JUM-REGLAGES { position: fixed; inset: 0; z-index: 99990; background: rgba(15,15,15,0.72); display: flex; align-items: center; justify-content: center; padding: 16px;' +
             ' font-family: Montserrat, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }' +
@@ -164,7 +213,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 12, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 13, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -290,6 +339,10 @@
     window.JUMELAGE_REGLAGES = function(opts) {
         opts = opts || {};
         if (reglages || !document.body) return;
+        if (opts.premiere && !window.JUMELAGE_PRESENTATION_VUE()) {
+            window.JUMELAGE_PRESENTATION({ premiere: true, apres: function() { window.JUMELAGE_REGLAGES(opts); } });
+            return;
+        }
         var r = lireReglages(), premiere = !!opts.premiere;
         var ancienCode = !codeDefini() && (lireTxt('mer_pin_hash') || lireTxt('trigone_pin_hash'));
         function champ(id, label, val, attrs) {
@@ -374,6 +427,72 @@
         setTimeout(function() { b.classList.add('sortie'); }, 2600);
         setTimeout(function() { b.remove(); }, 3100);
     }
+
+    // ---------- Présentation TRIGONE (première ouverture, puis roue crantée > Découvrir TRIGONE) ----------
+    var CLE_PRESENTATION = 'trigone_presentation_jumelage_vue', presentation = null;
+    var ICONES_PRES = {
+        id: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>',
+        cadenas: '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
+        maj: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>'
+    };
+    window.JUMELAGE_PRESENTATION = function(opts) {
+        opts = opts || {};
+        if (presentation || !document.body) { if (opts.apres) opts.apres(); return; }
+        var dossier = DANS_CR ? '../' : '';
+        function liste(items) { return '<ul>' + items.map(function(t) { return '<li>' + t + '</li>'; }).join('') + '</ul>'; }
+        presentation = document.createElement('div');
+        presentation.className = 'JUM-PRES';
+        presentation.setAttribute('role', 'dialog');
+        presentation.setAttribute('aria-label', 'Présentation de TRIGONE');
+        presentation.innerHTML = '<div class="JUM-PRES-TRAIT"></div><div class="JUM-PRES-DEFIL"><div class="JUM-PRES-CONTENU">' +
+            '<img class="JUM-PRES-LOGO" src="' + dossier + 'phoenix-icon.png" alt="">' +
+            '<div class="JUM-PRES-MARQUE">TRIGONE</div>' +
+            '<div class="JUM-PRES-LIGNE">Mise en route <span>·</span> Compte-rendu de mission</div>' +
+            '<h1>Vous partez en mission.<br><em>TRIGONE s\'occupe de tout.</em></h1>' +
+            '<p class="JUM-PRES-CHAPO">Une seule application, du départ au retour : la demande d\'ordre de mise en route avant de partir, le compte-rendu de mission une fois rentré.</p>' +
+            '<div class="JUM-PRES-DUO">' +
+                '<div class="JUM-PRES-VOLET JUM-PRES-CLAIR"><div class="JUM-PRES-NUM">01 — Avant le départ</div><div class="JUM-PRES-TITRE">Mise en route</div>' +
+                    liste(['Demande d\'ordre de mise en route, individuelle ou collective', 'Circuit de validation signé : 1er valideur, puis 2e valideur', 'PDF final prêt pour l\'assistant Chorus DT']) + '</div>' +
+                '<div class="JUM-PRES-VOLET JUM-PRES-SOMBRE"><div class="JUM-PRES-NUM">02 — Au retour</div><div class="JUM-PRES-TITRE">Compte-rendu de mission</div>' +
+                    liste(['Horodatage du départ, de l\'arrivée sur site et de la fin de mission', 'Repas, nuitées et trajets : forfait calculé selon les barèmes', 'Compte-rendu signé, prêt à l\'envoi']) + '</div>' +
+            '</div>' +
+            '<div class="JUM-PRES-GARANTIES">' +
+                '<div>' + ICONES_PRES.id + '<span>Identité saisie une seule fois</span></div>' +
+                '<div>' + ICONES_PRES.cadenas + '<span>Vos données restent sur votre appareil</span></div>' +
+                '<div>' + ICONES_PRES.maj + '<span>Toujours à jour, automatiquement</span></div>' +
+            '</div>' +
+            '<button type="button" class="JUM-PRES-BTN">' + (opts.premiere ? 'Commencer' : 'Fermer') + '</button>' +
+        '</div></div>';
+        document.body.appendChild(presentation);
+        requestAnimationFrame(function() { requestAnimationFrame(function() { if (presentation) presentation.classList.add('visible'); }); });
+        presentation.querySelector('.JUM-PRES-BTN').addEventListener('click', function() {
+            ecrireTxt(CLE_PRESENTATION, '1');
+            var p = presentation; presentation = null;
+            p.classList.remove('visible');
+            setTimeout(function() { p.remove(); if (opts.apres) opts.apres(); }, 380);
+        });
+    };
+    window.JUMELAGE_PRESENTATION_VUE = function() { return lireTxt(CLE_PRESENTATION) === '1'; };
+
+    // Menu de la roue crantée : réglages ou présentation.
+    window.JUMELAGE_MENU_ROUE = function(e) {
+        if (e) e.stopPropagation();
+        var m = document.querySelector('.JUM-ROUE-MENU');
+        if (m) { m.remove(); return; }
+        if (!ecran) return;
+        m = document.createElement('div');
+        m.className = 'JUM-ROUE-MENU';
+        m.innerHTML = '<button type="button" data-action="reglages">' + ROUE_SVG + '<span><b>Réglages TRIGONE</b><small>Identité, mails, code d\'accès</small></span></button>' +
+            '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>';
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { m.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
+        m.addEventListener('click', function(ev) {
+            var b = ev.target.closest('button');
+            if (!b) return;
+            m.remove();
+            if (b.getAttribute('data-action') === 'reglages') window.JUMELAGE_REGLAGES(); else window.JUMELAGE_PRESENTATION();
+        });
+        ecran.appendChild(m);
+    };
 
     // ---------- Code d'accès commun : demandé une fois à l'ouverture de TRIGONE ----------
     var pave = null, saisie = '';
@@ -491,11 +610,15 @@
         ecran.innerHTML = panneau('mer') + panneau('cr') +
             '<svg class="JUM-TRAIT" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
             '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
-            '<button type="button" class="JUM-ROUE" aria-label="Réglages TRIGONE" title="Réglages TRIGONE : identité, mails, code d\'accès">' + ROUE_SVG + '</button>';
+            '<button type="button" class="JUM-ROUE" aria-label="Réglages et présentation de TRIGONE" title="Réglages TRIGONE · Découvrir TRIGONE">' + ROUE_SVG + '</button>';
         var roue = ecran.querySelector('.JUM-ROUE');
         ['pointerdown', 'pointerup'].forEach(function(t) { roue.addEventListener(t, function(e) { e.stopPropagation(); }); });
-        roue.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_REGLAGES(); });
-        ecran.addEventListener('click', function(e) { choisir(coteDuPoint(e.clientX, e.clientY)); });
+        roue.addEventListener('click', window.JUMELAGE_MENU_ROUE);
+        ecran.addEventListener('click', function(e) {
+            var menu = document.querySelector('.JUM-ROUE-MENU');
+            if (menu) { menu.remove(); return; }
+            choisir(coteDuPoint(e.clientX, e.clientY));
+        });
         ecran.addEventListener('pointerdown', function(e) {
             var p = ecran.querySelector('.JUM-PAN-' + coteDuPoint(e.clientX, e.clientY).toUpperCase());
             if (p) p.classList.add('appuye');
