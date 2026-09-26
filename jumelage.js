@@ -368,6 +368,45 @@
         '.JUM-PIN-PAVE button { height: 60px; border-radius: 16px; border: 1px solid #333; background: #1c1c1c; color: #f5f5f5; font: 700 1.3rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
         '.JUM-PIN-PAVE button:active { background: #2a2a2a; }' +
         '.JUM-PIN .JUM-R-LIEN { color: #a3a3a3; }' +
+        /* Code d'accès — présentation PC */
+        '.JUM-PIN-PC { background: linear-gradient(135deg, #F8FBFD 0%, #E8F0F6 100%); }' +
+        '.JUM-PINPC { display: grid; grid-template-columns: 1fr 1.1fr; width: 100%; max-width: 820px; min-height: 460px; background: #fff; border-radius: 26px; overflow: hidden; box-shadow: 0 30px 80px rgba(26,45,62,0.18), 0 2px 6px rgba(26,45,62,0.06); color: #1a1a1a; }' +
+        '.JUM-PINPC-MARQUE { background: #1a1a1a; color: #fff; padding: 40px 36px; display: flex; flex-direction: column; align-items: flex-start; position: relative; }' +
+        '.JUM-PINPC-MARQUE::after { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(122,157,181,0.22), transparent 55%); pointer-events: none; }' +
+        '.JUM-PINPC-MARQUE img { width: 74px; height: 74px; object-fit: contain; filter: invert(1) brightness(1.4); opacity: 0.95; }' +
+        '.JUM-PINPC-NOM { margin-top: 18px; font-size: 1.7rem; font-weight: 800; letter-spacing: 0.22em; }' +
+        '.JUM-PINPC-SOUS { margin-top: 6px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #a9c3d6; }' +
+        '.JUM-PINPC-DATE { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }' +
+        '.JUM-PINPC-DATE b { font-size: 2.6rem; font-weight: 800; letter-spacing: 0.02em; }' +
+        '.JUM-PINPC-DATE span { font-size: 0.82rem; color: #c7d4de; text-transform: capitalize; }' +
+        '.JUM-PINPC-NOTE { margin-top: 22px; display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: #a9c3d6; }' +
+        '.JUM-PINPC-NOTE svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-PINPC-SAISIE { padding: 44px 44px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; }' +
+        '.JUM-PINPC-IC { width: 56px; height: 56px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(90,122,148,0.1); color: #5a7a94; }' +
+        '.JUM-PINPC-IC svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-PINPC-SAISIE h2 { margin: 16px 0 6px; font-size: 1.3rem; font-weight: 800; }' +
+        '.JUM-PINPC-SAISIE p { margin: 0 0 24px; font-size: 0.85rem; color: #5a7a94; }' +
+        '.JUM-PIN-PC .JUM-PIN-POINTS { gap: 14px; margin-bottom: 8px; }' +
+        '.JUM-PIN-PC .JUM-PIN-POINT { width: 54px; height: 62px; border-radius: 14px; border: 1.5px solid #c9d6e0; background: #F8FBFD; position: relative; transition: border-color 0.15s ease, box-shadow 0.15s ease; }' +
+        '.JUM-PIN-PC .JUM-PIN-POINT.plein { background: #F8FBFD; border-color: #1a1a1a; }' +
+        '.JUM-PIN-PC .JUM-PIN-POINT.plein::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #1a1a1a; }' +
+        '.JUM-PIN-PC .JUM-PIN-POINT.actif { border-color: #5a7a94; box-shadow: 0 0 0 4px rgba(90,122,148,0.15); }' +
+        '.JUM-PIN-PC .JUM-PIN-ERREUR { color: #b91c1c; margin: 6px 0 4px; }' +
+        '.JUM-PINPC-AIDE { font-size: 0.72rem; color: #7b8e9d; margin-bottom: 16px; }' +
+        '.JUM-PINPC-AIDE span { display: inline-block; padding: 1px 7px; border: 1px solid #c9d6e0; border-bottom-width: 2px; border-radius: 6px; font-weight: 700; color: #5a7a94; background: #fff; }' +
+        '.JUM-PIN-PC .JUM-PIN-PAVE { width: 100%; max-width: 250px; gap: 8px; margin-bottom: 12px; }' +
+        '.JUM-PIN-PC .JUM-PIN-PAVE button { height: 42px; border-radius: 11px; border: 1px solid #dde6ee; background: #fff; color: #1a1a1a; font-size: 1rem; }' +
+        '.JUM-PIN-PC .JUM-PIN-PAVE button:hover { background: #F2F7FB; border-color: #c9d6e0; }' +
+        '.JUM-PIN-PC .JUM-R-LIEN { color: #5a7a94; }' +
+        '.JUM-PIN-PC.sombre { background: linear-gradient(135deg, #0f1418 0%, #172029 100%); }' +
+        '.JUM-PIN-PC.sombre .JUM-PINPC { background: #1b242c; color: #e8eef3; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }' +
+        '.JUM-PIN-PC.sombre .JUM-PINPC-MARQUE { background: #0c1115; }' +
+        '.JUM-PIN-PC.sombre .JUM-PINPC-SAISIE p, .JUM-PIN-PC.sombre .JUM-R-LIEN { color: #a9c3d6; }' +
+        '.JUM-PIN-PC.sombre .JUM-PIN-POINT { background: #141b21; border-color: #33424f; }' +
+        '.JUM-PIN-PC.sombre .JUM-PIN-POINT.plein { background: #141b21; border-color: #e8eef3; } .JUM-PIN-PC.sombre .JUM-PIN-POINT.plein::after { background: #e8eef3; }' +
+        '.JUM-PIN-PC.sombre .JUM-PIN-PAVE button { background: #141b21; border-color: #2a3640; color: #e8eef3; }' +
+        '.JUM-PIN-PC.sombre .JUM-PINPC-AIDE span { background: #141b21; border-color: #33424f; color: #a9c3d6; }' +
+        '.JUM-PIN-PC.sombre .JUM-PIN-ERREUR { color: #f87171; }' +
         '.JUM-TRAIT { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; transition: opacity 0.2s ease; }' +
         '.JUM-CHOIX.choisi .JUM-TRAIT { opacity: 0; }' +
         '@media (prefers-reduced-motion: reduce) { .JUM-PAN, .JUM-BLOC { transition-duration: 0.01s; } }' +
@@ -381,7 +420,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 38, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 39, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -521,6 +560,30 @@
             if (window.JUMELAGE_MARQUER_DEVERROUILLE) window.JUMELAGE_MARQUER_DEVERROUILLE();
         });
     }
+    // Anciens codes propres à chaque appli (Compte-rendu : « Mon espace » ; Mise en route : premier réglage) :
+    // ils restent acceptés à l'ouverture, puis sont remplacés par le code TRIGONE dès la première saisie juste.
+    function ancienCode() { return lireTxt('trigone_pin_hash') || lireTxt('mer_pin_hash'); }
+    function codeActif() { return codeDefini() || !!ancienCode(); }
+    function hashSimpleCR(t) { var h = 0; for (var i = 0; i < t.length; i++) h = ((h << 5) - h + t.charCodeAt(i)) | 0; return String(h); }
+    function empreinteMer(code) {
+        return crypto.subtle.digest('SHA-256', new TextEncoder().encode('TRIGONE-MER:' + code)).then(function(b) {
+            return Array.prototype.map.call(new Uint8Array(b), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+        });
+    }
+    // Vérifie un code saisi (code TRIGONE, ou ancien code d'une appli) ; un ancien code juste devient le code TRIGONE.
+    window.JUMELAGE_VERIFIER_CODE = function(code) {
+        return empreinte(code).then(function(h) {
+            if (h === lireTxt(CLE_CODE)) return 'commun';
+            if (lireTxt('trigone_pin_hash') && hashSimpleCR(code) === lireTxt('trigone_pin_hash')) return 'ancien';
+            var m = lireTxt('mer_pin_hash');
+            return m ? empreinteMer(code).then(function(x) { return x === m ? 'ancien' : ''; }) : '';
+        }).then(function(r) {
+            if (r === 'ancien') return poserCode(code).then(function() { return true; });
+            return r === 'commun';
+        });
+    };
+    window.JUMELAGE_POSER_CODE = poserCode;
+    window.JUMELAGE_EFFACER_CODE = function() { try { ['trigone_code_commun', 'trigone_pin_hash', 'mer_pin_hash'].forEach(function(k) { localStorage.removeItem(k); }); } catch (e) {} };
     window.JUMELAGE_REGLAGES_FAITS = function() { return !!lireJSON(CLE_REGLAGES) || lireTxt('mer_config_faite') === '1'; };
 
     var reglages = null;
@@ -582,7 +645,7 @@
     };
     window.JUMELAGE_SUPPRIMER_CODE = function() {
         if (!window.confirm('Supprimer le code d\'accès ? TRIGONE s\'ouvrira sans code.')) return;
-        try { localStorage.removeItem(CLE_CODE); } catch (e) {}
+        window.JUMELAGE_EFFACER_CODE();
         window.JUMELAGE_FERMER_REGLAGES(); window.JUMELAGE_REGLAGES();
     };
     window.JUMELAGE_ENREGISTRER_REGLAGES = function(premiere) {
@@ -1159,19 +1222,20 @@
     var pave = null, saisie = '';
     function dessinerPoints() {
         if (!pave) return;
-        Array.prototype.forEach.call(pave.querySelectorAll('.JUM-PIN-POINT'), function(p, i) { p.classList.toggle('plein', i < saisie.length); });
+        Array.prototype.forEach.call(pave.querySelectorAll('.JUM-PIN-POINT'), function(p, i) { p.classList.toggle('plein', i < saisie.length); p.classList.toggle('actif', i === saisie.length); });
     }
     window.JUMELAGE_PIN_TOUCHE = function(ch) {
         if (!pave) return;
         if (ch === 'x') saisie = saisie.slice(0, -1); else if (saisie.length < 4) saisie += ch;
         dessinerPoints();
-        if (saisie.length === 4) empreinte(saisie).then(function(h) {
-            if (h === lireTxt(CLE_CODE)) {
+        if (saisie.length === 4) window.JUMELAGE_VERIFIER_CODE(saisie).then(function(ok) {
+            if (!pave) return;
+            if (ok) {
                 if (window.JUMELAGE_MARQUER_DEVERROUILLE) window.JUMELAGE_MARQUER_DEVERROUILLE();
                 pave.remove(); pave = null;
             } else {
                 saisie = ''; dessinerPoints();
-                var e = pave.querySelector('.JUM-PIN-ERREUR'); e.textContent = 'Code incorrect.';
+                var e = pave.querySelector('.JUM-PIN-ERREUR'); e.textContent = 'Code incorrect. Réessayez.';
                 pave.querySelector('.JUM-PIN-POINTS').classList.add('secoue');
                 setTimeout(function() { if (pave) pave.querySelector('.JUM-PIN-POINTS').classList.remove('secoue'); }, 450);
             }
@@ -1212,18 +1276,40 @@
         var touches = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'x'].map(function(t) {
             return t === '' ? '<span></span>' : '<button type="button" onclick="JUMELAGE_PIN_TOUCHE(\'' + t + '\')">' + (t === 'x' ? '⌫' : t) + '</button>';
         }).join('');
-        pave.innerHTML = '<div class="JUM-PIN-CARTE"><div class="JUM-PIN-TITRE">Code d\'accès</div><p>Entrez votre code à 4 chiffres pour ouvrir TRIGONE.</p>' +
+        var pc = window.matchMedia && window.matchMedia('(min-width: 900px) and (pointer: fine)').matches;
+        if (!pc) pave.innerHTML = '<div class="JUM-PIN-CARTE"><div class="JUM-PIN-TITRE">Code d\'accès</div><p>Entrez votre code à 4 chiffres pour ouvrir TRIGONE.</p>' +
             '<div class="JUM-PIN-POINTS"><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span></div>' +
             '<div class="JUM-PIN-ERREUR"></div><div class="JUM-PIN-PAVE">' + touches + '</div>' +
             '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_CODE_OUBLIE()">Code oublié ?</button></div>';
-        document.body.appendChild(pave);
+        else {
+            // PC : écran d'accès sobre, aux couleurs de TRIGONE ; saisie au clavier (les cases restent cliquables).
+            pave.className = 'JUM-PIN JUM-PIN-PC' + (window.JUMELAGE_THEME && window.JUMELAGE_THEME() ? ' sombre' : '');
+            var maintenant = new Date();
+            var date = maintenant.toLocaleDateString('fr-FR', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+            pave.innerHTML = '<div class="JUM-PINPC">' +
+                '<div class="JUM-PINPC-MARQUE"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="">' +
+                    '<div class="JUM-PINPC-NOM">TRIGONE</div><div class="JUM-PINPC-SOUS">Mise en route · Compte-rendu de mission</div>' +
+                    '<div class="JUM-PINPC-DATE"><b class="JUM-PINPC-HEURE"></b><span>' + date + '</span></div>' +
+                    '<div class="JUM-PINPC-NOTE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('cadenas') : '') + 'Vos données restent sur cet appareil.</div></div>' +
+                '<div class="JUM-PINPC-SAISIE"><div class="JUM-PINPC-IC">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('cadenas') : '') + '</div>' +
+                    '<h2>Accès sécurisé</h2><p>Saisissez votre code d\'accès à 4 chiffres.</p>' +
+                    '<div class="JUM-PIN-POINTS"><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span></div>' +
+                    '<div class="JUM-PIN-ERREUR"></div>' +
+                    '<div class="JUM-PINPC-AIDE"><span>Clavier</span> tapez les chiffres · <span>⌫</span> pour corriger</div>' +
+                    '<div class="JUM-PIN-PAVE">' + touches + '</div>' +
+                    '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_CODE_OUBLIE()">Code oublié ?</button></div></div>';
+            var heure = pave.querySelector('.JUM-PINPC-HEURE');
+            var tic = function() { if (!pave) return; heure.textContent = new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }); setTimeout(tic, 15000); };
+            tic();
+        }
+        document.body.appendChild(pave); dessinerPoints();
         document.addEventListener('keydown', function clavier(e) {
             if (!pave) { document.removeEventListener('keydown', clavier); return; }
             if (/^\d$/.test(e.key)) window.JUMELAGE_PIN_TOUCHE(e.key); else if (e.key === 'Backspace') window.JUMELAGE_PIN_TOUCHE('x');
         });
     }
-    window.JUMELAGE_CODE_ACTIF = codeDefini;
-    if (codeDefini() && !(window.JUMELAGE_DEVERROUILLE && window.JUMELAGE_DEVERROUILLE())) {
+    window.JUMELAGE_CODE_ACTIF = codeActif;
+    if (codeActif() && !(window.JUMELAGE_DEVERROUILLE && window.JUMELAGE_DEVERROUILLE())) {
         if (document.body) demanderCode(); else document.addEventListener('DOMContentLoaded', demanderCode);
     }
 

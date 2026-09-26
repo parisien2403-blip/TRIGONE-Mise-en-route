@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 85;
+var APP_CODE_VERSION = 86;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1413,7 +1413,17 @@ function GENERER_PDF(panier) {
 // (SHA-256) du code est gardée sur l'appareil ; code oublié = effacer toutes les données de l'appli.
 var STORAGE_PIN = 'mer_pin_hash';
 var PIN_UI = { saisie: '', mode: null, premier: null, verrouillage: false, apres: null };
-function PIN_EST_DEFINI() { try { return !!localStorage.getItem(STORAGE_PIN); } catch (e) { return false; } }
+// Code d'accès unique de TRIGONE (jumelage.js) : le même pour Mise en route et Compte-rendu, demandé à l'ouverture.
+function PIN_EST_DEFINI() { if (window.JUMELAGE_CODE_ACTIF) return JUMELAGE_CODE_ACTIF(); try { return !!localStorage.getItem(STORAGE_PIN); } catch (e) { return false; } }
+function PIN_ENREGISTRER(code) {
+    if (window.JUMELAGE_POSER_CODE) return JUMELAGE_POSER_CODE(code);
+    return PIN_EMPREINTE(code).then(function(h) { try { localStorage.setItem(STORAGE_PIN, h); } catch (e) {} });
+}
+function PIN_CODE_JUSTE(code) {
+    if (window.JUMELAGE_VERIFIER_CODE) return JUMELAGE_VERIFIER_CODE(code);
+    var attendu = ''; try { attendu = localStorage.getItem(STORAGE_PIN) || ''; } catch (e) {}
+    return PIN_EMPREINTE(code).then(function(h) { return h === attendu; });
+}
 function PIN_EMPREINTE(code) {
     return crypto.subtle.digest('SHA-256', new TextEncoder().encode('TRIGONE-MER:' + code)).then(function(b) {
         return Array.prototype.map.call(new Uint8Array(b), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
@@ -1467,23 +1477,21 @@ function PIN_VALIDER() {
             PIN_ERREUR('⛔ Les deux codes ne correspondent pas. Recommencez.');
             return;
         }
-        PIN_EMPREINTE(code).then(function(h) {
-            try { localStorage.setItem(STORAGE_PIN, h); } catch (e) {}
+        PIN_ENREGISTRER(code).then(function() {
             FERMER_ECRAN_PIN();
             if (PAGE_ACTUELLE === 'ESPACE') SHOW_PAGE('ESPACE');
-            MSG_INFO('Code d\'accès activé', 'Il vous sera demandé à chaque ouverture de TRIGONE Mise en route.', '🔒', 'mascotte-pouce.webp');
+            MSG_INFO('Code d\'accès activé', 'Il vous sera demandé à chaque ouverture de TRIGONE.', '🔒', 'mascotte-pouce.webp');
         });
         return;
     }
-    var attendu = '';
-    try { attendu = localStorage.getItem(STORAGE_PIN) || ''; } catch (e) {}
-    PIN_EMPREINTE(code).then(function(h) {
-        if (h !== attendu) { PIN_ERREUR('⛔ Code incorrect.'); return; }
+    PIN_CODE_JUSTE(code).then(function(ok) {
+        if (!ok) { PIN_ERREUR('⛔ Code incorrect.'); return; }
         if (PIN_UI.mode === 'suppression') {
+            if (window.JUMELAGE_EFFACER_CODE) JUMELAGE_EFFACER_CODE();
             try { localStorage.removeItem(STORAGE_PIN); } catch (e) {}
             FERMER_ECRAN_PIN();
             if (PAGE_ACTUELLE === 'ESPACE') SHOW_PAGE('ESPACE');
-            MSG_INFO('Code d\'accès désactivé', 'TRIGONE Mise en route s\'ouvrira sans code.', '🔓', 'mascotte-code.webp');
+            MSG_INFO('Code d\'accès désactivé', 'TRIGONE s\'ouvrira sans code.', '🔓', 'mascotte-code.webp');
             return;
         }
         PIN_UI.verrouillage = false;
@@ -1571,7 +1579,7 @@ function VALIDER_CONFIG_INITIALE() {
     r.identite = v; r.derniereUnite = v.unite; r.derniereCie = v.cie;
     r.mailSignataire = mailV; r.mailDemandeur = mailM;
     SAVE_REGLAGES(r);
-    (avecPin ? PIN_EMPREINTE(pin1).then(function(hash) { try { localStorage.setItem(STORAGE_PIN, hash); } catch (e) {} }) : Promise.resolve()).then(function() {
+    (avecPin ? PIN_ENREGISTRER(pin1) : Promise.resolve()).then(function() {
         FERMER_CONFIG_INITIALE();
         MSG_INFO('C\'est prêt', 'Vos informations pré-rempliront chaque nouvelle demande.' + (avecPin ? ' Votre code vous sera demandé à chaque ouverture.' : ''), '✅', 'mascotte-pouce.webp');
     });
@@ -3042,7 +3050,8 @@ window.addEventListener('DOMContentLoaded', function() {
     // Première ouverture : la proposition d'installer l'appli attend la fin des réglages communs.
     var suite = function() { if (!CONFIG_FAITE()) { MER_INSTALL_APRES_REGLAGES = true; AFFICHER_CONFIG_INITIALE(); } else PROPOSER_INSTALLATION_PREMIERE_FOIS(); };
     if (!vue) AFFICHER_POURQUOI(suite);
-    else if (PIN_EST_DEFINI() && !(window.JUMELAGE_DEVERROUILLE && JUMELAGE_DEVERROUILLE())) OUVRIR_ECRAN_PIN('verif', suite);
+    // Code d'accès : demandé une seule fois, à l'ouverture de TRIGONE, par l'écran commun (jumelage.js).
+    else if (PIN_EST_DEFINI() && !window.JUMELAGE_DEVERROUILLE) OUVRIR_ECRAN_PIN('verif', suite);
     else suite();
     REGISTER_SERVICE_WORKER();
     INIT_VERIF_MAJ_AUTO();
