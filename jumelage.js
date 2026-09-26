@@ -431,7 +431,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 44, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 45, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1014,8 +1014,8 @@
             return;
         }
         fenCompte.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS">' +
-            '<div class="JUM-R-TITRE">1. Votre adresse professionnelle</div>' +
-            '<div class="JUM-R-CHAMP"><label for="JUM-C-MAIL">Mail professionnel</label><input id="JUM-C-MAIL" type="email" autocomplete="email" value="' + esc(r.monMail || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr"></div>' +
+            '<div class="JUM-R-TITRE">1. Votre adresse mail</div>' +
+            '<div class="JUM-R-CHAMP"><label for="JUM-C-MAIL">Adresse mail</label><input id="JUM-C-MAIL" type="email" autocomplete="email" value="' + esc(r.monMail || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr"></div>' +
             '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-ENVOI" style="margin:12px 0 0;">Recevoir le code par mail</button>' +
             '<div id="JUM-C-ETAPE2" style="display:none;"><div class="JUM-R-TITRE">2. Code reçu par mail</div>' +
                 '<div class="JUM-R-CHAMP"><label for="JUM-C-CODE">Code à 6 chiffres</label><input id="JUM-C-CODE" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••"></div>' +

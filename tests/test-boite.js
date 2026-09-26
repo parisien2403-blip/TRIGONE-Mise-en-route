@@ -1,6 +1,6 @@
 // Boîte aux lettres TRIGONE : comptes (mail pro + code), envois directs chiffrés demandeur → 1er valideur →
 // 2e valideur → assistant Chorus DT, et refus renvoyé au demandeur.
-// Demande un serveur avec l'API : « npx wrangler dev --var MODE_TEST:1 » (le code est alors renvoyé au lieu d'être
+// Demande un serveur avec l'API : « npx wrangler dev --var MODE_TEST:1 --var DOMAINES_AUTORISES:interieur.gouv.fr » (le code est alors renvoyé au lieu d'être
 // envoyé par mail), puis TRIGONE_URL_BOITE=http://localhost:8787/ . Sans cette variable, le test est sauté.
 const path = require('path');
 const { FICHIERS, APP_CODE, navigateur, preparer, attendre, verifier } = require('./outils');
