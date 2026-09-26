@@ -440,7 +440,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 47, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 48, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -720,6 +720,7 @@
         etapeRole.then(function() {
         var roleAvant = roleChorus();
         try { if (veutChorus) localStorage.setItem(CLE_ROLE_CHORUS, '1'); else localStorage.removeItem(CLE_ROLE_CHORUS); } catch (e) {}
+        if (roleAvant !== veutChorus && window.JUMELAGE_DECLARER_ROLE) window.JUMELAGE_DECLARER_ROLE('chorus', veutChorus);
         ecrireReglages(r);
         (c1 ? poserCode(c1) : Promise.resolve()).then(function() {
             window.JUMELAGE_FERMER_REGLAGES();
@@ -788,7 +789,7 @@
     // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
     // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
     var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
-    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite)$/;
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares)$/;
     function basePieces(creer) {
         return new Promise(function(ok) {
             if (!window.indexedDB) { ok(null); return; }
@@ -993,6 +994,24 @@
     }
 
     window.JUMELAGE_COMPTE_ACTIF = function() { return !!monCompte(); };
+    // Rôles de cet appareil (1er / 2e valideur après le code valideur, assistant Chorus DT après son code) : déclarés au
+    // compte TRIGONE, ils décident de ce que la boîte peut recevoir (règle appliquée par le serveur).
+    var CLE_ROLES_LOCAUX = 'trigone_roles_locaux', CLE_ROLES_DECLARES = 'trigone_roles_declares';
+    function rolesLocaux() { var r = lireJSON(CLE_ROLES_LOCAUX) || {}; if (roleChorus()) r.chorus = true; return r; }
+    function declarerRoles() {
+        var c = monCompte(); if (!c || !navigator.onLine) return;
+        var r = rolesLocaux(), cle = c.mail + '|' + Object.keys(r).sort().join(',');
+        if (lireTxt(CLE_ROLES_DECLARES) === cle) return;
+        Promise.all(Object.keys(r).map(function(role) { return appelApi('role', { methode: 'POST', corps: { role: role, actif: true } }); }))
+            .then(function() { ecrireTxt(CLE_ROLES_DECLARES, cle); }).catch(function() {});
+    }
+    window.JUMELAGE_DECLARER_ROLE = function(role, actif) {
+        var r = lireJSON(CLE_ROLES_LOCAUX) || {};
+        if (actif) r[role] = true; else delete r[role];
+        ecrireTxt(CLE_ROLES_LOCAUX, JSON.stringify(r));
+        if (!actif && monCompte()) { try { localStorage.removeItem(CLE_ROLES_DECLARES); } catch (e) {} appelApi('role', { methode: 'POST', corps: { role: role, actif: false } }).catch(function() {}); }
+        declarerRoles();
+    };
     window.JUMELAGE_COMPTE_MAIL = function() { var c = monCompte(); return c ? c.mail : ''; };
     // Envoi direct : chiffré pour tous les appareils du destinataire. Rejette avec e.pasDeCompte si le destinataire
     // n'a pas encore de compte TRIGONE (l'appli propose alors le mail).
@@ -1082,7 +1101,7 @@
     window.JUMELAGE_RELEVER = function() {
         if (releveEnCours || !monCompte() || !navigator.onLine || !SUBTLE || !window.caches) return Promise.resolve(0);
         releveEnCours = true;
-        var nouveaux = [];
+        var nouveaux = [], ecartes = 0;
         return appelApi('boite').then(function(r) {
             return r.envois.reduce(function(suite, e) {
                 return suite.then(function() {
@@ -1090,6 +1109,10 @@
                     return appelApi('boite/' + e.id).then(function(x) {
                         return dechiffrer(x.enveloppe, x.donnees).then(function(clair) {
                             var o = JSON.parse(clair), info = resumeEnvoi(o.contenu);
+                            // Contenu conforme au type annoncé (demande → non signée, 1er valideur → 1 signature,
+                            // Chorus → 2 signatures, refus → refus) ; sinon l'envoi est écarté.
+                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus' }[x.type];
+                            if (attendu && info.nature !== attendu) { ecartes++; return appelApi('boite/' + e.id, { methode: 'DELETE' }); }
                             return caches.open(CACHE_BOITE).then(function(c) {
                                 return c.put('__boite__/' + e.id, new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));
                             }).then(function() {
@@ -1105,6 +1128,7 @@
             if (e.statut === 401) { try { localStorage.removeItem(CLE_COMPTE); } catch (x) {} }
         }).then(function() {
             releveEnCours = false;
+            if (ecartes) bandeau(ecartes + ' envoi(s) non conforme(s) écarté(s) de votre boîte de réception.');
             if (nouveaux.length) {
                 if (typeof window.JUMELAGE_APRES_RELEVE === 'function') { try { window.JUMELAGE_APRES_RELEVE(nouveaux); } catch (e) {} }
                 else bandeau(nouveaux.length > 1 ? nouveaux.length + ' demandes reçues : ouvrez Mise en route › Boîte de réception.' : 'Demande reçue : ouvrez Mise en route › Boîte de réception.');
@@ -1115,7 +1139,7 @@
     // Relève automatique : à l'ouverture, au retour dans l'appli, puis toutes les 45 secondes tant qu'elle est affichée.
     function releveAuto() { if (document.visibilityState === 'visible' && !document.body.classList.contains('demo-active')) window.JUMELAGE_RELEVER(); }
     if (monCompte()) {
-        var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); };
+        var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); setTimeout(declarerRoles, 2500); };
         if (document.body) lancerReleve(); else document.addEventListener('DOMContentLoaded', lancerReleve);
     }
     document.addEventListener('visibilitychange', function() { if (monCompte()) releveAuto(); });
@@ -1195,6 +1219,8 @@
                     window.JUMELAGE_FERMER_COMPTE();
                     bandeau('Compte TRIGONE actif : les demandes vous arrivent directement dans TRIGONE.');
                     if (window.JUMELAGE_APRES_COMPTE) try { window.JUMELAGE_APRES_COMPTE(); } catch (e) {}
+                    try { localStorage.removeItem(CLE_ROLES_DECLARES); } catch (e) {}
+                    declarerRoles();
                     window.JUMELAGE_RELEVER();
                 });
             }).catch(function(e) { err.textContent = '⛔ ' + e.message; btnValider.disabled = false; });
