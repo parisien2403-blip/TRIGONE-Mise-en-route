@@ -28,6 +28,9 @@ module.exports = async function() {
         await p.fill('#JUM-C-MAIL', MAILS[nom]); await p.click('#JUM-C-ENVOI'); await attendre(1500);
         await p.click('#JUM-C-VALIDER'); await attendre(1500);
         verifier(await p.evaluate(() => JUMELAGE_COMPTE_ACTIF()), nom + ' : compte TRIGONE actif (' + MAILS[nom].split('@')[0] + ')');
+        await attendre(800);
+        if (nom === 'M') verifier(await p.isVisible('#JUM-C-NOTIF'), 'après activation : « Activer les notifications » proposé');
+        await p.evaluate(() => JUMELAGE_FERMER_COMPTE());
         return p;
     }
     async function connecter(p, code, nom) {
@@ -149,10 +152,49 @@ module.exports = async function() {
     await ouvrirBoite(m);
     verifier(await m.evaluate(() => GET_PANIER().some(d => d.refus && d.refus.motif === 'Merci de joindre la DAF')), 'demandeur : la demande refusée revient dans Documents, avec le motif');
 
-    // 2e valideur
+    // Notifications : l'abonnement de l'appareil est enregistré ; un service de notification injoignable ne bloque pas les envois.
+    const abonne = await v1.evaluate(async () => {
+        const c = JSON.parse(localStorage.getItem('trigone_compte')), h = { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton, 'Content-Type': 'application/json' };
+        const cle = await (await fetch('api/push/cle')).json();
+        const r = await (await fetch('api/push', { method: 'POST', headers: h, body: JSON.stringify({ abonnement: { endpoint: 'https://push.invalid/trigone-test', keys: { p256dh: 'BNcRdreALRFXTkOOUHK1EtK2wtaz5Ry4YfYCA_0QTpQtUbVlUls0VJXg7A8u-Ts1XbjhazAkj7I99e8QcYP7DkM', auth: 'tBHItJI5svbpez7KI4CCXg' } } }) })).json();
+        return cle.ok && cle.cle.length > 80 && r.ok;
+    });
+    verifier(abonne, 'notifications : clé VAPID du serveur et abonnement de l\'appareil enregistré');
+
+    // 2e valideur : renvoie la demande au VALIDEUR 1, avec un motif
     await relever(v2);
     await ouvrirBoite(v2);
     verifier(await v2.evaluate(() => GET_A_VALIDER().length) === 1, '2e valideur : la demande validée par le 1er valideur arrive');
+    await v2.evaluate(() => DEMANDER_REFUS(GET_A_VALIDER()[0].id)); await attendre(600);
+    verifier(await v2.locator('input[name="MER-RENVOI"]').count() === 2, '2e valideur : choix « renvoyer au VALIDEUR 1 » ou « au demandeur »');
+    await v2.fill('#MER-MOTIF-REFUS', 'Préciser le lieu du stage'); await v2.click('#MER-MODALE-FOND button:has-text("Renvoyer")'); await attendre(800);
+    verifier(await v2.evaluate(() => GET_A_VALIDER()[0].decision === 'RENVOYEE'), '2e valideur : demande renvoyée au VALIDEUR 1');
+    await v2.evaluate(() => PREPARER_TRANSMISSION()); await attendre(600);
+    await v2.locator('#MER-MODALE-FOND .MER-PANIER-ITEM button:has-text("Envoyer")').first().click(); await attendre(3500);
+    verifier(await v2.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 1, '2e valideur : renvoi arrivé chez le VALIDEUR 1 (malgré un service de notification injoignable)');
+    await v2.click('#MER-MODALE-FOND button:has-text("Terminé")'); await attendre(800);
+
+    // 1er valideur : reçoit le renvoi, corrige à son niveau, revalide
+    await relever(v1);
+    verifier(await v1.evaluate(() => JUMELAGE_BOITE_LISTE().some(x => x.nature === 'renvoi' && x.statut === 'nouveau')), '1er valideur : « Renvoyée par le VALIDEUR 2 » dans sa boîte');
+    await ouvrirBoite(v1);
+    const carteRenvoi = await v1.evaluate(() => document.getElementById('PAGE-STAGE').innerText);
+    verifier(carteRenvoi.includes('Renvoyée par le VALIDEUR 2') && carteRenvoi.includes('Préciser le lieu du stage'), '1er valideur : motif du VALIDEUR 2 affiché');
+    await v1.evaluate(() => { const e = GET_A_VALIDER().find(x => x.d.renvoi); CORRIGER_PAR_VALIDEUR(e.id); }); await attendre(800);
+    verifier((await v1.textContent('h2')).includes('Correction'), '1er valideur : « ✎ Corriger » ouvre la demande en correction');
+    await v1.evaluate(() => { D.objet = 'Stage Bouquet — Paris 1er'; MER_ACTIVE_TAB = 'IMPUTATION'; AJOUTER_AU_PANIER(); }); await attendre(1200);
+    await v1.evaluate(() => FERMER_MSG()); await attendre(300);
+    verifier(await v1.evaluate(() => { const e = GET_A_VALIDER().find(x => x.d.renvoi); return e && e.corrigee && e.d.objet === 'Stage Bouquet — Paris 1er' && GET_PANIER().length === 0; }),
+        '1er valideur : correction enregistrée dans l\'Espace valideur (pas dans ses Documents)');
+    await v1.evaluate(() => VALIDER_DEMANDES([GET_A_VALIDER().find(x => x.d.renvoi).id])); await attendre(1500);
+    await v1.evaluate(() => PREPARER_TRANSMISSION()); await attendre(600);
+    await v1.locator('#MER-MODALE-FOND .MER-PANIER-ITEM button:has-text("Envoyer")').first().click(); await attendre(3500);
+    await v1.click('#MER-MODALE-FOND button:has-text("Terminé")'); await attendre(800);
+
+    // 2e valideur : reçoit la demande corrigée et la valide
+    await relever(v2);
+    await ouvrirBoite(v2);
+    verifier(await v2.evaluate(() => GET_A_VALIDER().length === 1 && GET_A_VALIDER()[0].d.objet === 'Stage Bouquet — Paris 1er'), '2e valideur : la demande corrigée revient');
     await v2.evaluate(() => VALIDER_DEMANDES([GET_A_VALIDER()[0].id])); await attendre(1500);
     await v2.evaluate(v => SET_MAIL_VALIDEUR('mailChorus', v), MAILS.C);
     await v2.evaluate(() => PREPARER_TRANSMISSION()); await attendre(600);
@@ -171,6 +213,15 @@ module.exports = async function() {
     const cartes = await c.locator('.MER-PANIER-ITEM').allInnerTexts();
     verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'CHORUS' && cartes.some(t => t.includes('Conforme : validée par les deux valideurs')),
         'assistant Chorus DT : la demande arrive, conforme (signatures et NDS vérifiées)');
+    // L'assistant Chorus DT renvoie directement au demandeur, avec un commentaire
+    await c.locator('button:has-text("Renvoyer au demandeur")').first().click(); await attendre(500);
+    await c.fill('#MER-MOTIF-CHORUS', 'Code FD à revoir'); await c.click('#MER-MODALE-FOND button:has-text("Renvoyer")'); await attendre(3500);
+    verifier((await c.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Demande renvoyée', 'Chorus DT : demande renvoyée au demandeur');
+    await c.evaluate(() => FERMER_MSG());
+    await m.evaluate(() => FERMER_MSG()); await attendre(400);
+    await relever(m); await ouvrirBoite(m);
+    verifier(await m.evaluate(() => GET_PANIER().some(d => d.refus && d.refus.niveau === 3 && d.refus.motif === 'Code FD à revoir')), 'demandeur : la demande renvoyée par l\'ASSIST CHORUS DT revient dans Documents, avec le commentaire');
+    verifier((await m.textContent('#PAGE-STAGE')).includes('ASSIST CHORUS DT'), 'demandeur : Documents indique « Refusée par l\'ASSIST CHORUS DT »');
 
     // Compte-rendu de fin de mission : le missionnaire l'envoie (PDF + justificatif) à l'assistant Chorus DT.
     await m.goto(URL + 'cr/'); await attendre(3000);

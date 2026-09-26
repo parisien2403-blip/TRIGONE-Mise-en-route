@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 98,
-  "appCodeMessage": "Version 50 : une personne qui a les rôles VALIDEUR 1 et VALIDEUR 2 peut valider les deux niveaux d'une demande. Logo Assist Chorus-DT de l'écran de choix : le logo seul, comme les deux autres, en plus petit.",
+  "appCodeVersion": 99,
+  "appCodeMessage": "Version 51 : notifications (PC, Android, iPhone avec TRIGONE installée) à chaque envoi reçu — activez-les dans Compte TRIGONE. Le VALIDEUR 2 peut renvoyer une demande au VALIDEUR 1 (qui la corrige, la revalide ou la refuse au demandeur) ; l'ASSIST CHORUS DT peut la renvoyer directement au demandeur avec un commentaire.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
