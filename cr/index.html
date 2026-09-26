@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=19"></script>
+<script src="../jumelage.js?v=20"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -716,6 +716,7 @@ body.dark-mode .app-credit {
 }
 .P0-REF-BTN:active { transform: scale(0.95); }
 .P0-CHECK-UPDATE-BTN { top: 40px; }
+.P0-SIGNALER-BTN { top: 70px; }
 .P0-REF-BTN:hover { border-color: var(--tg-accent-light); color: var(--tg-ink); }
 body.dark-mode .P0-REF-BTN { background: rgba(36, 36, 36, 0.9); border-color: #404040; color: #a3a3a3; }
 .P0-COLOR-SWATCHES { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -5253,8 +5254,9 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <button type="button" id="P0-MEDAILLE-BADGE" class="P0-MEDAILLE-BADGE HIDDEN" onclick="AFFICHER_INFO_MEDAILLE_BADGE()">
 <img id="P0-MEDAILLE-IMG" src="" alt="Médaille TRIGONE">
 </button>
-<button type="button" id="BTN-REFERENCES" class="P0-REF-BTN" onclick="OUVRIR_REFERENCES()" title="Textes et taux de référence utilisés par TRIGONE">Références</button>
+<button type="button" id="BTN-REFERENCES" class="P0-REF-BTN" onclick="OUVRIR_REFERENCES()" title="Textes et taux de référence utilisés par TRIGONE">📖 Références</button>
 <button type="button" id="BTN-CHECK-UPDATE" class="P0-REF-BTN P0-CHECK-UPDATE-BTN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()" title="Vérifier si une mise à jour est disponible">🔄 Mise à jour</button>
+<button type="button" id="BTN-SIGNALER" class="P0-REF-BTN P0-SIGNALER-BTN" onclick="SIGNALER_PROBLEME()" title="Signaler un problème à l'équipe TRIGONE">🛟 Signaler</button>
 <div class="P0-LOGO-WRAP" role="presentation">
 <img src="logo_cr_accueil.png" class="welcome-logo JUM-LOGO-CHOIX" alt="TRIGONE — Compte-rendu de mission" title="Revenir au choix Mise en route / Compte-rendu" onclick="JUMELAGE_CHOIX()">
 </div>
@@ -5545,7 +5547,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <div id="NOTICE-MENU-EXTRA" class="NOTICE-MENU-EXTRA"></div>
 <button type="button" id="NOTICE-PAGE-BTN-NOTIF" class="NOTICE-PAGE-NOTIF-BTN HIDDEN" onclick="OUVRIR_ALERTES()">Activer les rappels — Mon espace</button>
-<button type="button" class="NOTICE-PAGE-REPORT-BTN" onclick="SIGNALER_PROBLEME()">🛟 Signaler un problème</button>
+
 </div>
 <div id="NOTICE-DETAIL-VIEW" class="BIB-VIEW HIDDEN">
 <button type="button" class="BIB-BACK-LINK" onclick="NOTICE_RETOUR_LISTE()">← Liste</button>
@@ -6179,7 +6181,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Réglages TRIGONE</span><span class="NOTICE-CARD-SUB">Identité, unité, mail de l'assistant Chorus DT et code d'accès — communs aux deux applis</span></span>
 <span class="NOTICE-CARD-CHEV" aria-hidden="true">›</span></button>
 <p id="PARAMS-INTRO-TXT">Votre espace personnel — dépliez une section pour la régler. Rien à toucher si les valeurs par défaut vous conviennent.</p>
-<button type="button" class="NOTICE-PAGE-REPORT-BTN" style="margin-bottom:14px;" onclick="SIGNALER_PROBLEME()">🛟 Signaler un problème</button>
+
 
 <details class="notice-fold">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>Rappels &amp; notifications</summary>
@@ -9458,6 +9460,7 @@ function GET_LABEL_ECRAN_ACTUEL() {
 }
 
 function SIGNALER_PROBLEME() {
+    if (window.JUMELAGE_SIGNALER) { JUMELAGE_SIGNALER(GET_LABEL_ECRAN_ACTUEL()); return; }
     var sujet = 'TRIGONE - Signalement (V' + APP_VERSION_AFFICHEE + ')';
     var corps = 'Décrivez ici ce qui s\'est passé :\n\n\n\n'
         + '---\n'
@@ -11513,7 +11516,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 116;
+var APP_CODE_VERSION = 117;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13687,6 +13690,7 @@ function RENDRE_MENU_PC_CR(page) {
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'mer\')"><img src="../logo_mer.webp" alt=""><span>Passer à Mise en route</span></button>' +
             item('REF', CR_ICONES_PC.REFERENCES, 'Références', 'OUVRIR_REFERENCES()') +
             item('MAJ', CR_ICONES_PC.MAJ, 'Mise à jour', 'VERIFIER_MISE_A_JOUR_MANUELLE()') +
+            item('SIGNALER', '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/></svg>', 'Signaler un problème', 'SIGNALER_PROBLEME()') +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';
 }

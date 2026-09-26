@@ -119,6 +119,18 @@
         '.THEME-TOGGLE svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }' +
         '.THEME-TOGGLE { color: #5a7a94; } body.dark-mode .THEME-TOGGLE { color: #e5e5e5; }' +
         '@media (max-width: 480px) { .THEME-TOGGLE svg { width: 17px; height: 17px; } }' +
+        /* Icônes au trait qui remplacent les emoji */
+        '.JUM-IC { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex-shrink: 0; }' +
+        '.JUM-IC svg { width: 100%; height: 100%; display: block; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.P0-REF-BTN { display: inline-flex; align-items: center; gap: 5px; } .P0-REF-BTN .JUM-IC { width: 13px; height: 13px; vertical-align: 0; }' +
+        '.JUM-IC[data-ton="ok"] { color: #15803d; } .JUM-IC[data-ton="danger"] { color: #b91c1c; } .JUM-IC[data-ton="alerte"] { color: #b45309; }' +
+        'html body.dark-mode .JUM-IC[data-ton="ok"] { color: #86efac; } html body.dark-mode .JUM-IC[data-ton="danger"] { color: #f87171; } html body.dark-mode .JUM-IC[data-ton="alerte"] { color: #fbbf24; }' +
+        /* Icône en tête des messages : pastille, comme les icônes des onglets */
+        '.msg-icone .JUM-IC { width: 58px; height: 58px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(90,122,148,0.1); color: #5a7a94; vertical-align: 0; }' +
+        '.msg-icone .JUM-IC svg { stroke-width: 1.7; }' +
+        '.msg-icone .JUM-IC[data-ton="ok"] { background: rgba(21,128,61,0.1); } .msg-icone .JUM-IC[data-ton="danger"] { background: rgba(185,28,28,0.09); } .msg-icone .JUM-IC[data-ton="alerte"] { background: rgba(180,83,9,0.1); }' +
+        'html body.dark-mode .msg-icone .JUM-IC { background: rgba(169,195,214,0.12); color: #a9c3d6; }' +
+        'html body.dark-mode .msg-icone .JUM-IC[data-ton="ok"] { background: rgba(134,239,172,0.1); color: #86efac; } html body.dark-mode .msg-icone .JUM-IC[data-ton="danger"] { background: rgba(248,113,113,0.1); color: #f87171; } html body.dark-mode .msg-icone .JUM-IC[data-ton="alerte"] { background: rgba(251,191,36,0.1); color: #fbbf24; }' +
         /* ===== Thème sombre commun : une seule palette pour les deux applis (gris neutres + bleu ardoise TRIGONE) =====
            Fond #141414, surfaces #1f1f1f / #262626, texte #ececec, secondaire #a3a3a3, accent #a9c3d6 (bleu ardoise clair). */
         'html body.dark-mode { --tg-muted: #a3a3a3; --tg-soft: #8f8f8f; --tg-border: rgba(255,255,255,0.09); }' +
@@ -303,7 +315,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 19, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 20, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -594,6 +606,7 @@
         m.className = 'JUM-ROUE-MENU';
         m.innerHTML = '<button type="button" data-action="reglages">' + ROUE_SVG + '<span><b>Réglages TRIGONE</b><small>Identité, mails, code d\'accès</small></span></button>' +
             '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>' +
+            '<button type="button" data-action="signaler">' + window.JUMELAGE_ICONE('bouee') + '<span><b>Signaler un problème</b><small>Écrire à l\'équipe TRIGONE</small></span></button>' +
             '<div class="JUM-ROUE-SEP"></div>' +
             '<button type="button" data-action="reinitialiser" class="JUM-ROUE-DANGER">' + CORBEILLE_SVG + '<span><b>Réinitialiser TRIGONE</b><small>Tout effacer sur cet appareil</small></span></button>';
         ['pointerdown', 'pointerup', 'click'].forEach(function(t) { m.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
@@ -604,9 +617,138 @@
             var a = b.getAttribute('data-action');
             if (a === 'reglages') window.JUMELAGE_REGLAGES();
             else if (a === 'reinitialiser') window.JUMELAGE_REINITIALISER();
+            else if (a === 'signaler') window.JUMELAGE_SIGNALER('choix');
             else window.JUMELAGE_PRESENTATION();
         });
         ecran.appendChild(m);
+    };
+
+    // ---------- Icônes au trait à la place des emoji couleur (les deux applis) ----------
+    // Les textes des applis gardent leurs emoji ; à l'affichage, chacun est remplacé par l'icône au trait
+    // correspondante (même style que les onglets). Rien ne change dans les mails, PDF ou notifications.
+    var P = {
+        cadenas: '<rect x="4.5" y="11" width="15" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>',
+        cadenasOuvert: '<rect x="4.5" y="11" width="15" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 7.8-1.2"/>',
+        maj: '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>',
+        importer: '<path d="M12 3v11M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"/>',
+        exporter: '<path d="M12 15V4M7.5 8.5 12 4l4.5 4.5"/><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"/>',
+        trombone: '<path d="M20.5 11.5 12 20a5.5 5.5 0 0 1-7.8-7.8l8.9-8.9a3.7 3.7 0 0 1 5.2 5.2l-8.9 8.9a1.8 1.8 0 0 1-2.6-2.6l8.2-8.2"/>',
+        ok: '<circle cx="12" cy="12" r="9"/><path d="m8 12.3 2.7 2.7L16.2 9.5"/>',
+        interdit: '<circle cx="12" cy="12" r="9"/><path d="M5.7 5.7l12.6 12.6"/>',
+        disquette: '<path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 1-2Z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>',
+        alerte: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17.2h.01"/>',
+        telephone: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+        mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
+        lecture: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5-6-3.5Z"/>',
+        voiture: '<path d="M5 16.5V12l2-5h10l2 5v4.5"/><path d="M4 12h16v4.5H4z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/>',
+        document: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8Z"/><path d="M14 3v5h5M9 13h6M9 17h6"/>',
+        oeil: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/>',
+        presse: '<rect x="6" y="4" width="12" height="17" rx="2"/><path d="M9 4V3h6v1M9 10h6M9 14h6M9 18h3"/>',
+        sablier: '<path d="M6 3h12M6 21h12M7 3v3a5 5 0 0 0 10 0V3M7 21v-3a5 5 0 0 1 10 0v3"/>',
+        chrono: '<circle cx="12" cy="13" r="8"/><path d="M12 9v4l2.5 2M10 2.5h4"/>',
+        annonce: '<path d="M3.5 10v4a1 1 0 0 0 1 1H7l7 4.5v-15L7 9H4.5a1 1 0 0 0-1 1Z"/><path d="M17.5 9a4 4 0 0 1 0 6M20 6.5a7.5 7.5 0 0 1 0 11"/>',
+        corbeille: '<path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/>',
+        info: '<circle cx="12" cy="12" r="9"/><path d="M12 16.5v-5M12 8h.01"/>',
+        nouveau: '<path d="M12 3.5 13.9 9l5.6 1.9-5.6 1.9L12 18.5l-1.9-5.7L4.5 10.9 10.1 9 12 3.5Z"/><path d="M19 3v3M17.5 4.5h3"/>',
+        groupe: '<circle cx="9" cy="8" r="3.4"/><path d="M2.5 20c0-3.6 2.9-6.3 6.5-6.3s6.5 2.7 6.5 6.3"/><path d="M16 4.8a3.4 3.4 0 0 1 0 6.4M18 13.9c2.1.8 3.5 2.8 3.5 5.6"/>',
+        personne: '<circle cx="12" cy="8.2" r="3.6"/><path d="M5 20.5c0-3.8 3.1-6.6 7-6.6s7 2.8 7 6.6"/>',
+        image: '<rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="8.5" cy="9.5" r="1.8"/><path d="m21 16-5-5-9 9"/>',
+        photo: '<path d="M4 7.5h3l1.8-2.5h6.4L17 7.5h3a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.6"/>',
+        cloche: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
+        horsLigne: '<path d="M2 8.5a15 15 0 0 1 5-2.6M22 8.5a15 15 0 0 0-10.3-3.6M5 12a10 10 0 0 1 3.5-2M19 12a10 10 0 0 0-3-1.8M8.5 15.5a5 5 0 0 1 5.5-.9M12 19.5h.01M3 3l18 18"/>',
+        bouee: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/>',
+        dossier: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
+        medaille: '<circle cx="12" cy="9" r="5.5"/><path d="M8.7 13.4 7 21.5l5-2.8 5 2.8-1.7-8.1"/>',
+        euro: '<circle cx="12" cy="12" r="9"/><path d="M15.5 8.5a4 4 0 1 0 0 7M7 11h6M7 13.5h6"/>',
+        bulle: '<path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-9l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z"/>',
+        graphique: '<path d="M4 20V4M4 20h16"/><path d="M8 16v-5M12 16V8M16 16v-3"/>',
+        stylo: '<path d="M4 20l1.2-4.4L16.4 4.4a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L8.4 18.8 4 20Z"/><path d="M14.5 6.3l3.2 3.2"/>',
+        maison: '<path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/>',
+        salut: '<circle cx="12" cy="12" r="9"/><path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.5h.01M15 9.5h.01"/>',
+        colis: '<path d="M3.5 7.5 12 3l8.5 4.5v9L12 21l-8.5-4.5Z"/><path d="M3.5 7.5 12 12l8.5-4.5M12 12v9"/>',
+        repere: '<path d="M12 21s-7-6.2-7-11.5a7 7 0 0 1 14 0C19 14.8 12 21 12 21Z"/><circle cx="12" cy="9.5" r="2.5"/>',
+        couverts: '<path d="M7 3v8M5 3v5a2 2 0 0 0 4 0V3M7 11v10M17 21V3c-2 0-3.5 2.5-3.5 6v4H17"/>',
+        hotel: '<path d="M3 20V7M21 20v-6a3 3 0 0 0-3-3h-8v6M3 17h18"/><circle cx="6.8" cy="12.2" r="1.8"/>',
+        billet: '<path d="M3 8a1 1 0 0 1 1-1h16a1 1 0 0 1 1 1v2a2 2 0 0 0 0 4v2a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1v-2a2 2 0 0 0 0-4Z"/><path d="M14 7v10" stroke-dasharray="2 2"/>',
+        train: '<rect x="5" y="3" width="14" height="13" rx="3"/><path d="M5 10h14M8.5 19.5 7 21M15.5 19.5 17 21M8.5 13h.01M15.5 13h.01"/>',
+        avion: '<path d="M10.5 3.5a1.5 1.5 0 0 1 3 0V9l7 4v2l-7-2v4.5l2.5 2V21L12 20l-4 1v-1.5l2.5-2V13l-7 2v-2l7-4Z"/>',
+        bateau: '<path d="M3 17.5c1.5 1 3 1 4.5 0s3-1 4.5 0 3 1 4.5 0 3-1 4.5 0"/><path d="M4.5 14 6 9h12l1.5 5M9 9V5h6v4"/>',
+        partager: '<circle cx="18" cy="5.5" r="2.5"/><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="18.5" r="2.5"/><path d="m8.2 10.8 7.6-4.1M8.2 13.2l7.6 4.1"/>',
+        lien: '<path d="M7 7h11l-3-3M17 17H6l3 3"/>',
+        facture: '<path d="M6 3h12v18l-2-1.5-2 1.5-2-1.5-2 1.5-2-1.5L6 21Z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+        livre: '<path d="M6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5v-13A2.5 2.5 0 0 1 6.5 3z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H19"/><path d="M8.5 7.5h6M8.5 11h4"/>',
+        crayon: '<path d="M4 20l1.2-4.4L16.4 4.4a2 2 0 0 1 2.8 0l.4.4a2 2 0 0 1 0 2.8L8.4 18.8 4 20Z"/>'
+    };
+    // emoji → [icône, ton] ; ton : ok (vert), danger (rouge), alerte (ambre), sinon couleur du texte.
+    var EMOJI = {
+        '🔒': ['cadenas'], '🔐': ['cadenas'], '🔓': ['cadenasOuvert'], '🔄': ['maj'], '🔁': ['lien'], '📥': ['importer'], '⬇': ['importer'],
+        '📤': ['exporter'], '📎': ['trombone'], '✅': ['ok', 'ok'], '⛔': ['interdit', 'danger'], '🚫': ['interdit', 'danger'], '💾': ['disquette'],
+        '⚠': ['alerte', 'alerte'], '📱': ['telephone'], '📲': ['telephone'], '📧': ['mail'], '✉': ['mail'], '📨': ['mail'], '📩': ['mail'],
+        '🎬': ['lecture'], '🚗': ['voiture'], '📄': ['document'], '📃': ['document'], '👁': ['oeil'], '📋': ['presse'], '⏳': ['sablier'], '⌛': ['sablier'],
+        '⏱': ['chrono'], '📢': ['annonce'], '🗑': ['corbeille'], 'ℹ': ['info'], '✨': ['nouveau'], '👥': ['groupe'], '👤': ['personne'],
+        '🖼': ['image'], '📷': ['photo'], '📸': ['photo'], '🔔': ['cloche'], '📴': ['horsLigne'], '🛟': ['bouee'], '📂': ['dossier'], '📁': ['dossier'],
+        '🏅': ['medaille'], '🥇': ['medaille'], '🥈': ['medaille'], '🥉': ['medaille'], '💶': ['euro'], '💰': ['euro'], '💬': ['bulle'],
+        '📊': ['graphique'], '📈': ['graphique'], '🖋': ['stylo'], '✍': ['stylo'], '✏': ['crayon'], '🏠': ['maison'], '👋': ['salut'], '📦': ['colis'],
+        '🧾': ['facture'], '📍': ['repere'], '🍽': ['couverts'], '🏨': ['hotel'], '🎫': ['billet'], '🚆': ['train'], '🚄': ['train'], '✈': ['avion'],
+        '⛴': ['bateau'], '🚢': ['bateau'], '🗂': ['dossier'], '📌': ['repere'], '🔗': ['lien'], '📅': ['document'], '🗓': ['document'], '📖': ['livre'], '📚': ['livre']
+    };
+    var RE_EMOJI = new RegExp('(' + Object.keys(EMOJI).join('|') + ')\\uFE0F?', 'g');
+    var RE_TEST = new RegExp(Object.keys(EMOJI).join('|'));
+    window.JUMELAGE_ICONE = function(nom) { return '<svg viewBox="0 0 24 24" aria-hidden="true">' + (P[nom] || '') + '</svg>'; };
+    function remplacer(noeud) {
+        var t = noeud.data, frag = document.createDocumentFragment(), dernier = 0, m;
+        RE_EMOJI.lastIndex = 0;
+        while ((m = RE_EMOJI.exec(t))) {
+            if (m.index > dernier) frag.appendChild(document.createTextNode(t.slice(dernier, m.index)));
+            var def = EMOJI[m[1]], s = document.createElement('span');
+            s.className = 'JUM-IC'; if (def[1]) s.setAttribute('data-ton', def[1]);
+            s.innerHTML = window.JUMELAGE_ICONE(def[0]);
+            frag.appendChild(s);
+            dernier = m.index + m[0].length;
+        }
+        if (dernier < t.length) frag.appendChild(document.createTextNode(t.slice(dernier).replace(/^️/, '')));
+        noeud.parentNode.replaceChild(frag, noeud);
+    }
+    var EXCLUS = { SCRIPT: 1, STYLE: 1, TEXTAREA: 1, OPTION: 1, OPTGROUP: 1, TITLE: 1, svg: 1, SVG: 1 };
+    function iconiser(racine) {
+        if (!racine) return;
+        if (racine.nodeType === 3) { var p = racine.parentNode; if (p && !EXCLUS[p.nodeName] && !(p.closest && p.closest('.JUM-IC,[data-emoji]')) && RE_TEST.test(racine.data)) remplacer(racine); return; }
+        if (racine.nodeType !== 1 || EXCLUS[racine.nodeName] || (racine.closest && racine.closest('.JUM-IC,[data-emoji],svg'))) return;
+        if (!RE_TEST.test(racine.textContent || '')) return;
+        var w = document.createTreeWalker(racine, NodeFilter.SHOW_TEXT, { acceptNode: function(n) {
+            var p = n.parentNode;
+            if (!p || EXCLUS[p.nodeName] || (p.closest && p.closest('.JUM-IC,[data-emoji],svg,select,textarea'))) return NodeFilter.FILTER_REJECT;
+            return RE_TEST.test(n.data) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
+        } });
+        var liste = [], n;
+        while ((n = w.nextNode())) liste.push(n);
+        liste.forEach(remplacer);
+    }
+    window.JUMELAGE_ICONISER = iconiser;
+    function demarrerIcones() {
+        iconiser(document.body);
+        if (!window.MutationObserver) return;
+        new MutationObserver(function(muts) {
+            muts.forEach(function(m) {
+                if (m.type === 'characterData') iconiser(m.target);
+                else Array.prototype.forEach.call(m.addedNodes, iconiser);
+            });
+        }).observe(document.body, { childList: true, subtree: true, characterData: true });
+    }
+    if (document.body) demarrerIcones(); else document.addEventListener('DOMContentLoaded', demarrerIcones);
+
+    // ---------- Signaler un problème (écran de choix et les deux applis) ----------
+    var MAIL_SUPPORT = 'trigone.app@outlook.fr';
+    window.JUMELAGE_SIGNALER = function(ecran) {
+        var appli = ecran === 'choix' ? 'Écran de choix des applis' : (DANS_CR ? 'Compte-rendu de mission' : 'Mise en route');
+        var v = window.APP_VERSION_AFFICHEE || (typeof APP_VERSION_AFFICHEE !== 'undefined' ? APP_VERSION_AFFICHEE : '');
+        var sujet = 'TRIGONE - Signalement (' + (DANS_CR ? 'Compte-rendu' : 'Mise en route') + (v ? ' V' + v : '') + ')';
+        var corps = 'Décrivez ici ce qui s\'est passé :\n\n\n\n---\n' +
+            'Appli : ' + appli + '\n' + (v ? 'Version TRIGONE : V' + v + '\n' : '') +
+            (ecran && ecran !== 'choix' ? 'Écran concerné : ' + ecran + '\n' : '') +
+            'Appareil : ' + (window.matchMedia && matchMedia('(min-width: 1100px)').matches ? 'ordinateur' : 'téléphone / tablette') + '\n' +
+            'Connecté à internet : ' + (navigator.onLine ? 'oui' : 'non');
+        window.location.href = 'mailto:' + MAIL_SUPPORT + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
     };
 
     // ---------- Pont ordinateur → téléphone : une mise en route passe dans Compte-rendu par QR code ----------
