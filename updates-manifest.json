@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 80,
-  "appCodeMessage": "Version 32 : après une mise à jour, TRIGONE rouvre toujours sur l'écran de choix des applis, même si elle a démarré depuis une appli.",
+  "appCodeVersion": 81,
+  "appCodeMessage": "Version 33 : mise à jour de test — TRIGONE doit revenir sur l'écran de choix des applis.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
