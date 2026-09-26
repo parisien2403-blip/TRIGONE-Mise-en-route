@@ -431,7 +431,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 43, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 44, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -741,7 +741,7 @@
     // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
     // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
     var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
-    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde)$/;
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte)$/;
     function basePieces(creer) {
         return new Promise(function(ok) {
             if (!window.indexedDB) { ok(null); return; }
@@ -851,6 +851,217 @@
         return derniere ? 'Votre dernière sauvegarde TRIGONE commence à dater. Refaites-la pour ne rien perdre en cas de souci avec cet appareil.'
             : 'Vous n\'avez encore jamais sauvegardé TRIGONE. Tout est enregistré sur cet appareil uniquement : en cas de perte, de réinitialisation ou de changement d\'appareil, tout serait perdu.';
     };
+    // ---------- Compte TRIGONE et boîte aux lettres : envois directs d'appli à appli, chiffrés de bout en bout ----------
+    // Compte = adresse professionnelle vérifiée par un code reçu par mail. Chaque appareil a sa clé ECDH (P-256) :
+    // la clé privée, non exportable, reste dans l'appareil (IndexedDB) ; le serveur (worker.js) ne connaît que la
+    // clé publique. Un envoi est chiffré en AES-GCM avec une clé tirée au hasard, elle-même chiffrée pour chaque
+    // appareil du destinataire (ECDH éphémère + HKDF). Le serveur ne voit que des données illisibles.
+    var CLE_COMPTE = 'trigone_compte', API = (DANS_CR ? '../' : '') + 'api/', ETAT_API = null;
+    function monCompte() { var c = lireJSON(CLE_COMPTE); return c && c.mail && c.appareil && c.jeton ? c : null; }
+    function appelApi(chemin, opts) {
+        opts = opts || {};
+        var c = monCompte(), entetes = { 'Content-Type': 'application/json' };
+        if (c) entetes.Authorization = 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton;
+        return fetch(API + chemin, { method: opts.methode || 'GET', headers: entetes, body: opts.corps ? JSON.stringify(opts.corps) : undefined, cache: 'no-store' })
+            .then(function(r) {
+                return r.json().catch(function() { return { ok: false, erreur: 'Service indisponible.' }; }).then(function(j) {
+                    if (!r.ok || !j.ok) { var e = new Error(j.erreur || 'Service indisponible.'); e.statut = r.status; throw e; }
+                    return j;
+                });
+            });
+    }
+    // Service disponible ? (boîte aux lettres en place sur le serveur)
+    function serviceDisponible() {
+        if (ETAT_API) return ETAT_API;
+        ETAT_API = navigator.onLine ? appelApi('etat').then(function() { return true; }, function() { ETAT_API = null; return false; }) : Promise.resolve(false);
+        return ETAT_API;
+    }
+    function baseCles() {
+        return new Promise(function(ok, ko) {
+            var r = indexedDB.open('trigone-compte', 1);
+            r.onupgradeneeded = function() { r.result.createObjectStore('cles'); };
+            r.onsuccess = function() { ok(r.result); }; r.onerror = function() { ko(r.error); };
+        });
+    }
+    function cleIdb(action, valeur) {
+        return baseCles().then(function(db) { return new Promise(function(ok, ko) {
+            var tx = db.transaction('cles', action === 'lire' ? 'readonly' : 'readwrite'), st = tx.objectStore('cles');
+            var r = action === 'lire' ? st.get('appareil') : action === 'effacer' ? st.delete('appareil') : st.put(valeur, 'appareil');
+            tx.oncomplete = function() { db.close(); ok(action === 'lire' ? (r.result || null) : null); };
+            tx.onerror = function() { db.close(); ko(tx.error); };
+        }); });
+    }
+    function versB64(buf) {
+        var o = new Uint8Array(buf), s = '';
+        for (var i = 0; i < o.length; i += 0x8000) s += String.fromCharCode.apply(null, o.subarray(i, i + 0x8000));
+        return btoa(s);
+    }
+    function depuisB64(t) { var s = atob(t), o = new Uint8Array(s.length); for (var i = 0; i < s.length; i++) o[i] = s.charCodeAt(i); return o; }
+    var SUBTLE = window.crypto && window.crypto.subtle;
+    function cleEnveloppe(bits, usage) {
+        return SUBTLE.importKey('raw', bits, 'HKDF', false, ['deriveKey']).then(function(hk) {
+            return SUBTLE.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: new TextEncoder().encode('TRIGONE boite v1') },
+                hk, { name: 'AES-GCM', length: 256 }, false, [usage]);
+        });
+    }
+    function chiffrerPour(appareils, texte) {
+        var iv = crypto.getRandomValues(new Uint8Array(12)), cleContenu;
+        return SUBTLE.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']).then(function(k) {
+            cleContenu = k;
+            return Promise.all([SUBTLE.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(texte)), SUBTLE.exportKey('raw', k)]);
+        }).then(function(r) {
+            var brute = r[1];
+            return Promise.all(appareils.map(function(a) {
+                var eph, iv2 = crypto.getRandomValues(new Uint8Array(12));
+                return Promise.all([SUBTLE.importKey('jwk', a.cle, { name: 'ECDH', namedCurve: 'P-256' }, false, []),
+                    SUBTLE.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits'])]).then(function(x) {
+                    eph = x[1];
+                    return SUBTLE.deriveBits({ name: 'ECDH', public: x[0] }, eph.privateKey, 256);
+                }).then(function(bits) { return cleEnveloppe(bits, 'encrypt'); }).then(function(ke) {
+                    return Promise.all([SUBTLE.encrypt({ name: 'AES-GCM', iv: iv2 }, ke, brute), SUBTLE.exportKey('jwk', eph.publicKey)]);
+                }).then(function(y) {
+                    return { appareil: a.id, epk: { kty: 'EC', crv: 'P-256', x: y[1].x, y: y[1].y }, iv: versB64(iv2), ct: versB64(y[0]) };
+                });
+            })).then(function(enveloppes) { return { enveloppes: enveloppes, donnees: { iv: versB64(iv), ct: versB64(r[0]) } }; });
+        });
+    }
+    function dechiffrer(enveloppe, donnees) {
+        return cleIdb('lire').then(function(rec) {
+            if (!rec || !rec.prive) throw new Error('Clé de cet appareil introuvable.');
+            return SUBTLE.importKey('jwk', enveloppe.epk, { name: 'ECDH', namedCurve: 'P-256' }, false, []).then(function(epk) {
+                return SUBTLE.deriveBits({ name: 'ECDH', public: epk }, rec.prive, 256);
+            });
+        }).then(function(bits) { return cleEnveloppe(bits, 'decrypt'); }).then(function(ke) {
+            return SUBTLE.decrypt({ name: 'AES-GCM', iv: depuisB64(enveloppe.iv) }, ke, depuisB64(enveloppe.ct));
+        }).then(function(brute) {
+            return SUBTLE.importKey('raw', brute, { name: 'AES-GCM' }, false, ['decrypt']);
+        }).then(function(k) {
+            return SUBTLE.decrypt({ name: 'AES-GCM', iv: depuisB64(donnees.iv) }, k, depuisB64(donnees.ct));
+        }).then(function(clair) { return new TextDecoder().decode(clair); });
+    }
+    function nomAppareil() {
+        var ua = navigator.userAgent || '';
+        return (/iPhone|iPad/.test(ua) ? 'iPhone / iPad' : /Android/.test(ua) ? 'Android' : /Windows/.test(ua) ? 'PC Windows' : /Mac/.test(ua) ? 'Mac' : 'Appareil') +
+            ' — ' + new Date().toLocaleDateString('fr-FR');
+    }
+
+    window.JUMELAGE_COMPTE_ACTIF = function() { return !!monCompte(); };
+    window.JUMELAGE_COMPTE_MAIL = function() { var c = monCompte(); return c ? c.mail : ''; };
+    // Envoi direct : chiffré pour tous les appareils du destinataire. Rejette avec e.pasDeCompte si le destinataire
+    // n'a pas encore de compte TRIGONE (l'appli propose alors le mail).
+    window.JUMELAGE_ENVOYER_DIRECT = function(destinataire, type, nom, texte) {
+        if (!monCompte()) return Promise.reject(Object.assign(new Error('Activez d\'abord votre compte TRIGONE.'), { sansCompte: true }));
+        if (!navigator.onLine) return Promise.reject(new Error('Pas de connexion : l\'envoi direct demande du réseau.'));
+        var dest = String(destinataire || '').trim().toLowerCase();
+        return appelApi('cles?mail=' + encodeURIComponent(dest)).then(function(r) {
+            if (!r.compte) throw Object.assign(new Error(dest + ' n\'a pas encore de compte TRIGONE.'), { pasDeCompte: true });
+            // Le nom du fichier (qui contient le nom du demandeur) est chiffré avec le contenu : le serveur n'en voit rien.
+            return chiffrerPour(r.appareils, JSON.stringify({ nom: nom, contenu: texte }));
+        }).then(function(ch) {
+            return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, enveloppes: ch.enveloppes, donnees: ch.donnees } });
+        });
+    };
+    // Relève de la boîte : chaque envoi est déchiffré et remis à l'appli (ranger), puis supprimé du serveur.
+    var releveEnCours = false;
+    window.JUMELAGE_RELEVER = function(ranger) {
+        if (releveEnCours || !monCompte() || !navigator.onLine || !SUBTLE) return Promise.resolve(0);
+        releveEnCours = true;
+        return appelApi('boite').then(function(r) {
+            return r.envois.reduce(function(suite, e) {
+                return suite.then(function(n) {
+                    return appelApi('boite/' + e.id).then(function(x) {
+                        return dechiffrer(x.enveloppe, x.donnees).then(function(clair) {
+                            var o = JSON.parse(clair);
+                            var f = new File([o.contenu], o.nom || 'demande.json', { type: 'application/json' });
+                            return Promise.resolve(ranger([f], x)).then(function() { return appelApi('boite/' + e.id, { methode: 'DELETE' }); }).then(function() { return n + 1; });
+                        });
+                    }).catch(function() { return n; });
+                });
+            }, Promise.resolve(0));
+        }).catch(function(e) {
+            if (e.statut === 401) { try { localStorage.removeItem(CLE_COMPTE); } catch (x) {} }
+            return 0;
+        }).then(function(n) { releveEnCours = false; return n; });
+    };
+
+    // Fenêtre « Compte TRIGONE » : activer (mail pro → code reçu), état, déconnexion de l'appareil.
+    var fenCompte = null;
+    window.JUMELAGE_FERMER_COMPTE = function() { if (fenCompte) { fenCompte.remove(); fenCompte = null; } };
+    window.JUMELAGE_COMPTE = function() {
+        if (fenCompte || !document.body) return;
+        var c = monCompte(), r = lireReglages();
+        fenCompte = document.createElement('div');
+        fenCompte.className = 'JUM-REGLAGES';
+        fenCompte.setAttribute('role', 'dialog');
+        var tete = '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('mail') : '') + '</span><div><h2>Compte TRIGONE</h2>' +
+            '<p>Pour envoyer et recevoir les demandes directement dans TRIGONE, sans pièce jointe. Tout est chiffré : seul le destinataire peut les lire.</p></div>' +
+            '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_COMPTE()">✕</button></div>';
+        if (c) {
+            fenCompte.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS">' +
+                '<p class="JUM-R-AIDE" style="margin-top:14px;">✓ <b>Compte actif : ' + esc(c.mail) + '</b><br>Cet appareil reçoit les demandes qui vous sont envoyées ; elles arrivent à l\'ouverture de Mise en route.</p>' +
+                '<p class="JUM-R-AIDE">Sur un autre appareil (PC, téléphone), activez aussi votre compte avec la même adresse : chacun recevra les envois.</p>' +
+                '<button type="button" class="JUM-R-LIEN" id="JUM-C-DECO">Déconnecter cet appareil</button><p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
+                '<div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_COMPTE()">Fermer</button></div></div>';
+            document.body.appendChild(fenCompte);
+            fenCompte.querySelector('#JUM-C-DECO').addEventListener('click', function() {
+                if (!window.confirm('Déconnecter cet appareil ? Il ne recevra plus les envois TRIGONE (le mail reste possible).')) return;
+                appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() {
+                    try { localStorage.removeItem(CLE_COMPTE); } catch (e) {}
+                    cleIdb('effacer').catch(function() {});
+                    window.JUMELAGE_FERMER_COMPTE(); bandeau('Appareil déconnecté du compte TRIGONE.');
+                });
+            });
+            return;
+        }
+        fenCompte.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS">' +
+            '<div class="JUM-R-TITRE">1. Votre adresse professionnelle</div>' +
+            '<div class="JUM-R-CHAMP"><label for="JUM-C-MAIL">Mail professionnel</label><input id="JUM-C-MAIL" type="email" autocomplete="email" value="' + esc(r.monMail || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr"></div>' +
+            '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-ENVOI" style="margin:12px 0 0;">Recevoir le code par mail</button>' +
+            '<div id="JUM-C-ETAPE2" style="display:none;"><div class="JUM-R-TITRE">2. Code reçu par mail</div>' +
+                '<div class="JUM-R-CHAMP"><label for="JUM-C-CODE">Code à 6 chiffres</label><input id="JUM-C-CODE" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••"></div>' +
+                '<p class="JUM-R-AIDE" style="margin-top:8px;">Pas reçu ? Regardez dans les courriers indésirables, ou redemandez un code.</p></div>' +
+            '<p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
+            '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_COMPTE()">Annuler</button>' +
+            '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-VALIDER" disabled>Activer</button></div></div>';
+        document.body.appendChild(fenCompte);
+        var err = fenCompte.querySelector('#JUM-C-ERR'), champMail = fenCompte.querySelector('#JUM-C-MAIL'), mailDemande = '';
+        var btnEnvoi = fenCompte.querySelector('#JUM-C-ENVOI'), btnValider = fenCompte.querySelector('#JUM-C-VALIDER');
+        serviceDisponible().then(function(ok) {
+            if (!ok && fenCompte) { err.textContent = navigator.onLine ? 'Le service de boîte aux lettres TRIGONE n\'est pas encore en service.' : 'Pas de connexion : réessayez une fois connecté.'; btnEnvoi.disabled = true; }
+        });
+        btnEnvoi.addEventListener('click', function() {
+            var mail = champMail.value.trim().toLowerCase();
+            if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { err.textContent = '⛔ Adresse mail invalide.'; return; }
+            err.textContent = ''; btnEnvoi.disabled = true; btnEnvoi.textContent = 'Envoi du code…';
+            appelApi('inscription/code', { methode: 'POST', corps: { mail: mail } }).then(function(rep) {
+                mailDemande = mail;
+                fenCompte.querySelector('#JUM-C-ETAPE2').style.display = '';
+                btnEnvoi.textContent = 'Renvoyer un code'; btnEnvoi.disabled = false; btnValider.disabled = false;
+                var champCode = fenCompte.querySelector('#JUM-C-CODE');
+                if (rep.codeTest) champCode.value = rep.codeTest;   // tests locaux uniquement
+                champCode.focus();
+                err.style.color = '#15803d'; err.textContent = 'Code envoyé à ' + mail + '.';
+            }, function(e) { err.style.color = ''; err.textContent = '⛔ ' + e.message; btnEnvoi.disabled = false; btnEnvoi.textContent = 'Recevoir le code par mail'; });
+        });
+        btnValider.addEventListener('click', function() {
+            var code = fenCompte.querySelector('#JUM-C-CODE').value.trim();
+            if (!/^\d{6}$/.test(code)) { err.style.color = ''; err.textContent = '⛔ Le code contient 6 chiffres.'; return; }
+            btnValider.disabled = true; err.style.color = ''; err.textContent = '';
+            var paire;
+            SUBTLE.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']).then(function(p) {
+                paire = p; return SUBTLE.exportKey('jwk', p.publicKey);
+            }).then(function(pub) {
+                return appelApi('inscription/valider', { methode: 'POST', corps: { mail: mailDemande, code: code, nom: nomAppareil(), cle: { kty: pub.kty, crv: pub.crv, x: pub.x, y: pub.y } } });
+            }).then(function(rep) {
+                return cleIdb('ecrire', { prive: paire.privateKey }).then(function() {
+                    ecrireTxt(CLE_COMPTE, JSON.stringify({ mail: rep.mail, appareil: rep.appareil, jeton: rep.jeton }));
+                    window.JUMELAGE_FERMER_COMPTE();
+                    bandeau('Compte TRIGONE actif : les demandes vous arrivent directement dans TRIGONE.');
+                    if (window.JUMELAGE_APRES_COMPTE) try { window.JUMELAGE_APRES_COMPTE(); } catch (e) {}
+                });
+            }).catch(function(e) { err.textContent = '⛔ ' + e.message; btnValider.disabled = false; });
+        });
+    };
     // ---------- Déménagement : l'adresse officielle de TRIGONE est celle de Cloudflare ----------
     // L'ancienne adresse (GitHub Pages) ne sert plus qu'à publier. Le navigateur range les données par adresse :
     // à l'ancienne, TRIGONE propose de les transférer (fenêtre ouverte sur la nouvelle adresse, échange direct
@@ -940,6 +1151,7 @@
         m.innerHTML = '<button type="button" data-action="reglages">' + ROUE_SVG + '<span><b>Réglages TRIGONE</b><small>Identité, mails, code d\'accès</small></span></button>' +
             '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>' +
             '<button type="button" data-action="signaler">' + window.JUMELAGE_ICONE('bouee') + '<span><b>Signaler un problème</b><small>Écrire à l\'équipe TRIGONE</small></span></button>' +
+            '<button type="button" data-action="compte">' + window.JUMELAGE_ICONE('mail') + '<span><b>Compte TRIGONE</b><small>' + (monCompte() ? 'Actif : ' + esc(monCompte().mail) : 'Envois directs, sans pièce jointe') + '</small></span></button>' +
             '<div class="JUM-ROUE-SEP"></div>' +
             '<button type="button" data-action="sauvegarder">' + window.JUMELAGE_ICONE('disquette') + '<span><b>Sauvegarder mes données</b><small>Un fichier pour tout TRIGONE</small></span></button>' +
             '<button type="button" data-action="restaurer">' + window.JUMELAGE_ICONE('importer') + '<span><b>Restaurer une sauvegarde</b><small>Remettre en place un fichier de sauvegarde</small></span></button>' +
@@ -955,6 +1167,7 @@
             else if (a === 'reinitialiser') window.JUMELAGE_REINITIALISER();
             else if (a === 'signaler') window.JUMELAGE_SIGNALER('choix');
             else if (a === 'sauvegarder') window.JUMELAGE_SAUVEGARDER();
+            else if (a === 'compte') window.JUMELAGE_COMPTE();
             else if (a === 'restaurer') window.JUMELAGE_RESTAURER();
             else window.JUMELAGE_PRESENTATION();
         });

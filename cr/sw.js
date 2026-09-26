@@ -1,6 +1,6 @@
 // Copie jumelée dans TRIGONE Mise en route (dossier cr/) : caches préfixés « trigone-cr- » ; ceux de
 // Mise en route (« trigone-mise-en-route- ») ne sont jamais effacés d'ici.
-const CACHE_NAME = 'trigone-cr-v432';
+const CACHE_NAME = 'trigone-cr-v433';
 const ASSETS = [
   './',
   './manifest.json',
@@ -155,6 +155,8 @@ self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  // Boîte aux lettres TRIGONE (/api/…) : toujours en direct, jamais en cache.
+  if (/\/api\//.test(url.pathname)) return;
   // Vérifications de mise à jour (updates-manifest.json?t=..., taux, IK) : jamais mises en cache
   if (url.searchParams.has('t') || url.pathname.endsWith('updates-manifest.json')) return;
   if (event.request.mode === 'navigate') {

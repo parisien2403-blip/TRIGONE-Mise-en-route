@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v97';
+const CACHE_NAME = 'trigone-mise-en-route-v98';
 const ASSETS = [
   './',
   './manifest.json',
@@ -173,6 +173,8 @@ self.addEventListener('fetch', function(event) {
   if (event.request.method !== 'GET') return;
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
+  // Boîte aux lettres TRIGONE (/api/…) : toujours en direct, jamais en cache.
+  if (/\/api\//.test(url.pathname)) return;
   // Pages de TRIGONE Compte-rendu (dossier cr/) : elles ont leur propre service worker, on ne s'en mêle pas
   // (sinon la page CR serait rangée à la place de celle de Mise en route).
   if (event.request.mode === 'navigate' && url.href.indexOf(self.registration.scope + 'cr/') === 0) return;
