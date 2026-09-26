@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=20"></script>
+<script src="../jumelage.js?v=21"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11516,7 +11516,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 117;
+var APP_CODE_VERSION = 118;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13444,28 +13444,30 @@ var DEMO_BACKUP_KEY = 'trigone_demo_backup';
 var DEMO_ETAPE_IDX = 0;
 
 var DEMO_STEPS = [
-    { page: 'P0', texte: "Page d'accueil : le missionnaire appuie sur « La mission commence ici » pour démarrer son compte-rendu.",
-      spotlight: ['.P0-PC .PC-HERO-ACTIONS .BTN-START'] },
-    { page: 'P1', tab: 'IDENT', texte: 'Identification : grade, nom, prénom, NID, compagnie, libellé de la mission, et le lieu de départ / retour (résidence administrative ou familiale).',
+    { page: 'P0', titre: 'Accueil', texte: "Le jour du départ, appuyez sur « La mission commence ici » pour démarrer votre compte-rendu. Votre identité vient des Réglages TRIGONE : rien à retaper.",
+      spotlight: ['#P0 .BTN-ACCUEIL', '.P0-PC .PC-HERO-ACTIONS .BTN-START'] },
+    { page: 'P0', montrerMer: true, titre: 'À partir d\'une mise en route', texte: "Mission préparée dans TRIGONE Mise en route ? Ce bouton la reprend : directement sur ce téléphone, en scannant le QR code affiché sur l'ordinateur, ou depuis l'image reçue d'un collègue.",
+      spotlight: ['#BTN-DEPUIS-MER', '.P0-PC .PC-HERO-ACTIONS [onclick^="OUVRIR_LISTE_MISES_EN_ROUTE"]'] },
+    { page: 'P1', tab: 'IDENT', titre: 'Identification', texte: 'Grade, nom, prénom, NID et compagnie sont déjà remplis. Reste le libellé de la mission et le lieu de départ et de retour (résidence administrative ou familiale).',
       spotlight: ['#GRADE-USER', '#NOM-USER', '#PRENOM-USER', '#NID-USER', '#CIE-INPUT', '#LIBELLE-MISSION', '#LIEU-DEP', '#LIEU-RET'] },
-    { page: 'P1', tab: 'ALLER', texte: 'Trajet aller : le mode de transport — ici le train — puis la gare de départ et la gare d\'arrivée.',
+    { page: 'P1', tab: 'ALLER', titre: 'Trajet aller', texte: 'Le moyen de transport (ici le train), puis la gare de départ et la gare d\'arrivée.',
       spotlight: ['#TRANS-A', '#DEST-A'] },
-    { page: 'P1', tab: 'RETOUR', texte: 'Trajet retour : même principe, avec la gare de départ et d\'arrivée du retour.',
+    { page: 'P1', tab: 'RETOUR', titre: 'Trajet retour', texte: 'Même principe pour le retour : moyen de transport, gare de départ et gare d\'arrivée.',
       spotlight: ['#TRANS-R', '#DEST-R'] },
-    { page: 'P1', tab: 'TOP', texte: "Tout est prêt : un appui sur « Départ en mission » horodate le départ réel — à faire au moment où il part vraiment.",
+    { page: 'P1', tab: 'TOP', titre: 'Top départ', texte: "Tout est prêt : « Départ en mission » horodate le départ réel. À faire au moment où vous partez vraiment.",
       spotlight: ['#BTN-LANCER'] },
-    { page: 'P2', texte: 'Sur place, deux boutons suffisent : « Arrivée sur site » à l\'arrivée, puis « Fin de mission » au moment de repartir — un chrono, pas une saisie.',
+    { page: 'P2', titre: 'Sur place', texte: 'Deux boutons suffisent : « Arrivée sur site » à l\'arrivée, puis « Fin de mission » au moment de repartir. Un appui, pas une saisie.',
       spotlight: ['.P2-PRESS-ZONE'] },
-    { page: 'P2-FIN', fraisTab: 'REPAS', texte: 'Repas & hébergement : pour chaque jour, les repas (payants ou gratuits) et la nuitée (gratuite, en ABT, ou payante).',
+    { page: 'P2-FIN', fraisTab: 'REPAS', titre: 'Repas et hébergement', texte: 'Pour chaque jour : les repas (payants ou gratuits) et la nuitée (gratuite, en ABT ou payante).',
       spotlight: ['#FRAIS-PANEL-REPAS'] },
-    { page: 'P2-FIN', fraisTab: 'TRAJETS', texte: 'Trajets : les horaires exacts de départ et d\'arrivée de ses billets de train, aller et retour.',
+    { page: 'P2-FIN', fraisTab: 'TRAJETS', titre: 'Trajets', texte: 'Les horaires exacts de départ et d\'arrivée de vos billets, aller et retour.',
       spotlight: ['#FRAIS-PANEL-TRAJETS'] },
-    { page: 'P2-FIN', fraisTab: 'RECAP', texte: "Récap & valider : un dernier coup d'œil sur le total, puis « Valider et voir le récap ».",
+    { page: 'P2-FIN', fraisTab: 'RECAP', titre: 'Récap et validation', texte: "Un dernier coup d'œil sur le total, puis « Valider et voir le récap ».",
       spotlight: ['#FRAIS-PANEL-RECAP'] },
-    { page: 'P3', texte: 'Récapitulatif final : identité, mission, trajets, forfait — tout est calculé automatiquement, rien à recalculer à la main.' },
-    { page: 'P3-SIG', texte: 'Signature numérique, téléchargement du PDF, vérification des pièces jointes, puis envoi du compte-rendu par mail.',
+    { page: 'P3', titre: 'Récapitulatif final', texte: 'Identité, mission, trajets et forfait : tout est calculé automatiquement selon les barèmes, rien à recalculer à la main.' },
+    { page: 'P3-SIG', titre: 'Signature et envoi', texte: 'Signature numérique, PDF, vérification des pièces jointes (facture d\'hôtel, billets), puis envoi du compte-rendu par mail à l\'assistant Chorus DT.',
       spotlight: ['#BTN-SIG', '#CERTIF-CHECK', '#PJ-SIG-LIST', '#BTN-SEND'] },
-    { page: 'P3-SIG', texte: "C'était une démonstration : aucune donnée n'a été envoyée ni enregistrée.", derniere: true }
+    { page: 'P3-SIG', titre: 'À vous de jouer !', texte: "C'était une démonstration : aucune donnée n'a été envoyée ni enregistrée. Le jour du départ, lancez-vous avec « La mission commence ici ».", derniere: true }
 ];
 
 // Si l'appli a été fermée en pleine démonstration, la vraie mission (si elle existait) est restaurée
@@ -13595,9 +13597,15 @@ function DEMO_AFFICHER_ETAPE(i) {
     SHOW_PAGE(etape.page);
     if (etape.tab) SWITCH_P1_TAB(etape.tab);
     if (etape.fraisTab) FOCUS_FRAIS_MAIN(etape.fraisTab);
+    // Étape « À partir d'une mise en route » : le bouton, normalement caché pendant une mission, est montré.
+    var btnMer = document.getElementById('BTN-DEPUIS-MER');
+    if (btnMer) btnMer.classList.toggle('HIDDEN', !etape.montrerMer);
+    if (etape.page === 'P0' && typeof RENDRE_P0_PC === 'function') RENDRE_P0_PC();
     var banniere = document.getElementById('DEMO-BANDEAU-ETAPE');
     if (banniere) banniere.textContent = (i + 1) + '/' + DEMO_STEPS.length + ' — ' + etape.texte;
-    DEMO_AJUSTER_ESPACE_BANDEAU();
+    if (window.JUMELAGE_DEMO_MAJ) JUMELAGE_DEMO_MAJ({ etape: i + 1, total: DEMO_STEPS.length, titre: etape.titre, texte: etape.texte, derniere: !!etape.derniere,
+        prec: DEMO_PRECEDENT, suiv: DEMO_SUIVANT, quitter: DEMO_QUITTER, reserveDroite: true });
+    else DEMO_AJUSTER_ESPACE_BANDEAU();
     DEMO_MAJ_POINTS();
     // Met en couleur, sur la page elle-même, la ou les zones dont parle la bulle à cette étape.
     document.querySelectorAll('.demo-spotlight').forEach(function(el) { el.classList.remove('demo-spotlight'); });
@@ -13606,6 +13614,13 @@ function DEMO_AFFICHER_ETAPE(i) {
             document.querySelectorAll(sel).forEach(function(el) { el.classList.add('demo-spotlight'); });
         });
     }
+    // La zone expliquée est amenée à l'écran, sous la mascotte (téléphone) ou au centre (PC).
+    requestAnimationFrame(function() {
+        var z = Array.prototype.filter.call(document.querySelectorAll('.demo-spotlight'), function(el) { return el.getBoundingClientRect().height > 0; })[0];
+        // Zone plus haute que la place libre : on montre son début, juste sous la bulle.
+        var libre = window.innerHeight - (window.JUMELAGE_DEMO_ESPACE ? JUMELAGE_DEMO_ESPACE() : 0);
+        if (z) z.scrollIntoView({ block: z.getBoundingClientRect().height > libre - 40 ? 'start' : 'center', behavior: 'smooth' }); else window.scrollTo(0, 0);
+    });
     var precBtn = document.getElementById('DEMO-BTN-PREC');
     if (precBtn) precBtn.disabled = (i === 0);
     var suivBtn = document.getElementById('DEMO-BTN-SUIVANT');
@@ -13626,7 +13641,7 @@ function DEMO_AJUSTER_ESPACE_BANDEAU() {
 }
 // Une rotation d'écran change les retours à la ligne du texte à contenu égal : on réajuste alors aussi.
 window.addEventListener('resize', function() {
-    if (DEMO_MODE_ACTIF) DEMO_AJUSTER_ESPACE_BANDEAU();
+    if (DEMO_MODE_ACTIF && !window.JUMELAGE_DEMO_MAJ) DEMO_AJUSTER_ESPACE_BANDEAU();
 });
 
 function DEMO_PRECEDENT() {

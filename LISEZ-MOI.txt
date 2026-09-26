@@ -218,3 +218,12 @@ ICÔNES AU TRAIT ET SIGNALER UN PROBLÈME (V19)
   Pour garder un emoji tel quel : l'entourer d'un élément avec l'attribut data-emoji.
 - « Signaler un problème » : roue crantée de l'écran de choix, pastille « Signaler » de l'accueil (téléphone) et menu PC
   des deux applis. Mail prérempli à trigone.app@outlook.fr (appli, version, écran, appareil) : JUMELAGE_SIGNALER.
+
+DÉMONSTRATIONS (V20)
+- Affichage commun dans jumelage.js (JUMELAGE_DEMO_MAJ) : pastille « Démonstration n / N » + Quitter en haut, fin cadre
+  bleu ardoise, zones expliquées entourées en bleu ardoise. Plus de bandes jaunes et noires.
+- Téléphone : mascotte et bulle en haut, sous la pastille ; la page est repoussée d'autant (--demo-bandeau-h,
+  scroll-padding-top) et une zone plus haute que l'écran est montrée à partir de son début.
+- PC : mascotte en grand + bulle, placée à l'essai (bas droite / bas gauche, en ligne puis en colonne) au premier
+  endroit qui ne touche aucune zone mise en avant (ni le récapitulatif PC). Compte-rendu libère une colonne à droite.
+- Étapes (titre + texte) : DEMO_ETAPES dans app.js, DEMO_STEPS dans cr/index.html.

@@ -131,6 +131,54 @@
         '.msg-icone .JUM-IC[data-ton="ok"] { background: rgba(21,128,61,0.1); } .msg-icone .JUM-IC[data-ton="danger"] { background: rgba(185,28,28,0.09); } .msg-icone .JUM-IC[data-ton="alerte"] { background: rgba(180,83,9,0.1); }' +
         'html body.dark-mode .msg-icone .JUM-IC { background: rgba(169,195,214,0.12); color: #a9c3d6; }' +
         'html body.dark-mode .msg-icone .JUM-IC[data-ton="ok"] { background: rgba(134,239,172,0.1); color: #86efac; } html body.dark-mode .msg-icone .JUM-IC[data-ton="danger"] { background: rgba(248,113,113,0.1); color: #f87171; } html body.dark-mode .msg-icone .JUM-IC[data-ton="alerte"] { background: rgba(251,191,36,0.1); color: #fbbf24; }' +
+        /* ===== Démonstrations : plus de bandes jaunes et noires ===== */
+        'body.jdemo .DEMO-RUBAN, body.jdemo .DEMO-BANDEAU, body.jdemo .DEMO-CONTROLES, body.jdemo .THEME-TOGGLE { display: none !important; }' +
+        'body.jdemo::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99989; box-shadow: inset 0 0 0 3px rgba(90,122,148,0.55); }' +
+        'body.jdemo .demo-zone, body.jdemo .demo-spotlight { outline: 2.5px solid #5a7a94 !important; outline-offset: 4px !important; border-radius: 12px; box-shadow: 0 0 0 9px rgba(90,122,148,0.16) !important; animation: jdemo-halo 2.4s ease-in-out infinite !important; position: relative; z-index: 3; }' +
+        '@keyframes jdemo-halo { 0%, 100% { box-shadow: 0 0 0 7px rgba(90,122,148,0.16); } 50% { box-shadow: 0 0 0 12px rgba(90,122,148,0.07); } }' +
+        'html body.dark-mode.jdemo .demo-zone, html body.dark-mode.jdemo .demo-spotlight { outline-color: #a9c3d6 !important; }' +
+        '@media (min-width: 1100px) { html body.jdemo-reserve { padding-right: 400px !important; } }' +
+        '.JDEMO-PASTILLE { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 99995; display: flex; align-items: center; gap: 9px; white-space: nowrap;' +
+            ' background: #1a1a1a; color: #fff; border-radius: 999px; padding: 6px 6px 6px 14px; font: 800 11px Montserrat, system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }' +
+        '.JDEMO-PASTILLE i { width: 8px; height: 8px; border-radius: 50%; background: #7a9db5; box-shadow: 0 0 0 4px rgba(122,157,181,0.25); }' +
+        '.JDEMO-PASTILLE b { font-weight: 600; letter-spacing: 0.04em; color: #cbd5e1; }' +
+        '.JDEMO-QUITTER { border: 0; border-radius: 999px; background: rgba(255,255,255,0.14); color: #fff; font: 700 11px Montserrat, system-ui, sans-serif; padding: 6px 12px; letter-spacing: 0.04em; cursor: pointer; text-transform: none; }' +
+        '.JDEMO-GUIDE { position: fixed; z-index: 99994; display: flex; align-items: flex-end; font-family: Montserrat, system-ui, sans-serif; pointer-events: none; }' +
+        '.JDEMO-BULLE { pointer-events: auto; position: relative; background: #fff; color: #1a1a1a; border: 1px solid #e8e8e8; box-shadow: 0 18px 50px rgba(15,23,42,0.22); }' +
+        '.JDEMO-ETAPE { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #5a7a94; margin-bottom: 5px; }' +
+        '.JDEMO-TITRE { font-size: 17px; font-weight: 800; margin-bottom: 6px; }' +
+        '.JDEMO-TEXTE { font-size: 13.5px; line-height: 1.55; color: #404040; }' +
+        '.JDEMO-NAV { display: flex; align-items: center; gap: 10px; margin-top: 14px; }' +
+        '.JDEMO-POINTS { flex: 1; display: flex; gap: 4px; justify-content: center; min-width: 0; } .JDEMO-POINTS span { width: 5px; height: 5px; border-radius: 3px; background: #d4dde5; flex-shrink: 0; } .JDEMO-POINTS span.a { width: 14px; background: #1a1a1a; }' +
+        '.JDEMO-NAV button { border: 1px solid #e2e8f0; background: #fff; border-radius: 12px; padding: 9px 14px; font: 700 12px Montserrat, system-ui, sans-serif; color: #1a1a1a; cursor: pointer; white-space: nowrap; }' +
+        '.JDEMO-NAV button:disabled { opacity: 0.35; cursor: default; } .JDEMO-NAV .JDEMO-SUIV { background: #1a1a1a; color: #fff; border-color: #1a1a1a; }' +
+        '.JDEMO-ENTREE .JDEMO-BULLE { animation: jdemo-entree 0.35s cubic-bezier(0.2,0.8,0.2,1) both; }' +
+        '@keyframes jdemo-entree { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }' +
+        /* PC : mascotte en grand, bulle à côté (ligne) ou au-dessus (colonne) */
+        '.JDEMO-GUIDE.pc .JDEMO-MASCOTTE { width: 205px; height: auto; flex-shrink: 0; filter: drop-shadow(0 14px 22px rgba(0,0,0,0.22)); }' +
+        '.JDEMO-GUIDE.pc .JDEMO-BULLE { width: 360px; border-radius: 20px; padding: 18px 20px 14px; margin-bottom: 36px; margin-left: -18px; }' +
+        '.JDEMO-GUIDE.pc.droite { flex-direction: row-reverse; } .JDEMO-GUIDE.pc.droite .JDEMO-BULLE { margin-left: 0; margin-right: -18px; }' +
+        '.JDEMO-GUIDE.pc .JDEMO-BULLE::after { content: ""; position: absolute; bottom: 26px; left: -11px; width: 22px; height: 22px; background: inherit; transform: rotate(45deg); border: 1px solid #e8e8e8; border-top: 0; border-right: 0; }' +
+        '.JDEMO-GUIDE.pc.droite .JDEMO-BULLE::after { left: auto; right: -11px; border: 1px solid #e8e8e8; border-bottom: 0; border-left: 0; }' +
+        '.JDEMO-GUIDE.pc.colonne { flex-direction: column-reverse; align-items: flex-start; } .JDEMO-GUIDE.pc.colonne.droite { align-items: flex-end; }' +
+        '.JDEMO-GUIDE.pc.colonne .JDEMO-MASCOTTE { width: 150px; margin: -6px 10px 0; } .JDEMO-GUIDE.pc.colonne .JDEMO-BULLE { width: 330px; margin: 0; }' +
+        '.JDEMO-GUIDE.pc.colonne .JDEMO-BULLE::after { bottom: -11px; left: 62px; right: auto; border: 1px solid #e8e8e8; border-top: 0; border-left: 0; }' +
+        '.JDEMO-GUIDE.pc.colonne.droite .JDEMO-BULLE::after { left: auto; right: 62px; }' +
+        /* Téléphone : en haut de l'écran, sous la pastille */
+        '.JDEMO-GUIDE.tel { left: 10px; right: 10px; top: calc(48px + env(safe-area-inset-top, 0px)); }' +
+        '.JDEMO-GUIDE.tel .JDEMO-BULLE { flex: 1; border-radius: 20px; padding: 12px 12px 10px 92px; min-height: 112px; }' +
+        '.JDEMO-GUIDE.tel .JDEMO-MASCOTTE { position: absolute; left: -6px; bottom: -4px; width: 96px; z-index: 1; filter: drop-shadow(0 6px 10px rgba(0,0,0,0.2)); }' +
+        '.JDEMO-GUIDE.tel .JDEMO-ETAPE { font-size: 10px; margin-bottom: 2px; } .JDEMO-GUIDE.tel .JDEMO-TITRE { font-size: 14px; margin-bottom: 3px; } .JDEMO-GUIDE.tel .JDEMO-TEXTE { font-size: 12.5px; line-height: 1.45; }' +
+        '.JDEMO-GUIDE.tel .JDEMO-NAV { margin-top: 9px; } .JDEMO-GUIDE.tel .JDEMO-POINTS { display: none; } .JDEMO-GUIDE.tel .JDEMO-NAV button { padding: 8px 12px; font-size: 11px; } .JDEMO-GUIDE.tel .JDEMO-SUIV { margin-left: auto; }' +
+        '@media (max-width: 360px) { .JDEMO-GUIDE.tel .JDEMO-BULLE { padding-left: 80px; } .JDEMO-GUIDE.tel .JDEMO-MASCOTTE { width: 84px; } .JDEMO-PASTILLE span { display: none; } }' +
+        /* Mode sombre */
+        'html body.dark-mode .JDEMO-BULLE { background: #1f1f1f; color: #ececec; border-color: rgba(255,255,255,0.09); box-shadow: 0 18px 50px rgba(0,0,0,0.5); }' +
+        'html body.dark-mode .JDEMO-GUIDE.pc .JDEMO-BULLE::after { border-color: rgba(255,255,255,0.09); }' +
+        'html body.dark-mode .JDEMO-TEXTE { color: #c8c8c8; } html body.dark-mode .JDEMO-ETAPE { color: #a9c3d6; }' +
+        'html body.dark-mode .JDEMO-NAV button { background: #262626; color: #ececec; border-color: rgba(255,255,255,0.1); } html body.dark-mode .JDEMO-NAV .JDEMO-SUIV { background: #ececec; color: #141414; border-color: #ececec; }' +
+        'html body.dark-mode .JDEMO-POINTS span { background: #3a3a3a; } html body.dark-mode .JDEMO-POINTS span.a { background: #ececec; }' +
+        'html body.dark-mode.jdemo::after { box-shadow: inset 0 0 0 3px rgba(169,195,214,0.45); }' +
+        '@media (prefers-reduced-motion: reduce) { body.jdemo .demo-zone, body.jdemo .demo-spotlight, .JDEMO-ENTREE .JDEMO-BULLE { animation: none !important; } }' +
         /* ===== Thème sombre commun : une seule palette pour les deux applis (gris neutres + bleu ardoise TRIGONE) =====
            Fond #141414, surfaces #1f1f1f / #262626, texte #ececec, secondaire #a3a3a3, accent #a9c3d6 (bleu ardoise clair). */
         'html body.dark-mode { --tg-muted: #a3a3a3; --tg-soft: #8f8f8f; --tg-border: rgba(255,255,255,0.09); }' +
@@ -315,7 +363,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 20, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 21, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -736,6 +784,87 @@
         }).observe(document.body, { childList: true, subtree: true, characterData: true });
     }
     if (document.body) demarrerIcones(); else document.addEventListener('DOMContentLoaded', demarrerIcones);
+
+    // ---------- Démonstrations (les deux applis) : pastille, mascotte et bulle ----------
+    // Téléphone : la mascotte et sa bulle restent en haut de l'écran, sous la pastille « Démonstration ».
+    // PC : mascotte en grand, placée dans l'espace le plus libre de l'écran, sans jamais couvrir une zone mise en avant.
+    var demo = null;
+    function demoPc() { return window.matchMedia && matchMedia('(min-width: 1100px)').matches; }
+    function demoConstruire(o) {
+        if (demo) return demo;
+        demo = { pastille: document.createElement('div'), guide: document.createElement('div'), o: o };
+        demo.pastille.className = 'JDEMO-PASTILLE';
+        demo.pastille.innerHTML = '<i></i><span>Démonstration</span><b class="JDEMO-NUM"></b><button type="button" class="JDEMO-QUITTER">Quitter</button>';
+        demo.guide.className = 'JDEMO-GUIDE';
+        demo.guide.innerHTML = '<img class="JDEMO-MASCOTTE" src="demo-mascotte.webp" alt="">' +
+            '<div class="JDEMO-BULLE"><div class="JDEMO-ETAPE"></div><div class="JDEMO-TITRE"></div><div class="JDEMO-TEXTE"></div>' +
+            '<div class="JDEMO-NAV"><button type="button" class="JDEMO-PREC">← Revoir</button><div class="JDEMO-POINTS"></div><button type="button" class="JDEMO-SUIV">Suivant →</button></div></div>';
+        document.body.appendChild(demo.pastille); document.body.appendChild(demo.guide);
+        demo.pastille.querySelector('.JDEMO-QUITTER').addEventListener('click', function() { if (demo.o.quitter) demo.o.quitter(); });
+        demo.guide.querySelector('.JDEMO-PREC').addEventListener('click', function() { if (demo.o.prec) demo.o.prec(); });
+        demo.guide.querySelector('.JDEMO-SUIV').addEventListener('click', function() { if (demo.o.suiv) demo.o.suiv(); });
+        var replacer = function() { if (demo) demoPlacer(); };
+        window.addEventListener('resize', replacer);
+        window.addEventListener('scroll', function() { clearTimeout(demo && demo.t); if (demo) demo.t = setTimeout(replacer, 120); }, { passive: true });
+        return demo;
+    }
+    // Réserve la place de la pastille (et, sur téléphone, de la bulle) en haut de la page.
+    function demoEspace() {
+        var h = demoPc() ? Math.ceil(demo.pastille.getBoundingClientRect().bottom) + 14 : Math.ceil(demo.guide.getBoundingClientRect().bottom) + 10;
+        document.documentElement.style.setProperty('--demo-bandeau-h', h + 'px');
+        document.documentElement.style.scrollPaddingTop = h + 'px';
+    }
+    function demoPlacer() {
+        var g = demo.guide;
+        g.style.left = g.style.right = g.style.top = g.style.bottom = '';
+        if (!demoPc()) { g.className = 'JDEMO-GUIDE tel'; demoEspace(); return; }
+        var marge = 16, zones = [];
+        Array.prototype.forEach.call(document.querySelectorAll('.demo-zone, .demo-spotlight, .PC-RECAP'), function(e) {
+            var r = e.getBoundingClientRect();
+            if (r.width && r.height && r.bottom > 0 && r.top < innerHeight) zones.push({ l: r.left - marge, t: r.top - marge, r: r.right + marge, b: r.bottom + marge, fort: !e.classList.contains('PC-RECAP') });
+        });
+        var menu = document.querySelector('.PC-MENU'), g0 = menu && menu.getBoundingClientRect().width ? menu.getBoundingClientRect().right : 0;
+        var essais = [['droite', 'ligne'], ['gauche', 'ligne'], ['droite', 'colonne'], ['gauche', 'colonne']], meilleur = null;
+        for (var i = 0; i < essais.length; i++) {
+            g.className = 'JDEMO-GUIDE pc ' + essais[i][1] + (essais[i][0] === 'droite' ? ' droite' : '');
+            g.style.left = g.style.right = ''; g.style.bottom = '0px';
+            if (essais[i][0] === 'droite') g.style.right = '18px'; else g.style.left = (g0 + 18) + 'px';
+            var r = g.getBoundingClientRect(), gene = 0;
+            zones.forEach(function(z) {
+                var w = Math.min(r.right, z.r) - Math.max(r.left, z.l), h = Math.min(r.bottom, z.b) - Math.max(r.top, z.t);
+                if (w > 0 && h > 0) gene += w * h * (z.fort ? 10 : 1);
+            });
+            if (r.left < g0 || r.top < 60) gene += 1e9;
+            if (!meilleur || gene < meilleur.gene) meilleur = { i: i, gene: gene };
+            if (!gene) break;
+        }
+        var e = essais[meilleur.i];
+        g.className = 'JDEMO-GUIDE pc ' + e[1] + (e[0] === 'droite' ? ' droite' : '');
+        g.style.left = g.style.right = ''; g.style.bottom = '0px';
+        if (e[0] === 'droite') g.style.right = '18px'; else g.style.left = (g0 + 18) + 'px';
+        demoEspace();
+    }
+    // o : { etape, total, titre, texte, derniere, prec, suiv, quitter }
+    window.JUMELAGE_DEMO_MAJ = function(o) {
+        demoConstruire(o); demo.o = o;
+        document.body.classList.add('jdemo');
+        // Page pleine largeur (Compte-rendu) : sur PC, une colonne est libérée à droite pour la mascotte.
+        document.body.classList.toggle('jdemo-reserve', !!o.reserveDroite);
+        demo.pastille.querySelector('.JDEMO-NUM').textContent = o.etape + ' / ' + o.total;
+        demo.guide.querySelector('.JDEMO-ETAPE').textContent = 'Étape ' + o.etape + ' sur ' + o.total;
+        demo.guide.querySelector('.JDEMO-TITRE').textContent = o.titre || '';
+        demo.guide.querySelector('.JDEMO-TEXTE').textContent = o.texte || '';
+        var pts = ''; for (var i = 1; i <= o.total; i++) pts += '<span' + (i === o.etape ? ' class="a"' : '') + '></span>';
+        demo.guide.querySelector('.JDEMO-POINTS').innerHTML = pts;
+        var prec = demo.guide.querySelector('.JDEMO-PREC'); prec.disabled = o.etape === 1;
+        demo.guide.querySelector('.JDEMO-SUIV').textContent = o.derniere ? 'Recommencer ↻' : 'Suivant →';
+        demo.guide.classList.remove('JDEMO-ENTREE'); void demo.guide.offsetWidth; demo.guide.classList.add('JDEMO-ENTREE');
+        demoPlacer();
+        // La page défile vers la zone expliquée : on replace la mascotte une fois le défilement fini.
+        setTimeout(function() { if (demo) demoPlacer(); }, 500);
+        setTimeout(function() { if (demo) demoPlacer(); }, 1100);
+    };
+    window.JUMELAGE_DEMO_ESPACE = function() { return demo ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--demo-bandeau-h'), 10) || 0 : 0; };
 
     // ---------- Signaler un problème (écran de choix et les deux applis) ----------
     var MAIL_SUPPORT = 'trigone.app@outlook.fr';
