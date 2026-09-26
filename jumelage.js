@@ -118,6 +118,15 @@
         /* Mascotte cachée derrière la carte blanche : elle en dépasse, comme si elle se penchait derrière */
         '.JUM-NOUV-CARTE { position: relative; }' +
         '.JUM-NOUV-BTNS { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }' +
+        /* Déménagement vers l'adresse Cloudflare */
+        '.JUM-DEM { position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center; justify-content: center; padding: 16px; background: linear-gradient(135deg, #F8FBFD 0%, #E8F0F6 100%); font-family: Montserrat, system-ui, sans-serif; overflow-y: auto; }' +
+        '.JUM-DEM-CARTE { width: 100%; max-width: 460px; background: #fff; color: #1a1a1a; border-radius: 24px; padding: 28px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(26,45,62,0.16); }' +
+        '.JUM-DEM-CARTE img { width: 84px; height: 84px; border-radius: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.15); }' +
+        '.JUM-DEM-CARTE h2 { margin: 16px 0 8px; font-size: 1.2rem; font-weight: 800; } .JUM-DEM-CARTE p { margin: 0 0 16px; font-size: 0.88rem; line-height: 1.55; color: #404040; }' +
+        '.JUM-DEM-GO { width: 100%; border: 0; border-radius: 14px; padding: 15px; background: #1a1a1a; color: #fff; font: 800 0.8rem Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }' +
+        '.JUM-DEM-GO:disabled { opacity: 0.5; } .JUM-DEM-ETAT { min-height: 1.2em; margin: 12px 0 0 !important; font-weight: 700; color: #15803d !important; }' +
+        '.JUM-DEM-AIDE { text-align: left; font-size: 0.78rem; line-height: 1.5; color: #5a7a94; background: #F2F7FB; border-radius: 12px; padding: 12px 14px; margin: 8px 0 12px; }' +
+        '.JUM-DEM-FICHIER { border: 0; background: none; color: #5a7a94; font: 700 0.76rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; }' +
         '.JUM-NOUV .JUM-NOUV-SECOND { background: #fff; color: #5a7a94; border: 1.5px solid #c9d6e0; }' +
         '.JUM-NOUV-MASCOTTE { position: absolute; z-index: -1; right: -92px; bottom: 26px; width: 150px; height: auto; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.25)); pointer-events: none; }' +
         '@media (max-width: 560px) { .JUM-NOUV-MASCOTTE { right: 12px; bottom: auto; top: -84px; width: 110px; } }' +
@@ -422,7 +431,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 42, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 43, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -774,11 +783,24 @@
         else if (typeof window.MSG_INFO === 'function') window.MSG_INFO(titre, texte, icone === 'ok' ? '✅' : icone === 'alerte' ? '⛔' : '💾');
         else window.alert(titre + '\n\n' + texte);
     }
-    window.JUMELAGE_SAUVEGARDER = function() {
+    function collecterSauvegarde() {
         var donnees = {};
         try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (!NON_SAUVEGARDE.test(k)) donnees[k] = localStorage.getItem(k); } } catch (e) {}
         return lirePieces().then(function(pieces) {
-            var s = { app: 'TRIGONE', type: 'sauvegarde-complete', version: 2, date: new Date().toISOString(), donnees: donnees, pieces: pieces };
+            return { app: 'TRIGONE', type: 'sauvegarde-complete', version: 2, date: new Date().toISOString(), donnees: donnees, pieces: pieces };
+        });
+    }
+    // Remet une sauvegarde en place. remplacer : efface d'abord les données actuelles (sinon ajoute / met à jour).
+    function appliquerSauvegarde(s, remplacer) {
+        try {
+            if (remplacer) localStorage.clear();
+            Object.keys(s.donnees).forEach(function(k) { localStorage.setItem(k, s.donnees[k]); });
+            localStorage.setItem(CLE_DERNIERE_SAUVEGARDE, String(Date.now()));
+        } catch (e) { return Promise.reject(e); }
+        return ecrirePieces(s.type === 'sauvegarde-complete' ? s.pieces : null);
+    }
+    window.JUMELAGE_SAUVEGARDER = function() {
+        return collecterSauvegarde().then(function(s) {
             var d = new Date(), jour = ('0' + d.getDate()).slice(-2) + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + d.getFullYear();
             var lien = document.createElement('a');
             lien.href = URL.createObjectURL(new Blob([JSON.stringify(s)], { type: 'application/json' }));
@@ -803,15 +825,10 @@
             var go = function() {
                 window.JUMELAGE_RESTAURATION_EN_COURS = true;   // bloque les enregistrements automatiques avant le redémarrage
                 try { if (window.JUMELAGE_AVANT_RESTAURATION) window.JUMELAGE_AVANT_RESTAURATION(); } catch (e) {}
-                try {
-                    if (complete) localStorage.clear();
-                    Object.keys(s.donnees).forEach(function(k) { localStorage.setItem(k, s.donnees[k]); });
-                    localStorage.setItem(CLE_DERNIERE_SAUVEGARDE, String(Date.now()));
-                } catch (e) { annoncer('Restauration impossible', 'L\'appareil n\'a pas assez de place pour cette sauvegarde.', 'alerte', 'alerte'); return; }
-                ecrirePieces(complete ? s.pieces : null).then(function() {
+                appliquerSauvegarde(s, complete).then(function() {
                     try { sessionStorage.removeItem(CLE_CHOIX_FAIT); sessionStorage.setItem(CLE_DEVERROUILLE, '1'); } catch (e) {}
                     location.replace(DANS_CR ? '../' : './');
-                });
+                }, function() { annoncer('Restauration impossible', 'L\'appareil n\'a pas assez de place pour cette sauvegarde.', 'alerte', 'alerte'); });
             };
             if (ecran && !ecran.classList.contains('choisi')) carteChoix('Restaurer cette sauvegarde ?', texte, 'alerte', 'alerte', null, { libelle: 'Restaurer', faire: go });
             else if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Restaurer cette sauvegarde ?', texte, 'Restaurer', go, '⚠️', 'mascotte-maj.webp', true);
@@ -834,6 +851,84 @@
         return derniere ? 'Votre dernière sauvegarde TRIGONE commence à dater. Refaites-la pour ne rien perdre en cas de souci avec cet appareil.'
             : 'Vous n\'avez encore jamais sauvegardé TRIGONE. Tout est enregistré sur cet appareil uniquement : en cas de perte, de réinitialisation ou de changement d\'appareil, tout serait perdu.';
     };
+    // ---------- Déménagement : l'adresse officielle de TRIGONE est celle de Cloudflare ----------
+    // L'ancienne adresse (GitHub Pages) ne sert plus qu'à publier. Le navigateur range les données par adresse :
+    // à l'ancienne, TRIGONE propose de les transférer (fenêtre ouverte sur la nouvelle adresse, échange direct
+    // entre les deux pages), puis y renvoie toujours vers la nouvelle.
+    var DEM = { ancienne: 'https://parisien2403-blip.github.io', cible: 'https://trigone-mise-en-route.parisien2403.workers.dev/' };
+    try { var demTest = JSON.parse(sessionStorage.getItem('trigone_test_demenagement') || 'null'); if (demTest) DEM = demTest; } catch (e) {}
+    var ICI_ANCIENNE = location.origin === DEM.ancienne;
+    var racineAppli = new URL(DANS_CR ? '../' : './', location.href).pathname;
+    function adresseCible() { return DEM.cible + location.pathname.slice(racineAppli.length) + location.search + location.hash; }
+    function donneesPresentes() {
+        try { for (var i = 0; i < localStorage.length; i++) if (!/^(trigone_theme|trigone_build_vu|trigone_demenage_fait)$/.test(localStorage.key(i))) return true; } catch (e) {}
+        return false;
+    }
+    var DEMENAGEMENT = ICI_ANCIENNE && !/[?&]rester=1/.test(location.search);
+    if (DEMENAGEMENT && (lireTxt('trigone_demenage_fait') === '1' || !donneesPresentes())) {
+        // Rien à transférer (ou déjà fait) : direction la nouvelle adresse.
+        ecrireTxt('trigone_demenage_fait', '1');
+        location.replace(adresseCible());
+    } else if (DEMENAGEMENT) {
+        var afficherDemenagement = function() {
+            var d = document.createElement('div');
+            d.className = 'JUM-DEM';
+            d.innerHTML = '<div class="JUM-DEM-CARTE"><img src="' + (DANS_CR ? '../' : '') + 'icon-192.png" alt="">' +
+                '<h2>TRIGONE change d\'adresse</h2>' +
+                '<p>TRIGONE s\'utilise désormais à l\'adresse <b>' + DEM.cible.replace(/^https:\/\//, '').replace(/\/$/, '') + '</b>. Vos données (demandes, bibliothèque, comptes-rendus, réglages, pièces jointes) sont transférées en un clic.</p>' +
+                '<button type="button" class="JUM-DEM-GO">Transférer mes données et continuer</button>' +
+                '<p class="JUM-DEM-ETAT"></p>' +
+                '<div class="JUM-DEM-AIDE"><b>Ensuite, sur cet appareil :</b> installez TRIGONE depuis la nouvelle adresse (PC : icône d\'installation dans la barre d\'adresse ; Android : menu ⋮ › Installer l\'application ; iPhone : Partager › Sur l\'écran d\'accueil), puis supprimez l\'ancienne icône TRIGONE.</div>' +
+                '<button type="button" class="JUM-DEM-FICHIER">Transférer plutôt avec un fichier de sauvegarde</button></div>';
+            document.body.appendChild(d);
+            var etat = d.querySelector('.JUM-DEM-ETAT');
+            d.querySelector('.JUM-DEM-FICHIER').addEventListener('click', function() {
+                window.JUMELAGE_SAUVEGARDER();
+                etat.textContent = 'Fichier de sauvegarde téléchargé. Ouvrez TRIGONE à la nouvelle adresse, puis roue crantée › « Restaurer une sauvegarde ».';
+            });
+            d.querySelector('.JUM-DEM-GO').addEventListener('click', function() {
+                var bouton = this, fenetre = window.open(adresseCible().replace(/[?#].*$/, '') + '?demenagement=1', '_blank');
+                if (!fenetre) { etat.textContent = 'La nouvelle fenêtre a été bloquée : autorisez les fenêtres pour cette page, ou transférez avec un fichier de sauvegarde.'; return; }
+                bouton.disabled = true; etat.textContent = 'Transfert en cours…';
+                var origineCible = new URL(DEM.cible).origin;
+                window.addEventListener('message', function recevoir(ev) {
+                    if (ev.origin !== origineCible || !ev.data) return;
+                    if (ev.data.type === 'trigone-demenagement-pret') {
+                        collecterSauvegarde().then(function(sv) { fenetre.postMessage({ type: 'trigone-demenagement-donnees', sauvegarde: sv }, origineCible); });
+                    } else if (ev.data.type === 'trigone-demenagement-ok') {
+                        window.removeEventListener('message', recevoir);
+                        ecrireTxt('trigone_demenage_fait', '1');
+                        etat.textContent = '✓ Données transférées. TRIGONE continue à la nouvelle adresse.';
+                        setTimeout(function() { location.replace(adresseCible()); }, 1800);
+                    }
+                });
+            });
+        };
+        if (document.body) afficherDemenagement(); else document.addEventListener('DOMContentLoaded', afficherDemenagement);
+    }
+    // Nouvelle adresse, ouverte par l'ancienne pour le transfert : reçoit les données et les range.
+    var RECEPTION_DEMENAGEMENT = /[?&]demenagement=1/.test(location.search) && !!window.opener && !ICI_ANCIENNE;
+    if (RECEPTION_DEMENAGEMENT) {
+        var attente = function() {
+            var d = document.createElement('div');
+            d.className = 'JUM-DEM';
+            d.innerHTML = '<div class="JUM-DEM-CARTE"><img src="' + (DANS_CR ? '../' : '') + 'icon-192.png" alt=""><h2>Transfert de vos données…</h2><p class="JUM-DEM-ETAT">Réception depuis l\'ancienne adresse de TRIGONE.</p></div>';
+            document.body.appendChild(d);
+            window.addEventListener('message', function(ev) {
+                if (ev.origin !== DEM.ancienne || !ev.data || ev.data.type !== 'trigone-demenagement-donnees') return;
+                var sv = ev.data.sauvegarde;
+                appliquerSauvegarde(sv, !donneesPresentes()).then(function() {
+                    try { ev.source.postMessage({ type: 'trigone-demenagement-ok' }, DEM.ancienne); } catch (e) {}
+                    try { sessionStorage.setItem(CLE_DEVERROUILLE, '1'); sessionStorage.removeItem(CLE_CHOIX_FAIT); } catch (e) {}
+                    d.querySelector('h2').textContent = '✓ Données transférées';
+                    d.querySelector('.JUM-DEM-ETAT').textContent = 'TRIGONE est prêt à sa nouvelle adresse.';
+                    setTimeout(function() { location.replace(location.pathname); }, 1500);
+                });
+            });
+            window.opener.postMessage({ type: 'trigone-demenagement-pret' }, DEM.ancienne);
+        };
+        if (document.body) attente(); else document.addEventListener('DOMContentLoaded', attente);
+    }
     // Menu de la roue crantée : réglages ou présentation.
     window.JUMELAGE_MENU_ROUE = function(e) {
         if (e) e.stopPropagation();
@@ -1422,7 +1517,7 @@
         });
     }
     window.JUMELAGE_CODE_ACTIF = codeActif;
-    if (codeActif() && !(window.JUMELAGE_DEVERROUILLE && window.JUMELAGE_DEVERROUILLE())) {
+    if (!DEMENAGEMENT && !RECEPTION_DEMENAGEMENT && codeActif() && !(window.JUMELAGE_DEVERROUILLE && window.JUMELAGE_DEVERROUILLE())) {
         if (document.body) demanderCode(); else document.addEventListener('DOMContentLoaded', demanderCode);
     }
 
@@ -1589,7 +1684,7 @@
     try { apresMaj = sessionStorage.getItem('trigone_apres_maj') === '1'; sessionStorage.removeItem('trigone_apres_maj'); } catch (e) {}
     if ((apresMaj || (buildVu && buildVu < BUILD)) && !fichierOuQr) { dejaChoisi = false; arrivee = false; }
     ecrireTxt('trigone_build_vu', String(BUILD));
-    if (!arrivee && !dejaChoisi) {
+    if (!arrivee && !dejaChoisi && !DEMENAGEMENT && !RECEPTION_DEMENAGEMENT) {
         if (document.body) window.JUMELAGE_CHOIX();
         else document.addEventListener('DOMContentLoaded', window.JUMELAGE_CHOIX);
     }

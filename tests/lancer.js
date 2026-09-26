@@ -4,7 +4,8 @@ const TESTS = {
     'parcours': ['Parcours complet (demande → valideurs → Chorus DT)', require('./test-parcours')],
     'code-acces': ['Code d\'accès unique à l\'ouverture', require('./test-code-acces')],
     'sauvegarde': ['Sauvegarde et restauration', require('./test-sauvegarde')],
-    'hors-ligne': ['Sans réseau', require('./test-hors-ligne')]
+    'hors-ligne': ['Sans réseau', require('./test-hors-ligne')],
+    'demenagement': ['Déménagement vers l\'adresse Cloudflare', require('./test-demenagement')]
 };
 (async () => {
     const choix = process.argv.slice(2);
