@@ -117,6 +117,8 @@
         '.JUM-NOUV-IC[data-ton="ok"] { background: rgba(21,128,61,0.1); color: #15803d; }' +
         /* Mascotte cachée derrière la carte blanche : elle en dépasse, comme si elle se penchait derrière */
         '.JUM-NOUV-CARTE { position: relative; }' +
+        '.JUM-NOUV-BTNS { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }' +
+        '.JUM-NOUV .JUM-NOUV-SECOND { background: #fff; color: #5a7a94; border: 1.5px solid #c9d6e0; }' +
         '.JUM-NOUV-MASCOTTE { position: absolute; z-index: -1; right: -92px; bottom: 26px; width: 150px; height: auto; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.25)); pointer-events: none; }' +
         '@media (max-width: 560px) { .JUM-NOUV-MASCOTTE { right: 12px; bottom: auto; top: -84px; width: 110px; } }' +
         '.JUM-NOUV h2 { margin: 12px 0 8px; font-size: 1.15rem; } .JUM-NOUV p { margin: 0 0 18px; font-size: 0.9rem; line-height: 1.55; color: #404040; }' +
@@ -420,7 +422,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 41, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 42, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -726,6 +728,112 @@
     };
     window.JUMELAGE_PRESENTATION_VUE = function() { return lireTxt(CLE_PRESENTATION) === '1'; };
 
+    // ---------- Sauvegarde complète de TRIGONE (Mise en route + Compte-rendu, pièces jointes comprises) ----------
+    // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
+    // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
+    var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde)$/;
+    function basePieces(creer) {
+        return new Promise(function(ok) {
+            if (!window.indexedDB) { ok(null); return; }
+            var r;
+            try { r = creer ? indexedDB.open('trigone-mise-en-route', 2) : indexedDB.open('trigone-mise-en-route'); } catch (e) { ok(null); return; }
+            r.onupgradeneeded = function() {
+                var noms = r.result.objectStoreNames;
+                if (!noms.contains('pieces')) r.result.createObjectStore('pieces');
+                if (!noms.contains('acces')) r.result.createObjectStore('acces');
+            };
+            r.onsuccess = function() { ok(r.result.objectStoreNames.contains('pieces') ? r.result : (r.result.close(), null)); };
+            r.onerror = function() { ok(null); };
+        });
+    }
+    function lirePieces() {
+        return basePieces(false).then(function(db) {
+            if (!db) return {};
+            return new Promise(function(ok) {
+                var out = {}, cur = db.transaction('pieces').objectStore('pieces').openCursor();
+                cur.onsuccess = function() { var c = cur.result; if (c) { out[c.key] = c.value; c.continue(); } else { db.close(); ok(out); } };
+                cur.onerror = function() { db.close(); ok(out); };
+            });
+        });
+    }
+    function ecrirePieces(pieces) {
+        var ids = Object.keys(pieces || {});
+        if (!ids.length) return Promise.resolve();
+        return basePieces(true).then(function(db) {
+            if (!db) return;
+            return new Promise(function(ok) {
+                var tx = db.transaction('pieces', 'readwrite'), st = tx.objectStore('pieces');
+                ids.forEach(function(id) { st.put(pieces[id], id); });
+                tx.oncomplete = tx.onerror = function() { db.close(); ok(); };
+            });
+        });
+    }
+    function annoncer(titre, texte, icone, ton) {
+        if (ecran && !ecran.classList.contains('choisi')) carteChoix(titre, texte, icone, ton);
+        else if (typeof window.MSG_INFO === 'function') window.MSG_INFO(titre, texte, icone === 'ok' ? '✅' : icone === 'alerte' ? '⛔' : '💾');
+        else window.alert(titre + '\n\n' + texte);
+    }
+    window.JUMELAGE_SAUVEGARDER = function() {
+        var donnees = {};
+        try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); if (!NON_SAUVEGARDE.test(k)) donnees[k] = localStorage.getItem(k); } } catch (e) {}
+        return lirePieces().then(function(pieces) {
+            var s = { app: 'TRIGONE', type: 'sauvegarde-complete', version: 2, date: new Date().toISOString(), donnees: donnees, pieces: pieces };
+            var d = new Date(), jour = ('0' + d.getDate()).slice(-2) + '-' + ('0' + (d.getMonth() + 1)).slice(-2) + '-' + d.getFullYear();
+            var lien = document.createElement('a');
+            lien.href = URL.createObjectURL(new Blob([JSON.stringify(s)], { type: 'application/json' }));
+            lien.download = 'TRIGONE - sauvegarde ' + jour + '.json';
+            document.body.appendChild(lien); lien.click();
+            setTimeout(function() { URL.revokeObjectURL(lien.href); lien.remove(); }, 1500);
+            ecrireTxt(CLE_DERNIERE_SAUVEGARDE, String(Date.now()));
+            annoncer('Sauvegarde téléchargée', 'Le fichier « ' + lien.download + ' » contient tout TRIGONE : demandes, documents, bibliothèque, comptes-rendus, remboursements, médailles, réglages et pièces jointes. Rangez-le en lieu sûr (mail à vous-même, clé USB, Drive…) : « Restaurer une sauvegarde » le remet en place, sur cet appareil ou un autre.', 'ok', 'ok');
+        });
+    };
+    function restaurer(fichier) {
+        var lecteur = new FileReader();
+        lecteur.onload = function() {
+            var s = null;
+            try { s = JSON.parse(lecteur.result); } catch (e) {}
+            if (!s || s.app !== 'TRIGONE' || !s.donnees) { annoncer('Fichier non reconnu', 'Ce fichier n\'est pas une sauvegarde TRIGONE.', 'alerte', 'alerte'); return; }
+            var complete = s.type === 'sauvegarde-complete';
+            var date = s.date ? new Date(s.date).toLocaleDateString('fr-FR') : 'date inconnue';
+            var texte = 'Sauvegarde du ' + date + '. ' + (complete
+                ? 'Toutes les données actuelles de TRIGONE sur cet appareil (les deux applis) seront remplacées par celles de ce fichier, code d\'accès compris.'
+                : 'Ancienne sauvegarde de Compte-rendu : ses données (bibliothèque, remboursements, médailles, réglages) remplaceront celles de Compte-rendu.') + ' Cette action est définitive.';
+            var go = function() {
+                window.JUMELAGE_RESTAURATION_EN_COURS = true;   // bloque les enregistrements automatiques avant le redémarrage
+                try { if (window.JUMELAGE_AVANT_RESTAURATION) window.JUMELAGE_AVANT_RESTAURATION(); } catch (e) {}
+                try {
+                    if (complete) localStorage.clear();
+                    Object.keys(s.donnees).forEach(function(k) { localStorage.setItem(k, s.donnees[k]); });
+                    localStorage.setItem(CLE_DERNIERE_SAUVEGARDE, String(Date.now()));
+                } catch (e) { annoncer('Restauration impossible', 'L\'appareil n\'a pas assez de place pour cette sauvegarde.', 'alerte', 'alerte'); return; }
+                ecrirePieces(complete ? s.pieces : null).then(function() {
+                    try { sessionStorage.removeItem(CLE_CHOIX_FAIT); sessionStorage.setItem(CLE_DEVERROUILLE, '1'); } catch (e) {}
+                    location.replace(DANS_CR ? '../' : './');
+                });
+            };
+            if (ecran && !ecran.classList.contains('choisi')) carteChoix('Restaurer cette sauvegarde ?', texte, 'alerte', 'alerte', null, { libelle: 'Restaurer', faire: go });
+            else if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Restaurer cette sauvegarde ?', texte, 'Restaurer', go, '⚠️', 'mascotte-maj.webp', true);
+            else if (window.confirm('Restaurer cette sauvegarde ?\n\n' + texte)) go();
+        };
+        lecteur.readAsText(fichier);
+    }
+    window.JUMELAGE_RESTAURER_FICHIER = restaurer;
+    window.JUMELAGE_RESTAURER = function() {
+        var champ = document.createElement('input');
+        champ.type = 'file'; champ.accept = '.json,application/json'; champ.style.display = 'none';
+        champ.addEventListener('change', function() { if (champ.files && champ.files[0]) restaurer(champ.files[0]); champ.remove(); });
+        document.body.appendChild(champ); champ.click();
+    };
+    // Rappel : jamais sauvegardé, ou pas depuis 60 jours ; au plus une fois tous les 14 jours. Renvoie le texte à afficher, ou null.
+    window.JUMELAGE_SAUVEGARDE_A_RAPPELER = function() {
+        var jour = 86400000, derniere = +lireTxt(CLE_DERNIERE_SAUVEGARDE) || 0, rappel = +lireTxt(CLE_RAPPEL_SAUVEGARDE) || 0;
+        if (Date.now() - derniere < 60 * jour || Date.now() - rappel < 14 * jour) return null;
+        ecrireTxt(CLE_RAPPEL_SAUVEGARDE, String(Date.now()));
+        return derniere ? 'Votre dernière sauvegarde TRIGONE commence à dater. Refaites-la pour ne rien perdre en cas de souci avec cet appareil.'
+            : 'Vous n\'avez encore jamais sauvegardé TRIGONE. Tout est enregistré sur cet appareil uniquement : en cas de perte, de réinitialisation ou de changement d\'appareil, tout serait perdu.';
+    };
     // Menu de la roue crantée : réglages ou présentation.
     window.JUMELAGE_MENU_ROUE = function(e) {
         if (e) e.stopPropagation();
@@ -738,6 +846,9 @@
             '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>' +
             '<button type="button" data-action="signaler">' + window.JUMELAGE_ICONE('bouee') + '<span><b>Signaler un problème</b><small>Écrire à l\'équipe TRIGONE</small></span></button>' +
             '<div class="JUM-ROUE-SEP"></div>' +
+            '<button type="button" data-action="sauvegarder">' + window.JUMELAGE_ICONE('disquette') + '<span><b>Sauvegarder mes données</b><small>Un fichier pour tout TRIGONE</small></span></button>' +
+            '<button type="button" data-action="restaurer">' + window.JUMELAGE_ICONE('importer') + '<span><b>Restaurer une sauvegarde</b><small>Remettre en place un fichier de sauvegarde</small></span></button>' +
+            '<div class="JUM-ROUE-SEP"></div>' +
             '<button type="button" data-action="reinitialiser" class="JUM-ROUE-DANGER">' + CORBEILLE_SVG + '<span><b>Réinitialiser TRIGONE</b><small>Tout effacer sur cet appareil</small></span></button>';
         ['pointerdown', 'pointerup', 'click'].forEach(function(t) { m.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
         m.addEventListener('click', function(ev) {
@@ -748,6 +859,8 @@
             if (a === 'reglages') window.JUMELAGE_REGLAGES();
             else if (a === 'reinitialiser') window.JUMELAGE_REINITIALISER();
             else if (a === 'signaler') window.JUMELAGE_SIGNALER('choix');
+            else if (a === 'sauvegarder') window.JUMELAGE_SAUVEGARDER();
+            else if (a === 'restaurer') window.JUMELAGE_RESTAURER();
             else window.JUMELAGE_PRESENTATION();
         });
         ecran.appendChild(m);
@@ -1415,16 +1528,23 @@
     function manifesteMaj() {
         return fetch((DANS_CR ? '../' : '') + 'updates-manifest.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; });
     }
-    function carteChoix(titre, texte, icone, ton, mascotte) {
+    // action (facultatif) : { libelle, faire } — la carte devient une confirmation « Annuler / libelle ».
+    function carteChoix(titre, texte, icone, ton, mascotte, action) {
         if (!ecran) return;
         var ancienne = ecran.querySelector('.JUM-NOUV'); if (ancienne) ancienne.remove();
         var c = document.createElement('div');
         c.className = 'JUM-NOUV';
         c.innerHTML = '<div class="JUM-NOUV-CARTE' + (mascotte ? ' avec-mascotte' : '') + '"><span class="JUM-NOUV-IC"' + (ton ? ' data-ton="' + ton + '"' : '') + '>' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE(icone) : '') + '</span>' +
-            '<h2></h2><p></p><button type="button">J\'ai compris</button>' + (mascotte ? '<img class="JUM-NOUV-MASCOTTE" src="' + mascotte + '" alt="">' : '') + '</div>';
+            '<h2></h2><p></p>' + (action ? '<div class="JUM-NOUV-BTNS"><button type="button" class="JUM-NOUV-SECOND">Annuler</button><button type="button" class="JUM-NOUV-OK"></button></div>' : '<button type="button">J\'ai compris</button>') +
+            (mascotte ? '<img class="JUM-NOUV-MASCOTTE" src="' + mascotte + '" alt="">' : '') + '</div>';
         c.querySelector('h2').textContent = titre; c.querySelector('p').textContent = texte;
         ['pointerdown', 'pointerup', 'click'].forEach(function(t) { c.addEventListener(t, function(e) { e.stopPropagation(); }); });
-        c.querySelector('button').addEventListener('click', function() { c.classList.add('sortie'); setTimeout(function() { c.remove(); }, 250); });
+        var fermer = function() { c.classList.add('sortie'); setTimeout(function() { c.remove(); }, 250); };
+        if (action) {
+            c.querySelector('.JUM-NOUV-OK').textContent = action.libelle;
+            c.querySelector('.JUM-NOUV-OK').addEventListener('click', function() { fermer(); action.faire(); });
+        }
+        c.querySelector('button').addEventListener('click', fermer);
         c.addEventListener('click', function(e) { if (e.target === c) c.querySelector('button').click(); });
         ecran.appendChild(c);
     }

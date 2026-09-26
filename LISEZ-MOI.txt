@@ -274,3 +274,5 @@ Version 38 : code d'accès unique pour TRIGONE (jumelage.js), demandé à l'ouve
 Version 39 : nouvelle icône d'application (logo phénix + TRIGONE fourni) : icon-192/512, maskable, apple-touch-icon (racine et cr/), favicon-32 (phénix seul). Adresses suffixées ?v=2 pour forcer le rafraîchissement.
 
 Version 40 : hors ligne — valideurs.json rangé à l'installation (connexion valideur et contrôle Chorus DT possibles sans réseau, même sans connexion préalable) ; police Montserrat hébergée dans fonts/ (plus de Google Fonts) ; villes déjà trouvées mémorisées (mer_villes_connues) et message « Hors connexion » invitant à taper le code postal.
+
+Version 41 : sauvegarde complète commune (jumelage.js : JUMELAGE_SAUVEGARDER / JUMELAGE_RESTAURER) — tout le localStorage de TRIGONE + pièces jointes (IndexedDB « pieces ») dans « TRIGONE - sauvegarde JJ-MM-AAAA.json ». Roue crantée (Sauvegarder / Restaurer), Mon espace (Mise en route), bouton existant de Compte-rendu. Restauration : remplace tout, puis rouvre l'écran de choix ; anciennes sauvegardes de Compte-rendu acceptées. Rappel commun (jamais / plus de 60 jours, au plus tous les 14 jours).
