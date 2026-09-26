@@ -268,3 +268,5 @@ Version 35 : icône du Panier — dossier au trait à la place du caddie (menu P
 Version 36 : « Panier » renommé « Documents » (menu, barre du bas, titres, boutons, notice, démo, mails). Messages à chaque mouvement : ajout aux Documents, sortie pour modification, retrait (avec confirmation), refus reçu rangé dans Documents, envoi (les demandes passent dans la Bibliothèque).
 
 Version 37 : Espace valideur — bouton « Effacer » (avec confirmation) sur chaque demande reçue sans décision : elle est retirée sans être validée ni refusée ; réimporter le .json pour la retrouver.
+
+Version 38 : code d'accès unique pour TRIGONE (jumelage.js), demandé à l'ouverture avant l'écran de choix, dans les deux applis. Les anciens codes propres à chaque appli (Compte-rendu « Mon espace », Mise en route) restent acceptés et deviennent le code TRIGONE à la première saisie. Activer / désactiver le code depuis Compte-rendu ou les Réglages TRIGONE agit sur le code commun. PC : nouvel écran d'accès (panneau TRIGONE + cases de saisie au clavier) ; téléphone inchangé.

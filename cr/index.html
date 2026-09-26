@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=38"></script>
+<script src="../jumelage.js?v=39"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -11516,7 +11516,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 135;
+var APP_CODE_VERSION = 136;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13012,8 +13012,20 @@ function HASH_SIMPLE(txt) {
     return String(h);
 }
 
+// Code d'accès unique de TRIGONE (jumelage.js) : le même pour Mise en route et Compte-rendu, demandé à l'ouverture.
 function PIN_EST_DEFINI() {
+    if (window.JUMELAGE_CODE_ACTIF) return JUMELAGE_CODE_ACTIF();
     try { return !!localStorage.getItem(PIN_HASH_KEY); } catch (e) { return false; }
+}
+function PIN_CODE_JUSTE(code) {
+    if (window.JUMELAGE_VERIFIER_CODE) return JUMELAGE_VERIFIER_CODE(code);
+    var h = ''; try { h = localStorage.getItem(PIN_HASH_KEY) || ''; } catch (e) {}
+    return Promise.resolve(HASH_SIMPLE(code) === h);
+}
+function PIN_ENREGISTRER(code) {
+    if (window.JUMELAGE_POSER_CODE) return JUMELAGE_POSER_CODE(code);
+    try { localStorage.setItem(PIN_HASH_KEY, HASH_SIMPLE(code)); } catch (e) {}
+    return Promise.resolve();
 }
 
 function PIN_PROTECTION_ACTIVE() {
@@ -13078,7 +13090,6 @@ function PIN_EFFACER() {
 }
 
 function PIN_VALIDER() {
-    var hashSaisie = HASH_SIMPLE(PIN_UI.saisie);
     if (PIN_UI.mode === 'creation') {
         if (!PIN_UI.premierChiffre) {
             PIN_UI.premierChiffre = PIN_UI.saisie;
@@ -13096,23 +13107,27 @@ function PIN_VALIDER() {
             RENDER_PIN_DOTS();
             return;
         }
-        try { localStorage.setItem(PIN_HASH_KEY, HASH_SIMPLE(PIN_UI.saisie)); } catch (e) {}
-        PIN_UI.deverrouille = true;
-        FERMER_ECRAN_PIN();
-        UPDATE_PIN_SECTION_UI();
-        AFFICHER_WELCOME_TOAST('✓ Code d\'accès activé.');
+        PIN_ENREGISTRER(PIN_UI.saisie).then(function() {
+            PIN_UI.deverrouille = true;
+            FERMER_ECRAN_PIN();
+            UPDATE_PIN_SECTION_UI();
+            AFFICHER_WELCOME_TOAST('✓ Code d\'accès activé pour TRIGONE.');
+        });
         return;
     }
+    var modeSaisi = PIN_UI.mode;
+    PIN_CODE_JUSTE(PIN_UI.saisie).then(function(ok) { if (PIN_UI.mode === modeSaisi) PIN_VALIDER_SUITE(ok); });
+}
+function PIN_VALIDER_SUITE(ok) {
     if (PIN_UI.mode === 'suppression') {
-        var hashActuel = '';
-        try { hashActuel = localStorage.getItem(PIN_HASH_KEY) || ''; } catch (e) {}
-        if (hashSaisie !== hashActuel) {
+        if (!ok) {
             document.getElementById('PIN-OVERLAY-ERREUR').textContent = '⛔ Code incorrect.';
             document.getElementById('PIN-OVERLAY-ERREUR').classList.remove('HIDDEN');
             PIN_UI.saisie = '';
             RENDER_PIN_DOTS();
             return;
         }
+        if (window.JUMELAGE_EFFACER_CODE) JUMELAGE_EFFACER_CODE();
         try {
             localStorage.removeItem(PIN_HASH_KEY);
         } catch (e) {}
@@ -13122,9 +13137,7 @@ function PIN_VALIDER() {
         return;
     }
     // mode 'verif' : acces a Bibliotheque / Remboursement
-    var hashStocke = '';
-    try { hashStocke = localStorage.getItem(PIN_HASH_KEY) || ''; } catch (e) {}
-    if (hashSaisie !== hashStocke) {
+    if (!ok) {
         document.getElementById('PIN-OVERLAY-ERREUR').textContent = '⛔ Code incorrect.';
         document.getElementById('PIN-OVERLAY-ERREUR').classList.remove('HIDDEN');
         PIN_UI.saisie = '';
@@ -13199,8 +13212,8 @@ function VALIDER_CONFIG_INITIALE() {
         current.mailAssist = mail;
         current.mailBodyText = mailBody;
         localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(current));
-        localStorage.setItem(PIN_HASH_KEY, HASH_SIMPLE(pin1));
     } catch (e) {}
+    PIN_ENREGISTRER(pin1);
     var unitField = document.getElementById('PARAM-UNIT-NAME');
     var mailField = document.getElementById('PARAM-MAIL-ASSIST');
     var mailBodyField = document.getElementById('PARAM-MAIL-BODY');
@@ -13291,7 +13304,7 @@ function UPDATE_PIN_SECTION_UI() {
     if (btnActiver) btnActiver.classList.toggle('HIDDEN', actif);
     if (btnDesactiver) btnDesactiver.classList.toggle('HIDDEN', !actif);
     if (statut) statut.innerHTML = actif
-        ? '<span style="color:#16a34a;">✓ Activé</span> — un code est demandé à chaque ouverture de TRIGONE.'
+        ? '<span style="color:#16a34a;">✓ Activé</span> — le même code est demandé à chaque ouverture de TRIGONE (Mise en route et Compte-rendu).'
         : 'Non activé — TRIGONE s\'ouvre librement, sans code.';
 }
 // ======================================================================================
@@ -13322,7 +13335,8 @@ window.onload = function() {
     INIT_TITRES_AUTO();
     var versionTagEl = document.getElementById('APP-VERSION-TAG');
     if (versionTagEl) versionTagEl.textContent = '- V' + APP_VERSION_AFFICHEE;
-    if (PIN_EST_DEFINI() && window.JUMELAGE_DEVERROUILLE && JUMELAGE_DEVERROUILLE()) {
+    if (PIN_EST_DEFINI() && window.JUMELAGE_DEVERROUILLE) {
+        // Code demandé une seule fois, à l'ouverture de TRIGONE, par l'écran commun (jumelage.js).
         PIN_UI.deverrouille = true;
         FINALISER_DEMARRAGE();
     } else if (PIN_EST_DEFINI()) {
