@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 72;
+var APP_CODE_VERSION = 73;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3047,7 +3047,7 @@ function RECUS_OUBLIER(elements) {
 }
 function MER_RECEPTION_INIT() {
     var p = new URLSearchParams(location.search || '');
-    var partage = p.get('partage'), erreur = p.get('err');
+    var partage = p.get('partage'), erreur = p.get('err'), recu = p.get('recu');
     // Page ouverte à l'adresse du partage : le service worker n'était pas encore à jour et n'a pas pu recevoir le fichier.
     var nonRecu = /\/partage-trigone\/?$/.test(location.pathname);
     if ((nonRecu || /[?&](partage|fichier)=/.test(location.search)) && history.replaceState)
@@ -3058,7 +3058,8 @@ function MER_RECEPTION_INIT() {
                 texte: nonRecu
                     ? 'TRIGONE vient de se mettre à jour et n\'a pas pu recevoir ce partage. Partagez à nouveau la pièce jointe vers TRIGONE : cette fois, elle arrivera.'
                     : 'TRIGONE s\'est ouverte, mais votre messagerie ne lui a transmis aucun fichier' + (erreur ? ' (' + erreur + ')' : '') + '. ' +
-                      'Enregistrez la pièce jointe (elle va dans Téléchargements), puis dans l\'Espace valideur touchez « Importer la demande reçue ».',
+                      'Enregistrez la pièce jointe (elle va dans Téléchargements), puis partagez-la vers TRIGONE depuis l\'appli Fichiers, ou dans l\'Espace valideur touchez « Importer la demande reçue ».' +
+                      (recu ? '\n\nDétail technique : ' + recu : ''),
                 boutons: [{ label: 'Compris' }] });
         });
     }

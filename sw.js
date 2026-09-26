@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v79';
+const CACHE_NAME = 'trigone-mise-en-route-v80';
 const ASSETS = [
   './',
   './manifest.json',
@@ -139,8 +139,10 @@ function reseauDAbord(request, fin) {
 // « Partager » / « Ouvrir avec » TRIGONE (Android) : le fichier arrive ici en POST. Il est rangé dans un cache
 // dédié, puis l'appli s'ouvre et le traite (Espace valideur, assistant Chorus DT ou retour d'un refus).
 function recevoirPartage(request) {
-  var n = 0, erreur = '';
+  var n = 0, erreur = '', recu = [];
   return request.formData().then(function(form) {
+    // Détail de ce que la messagerie a transmis (noms des champs, types, tailles) : affiché si rien n'est exploitable.
+    form.forEach(function(v, k) { recu.push(k + ':' + (v && typeof v !== 'string' ? (v.type || 'fichier') + '/' + v.size + 'o' : 'texte/' + String(v || '').length + 'c')); });
     // Tout fichier reçu, quel que soit le nom du champ ; et le contenu d'une demande partagée comme du texte
     // (certaines messageries, dont Outlook, peuvent transmettre le contenu plutôt que le fichier).
     var fichiers = [];
@@ -157,7 +159,8 @@ function recevoirPartage(request) {
       }));
     });
   }).catch(function(e) { erreur = (e && e.message) || 'lecture'; }).then(function() {
-    return Response.redirect(self.registration.scope + '?partage=' + n + (erreur ? '&err=' + encodeURIComponent(erreur) : ''), 303);
+    return Response.redirect(self.registration.scope + '?partage=' + n + (erreur ? '&err=' + encodeURIComponent(erreur) : '') +
+      (n ? '' : '&recu=' + encodeURIComponent(recu.join(', ').slice(0, 300) || 'rien')), 303);
   });
 }
 
