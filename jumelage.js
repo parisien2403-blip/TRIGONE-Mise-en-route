@@ -115,9 +115,10 @@
         '.JUM-NOUV-IC { display: inline-flex; width: 58px; height: 58px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(90,122,148,0.1); color: #5a7a94; }' +
         '.JUM-NOUV-IC svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-NOUV-IC[data-ton="ok"] { background: rgba(21,128,61,0.1); color: #15803d; }' +
-        '.JUM-NOUV-CARTE { position: relative; } .JUM-NOUV-CARTE.avec-mascotte { padding-bottom: 24px; }' +
-        '.JUM-NOUV-MASCOTTE { position: absolute; right: -122px; bottom: -10px; width: 140px; height: auto; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.25)); pointer-events: none; }' +
-        '@media (max-width: 560px) { .JUM-NOUV-MASCOTTE { right: -10px; bottom: -34px; width: 96px; } .JUM-NOUV-CARTE.avec-mascotte { padding-bottom: 60px; } }' +
+        /* Mascotte cachée derrière la carte blanche : elle en dépasse, comme si elle se penchait derrière */
+        '.JUM-NOUV-CARTE { position: relative; }' +
+        '.JUM-NOUV-MASCOTTE { position: absolute; z-index: -1; right: -92px; bottom: 26px; width: 150px; height: auto; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.25)); pointer-events: none; }' +
+        '@media (max-width: 560px) { .JUM-NOUV-MASCOTTE { right: 12px; bottom: auto; top: -84px; width: 110px; } }' +
         '.JUM-NOUV h2 { margin: 12px 0 8px; font-size: 1.15rem; } .JUM-NOUV p { margin: 0 0 18px; font-size: 0.9rem; line-height: 1.55; color: #404040; }' +
         '.JUM-NOUV button { border: 0; border-radius: 14px; padding: 13px 34px; background: #1a1a1a; color: #fff; font: 800 0.8rem Montserrat, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-VERSION { position: absolute; top: max(16px, env(safe-area-inset-top, 0px)); right: max(18px, env(safe-area-inset-right, 0px)); z-index: 3; padding: 5px 12px; border-radius: 999px;' +
@@ -380,7 +381,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 30, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 31, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
