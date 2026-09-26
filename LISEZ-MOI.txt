@@ -262,3 +262,5 @@ Version 32 : toute mise à jour (automatique, bouton en bas à gauche de l'écra
 Version 33 : publication de test pour vérifier le retour à l'écran de choix après une mise à jour.
 
 Version 34 : assistant Chorus DT sur PC — zone de dépôt (glisser le .json ou le PDF, Ctrl + V, ou clic) à la place du bouton ; un fichier collé sur cette page est contrôlé directement.
+
+Version 35 : icône du Panier — dossier au trait à la place du caddie (menu PC, barre du bas, accueil).
