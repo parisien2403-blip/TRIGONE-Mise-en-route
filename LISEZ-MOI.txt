@@ -169,3 +169,13 @@ Augmenter ensemble : APP_CODE_VERSION (app.js et cr/index.html) et appCodeVersio
 updates-manifest.json, avec appCodeMessage), BUILD (jumelage.js) et build.json, les ?v= des scripts
 (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), et les noms de cache
 des deux sw.js. Les applis ouvertes se mettent alors à jour d'elles-mêmes en quelques secondes.
+
+RÉGLAGES TRIGONE COMMUNS (roue crantée de l'écran de choix)
+- Identité (unité, CIE, grade, nom, prénom, matricule/NID), mail du 1er valideur, mon mail, mail de l'assistant
+  Chorus DT et code d'accès à 4 chiffres : saisis une seule fois pour les deux applis (jumelage.js), recopiés
+  dans le stockage propre à chacune (mer_reglages, mission_saved_*, trigone_app_settings).
+- Première ouverture : « Avant de commencer » commun (remplace les écrans de chaque appli).
+- Code d'accès commun (trigone_code_commun) : demandé une fois à l'ouverture de TRIGONE, plus au passage d'une
+  appli à l'autre ; il remplace les anciens codes propres à chaque appli.
+- Le mail du 2e valideur reste réglé par le 1er valideur, dans l'Espace valideur.
+- Saisie en majuscules partout, sauf le prénom, les adresses mail et les codes.

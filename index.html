@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=10"></script>
+<script src="jumelage.js?v=11"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -586,6 +586,14 @@ body.dark-mode .DEMO-CONTROLES { background: rgba(20,20,20,0.97); border-top-col
 .MER-CHECKBOX-ROW input { width: 18px; height: 18px; flex-shrink: 0; }
 .MER-CHECKBOX-ROW span { font-size: 0.82em; font-weight: 700; }
 
+
+/* Ville + code postal dans un seul champ */
+.MER-VILLE-CP { position: relative; }
+.MER-VILLE-CP input[type=text]:not(.MER-CP-IN) { padding-right: 96px; }
+.MER-FIELD .MER-VILLE-CP .MER-CP-IN { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 82px; padding: 7px 8px; border-radius: 8px;
+  border: 1px solid var(--tg-border); background: #f1f5f9; text-align: center; font-weight: 800; font-size: 0.82rem; letter-spacing: 0.04em; margin: 0; }
+body.dark-mode .MER-FIELD .MER-VILLE-CP .MER-CP-IN { background: #1a1a1a; border-color: #404040; }
+.MER-LABEL-FIN { font-weight: 600; text-transform: none; letter-spacing: 0; color: #94a3b8; }
 /* ===================== FORMAT PC (écran large, ≥ 1100 px) =====================
    Menu à gauche à la place de la barre du bas ; pages plus larges ; tableau de bord, récapitulatif, tableau des
    demandes à valider. En dessous de 1100 px (téléphones, tablettes) : rien ne change. */
@@ -810,6 +818,6 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
     </div>
   </div>
 </div>
-<script src="app.js?v=10"></script>
+<script src="app.js?v=11"></script>
 </body>
 </html>
