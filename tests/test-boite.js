@@ -47,6 +47,17 @@ module.exports = async function() {
 
     const m = await appareil('M'), v1 = await appareil('V1'), v2 = await appareil('V2'), c = await appareil('C');
 
+    // Rôles : chaque valideur se connecte une fois avec son code (rôle déclaré au compte) ; l'assistant active son rôle.
+    await connecter(v1, code1); await connecter(v2, code2); await attendre(1500);
+    const codeChorus = process.env.TRIGONE_CODE_CHORUS;
+    if (codeChorus) {
+        await c.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
+        await c.check('#JUM-R-CHORUS'); await c.fill('#JUM-R-CODECHORUS', 'MAUVAIS'); await c.click('.JUM-R-PRINCIPAL'); await attendre(600);
+        verifier((await c.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Chorus DT : un mauvais code ne donne pas le rôle');
+        await c.fill('#JUM-R-CODECHORUS', codeChorus); await c.click('.JUM-R-PRINCIPAL'); await attendre(1500);
+    } else { await c.evaluate(() => { localStorage.setItem('trigone_role_chorus', '1'); JUMELAGE_DECLARER_ROLE('chorus', true); }); await attendre(1500); }
+    verifier(await c.evaluate(() => JUMELAGE_ROLE_CHORUS()), 'Chorus DT : rôle actif');
+
     // Demandeur : 2 demandes, envoyées directement au 1er valideur
     for (const nom of ['Bouquet', 'Martin']) {
         await m.evaluate(n => {
@@ -59,6 +70,14 @@ module.exports = async function() {
         if (nom === 'Bouquet') { await m.setInputFiles('input[type=file][onchange="AJOUTER_PJ(this)"]', [path.join(FICHIERS, 'nds_test.pdf')]); await attendre(1200); }
         await m.click('text=Ajouter aux documents'); await attendre(500); await m.evaluate(() => FERMER_MSG()); await attendre(300);
     }
+    // Règle des boîtes : une demande ne peut pas partir vers le 2e valideur ni vers l'assistant Chorus DT
+    for (const [qui, adr] of [['2e valideur', MAILS.V2], ['assistant Chorus DT', MAILS.C]]) {
+        await m.evaluate(a => { const r = GET_REGLAGES(); r.mailSignataire = a; SAVE_REGLAGES(r); SHOW_PAGE('PANIER'); }, adr); await attendre(300);
+        await m.click('text=Envoyer mes documents'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
+        verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Mauvais destinataire', 'règle des boîtes : une demande de missionnaire est refusée par la boîte du ' + qui);
+        await m.evaluate(() => { FERMER_MSG(); FERMER_MODALE(); }); await attendre(400);
+    }
+    await m.evaluate(() => SHOW_PAGE('PANIER')); await attendre(300);
     await m.fill('#MER-MAIL-DEST', MAILS.V1); await m.fill('#MER-MAIL-DEMANDEUR', MAILS.M);
     await m.click('text=Envoyer mes documents'); await attendre(500);
     verifier(await m.isVisible('#MER-BTN-DIRECT'), 'demandeur : bouton « Envoyer directement dans TRIGONE »');
@@ -79,6 +98,7 @@ module.exports = async function() {
     verifier(await v1.evaluate(() => JUMELAGE_BOITE_NB()) === 1, '1er valideur : l\'envoi arrive dans la boîte de réception');
     await v1.evaluate(() => SHOW_PAGE('ACCUEIL')); await attendre(300);
     verifier((await v1.textContent('.BTN-ACCUEIL-BOITE')).includes('1'), '1er valideur : pastille « 1 » sur le bouton Boîte de réception de l\'accueil');
+    await v1.evaluate(() => { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; return ACCES_MEMO('effacer'); });
     await ouvrirBoite(v1);
     verifier((await v1.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Connexion valideur', '1er valideur non connecté : « Ouvrir » demande le code valideur');
     await v1.evaluate(() => FERMER_MSG()); await attendre(300);
@@ -106,7 +126,6 @@ module.exports = async function() {
     verifier(await m.evaluate(() => GET_PANIER().some(d => d.refus && d.refus.motif === 'Merci de joindre la DAF')), 'demandeur : la demande refusée revient dans Documents, avec le motif');
 
     // 2e valideur
-    await connecter(v2, code2);
     await relever(v2);
     await ouvrirBoite(v2);
     verifier(await v2.evaluate(() => GET_A_VALIDER().length) === 1, '2e valideur : la demande validée par le 1er valideur arrive');
@@ -117,15 +136,7 @@ module.exports = async function() {
     verifier(await v2.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 1, '2e valideur : envoi direct à l\'assistant Chorus DT');
 
     // Assistant Chorus DT
-    // Rôle Assistant Chorus DT (Réglages, code TRIGONE_CODE_CHORUS) : logo au centre de l'écran de choix, espace dédié
-    const codeChorus = process.env.TRIGONE_CODE_CHORUS;
-    if (codeChorus) {
-        await c.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
-        await c.check('#JUM-R-CHORUS'); await c.fill('#JUM-R-CODECHORUS', 'MAUVAIS'); await c.click('.JUM-R-PRINCIPAL'); await attendre(600);
-        verifier((await c.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Chorus DT : un mauvais code ne donne pas le rôle');
-        await c.fill('#JUM-R-CODECHORUS', codeChorus); await c.click('.JUM-R-PRINCIPAL'); await attendre(1000);
-    } else await c.evaluate(() => localStorage.setItem('trigone_role_chorus', '1'));
-    verifier(await c.evaluate(() => JUMELAGE_ROLE_CHORUS()), 'Chorus DT : rôle actif');
+
     await relever(c);
     await c.evaluate(() => { document.querySelectorAll('.JUM-CHOIX').forEach(e => e.remove()); JUMELAGE_CHOIX(); }); await attendre(600);
     verifier(await c.evaluate(() => !!document.querySelector('.JUM-CHORUS') && document.querySelector('.JUM-CHORUS-NB').textContent === '1'), 'Chorus DT : logo au centre de l\'écran de choix, pastille « 1 »');

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 94;
+var APP_CODE_VERSION = 95;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2090,7 +2090,7 @@ function ENVOYER_PANIER_DIRECT() {
         }, 300);
     }).catch(function(e) {
         if (b) { b.disabled = false; b.textContent = '📨 Envoyer directement dans TRIGONE'; }
-        MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : 'Envoi impossible', e.pasDeCompte
+        MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : e.statut === 403 ? 'Mauvais destinataire' : 'Envoi impossible', e.pasDeCompte
             ? 'Le 1er valideur (' + reg.mailSignataire + ') n\'a pas encore activé son compte TRIGONE. Envoyez la demande par mail (étapes 1 et 2), et invitez-le à activer son compte : roue crantée › Compte TRIGONE.'
             : (e.message || String(e)));
     });
@@ -2471,7 +2471,7 @@ function OUVRIR_VALIDATION() {
     var zone = document.getElementById('PAGE-STAGE');
     zone.classList.add('avec-marge');
     zone.innerHTML = '<div class="CARD"><div class="MER-EMPTY">Chargement…</div></div>';
-    CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(RENDER_VALIDATION_INPLACE);
+    CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() { MER_DECLARER_ROLE_VALIDEUR(); RENDER_VALIDATION_INPLACE(); });
 }
 function RENDER_VALIDATION_INPLACE() {
     var liste = GET_A_VALIDER();
@@ -2524,6 +2524,7 @@ function SE_CONNECTER(btn) {
     if (bouton) { bouton.disabled = true; bouton.textContent = 'Vérification…'; }
     CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(function() {
         RENDER_VALIDATION_INPLACE();
+        MER_DECLARER_ROLE_VALIDEUR();
         if (MER_RECUS_ATTENTE) { MER_RECUS_ATTENTE = false; setTimeout(MER_TRAITER_RECUS, 300); }
         if (MER_BOITE_A_OUVRIR) { var idBoite = MER_BOITE_A_OUVRIR; MER_BOITE_A_OUVRIR = null; setTimeout(function() { OUVRIR_RECU(idBoite); }, 400); }
     }).catch(function() {
@@ -2869,7 +2870,7 @@ function ENVOYER_ENVOI_DIRECT(i) {
     }).catch(function(e) {
         FERMER_MSG();
         setTimeout(function() {
-            MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : 'Envoi impossible', e.pasDeCompte
+            MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : e.statut === 403 ? 'Mauvais destinataire' : 'Envoi impossible', e.pasDeCompte
                 ? env.mail + ' n\'a pas encore activé son compte TRIGONE : envoyez par mail (1. Enregistrer, 2. Envoyer), et invitez-le à activer son compte (roue crantée › Compte TRIGONE).'
                 : (e.message || String(e)));
         }, 350);
@@ -3279,6 +3280,11 @@ var MER_NATURES_BOITE = {
     niveau1: ['À signer — 1er niveau', 'Ouvrir et signer'], niveau2: ['À signer — 2e niveau', 'Ouvrir et signer'],
     chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée', 'Corriger dans Documents'], inconnu: ['Fichier reçu', 'Ouvrir']
 };
+// Valideur connecté : son rôle (1er ou 2e) est déclaré au compte TRIGONE, pour que sa boîte reçoive ce qui lui revient.
+function MER_DECLARER_ROLE_VALIDEUR() {
+    var h = HABILITATION_COURANTE();
+    if (h && !h.retire && window.JUMELAGE_DECLARER_ROLE) JUMELAGE_DECLARER_ROLE('valideur' + h.role, true);
+}
 function MER_ROLE_CHORUS() { return !!(window.JUMELAGE_ROLE_CHORUS && JUMELAGE_ROLE_CHORUS()); }
 // Avec le rôle Assistant Chorus DT, les envois pour Chorus vont dans son espace dédié, pas dans la boîte de Mise en route.
 function MER_NB_BOITE() { return window.JUMELAGE_BOITE_NB ? JUMELAGE_BOITE_NB(MER_ROLE_CHORUS() ? 'autres' : '') : 0; }

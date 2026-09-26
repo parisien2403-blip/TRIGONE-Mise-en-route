@@ -23,6 +23,14 @@
 import { connect } from 'cloudflare:sockets';
 
 const JOUR = 86400;
+const ROLES = ['valideur1', 'valideur2', 'chorus'];
+// Type d'envoi → rôle exigé du destinataire (REFUS : retour au demandeur, tout compte).
+const ROLE_REQUIS = { DEMANDE: 'valideur1', VALIDATION_1: 'valideur2', CHORUS: 'chorus', REFUS: '' };
+const MESSAGE_ROLE = {
+    valideur1: 'n\'est pas enregistré comme 1er valideur dans TRIGONE : vérifiez l\'adresse du 1er valideur. (Un 1er valideur est enregistré dès qu\'il se connecte à son Espace valideur avec son code.)',
+    valideur2: 'n\'est pas enregistré comme 2e valideur dans TRIGONE : vérifiez l\'adresse du 2e valideur. (Un 2e valideur est enregistré dès qu\'il se connecte à son Espace valideur avec son code.)',
+    chorus: 'n\'est pas enregistré comme assistant Chorus DT dans TRIGONE : vérifiez l\'adresse de l\'assistant Chorus DT. (Il est enregistré dès qu\'il active le rôle dans ses Réglages, avec son code.)'
+};
 const DUREE_MESSAGE = 30 * JOUR;
 const TAILLE_MAX = 24 * 1024 * 1024;   // limite d'une valeur Workers KV : 25 Mo
 
@@ -198,12 +206,24 @@ async function api(requete, env, url) {
     const moi = await appareilConnecte(env, requete);
     if (!moi) return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
 
+    // Rôles du compte (déclarés par l'appli après le code valideur ou le code Assistant Chorus DT) : ils décident de ce
+    // que chaque boîte peut recevoir. 1er valideur : les demandes des missionnaires ; 2e valideur : les envois des
+    // 1ers valideurs ; assistant Chorus DT : les envois des 2es valideurs. Un refus revient à tout compte (le demandeur).
+    if (chemin === 'role' && methode === 'POST') {
+        const { role, actif } = await requete.json().catch(() => ({}));
+        if (ROLES.indexOf(role) < 0) return erreur(400, 'Rôle inconnu.');
+        moi.compte.roles = moi.compte.roles || {};
+        if (actif) moi.compte.roles[role] = true; else delete moi.compte.roles[role];
+        await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
+        return json({ ok: true, roles: moi.compte.roles });
+    }
+
     // Clés publiques des appareils d'un destinataire (pour chiffrer un envoi).
     if (chemin === 'cles' && methode === 'GET') {
         const mail = normaliser(url.searchParams.get('mail'));
         const compte = await kv.get('compte:' + mail, 'json');
         if (!compte || !compte.appareils.length) return json({ ok: true, compte: false });
-        return json({ ok: true, compte: true, mail, appareils: compte.appareils.map(a => ({ id: a.id, cle: a.cle })) });
+        return json({ ok: true, compte: true, mail, roles: compte.roles || {}, appareils: compte.appareils.map(a => ({ id: a.id, cle: a.cle })) });
     }
 
     // Dépôt d'un envoi chiffré : le contenu une fois, une enveloppe (clé du contenu chiffrée) par appareil destinataire.
@@ -214,11 +234,16 @@ async function api(requete, env, url) {
         const dest = normaliser(corps.destinataire);
         const compte = await kv.get('compte:' + dest, 'json');
         if (!compte) return erreur(404, 'Ce destinataire n\'a pas de compte TRIGONE.');
+        // Chaque boîte ne reçoit que ce qui lui revient.
+        const type = String(corps.type || '');
+        if (!(type in ROLE_REQUIS)) return erreur(400, 'Type d\'envoi inconnu.');
+        const requis = ROLE_REQUIS[type];
+        if (requis && !(compte.roles || {})[requis]) return erreur(403, dest + ' ' + MESSAGE_ROLE[requis]);
         const ids = new Set(compte.appareils.map(a => a.id));
         const enveloppes = (corps.enveloppes || []).filter(e => ids.has(e.appareil));
         if (!enveloppes.length || !corps.donnees || !corps.donnees.ct) return erreur(400, 'Envoi incomplet.');
         const id = Date.now().toString(36) + b64url(hasard(6));
-        const le = Date.now(), type = String(corps.type || '').slice(0, 30);
+        const le = Date.now();
         await kv.put('msg:' + id, JSON.stringify(corps.donnees), { expirationTtl: DUREE_MESSAGE });
         const db = await baseBoite(env);
         await db.batch(enveloppes.map(e => db.prepare('INSERT INTO boite (id, dest, appareil, de, type, le, enveloppe) VALUES (?, ?, ?, ?, ?, ?, ?)')
