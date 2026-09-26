@@ -113,6 +113,8 @@
         '.JUM-ROUE-MENU button { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 11px 12px; border-radius: 12px; text-align: left; cursor: pointer; color: #1a1a1a; font-family: inherit; }' +
         '.JUM-ROUE-MENU button:hover { background: #f1f5f9; }' +
         '.JUM-ROUE-MENU svg, .JUM-ROUE-MENU img { width: 26px; height: 26px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; object-fit: contain; }' +
+        '.JUM-ROUE-SEP { height: 1px; background: #e2e8f0; margin: 4px 10px; }' +
+        '.JUM-ROUE-MENU .JUM-ROUE-DANGER svg { stroke: #b91c1c; } .JUM-ROUE-MENU .JUM-ROUE-DANGER b { color: #b91c1c; } .JUM-ROUE-MENU .JUM-ROUE-DANGER:hover { background: #fef2f2; }' +
         '.JUM-ROUE-MENU b { display: block; font-size: 0.84rem; } .JUM-ROUE-MENU small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 2px; }' +
         /* Présentation TRIGONE */
         '.JUM-PRES { position: fixed; inset: 0; z-index: 99992; background: radial-gradient(120% 90% at 50% 0%, #1d1d1d 0%, #0b0b0b 60%); color: #f5f5f5;' +
@@ -213,7 +215,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 13, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 14, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -266,6 +268,7 @@
     };
     var ICI = DANS_CR ? 'cr' : 'mer', CLE_CHOIX = 'trigone_choix_fait';
     var ecran = null;
+    var CORBEILLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
     var ROUE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg>';
     // ---------- Réglages TRIGONE communs (roue crantée de l'écran de choix) ----------
     // Identité, mail du 1er valideur, mon mail, mail de l'assistant Chorus DT et code d'accès : saisis une seule
@@ -483,13 +486,18 @@
         m = document.createElement('div');
         m.className = 'JUM-ROUE-MENU';
         m.innerHTML = '<button type="button" data-action="reglages">' + ROUE_SVG + '<span><b>Réglages TRIGONE</b><small>Identité, mails, code d\'accès</small></span></button>' +
-            '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>';
+            '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>' +
+            '<div class="JUM-ROUE-SEP"></div>' +
+            '<button type="button" data-action="reinitialiser" class="JUM-ROUE-DANGER">' + CORBEILLE_SVG + '<span><b>Réinitialiser TRIGONE</b><small>Tout effacer sur cet appareil</small></span></button>';
         ['pointerdown', 'pointerup', 'click'].forEach(function(t) { m.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
         m.addEventListener('click', function(ev) {
             var b = ev.target.closest('button');
             if (!b) return;
             m.remove();
-            if (b.getAttribute('data-action') === 'reglages') window.JUMELAGE_REGLAGES(); else window.JUMELAGE_PRESENTATION();
+            var a = b.getAttribute('data-action');
+            if (a === 'reglages') window.JUMELAGE_REGLAGES();
+            else if (a === 'reinitialiser') window.JUMELAGE_REINITIALISER();
+            else window.JUMELAGE_PRESENTATION();
         });
         ecran.appendChild(m);
     };
@@ -516,12 +524,32 @@
             }
         });
     };
-    window.JUMELAGE_CODE_OUBLIE = function() {
-        if (!window.confirm('Code oublié : la seule solution est d\'effacer toutes les données de TRIGONE sur cet appareil (demandes, comptes-rendus, réglages). Continuer ?')) return;
+    // Efface toutes les données de TRIGONE sur l'appareil puis rouvre l'écran de choix, comme au premier jour.
+    function toutEffacer() {
         try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
         var fin = function() { location.replace(DANS_CR ? '../' : './'); };
-        if (window.indexedDB && indexedDB.databases) indexedDB.databases().then(function(l) { l.forEach(function(d) { if (d.name) indexedDB.deleteDatabase(d.name); }); }).then(fin, fin);
-        else fin();
+        var bases = ['trigone-mise-en-route'];
+        var supprimer = function(noms) { return Promise.all(noms.map(function(n) { return new Promise(function(ok) {
+            try { var r = indexedDB.deleteDatabase(n); r.onsuccess = r.onerror = r.onblocked = function() { ok(); }; } catch (e) { ok(); }
+        }); })); };
+        if (!window.indexedDB) { fin(); return; }
+        (indexedDB.databases ? indexedDB.databases().then(function(l) { return l.map(function(d) { return d.name; }).filter(Boolean).concat(bases); }, function() { return bases; }) : Promise.resolve(bases))
+            .then(supprimer).then(fin, fin);
+    }
+    // Avertissement avec la mascotte (message centré de l'appli), sinon confirmation du navigateur.
+    function confirmerEffacement(titre, texte, libelle) {
+        if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM(titre, texte, libelle, toutEffacer, '⚠️', 'mascotte-poubelle.webp', true);
+        else if (window.confirm(titre + '\n\n' + texte)) toutEffacer();
+    }
+    window.JUMELAGE_REINITIALISER = function() {
+        confirmerEffacement('Réinitialiser TRIGONE ?',
+            'Toutes les données de TRIGONE seront définitivement effacées de cet appareil, pour les deux applis : demandes de mise en route, bibliothèque, comptes-rendus, remboursements, médailles, réglages (identité, mails) et code d\'accès.\n\nTRIGONE redémarrera comme au premier jour. Cette action est irréversible.',
+            'Oui, tout effacer');
+    };
+    window.JUMELAGE_CODE_OUBLIE = function() {
+        confirmerEffacement('Code oublié ?',
+            'Il n\'existe aucun moyen de récupérer votre code. La seule solution est d\'effacer toutes les données de TRIGONE sur cet appareil (demandes, comptes-rendus, réglages). Cette action est irréversible.',
+            'Oui, tout effacer et recommencer');
     };
     function demanderCode() {
         if (pave || !document.body) return;

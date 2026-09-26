@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 60;
+var APP_CODE_VERSION = 61;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -505,8 +505,6 @@ function TPL_MON_ESPACE() {
         '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_REGLAGES()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>' +
             '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Réglages TRIGONE</span><span class="NOTICE-CARD-SUB">Identité, mails (1er valideur, assistant Chorus DT) et code d\'accès — communs aux deux applis</span></span>' +
             '<span class="NOTICE-CARD-CHEV">›</span></button>' +
-        '<div class="MER-SECTION-TITLE">Application</div>' +
-        '<button type="button" class="BTN BTN-GHOST" onclick="PROPOSER_INSTALLATION(true)">📲 Installer l\'application</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 
