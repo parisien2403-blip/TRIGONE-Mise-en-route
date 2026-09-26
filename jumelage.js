@@ -105,7 +105,13 @@
         '.JUM-CHORUS:hover { transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 18px 46px rgba(0,0,0,0.4), 0 0 0 8px rgba(214,167,86,0.22); }' +
         '.JUM-CHOIX.choix-chorus .JUM-CHORUS { transform: translate(-50%, -50%) scale(1.12); }' +
         '.JUM-CHORUS-NB { position: absolute; top: 2%; right: 2%; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.75rem/24px Montserrat, system-ui, sans-serif; box-shadow: 0 4px 10px rgba(185,28,28,0.4); }' +
-        '.JUM-R-CASE { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; cursor: pointer; margin: 4px 0 8px; } .JUM-R-CASE input { width: 18px; height: 18px; }' +
+        '.JUM-R-CASE { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; cursor: pointer; margin: 4px 0 8px; } .JUM-R-CASE input { width: 18px; height: 18px; flex-shrink: 0; }' +
+        '.JUM-CR-FICHIER { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 6px 0; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.82rem; }' +
+        '.JUM-CR-FICHIER b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .JUM-CR-FICHIER small { color: #64748b; white-space: nowrap; }' +
+        '.JUM-CR-RETIRER { border: 0; background: none; color: #b91c1c; font-size: 0.9rem; cursor: pointer; padding: 2px 4px; }' +
+        '.JUM-CR-AJOUT { display: block; text-align: center; margin: 10px 0 0; cursor: pointer; }' +
+        'html body.dark-mode .JUM-CR-FICHIER { border-color: rgba(255,255,255,0.1); } html body.dark-mode .JUM-CR-FICHIER small { color: #a3a3a3; }' +
+        '.JUM-R-ACTIF { font-style: normal; font-size: 0.72rem; font-weight: 800; color: #15803d; background: rgba(21,128,61,0.1); border-radius: 999px; padding: 2px 8px; margin-left: 4px; white-space: nowrap; }' +
         '.JUM-BOITE-PASTILLE { display: inline-block; margin-top: 12px; padding: 6px 13px; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.72rem Montserrat, system-ui, sans-serif; letter-spacing: 0.02em; box-shadow: 0 4px 12px rgba(185,28,28,0.3); animation: jum-pulse 2s ease-in-out infinite; }' +
         '@keyframes jum-pulse { 50% { transform: scale(1.06); } }' +
         '.JUM-PAN-CR .JUM-SOUS { color: #d6a756; }' +
@@ -265,42 +271,7 @@
         'html body.dark-mode .JUM-PRES-GARANTIES div { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); color: #d4d4d4; }' +
         'html body.dark-mode .JUM-PRES-GARANTIES svg { stroke: #a9c3d6; }' +
         'html body.dark-mode .JUM-PRES-BTN { background: #ececec; color: #141414; } html body.dark-mode .JUM-PRES-BTN:hover { background: #fff; }' +
-        /* Fenêtre du QR code en mode sombre (le QR garde son cadre blanc, indispensable à la lecture) */
-        'html body.dark-mode .JUM-QR-CARTE { background: #1f1f1f; color: #ececec; }' +
-        'html body.dark-mode .JUM-QR-TETE p, html body.dark-mode .JUM-QR-ETAPES { color: #a3a3a3; } html body.dark-mode .JUM-QR-ETAPES b { color: #ececec; }' +
-        'html body.dark-mode .JUM-QR-TEL { background: rgba(169,195,214,0.12); } html body.dark-mode .JUM-QR-TEL svg, html body.dark-mode .JUM-QR-NOTE svg { stroke: #a9c3d6; }' +
-        'html body.dark-mode .JUM-QR-ACTIONS button, html body.dark-mode .JUM-QR-CHOIX button { background: #262626; border-color: rgba(255,255,255,0.1); color: #ececec; }' +
-        'html body.dark-mode .JUM-QR-ACTIONS button:hover { background: #2e2e2e; } html body.dark-mode .JUM-QR-CHOIX button.actif { background: #ececec; color: #141414; border-color: #ececec; }' +
-        'html body.dark-mode .JUM-QR-NOTE { background: #262626; color: #a3a3a3; } html body.dark-mode .JUM-QR-CADRE { border-color: transparent; }' +
         'html body.dark-mode .JUM-R-X { background: #262626; color: #d4d4d4; border-color: rgba(255,255,255,0.1); }' +
-        /* QR code Mise en route → Compte-rendu, et scanner */
-        '.JUM-QR { position: fixed; inset: 0; z-index: 99990; background: rgba(15,15,15,0.72); display: flex; align-items: center; justify-content: center; padding: 16px; font-family: Montserrat, system-ui, sans-serif; }' +
-        '.JUM-QR-CARTE { position: relative; background: #fff; color: #1a1a1a; border-radius: 20px; width: 100%; max-width: 440px; max-height: 100%; overflow-y: auto; padding: 22px 22px 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.4); }' +
-        '.JUM-QR-CARTE .JUM-R-X { position: absolute; top: 14px; right: 14px; }' +
-        '.JUM-QR-TETE { display: flex; gap: 12px; align-items: center; padding-right: 36px; }' +
-        '.JUM-QR-TETE h2 { margin: 0; font-size: 1.05rem; } .JUM-QR-TETE p { margin: 3px 0 0; font-size: 0.78rem; color: #64748b; line-height: 1.4; }' +
-        '.JUM-QR-TEL { width: 44px; height: 44px; flex-shrink: 0; border-radius: 12px; background: #E8F0F6; display: flex; align-items: center; justify-content: center; }' +
-        '.JUM-QR-TEL svg, .JUM-QR-NOTE svg { width: 22px; height: 22px; fill: none; stroke: #5a7a94; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
-        '.JUM-QR-CHOIX { display: flex; flex-wrap: wrap; gap: 6px; margin: 14px 0 0; }' +
-        '.JUM-QR-CHOIX button { border: 1px solid #e2e8f0; background: #fff; border-radius: 999px; padding: 6px 12px; font: 700 0.72rem Montserrat, system-ui, sans-serif; color: #475569; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
-        '.JUM-QR-CHOIX button.actif { background: #1a1a1a; border-color: #1a1a1a; color: #fff; }' +
-        '.JUM-QR-CADRE { margin: 16px auto 12px; width: min(300px, 100%); aspect-ratio: 1; padding: 14px; border-radius: 16px; border: 1px solid #e8e8e8; background: #fff; }' +
-        '.JUM-QR-CODE, .JUM-QR-CODE canvas, .JUM-QR-CODE img { width: 100% !important; height: 100% !important; display: block; image-rendering: pixelated; }' +
-        '.JUM-QR-ACTIONS { display: flex; gap: 8px; justify-content: center; margin: 0 0 14px; flex-wrap: wrap; }' +
-        '.JUM-QR-ACTIONS button { border: 1px solid #e2e8f0; background: #fff; border-radius: 12px; padding: 10px 14px; font: 700 0.76rem Montserrat, system-ui, sans-serif; color: #1a1a1a; cursor: pointer; }' +
-        '.JUM-QR-ACTIONS button:hover { background: #f1f5f9; } .JUM-QR-ACTIONS .HIDDEN-JUM { display: none; }' +
-        '.JUM-SCAN-PHOTO { position: absolute; left: 50%; bottom: calc(max(30px, env(safe-area-inset-bottom, 0px)) + 62px); transform: translateX(-50%); border: 1.5px solid rgba(255,255,255,0.7); border-radius: 14px; padding: 12px 22px; background: rgba(0,0,0,0.35); color: #fff; font: 700 0.8rem Montserrat, system-ui, sans-serif; cursor: pointer; white-space: nowrap; }' +
-        '.JUM-QR-ETAPES { margin: 0; padding: 0 0 0 20px; font-size: 0.8rem; line-height: 1.5; color: #404040; } .JUM-QR-ETAPES li { margin: 3px 0; }' +
-        '.JUM-QR-NOTE { display: flex; gap: 8px; align-items: center; margin: 12px 0 0; padding: 10px 12px; border-radius: 12px; background: #F8FBFD; font-size: 0.72rem; color: #525252; }' +
-        '.JUM-QR-NOTE svg { width: 18px; height: 18px; flex-shrink: 0; }' +
-        '.JUM-SCAN { position: fixed; inset: 0; z-index: 99997; background: #000; font-family: Montserrat, system-ui, sans-serif; }' +
-        '.JUM-SCAN video { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }' +
-        '.JUM-SCAN-VISEUR { position: absolute; left: 50%; top: 45%; width: min(70vw, 300px); aspect-ratio: 1; transform: translate(-50%, -50%); border-radius: 22px; box-shadow: 0 0 0 100vmax rgba(0,0,0,0.55); }' +
-        '.JUM-SCAN-VISEUR span { position: absolute; inset: 0; border-radius: 22px; border: 3px solid #fff; }' +
-        '.JUM-SCAN-VISEUR span::after { content: ""; position: absolute; left: 10%; right: 10%; height: 2px; top: 50%; background: #7a9db5; box-shadow: 0 0 12px #7a9db5; animation: jum-scan 2s ease-in-out infinite; }' +
-        '@keyframes jum-scan { 0%, 100% { transform: translateY(-110px); } 50% { transform: translateY(110px); } }' +
-        '.JUM-SCAN-TEXTE { position: absolute; left: 16px; right: 16px; top: max(28px, env(safe-area-inset-top, 0px)); text-align: center; color: #fff; font-size: 0.9rem; line-height: 1.45; }' +
-        '.JUM-SCAN-ANNULER { position: absolute; left: 50%; bottom: max(30px, env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); border: 0; border-radius: 14px; padding: 14px 40px; background: #fff; color: #1a1a1a; font: 800 0.8rem Montserrat, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }' +
         /* Présentation TRIGONE */
         '.JUM-PRES { position: fixed; inset: 0; z-index: 99992; background: linear-gradient(165deg, #F8FBFD 0%, #E8F0F6 100%); color: #1a1a1a;' +
             ' font-family: Montserrat, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; opacity: 0; transition: opacity 0.38s ease; }' +
@@ -440,7 +411,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 48, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 49, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -513,7 +484,6 @@
         return false;
     };
     var ecran = null;
-    var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     // Bouton clair / sombre : symboles au trait, comme les autres icônes de TRIGONE (lune en clair, soleil en sombre).
     var LUNE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></svg>';
     var SOLEIL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>';
@@ -665,10 +635,14 @@
                 '<div class="JUM-R-GRILLE">' + champ('CODE1', codeDefini() ? 'Nouveau code' : 'Code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') +
                     champ('CODE2', 'Confirmer le code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') + '</div>' +
                 (codeDefini() ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_SUPPRIMER_CODE()">Supprimer le code d\'accès</button>' : '') +
-                '<div class="JUM-R-TITRE">Rôle particulier</div>' +
-                '<label class="JUM-R-CASE"><input type="checkbox" id="JUM-R-CHORUS"' + (roleChorus() ? ' checked' : '') + '><span>Je suis l\'<b>assistant Chorus DT</b></span></label>' +
-                '<div id="JUM-R-CHORUS-CODE" style="display:none;">' + champ('CODECHORUS', 'Code Assistant Chorus DT', '', 'type="password" autocomplete="off" placeholder="Code remis par l\'administrateur"') + '</div>' +
-                '<p class="JUM-R-AIDE" style="margin-top:6px;">' + (roleChorus() ? '✓ Rôle actif : votre espace Assistant Chorus DT est au centre de l\'écran de choix.' : 'Réservé à l\'assistant Chorus DT : un code est demandé. Son espace apparaît alors au centre de l\'écran de choix.') + '</p>' +
+                // Mes rôles : chacun est missionnaire ; valideurs et assistant Chorus DT cochent en plus leur rôle, avec son code.
+                '<div class="JUM-R-TITRE">Mes rôles</div>' +
+                '<p class="JUM-R-AIDE">Vous êtes missionnaire. Si l\'un de ces rôles vous a été confié, cochez-le : son code, remis par l\'administrateur, vous est demandé une seule fois.</p>' +
+                caseRole('VAL1', 'valideur1', 'Je suis <b>1er valideur</b> (chef de service)', 'Code d\'accès 1er valideur') +
+                caseRole('VAL2', 'valideur2', 'Je suis <b>2e valideur</b>', 'Code d\'accès 2e valideur') +
+                '<div id="JUM-R-FONCTION-BLOC" style="display:none;">' + champ('FONCTION', 'Ma fonction de valideur', (lireJSON('mer_valideur') || {}).fonction || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE SERVICE"') + '</div>' +
+                caseRole('CHORUS', 'chorus', 'Je suis <b>assistant Chorus DT</b>', 'Code Assistant Chorus DT') +
+                '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>' +
                 '<p class="JUM-R-ERREUR" id="JUM-R-ERREUR"></p>' +
             '</div>' +
             '<div class="JUM-R-PIED">' +
@@ -679,12 +653,87 @@
         document.body.appendChild(reglages);
         var m = document.getElementById('JUM-R-MATRICULE');
         m.addEventListener('input', function() { m.value = formatMatricule(m.value); });
-        var caseChorus = document.getElementById('JUM-R-CHORUS');
-        caseChorus.addEventListener('change', function() {
-            document.getElementById('JUM-R-CHORUS-CODE').style.display = caseChorus.checked && !roleChorus() ? '' : 'none';
-            if (caseChorus.checked && !roleChorus()) document.getElementById('JUM-R-CODECHORUS').focus();
+        ['VAL1', 'VAL2', 'CHORUS'].forEach(function(id) {
+            var c = document.getElementById('JUM-R-' + id);
+            c.addEventListener('change', function() { majCasesRoles(c.checked && !roleActif(c.getAttribute('data-role')) ? id : null); });
         });
+        majCasesRoles(null);
     };
+    // Rôles : case cochée pas encore active → champ du code ; valideur → fonction (reprise dans ses signatures).
+    function roleActif(role) { return role === 'chorus' ? roleChorus() : !!(lireJSON(CLE_ROLES_LOCAUX) || {})[role]; }
+    function caseRole(id, role, libelle, libelleCode) {
+        var actif = roleActif(role);
+        return '<label class="JUM-R-CASE"><input type="checkbox" id="JUM-R-' + id + '" data-role="' + role + '"' + (actif ? ' checked' : '') + '><span>' + libelle +
+            (actif ? ' <em class="JUM-R-ACTIF">✓ actif</em>' : '') + '</span></label>' +
+            '<div id="JUM-R-' + id + '-CODE" style="display:none;"><div class="JUM-R-CHAMP"><label for="JUM-R-CODE' + id + '">' + libelleCode + '</label>' +
+            '<input id="JUM-R-CODE' + id + '" type="password" autocomplete="off" placeholder="Code remis par l\'administrateur"></div></div>';
+    }
+    function majCasesRoles(focus) {
+        var val = false;
+        ['VAL1', 'VAL2', 'CHORUS'].forEach(function(id) {
+            var c = document.getElementById('JUM-R-' + id); if (!c) return;
+            document.getElementById('JUM-R-' + id + '-CODE').style.display = c.checked && !roleActif(c.getAttribute('data-role')) ? '' : 'none';
+            if (id !== 'CHORUS' && c.checked) val = true;
+        });
+        var f = document.getElementById('JUM-R-FONCTION-BLOC'); if (f) f.style.display = val ? '' : 'none';
+        if (focus) document.getElementById('JUM-R-CODE' + focus).focus();
+    }
+    // Codes valideurs : le code déchiffre la clé de signature de son rôle, publiée chiffrée dans valideurs.json (comme
+    // à la connexion de l'Espace valideur). La clé déverrouillée est mémorisée pour Mise en route (même base IndexedDB).
+    function listeValideurs() {
+        return fetch(APPLIS.mer.url + 'valideurs.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) {
+            if (!r.ok) throw new Error('liste'); return r.json();
+        }).then(function(l) { ecrireTxt('mer_liste_valideurs', JSON.stringify(l)); return l; }).catch(function() {
+            var l = lireJSON('mer_liste_valideurs'); if (l) return l;
+            return (window.caches ? caches.match(APPLIS.mer.url + 'valideurs.json', { ignoreSearch: true }) : Promise.resolve(null))
+                .then(function(r) { return r ? r.json() : { valideurs: [] }; }).catch(function() { return { valideurs: [] }; });
+        });
+    }
+    function baseMer() {
+        return new Promise(function(ok, ko) {
+            var r = indexedDB.open('trigone-mise-en-route', 2);
+            r.onupgradeneeded = function() {
+                var noms = r.result.objectStoreNames;
+                if (!noms.contains('pieces')) r.result.createObjectStore('pieces');
+                if (!noms.contains('acces')) r.result.createObjectStore('acces');
+            };
+            r.onsuccess = function() { ok(r.result); }; r.onerror = function() { ko(r.error); };
+        });
+    }
+    function accesValideur(action, valeur) {
+        return baseMer().then(function(db) { return new Promise(function(ok, ko) {
+            var tx = db.transaction('acces', action === 'lire' ? 'readonly' : 'readwrite'), st = tx.objectStore('acces');
+            var r = action === 'lire' ? st.get('valideur') : action === 'effacer' ? st.delete('valideur') : st.put(valeur, 'valideur');
+            tx.oncomplete = function() { db.close(); ok(action === 'lire' ? (r.result || null) : null); };
+            tx.onerror = function() { db.close(); ko(tx.error); };
+        }); });
+    }
+    function verifierCodeValideur(code, niveau) {
+        var octets = function(t) { return new TextEncoder().encode(t); };
+        return listeValideurs().then(function(liste) {
+            var acces = (liste.valideurs || []).filter(function(a) { return a.role === niveau && a.prive && !a.retire; });
+            return acces.reduce(function(prec, a) {
+                return prec.catch(function() {
+                    return crypto.subtle.importKey('raw', octets(code), 'PBKDF2', false, ['deriveKey']).then(function(base) {
+                        return crypto.subtle.deriveKey({ name: 'PBKDF2', salt: depuisB64(a.sel), iterations: 250000, hash: 'SHA-256' },
+                            base, { name: 'AES-GCM', length: 256 }, false, ['decrypt']);
+                    }).then(function(k) {
+                        return crypto.subtle.decrypt({ name: 'AES-GCM', iv: depuisB64(a.iv) }, k, depuisB64(a.prive));
+                    }).then(function(pkcs8) {
+                        return crypto.subtle.importKey('pkcs8', pkcs8, { name: 'ECDSA', namedCurve: 'P-256' }, false, ['sign']);
+                    }).then(function(k) { return { cle: k, pub: a.cle }; });
+                });
+            }, Promise.reject(new Error('code')));
+        }).catch(function() { throw 'Code d\'accès ' + (niveau === 1 ? '1er' : '2e') + ' valideur incorrect.'; });
+    }
+    // Rôle valideur retiré : sa clé mémorisée est oubliée (si c'est bien celle de ce rôle).
+    function oublierAccesValideur(niveau) {
+        return Promise.all([accesValideur('lire'), listeValideurs()]).then(function(r) {
+            var m = r[0]; if (!m) return;
+            var a = (r[1].valideurs || []).filter(function(x) { return x.cle === m.pub; })[0];
+            if (!a || a.role === niveau) return accesValideur('effacer');
+        }).catch(function() {});
+    }
     window.JUMELAGE_FERMER_REGLAGES = function() { if (reglages) { reglages.remove(); reglages = null; } };
     window.JUMELAGE_PASSER_REGLAGES = function() {
         ecrireTxt('mer_config_faite', '1'); ecrireTxt('trigone_premier_lancement_fait', '1');
@@ -713,20 +762,45 @@
             if (!/^\d{4}$/.test(c1)) return refuser('Le code doit contenir exactement 4 chiffres.');
             if (c1 !== c2) return refuser('Les deux codes ne correspondent pas.');
         }
-        // Rôle Assistant Chorus DT : vérifié avec le code avant tout enregistrement.
-        var veutChorus = document.getElementById('JUM-R-CHORUS').checked, codeChorus = v('CODECHORUS');
-        var etapeRole = !veutChorus || roleChorus() ? Promise.resolve() : !codeChorus ? Promise.reject('Saisissez le code Assistant Chorus DT, ou décochez la case.')
-            : empreinteCodeChorus(codeChorus).then(function(h) { if (h !== EMPREINTE_CODE_CHORUS) throw 'Code Assistant Chorus DT incorrect.'; });
+        // Rôles : chaque rôle nouvellement coché est vérifié avec son code avant tout enregistrement.
+        var roles = ['VAL1', 'VAL2', 'CHORUS'].map(function(id) {
+            var c = document.getElementById('JUM-R-' + id), role = c.getAttribute('data-role');
+            return { id: id, role: role, niveau: id === 'VAL1' ? 1 : id === 'VAL2' ? 2 : 0, veut: c.checked, actif: roleActif(role), code: v('CODE' + id) };
+        });
+        var fonction = v('FONCTION').toUpperCase();
+        var nouveaux = roles.filter(function(x) { return x.veut && !x.actif; });
+        var sansCode = nouveaux.filter(function(x) { return !x.code; })[0];
+        if (sansCode) return refuser('Saisissez le code de votre rôle (' + { VAL1: '1er valideur', VAL2: '2e valideur', CHORUS: 'assistant Chorus DT' }[sansCode.id] + '), ou décochez la case.');
+        if (roles.some(function(x) { return x.niveau && x.veut; }) && !fonction) return refuser('Indiquez votre fonction de valideur (ex : CHEF DE SERVICE).');
+        if (roles.some(function(x) { return x.niveau && x.veut; }) && (!r.grade || !r.nom || !r.prenom)) return refuser('Un valideur signe avec son grade, son nom et son prénom : renseignez-les.');
+        var acces = null;
+        var etapeRole = nouveaux.reduce(function(prec, x) {
+            return prec.then(function() {
+                if (x.niveau) return verifierCodeValideur(x.code, x.niveau).then(function(a) { acces = a; });
+                return empreinteCodeChorus(x.code).then(function(h) { if (h !== EMPREINTE_CODE_CHORUS) throw 'Code Assistant Chorus DT incorrect.'; });
+            });
+        }, Promise.resolve());
         etapeRole.then(function() {
-        var roleAvant = roleChorus();
+        var roleAvant = roleChorus(), veutChorus = roles[2].veut;
         try { if (veutChorus) localStorage.setItem(CLE_ROLE_CHORUS, '1'); else localStorage.removeItem(CLE_ROLE_CHORUS); } catch (e) {}
-        if (roleAvant !== veutChorus && window.JUMELAGE_DECLARER_ROLE) window.JUMELAGE_DECLARER_ROLE('chorus', veutChorus);
+        var changes = roles.filter(function(x) { return x.veut !== x.actif; });
+        changes.forEach(function(x) { window.JUMELAGE_DECLARER_ROLE(x.role, x.veut); });
+        // Valideur : identité de signature (Espace valideur de Mise en route) et clé déverrouillée.
+        if (roles.some(function(x) { return x.niveau && x.veut; })) {
+            var val = lireJSON('mer_valideur') || {};
+            val.grade = r.grade; val.nom = r.nom; val.prenom = r.prenom; val.fonction = fonction;
+            ecrireTxt('mer_valideur', JSON.stringify(val));
+        }
+        var etapeAcces = acces ? accesValideur('ecrire', acces).catch(function() {}) : Promise.resolve();
+        roles.forEach(function(x) { if (x.niveau && x.actif && !x.veut) etapeAcces = etapeAcces.then(function() { return oublierAccesValideur(x.niveau); }); });
         ecrireReglages(r);
-        (c1 ? poserCode(c1) : Promise.resolve()).then(function() {
+        Promise.all([c1 ? poserCode(c1) : Promise.resolve(), etapeAcces]).then(function() {
             window.JUMELAGE_FERMER_REGLAGES();
             if (roleAvant !== veutChorus && ecran) { ecran.remove(); ecran = null; window.JUMELAGE_CHOIX(); }
-            bandeau(!roleAvant && veutChorus ? 'Rôle Assistant Chorus DT activé : votre espace est au centre de l\'écran de choix.' :
+            var actives = changes.filter(function(x) { return x.veut; }).map(function(x) { return { VAL1: '1er valideur', VAL2: '2e valideur', CHORUS: 'assistant Chorus DT' }[x.id]; });
+            bandeau(actives.length ? 'Rôle ' + actives.join(' et ') + ' activé' + (roles[2].veut && !roles[2].actif ? ' : votre espace Assistant Chorus DT est au centre de l\'écran de choix.' : ' : votre boîte TRIGONE reçoit les demandes à signer.') :
                 premiere ? 'C\'est prêt : vos informations pré-rempliront Mise en route et Compte-rendu.' : 'Réglages enregistrés.');
+            if (changes.length && window.JUMELAGE_ROLES_CHANGES) try { window.JUMELAGE_ROLES_CHANGES(); } catch (e) {}
             if (window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
         });
         }, function(message) { refuser(message); });
@@ -1014,7 +1088,7 @@
     };
     window.JUMELAGE_COMPTE_MAIL = function() { var c = monCompte(); return c ? c.mail : ''; };
     // Envoi direct : chiffré pour tous les appareils du destinataire. Rejette avec e.pasDeCompte si le destinataire
-    // n'a pas encore de compte TRIGONE (l'appli propose alors le mail).
+    // n'a pas encore de compte TRIGONE (l'envoi est alors bloqué : il doit d'abord activer son compte).
     window.JUMELAGE_ENVOYER_DIRECT = function(destinataire, type, nom, texte) {
         if (!monCompte()) return Promise.reject(Object.assign(new Error('Activez d\'abord votre compte TRIGONE.'), { sansCompte: true }));
         if (!navigator.onLine) return Promise.reject(new Error('Pas de connexion : l\'envoi direct demande du réseau.'));
@@ -1025,6 +1099,98 @@
             return chiffrerPour(r.appareils, JSON.stringify({ nom: nom, contenu: texte }));
         }).then(function(ch) {
             return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, enveloppes: ch.enveloppes, donnees: ch.donnees } });
+        });
+    };
+    // Compte-rendu de fin de mission → boîte TRIGONE de l'assistant Chorus DT : le PDF du compte-rendu (produit par
+    // Compte-rendu) et les justificatifs choisis ici (billets, factures : PDF ou photos, réduites avant l'envoi).
+    var TAILLE_MAX_CR = 12 * 1024 * 1024, fenCr = null;
+    function tailleLisible(o) { return o < 1024 * 1024 ? Math.max(1, Math.round(o / 1024)) + ' Ko' : (o / 1024 / 1024).toFixed(1).replace('.', ',') + ' Mo'; }
+    function blobB64(b) { return b.arrayBuffer().then(versB64); }
+    // Photo : au plus 2000 px de côté, en JPEG ; un justificatif reste lisible et l'envoi reste léger.
+    function reduirePhoto(f) {
+        if (!/^image\//.test(f.type) || !window.createImageBitmap || f.size < 400 * 1024) return Promise.resolve(f);
+        return createImageBitmap(f).then(function(img) {
+            var k = Math.min(1, 2000 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+            c.width = Math.round(img.width * k); c.height = Math.round(img.height * k);
+            c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+            return new Promise(function(ok) { c.toBlob(function(b) { ok(b && b.size < f.size ? new File([b], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }) : f); }, 'image/jpeg', 0.82); });
+        }).catch(function() { return f; });
+    }
+    window.JUMELAGE_FERMER_ENVOI_CR = function() { if (fenCr) { fenCr.remove(); fenCr = null; } };
+    // o : { destinataire, missionnaire, libelle, dates, corps, pieces (justificatifs déclarés), pdf() → Promise<{ nom, blob }>, succes() }
+    window.JUMELAGE_ENVOYER_CR = function(o) {
+        if (fenCr || !document.body) return;
+        var compte = monCompte(), choisis = [];
+        fenCr = document.createElement('div');
+        fenCr.className = 'JUM-REGLAGES';
+        fenCr.setAttribute('role', 'dialog');
+        var tete = '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('mail') : '') + '</span><div><h2>Envoyer le compte-rendu</h2>' +
+            '<p>Chiffré, il arrive dans le TRIGONE de l\'assistant Chorus DT' + (o.destinataire ? ' (' + esc(o.destinataire) + ')' : '') + '. Seul lui peut le lire.</p></div>' +
+            '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_ENVOI_CR()">✕</button></div>';
+        if (!compte || !o.destinataire) {
+            fenCr.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS"><p class="JUM-R-AIDE" style="margin-top:14px;">' +
+                (!compte ? 'Pour envoyer votre compte-rendu, activez d\'abord votre <b>compte TRIGONE</b> (votre adresse mail, vérifiée par un code) : une seule fois, sur cet appareil.'
+                    : 'Renseignez d\'abord le <b>mail de l\'assistant Chorus DT</b> dans les Réglages TRIGONE (roue crantée de l\'écran de choix).') + '</p></div>' +
+                '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_ENVOI_CR()">Fermer</button>' +
+                '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-CR-ALLER">' + (!compte ? 'Activer mon compte TRIGONE' : 'Ouvrir les réglages') + '</button></div></div>';
+            document.body.appendChild(fenCr);
+            fenCr.querySelector('#JUM-CR-ALLER').addEventListener('click', function() { window.JUMELAGE_FERMER_ENVOI_CR(); if (!compte) window.JUMELAGE_COMPTE(); else window.JUMELAGE_REGLAGES(); });
+            return;
+        }
+        var pieces = (o.pieces || []).filter(Boolean);
+        fenCr.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS">' +
+            '<div class="JUM-R-TITRE">Compte-rendu</div>' +
+            '<div class="JUM-CR-FICHIER"><span>📄</span><b>Compte-rendu PDF</b><small>joint automatiquement</small></div>' +
+            '<div class="JUM-R-TITRE">Justificatifs</div>' +
+            (pieces.length ? '<p class="JUM-R-AIDE">Joignez les pièces déclarées : ' + pieces.map(esc).join(', ') + '.</p>' : '<p class="JUM-R-AIDE">Aucun justificatif déclaré pour ce compte-rendu.</p>') +
+            '<div id="JUM-CR-LISTE"></div>' +
+            '<label class="JUM-R-SECOND JUM-CR-AJOUT">📎 Ajouter des justificatifs (PDF ou photos)<input type="file" id="JUM-CR-FICHIERS" multiple accept="application/pdf,.pdf,image/*" style="display:none;"></label>' +
+            '<p class="JUM-R-AIDE" id="JUM-CR-TAILLE" style="margin-top:6px;"></p>' +
+            '<p class="JUM-R-ERREUR" id="JUM-CR-ERR"></p></div>' +
+            '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_ENVOI_CR()">Annuler</button>' +
+            '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-CR-ENVOYER">Envoyer</button></div></div>';
+        document.body.appendChild(fenCr);
+        var f = fenCr, err = f.querySelector('#JUM-CR-ERR'), btn = f.querySelector('#JUM-CR-ENVOYER');
+        function total() { return choisis.reduce(function(t, x) { return t + x.size; }, 0); }
+        function dessiner() {
+            f.querySelector('#JUM-CR-LISTE').innerHTML = choisis.map(function(x, i) {
+                return '<div class="JUM-CR-FICHIER"><span>' + (/^image\//.test(x.type) ? '🖼️' : '📎') + '</span><b>' + esc(x.name) + '</b><small>' + tailleLisible(x.size) + '</small>' +
+                    '<button type="button" class="JUM-CR-RETIRER" data-i="' + i + '" aria-label="Retirer">✕</button></div>';
+            }).join('');
+            f.querySelector('#JUM-CR-TAILLE').textContent = choisis.length ? choisis.length + ' justificatif(s) — ' + tailleLisible(total()) + ' (' + tailleLisible(TAILLE_MAX_CR) + ' au plus)' : '';
+        }
+        f.querySelector('#JUM-CR-LISTE').addEventListener('click', function(ev) {
+            var b = ev.target.closest('.JUM-CR-RETIRER'); if (!b) return;
+            choisis.splice(+b.getAttribute('data-i'), 1); dessiner();
+        });
+        f.querySelector('#JUM-CR-FICHIERS').addEventListener('change', function(ev) {
+            var liste = Array.prototype.slice.call(ev.target.files || []); ev.target.value = '';
+            err.textContent = '';
+            Promise.all(liste.map(reduirePhoto)).then(function(r) {
+                r.forEach(function(x) { if (!choisis.some(function(y) { return y.name === x.name && y.size === x.size; })) choisis.push(x); });
+                dessiner();
+                if (total() > TAILLE_MAX_CR) err.textContent = '⛔ Trop volumineux : retirez un fichier (' + tailleLisible(TAILLE_MAX_CR) + ' au plus).';
+            });
+        });
+        btn.addEventListener('click', function() {
+            if (total() > TAILLE_MAX_CR) { err.textContent = '⛔ Trop volumineux : retirez un fichier (' + tailleLisible(TAILLE_MAX_CR) + ' au plus).'; return; }
+            if (!navigator.onLine) { err.textContent = '⛔ Pas de connexion : l\'envoi se fait dès que vous avez du réseau.'; return; }
+            btn.disabled = true; btn.textContent = 'Envoi en cours…'; err.textContent = '';
+            Promise.resolve().then(o.pdf).then(function(pdf) {
+                if (!pdf || !pdf.blob) throw new Error('Le PDF du compte-rendu n\'a pas pu être produit : réessayez.');
+                return Promise.all([blobB64(pdf.blob)].concat(choisis.map(blobB64))).then(function(b64) {
+                    var fichiers = [{ nom: pdf.nom, type: 'application/pdf', b64: b64[0] }].concat(choisis.map(function(x, i) { return { nom: x.name, type: x.type || 'application/octet-stream', b64: b64[i + 1] }; }));
+                    var contenu = JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: o.missionnaire || '', libelle: o.libelle || '', dates: o.dates || '',
+                        corps: o.corps || '', de: compte.mail, envoyeLe: new Date().toISOString(), fichiers: fichiers });
+                    return window.JUMELAGE_ENVOYER_DIRECT(o.destinataire, 'CR', pdf.nom, contenu);
+                });
+            }).then(function() {
+                window.JUMELAGE_FERMER_ENVOI_CR();
+                if (o.succes) o.succes();
+            }).catch(function(e) {
+                btn.disabled = false; btn.textContent = 'Envoyer';
+                err.textContent = '⛔ ' + (e.pasDeCompte ? o.destinataire + ' n\'a pas encore de compte TRIGONE : demandez-lui de l\'activer (roue crantée › Compte TRIGONE), puis renvoyez votre compte-rendu.' : (e.message || String(e)));
+            });
         });
     };
     // ---------- Boîte de réception (sur l'appareil) ----------
@@ -1040,7 +1206,11 @@
     // Nature d'un envoi, d'après son contenu : à signer (1er ou 2e niveau), pour l'assistant Chorus DT, ou refus.
     function resumeEnvoi(texte) {
         try {
-            var d = JSON.parse(texte), ds = d.demandes || [], p0 = ((ds[0] || {}).personnes || [])[0] || {};
+            var d = JSON.parse(texte);
+            // Compte-rendu de fin de mission (Compte-rendu → assistant Chorus DT).
+            if (d.app === 'TRIGONE-CR') return { nature: 'cr', n: 1, ids: [], noms: d.missionnaire || '', objet: d.libelle || 'Compte-rendu de mission',
+                dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length };
+            var ds = d.demandes || [], p0 = ((ds[0] || {}).personnes || [])[0] || {};
             var nature = ds.some(function(x) { return x.refus; }) ? 'refus'
                 : ds.length && ds.every(function(x) { return (x.validations || []).length >= 2; }) ? 'chorus'
                 : ds.some(function(x) { return (x.validations || []).length === 1; }) ? 'niveau2' : 'niveau1';
@@ -1055,7 +1225,7 @@
     window.JUMELAGE_BOITE_LISTE = function() { return boiteLire(); };
     // filtre : 'chorus' (envois pour l'assistant Chorus DT), 'autres' (tout le reste), sinon tout.
     window.JUMELAGE_BOITE_NB = function(filtre) {
-        return boiteLire().filter(function(x) { return x.statut !== 'traite' && (filtre === 'chorus' ? x.nature === 'chorus' : filtre === 'autres' ? x.nature !== 'chorus' : true); }).length;
+        return boiteLire().filter(function(x) { var c = x.nature === 'chorus' || x.nature === 'cr'; return x.statut !== 'traite' && (filtre === 'chorus' ? c : filtre === 'autres' ? !c : true); }).length;
     };
     window.JUMELAGE_BOITE_FICHIER = function(id) {
         var x = boiteLire().filter(function(e) { return e.id === id; })[0];
@@ -1110,8 +1280,8 @@
                         return dechiffrer(x.enveloppe, x.donnees).then(function(clair) {
                             var o = JSON.parse(clair), info = resumeEnvoi(o.contenu);
                             // Contenu conforme au type annoncé (demande → non signée, 1er valideur → 1 signature,
-                            // Chorus → 2 signatures, refus → refus) ; sinon l'envoi est écarté.
-                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus' }[x.type];
+                            // Chorus → 2 signatures, refus → refus, CR → compte-rendu) ; sinon l'envoi est écarté.
+                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus', CR: 'cr' }[x.type];
                             if (attendu && info.nature !== attendu) { ecartes++; return appelApi('boite/' + e.id, { methode: 'DELETE' }); }
                             return caches.open(CACHE_BOITE).then(function(c) {
                                 return c.put('__boite__/' + e.id, new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));
@@ -1131,6 +1301,7 @@
             if (ecartes) bandeau(ecartes + ' envoi(s) non conforme(s) écarté(s) de votre boîte de réception.');
             if (nouveaux.length) {
                 if (typeof window.JUMELAGE_APRES_RELEVE === 'function') { try { window.JUMELAGE_APRES_RELEVE(nouveaux); } catch (e) {} }
+                else if (roleChorus() && nouveaux.every(function(x) { return x.nature === 'chorus' || x.nature === 'cr'; })) bandeau((nouveaux.length > 1 ? nouveaux.length + ' envois reçus' : 'Envoi reçu') + ' : ouvrez l\'espace Assistant Chorus DT (écran de choix).');
                 else bandeau(nouveaux.length > 1 ? nouveaux.length + ' demandes reçues : ouvrez Mise en route › Boîte de réception.' : 'Demande reçue : ouvrez Mise en route › Boîte de réception.');
             }
             return nouveaux.length;
@@ -1155,7 +1326,7 @@
         fenCompte.className = 'JUM-REGLAGES';
         fenCompte.setAttribute('role', 'dialog');
         var tete = '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('mail') : '') + '</span><div><h2>Compte TRIGONE</h2>' +
-            '<p>Pour envoyer et recevoir les demandes directement dans TRIGONE, sans pièce jointe. Tout est chiffré : seul le destinataire peut les lire.</p></div>' +
+            '<p>Pour envoyer et recevoir demandes et comptes-rendus directement dans TRIGONE. Tout est chiffré : seul le destinataire peut les lire.</p></div>' +
             '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_COMPTE()">✕</button></div>';
         if (c) {
             fenCompte.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS">' +
@@ -1165,7 +1336,7 @@
                 '<div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_COMPTE()">Fermer</button></div></div>';
             document.body.appendChild(fenCompte);
             fenCompte.querySelector('#JUM-C-DECO').addEventListener('click', function() {
-                if (!window.confirm('Déconnecter cet appareil ? Il ne recevra plus les envois TRIGONE (le mail reste possible).')) return;
+                if (!window.confirm('Déconnecter cet appareil ? Il ne pourra plus envoyer ni recevoir d\'envois TRIGONE.')) return;
                 appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() {
                     try { localStorage.removeItem(CLE_COMPTE); } catch (e) {}
                     cleIdb('effacer').catch(function() {});
@@ -1315,7 +1486,7 @@
         m.innerHTML = '<button type="button" data-action="reglages">' + ROUE_SVG + '<span><b>Réglages TRIGONE</b><small>Identité, mails, code d\'accès</small></span></button>' +
             '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>' +
             '<button type="button" data-action="signaler">' + window.JUMELAGE_ICONE('bouee') + '<span><b>Signaler un problème</b><small>Écrire à l\'équipe TRIGONE</small></span></button>' +
-            '<button type="button" data-action="compte">' + window.JUMELAGE_ICONE('mail') + '<span><b>Compte TRIGONE</b><small>' + (monCompte() ? 'Actif : ' + esc(monCompte().mail) : 'Envois directs, sans pièce jointe') + '</small></span></button>' +
+            '<button type="button" data-action="compte">' + window.JUMELAGE_ICONE('mail') + '<span><b>Compte TRIGONE</b><small>' + (monCompte() ? 'Actif : ' + esc(monCompte().mail) : 'Envois directs et chiffrés') + '</small></span></button>' +
             '<div class="JUM-ROUE-SEP"></div>' +
             '<button type="button" data-action="sauvegarder">' + window.JUMELAGE_ICONE('disquette') + '<span><b>Sauvegarder mes données</b><small>Un fichier pour tout TRIGONE</small></span></button>' +
             '<button type="button" data-action="restaurer">' + window.JUMELAGE_ICONE('importer') + '<span><b>Restaurer une sauvegarde</b><small>Remettre en place un fichier de sauvegarde</small></span></button>' +
@@ -1545,262 +1716,6 @@
             'Appareil : ' + (window.matchMedia && matchMedia('(min-width: 1100px)').matches ? 'ordinateur' : 'téléphone / tablette') + '\n' +
             'Connecté à internet : ' + (navigator.onLine ? 'oui' : 'non');
         window.location.href = 'mailto:' + MAIL_SUPPORT + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
-    };
-
-    // ---------- Pont ordinateur → téléphone : une mise en route passe dans Compte-rendu par QR code ----------
-    // Mise en route (souvent sur l'ordinateur) affiche un QR code ; Compte-rendu (souvent sur le téléphone) le scanne.
-    // Le QR ne contient que ce dont le compte-rendu a besoin (ni pièces jointes, ni imputation) : c'est une adresse
-    // « cr/?mer=… », lisible aussi par l'appareil photo du téléphone. Aucune donnée ne transite par un serveur.
-    var CHAMPS_TRAJET = ['moyen', 'lieuDep', 'cpDep', 'paysDep', 'lieuArr', 'cpArr', 'paysArr', 'dateDep', 'dateArr', 'residenceDep', 'residenceArr'];
-    var CHAMPS_PERSONNE = ['nom', 'prenom', 'grade', 'matricule', 'cie'];
-    function versTableau(o, champs) {
-        var t = champs.map(function(k) { return (o && o[k]) || ''; });
-        while (t.length && t[t.length - 1] === '') t.pop();
-        return t;
-    }
-    function depuisTableau(t, champs) { var o = {}; champs.forEach(function(k, i) { o[k] = (t && t[i]) || ''; }); return o; }
-    function base64url(octets) {
-        var s = ''; for (var i = 0; i < octets.length; i++) s += String.fromCharCode(octets[i]);
-        return btoa(s).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-    }
-    function depuisBase64url(t) {
-        t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '=';
-        var s = atob(t), o = new Uint8Array(s.length);
-        for (var i = 0; i < s.length; i++) o[i] = s.charCodeAt(i);
-        return o;
-    }
-    function fluxVersOctets(octets, transformation) {
-        var flux = new Blob([octets]).stream().pipeThrough(transformation);
-        return new Response(flux).arrayBuffer().then(function(b) { return new Uint8Array(b); });
-    }
-    // Demande de Mise en route → adresse du QR code (promesse).
-    // Toutes les personnes de la demande (le téléphone retrouve la sienne par son nom) ; pour une grande
-    // collective, seulement la personne des réglages, afin que le QR code reste facile à lire.
-    window.JUMELAGE_MER_VERS_QR = function(d) {
-        var nom = (lireReglages().nom || '').trim().toUpperCase();
-        var moi = (d.personnes || []).filter(function(p) { return nom && (p.nom || '').trim().toUpperCase() === nom; });
-        return construireQr(d, d.personnes || []).then(function(url) {
-            return url.length > 1400 && moi.length && moi.length < (d.personnes || []).length ? construireQr(d, moi) : url;
-        });
-    };
-    function construireQr(d, pers) {
-        var t = d.trajets || {};
-        var c = { v: 1, id: d.id || '', o: d.objet || '', p: pers.map(function(p) { return versTableau(p, CHAMPS_PERSONNE); }),
-            a: versTableau(t.aller, CHAMPS_TRAJET), r: versTableau(t.retour, CHAMPS_TRAJET) };
-        if (d.reservationABT) c.b = 1;
-        if (t.intermediaireAllerActif) c.ai = versTableau(t.intermediaireAller, CHAMPS_TRAJET);
-        if (t.intermediaireRetourActif) c.ri = versTableau(t.intermediaireRetour, CHAMPS_TRAJET);
-        var octets = new TextEncoder().encode(JSON.stringify(c));
-        var base = new URL(DANS_CR ? './' : 'cr/', location.href.split('?')[0].split('#')[0]).href;
-        var adresse = function(prefixe, o) { return base + '?mer=' + prefixe + base64url(o); };
-        if (typeof CompressionStream === 'undefined') return Promise.resolve(adresse('j', octets));
-        return fluxVersOctets(octets, new CompressionStream('deflate-raw'))
-            .then(function(z) { return adresse('z', z); }, function() { return adresse('j', octets); });
-    }
-    // Texte scanné (adresse « …?mer=… » ou contenu seul) → demande au format Mise en route (promesse).
-    window.JUMELAGE_QR_VERS_MER = function(texte) {
-        return new Promise(function(ok, ko) {
-            var brut = String(texte || '').trim(), m = brut.match(/[?&]mer=([^&#\s]+)/);
-            var val = m ? decodeURIComponent(m[1]) : brut;
-            if (!/^[zj][A-Za-z0-9_-]+$/.test(val)) { ko(new Error('pas-mer')); return; }
-            var octets = depuisBase64url(val.slice(1));
-            var suite = val[0] === 'z'
-                ? (typeof DecompressionStream === 'undefined' ? Promise.reject(new Error('ancien')) : fluxVersOctets(octets, new DecompressionStream('deflate-raw')))
-                : Promise.resolve(octets);
-            suite.then(function(o) {
-                var c = JSON.parse(new TextDecoder().decode(o));
-                if (!c || c.v !== 1) throw new Error('pas-mer');
-                ok({ id: c.id || '', objet: c.o || '', reservationABT: !!c.b,
-                    personnes: (c.p || []).map(function(p) { return depuisTableau(p, CHAMPS_PERSONNE); }),
-                    trajets: { aller: depuisTableau(c.a, CHAMPS_TRAJET), retour: depuisTableau(c.r, CHAMPS_TRAJET),
-                        intermediaireAllerActif: !!c.ai, intermediaireAller: depuisTableau(c.ai, CHAMPS_TRAJET),
-                        intermediaireRetourActif: !!c.ri, intermediaireRetour: depuisTableau(c.ri, CHAMPS_TRAJET) } });
-            }).catch(function(e) { ko(e && e.message === 'ancien' ? e : new Error('pas-mer')); });
-        });
-    };
-
-    // Mise en route : fenêtre du QR code (une ou plusieurs demandes envoyées ensemble).
-    var fenetreQr = null;
-    window.JUMELAGE_AFFICHER_QR_MER = function(demandes) {
-        if (fenetreQr || !document.body || !demandes || !demandes.length) return;
-        fenetreQr = document.createElement('div');
-        fenetreQr.className = 'JUM-QR';
-        fenetreQr.setAttribute('role', 'dialog');
-        fenetreQr.innerHTML = '<div class="JUM-QR-CARTE"><button type="button" class="JUM-R-X" aria-label="Fermer">✕</button>' +
-            '<div class="JUM-QR-TETE"><span class="JUM-QR-TEL">' + TEL_SVG + '</span><div><h2>Sur un téléphone</h2><p>Pour faire le compte-rendu sur votre téléphone, ou l\'envoyer en image au missionnaire concerné.</p></div></div>' +
-            (demandes.length > 1 ? '<div class="JUM-QR-CHOIX">' + demandes.map(function(d, i) {
-                return '<button type="button" data-i="' + i + '"' + (i ? '' : ' class="actif"') + '>' + esc(d.objet || ('Demande ' + (i + 1))) + '</button>'; }).join('') + '</div>' : '') +
-            '<div class="JUM-QR-CADRE"><div class="JUM-QR-CODE"></div></div>' +
-            '<div class="JUM-QR-ACTIONS"><button type="button" data-action="partager" class="JUM-QR-PARTAGER HIDDEN-JUM">📤 Envoyer l\'image</button>' +
-                '<button type="button" data-action="enregistrer">💾 Enregistrer l\'image</button></div>' +
-            '<ol class="JUM-QR-ETAPES"><li>Sur le téléphone, ouvrez <b>TRIGONE Compte-rendu de mission</b>.</li>' +
-                '<li>Touchez <b>« À partir d\'une mise en route »</b>, puis <b>« Scanner le QR code »</b> pour viser cet écran, ou <b>« Depuis une photo »</b> pour l\'image reçue.</li>' +
-                '<li>La mission est pré-remplie.</li></ol>' +
-            '<p class="JUM-QR-NOTE">' + ICONES_PRES.cadenas + '<span>Aucun serveur TRIGONE : les informations sont dans le QR code lui-même.</span></p></div>';
-        document.body.appendChild(fenetreQr);
-        var f = fenetreQr, zone = f.querySelector('.JUM-QR-CODE'), courante = 0;
-        function dessiner(i) {
-            zone.innerHTML = ''; courante = i;
-            window.JUMELAGE_MER_VERS_QR(demandes[i]).then(function(url) {
-                if (typeof QRCode === 'undefined') { zone.textContent = 'QR code indisponible : rechargez la page.'; return; }
-                new QRCode(zone, { text: url, width: 720, height: 720, colorDark: '#1a1a1a', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M });
-                zone.setAttribute('data-url', url);
-            });
-        }
-        // L'image envoyée : QR code net + de quoi reconnaître la mission, prête pour un SMS, WhatsApp ou un mail.
-        function fichierImage() {
-            var qr = zone.querySelector('canvas'), d = demandes[courante] || {}, a = (d.trajets && d.trajets.aller) || {}, r = (d.trajets && d.trajets.retour) || {};
-            if (!qr) return Promise.reject(new Error('qr'));
-            var W = 1080, H = 1400, cv = document.createElement('canvas'); cv.width = W; cv.height = H;
-            var x = cv.getContext('2d');
-            x.fillStyle = '#ffffff'; x.fillRect(0, 0, W, H);
-            x.fillStyle = '#E8F0F6'; x.fillRect(0, 0, W, 190);
-            x.textAlign = 'center'; x.fillStyle = '#1a1a1a';
-            x.font = '800 64px Montserrat, system-ui, sans-serif'; x.fillText('T R I G O N E', W / 2, 96);
-            x.fillStyle = '#5a7a94'; x.font = '800 26px Montserrat, system-ui, sans-serif'; x.fillText('MISE EN ROUTE  →  COMPTE-RENDU DE MISSION', W / 2, 150);
-            function ligne(t, y, police, couleur) { x.font = police; x.fillStyle = couleur; var s = String(t || ''); while (s.length > 4 && x.measureText(s).width > W - 120) s = s.slice(0, -2); if (s !== String(t || '')) s += '…'; x.fillText(s, W / 2, y); }
-            var jour = function(v) { try { return v ? new Date(v).toLocaleDateString('fr-FR') : ''; } catch (e) { return ''; } };
-            ligne(d.objet || 'Mise en route', 262, '800 40px Montserrat, system-ui, sans-serif', '#1a1a1a');
-            ligne((d.personnes || []).map(function(p) { return [p.grade, p.nom, p.prenom].filter(Boolean).join(' '); }).join(', '), 314, '600 30px Montserrat, system-ui, sans-serif', '#404040');
-            ligne([[a.lieuDep, a.paysArr || a.lieuArr].filter(Boolean).join(' → '), [jour(a.dateDep), jour(r.dateArr)].filter(Boolean).join(' – ')].filter(Boolean).join('  ·  '), 360, '500 28px Montserrat, system-ui, sans-serif', '#525252');
-            x.imageSmoothingEnabled = false; x.drawImage(qr, 170, 410, 740, 740);
-            ligne('Dans TRIGONE Compte-rendu de mission :', 1232, '700 30px Montserrat, system-ui, sans-serif', '#1a1a1a');
-            ligne('« À partir d\'une mise en route » › « Depuis une photo »', 1280, '600 28px Montserrat, system-ui, sans-serif', '#5a7a94');
-            return new Promise(function(ok, ko) { cv.toBlob(function(b) { b ? ok(new File([b], 'TRIGONE - ' + String(d.objet || 'mise en route').replace(/[\\/:*?"<>|]/g, '').slice(0, 60) + '.png', { type: 'image/png' })) : ko(new Error('image')); }, 'image/png'); });
-        }
-        var boutonPartager = f.querySelector('.JUM-QR-PARTAGER');
-        try { if (navigator.canShare && navigator.canShare({ files: [new File(['x'], 'x.png', { type: 'image/png' })] })) boutonPartager.classList.remove('HIDDEN-JUM'); } catch (e) {}
-        f.addEventListener('click', function(ev) {
-            var act = ev.target.closest('.JUM-QR-ACTIONS button');
-            if (act) {
-                fichierImage().then(function(fichier) {
-                    if (act.getAttribute('data-action') === 'partager') return navigator.share({ files: [fichier], title: 'TRIGONE — mise en route' }).catch(function() {});
-                    var lien = document.createElement('a'); lien.href = URL.createObjectURL(fichier); lien.download = fichier.name;
-                    document.body.appendChild(lien); lien.click(); setTimeout(function() { URL.revokeObjectURL(lien.href); lien.remove(); }, 1500);
-                    bandeau('Image enregistrée : envoyez-la au missionnaire (SMS, WhatsApp, mail…).');
-                });
-                return;
-            }
-            var b = ev.target.closest('.JUM-QR-CHOIX button');
-            if (b) { Array.prototype.forEach.call(f.querySelectorAll('.JUM-QR-CHOIX button'), function(x) { x.classList.toggle('actif', x === b); }); dessiner(+b.getAttribute('data-i')); return; }
-            if (ev.target === f || ev.target.closest('.JUM-R-X')) { f.remove(); fenetreQr = null; }
-        });
-        dessiner(0);
-    };
-
-    // Compte-rendu : scanner (caméra arrière). BarcodeDetector si le téléphone le propose, sinon jsQR (iPhone).
-    var scanner = null;
-    function chargerJsQR() {
-        if (window.jsQR) return Promise.resolve();
-        return new Promise(function(ok, ko) {
-            var s = document.createElement('script');
-            s.src = (DANS_CR ? '../' : '') + 'vendor/jsQR.js';
-            s.onload = ok; s.onerror = ko;
-            document.head.appendChild(s);
-        });
-    }
-    window.JUMELAGE_FERMER_SCANNER = function() {
-        if (!scanner) return;
-        scanner.fini = true;
-        if (scanner.flux) scanner.flux.getTracks().forEach(function(t) { t.stop(); });
-        scanner.el.remove(); scanner = null;
-    };
-    // QR code sur une photo (image reçue par message, capture d'écran…) : choisie dans la galerie du téléphone.
-    function lireImage(fichier) {
-        var bitmap = window.createImageBitmap ? createImageBitmap(fichier) : new Promise(function(ok, ko) {
-            var img = new Image(); img.onload = function() { ok(img); }; img.onerror = ko; img.src = URL.createObjectURL(fichier);
-        });
-        return bitmap.then(function(img) {
-            var avecDetecteur = window.BarcodeDetector && BarcodeDetector.getSupportedFormats
-                ? BarcodeDetector.getSupportedFormats().then(function(f) {
-                    return f.indexOf('qr_code') < 0 ? null : new BarcodeDetector({ formats: ['qr_code'] }).detect(img).then(function(r) { return r && r[0] ? r[0].rawValue : null; }, function() { return null; });
-                }, function() { return null; })
-                : Promise.resolve(null);
-            return avecDetecteur.then(function(texte) {
-                if (texte) return texte;
-                return chargerJsQR().then(function() {
-                    var w = img.width || img.naturalWidth, h = img.height || img.naturalHeight;
-                    var tailles = [1400, 2000, 900, 600], cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
-                    for (var i = 0; i < tailles.length; i++) {
-                        var k = Math.min(1, tailles[i] / Math.max(w, h));
-                        cv.width = Math.round(w * k); cv.height = Math.round(h * k);
-                        ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, cv.width, cv.height);
-                        ctx.drawImage(img, 0, 0, cv.width, cv.height);
-                        var px = ctx.getImageData(0, 0, cv.width, cv.height);
-                        var r = window.jsQR(px.data, px.width, px.height, { inversionAttempts: 'attemptBoth' });
-                        if (r && r.data) return r.data;
-                        if (k === 1) break;
-                    }
-                    return null;
-                });
-            });
-        });
-    }
-    window.JUMELAGE_LIRE_QR_PHOTO = function(surTexte, surErreur) {
-        var entree = document.createElement('input');
-        entree.type = 'file'; entree.accept = 'image/*'; entree.style.display = 'none';
-        entree.addEventListener('change', function() {
-            var f = entree.files && entree.files[0];
-            entree.remove();
-            if (!f) return;
-            lireImage(f).then(function(texte) {
-                if (texte) surTexte(texte);
-                else surErreur('Aucun QR code lisible sur cette image. Choisissez l\'image reçue telle quelle (sans la recadrer), ou une photo nette et bien droite de l\'écran.');
-            }, function() { surErreur('Cette image n\'a pas pu être ouverte. Essayez avec une autre image.'); });
-        });
-        document.body.appendChild(entree);
-        entree.click();
-    };
-    window.JUMELAGE_LIRE_QR_IMAGE = lireImage;   // pour les tests
-
-    // surTexte(texte) reçoit le contenu du QR code ; surErreur(message) si la caméra est inaccessible.
-    window.JUMELAGE_SCANNER_QR = function(surTexte, surErreur) {
-        if (scanner || !document.body) return;
-        if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { surErreur('Ce navigateur ne donne pas accès à la caméra.'); return; }
-        var el = document.createElement('div');
-        el.className = 'JUM-SCAN';
-        el.innerHTML = '<video playsinline muted></video><div class="JUM-SCAN-VISEUR"><span></span></div>' +
-            '<div class="JUM-SCAN-TEXTE">Visez le QR code affiché par<br><b>TRIGONE Mise en route</b> sur l\'ordinateur</div>' +
-            '<button type="button" class="JUM-SCAN-PHOTO">🖼️ Depuis une photo</button>' +
-            '<button type="button" class="JUM-SCAN-ANNULER">Annuler</button>';
-        document.body.appendChild(el);
-        scanner = { el: el, fini: false, flux: null };
-        var s = scanner, video = el.querySelector('video');
-        el.querySelector('.JUM-SCAN-ANNULER').addEventListener('click', window.JUMELAGE_FERMER_SCANNER);
-        el.querySelector('.JUM-SCAN-PHOTO').addEventListener('click', function() { window.JUMELAGE_FERMER_SCANNER(); window.JUMELAGE_LIRE_QR_PHOTO(surTexte, surErreur); });
-        var detecteur = null;
-        var pret = (window.BarcodeDetector && BarcodeDetector.getSupportedFormats
-            ? BarcodeDetector.getSupportedFormats().then(function(f) { if (f.indexOf('qr_code') >= 0) detecteur = new BarcodeDetector({ formats: ['qr_code'] }); }, function() {})
-            : Promise.resolve()).then(function() { return detecteur ? null : chargerJsQR(); });
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 }, height: { ideal: 720 } }, audio: false }).then(function(flux) {
-            if (s.fini) { flux.getTracks().forEach(function(t) { t.stop(); }); return; }
-            s.flux = flux; video.srcObject = flux;
-            return video.play().then(function() { return pret; }).then(function() {
-                var toile = document.createElement('canvas'), ctx = toile.getContext('2d', { willReadFrequently: true });
-                function trouve(texte) { if (s.fini) return; window.JUMELAGE_FERMER_SCANNER(); surTexte(texte); }
-                function boucle() {
-                    if (s.fini) return;
-                    if (video.readyState < 2) { requestAnimationFrame(boucle); return; }
-                    if (detecteur) {
-                        detecteur.detect(video).then(function(r) { if (r && r[0]) trouve(r[0].rawValue); else setTimeout(boucle, 120); }, function() { setTimeout(boucle, 200); });
-                        return;
-                    }
-                    var w = video.videoWidth, h = video.videoHeight, k = Math.min(1, 900 / Math.max(w, h));
-                    toile.width = Math.round(w * k); toile.height = Math.round(h * k);
-                    ctx.drawImage(video, 0, 0, toile.width, toile.height);
-                    var img = ctx.getImageData(0, 0, toile.width, toile.height);
-                    var r = window.jsQR && window.jsQR(img.data, img.width, img.height, { inversionAttempts: 'dontInvert' });
-                    if (r && r.data) trouve(r.data); else setTimeout(boucle, 90);
-                }
-                boucle();
-            });
-        }).catch(function(e) {
-            if (s.fini) return;
-            window.JUMELAGE_FERMER_SCANNER();
-            surErreur(e && (e.name === 'NotAllowedError' || e.name === 'SecurityError')
-                ? 'TRIGONE n\'a pas l\'autorisation d\'utiliser la caméra. Autorisez-la dans les réglages du navigateur, puis réessayez.'
-                : 'La caméra n\'a pas pu démarrer. Réessayez, ou visez le QR code avec l\'appareil photo du téléphone.');
-        });
     };
 
     // ---------- Code d'accès commun : demandé une fois à l'ouverture de TRIGONE ----------
@@ -2066,16 +1981,11 @@
     // d'ouverture, la présentation, le code d'accès et « Avant de commencer », qui gardent la priorité.
     var dejaChoisi = false;
     try { dejaChoisi = sessionStorage.getItem(CLE_CHOIX) === '1'; } catch (e) {}
-    // QR code d'une mise en route lu avec l'appareil photo : on va droit au compte-rendu.
-    if (DANS_CR && /[?&]mer=/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
-    // Fichier .json ouvert depuis la messagerie (« Partager » / « Ouvrir avec » TRIGONE) : droit à Mise en route.
-    if (!DANS_CR && (/[?&](partage|fichier)=/.test(location.search) || /\/partage-trigone\/?$/.test(location.pathname))) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
     // Juste après une mise à jour (nouvelle publication chargée, quelle qu'en soit la cause) : retour à l'écran de choix.
     var buildVu = +lireTxt('trigone_build_vu') || 0;
-    var fichierOuQr = /[?&](partage|fichier|mer)=/.test(location.search) || /\/partage-trigone\/?$/.test(location.pathname);
     var apresMaj = false;
     try { apresMaj = sessionStorage.getItem('trigone_apres_maj') === '1'; sessionStorage.removeItem('trigone_apres_maj'); } catch (e) {}
-    if ((apresMaj || (buildVu && buildVu < BUILD)) && !fichierOuQr) { dejaChoisi = false; arrivee = false; }
+    if (apresMaj || (buildVu && buildVu < BUILD)) { dejaChoisi = false; arrivee = false; }
     ecrireTxt('trigone_build_vu', String(BUILD));
     if (!arrivee && !dejaChoisi && !DEMENAGEMENT && !RECEPTION_DEMENAGEMENT) {
         if (document.body) window.JUMELAGE_CHOIX();

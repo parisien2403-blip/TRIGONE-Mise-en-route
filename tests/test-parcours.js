@@ -56,24 +56,31 @@ module.exports = async function(srv, options) {
     await m.click('text=Ajouter aux documents'); await attendre(600);
     verifier(await m.evaluate(() => document.getElementById('MSG-TITRE').textContent) === 'Ajoutée à vos Documents', 'message « Ajoutée à vos Documents »');
     await m.evaluate(() => FERMER_MSG()); await attendre(400);
-    await m.fill('#MER-MAIL-DEST', 'chef@test.fr'); await m.fill('#MER-MAIL-DEMANDEUR', 'moi@test.fr');
+    await m.fill('#MER-MAIL-DEST', 'chef@test.fr');
     await m.click('text=Envoyer mes documents'); await attendre(500);
-    verifier(await m.isDisabled('#MER-BTN-ENVOYER'), '« Envoyer » grisé tant que le .json n\'est pas enregistré');
-    await m.click('#MER-BTN-ENREGISTRER'); await attendre(1500);
-    verifier(!(await m.isDisabled('#MER-BTN-ENVOYER')), '« Envoyer » actif après enregistrement');
-    await m.click('#MER-BTN-ENVOYER'); await attendre(1400);
-    verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Demande envoyée', 'message « Demande envoyée »');
-    await m.evaluate(() => FERMER_MSG());
-    const j0 = dernier('M__1-DEMANDE MISSIONNAIRE');
-    verifier(!!j0, 'fichier « 1-DEMANDE MISSIONNAIRE … .json » produit');
-    if (j0) verifier(Object.keys(JSON.parse(fs.readFileSync(j0)).pieces).length === 2, 'les 2 pièces jointes voyagent dans le .json');
-    verifier(await m.evaluate(() => GET_BIBLIOTHEQUE().length === 1 && GET_PANIER().length === 0), 'la demande passe de Documents à la Bibliothèque');
+    // Plus d'envoi par mail : sans compte TRIGONE, rien ne part et la demande reste dans Documents.
+    verifier((await m.textContent('#MER-MODALE-FOND')).includes('Compte TRIGONE à activer') && !(await m.isVisible('#MER-BTN-DIRECT')),
+        'sans compte TRIGONE : envoi bloqué, activation du compte proposée');
+    await m.evaluate(() => FERMER_MODALE()); await attendre(300);
+    verifier(await m.evaluate(() => GET_PANIER().length === 1), 'la demande reste dans Documents');
+    verifier(await m.evaluate(() => !document.body.innerHTML.includes('Importer une demande refusée') && typeof ENREGISTRER_PANIER === 'undefined' && typeof BIB_QR === 'undefined'),
+        'plus aucun échange par fichier (.json par mail, import, QR)');
+    // Le contenu envoyé (celui que la boîte TRIGONE chiffre) : demandes + pièces jointes.
+    const ecrire = async (p, nom, etape) => {
+        const t = await p.evaluate(e => GENERER_JSON_COMPLET(e === 'DEMANDE_INITIALE' ? PANIER_A_ENVOYER() : MER_ENVOIS[0].demandes, e === 'DEMANDE_INITIALE' ? e : ETAPE_ENVOI(MER_ENVOIS[0])), etape);
+        const f = path.join(SORTIE, nom); fs.writeFileSync(f, t); return f;
+    };
+    const j0 = await ecrire(m, '1-demande.json', 'DEMANDE_INITIALE');
+    verifier(Object.keys(JSON.parse(fs.readFileSync(j0)).pieces).length === 2, 'les 2 pièces jointes voyagent avec la demande');
+    // Réception telle que la boîte TRIGONE la fait (ouverture d'un envoi reçu).
+    const recevoir = (p, fonction, fichiers) => p.evaluate(([fn, contenus]) => window[fn]({ files: contenus.map((c, i) => new File([c], 'recu' + i + '.json', { type: 'application/json' })), value: '' }),
+        [fonction, fichiers.map(f => fs.readFileSync(f, 'utf8'))]);
 
-    // ---- Assistant Chorus DT : un fichier non signé est refusé ----
+    // ---- Assistant Chorus DT : une demande non signée est refusée ----
     const c = await page('C');
     await c.evaluate(() => SHOW_PAGE('VERIFIER')); await attendre(400);
-    await c.setInputFiles('input[type=file][onchange="VERIFIER_FICHIERS(this)"]', j0); await attendre(1500);
-    verifier((await c.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Fichier non validé', 'Chorus DT refuse le fichier du demandeur (aucune signature)');
+    await recevoir(c, 'VERIFIER_FICHIERS', [j0]); await attendre(1500);
+    verifier((await c.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Fichier non validé', 'Chorus DT refuse la demande du missionnaire (aucune signature)');
 
     const code1 = process.env.TRIGONE_CODE_VAL1, code2 = process.env.TRIGONE_CODE_VAL2;
     if (!code1 || !code2) {
@@ -82,31 +89,29 @@ module.exports = async function(srv, options) {
         // ---- 1er valideur : effacer une demande reçue, la réimporter, la valider ----
         const v1 = await page('V1');
         verifier(await connecter(v1, code1), '1er valideur connecté');
-        await v1.setInputFiles('input[type=file]', j0); await attendre(1200);
+        await v1.evaluate(() => SHOW_PAGE('VALIDATION')); await recevoir(v1, 'IMPORTER_A_VALIDER', [j0]); await attendre(1200);
         await v1.locator('button.BTN-DANGER-TEXT:has-text("Effacer")').first().click(); await attendre(500);
         await v1.locator('button:has-text("Effacer") >> visible=true').last().click(); await attendre(1200);
         verifier(await v1.evaluate(() => GET_A_VALIDER().length) === 0, '« Effacer » retire la demande reçue');
         await v1.evaluate(() => FERMER_MSG()); await attendre(400);
-        await v1.setInputFiles('input[type=file]', j0); await attendre(1200);
+        await recevoir(v1, 'IMPORTER_A_VALIDER', [j0]); await attendre(1200);
         await v1.locator('button.BTN-PRIMARY:has-text("Valider")').first().click(); await attendre(800);
         await v1.fill('input[type=email]', 'v2@test.fr');
-        await v1.click('text=Transmettre les décisions');
-        await v1.locator('#MER-MODALE-FOND button:has-text("Enregistrer")').first().click(); await attendre(1500);
-        await v1.locator('#MER-MODALE-FOND button:has-text("Envoyer")').first().click(); await attendre(500);
-        const j1 = dernier('2-SIGNE VALIDEUR 1');
-        verifier(!!j1, 'fichier « 2-SIGNE VALIDEUR 1 … .json » produit');
+        await v1.click('text=Transmettre les décisions'); await attendre(600);
+        verifier((await v1.textContent('#MER-MODALE-FOND')).includes('Compte TRIGONE à activer'), '1er valideur sans compte TRIGONE : transmission en attente, rien n\'est perdu');
+        await v1.evaluate(() => FERMER_MODALE());
+        const j1 = await ecrire(v1, '2-valideur1.json', 'x');
+        verifier(JSON.parse(fs.readFileSync(j1)).demandes[0].validations.length === 1, 'demande signée par le 1er valideur');
 
         // ---- 2e valideur ----
         const v2 = await page('V2');
         verifier(await connecter(v2, code2), '2e valideur connecté');
-        await v2.setInputFiles('input[type=file]', j1); await attendre(1500);
+        await v2.evaluate(() => SHOW_PAGE('VALIDATION')); await recevoir(v2, 'IMPORTER_A_VALIDER', [j1]); await attendre(1500);
         await v2.locator('button.BTN-PRIMARY:has-text("Valider")').first().click(); await attendre(800);
         await v2.fill('input[type=email]', 'chorus@test.fr');
-        await v2.click('text=Transmettre les décisions');
-        await v2.locator('#MER-MODALE-FOND button:has-text("Enregistrer")').first().click(); await attendre(3000);
-        await v2.locator('#MER-MODALE-FOND button:has-text("Envoyer")').first().click(); await attendre(500);
-        const j2 = dernier('3-SIGNE VALIDEUR 2');
-        verifier(!!j2, 'fichier « 3-SIGNE VALIDEUR 2 … .json » produit');
+        await v2.click('text=Transmettre les décisions'); await attendre(600); await v2.evaluate(() => FERMER_MODALE());
+        const j2 = await ecrire(v2, '3-valideur2.json', 'x');
+        verifier(JSON.parse(fs.readFileSync(j2)).demandes[0].validations.length === 2, 'demande signée par les deux valideurs');
 
         // ---- Chorus DT : fichier conforme, et le même avec une NDS remplacée (fraude) ----
         const faux = JSON.parse(fs.readFileSync(j2)); const k = Object.keys(faux.pieces).find(x => faux.pieces[x].type === 'application/pdf');
@@ -114,7 +119,7 @@ module.exports = async function(srv, options) {
         const ff = path.join(SORTIE, 'falsifie.json'); fs.writeFileSync(ff, JSON.stringify(faux));
         const c2 = await page('C2');
         await c2.evaluate(() => SHOW_PAGE('VERIFIER')); await attendre(400);
-        await c2.setInputFiles('input[type=file][onchange="VERIFIER_FICHIERS(this)"]', [j2, ff]); await attendre(2500);
+        await recevoir(c2, 'VERIFIER_FICHIERS', [j2, ff]); await attendre(2500);
         const cartes = await c2.locator('.MER-PANIER-ITEM').allInnerTexts();
         verifier(cartes.filter(t => t.includes('Conforme : validée par les deux valideurs')).length === 1, 'Chorus DT : la demande signée par les deux valideurs est conforme');
         verifier(cartes.filter(t => t.includes('Non conforme')).length === 1, 'Chorus DT : la demande à la NDS remplacée est non conforme');

@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=48"></script>
+<script src="../jumelage.js?v=49"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -5215,7 +5215,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <h2 class="medaille-titre">À partir d'une mise en route</h2>
 <p class="medaille-texte MER-LISTE-SOUS">Choisissez votre demande : identité, libellé, lieux, transports, gares et horaires sont repris automatiquement.</p>
 <div id="MER-LISTE-ITEMS"></div>
-<div class="msg-boutons"><button type="button" class="BTN BTN-START" onclick="FERMER_LISTE_MISES_EN_ROUTE(); setTimeout(SCANNER_MISE_EN_ROUTE, 320);">📷 Scanner le QR code</button><button type="button" class="BTN BTN-START" onclick="FERMER_LISTE_MISES_EN_ROUTE(); PHOTO_MISE_EN_ROUTE();">🖼️ Depuis une photo</button><button type="button" class="BTN-ADMIN-CLOSE" onclick="FERMER_LISTE_MISES_EN_ROUTE()">Annuler</button></div>
+<div class="msg-boutons"><button type="button" class="BTN-ADMIN-CLOSE" onclick="FERMER_LISTE_MISES_EN_ROUTE()">Annuler</button></div>
 </div>
 </div>
 </div>
@@ -5339,7 +5339,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <svg viewBox="0 0 24 24"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg>
 </div>
 <p>Aucun CR archivé</p>
-<span>Les CR archivés apparaissent après envoi par mail.</span>
+<span>Les CR archivés apparaissent après envoi.</span>
 </div>
 </div>
 <div id="BIB-DETAIL-VIEW" class="BIB-VIEW HIDDEN">
@@ -5588,7 +5588,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <div class="PAX-STEP active" id="PAX-STEP-2">2. IDENTITÉ</div>
 <div class="PAX-STEP" id="PAX-STEP-3">3. PDF &amp; ENVOI</div>
 </div>
-<div class="PAX-BANNER">👥 <b>Participant</b> — Les transports et frais sont déjà renseignés par le chef (ci-dessous, grisé). Renseignez <b>votre nom</b> et <b>votre compagnie</b>, puis validez : récap, signature, <b>téléchargement du PDF</b> et <b>envoi par mail</b> (comme une mission individuelle).</div>
+<div class="PAX-BANNER">👥 <b>Participant</b> — Les transports et frais sont déjà renseignés par le chef (ci-dessous, grisé). Renseignez <b>votre nom</b> et <b>votre compagnie</b>, puis validez : récap, signature, <b>téléchargement du PDF</b> et <b>envoi dans TRIGONE</b> (comme une mission individuelle).</div>
 <div class="PAX-READONLY-ZONE">
 <p class="PAX-READONLY-LABEL">Données mission — lecture seule</p>
 <div id="PAX-MISSION-SUMMARY" class="RECAP-BOX PAX-SUMMARY-BOX" style="max-height:28vh; overflow-y:auto; font-size:0.78em;"></div>
@@ -6074,7 +6074,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <div class="finalize-panel">
 <p class="panel-label">Finalisation du compte-rendu</p>
-<p class="CIE-HINT" style="text-align:center; margin-top:0;">Envoi du CR par mail à l'assist. Chorus DT — téléchargez le PDF pour le joindre. <b>Hors ligne :</b> PDF possible, mail à la reconnexion.</p>
+<p class="CIE-HINT" style="text-align:center; margin-top:0;">Envoi du CR dans TRIGONE à l'assist. Chorus DT — téléchargez le PDF pour le joindre. <b>Hors ligne :</b> PDF possible, mail à la reconnexion.</p>
 <button type="button" class="BTN BTN-START" id="BTN-P3-SIG" onclick="SHOW_PAGE('P3-SIG')">→ SIGNATURE &amp; ENVOI</button>
 </div>
 </div>
@@ -6120,10 +6120,10 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </details>
 <p id="PJ-INCOMPLETE-HINT" class="CIE-HINT HIDDEN" style="text-align:center; margin-top:6px; color:var(--sm2-accent-deep); font-weight:700;">Cochez chaque pièce jointe, ou indiquez un motif d'absence, pour débloquer le téléchargement du PDF.</p>
 <button id="BTN-DOWNLOAD-PDF" class="BTN BTN-QR BTN-DISABLED" disabled onclick="GENERER_PDF()">⬇️ TÉLÉCHARGER LE COMPTE-RENDU PDF</button>
-<p id="PDF-SEND-HINT" class="CIE-HINT" style="text-align:center; margin-top:6px;">Téléchargez le PDF pour le joindre, puis envoyez le mail à l'assist. Chorus DT.</p>
-<p id="OFFLINE-SEND-HINT" class="CIE-HINT HIDDEN" style="text-align:center; margin-top:4px; color:var(--sm2-accent-deep);">📴 Mode hors ligne : saisie et PDF OK · mail à la reconnexion</p>
+<p id="PDF-SEND-HINT" class="CIE-HINT" style="text-align:center; margin-top:6px;">Le PDF est pour vous ; l'envoi le joint automatiquement, avec vos justificatifs.</p>
+<p id="OFFLINE-SEND-HINT" class="CIE-HINT HIDDEN" style="text-align:center; margin-top:4px; color:var(--sm2-accent-deep);">📴 Mode hors ligne : saisie et PDF OK · envoi dès le retour du réseau</p>
 <p id="EXP-MAIL-BLOCK-HINT" class="EXP-MAIL-BLOCK-HINT HIDDEN"></p>
-<button id="BTN-SEND" class="BTN BTN-MAIL BTN-DISABLED" disabled onclick="ENVOYER_MAIL()">📧 ENVOYER LE CR PAR MAIL</button>
+<button id="BTN-SEND" class="BTN BTN-MAIL BTN-DISABLED" disabled onclick="ENVOYER_MAIL()">📨 ENVOYER LE CR DANS TRIGONE</button>
 <p id="MAIL-DEST-HINT" class="CIE-HINT" style="text-align:center; margin-top:6px;"></p>
 <div id="MAIL-SENT-THANKS" class="ALERTE-OK-BOX HIDDEN" style="margin:12px 0 0; text-align:center;"><strong>Merci</strong> — vous pouvez maintenant fermer la mission.</div>
 <div id="P3-LIMITE-BOX" class="RED-ALERT">Vous avez jusqu'au <span id="LIMITE" style="text-decoration:underline;"></span> pour envoyer le CR de votre mission.</div>
@@ -6184,7 +6184,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <details class="notice-fold">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>Rappels &amp; notifications</summary>
 <div class="ADMIN-SECTION">
-<p class="ALERTE-INTRO" style="margin:0 0 10px;">Vous disposez de <b>30 jours</b> après la fin de mission pour signer, télécharger le PDF et envoyer votre compte-rendu par mail.</p>
+<p class="ALERTE-INTRO" style="margin:0 0 10px;">Vous disposez de <b>30 jours</b> après la fin de mission pour signer, télécharger le PDF et envoyer votre compte-rendu dans TRIGONE.</p>
 <div id="ALERTE-STATUS-BOX" class="NOTIF-NOTICE"></div>
 <div id="ALERTE-MISSION-BOX" class="ALERTE-MISSION-BOX HIDDEN">
 <strong>Mission en cours</strong>
@@ -6192,7 +6192,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <ul class="ALERTE-TIERS">
 <li><b>Tous les 5 jours</b> — notification tant que le CR n'est pas envoyé</li>
-<li>Les rappels s'arrêtent automatiquement après l'envoi du mail</li>
+<li>Les rappels s'arrêtent automatiquement après l'envoi du compte-rendu</li>
 <li>Sans notifications : bandeau rappel sur le récap (masquable avec ✕)</li>
 </ul>
 <div id="ALERTE-OK-BOX" class="ALERTE-OK-BOX HIDDEN"></div>
@@ -7002,16 +7002,16 @@ function SYNC_DESKTOP_CR_UI() {
 
 var NOTICE_UI = { selectedKey: null };
 
-var NOTICE_MENU_EXTRA = '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.5 1 1.3 1 2.5h6c0-1.2.4-2 1-2.5A6 6 0 0 0 12 3Z"/></svg></span>Découvrir TRIGONE</summary><p class="notice-lead">Vous partez en mission. TRIGONE s\'occupe de tout : la mise en route avant le départ, le compte-rendu au retour.</p><button type="button" class="BTN-ADMIN-CLOSE" onclick="JUMELAGE_PRESENTATION()">Voir la présentation</button></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg></span>Réglages TRIGONE</summary><ul class="notice-mini"><li>À la toute première ouverture, TRIGONE présente les deux applis puis demande une seule fois : votre <b>identité</b> (unité, CIE, grade, nom, prénom, NID), le <b>mail du 1er valideur</b>, <b>votre mail</b>, le <b>mail de l\'assistant Chorus DT</b> et un <b>code d\'accès à 4 chiffres</b>.</li><li>Ces réglages sont communs à Mise en route et Compte-rendu : ils se modifient à tout moment avec la <b>roue crantée</b> en bas à droite de l\'écran de choix.</li></ul></details><details class="notice-fold"><summary>Bibliothèque &amp; Remboursement</summary><ul class="notice-mini"><li><b>Bibliothèque</b> : vos 3 derniers comptes-rendus archivés après envoi du mail. Chaque ligne affiche le montant en <b>forfaitaire</b> (€).</li><li><b>Remboursement</b> : suivi par mois des <b>frais réels</b> (repas et hébergement calculés automatiquement ; train, avion, bateau, TC et indemnité kilométrique à saisir ou déjà calculée).</li><li>La pastille sur un onglet signale du nouveau contenu depuis votre dernière visite <em>sur cet onglet</em> — consulter la Bibliothèque n\'efface pas la pastille Remboursement, et inversement.</li></ul></details><details class="notice-fold"><summary>Corriger un horodatage oublié</summary><ul class="notice-mini"><li>Un lien <b>« Vous avez oublié de cliquer ? Cliquer ici »</b> apparaît au-dessus du bouton d\'horodatage tant que l\'étape en cours (arrivée sur site, départ du site, fin de mission) n\'est pas enregistrée.</li><li>Il permet de saisir manuellement la date et l\'heure exactes, plutôt que d\'horodater à l\'instant présent si vous avez oublié d\'appuyer au bon moment.</li><li><b>Départ de mission</b> : si vous avez oublié d\'appuyer sur « La mission commence ici », un lien <b>« Départ mission : vous avez oublié de cliquer ? Corriger »</b> est disponible en haut de l\'écran Mission en cours, sous la date affichée.</li><li>TRIGONE vérifie que la nouvelle heure reste <b>cohérente</b> avec l\'étape précédente déjà enregistrée.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>Pièces jointes — ce qui est exigé</summary><ul class="notice-mini"><li><b>Facture d\'hôtel</b> : obligatoire dès que l\'hébergement est payant (hors ABT). Elle doit être <b>nominative</b> (à votre nom) et porter clairement la mention <b>« Payé »</b> — un devis ou une simple réservation ne suffit pas. Sans elle, l\'assist. Chorus DT ne peut pas liquider votre OM : TRIGONE bloque l\'envoi du compte-rendu tant qu\'elle n\'est pas cochée, sans exception possible.</li><li><b>Billets de train</b> : à réserver via <b>SNCF Connect</b>, sur un compte personnel ouvert à votre nom, de façon à recevoir par mail le document portant la mention <b>« Mon Billet »</b>. Un simple justificatif d\'achat ou une réservation ne sont <b>pas acceptés</b>.</li><li>Même principe pour les billets d\'avion et de bateau : le titre de transport définitif est exigé, pas une confirmation de réservation.</li><li>Si un billet de train, d\'avion ou de bateau est réellement perdu, c\'est le seul motif accepté pour cocher son absence — toute autre raison (« à transmettre plus tard », etc.) ne débloque pas l\'envoi.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Sécurité — code d\'accès</summary><ul class="notice-mini"><li>Avec la <b>roue crantée</b> de l\'écran de choix (Réglages TRIGONE), vous pouvez activer un <b>code à 4 chiffres</b> demandé une fois à <b>chaque ouverture de TRIGONE</b>, pour les deux applis — utile si votre téléphone n\'est pas verrouillé ou est partagé avec d\'autres.</li><li>Le code ne quitte jamais votre téléphone — TRIGONE ne le transmet nulle part.</li><li><b>Code oublié</b> : un lien « Code oublié ? » sur l\'écran de verrouillage permet de réinitialiser complètement l\'appareil. Il n\'existe aucun autre moyen de récupérer un code perdu — cette réinitialisation efface toutes les données de TRIGONE sur ce téléphone (mission en cours, historique, paramètres), sans possibilité de retour en arrière.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg></span>Mises à jour de l\'application</summary><ul class="notice-mini"><li>TRIGONE se met à jour automatiquement en arrière-plan dès que vous avez une connexion internet — vous n\'avez rien à installer manuellement.</li><li>Certaines mises à jour importantes (nouveaux taux de change, indemnité kilométrique, évolutions de l\'application) s\'accompagnent d\'un <b>message centré à l\'écran</b> à l\'ouverture de TRIGONE.</li><li>Ce message est <b>obligatoire</b> pour les taux et les évolutions de l\'application : il n\'y a pas de bouton pour l\'ignorer, il faut appuyer sur le bouton proposé pour continuer à utiliser l\'application normalement.</li><li><b>Vos données ne sont jamais affectées</b> par une mise à jour : Bibliothèque, Remboursement et médailles TRIGONE restent intactes, quoi qu\'il arrive.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8 14 14l-6.2 2.2L10 10l6.2-2.2Z"/></svg></span>Simulateur avant départ</summary><ul class="notice-mini"><li>Accessible depuis l\'écran d\'accueil — un petit lien <b>« Simuler une mission à venir »</b> sous le bouton principal. Donnez une idée approximative d\'une mission à venir (dates, ville ou pays, hébergement et repas payants ou non) pour obtenir une <b>estimation</b> du forfait, avant même de partir.</li><li>Il suffit d\'indiquer le <b>nom de la ville</b> — TRIGONE détecte automatiquement s\'il s\'agit d\'une grande ville, de Paris ou d\'une autre commune, sans que vous ayez à connaître vous-même la zone tarifaire.</li><li>Le simulateur utilise le <b>même moteur de calcul</b> que pour un vrai compte-rendu, y compris les règles d\'éligibilité (dernier jour, horaires...). L\'estimation reste indicative : le montant réel dépendra des horaires précis constatés sur place.</li><li>Le simulateur ne remplace jamais le vrai compte-rendu — une fois en mission, la saisie normale reste indispensable.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M8.5 12.5 7 22l5-3 5 3-1.5-9.5"/></svg></span>Badges TRIGONE — Bronze, Argent, Or</summary><div style="display:flex; justify-content:center; align-items:flex-end; gap:18px; padding:6px 14px 4px;"><div style="text-align:center; width:64px;"><img src="medaille-bronze-icone.webp" alt="TRIGONE Bronze" style="width:56px; height:56px; object-fit:contain; display:block; margin:0 auto;"><div style="font-size:0.68em; font-weight:700; margin-top:4px; color:#92400e;">Bronze</div></div><div style="text-align:center; width:64px;"><img src="medaille-argent-icone.webp" alt="TRIGONE Argent" style="width:56px; height:56px; object-fit:contain; display:block; margin:0 auto;"><div style="font-size:0.68em; font-weight:700; margin-top:4px; color:#475569;">Argent</div></div><div style="text-align:center; width:64px;"><img src="medaille-or-icone.webp" alt="TRIGONE Or" style="width:56px; height:56px; object-fit:contain; display:block; margin:0 auto;"><div style="font-size:0.68em; font-weight:700; margin-top:4px; color:#a16207;">Or</div></div></div><ul class="notice-mini"><li>Une médaille récompense le nombre total de comptes-rendus envoyés par mail depuis votre téléphone (missions individuelles, comme chef ou comme participant, tout compte).</li><li><b>1er envoi</b> → TRIGONE de <b>Bronze</b>. <b>10 envois</b> → TRIGONE d\'<b>Argent</b>. <b>20 envois</b> → TRIGONE d\'<b>Or</b>.</li><li>Un écran de félicitations apparaît au moment où vous obtenez une nouvelle médaille, et la plus haute obtenue reste affichée en haut à gauche de l\'écran d\'accueil.</li><li>Ce compteur est propre à votre téléphone : il ne se partage pas et ne remonte à personne.</li></ul><button type="button" class="BTN-ADMIN-CLOSE" style="margin-top:4px;" onclick="REINITIALISER_MEDAILLES()">↺ Repartir à zéro (efface le compteur et les médailles)</button></details>';
+var NOTICE_MENU_EXTRA = '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M9 18h6M10 21h4M12 3a6 6 0 0 0-4 10.5c.6.5 1 1.3 1 2.5h6c0-1.2.4-2 1-2.5A6 6 0 0 0 12 3Z"/></svg></span>Découvrir TRIGONE</summary><p class="notice-lead">Vous partez en mission. TRIGONE s\'occupe de tout : la mise en route avant le départ, le compte-rendu au retour.</p><button type="button" class="BTN-ADMIN-CLOSE" onclick="JUMELAGE_PRESENTATION()">Voir la présentation</button></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg></span>Réglages TRIGONE</summary><ul class="notice-mini"><li>À la toute première ouverture, TRIGONE présente les deux applis puis demande une seule fois : votre <b>identité</b> (unité, CIE, grade, nom, prénom, NID), le <b>mail du 1er valideur</b>, <b>votre mail</b>, le <b>mail de l\'assistant Chorus DT</b> et un <b>code d\'accès à 4 chiffres</b>.</li><li>Ces réglages sont communs à Mise en route et Compte-rendu : ils se modifient à tout moment avec la <b>roue crantée</b> en bas à droite de l\'écran de choix.</li><li><b>Compte TRIGONE</b> (roue crantée) : activez-le une fois avec votre adresse mail. Le compte-rendu part alors directement dans le TRIGONE de l\'assistant Chorus DT, chiffré : le PDF est joint automatiquement, vous y ajoutez vos justificatifs (photos ou PDF).</li><li><b>Mes rôles</b> : les valideurs et l\'assistant Chorus DT y cochent leur rôle, avec le code remis par l\'administrateur.</li></ul></details><details class="notice-fold"><summary>Bibliothèque &amp; Remboursement</summary><ul class="notice-mini"><li><b>Bibliothèque</b> : vos 3 derniers comptes-rendus archivés après envoi. Chaque ligne affiche le montant en <b>forfaitaire</b> (€).</li><li><b>Remboursement</b> : suivi par mois des <b>frais réels</b> (repas et hébergement calculés automatiquement ; train, avion, bateau, TC et indemnité kilométrique à saisir ou déjà calculée).</li><li>La pastille sur un onglet signale du nouveau contenu depuis votre dernière visite <em>sur cet onglet</em> — consulter la Bibliothèque n\'efface pas la pastille Remboursement, et inversement.</li></ul></details><details class="notice-fold"><summary>Corriger un horodatage oublié</summary><ul class="notice-mini"><li>Un lien <b>« Vous avez oublié de cliquer ? Cliquer ici »</b> apparaît au-dessus du bouton d\'horodatage tant que l\'étape en cours (arrivée sur site, départ du site, fin de mission) n\'est pas enregistrée.</li><li>Il permet de saisir manuellement la date et l\'heure exactes, plutôt que d\'horodater à l\'instant présent si vous avez oublié d\'appuyer au bon moment.</li><li><b>Départ de mission</b> : si vous avez oublié d\'appuyer sur « La mission commence ici », un lien <b>« Départ mission : vous avez oublié de cliquer ? Corriger »</b> est disponible en haut de l\'écran Mission en cours, sous la date affichée.</li><li>TRIGONE vérifie que la nouvelle heure reste <b>cohérente</b> avec l\'étape précédente déjà enregistrée.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4M12 17h.01"/></svg></span>Pièces jointes — ce qui est exigé</summary><ul class="notice-mini"><li><b>Facture d\'hôtel</b> : obligatoire dès que l\'hébergement est payant (hors ABT). Elle doit être <b>nominative</b> (à votre nom) et porter clairement la mention <b>« Payé »</b> — un devis ou une simple réservation ne suffit pas. Sans elle, l\'assist. Chorus DT ne peut pas liquider votre OM : TRIGONE bloque l\'envoi du compte-rendu tant qu\'elle n\'est pas cochée, sans exception possible.</li><li><b>Billets de train</b> : à réserver via <b>SNCF Connect</b>, sur un compte personnel ouvert à votre nom, de façon à recevoir par mail le document portant la mention <b>« Mon Billet »</b>. Un simple justificatif d\'achat ou une réservation ne sont <b>pas acceptés</b>.</li><li>Même principe pour les billets d\'avion et de bateau : le titre de transport définitif est exigé, pas une confirmation de réservation.</li><li>Si un billet de train, d\'avion ou de bateau est réellement perdu, c\'est le seul motif accepté pour cocher son absence — toute autre raison (« à transmettre plus tard », etc.) ne débloque pas l\'envoi.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Sécurité — code d\'accès</summary><ul class="notice-mini"><li>Avec la <b>roue crantée</b> de l\'écran de choix (Réglages TRIGONE), vous pouvez activer un <b>code à 4 chiffres</b> demandé une fois à <b>chaque ouverture de TRIGONE</b>, pour les deux applis — utile si votre téléphone n\'est pas verrouillé ou est partagé avec d\'autres.</li><li>Le code ne quitte jamais votre téléphone — TRIGONE ne le transmet nulle part.</li><li><b>Code oublié</b> : un lien « Code oublié ? » sur l\'écran de verrouillage permet de réinitialiser complètement l\'appareil. Il n\'existe aucun autre moyen de récupérer un code perdu — cette réinitialisation efface toutes les données de TRIGONE sur ce téléphone (mission en cours, historique, paramètres), sans possibilité de retour en arrière.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg></span>Mises à jour de l\'application</summary><ul class="notice-mini"><li>TRIGONE se met à jour automatiquement en arrière-plan dès que vous avez une connexion internet — vous n\'avez rien à installer manuellement.</li><li>Certaines mises à jour importantes (nouveaux taux de change, indemnité kilométrique, évolutions de l\'application) s\'accompagnent d\'un <b>message centré à l\'écran</b> à l\'ouverture de TRIGONE.</li><li>Ce message est <b>obligatoire</b> pour les taux et les évolutions de l\'application : il n\'y a pas de bouton pour l\'ignorer, il faut appuyer sur le bouton proposé pour continuer à utiliser l\'application normalement.</li><li><b>Vos données ne sont jamais affectées</b> par une mise à jour : Bibliothèque, Remboursement et médailles TRIGONE restent intactes, quoi qu\'il arrive.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M16.2 7.8 14 14l-6.2 2.2L10 10l6.2-2.2Z"/></svg></span>Simulateur avant départ</summary><ul class="notice-mini"><li>Accessible depuis l\'écran d\'accueil — un petit lien <b>« Simuler une mission à venir »</b> sous le bouton principal. Donnez une idée approximative d\'une mission à venir (dates, ville ou pays, hébergement et repas payants ou non) pour obtenir une <b>estimation</b> du forfait, avant même de partir.</li><li>Il suffit d\'indiquer le <b>nom de la ville</b> — TRIGONE détecte automatiquement s\'il s\'agit d\'une grande ville, de Paris ou d\'une autre commune, sans que vous ayez à connaître vous-même la zone tarifaire.</li><li>Le simulateur utilise le <b>même moteur de calcul</b> que pour un vrai compte-rendu, y compris les règles d\'éligibilité (dernier jour, horaires...). L\'estimation reste indicative : le montant réel dépendra des horaires précis constatés sur place.</li><li>Le simulateur ne remplace jamais le vrai compte-rendu — une fois en mission, la saisie normale reste indispensable.</li></ul></details><details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M8.5 12.5 7 22l5-3 5 3-1.5-9.5"/></svg></span>Badges TRIGONE — Bronze, Argent, Or</summary><div style="display:flex; justify-content:center; align-items:flex-end; gap:18px; padding:6px 14px 4px;"><div style="text-align:center; width:64px;"><img src="medaille-bronze-icone.webp" alt="TRIGONE Bronze" style="width:56px; height:56px; object-fit:contain; display:block; margin:0 auto;"><div style="font-size:0.68em; font-weight:700; margin-top:4px; color:#92400e;">Bronze</div></div><div style="text-align:center; width:64px;"><img src="medaille-argent-icone.webp" alt="TRIGONE Argent" style="width:56px; height:56px; object-fit:contain; display:block; margin:0 auto;"><div style="font-size:0.68em; font-weight:700; margin-top:4px; color:#475569;">Argent</div></div><div style="text-align:center; width:64px;"><img src="medaille-or-icone.webp" alt="TRIGONE Or" style="width:56px; height:56px; object-fit:contain; display:block; margin:0 auto;"><div style="font-size:0.68em; font-weight:700; margin-top:4px; color:#a16207;">Or</div></div></div><ul class="notice-mini"><li>Une médaille récompense le nombre total de comptes-rendus envoyés depuis votre téléphone (missions individuelles, comme chef ou comme participant, tout compte).</li><li><b>1er envoi</b> → TRIGONE de <b>Bronze</b>. <b>10 envois</b> → TRIGONE d\'<b>Argent</b>. <b>20 envois</b> → TRIGONE d\'<b>Or</b>.</li><li>Un écran de félicitations apparaît au moment où vous obtenez une nouvelle médaille, et la plus haute obtenue reste affichée en haut à gauche de l\'écran d\'accueil.</li><li>Ce compteur est propre à votre téléphone : il ne se partage pas et ne remonte à personne.</li></ul><button type="button" class="BTN-ADMIN-CLOSE" style="margin-top:4px;" onclick="REINITIALISER_MEDAILLES()">↺ Repartir à zéro (efface le compteur et les médailles)</button></details>';
 
 var NOTICE_TEXTS = {
-    INDIVIDUEL: '<p class="notice-lead">Parcours d\'une mission individuelle, de l\'accueil à l\'envoi du mail.</p><ol class="notice-steps"><li><b>Départ mission</b> : grade, nom, prénom, NID, compagnie, libellé de la mission, lieu de départ et retour, transports aller puis retour (onglets Aller / Retour)</li><li><b>Sur site</b> : horodater l\'arrivée, puis appuyer sur <b>Je quitte le site</b> — un choix s\'ouvre alors : <b>vers une autre destination</b> ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît — c\'est cet appui qui arrête le chrono</li><li><b>Frais</b> : repas, nuitées, horaires de billet et kilométrage (véhicule personnel), à compléter chez vous sans limite de temps</li><li><b>Récapitulatif</b> : vérification, pièces jointes à cocher (certaines, comme la facture d\'hôtel, sont obligatoires — voir la fiche dédiée ci-dessous), observations, signature, PDF et envoi mail</li><li>Après envoi : le CR est dans la <b>Bibliothèque</b> (montant <b>forfaitaire</b>, PDF retéléchargeable à tout moment)</li><li>Le suivi des dépenses se fait dans <b>Remboursement</b> (montants <b>frais réels</b>, indemnité kilométrique, et déduction automatique si une <b>avance de 75 %</b> a été perçue à la création de l\'OM)</li></ol><details class="notice-fold" style="margin-top:14px"><summary>Enchaîner vers une autre destination</summary><p style="padding:0 14px 12px;margin:0;font-size:0.82em;color:var(--sm2-muted);line-height:1.5">En choisissant <b>vers une autre destination</b> après <b>Je quitte le site</b>, un écran simplifié « Destination 2 » (puis 3, etc.) s\'ouvre : identité et compagnie déjà connues restent masquées, seuls le lieu de retour et les transports de cette étape sont à saisir.</p></details>',
-    COLLECTIF: '<p class="notice-lead">Mission collective : le chef saisit le groupe ; chaque participant finalise son propre envoi.</p><p class="notice-role">Chef de mission</p><ol class="notice-steps"><li>Cochez <b>Mission collective</b> et indiquez votre mail</li><li>Grade, identité, libellé de la mission, transports, horodatages (arrivée site, départ site, fin de mission) et frais du groupe</li><li>QR code : affichage à l\'écran ou partage WhatsApp pour les participants</li><li>Récap, signature, PDF et envoi mail</li><li>CR archivé en <b>Bibliothèque</b> · suivi en <b>Remboursement</b></li></ol><p class="notice-role">Participant</p><ol class="notice-steps"><li>Scanner le QR du chef ou ouvrir le lien reçu</li><li>Le libellé de la mission et les horodatages du chef sont déjà repris — <b>votre</b> grade, nom, prénom, NID et compagnie restent à saisir, ils vous sont propres</li><li>Récap, signature, PDF et envoi mail</li></ol>',
+    INDIVIDUEL: '<p class="notice-lead">Parcours d\'une mission individuelle, de l\'accueil à l\'envoi du compte-rendu.</p><ol class="notice-steps"><li><b>Départ mission</b> : grade, nom, prénom, NID, compagnie, libellé de la mission, lieu de départ et retour, transports aller puis retour (onglets Aller / Retour)</li><li><b>Sur site</b> : horodater l\'arrivée, puis appuyer sur <b>Je quitte le site</b> — un choix s\'ouvre alors : <b>vers une autre destination</b> ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît — c\'est cet appui qui arrête le chrono</li><li><b>Frais</b> : repas, nuitées, horaires de billet et kilométrage (véhicule personnel), à compléter chez vous sans limite de temps</li><li><b>Récapitulatif</b> : vérification, pièces jointes à cocher (certaines, comme la facture d\'hôtel, sont obligatoires — voir la fiche dédiée ci-dessous), observations, signature, PDF et envoi dans TRIGONE</li><li>Après envoi : le CR est dans la <b>Bibliothèque</b> (montant <b>forfaitaire</b>, PDF retéléchargeable à tout moment)</li><li>Le suivi des dépenses se fait dans <b>Remboursement</b> (montants <b>frais réels</b>, indemnité kilométrique, et déduction automatique si une <b>avance de 75 %</b> a été perçue à la création de l\'OM)</li></ol><details class="notice-fold" style="margin-top:14px"><summary>Enchaîner vers une autre destination</summary><p style="padding:0 14px 12px;margin:0;font-size:0.82em;color:var(--sm2-muted);line-height:1.5">En choisissant <b>vers une autre destination</b> après <b>Je quitte le site</b>, un écran simplifié « Destination 2 » (puis 3, etc.) s\'ouvre : identité et compagnie déjà connues restent masquées, seuls le lieu de retour et les transports de cette étape sont à saisir.</p></details>',
+    COLLECTIF: '<p class="notice-lead">Mission collective : le chef saisit le groupe ; chaque participant finalise son propre envoi.</p><p class="notice-role">Chef de mission</p><ol class="notice-steps"><li>Cochez <b>Mission collective</b> et indiquez votre mail</li><li>Grade, identité, libellé de la mission, transports, horodatages (arrivée site, départ site, fin de mission) et frais du groupe</li><li>QR code : affichage à l\'écran ou partage WhatsApp pour les participants</li><li>Récap, signature, PDF et envoi dans TRIGONE</li><li>CR archivé en <b>Bibliothèque</b> · suivi en <b>Remboursement</b></li></ol><p class="notice-role">Participant</p><ol class="notice-steps"><li>Scanner le QR du chef ou ouvrir le lien reçu</li><li>Le libellé de la mission et les horodatages du chef sont déjà repris — <b>votre</b> grade, nom, prénom, NID et compagnie restent à saisir, ils vous sont propres</li><li>Récap, signature, PDF et envoi dans TRIGONE</li></ol>',
     P1: '<ol class="notice-steps"><li>Nom et prénom</li><li>Compagnie (1<sup>re</sup> ou 4<sup>e</sup> Cie)</li><li>Collective : cochez et indiquez le mail du chef de mission</li><li>Lieu de départ et de retour (résidence administrative ou familiale)</li><li><b>Transport aller</b> puis <b>transport retour</b> — onglets Aller / Retour (un bloc à la fois)</li><li>VRM / VRC : destination · VF / avion / bateau : gare, port ou aéroport (les horaires se saisissent plus tard, dans Frais)</li><li>VRC — véhicule personnel : cochez <b>IK</b> si le chef de corps autorise l\'indemnité kilométrique, puis choisissez la puissance fiscale (le kilométrage se saisit dans Frais)</li><li>Une fois les 4 onglets complets, <b>Départ en mission</b> (dernier onglet, Top départ) — horodatage du départ</li></ol>',
     P2: '<ol class="notice-steps"><li><b>Arrivée sur site</b> — horodatage au bouton vert</li><li><b>Je quitte le site</b> — un choix s\'ouvre : <b>vers une autre destination</b> (enchaînement) ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît alors — c\'est lui qui arrête le chrono</li><li>Les <b>frais</b> se saisissent ensuite sans pression du temps</li></ol>',
-    'P2-FIN': '<ol class="notice-steps"><li><b>Horodatage terminé</b> — fixé à l\'étape précédente (bouton Valider et voir le récap)</li><li>Complétez vos frais chez vous, sans limite de temps</li><li><b>3 onglets</b> : Repas &amp; hébergement → Trajets → Récap &amp; valider</li><li><b>Repas</b> : gratuit par défaut — les jours se créent automatiquement</li><li><b>Trajets</b> : VF / avion / bateau — Aller / Retour avec date-heure de billet · VRC + IK — kilométrage parcouru</li><li><b>Récap</b> : vérifiez puis <b>Valider et voir le récapitulatif</b></li><li>Plusieurs jours : onglets J1, J2… — un jour à la fois</li><li><b>Expérience de saisie</b> : envoi mail bloqué — supprimez le jour en trop (×)</li></ol>',
-    P3: '<ol class="notice-steps"><li>Vérifier le récapitulatif (transports, horaires, forfait)</li><li><b>Observations éventuelles</b> si besoin — le cadre passe en rouge dès qu\'il contient du texte, pour ne pas le manquer</li><li>Pièces jointes à cocher une à une (billets, factures…) au fur et à mesure que vous les joignez au mail</li><li>Signature numérique, téléchargement PDF et envoi mail</li><li>Après envoi : mission archivée dans la <b>Bibliothèque</b></li></ol><p class="notice-lead" style="margin-top:12px;margin-bottom:0;">Délai réglementaire : 30 jours après la fin de mission.</p>',
-    'P-PAX': '<ol class="notice-steps"><li>Résumé de la mission collective (lecture seule)</li><li>Votre nom et compagnie</li><li>Récapitulatif, signature, PDF et envoi mail</li><li>Votre CR rejoint la mission collective après envoi</li></ol>'
+    'P2-FIN': '<ol class="notice-steps"><li><b>Horodatage terminé</b> — fixé à l\'étape précédente (bouton Valider et voir le récap)</li><li>Complétez vos frais chez vous, sans limite de temps</li><li><b>3 onglets</b> : Repas &amp; hébergement → Trajets → Récap &amp; valider</li><li><b>Repas</b> : gratuit par défaut — les jours se créent automatiquement</li><li><b>Trajets</b> : VF / avion / bateau — Aller / Retour avec date-heure de billet · VRC + IK — kilométrage parcouru</li><li><b>Récap</b> : vérifiez puis <b>Valider et voir le récapitulatif</b></li><li>Plusieurs jours : onglets J1, J2… — un jour à la fois</li><li><b>Expérience de saisie</b> : envoi bloqué — supprimez le jour en trop (×)</li></ol>',
+    P3: '<ol class="notice-steps"><li>Vérifier le récapitulatif (transports, horaires, forfait)</li><li><b>Observations éventuelles</b> si besoin — le cadre passe en rouge dès qu\'il contient du texte, pour ne pas le manquer</li><li>Pièces jointes à cocher une à une (billets, factures…) au fur et à mesure que vous rassemblez les justificatifs (photos ou PDF), à joindre dans la fenêtre d\'envoi</li><li>Signature numérique, téléchargement PDF et envoi dans TRIGONE</li><li>Après envoi : mission archivée dans la <b>Bibliothèque</b></li></ol><p class="notice-lead" style="margin-top:12px;margin-bottom:0;">Délai réglementaire : 30 jours après la fin de mission.</p>',
+    'P-PAX': '<ol class="notice-steps"><li>Résumé de la mission collective (lecture seule)</li><li>Votre nom et compagnie</li><li>Récapitulatif, signature, PDF et envoi dans TRIGONE</li><li>Votre CR rejoint la mission collective après envoi</li></ol>'
 };
 
 function CLEAR_NOTICE_HIGHLIGHTS() {
@@ -7729,7 +7729,7 @@ function BUILD_RECAP_PREVIEW_HTML(core) {
     html += '<div class="cr-preview-meta"><div>' + ESC_HTML(omType) + '</div><div>Édité le ' + ESC_HTML(new Date().toLocaleString('FR-FR')) + '</div></div>';
     html += '</div><div class="cr-preview-content">';
     if (HAS_EXPERIENCE_SAISIE()) {
-        html += '<div class="cr-preview-warn">Expérience de saisie — envoi mail bloqué · supprimez le jour en double</div>';
+        html += '<div class="cr-preview-warn">Expérience de saisie — envoi bloqué · supprimez le jour en double</div>';
     }
     html += '<section class="cr-preview-section"><h4 class="cr-preview-section-title">Identité</h4>';
     var idPairs = [];
@@ -8946,7 +8946,7 @@ function RENDER_ALERTES_PAGE() {
         if (perm === 'granted') {
             okBox.classList.remove('HIDDEN');
             var okMsg = HAS_PENDING_CR_TO_SEND()
-                ? 'Vous recevrez une notification <b>tous les 5 jours</b> jusqu\'à l\'envoi du mail.'
+                ? 'Vous recevrez une notification <b>tous les 5 jours</b> jusqu\'à l\'envoi du compte-rendu.'
                 : 'Rappels activés — vous serez notifié <b>tous les 5 jours</b> dès qu\'un CR sera en attente d\'envoi.';
             okBox.innerHTML = '<strong>✓ Rappels activés</strong><p style="margin:8px 0 0;">' + okMsg + '</p>';
         } else {
@@ -9365,9 +9365,7 @@ function APPLY_P3_PAX_UI() {
     var title = document.getElementById('P3-TITLE');
     var sigTitle = document.getElementById('P3-SIG-TITLE');
     var recap = document.getElementById('RECAP-TXT');
-    var ccNote = (M.CHEF_MAIL && IS_VALID_EMAIL(M.CHEF_MAIL))
-        ? ' Le chef de mission sera <b>en copie</b> du mail (' + M.CHEF_MAIL + ').'
-        : '';
+    var ccNote = '';
     if (M.IS_PAX) {
         if (banner) {
             banner.classList.remove('HIDDEN');
@@ -9478,13 +9476,13 @@ function UPDATE_MAIL_BUTTON() {
     if (destHint) {
         destHint.textContent = HAS_EXPERIENCE_SAISIE()
             ? 'Envoi bloqué — corrigez l\'expérience de saisie sur la page Frais.'
-            : ('Destinataire : ' + ASSIST_CHORUS_LABEL);
+            : ('Destinataire : ' + ASSIST_CHORUS_LABEL + (MAIL_ASSIST ? ' (' + MAIL_ASSIST + ')' : '') + ', dans sa boîte TRIGONE');
     }
     var finalizeHint = document.querySelector('#P3 .finalize-panel .CIE-HINT');
     if (finalizeHint) {
         finalizeHint.textContent = HAS_EXPERIENCE_SAISIE()
-            ? 'PDF possible pour contrôle — envoi mail à ' + ASSIST_CHORUS_LABEL + ' bloqué tant que l\'expérience de saisie n\'est pas corrigée.'
-            : ('Envoi du CR par mail à ' + ASSIST_CHORUS_LABEL + ' — téléchargez le PDF pour le joindre. Hors ligne : PDF possible, mail à la reconnexion.');
+            ? 'PDF possible pour contrôle — envoi à ' + ASSIST_CHORUS_LABEL + ' bloqué tant que l\'expérience de saisie n\'est pas corrigée.'
+            : ('Envoi du CR à ' + ASSIST_CHORUS_LABEL + ' directement dans TRIGONE, PDF et justificatifs compris. Hors ligne : PDF possible, envoi au retour du réseau.');
     }
 }
 
@@ -11059,7 +11057,7 @@ function BUILD_PJ_RAPPEL_HTML() {
         msgs.push('<div class="PJ-RAPPEL-ITEM"><strong>Rappel — Hébergement payant</strong><p>Joignez une <b>facture nominative et acquittée</b> (= payée).</p></div>');
     }
     if (MISSION_HAS_TC()) {
-        msgs.push('<div class="PJ-RAPPEL-ITEM"><strong>Rappel — TC (métro, bus, parking…)</strong><p>Vous avez coché des frais TC : prenez une <b>photo</b> de chaque justificatif (ticket, reçu de parking, etc.) pour les <b>joindre au PDF</b> lors de l\'envoi du mail.</p></div>');
+        msgs.push('<div class="PJ-RAPPEL-ITEM"><strong>Rappel — TC (métro, bus, parking…)</strong><p>Vous avez coché des frais TC : prenez une <b>photo</b> de chaque justificatif (ticket, reçu de parking, etc.) pour les <b>joindre</b> lors de l\'envoi du compte-rendu.</p></div>');
     }
     return msgs.join('');
 }
@@ -11514,7 +11512,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 145;
+var APP_CODE_VERSION = 146;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12581,37 +12579,10 @@ function PROCESS_SYNC_QUEUE() {
     if (!q.length) { UPDATE_NETWORK_UI(); return; }
     var item = q[0];
     if (item.type === 'MAIL') {
-        if (HAS_EXPERIENCE_SAISIE()) {
-            REMOVE_FROM_SYNC_QUEUE(item.id);
-            UPDATE_NETWORK_UI();
-            UPDATE_MAIL_QUEUE_UI();
-            alert(GET_EXP_SAISIE_ALERT());
-            return;
-        }
-        if (item.needsPdf && !M.PDF_DOWNLOADED) GENERER_PDF();
-        // Même relecture qu'un envoi en ligne : le mail attendait la reconnexion, c'est maintenant qu'il
-        // s'ouvre réellement, donc c'est maintenant qu'il faut rappeler de joindre les pièces.
-        var pjAJoindre = GET_PJ_LISTE_A_JOINDRE();
-        var listeTexte = pjAJoindre.map(function(x) { return '📎 ' + x; }).join('\n');
-        MSG_CONFIRM(
-            'Avant d\'envoyer',
-            (listeTexte ? 'Vérifiez que vous avez bien ces pièces prêtes, puis joignez-les vous-même dans le mail qui va s\'ouvrir :\n\n' + listeTexte : 'Aucune pièce jointe déclarée pour ce compte-rendu.') + '\n\nTRIGONE ne peut pas les joindre automatiquement.',
-            'J\'ai tout joint — Envoyer',
-            function() {
-                M.MAIL_SENT = true;
-                M.MAIL_SENT_AT = new Date().toISOString();
-                CLEAR_CR_NOTIF_PING();
-                PERSIST_MISSION_ARCHIVES();
-                CLEAR_MISSION_BACKUP();
-                SAVE_STATE();
-                RESTORE_OBS_FIELD();
-                UPDATE_P3_NAV_BUTTONS();
-                UPDATE_REMINDER_BANNER();
-                window.location.href = BUILD_MAILTO_URL(item.sujet, item.body, item.cc);
-                REMOVE_FROM_SYNC_QUEUE(item.id);
-            },
-            '📎'
-        );
+        // Ancien envoi par mail mis en attente : il passe désormais par la boîte TRIGONE.
+        REMOVE_FROM_SYNC_QUEUE(item.id);
+        UPDATE_MAIL_QUEUE_UI();
+        ENVOYER_MAIL();
     } else if (item.type === 'AIDE' || item.type === 'OM_DEMANDE') {
         window.location.href = 'mailto:' + MAIL_ASSIST + '?subject=' + encodeURIComponent(item.sujet) + '&body=' + encodeURIComponent(item.body);
         REMOVE_FROM_SYNC_QUEUE(item.id);
@@ -13406,7 +13377,6 @@ function FINALISER_DEMARRAGE() {
         SHOW_PAGE('P0');
     }
     const urlParams = new URLSearchParams(window.location.search);
-    TRAITER_MER_QR_URL();
     if (urlParams.has('data')) {
         try {
             var paxUser = (M.USER || '').trim();
@@ -13468,7 +13438,7 @@ var DEMO_ETAPE_IDX = 0;
 var DEMO_STEPS = [
     { page: 'P0', titre: 'Accueil', texte: "Le jour du départ, appuyez sur « La mission commence ici » pour démarrer votre compte-rendu. Votre identité vient des Réglages TRIGONE : rien à retaper.",
       spotlight: ['#P0 .BTN-ACCUEIL', '.P0-PC .PC-HERO-ACTIONS .BTN-START'] },
-    { page: 'P0', montrerMer: true, titre: 'À partir d\'une mise en route', texte: "Mission préparée dans TRIGONE Mise en route ? Ce bouton la reprend : directement sur ce téléphone, en scannant le QR code affiché sur l'ordinateur, ou depuis l'image reçue d'un collègue.",
+    { page: 'P0', montrerMer: true, titre: 'À partir d\'une mise en route', texte: "Mission préparée dans TRIGONE Mise en route sur ce même appareil ? Ce bouton la reprend. Sinon, saisissez-la directement ici : c'est tout aussi simple.",
       spotlight: ['#BTN-DEPUIS-MER', '.P0-PC .PC-HERO-ACTIONS [onclick^="OUVRIR_LISTE_MISES_EN_ROUTE"]'] },
     { page: 'P1', tab: 'IDENT', titre: 'Identification', texte: 'Grade, nom, prénom, NID et compagnie sont déjà remplis. Reste le libellé de la mission et le lieu de départ et de retour (résidence administrative ou familiale).',
       spotlight: ['#GRADE-USER', '#NOM-USER', '#PRENOM-USER', '#NID-USER', '#CIE-INPUT', '#LIBELLE-MISSION', '#LIEU-DEP', '#LIEU-RET'] },
@@ -13487,7 +13457,7 @@ var DEMO_STEPS = [
     { page: 'P2-FIN', fraisTab: 'RECAP', titre: 'Récap et validation', texte: "Un dernier coup d'œil sur le total, puis « Valider et voir le récap ».",
       spotlight: ['#FRAIS-PANEL-RECAP'] },
     { page: 'P3', titre: 'Récapitulatif final', texte: 'Identité, mission, trajets et forfait : tout est calculé automatiquement selon les barèmes, rien à recalculer à la main.' },
-    { page: 'P3-SIG', titre: 'Signature et envoi', texte: 'Signature numérique, PDF, vérification des pièces jointes (facture d\'hôtel, billets), puis envoi du compte-rendu par mail à l\'assistant Chorus DT.',
+    { page: 'P3-SIG', titre: 'Signature et envoi', texte: 'Signature numérique, PDF, vérification des pièces jointes (facture d\'hôtel, billets), puis envoi du compte-rendu dans TRIGONE à l\'assistant Chorus DT.',
       spotlight: ['#BTN-SIG', '#CERTIF-CHECK', '#PJ-SIG-LIST', '#BTN-SEND'] },
     { page: 'P3-SIG', titre: 'À vous de jouer !', texte: "C'était une démonstration : aucune donnée n'a été envoyée ni enregistrée. Le jour du départ, lancez-vous avec « La mission commence ici ».", derniere: true }
 ];
@@ -13698,7 +13668,7 @@ function DEMO_QUITTER() {
 // Menu à gauche à la place de la barre du bas (même menu que TRIGONE Mise en route) ; page « Départ mission »
 // sur deux colonnes. En dessous de 1100 px, rien ne change.
 // Après les réglages communs : l'accueil suit (nom du tableau de bord PC).
-window.JUMELAGE_APRES_REGLAGES = function() { if (M.PAGE === 'P0') RENDRE_P0_PC(); if (MER_QR_EN_ATTENTE) setTimeout(LANCER_MER_QR_EN_ATTENTE, 600); };
+window.JUMELAGE_APRES_REGLAGES = function() { if (M.PAGE === 'P0') RENDRE_P0_PC(); };
 var CR_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
 var CR_ICONES_PC = {
     ACCUEIL: '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -13765,7 +13735,7 @@ function RENDRE_P0_PC() {
         '<div class="PC-CARTE PC-HERO">' +
             '<img src="logo_cr_accueil.png" class="PC-HERO-LOGO" alt="TRIGONE Compte-rendu de mission" title="Revenir au choix Mise en route / Compte-rendu" onclick="JUMELAGE_CHOIX()">' +
             '<div class="PC-HERO-TXT"><div class="PC-HERO-TITRE">Compte-rendu de mission</div>' +
-                '<p>Horodatez le départ, l\'arrivée sur site et la fin de mission ; saisissez vos repas, nuitées et trajets : le forfait est calculé et le compte-rendu signé part par mail.</p></div>' +
+                '<p>Horodatez le départ, l\'arrivée sur site et la fin de mission ; saisissez vos repas, nuitées et trajets : le forfait est calculé et le compte-rendu signé part dans TRIGONE.</p></div>' +
             '<div class="PC-HERO-ACTIONS">' +
                 (enCours ? '<button type="button" class="BTN BTN-START" onclick="OUVRIR_MENU_MISSION()">Reprendre ma mission en cours</button>'
                          : '<button type="button" class="BTN BTN-START" onclick="ENTRER()">La mission commence ici</button>') +
@@ -13827,7 +13797,7 @@ function LIRE_MISES_EN_ROUTE() {
 }
 function MAJ_BOUTON_DEPUIS_MER() {
     var b = document.getElementById('BTN-DEPUIS-MER');
-    // Toujours proposé avant le départ : la mise en route peut venir de cet appareil ou d'un QR code (ordinateur).
+    // Toujours proposé avant le départ : les mises en route envoyées depuis cet appareil (sinon, la mission se saisit ici).
     if (b) b.classList.toggle('HIDDEN', !!(M.IS_PAX || M.DEBUT || M.ARR_SITE || M.MAIL_SENT));
 }
 function MER_LIEU(nom, cp, pays) {
@@ -13853,14 +13823,10 @@ function OUVRIR_LISTE_MISES_EN_ROUTE() {
     if (!MER_LISTE_DEMANDES.length) {
         AFFICHER_MSG_CENTRE({
             titre: 'À partir d\'une mise en route',
-            texte: 'Faite sur l\'ordinateur ou par un collègue ? Scannez le QR code affiché, ou choisissez l\'image reçue.',
+            texte: 'Aucune mise en route envoyée depuis ce TRIGONE. Pas de souci : saisissez directement votre mission avec « La mission commence ici ».',
             icone: '📋',
             mascotteImage: 'mascotte.webp',
-            boutons: [
-                { label: '📷 Scanner le QR code', style: 'BTN BTN-START', action: SCANNER_MISE_EN_ROUTE },
-                { label: '🖼️ Depuis une photo', style: 'BTN BTN-START', action: PHOTO_MISE_EN_ROUTE },
-                { label: 'Fermer', style: 'BTN-ADMIN-CLOSE' }
-            ]
+            boutons: [{ label: 'Compris', style: 'BTN BTN-START' }]
         });
         return;
     }
@@ -13892,46 +13858,6 @@ function PRENDRE_MISE_EN_ROUTE(d) {
         return;
     }
     APPLIQUER_MISE_EN_ROUTE(d);
-}
-// QR code affiché par Mise en route sur l'ordinateur (Bibliothèque > « Sur mon téléphone »).
-function SCANNER_MISE_EN_ROUTE() {
-    JUMELAGE_SCANNER_QR(function(texte) { IMPORTER_MISE_EN_ROUTE_QR(texte); },
-        function(message) { AFFICHER_MSG_CENTRE({ titre: 'Caméra indisponible', texte: message, icone: '📷', mascotteImage: 'mascotte-erreur.webp', boutons: [{ label: 'Compris', style: 'BTN BTN-START' }] }); });
-}
-// Image du QR code reçue (SMS, WhatsApp, mail…) ou capture d'écran, choisie dans la galerie.
-function PHOTO_MISE_EN_ROUTE() {
-    JUMELAGE_LIRE_QR_PHOTO(function(texte) { IMPORTER_MISE_EN_ROUTE_QR(texte); },
-        function(message) { AFFICHER_MSG_CENTRE({ titre: 'QR code introuvable', texte: message, icone: '🖼️', mascotteImage: 'mascotte-erreur.webp',
-            boutons: [{ label: '🖼️ Choisir une autre image', style: 'BTN BTN-START', action: PHOTO_MISE_EN_ROUTE }, { label: 'Fermer', style: 'BTN-ADMIN-CLOSE' }] }); });
-}
-function IMPORTER_MISE_EN_ROUTE_QR(texte) {
-    JUMELAGE_QR_VERS_MER(texte).then(PRENDRE_MISE_EN_ROUTE, function(e) {
-        var ancien = e && e.message === 'ancien';
-        AFFICHER_MSG_CENTRE({
-            titre: ancien ? 'Téléphone trop ancien' : 'QR code non reconnu',
-            texte: ancien ? 'Ce téléphone ne sait pas lire ce QR code : mettez à jour son système, puis réessayez.'
-                : 'Ce QR code ne vient pas de TRIGONE Mise en route. Dans Mise en route, ouvrez la Bibliothèque et touchez « 📱 Sur un téléphone ».',
-            icone: '⛔', mascotteImage: 'mascotte-erreur.webp',
-            boutons: ancien ? [{ label: 'Compris', style: 'BTN BTN-START' }]
-                : [{ label: '📷 Scanner à nouveau', style: 'BTN BTN-START', action: SCANNER_MISE_EN_ROUTE }, { label: '🖼️ Depuis une photo', style: 'BTN BTN-START', action: PHOTO_MISE_EN_ROUTE }, { label: 'Fermer', style: 'BTN-ADMIN-CLOSE' }]
-        });
-    });
-}
-// QR code lu avec l'appareil photo du téléphone : l'adresse « cr/?mer=… » ouvre Compte-rendu.
-var MER_QR_EN_ATTENTE = '';
-function TRAITER_MER_QR_URL() {
-    var val = new URLSearchParams(window.location.search || '').get('mer');
-    if (!val) return;
-    STRIP_QR_FROM_URL();
-    MER_QR_EN_ATTENTE = '?mer=' + val;
-    // Première ouverture : la mission est reprise une fois la présentation et les réglages faits.
-    if (window.JUMELAGE_REGLAGES_FAITS && !JUMELAGE_REGLAGES_FAITS()) return;
-    setTimeout(LANCER_MER_QR_EN_ATTENTE, 900);
-}
-function LANCER_MER_QR_EN_ATTENTE() {
-    if (!MER_QR_EN_ATTENTE) return;
-    var t = MER_QR_EN_ATTENTE; MER_QR_EN_ATTENTE = '';
-    IMPORTER_MISE_EN_ROUTE_QR(t);
 }
 function APPLIQUER_MISE_EN_ROUTE(d) {
     // La personne concernée : celle dont le nom est l'identité enregistrée, sinon la première de la demande.
@@ -14713,7 +14639,7 @@ function FORMAT_DAY_DATE(key) {
 }
 
 function GET_EXP_SAISIE_MSG() {
-    return 'Expérience de saisie — jour en double sur la même date. Supprimez le jour en trop (page Frais, bouton ×). L\'envoi du CR par mail à l\'assist. DT est bloqué tant que la saisie n\'est pas corrigée.';
+    return 'Expérience de saisie — jour en double sur la même date. Supprimez le jour en trop (page Frais, bouton ×). L\'envoi du CR à l\'assist. DT est bloqué tant que la saisie n\'est pas corrigée.';
 }
 
 function GET_EXP_SAISIE_ALERT() {
@@ -14779,7 +14705,7 @@ function ADD_DAY() {
         var last = M.JOURS[M.JOURS.length - 1];
         if (last.DATE === todayKey) {
             var msg = '⚠️ Attention\n\nVous ajoutez un jour supplémentaire pour la même date calendaire (' + FORMAT_DAY_DATE(todayKey) + ').\n\n';
-            msg += 'Cela engendre une expérience de saisie : le jour ne sera pas compté dans le forfait et l\'envoi du CR par mail à l\'assist. DT sera bloqué tant que ce jour n\'aura pas été supprimé.\n\n';
+            msg += 'Cela engendre une expérience de saisie : le jour ne sera pas compté dans le forfait et l\'envoi du CR à l\'assist. DT sera bloqué tant que ce jour n\'aura pas été supprimé.\n\n';
             msg += 'Confirmez-vous vouloir continuer ?';
             if (!confirm(msg)) return;
             isExp = true;
@@ -15652,7 +15578,7 @@ function VALIDATE_BEFORE_RECAP() {
         }
     }
     if (HAS_EXPERIENCE_SAISIE()) {
-        warnings.push('Expérience de saisie — envoi du CR par mail à l\'assist. DT bloqué. Supprimez le jour en double (page Frais, ×).');
+        warnings.push('Expérience de saisie — envoi du CR à l\'assist. DT bloqué. Supprimez le jour en double (page Frais, ×).');
     }
     return { blockers: blockers, warnings: warnings };
 }
@@ -15779,15 +15705,13 @@ function UPDATE_PDF_SEND_HINT() {
     }
     hint.classList.remove('HIDDEN');
     if (HAS_EXPERIENCE_SAISIE()) {
-        hint.textContent = 'PDF téléchargeable pour contrôle — envoi mail à ' + ASSIST_CHORUS_LABEL + ' bloqué (expérience de saisie).';
+        hint.textContent = 'PDF téléchargeable pour contrôle — envoi à ' + ASSIST_CHORUS_LABEL + ' bloqué (expérience de saisie).';
     } else if (HAS_PENDING_MAIL()) {
         hint.textContent = 'Envoi mail à ' + ASSIST_CHORUS_LABEL + ' en attente — à la reconnexion, « Synchroniser » en haut (PDF déjà téléchargé).';
-    } else if (!navigator.onLine && M.PDF_DOWNLOADED) {
-        hint.textContent = 'Hors ligne — PDF prêt. L\'envoi mail à ' + ASSIST_CHORUS_LABEL + ' sera proposé à la reconnexion.';
-    } else if (M.PDF_DOWNLOADED) {
-        hint.textContent = 'Envoyez le mail à ' + ASSIST_CHORUS_LABEL + ' — n\'oubliez pas de joindre le PDF.';
+    } else if (!navigator.onLine) {
+        hint.textContent = 'Hors ligne — l\'envoi à ' + ASSIST_CHORUS_LABEL + ' se fera dès le retour du réseau.';
     } else {
-        hint.textContent = 'Téléchargez le PDF pour le joindre, puis envoyez le mail à ' + ASSIST_CHORUS_LABEL + '.';
+        hint.textContent = 'L\'envoi joint automatiquement le PDF du compte-rendu ; vous y ajoutez vos justificatifs (photos ou PDF). Le PDF téléchargé est pour vous.';
     }
     UPDATE_MAIL_QUEUE_UI();
 }
@@ -15835,12 +15759,12 @@ function VALIDER_BOUTON() {
         // pjResolved doit aussi être vérifié ici, pas seulement pour débloquer le téléchargement du PDF :
         // sans ça, décocher une pièce obligatoire (ex. la facture d'hôtel) après avoir déjà téléchargé le
         // PDF laissait le bouton Envoyer actif, alors que l'aide affichée promet « aucune exception possible ».
-        var canSend = check && pdfOk && pjResolved && !expBlock;
+        // L'envoi TRIGONE joint lui-même le PDF : le télécharger n'est plus un préalable.
+        var canSend = check && pjResolved && !expBlock;
         sendBtn.disabled = !canSend;
         sendBtn.classList.toggle('BTN-DISABLED', !canSend);
-        if (expBlock) sendBtn.textContent = '📧 ENVOI IMPOSSIBLE (EXPÉRIENCE DE SAISIE)';
-        else if (M.IS_PAX && M.CHEF_MAIL && IS_VALID_EMAIL(M.CHEF_MAIL)) sendBtn.textContent = '📧 ENVOYER LE CR (COPIE CHEF DE MISSION)';
-        else sendBtn.textContent = '📧 ENVOYER LE CR PAR MAIL';
+        if (expBlock) sendBtn.textContent = '📨 ENVOI IMPOSSIBLE (EXPÉRIENCE DE SAISIE)';
+        else sendBtn.textContent = '📨 ENVOYER LE CR DANS TRIGONE';
     }
     if (downloadBtn) {
         var canDownload = check && pjResolved;
@@ -16108,7 +16032,8 @@ function GENERER_PDF_REMBOURSEMENT(key, retryCount) {
     return true;
 }
 
-function GENERER_PDF(retryCount, readOnlyMode) {
+// sortie === 'blob' : le PDF est rendu ({ nom, blob }) au lieu d'être téléchargé (envoi TRIGONE).
+function GENERER_PDF(retryCount, readOnlyMode, sortie) {
     retryCount = retryCount || 0;
     if (!readOnlyMode) SAVE_OBS();
     const jsPDFConstructor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : window.jsPDF;
@@ -16296,7 +16221,7 @@ function GENERER_PDF(retryCount, readOnlyMode) {
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9.5);
         doc.setTextColor(133, 77, 14);
-        doc.text('EXPÉRIENCE DE SAISIE — envoi mail bloqué · supprimez le jour en double', margin + 10, y + 19);
+        doc.text('EXPÉRIENCE DE SAISIE — envoi bloqué · supprimez le jour en double', margin + 10, y + 19);
         doc.setTextColor.apply(doc, PDF_INK);
         y += 42;
     }
@@ -16471,6 +16396,7 @@ function GENERER_PDF(retryCount, readOnlyMode) {
 
     var cleanUser = (M.USER || 'MISSION').replace(/[^a-zA-Z0-9_\-]/g, '_');
     var filename = 'CR_MISSION_' + cleanUser + '.pdf';
+    if (sortie === 'blob') return { nom: filename, blob: doc.output('blob') };
     doc.save(filename);
     if (!readOnlyMode) {
         M.PDF_DOWNLOADED = true;
@@ -16514,57 +16440,50 @@ function GET_PJ_LISTE_A_JOINDRE() {
     });
 }
 
+// Envoi du compte-rendu à l'assistant Chorus DT, directement dans sa boîte TRIGONE (chiffré) : le PDF du
+// compte-rendu est joint automatiquement, les justificatifs sont choisis dans la fenêtre d'envoi (jumelage.js).
 function ENVOYER_MAIL() {
     if (M.MAIL_SENT) return;
     if (HAS_EXPERIENCE_SAISIE()) {
         alert(GET_EXP_SAISIE_ALERT());
         return;
     }
-    if (HAS_PENDING_MAIL()) {
-        if (navigator.onLine) PROCESS_SYNC_QUEUE();
-        else alert('Envoi mail déjà en attente. À la reconnexion, appuyez sur « Synchroniser » en haut de l\'écran.');
-        return;
-    }
-    if (!M.PDF_DOWNLOADED) {
-        alert('Téléchargez d\'abord le PDF pour le joindre au mail à ' + ASSIST_CHORUS_LABEL + '.');
-        return;
-    }
     if (!ALL_PJ_RESOLVED()) {
         alert('Une pièce jointe obligatoire n\'est plus cochée (ex. facture d\'hôtel). Cochez-la ou indiquez un motif avant d\'envoyer.');
         return;
     }
-    SAVE_OBS();
-    var sujet = 'CR MISSION - ' + M.USER;
-    if (M.COLLECTIVE) { sujet = '⚠️ COLLECTIF (CHEF DE MISSION) - ' + M.USER; }
-    else if (M.IS_PAX) { sujet = '👥 COLLECTIF (PAX) - ' + M.USER; }
-    if (HAS_EXPERIENCE_SAISIE()) { sujet = '⚠️ EXPÉRIENCE DE SAISIE - ' + sujet; }
-    if (M.LIBELLE_MISSION && M.LIBELLE_MISSION.trim()) { sujet += ' - ' + M.LIBELLE_MISSION.trim(); }
-    sujet += ' - Retour de CR de Mission';
-    var body = GET_MAIL_BODY() + '\n\n' + GET_PJ_RECAP_TEXTE_MAIL();
-    var cc = (M.IS_PAX && M.CHEF_MAIL && IS_VALID_EMAIL(M.CHEF_MAIL)) ? M.CHEF_MAIL.trim() : '';
     if (!navigator.onLine) {
-        ADD_TO_SYNC_QUEUE({ type: 'MAIL', sujet: sujet, body: body, user: M.USER, needsPdf: false, cc: cc });
-        alert('Hors ligne : envoi mail mis en attente.\n\nLe PDF est sur votre appareil. À la reconnexion, appuyez sur « Synchroniser » en haut pour ouvrir le mail (n\'oubliez pas de joindre le PDF).');
-        UPDATE_MAIL_QUEUE_UI();
-        UPDATE_NETWORK_UI();
+        alert('Hors ligne : l\'envoi du compte-rendu demande du réseau. Réessayez dès que vous êtes connecté (votre saisie est enregistrée).');
         return;
     }
-    // TRIGONE ne peut pas joindre les fichiers au mail à la place du missionnaire (ni « mailto: », ni aucune
-    // page web, ne peut le faire) : cocher une pièce jointe plus haut n'est qu'une déclaration d'intention.
-    // Cette relecture, juste avant l'ouverture du mail, est le seul vrai filet possible pour qu'elles arrivent
-    // réellement à l'assistant — sans ça, une pièce oubliée ne se voit qu'une fois le dossier revenu incomplet.
-    var pjAJoindre = GET_PJ_LISTE_A_JOINDRE();
-    var listeTexte = pjAJoindre.map(function(x) { return '📎 ' + x; }).join('\n');
-    MSG_CONFIRM(
-        'Avant d\'envoyer',
-        (listeTexte ? 'Vérifiez que vous avez bien ces pièces prêtes, puis joignez-les vous-même dans le mail qui va s\'ouvrir :\n\n' + listeTexte : 'Aucune pièce jointe déclarée pour ce compte-rendu.') + '\n\nTRIGONE ne peut pas les joindre automatiquement.',
-        'J\'ai tout joint — Envoyer',
-        function() { FINALISER_ENVOI_MAIL(sujet, body, cc); },
-        '📎'
-    );
+    if (!window.JUMELAGE_ENVOYER_CR) { alert('Envoi indisponible : fermez et rouvrez TRIGONE.'); return; }
+    SAVE_OBS();
+    var sujet = 'CR MISSION - ' + M.USER;
+    if (M.COLLECTIVE) { sujet = 'COLLECTIF (CHEF DE MISSION) - ' + M.USER; }
+    else if (M.IS_PAX) { sujet = 'COLLECTIF (PAX) - ' + M.USER; }
+    if (M.LIBELLE_MISSION && M.LIBELLE_MISSION.trim()) { sujet += ' - ' + M.LIBELLE_MISSION.trim(); }
+    var corps = sujet + '\n\n' + GET_MAIL_BODY() + '\n\n' + GET_PJ_RECAP_TEXTE_MAIL();
+    var besoin;
+    try { besoin = BUILD_RECAP_CORE(false).BESOIN; } catch (e) { besoin = []; }
+    var checked = M.PJ_CHECKED || {};
+    var pieces = [...new Set(besoin || [])].filter(function(x) { return checked[x] && x !== 'COMPTE-RENDU PDF'; });
+    var jour = function(t) { return String(t || '').split(/[ ,]/)[0]; };
+    JUMELAGE_ENVOYER_CR({
+        destinataire: (MAIL_ASSIST || '').trim(),
+        missionnaire: [M.GRADE, M.USER].filter(Boolean).join(' '),
+        libelle: (M.LIBELLE_MISSION || '').trim() || 'Compte-rendu de mission',
+        dates: [jour(M.DEBUT), jour(M.FIN_HORODATAGE)].filter(Boolean).join(' → '),
+        corps: corps,
+        pieces: pieces,
+        pdf: function() { return GENERER_PDF(0, true, 'blob'); },
+        succes: function() {
+            FINALISER_ENVOI_MAIL();
+            MSG_INFO('Compte-rendu envoyé', 'Votre compte-rendu et vos justificatifs sont arrivés, chiffrés, dans le TRIGONE de ' + ASSIST_CHORUS_LABEL + '. La mission est archivée dans votre Bibliothèque.', '✅');
+        }
+    });
 }
 
-function FINALISER_ENVOI_MAIL(sujet, body, cc) {
+function FINALISER_ENVOI_MAIL() {
     M.MAIL_SENT = true;
     M.MAIL_SENT_AT = new Date().toISOString();
     CLEAR_CR_NOTIF_PING();
@@ -16574,7 +16493,6 @@ function FINALISER_ENVOI_MAIL(sujet, body, cc) {
     RESTORE_OBS_FIELD();
     UPDATE_P3_NAV_BUTTONS();
     UPDATE_REMINDER_BANNER();
-    window.location.href = BUILD_MAILTO_URL(sujet, body, cc);
 }
 
 function RESET_APP() {

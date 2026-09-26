@@ -47,8 +47,20 @@ module.exports = async function() {
 
     const m = await appareil('M'), v1 = await appareil('V1'), v2 = await appareil('V2'), c = await appareil('C');
 
-    // Rôles : chaque valideur se connecte une fois avec son code (rôle déclaré au compte) ; l'assistant active son rôle.
-    await connecter(v1, code1); await connecter(v2, code2); await attendre(1500);
+    // Rôles : le 1er valideur coche son rôle dans Réglages › Mes rôles (avec son code) ; le 2e se connecte à l'Espace valideur.
+    await v1.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
+    await v1.check('#JUM-R-VAL1'); await attendre(200);
+    verifier(await v1.isVisible('#JUM-R-CODEVAL1') && await v1.isVisible('#JUM-R-FONCTION'), 'Réglages › Mes rôles : 1er valideur coché → code et fonction demandés');
+    await v1.fill('#JUM-R-FONCTION', 'Chef de service'); await v1.fill('#JUM-R-CODEVAL1', 'MAUVAIS'); await v1.click('.JUM-R-PRINCIPAL'); await attendre(3000);
+    verifier((await v1.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Mes rôles : un mauvais code valideur ne donne pas le rôle');
+    await v1.fill('#JUM-R-CODEVAL1', code2); await v1.click('.JUM-R-PRINCIPAL'); await attendre(3000);
+    verifier((await v1.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Mes rôles : le code du 2e valideur ne donne pas le rôle de 1er valideur');
+    await v1.fill('#JUM-R-CODEVAL1', code1); await v1.click('.JUM-R-PRINCIPAL'); await attendre(4000);
+    verifier(await v1.evaluate(() => !document.querySelector('.JUM-REGLAGES') && JSON.parse(localStorage.getItem('trigone_roles_locaux')).valideur1 === true),
+        'Mes rôles : 1er valideur activé avec son code');
+    await v1.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(2500);
+    verifier(await v1.evaluate(() => { const h = HABILITATION_COURANTE(); return !!h && h.role === 1 && h.fonction === 'CHEF DE SERVICE'; }), 'Mes rôles : l\'Espace valideur est connecté d\'office (1er valideur)');
+    await connecter(v2, code2); await attendre(1500);
     const codeChorus = process.env.TRIGONE_CODE_CHORUS;
     if (codeChorus) {
         await c.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
@@ -78,9 +90,15 @@ module.exports = async function() {
         await m.evaluate(() => { FERMER_MSG(); FERMER_MODALE(); }); await attendre(400);
     }
     await m.evaluate(() => SHOW_PAGE('PANIER')); await attendre(300);
-    await m.fill('#MER-MAIL-DEST', MAILS.V1); await m.fill('#MER-MAIL-DEMANDEUR', MAILS.M);
+    // Destinataire sans compte TRIGONE : envoi bloqué, la demande reste dans Documents.
+    await m.fill('#MER-MAIL-DEST', 'personne.' + suffixe + '@interieur.gouv.fr');
+    await m.click('text=Envoyer mes documents'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
+    verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Pas encore de compte TRIGONE' && await m.evaluate(() => GET_PANIER().length === 2),
+        'destinataire sans compte : envoi bloqué, les demandes restent dans Documents');
+    await m.evaluate(() => { FERMER_MSG(); FERMER_MODALE(); SHOW_PAGE('PANIER'); }); await attendre(400);
+    await m.fill('#MER-MAIL-DEST', MAILS.V1);
     await m.click('text=Envoyer mes documents'); await attendre(500);
-    verifier(await m.isVisible('#MER-BTN-DIRECT'), 'demandeur : bouton « Envoyer directement dans TRIGONE »');
+    verifier(await m.isVisible('#MER-BTN-DIRECT'), 'demandeur : bouton « Envoyer » (boîte TRIGONE)');
     await m.click('#MER-BTN-DIRECT'); await attendre(3000);
     verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Demandes envoyées', 'demandeur : envoi direct réussi, sans pièce jointe ni mail');
     await m.evaluate(() => FERMER_MSG());
@@ -113,9 +131,9 @@ module.exports = async function() {
     await v1.fill('#MER-MOTIF-REFUS', 'Merci de joindre la DAF'); await v1.click('#MER-MODALE-FOND button:has-text("Refuser")'); await attendre(800);
     await v1.evaluate(v => SET_MAIL_VALIDEUR('mailValideur2', v), MAILS.V2);
     await v1.evaluate(() => PREPARER_TRANSMISSION()); await attendre(600);
-    const boutons = await v1.locator('#MER-MODALE-FOND button:has-text("Envoyer directement")').count();
-    verifier(boutons === 2, '1er valideur : 2 envois directs proposés (2e valideur + refus au demandeur)');
-    for (let i = 0; i < boutons; i++) { await v1.locator('#MER-MODALE-FOND button:has-text("Envoyer directement")').first().click(); await attendre(3000); }
+    const boutons = await v1.locator('#MER-MODALE-FOND .MER-PANIER-ITEM button:has-text("Envoyer")').count();
+    verifier(boutons === 2, '1er valideur : 2 envois proposés (2e valideur + refus au demandeur)');
+    for (let i = 0; i < boutons; i++) { await v1.locator('#MER-MODALE-FOND .MER-PANIER-ITEM button:has-text("Envoyer")').first().click(); await attendre(3000); }
     verifier(await v1.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 2, '1er valideur : les 2 envois sont arrivés');
     await v1.click('#MER-MODALE-FOND button:has-text("Terminé")'); await attendre(800);
     verifier(await v1.evaluate(() => JUMELAGE_BOITE_NB() === 0 && JUMELAGE_BOITE_LISTE()[0].statut === 'traite'), '1er valideur : l\'envoi passe en « Traitées » dans la boîte');
@@ -132,7 +150,7 @@ module.exports = async function() {
     await v2.evaluate(() => VALIDER_DEMANDES([GET_A_VALIDER()[0].id])); await attendre(1500);
     await v2.evaluate(v => SET_MAIL_VALIDEUR('mailChorus', v), MAILS.C);
     await v2.evaluate(() => PREPARER_TRANSMISSION()); await attendre(600);
-    await v2.locator('#MER-MODALE-FOND button:has-text("Envoyer directement")').first().click(); await attendre(3500);
+    await v2.locator('#MER-MODALE-FOND .MER-PANIER-ITEM button:has-text("Envoyer")').first().click(); await attendre(3500);
     verifier(await v2.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 1, '2e valideur : envoi direct à l\'assistant Chorus DT');
 
     // Assistant Chorus DT
@@ -147,6 +165,29 @@ module.exports = async function() {
     const cartes = await c.locator('.MER-PANIER-ITEM').allInnerTexts();
     verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'CHORUS' && cartes.some(t => t.includes('Conforme : validée par les deux valideurs')),
         'assistant Chorus DT : la demande arrive, conforme (signatures et NDS vérifiées)');
+
+    // Compte-rendu de fin de mission : le missionnaire l'envoie (PDF + justificatif) à l'assistant Chorus DT.
+    await m.goto(URL + 'cr/'); await attendre(3000);
+    const envoyerCr = async dest => {
+        await m.evaluate(d => JUMELAGE_ENVOYER_CR({ destinataire: d, missionnaire: 'ADJ BOUQUET GP', libelle: 'Stage Bouquet', dates: '01/10/2026 → 03/10/2026',
+            corps: 'Bonjour', pieces: ['FACTURE HÔTEL'], pdf: () => ({ nom: 'CR_MISSION_BOUQUET.pdf', blob: new Blob(['%PDF-1.4 test'], { type: 'application/pdf' }) }),
+            succes: () => { window.__crEnvoye = true; } }), dest); await attendre(400);
+        await m.setInputFiles('#JUM-CR-FICHIERS', path.join(FICHIERS, 'nds_test.pdf')); await attendre(500);
+        await m.click('#JUM-CR-ENVOYER'); await attendre(3000);
+    };
+    await envoyerCr(MAILS.V1);
+    verifier((await m.textContent('#JUM-CR-ERR')).includes('assistant Chorus DT'), 'compte-rendu : refusé par la boîte d\'un valideur (réservé à l\'assistant Chorus DT)');
+    await m.evaluate(() => JUMELAGE_FERMER_ENVOI_CR());
+    await envoyerCr(MAILS.C);
+    verifier(await m.evaluate(() => window.__crEnvoye === true && !document.querySelector('.JUM-REGLAGES')), 'compte-rendu : envoyé à l\'assistant Chorus DT');
+    await relever(c); await c.evaluate(() => SHOW_PAGE('CHORUS')); await attendre(600);
+    verifier((await c.textContent('#PAGE-STAGE')).includes('ADJ BOUQUET GP'), 'Chorus DT : le compte-rendu arrive dans la section « Comptes-rendus de mission »');
+    await c.locator('.MER-RECU:has(.MER-RECU-cr) .BTN-PRIMARY').click(); await attendre(1200);
+    const dl = c.waitForEvent('download');
+    await c.locator('#MER-MODALE-FOND button:has-text("Télécharger")').nth(1).click();
+    verifier((await dl).suggestedFilename() === 'nds_test.pdf', 'Chorus DT : le justificatif se télécharge');
+    await c.click('#MER-MODALE-FOND button:has-text("Traité")'); await attendre(500);
+    verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().filter(x => x.nature === 'cr').every(x => x.statut === 'traite')), 'Chorus DT : compte-rendu marqué « traité »');
 
     // Boîtes vides après relève
     const reste = await v1.evaluate(async () => { const c = JSON.parse(localStorage.getItem('trigone_compte'));
