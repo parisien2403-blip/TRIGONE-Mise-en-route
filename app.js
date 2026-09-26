@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 97;
+var APP_CODE_VERSION = 98;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1656,7 +1656,7 @@ var MER_NOTICES = {
             'Au retour de mission, <b>TRIGONE Compte-rendu</b> reprend la mission envoyée depuis cet appareil (« À partir d\'une mise en route ») ; sinon, le missionnaire la saisit directement dans Compte-rendu.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Rôle valideur · boîte de réception · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Réglages › Mes rôles</b> (roue crantée de l\'écran de choix) : cochez <b>VALIDEUR 1</b> et/ou <b>VALIDEUR 2</b>, saisissez votre fonction et le <b>code</b> de chaque rôle, remis par l\'administrateur. Les rôles sont déclarés à votre compte TRIGONE : votre boîte ne reçoit que les demandes de vos niveaux. Il peut y avoir plusieurs VALIDEUR 1 et plusieurs VALIDEUR 2 ; une même personne peut avoir tous les rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) et rester missionnaire.',
-            '<b>Les deux rôles valideur ?</b> Dans l\'Espace valideur, la bascule <b>VALIDEUR 1 / VALIDEUR 2</b> choisit le niveau ; une demande ouverte depuis la Boîte de réception passe d\'elle-même au bon niveau. Vous ne pouvez jamais valider les deux niveaux d\'une même demande.',
+            '<b>Les deux rôles valideur ?</b> Dans l\'Espace valideur, la bascule <b>VALIDEUR 1 / VALIDEUR 2</b> choisit le niveau ; une demande ouverte depuis la Boîte de réception passe d\'elle-même au bon niveau. Une personne qui a les deux rôles peut valider les deux niveaux d\'une même demande.',
             'Ou, dans l\'<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Les demandes à signer arrivent dans votre <b>Boîte de réception</b> (pastille rouge) : « Ouvrir et signer » les affiche dans l\'Espace valideur, avec leur <b>aperçu</b> et leurs pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
@@ -2647,19 +2647,15 @@ function IMPORTER_A_VALIDER(input) {
 function VALIDER_DEMANDES(ids) {
     var h = HABILITATION_COURANTE();
     if (!MER_CLE_SESSION || !h || h.retire) { RENDER_VALIDATION_INPLACE(); return; }
-    var liste = GET_A_VALIDER(), memePersonne = [];
-    // Une même personne peut être VALIDEUR 1 et VALIDEUR 2, mais jamais valider les deux niveaux d'une même demande.
-    var moi = function(v) { return v && (v.nom || '').toUpperCase() === (h.nom || '').toUpperCase() && (v.prenom || '').toUpperCase() === (h.prenom || '').toUpperCase(); };
+    // Une même personne peut être VALIDEUR 1 et VALIDEUR 2, et valider les deux niveaux d'une même demande.
+    var liste = GET_A_VALIDER();
     Promise.all(liste.map(function(e) {
         var ko = (MER_VERIF[e.id] || []).some(function(x) { return !x.ok; }) || (e.pjAlterees || []).length;
         if (ids.indexOf(e.id) === -1 || e.decision || NIVEAU_VALIDATION(e.d) !== h.role || ko) return null;
-        if (h.role === 2 && moi((e.d.validations || [])[0])) { memePersonne.push(RESUME_DEMANDE(e.d).noms); return null; }
         return SIGNER_VALIDATION(e.d, h).then(function(s) { e.decision = 'VALIDEE'; e.signature = s; });
     })).then(function() {
         SAVE_A_VALIDER(liste);
         RENDER_VALIDATION_INPLACE();
-        if (memePersonne.length) MSG_ERREUR('Déjà validée par vous', 'Vous avez validé ' + (memePersonne.length > 1 ? 'ces demandes' : 'cette demande') + ' en VALIDEUR 1 (' + memePersonne.join(', ') +
-            ') : le 2e niveau doit être validé par une autre personne. Refusez-la ou laissez-la à un autre VALIDEUR 2.');
     }).catch(function(err) { MSG_ERREUR('Signature impossible', err.message); });
 }
 function COCHER_TOUT_VALIDATION() {
