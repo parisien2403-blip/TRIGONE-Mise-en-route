@@ -198,3 +198,7 @@ MISE EN ROUTE → COMPTE-RENDU PAR QR CODE (ordinateur → téléphone)
   caméra arrière, BarcodeDetector sinon vendor/jsQR.js (Apache-2.0, chargé à la demande). L'adresse lue par
   l'appareil photo ouvre aussi Compte-rendu directement (sans écran de choix) et pré-remplit la mission.
 - Code commun : jumelage.js (JUMELAGE_MER_VERS_QR, JUMELAGE_QR_VERS_MER, JUMELAGE_AFFICHER_QR_MER, JUMELAGE_SCANNER_QR).
+- Image à envoyer (V17) : la fenêtre du QR code propose « Envoyer l'image » (partage du téléphone/PC si disponible)
+  et « Enregistrer l'image » (PNG avec libellé, missionnaire, trajet et dates). Compte-rendu lit l'image depuis la
+  galerie : « Depuis une photo » (BarcodeDetector, sinon jsQR à plusieurs tailles). Le QR contient toutes les personnes
+  de la demande (le téléphone retrouve la sienne par son nom), sauf grande collective : seulement la personne des réglages.

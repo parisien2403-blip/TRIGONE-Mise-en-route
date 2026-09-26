@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 64;
+var APP_CODE_VERSION = 65;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -241,7 +241,7 @@ function TPL_ACCUEIL_PC() {
         var objet = e.demandes.map(function(x) { return x.objet || 'Mise en route'; }).join(' · ');
         return ligne('Envoyée le ' + new Date(e.envoyeLe).toLocaleDateString('fr-FR'), '', objet,
             [a.lieuArr || a.paysArr || '', a.dateDep ? FORMAT_DATE_COURT(a.dateDep) : ''].filter(Boolean).join(' · '), 'SHOW_PAGE(\'BIBLIOTHEQUE\')');
-    }).join('') + '<button type="button" class="BTN BTN-GHOST" style="margin-top:14px;" onclick="BIB_QR(\'' + bib[0].id + '\')">📱 Dernière demande sur mon téléphone (QR code)</button>'
+    }).join('') + '<button type="button" class="BTN BTN-GHOST" style="margin-top:14px;" onclick="BIB_QR(\'' + bib[0].id + '\')">📱 Dernière demande sur un téléphone (QR code)</button>'
         : '<div class="PC-VIDE">Aucune demande envoyée pour l\'instant.</div>';
     var attente = panier.length ? panier.map(function(d) {
         var n = (d.personnes || []).length, a = (d.trajets && d.trajets.aller) || {};
@@ -441,7 +441,7 @@ function TPL_BIBLIOTHEQUE() {
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(objets) + (e.destinataire ? '<br>À ' + ESC(e.destinataire) : '') + '</div>' +
             '<div class="MER-VAL-ACTIONS">' +
-                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_QR(\'' + e.id + '\')">📱 Sur mon téléphone</button>' +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_QR(\'' + e.id + '\')">📱 Sur un téléphone</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_JSON(\'' + e.id + '\')">💾 .json</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
@@ -449,7 +449,7 @@ function TPL_BIBLIOTHEQUE() {
             '</div></div></div>';
     }).join('');
     return '<div class="CARD"><h2>Bibliothèque</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées. « 📱 Sur mon téléphone » affiche un QR code à scanner avec TRIGONE Compte-rendu de mission pour y reprendre la mission. « 💾 .json » réenregistre le fichier envoyé (pièces jointes comprises) pour le renvoyer si besoin.</p>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées. « 📱 Sur un téléphone » affiche un QR code à scanner avec TRIGONE Compte-rendu de mission pour y reprendre la mission, ou à envoyer en image au missionnaire concerné. « 💾 .json » réenregistre le fichier envoyé (pièces jointes comprises) pour le renvoyer si besoin.</p>' +
         (items || '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
