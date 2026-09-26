@@ -381,7 +381,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 32, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 33, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -398,7 +398,8 @@
             sessionStorage.setItem(CLE_RECHARGE, String(Date.now()));
         } catch (e) {}
         try { if (window.JUMELAGE_AVANT_RECHARGE) window.JUMELAGE_AVANT_RECHARGE(); } catch (e) {}
-        if (!ecran) { try { sessionStorage.setItem(CLE_CHOIX_FAIT, '1'); } catch (e) {} }
+        // Après la mise à jour, TRIGONE rouvre sur l'écran de choix (et non dans l'appli en cours).
+        try { sessionStorage.setItem('trigone_apres_maj', '1'); sessionStorage.removeItem(CLE_CHOIX_FAIT); } catch (e) {}
         var voile = document.createElement('div');
         voile.className = 'JUM-MAJ';
         voile.innerHTML = '<div class="JUM-MAJ-ROND"></div><div>Mise à jour de TRIGONE…</div>';
@@ -1378,7 +1379,9 @@
     // Juste après une mise à jour (nouvelle publication chargée, quelle qu'en soit la cause) : retour à l'écran de choix.
     var buildVu = +lireTxt('trigone_build_vu') || 0;
     var fichierOuQr = /[?&](partage|fichier|mer)=/.test(location.search) || /\/partage-trigone\/?$/.test(location.pathname);
-    if (buildVu && buildVu < BUILD && !fichierOuQr) dejaChoisi = false;
+    var apresMaj = false;
+    try { apresMaj = sessionStorage.getItem('trigone_apres_maj') === '1'; sessionStorage.removeItem('trigone_apres_maj'); } catch (e) {}
+    if ((apresMaj || (buildVu && buildVu < BUILD)) && !fichierOuQr) { dejaChoisi = false; arrivee = false; }
     ecrireTxt('trigone_build_vu', String(BUILD));
     if (!arrivee && !dejaChoisi) {
         if (document.body) window.JUMELAGE_CHOIX();
