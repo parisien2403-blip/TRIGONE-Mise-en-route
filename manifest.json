@@ -39,6 +39,7 @@
         {
           "name": "fichiers",
           "accept": [
+            "*/*",
             "application/json",
             ".json",
             "application/octet-stream",

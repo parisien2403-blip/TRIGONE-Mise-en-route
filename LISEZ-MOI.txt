@@ -240,3 +240,6 @@ DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE (V21)
 - V22 : le nouvel Outlook (Windows) n'a pas « Ouvrir avec » : « Copier » sur la pièce jointe puis Ctrl+V n'importe où
   dans TRIGONE (événement paste), ou glisser la pièce jointe n'importe où dans l'appli : même aiguillage (MER_RECEVOIR_FICHIERS).
   Les mails envoyés par TRIGONE expliquent ces gestes.
+- V23 : share_target accepte */* (des messageries Android partagent le .json en type générique) ; les fichiers qui
+  ne sont pas des demandes TRIGONE sont refusés avec un message. Android ne permet aux applis web que « Partager »
+  (pas « Ouvrir avec ») ; après un changement du manifeste, réinstaller TRIGONE depuis Chrome.

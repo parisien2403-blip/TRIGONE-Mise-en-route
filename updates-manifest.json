@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 70,
-  "appCodeMessage": "Version 22 : avec Outlook sur ordinateur, « Copier » sur la pièce jointe puis Ctrl+V dans TRIGONE (ou glisser la pièce jointe n'importe où dans TRIGONE) : la demande s'ouvre, prête à signer.",
+  "appCodeVersion": 71,
+  "appCodeMessage": "Version 23 : sur Android, TRIGONE apparaît dans « Partager » pour tous les types de pièces jointes (les messageries n'annoncent pas toujours un .json comme tel). Réinstallez TRIGONE depuis Chrome pour en profiter.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
