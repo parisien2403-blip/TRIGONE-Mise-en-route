@@ -106,6 +106,9 @@
         '.JUM-ROUE svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.4s ease; }' +
         '.JUM-ROUE:hover svg, .JUM-ROUE:active svg { transform: rotate(60deg); }' +
         '.JUM-CHOIX.choisi .JUM-ROUE { opacity: 0; pointer-events: none; }' +
+        '.JUM-VERSION { position: absolute; top: max(16px, env(safe-area-inset-top, 0px)); right: max(18px, env(safe-area-inset-right, 0px)); z-index: 3; padding: 5px 12px; border-radius: 999px;' +
+            ' border: 1px solid rgba(255,255,255,0.18); background: #1a1a1a; color: #f5f5f5; box-shadow: 0 4px 14px rgba(0,0,0,0.25); font: 700 12px Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; pointer-events: none; }' +
+        '.JUM-CHOIX.choisi .JUM-VERSION { opacity: 0; }' +
         /* Menu de la roue crantée */
         '.JUM-ROUE-MENU { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 62px); z-index: 4;' +
             ' background: #fff; border-radius: 16px; padding: 6px; min-width: 250px; box-shadow: 0 18px 44px rgba(0,0,0,0.45); font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; }' +
@@ -363,7 +366,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 27, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 28, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1272,7 +1275,9 @@
         ecran.innerHTML = panneau('mer') + panneau('cr') +
             '<svg class="JUM-TRAIT" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
             '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
-            '<button type="button" class="JUM-ROUE" aria-label="Réglages et présentation de TRIGONE" title="Réglages TRIGONE · Découvrir TRIGONE">' + ROUE_SVG + '</button>';
+            '<button type="button" class="JUM-ROUE" aria-label="Réglages et présentation de TRIGONE" title="Réglages TRIGONE · Découvrir TRIGONE">' + ROUE_SVG + '</button>' +
+            // Numéro de version, en haut à droite (le même dans les deux applis).
+            (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '');
         var roue = ecran.querySelector('.JUM-ROUE');
         ['pointerdown', 'pointerup'].forEach(function(t) { roue.addEventListener(t, function(e) { e.stopPropagation(); }); });
         roue.addEventListener('click', window.JUMELAGE_MENU_ROUE);
