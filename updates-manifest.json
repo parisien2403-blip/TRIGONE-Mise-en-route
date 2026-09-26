@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 82,
-  "appCodeMessage": "Version 34 : assistant Chorus DT — sur PC, glissez le fichier .json (ou le PDF) dans la zone prévue, ou collez-le avec Ctrl + V.",
+  "appCodeVersion": 83,
+  "appCodeMessage": "Version 35 : le Panier prend une icône de dossier, plus sobre que le caddie.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

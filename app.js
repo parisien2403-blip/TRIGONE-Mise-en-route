@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 82;
+var APP_CODE_VERSION = 83;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -174,7 +174,7 @@ function SHOW_PAGE(page) {
 
 var MER_ICONES = {
     BIBLIOTHEQUE: '<svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg>',
-    PANIER: '<svg viewBox="0 0 24 24"><path d="M3 4h2l2.4 11.2a2 2 0 0 0 2 1.6h7.9a2 2 0 0 0 2-1.5L21 8H6.2"/><circle cx="10" cy="20" r="1.2"/><circle cx="17" cy="20" r="1.2"/></svg>',
+    PANIER: '<svg viewBox="0 0 24 24"><path d="M3 7.5a2 2 0 0 1 2-2h4.2l2 2.2H19a2 2 0 0 1 2 2v8.3a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M8 13.5h8M8 16.5h5"/></svg>',
     ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>',
     NOTICE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 15.7v-5M12 8h.01"/></svg>',
     CHORUS: '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14.5l2 2 4-4"/></svg>'
