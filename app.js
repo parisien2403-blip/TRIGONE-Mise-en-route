@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 92;
+var APP_CODE_VERSION = 93;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -163,6 +163,7 @@ function SHOW_PAGE(page) {
     else if (page === 'PANIER') zone.innerHTML = TPL_PANIER();
     else if (page === 'VALIDATION') { OUVRIR_VALIDATION(); return; }
     else if (page === 'VERIFIER') zone.innerHTML = TPL_VERIFIER();
+    else if (page === 'RECEPTION') zone.innerHTML = TPL_RECEPTION();
     else if (page === 'BIBLIOTHEQUE') zone.innerHTML = TPL_BIBLIOTHEQUE();
     else if (page === 'ESPACE') zone.innerHTML = TPL_MON_ESPACE();
     else if (page === 'NOTICE') zone.innerHTML = TPL_NOTICE();
@@ -188,10 +189,11 @@ function EST_PC() { return !!(MER_PC_MQ && MER_PC_MQ.matches); }
 MER_ICONES.ACCUEIL = '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>';
 MER_ICONES.REFERENCES = '<svg viewBox="0 0 24 24"><path d="M6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5v-13A2.5 2.5 0 0 1 6.5 3z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H19"/><path d="M8.5 7.5h6M8.5 11h4"/></svg>';
 MER_ICONES.MAJ = '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>';
+MER_ICONES.RECEPTION = '<svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg>';
 MER_ICONES.VALIDEUR = '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 
 function TPL_MENU_PC() {
-    var actif = { REFERENCES: 'REFERENCES', ACCUEIL: 'ACCUEIL', REPRISE: 'ACCUEIL', BIBLIOTHEQUE: 'BIBLIOTHEQUE', PANIER: 'PANIER', NOTICE: 'NOTICE', ESPACE: 'ESPACE', VALIDATION: 'VALIDATION', VERIFIER: 'VALIDATION' }[PAGE_ACTUELLE] || '';
+    var actif = { REFERENCES: 'REFERENCES', ACCUEIL: 'ACCUEIL', REPRISE: 'ACCUEIL', BIBLIOTHEQUE: 'BIBLIOTHEQUE', PANIER: 'PANIER', NOTICE: 'NOTICE', ESPACE: 'ESPACE', VALIDATION: 'VALIDATION', VERIFIER: 'VALIDATION', RECEPTION: 'RECEPTION' }[PAGE_ACTUELLE] || '';
     var n = GET_PANIER().length;
     function item(page, icone, libelle, pastille) {
         return '<button type="button" class="PC-NAV' + (actif === page ? ' actif' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')">' + icone +
@@ -199,6 +201,7 @@ function TPL_MENU_PC() {
     }
     return '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_mer.webp" alt="TRIGONE Mise en route"></button>' +
         item('ACCUEIL', MER_ICONES.ACCUEIL, 'Accueil') +
+        (MER_COMPTE_ACTIF() ? item('RECEPTION', MER_ICONES.RECEPTION, 'Boîte de réception', MER_NB_BOITE() || '') : '') +
         item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
         item('PANIER', MER_ICONES.PANIER, 'Documents', n || '') +
         item('NOTICE', MER_ICONES.NOTICE, 'Notice') +
@@ -408,6 +411,8 @@ function TPL_ACCUEIL() {
         '<div class="MER-P0-HERO">' +
           (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
+          (MER_COMPTE_ACTIF() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-BOITE" onclick="SHOW_PAGE(\'RECEPTION\')">📥 Boîte de réception' +
+            (MER_NB_BOITE() ? '<span class="MER-PASTILLE-SIGNER MER-PASTILLE-BOITE">' + MER_NB_BOITE() + '</span>' : '') + '</button>' : '') +
           '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur &amp; Chorus DT' +
             (MER_NB_A_SIGNER() ? '<span class="MER-PASTILLE-SIGNER">' + MER_NB_A_SIGNER() + ' à signer</span>' : '') + '</button>' +
           '<button type="button" class="P0-LIEN" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
@@ -2516,6 +2521,7 @@ function SE_CONNECTER(btn) {
     CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(function() {
         RENDER_VALIDATION_INPLACE();
         if (MER_RECUS_ATTENTE) { MER_RECUS_ATTENTE = false; setTimeout(MER_TRAITER_RECUS, 300); }
+        if (MER_BOITE_A_OUVRIR) { var idBoite = MER_BOITE_A_OUVRIR; MER_BOITE_A_OUVRIR = null; setTimeout(function() { OUVRIR_RECU(idBoite); }, 400); }
     }).catch(function() {
         AFFICHER_MSG_CENTRE({ titre: 'Code incorrect', texte: 'Ce code d\'accès n\'est pas reconnu. Vérifiez-le, en respectant les majuscules et les symboles.', icone: '⛔', mascotte: 'mascotte-code.webp' });
         champ.value = '';
@@ -2867,6 +2873,7 @@ function ENVOYER_ENVOI_DIRECT(i) {
 }
 function TERMINER_TRANSMISSION() {
     FERMER_MODALE();
+    if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(GET_A_VALIDER().filter(function(e) { return e.decision; }).map(function(e) { return e.d.id; }));
     SAVE_A_VALIDER(GET_A_VALIDER().filter(function(e) { return !e.decision; }));
     MER_ENVOIS = [];
     RENDER_VALIDATION_INPLACE();
@@ -2958,6 +2965,7 @@ function TELECHARGER_PDF_VERIFIE(indices) {
     GENERER_PDF_FINAL(demandes).then(function(octets) {
         FERMER_MSG();
         TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes, 'PDF_FINAL') + '.pdf', octets, 'application/pdf');
+        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(demandes.map(function(d) { return d.id; }));
     }).catch(function(e) { FERMER_MSG(); setTimeout(function() { MSG_ERREUR('PDF impossible', e.message || String(e)); }, 350); });
 }
 
@@ -3158,9 +3166,6 @@ window.addEventListener('DOMContentLoaded', function() {
     setTimeout(MER_RAPPEL_SAUVEGARDE, 6000);
     INIT_VERIF_MAJ_AUTO();
     MER_RECEPTION_INIT();
-    MER_RELEVER_BOITE();
-    document.addEventListener('visibilitychange', function() { if (document.visibilityState === 'visible') MER_RELEVER_BOITE(); });
-    setInterval(function() { if (document.visibilityState === 'visible') MER_RELEVER_BOITE(); }, 120000);
 });
 
 // ===================== DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE =====================
@@ -3259,12 +3264,90 @@ function MER_TRAITER_RECUS() {
         });
     });
 }
-// Boîte aux lettres TRIGONE (compte actif) : les envois reçus sont déchiffrés puis aiguillés comme un fichier ouvert.
-function MER_RELEVER_BOITE() {
-    if (!window.JUMELAGE_RELEVER || DEMO_ACTIF) return;
-    JUMELAGE_RELEVER(function(fichiers) { return RECUS_RANGER(fichiers); }).then(function(n) { if (n) MER_TRAITER_RECUS(); });
+// ===================== BOÎTE DE RÉCEPTION (compte TRIGONE) =====================
+// Les envois reçus directement dans TRIGONE (jumelage.js : relève, déchiffrement, rangement sur l'appareil) sont listés
+// ici ; « Ouvrir » les mène où il faut : Espace valideur (à signer), assistant Chorus DT (à contrôler), Documents (refus).
+var MER_BOITE_A_OUVRIR = null;
+var MER_NATURES_BOITE = {
+    niveau1: ['À signer — 1er niveau', 'Ouvrir et signer'], niveau2: ['À signer — 2e niveau', 'Ouvrir et signer'],
+    chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée', 'Corriger dans Documents'], inconnu: ['Fichier reçu', 'Ouvrir']
+};
+function MER_NB_BOITE() { return window.JUMELAGE_BOITE_NB ? JUMELAGE_BOITE_NB() : 0; }
+function MER_COMPTE_ACTIF() { return !!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF()); }
+function TPL_ENVOI_RECU(x) {
+    var nat = MER_NATURES_BOITE[x.nature] || MER_NATURES_BOITE.inconnu, traite = x.statut === 'traite';
+    var le = x.le ? new Date(x.le).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
+    return '<div class="MER-PANIER-ITEM MER-RECU' + (x.statut === 'nouveau' ? ' nouveau' : '') + '" style="align-items:flex-start;"><div class="MER-PANIER-ITEM-TXT">' +
+        '<span class="MER-BADGE MER-RECU-' + ESC(x.nature || 'inconnu') + '">' + nat[0] + '</span>' + (x.statut === 'nouveau' ? ' <span class="MER-RECU-NOUVEAU">Nouveau</span>' : '') +
+        '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(x.noms || x.nom || 'Demande') + '</div>' +
+        '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
+        '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
+        '<div class="MER-VAL-ACTIONS">' +
+            (traite ? '' : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
+            '<button type="button" class="BTN-DANGER-TEXT" onclick="SUPPRIMER_RECU(\'' + x.id + '\')">Supprimer</button>' +
+        '</div></div></div>';
 }
-window.JUMELAGE_APRES_COMPTE = MER_RELEVER_BOITE;
+function TPL_RECEPTION() {
+    var compte = MER_COMPTE_ACTIF();
+    var l = window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : [];
+    var aTraiter = l.filter(function(x) { return x.statut !== 'traite'; }), traites = l.filter(function(x) { return x.statut === 'traite'; });
+    return '<div class="CARD"><h2>Boîte de réception</h2>' +
+        (compte
+            ? '<p class="MER-HINT" style="margin:4px 0 12px;">Demandes reçues directement dans TRIGONE, à l\'adresse <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>. Elles arrivent toutes seules (relève automatique) ; « Ouvrir » les mène au bon endroit.</p>' +
+              '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>'
+            : '<p class="MER-HINT" style="margin:4px 0 12px;">Activez votre compte TRIGONE pour recevoir les demandes directement ici, sans pièce jointe.</p>' +
+              '<button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
+        (compte ? '<div class="MER-SECTION-TITLE">À traiter' + (aTraiter.length ? ' (' + aTraiter.length + ')' : '') + '</div>' +
+            (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Aucune demande en attente.</div>') +
+            (traites.length ? '<details class="MER-RECU-TRAITES"><summary>Traitées (' + traites.length + ')</summary>' + traites.map(TPL_ENVOI_RECU).join('') + '</details>' : '') : '') +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+}
+function ACTUALISER_RECEPTION(btn) {
+    if (!window.JUMELAGE_RELEVER) return;
+    if (btn) { btn.disabled = true; btn.textContent = 'Relève en cours…'; }
+    JUMELAGE_RELEVER().then(function(n) {
+        if (PAGE_ACTUELLE === 'RECEPTION') SHOW_PAGE('RECEPTION');
+        if (!n) MER_BANDEAU_RECU('Boîte à jour', 'Aucune nouvelle demande pour l\'instant.');
+    });
+}
+function OUVRIR_RECU(id) {
+    var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(e) { return e.id === id; })[0];
+    if (!x) return;
+    JUMELAGE_BOITE_FICHIER(id).then(function(f) {
+        var faux = { files: [f], value: '' };
+        if (x.nature === 'refus') { IMPORTER_REFUS(faux); JUMELAGE_BOITE_MARQUER(id, 'traite'); return; }
+        if (x.nature === 'chorus') { JUMELAGE_BOITE_MARQUER(id, 'ouvert'); VERIFIER_FICHIERS(faux); return; }
+        CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() {
+            var h = HABILITATION_COURANTE();
+            if (!h || h.retire) {
+                MER_BOITE_A_OUVRIR = id;
+                SHOW_PAGE('VALIDATION');
+                AFFICHER_MSG_CENTRE({ titre: 'Connexion valideur', icone: '🔒', mascotte: 'mascotte-code.webp',
+                    texte: 'Connectez-vous avec votre code valideur : la demande s\'ouvrira aussitôt, prête à signer.', boutons: [{ label: 'Compris' }] });
+                return;
+            }
+            JUMELAGE_BOITE_MARQUER(id, 'ouvert');
+            var deja = (x.ids || []).length && x.ids.every(function(i) { return GET_A_VALIDER().some(function(e) { return e.d.id === i; }); });
+            SHOW_PAGE('VALIDATION');
+            if (!deja) IMPORTER_A_VALIDER(faux);
+        });
+    }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
+}
+function SUPPRIMER_RECU(id) {
+    MSG_CONFIRM('Supprimer de la boîte ?', 'Cet envoi sera retiré de votre boîte de réception sur cet appareil. S\'il n\'a pas été traité, demandez à l\'expéditeur de le renvoyer.',
+        'Supprimer', function() { JUMELAGE_BOITE_SUPPRIMER(id).then(function() { if (PAGE_ACTUELLE === 'RECEPTION') SHOW_PAGE('RECEPTION'); }); }, '⚠️', 'mascotte-poubelle.webp', true);
+}
+// Nouveaux envois relevés : bandeau (touchable) et pages à jour.
+window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
+    var x = nouveaux[0], n = nouveaux.length;
+    MER_BANDEAU_RECU(n > 1 ? n + ' demandes reçues' : 'Demande reçue', (n > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir la boîte de réception.', function() { SHOW_PAGE('RECEPTION'); });
+};
+window.addEventListener('trigone-boite', function() {
+    if (typeof PAGE_ACTUELLE === 'undefined' || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
+    if (PAGE_ACTUELLE === 'RECEPTION' || PAGE_ACTUELLE === 'ACCUEIL') { var y = window.scrollY; SHOW_PAGE(PAGE_ACTUELLE); window.scrollTo(0, y); }
+    else RENDRE_MENU_PC();
+});
+function MER_RELEVER_BOITE() { if (window.JUMELAGE_RELEVER) JUMELAGE_RELEVER(); }
 // Fichiers donnés à TRIGONE depuis la page (déposés ou collés) : même aiguillage que « Ouvrir avec ».
 function MER_RECEVOIR_FICHIERS(liste) {
     var json = Array.prototype.filter.call(liste || [], function(f) { return /\.json$/i.test(f.name || '') || /json/.test(f.type || ''); });
@@ -3280,13 +3363,14 @@ document.addEventListener('paste', function(e) {
     if (PAGE_ACTUELLE === 'VERIFIER') { e.preventDefault(); VERIFIER_FICHIERS({ files: cd.files, value: '' }); return; }
     if (MER_RECEVOIR_FICHIERS(cd.files)) e.preventDefault();
 });
-function MER_BANDEAU_RECU(titre, texte) {
+function MER_BANDEAU_RECU(titre, texte, surClic) {
     var b = document.createElement('div');
-    b.className = 'MER-BANDEAU-RECU';
+    b.className = 'MER-BANDEAU-RECU' + (surClic ? ' cliquable' : '');
     b.innerHTML = '<span class="MER-BANDEAU-RECU-IC">📥</span><span><b>' + ESC(titre) + '</b><br>' + ESC(texte) + '</span>';
+    if (surClic) b.addEventListener('click', function() { b.remove(); surClic(); });
     document.body.appendChild(b);
     requestAnimationFrame(function() { b.classList.add('visible'); });
-    setTimeout(function() { b.classList.remove('visible'); setTimeout(function() { b.remove(); }, 400); }, 6000);
+    setTimeout(function() { b.classList.remove('visible'); setTimeout(function() { b.remove(); }, 400); }, surClic ? 10000 : 6000);
 }
 // Espace valideur vide : comment faire arriver la demande reçue par mail, selon l'appareil.
 function TPL_AIDE_RECEPTION() {

@@ -99,6 +99,8 @@
             ' .JUM-PAN-MER .JUM-BLOC { left: 30%; top: 34%; } .JUM-PAN-CR .JUM-BLOC { left: 70%; top: 66%; } }' +
         '.JUM-SOUS { font: 800 0.62rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }' +
         '.JUM-PAN-MER .JUM-SOUS { color: #5a7a94; }' +
+        '.JUM-BOITE-PASTILLE { display: inline-block; margin-top: 12px; padding: 6px 13px; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.72rem Montserrat, system-ui, sans-serif; letter-spacing: 0.02em; box-shadow: 0 4px 12px rgba(185,28,28,0.3); animation: jum-pulse 2s ease-in-out infinite; }' +
+        '@keyframes jum-pulse { 50% { transform: scale(1.06); } }' +
         '.JUM-PAN-CR .JUM-SOUS { color: #d6a756; }' +
         /* Roue crantée (réglages) sur l'écran de choix, en bas à droite */
         '.JUM-ROUE { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: max(18px, env(safe-area-inset-bottom, 0px)); z-index: 3; width: 52px; height: 52px;' +
@@ -431,7 +433,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 45, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 46, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -741,7 +743,7 @@
     // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
     // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
     var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
-    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte)$/;
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite)$/;
     function basePieces(creer) {
         return new Promise(function(ok) {
             if (!window.indexedDB) { ok(null); return; }
@@ -961,28 +963,109 @@
             return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, enveloppes: ch.enveloppes, donnees: ch.donnees } });
         });
     };
-    // Relève de la boîte : chaque envoi est déchiffré et remis à l'appli (ranger), puis supprimé du serveur.
+    // ---------- Boîte de réception (sur l'appareil) ----------
+    // Chaque envoi reçu est déchiffré, rangé sur l'appareil (Cache « trigone-boite-reception » + index localStorage
+    // « trigone_boite »), puis supprimé du serveur. Il reste dans la boîte jusqu'à ce qu'on le traite ou le supprime.
+    var CLE_BOITE = 'trigone_boite', CACHE_BOITE = 'trigone-boite-reception';
+    function boiteLire() { var l = lireJSON(CLE_BOITE); return Array.isArray(l) ? l : []; }
+    function boiteEcrire(l) {
+        ecrireTxt(CLE_BOITE, JSON.stringify(l));
+        majPastilleHub();
+        try { window.dispatchEvent(new Event('trigone-boite')); } catch (e) {}
+    }
+    // Nature d'un envoi, d'après son contenu : à signer (1er ou 2e niveau), pour l'assistant Chorus DT, ou refus.
+    function resumeEnvoi(texte) {
+        try {
+            var d = JSON.parse(texte), ds = d.demandes || [], p0 = ((ds[0] || {}).personnes || [])[0] || {};
+            var nature = ds.some(function(x) { return x.refus; }) ? 'refus'
+                : ds.length && ds.every(function(x) { return (x.validations || []).length >= 2; }) ? 'chorus'
+                : ds.some(function(x) { return (x.validations || []).length === 1; }) ? 'niveau2' : 'niveau1';
+            var a = ((ds[0] || {}).trajets || {}).aller || {}, r = ((ds[0] || {}).trajets || {}).retour || {};
+            var jour = function(v) { try { return v ? new Date(v).toLocaleDateString('fr-FR') : ''; } catch (e) { return ''; } };
+            return { nature: nature, n: ds.length, ids: ds.map(function(x) { return x.id; }),
+                noms: [p0.grade, p0.nom, p0.prenom].filter(Boolean).join(' ') + (ds.length > 1 ? ' (+ ' + (ds.length - 1) + ')' : ((ds[0] || {}).personnes || []).length > 1 ? ' et ' + ((ds[0].personnes.length) - 1) + ' autre(s)' : ''),
+                objet: (ds[0] || {}).objet || '', dates: [jour(a.dateDep), jour(r.dateArr)].filter(Boolean).join(' → '),
+                lieu: a.paysArr || a.lieuArr || '' };
+        } catch (e) { return { nature: 'inconnu', n: 0, ids: [] }; }
+    }
+    window.JUMELAGE_BOITE_LISTE = function() { return boiteLire(); };
+    window.JUMELAGE_BOITE_NB = function() { return boiteLire().filter(function(x) { return x.statut !== 'traite'; }).length; };
+    window.JUMELAGE_BOITE_FICHIER = function(id) {
+        var x = boiteLire().filter(function(e) { return e.id === id; })[0];
+        return caches.open(CACHE_BOITE).then(function(c) { return c.match('__boite__/' + id); }).then(function(r) {
+            if (!r) throw new Error('Fichier introuvable sur cet appareil.');
+            return r.blob();
+        }).then(function(b) { return new File([b], (x && x.nom) || 'demande.json', { type: 'application/json' }); });
+    };
+    window.JUMELAGE_BOITE_MARQUER = function(id, statut) {
+        var l = boiteLire(); l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') x.statut = statut; }); boiteEcrire(l);
+    };
+    // Demandes traitées (validées / refusées puis transmises, PDF Chorus produit) : les envois qui les contiennent passent en « traité ».
+    window.JUMELAGE_BOITE_TRAITER_DEMANDES = function(ids) {
+        if (!ids || !ids.length) return;
+        var l = boiteLire(), change = false;
+        l.forEach(function(x) {
+            if (x.statut !== 'traite' && (x.ids || []).length && x.ids.every(function(i) { return ids.indexOf(i) >= 0; })) { x.statut = 'traite'; x.traiteLe = Date.now(); change = true; }
+        });
+        if (change) boiteEcrire(l);
+    };
+    window.JUMELAGE_BOITE_SUPPRIMER = function(id) {
+        boiteEcrire(boiteLire().filter(function(x) { return x.id !== id; }));
+        return caches.open(CACHE_BOITE).then(function(c) { return c.delete('__boite__/' + id); }).catch(function() {});
+    };
+    // Pastille sur l'écran de choix (côté Mise en route) : envois reçus pas encore traités.
+    function majPastilleHub() {
+        if (!ecran) return;
+        var bloc = ecran.querySelector('.JUM-PAN-MER .JUM-BLOC'); if (!bloc) return;
+        var n = window.JUMELAGE_BOITE_NB(), p = bloc.querySelector('.JUM-BOITE-PASTILLE');
+        if (!n) { if (p) p.remove(); return; }
+        if (!p) { p = document.createElement('span'); p.className = 'JUM-BOITE-PASTILLE'; bloc.appendChild(p); }
+        p.textContent = '📥 ' + n + (n > 1 ? ' demandes reçues' : ' demande reçue');
+    }
+
+    // Relève : nouveaux envois du serveur → boîte de réception de l'appareil.
     var releveEnCours = false;
-    window.JUMELAGE_RELEVER = function(ranger) {
-        if (releveEnCours || !monCompte() || !navigator.onLine || !SUBTLE) return Promise.resolve(0);
+    window.JUMELAGE_RELEVER = function() {
+        if (releveEnCours || !monCompte() || !navigator.onLine || !SUBTLE || !window.caches) return Promise.resolve(0);
         releveEnCours = true;
+        var nouveaux = [];
         return appelApi('boite').then(function(r) {
             return r.envois.reduce(function(suite, e) {
-                return suite.then(function(n) {
+                return suite.then(function() {
+                    if (boiteLire().some(function(x) { return x.id === e.id; })) return appelApi('boite/' + e.id, { methode: 'DELETE' });
                     return appelApi('boite/' + e.id).then(function(x) {
                         return dechiffrer(x.enveloppe, x.donnees).then(function(clair) {
-                            var o = JSON.parse(clair);
-                            var f = new File([o.contenu], o.nom || 'demande.json', { type: 'application/json' });
-                            return Promise.resolve(ranger([f], x)).then(function() { return appelApi('boite/' + e.id, { methode: 'DELETE' }); }).then(function() { return n + 1; });
+                            var o = JSON.parse(clair), info = resumeEnvoi(o.contenu);
+                            return caches.open(CACHE_BOITE).then(function(c) {
+                                return c.put('__boite__/' + e.id, new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));
+                            }).then(function() {
+                                var el = Object.assign({ id: e.id, nom: o.nom || 'demande.json', de: x.de, le: x.le, type: x.type, statut: 'nouveau' }, info);
+                                var l = boiteLire(); l.unshift(el); boiteEcrire(l); nouveaux.push(el);
+                                return appelApi('boite/' + e.id, { methode: 'DELETE' });
+                            });
                         });
-                    }).catch(function() { return n; });
+                    }).catch(function() {});
                 });
-            }, Promise.resolve(0));
+            }, Promise.resolve());
         }).catch(function(e) {
             if (e.statut === 401) { try { localStorage.removeItem(CLE_COMPTE); } catch (x) {} }
-            return 0;
-        }).then(function(n) { releveEnCours = false; return n; });
+        }).then(function() {
+            releveEnCours = false;
+            if (nouveaux.length) {
+                if (typeof window.JUMELAGE_APRES_RELEVE === 'function') { try { window.JUMELAGE_APRES_RELEVE(nouveaux); } catch (e) {} }
+                else bandeau(nouveaux.length > 1 ? nouveaux.length + ' demandes reçues : ouvrez Mise en route › Boîte de réception.' : 'Demande reçue : ouvrez Mise en route › Boîte de réception.');
+            }
+            return nouveaux.length;
+        });
     };
+    // Relève automatique : à l'ouverture, au retour dans l'appli, puis toutes les 45 secondes tant qu'elle est affichée.
+    function releveAuto() { if (document.visibilityState === 'visible' && !document.body.classList.contains('demo-active')) window.JUMELAGE_RELEVER(); }
+    if (monCompte()) {
+        var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); };
+        if (document.body) lancerReleve(); else document.addEventListener('DOMContentLoaded', lancerReleve);
+    }
+    document.addEventListener('visibilitychange', function() { if (monCompte()) releveAuto(); });
+    setInterval(function() { if (monCompte()) releveAuto(); }, 45000);
 
     // Fenêtre « Compte TRIGONE » : activer (mail pro → code reçu), état, déconnexion de l'appareil.
     var fenCompte = null;
@@ -1058,6 +1141,7 @@
                     window.JUMELAGE_FERMER_COMPTE();
                     bandeau('Compte TRIGONE actif : les demandes vous arrivent directement dans TRIGONE.');
                     if (window.JUMELAGE_APRES_COMPTE) try { window.JUMELAGE_APRES_COMPTE(); } catch (e) {}
+                    window.JUMELAGE_RELEVER();
                 });
             }).catch(function(e) { err.textContent = '⛔ ' + e.message; btnValider.disabled = false; });
         });
@@ -1803,6 +1887,7 @@
             (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '') +
             // Mise à jour, en bas à gauche (pendant de la roue crantée).
             '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>';
+        majPastilleHub();
         var roue = ecran.querySelector('.JUM-ROUE');
         ['pointerdown', 'pointerup'].forEach(function(t) { roue.addEventListener(t, function(e) { e.stopPropagation(); }); });
         roue.addEventListener('click', window.JUMELAGE_MENU_ROUE);

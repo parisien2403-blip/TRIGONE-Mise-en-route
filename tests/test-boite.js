@@ -35,7 +35,9 @@ module.exports = async function() {
         await p.fill('#MER-VAL-grade', 'CNE'); await p.fill('#MER-VAL-fonction', 'Chef'); await p.fill('#MER-VAL-nom', 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
         await p.fill('#MER-CODE-ACCES', code); await p.click('button:has-text("Se connecter")'); await attendre(2500);
     }
-    async function relever(p) { await p.evaluate(() => MER_RELEVER_BOITE()); await attendre(3500); await p.evaluate(() => { try { FERMER_MSG(); } catch (e) {} }); await attendre(300); }
+    async function relever(p) { await p.evaluate(() => JUMELAGE_RELEVER()); await attendre(2500); }
+    // Boîte de réception : bouton « Ouvrir… » du premier envoi à traiter.
+    async function ouvrirBoite(p) { await p.evaluate(() => SHOW_PAGE('RECEPTION')); await attendre(400); await p.locator('.MER-RECU .BTN-PRIMARY').first().click(); await attendre(2500); }
 
     // Adresse non professionnelle refusée
     const x = await b.newPage(); await x.goto(URL); await x.evaluate(preparer, APP_CODE); await x.reload(); await attendre(2000);
@@ -73,9 +75,16 @@ module.exports = async function() {
     verifier(brut.length > 100 && !/Bouquet|Martin|BORDEAUX|FDYDDR4FCT/i.test(brut), 'serveur : contenu illisible (chiffré de bout en bout)');
 
     // 1er valideur : relève, valide Bouquet, refuse Martin, transmet directement
-    await connecter(v1, code1);
     await relever(v1);
-    verifier(await v1.evaluate(() => GET_A_VALIDER().length) === 2, '1er valideur : les 2 demandes arrivent dans l\'Espace valideur');
+    verifier(await v1.evaluate(() => JUMELAGE_BOITE_NB()) === 1, '1er valideur : l\'envoi arrive dans la boîte de réception');
+    await v1.evaluate(() => SHOW_PAGE('ACCUEIL')); await attendre(300);
+    verifier((await v1.textContent('.BTN-ACCUEIL-BOITE')).includes('1'), '1er valideur : pastille « 1 » sur le bouton Boîte de réception de l\'accueil');
+    await ouvrirBoite(v1);
+    verifier((await v1.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Connexion valideur', '1er valideur non connecté : « Ouvrir » demande le code valideur');
+    await v1.evaluate(() => FERMER_MSG()); await attendre(300);
+    await v1.fill('#MER-VAL-grade', 'CNE'); await v1.fill('#MER-VAL-fonction', 'Chef'); await v1.fill('#MER-VAL-nom', 'Dupont'); await v1.fill('#MER-VAL-prenom', 'Jean');
+    await v1.fill('#MER-CODE-ACCES', code1); await v1.click('button:has-text("Se connecter")'); await attendre(3500);
+    verifier(await v1.evaluate(() => GET_A_VALIDER().length) === 2, '1er valideur : après connexion, les 2 demandes s\'ouvrent dans l\'Espace valideur');
     await v1.evaluate(() => {
         const l = GET_A_VALIDER(); const b = l.find(e => e.d.personnes[0].nom === 'Bouquet'), mt = l.find(e => e.d.personnes[0].nom === 'Martin');
         VALIDER_DEMANDES([b.id]); window.__refus = mt.id;
@@ -88,14 +97,18 @@ module.exports = async function() {
     verifier(boutons === 2, '1er valideur : 2 envois directs proposés (2e valideur + refus au demandeur)');
     for (let i = 0; i < boutons; i++) { await v1.locator('#MER-MODALE-FOND button:has-text("Envoyer directement")').first().click(); await attendre(3000); }
     verifier(await v1.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 2, '1er valideur : les 2 envois sont arrivés');
+    await v1.click('#MER-MODALE-FOND button:has-text("Terminé")'); await attendre(800);
+    verifier(await v1.evaluate(() => JUMELAGE_BOITE_NB() === 0 && JUMELAGE_BOITE_LISTE()[0].statut === 'traite'), '1er valideur : l\'envoi passe en « Traitées » dans la boîte');
 
     // Demandeur : le refus revient dans Documents
     await relever(m);
+    await ouvrirBoite(m);
     verifier(await m.evaluate(() => GET_PANIER().some(d => d.refus && d.refus.motif === 'Merci de joindre la DAF')), 'demandeur : la demande refusée revient dans Documents, avec le motif');
 
     // 2e valideur
     await connecter(v2, code2);
     await relever(v2);
+    await ouvrirBoite(v2);
     verifier(await v2.evaluate(() => GET_A_VALIDER().length) === 1, '2e valideur : la demande validée par le 1er valideur arrive');
     await v2.evaluate(() => VALIDER_DEMANDES([GET_A_VALIDER()[0].id])); await attendre(1500);
     await v2.evaluate(v => SET_MAIL_VALIDEUR('mailChorus', v), MAILS.C);
@@ -104,7 +117,8 @@ module.exports = async function() {
     verifier(await v2.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 1, '2e valideur : envoi direct à l\'assistant Chorus DT');
 
     // Assistant Chorus DT
-    await relever(c); await attendre(1500);
+    await relever(c);
+    await ouvrirBoite(c);
     const cartes = await c.locator('.MER-PANIER-ITEM').allInnerTexts();
     verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'VERIFIER' && cartes.some(t => t.includes('Conforme : validée par les deux valideurs')),
         'assistant Chorus DT : la demande arrive, conforme (signatures et NDS vérifiées)');

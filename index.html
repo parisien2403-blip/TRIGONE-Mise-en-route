@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=45"></script>
+<script src="jumelage.js?v=46"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
@@ -114,6 +114,16 @@ body.dark-mode .MER-LOGO-IMG { filter: brightness(0) invert(0.93); }
   display: flex; gap: 12px; align-items: center; background: #1a1a1a; color: #fff; border-radius: 16px; padding: 12px 14px; box-shadow: 0 14px 34px rgba(0,0,0,.28); font-size: 0.82rem; line-height: 1.4; }
 .MER-BANDEAU-RECU.visible { opacity: 1; transform: translate(-50%, 0); }
 .MER-BANDEAU-RECU b { font-size: 0.9rem; }
+.MER-BANDEAU-RECU.cliquable { cursor: pointer; pointer-events: auto; }
+/* Boîte de réception (compte TRIGONE) */
+.BTN-ACCUEIL-BOITE { position: relative; }
+.MER-RECU.nouveau { border-color: #b91c1c; box-shadow: 0 0 0 1px rgba(185,28,28,0.25); }
+.MER-RECU-NOUVEAU { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: #b91c1c; color: #fff; font-size: 0.66rem; font-weight: 800; text-transform: uppercase; letter-spacing: 0.05em; vertical-align: middle; }
+.MER-BADGE.MER-RECU-chorus { background: rgba(21,128,61,0.12); color: #15803d; }
+.MER-BADGE.MER-RECU-refus { background: rgba(185,28,28,0.1); color: #b91c1c; }
+.MER-RECU-TRAITES { margin: 14px 0 6px; }
+.MER-RECU-TRAITES summary { cursor: pointer; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tg-accent); padding: 8px 0; }
+.MER-RECU-TRAITES .MER-RECU { opacity: 0.75; }
 .MER-BANDEAU-RECU-IC { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; background: rgba(122,157,181,.25); color: #a9c3d6; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
 .MER-AIDE-RECEPTION { border: 1.5px dashed rgba(90,122,148,0.4); border-radius: 16px; padding: 16px; margin: 4px 0 16px; background: rgba(90,122,148,0.05); }
 .MER-AIDE-RECEPTION-TETE { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
@@ -832,6 +842,6 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
     </div>
   </div>
 </div>
-<script src="app.js?v=45"></script>
+<script src="app.js?v=46"></script>
 </body>
 </html>

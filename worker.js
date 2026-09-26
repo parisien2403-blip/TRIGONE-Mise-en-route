@@ -11,7 +11,7 @@
 //   code:<mail>                { empreinte, essais }                      — 15 min
 //   limite:<mail>              nombre de codes demandés                   — 1 h
 //   msg:<id>                   { iv, ct } contenu chiffré                 — 30 jours
-//   boite:<mail>:<appareil>:<id>  { cle enveloppée } + métadonnées (de, type, le)   — 30 jours
+//   D1 (TRIGONE_DB), table boite : une ligne par envoi et par appareil destinataire (clé enveloppée, de, type, date)
 //
 // Réglages (Cloudflare › Workers › trigone-mise-en-route › Paramètres › Variables et secrets) :
 //   BREVO_CLE (secret)          clé API Brevo — ou BREVO_SMTP_UTILISATEUR (texte, « …@smtp-brevo.com ») + BREVO_SMTP_CLE (secret) : SMTP Brevo
@@ -25,6 +25,20 @@ import { connect } from 'cloudflare:sockets';
 const JOUR = 86400;
 const DUREE_MESSAGE = 30 * JOUR;
 const TAILLE_MAX = 24 * 1024 * 1024;   // limite d'une valeur Workers KV : 25 Mo
+
+// Index des boîtes aux lettres dans D1 (liaison TRIGONE_DB, base SQLite de Cloudflare) : cohérent et sans limite de
+// « list » ; le contenu chiffré reste dans KV (msg:<id>), une ligne D1 par appareil destinataire.
+let TABLES_PRETES = false;
+async function baseBoite(env) {
+    if (!TABLES_PRETES) {
+        await env.TRIGONE_DB.batch([
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS boite (id TEXT NOT NULL, dest TEXT NOT NULL, appareil TEXT NOT NULL, de TEXT, type TEXT, le INTEGER, enveloppe TEXT, PRIMARY KEY (id, appareil))'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_dest ON boite (dest, appareil)')
+        ]);
+        TABLES_PRETES = true;
+    }
+    return env.TRIGONE_DB;
+}
 
 function json(corps, statut) {
     return new Response(JSON.stringify(corps), { status: statut || 200, headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' } });
@@ -136,7 +150,7 @@ async function envoyerCode(env, mail, code) {
 
 async function api(requete, env, url) {
     const kv = env.TRIGONE_KV;
-    if (!kv) return erreur(503, 'Boîte aux lettres non configurée.');
+    if (!kv || !env.TRIGONE_DB) return erreur(503, 'Boîte aux lettres non configurée.');
     const chemin = url.pathname.replace(/^\/api\//, '');
     const methode = requete.method;
 
@@ -204,30 +218,36 @@ async function api(requete, env, url) {
         const enveloppes = (corps.enveloppes || []).filter(e => ids.has(e.appareil));
         if (!enveloppes.length || !corps.donnees || !corps.donnees.ct) return erreur(400, 'Envoi incomplet.');
         const id = Date.now().toString(36) + b64url(hasard(6));
-        const meta = { de: moi.mail, type: String(corps.type || '').slice(0, 30), le: Date.now() };
+        const le = Date.now(), type = String(corps.type || '').slice(0, 30);
         await kv.put('msg:' + id, JSON.stringify(corps.donnees), { expirationTtl: DUREE_MESSAGE });
-        await Promise.all(enveloppes.map(e => kv.put('boite:' + dest + ':' + e.appareil + ':' + id,
-            JSON.stringify({ epk: e.epk, iv: e.iv, ct: e.ct }), { expirationTtl: DUREE_MESSAGE, metadata: meta })));
+        const db = await baseBoite(env);
+        await db.batch(enveloppes.map(e => db.prepare('INSERT INTO boite (id, dest, appareil, de, type, le, enveloppe) VALUES (?, ?, ?, ?, ?, ?, ?)')
+            .bind(id, dest, e.appareil, moi.mail, type, le, JSON.stringify({ epk: e.epk, iv: e.iv, ct: e.ct })))
+            .concat(db.prepare('DELETE FROM boite WHERE le < ?').bind(le - DUREE_MESSAGE * 1000)));
         return json({ ok: true, id });
     }
 
     // Relève : liste des envois en attente pour cet appareil.
     if (chemin === 'boite' && methode === 'GET') {
-        const prefixe = 'boite:' + moi.mail + ':' + moi.appareil.id + ':';
-        const liste = await kv.list({ prefix: prefixe });
-        return json({ ok: true, envois: liste.keys.map(k => Object.assign({ id: k.name.slice(prefixe.length) }, k.metadata || {})) });
+        const db = await baseBoite(env);
+        const r = await db.prepare('SELECT id, de, type, le FROM boite WHERE dest = ? AND appareil = ? AND le > ? ORDER BY le')
+            .bind(moi.mail, moi.appareil.id, Date.now() - DUREE_MESSAGE * 1000).all();
+        return json({ ok: true, envois: r.results || [] });
     }
     const m = /^boite\/([\w-]+)$/.exec(chemin);
     if (m) {
-        const cle = 'boite:' + moi.mail + ':' + moi.appareil.id + ':' + m[1];
+        const db = await baseBoite(env);
         if (methode === 'GET') {
-            const env1 = await kv.getWithMetadata(cle, 'json');
-            if (!env1.value) return erreur(404, 'Envoi introuvable ou expiré.');
+            const ligne = await db.prepare('SELECT id, de, type, le, enveloppe FROM boite WHERE id = ? AND dest = ? AND appareil = ?').bind(m[1], moi.mail, moi.appareil.id).first();
+            if (!ligne) return erreur(404, 'Envoi introuvable ou expiré.');
             const donnees = await kv.get('msg:' + m[1], 'json');
             if (!donnees) return erreur(404, 'Envoi expiré.');
-            return json(Object.assign({ ok: true, id: m[1], enveloppe: env1.value, donnees }, env1.metadata || {}));
+            return json({ ok: true, id: ligne.id, de: ligne.de, type: ligne.type, le: ligne.le, enveloppe: JSON.parse(ligne.enveloppe), donnees });
         }
-        if (methode === 'DELETE') { await kv.delete(cle); return json({ ok: true }); }
+        if (methode === 'DELETE') {
+            await db.prepare('DELETE FROM boite WHERE id = ? AND dest = ? AND appareil = ?').bind(m[1], moi.mail, moi.appareil.id).run();
+            return json({ ok: true });
+        }
     }
 
     // Déconnexion de cet appareil (ou suppression du compte s'il n'en reste aucun).
