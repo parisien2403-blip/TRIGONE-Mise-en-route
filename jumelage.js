@@ -100,11 +100,14 @@
         '.JUM-SOUS { font: 800 0.62rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }' +
         '.JUM-PAN-MER .JUM-SOUS { color: #5a7a94; }' +
         /* Médaillon Assistant Chorus DT : au centre, sur la diagonale */
-        '.JUM-CHORUS { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); width: min(30vw, 22vh, 190px); aspect-ratio: 1; border-radius: 50%; border: 2px solid #d6a756; background: #fff; box-shadow: 0 14px 40px rgba(0,0,0,0.35), 0 0 0 6px rgba(214,167,86,0.15); padding: 0; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease, box-shadow 0.2s ease; }' +
-        '.JUM-CHORUS img { width: 74%; height: auto; display: block; }' +
-        '.JUM-CHORUS:hover { transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 18px 46px rgba(0,0,0,0.4), 0 0 0 8px rgba(214,167,86,0.22); }' +
+        /* Logo Assist Chorus-DT : comme les deux autres (le logo seul), en plus petit. Posé sur la diagonale, il se met en
+           négatif (mix-blend-mode : difference) : noir sur la partie claire, blanc sur la partie sombre, sans couleur ajoutée. */
+        '.JUM-CHOIX { --jum-chorus: min(24vw, 17vh, 150px); }' +
+        '.JUM-CHORUS { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); width: var(--jum-chorus); aspect-ratio: 1; border: 0; border-radius: 0; background: none; box-shadow: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; mix-blend-mode: difference; transition: transform 0.2s ease; -webkit-tap-highlight-color: transparent; }' +
+        '.JUM-CHORUS img { width: 100%; height: auto; display: block; filter: invert(1); }' +
+        '.JUM-CHORUS:hover { transform: translate(-50%, -50%) scale(1.05); } .JUM-CHORUS:focus-visible { outline: 2px solid #d6a756; outline-offset: 6px; }' +
         '.JUM-CHOIX.choix-chorus .JUM-CHORUS { transform: translate(-50%, -50%) scale(1.12); }' +
-        '.JUM-CHORUS-NB { position: absolute; top: 2%; right: 2%; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.75rem/24px Montserrat, system-ui, sans-serif; box-shadow: 0 4px 10px rgba(185,28,28,0.4); }' +
+        '.JUM-CHORUS-NB { position: absolute; z-index: 4; left: calc(50% + var(--jum-chorus) * 0.36); top: calc(50% - var(--jum-chorus) * 0.5); min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.75rem/24px Montserrat, system-ui, sans-serif; text-align: center; box-shadow: 0 4px 10px rgba(185,28,28,0.4); pointer-events: none; }' +
         '.JUM-R-CASE { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; cursor: pointer; margin: 4px 0 8px; } .JUM-R-CASE input { width: 18px; height: 18px; flex-shrink: 0; }' +
         '.JUM-CR-FICHIER { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 6px 0; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.82rem; }' +
         '.JUM-CR-FICHIER b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .JUM-CR-FICHIER small { color: #64748b; white-space: nowrap; }' +
@@ -411,7 +414,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 50, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 51, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1265,9 +1268,9 @@
             p.textContent = '📥 ' + n + (n > 1 ? ' demandes reçues' : ' demande reçue');
         }
         var med = ecran.querySelector('.JUM-CHORUS'); if (!med) return;
-        var nc = window.JUMELAGE_BOITE_NB('chorus'), pc = med.querySelector('.JUM-CHORUS-NB');
+        var nc = window.JUMELAGE_BOITE_NB('chorus'), pc = ecran.querySelector('.JUM-CHORUS-NB');
         if (!nc) { if (pc) pc.remove(); return; }
-        if (!pc) { pc = document.createElement('span'); pc.className = 'JUM-CHORUS-NB'; med.appendChild(pc); }
+        if (!pc) { pc = document.createElement('span'); pc.className = 'JUM-CHORUS-NB'; med.parentNode.appendChild(pc); }
         pc.textContent = nc;
     }
 

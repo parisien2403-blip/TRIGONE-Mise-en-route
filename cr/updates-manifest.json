@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 147,
-  "appCodeMessage": "Version 49 : Réglages › Mes rôles — VALIDEUR 1, VALIDEUR 2 et ASSIST CHORUS DT, cumulables par une même personne (bascule VALIDEUR 1 / VALIDEUR 2 dans l'Espace valideur). Plusieurs personnes peuvent avoir chaque rôle.",
+  "appCodeVersion": 148,
+  "appCodeMessage": "Version 50 : une personne qui a les rôles VALIDEUR 1 et VALIDEUR 2 peut valider les deux niveaux d'une demande. Logo Assist Chorus-DT de l'écran de choix : le logo seul, comme les deux autres, en plus petit.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
