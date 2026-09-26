@@ -260,3 +260,5 @@ NOUVEAUTÉS ET MISE À JOUR SUR L'ÉCRAN DE CHOIX (V28)
 Version 32 : toute mise à jour (automatique, bouton en bas à gauche de l'écran de choix, « Mise à jour obligatoire » d'une appli) pose un marqueur « trigone_apres_maj » avant de recharger ; au redémarrage, TRIGONE ouvre alors l'écran de choix même si la mise à jour a été lancée depuis l'intérieur d'une appli (sauf ouverture depuis un fichier reçu ou un QR code).
 
 Version 33 : publication de test pour vérifier le retour à l'écran de choix après une mise à jour.
+
+Version 34 : assistant Chorus DT sur PC — zone de dépôt (glisser le .json ou le PDF, Ctrl + V, ou clic) à la place du bouton ; un fichier collé sur cette page est contrôlé directement.
