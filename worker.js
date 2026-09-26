@@ -14,7 +14,7 @@
 //   boite:<mail>:<appareil>:<id>  { cle enveloppée } + métadonnées (de, type, le)   — 30 jours
 //
 // Réglages (Cloudflare › Workers › trigone-mise-en-route › Paramètres › Variables et secrets) :
-//   BREVO_CLE (secret)          clé API Brevo
+//   BREVO_CLE (secret)          clé API Brevo — ou, à la place, MAILJET_CLE + MAILJET_SECRET (secrets) : clés API Mailjet
 //   EXPEDITEUR_MAIL             adresse d'envoi validée dans Brevo
 //   DOMAINES_AUTORISES          ex. « interieur.gouv.fr » (sous-domaines compris), séparés par des virgules
 //   MODE_TEST = "1"             tests locaux uniquement : le code est renvoyé au lieu d'être envoyé par mail
@@ -54,23 +54,32 @@ async function appareilConnecte(env, requete) {
     return app ? { mail, appareil: app, compte } : null;
 }
 
+// Envoi du code par mail : Brevo (BREVO_CLE) ou, à défaut, Mailjet (MAILJET_CLE + MAILJET_SECRET).
 async function envoyerCode(env, mail, code) {
     if (env.MODE_TEST === '1') return true;
-    if (!env.BREVO_CLE || !env.EXPEDITEUR_MAIL) return false;
-    const r = await fetch('https://api.brevo.com/v3/smtp/email', {
-        method: 'POST',
-        headers: { 'api-key': env.BREVO_CLE, 'Content-Type': 'application/json', Accept: 'application/json' },
-        body: JSON.stringify({
-            sender: { email: env.EXPEDITEUR_MAIL, name: 'TRIGONE' },
-            to: [{ email: mail }],
-            subject: 'Votre code TRIGONE : ' + code,
-            textContent: 'Bonjour,\n\nVotre code pour activer votre compte TRIGONE : ' + code + '\n\nIl est valable 15 minutes. Si vous n\'avez rien demandé, ignorez ce message.\n\nTRIGONE',
-            htmlContent: '<div style="font-family:Arial,sans-serif;font-size:15px;color:#1a1a1a">Bonjour,<br><br>Votre code pour activer votre compte TRIGONE :<br>' +
-                '<div style="font-size:30px;font-weight:bold;letter-spacing:8px;margin:18px 0">' + code + '</div>' +
-                'Il est valable 15 minutes. Si vous n\'avez rien demandé, ignorez ce message.<br><br>TRIGONE</div>'
-        })
-    });
-    return r.ok;
+    if (!env.EXPEDITEUR_MAIL) return false;
+    const sujet = 'Votre code TRIGONE : ' + code;
+    const texte = 'Bonjour,\n\nVotre code pour activer votre compte TRIGONE : ' + code + '\n\nIl est valable 15 minutes. Si vous n\'avez rien demandé, ignorez ce message.\n\nTRIGONE';
+    const html = '<div style="font-family:Arial,sans-serif;font-size:15px;color:#1a1a1a">Bonjour,<br><br>Votre code pour activer votre compte TRIGONE :<br>' +
+        '<div style="font-size:30px;font-weight:bold;letter-spacing:8px;margin:18px 0">' + code + '</div>' +
+        'Il est valable 15 minutes. Si vous n\'avez rien demandé, ignorez ce message.<br><br>TRIGONE</div>';
+    if (env.BREVO_CLE) {
+        const r = await fetch('https://api.brevo.com/v3/smtp/email', {
+            method: 'POST',
+            headers: { 'api-key': env.BREVO_CLE, 'Content-Type': 'application/json', Accept: 'application/json' },
+            body: JSON.stringify({ sender: { email: env.EXPEDITEUR_MAIL, name: 'TRIGONE' }, to: [{ email: mail }], subject: sujet, textContent: texte, htmlContent: html })
+        });
+        return r.ok;
+    }
+    if (env.MAILJET_CLE && env.MAILJET_SECRET) {
+        const r = await fetch('https://api.mailjet.com/v3.1/send', {
+            method: 'POST',
+            headers: { Authorization: 'Basic ' + btoa(env.MAILJET_CLE + ':' + env.MAILJET_SECRET), 'Content-Type': 'application/json' },
+            body: JSON.stringify({ Messages: [{ From: { Email: env.EXPEDITEUR_MAIL, Name: 'TRIGONE' }, To: [{ Email: mail }], Subject: sujet, TextPart: texte, HTMLPart: html }] })
+        });
+        return r.ok;
+    }
+    return false;
 }
 
 async function api(requete, env, url) {
