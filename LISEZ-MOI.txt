@@ -292,3 +292,4 @@ Version 43 : BOÎTE AUX LETTRES TRIGONE (envois directs d'appli à appli, chiffr
 - Tests : tests/test-boite.js avec « npx wrangler dev --var MODE_TEST:1 » (voir tests/LISEZ-MOI.md).
 
 Serveur : envoi des codes par Brevo (BREVO_CLE) ou, à défaut, par Mailjet (secrets MAILJET_CLE + MAILJET_SECRET), avec EXPEDITEUR_MAIL validé chez le fournisseur choisi.
+Serveur : envoi possible aussi par le SMTP Brevo (BREVO_SMTP_UTILISATEUR en texte, BREVO_SMTP_CLE en secret), port 465 chiffré.

@@ -14,10 +14,13 @@
 //   boite:<mail>:<appareil>:<id>  { cle enveloppée } + métadonnées (de, type, le)   — 30 jours
 //
 // Réglages (Cloudflare › Workers › trigone-mise-en-route › Paramètres › Variables et secrets) :
-//   BREVO_CLE (secret)          clé API Brevo — ou, à la place, MAILJET_CLE + MAILJET_SECRET (secrets) : clés API Mailjet
+//   BREVO_CLE (secret)          clé API Brevo — ou BREVO_SMTP_UTILISATEUR (texte, « …@smtp-brevo.com ») + BREVO_SMTP_CLE (secret) : SMTP Brevo
+//                               — ou MAILJET_CLE + MAILJET_SECRET (secrets) : clés API Mailjet
 //   EXPEDITEUR_MAIL             adresse d'envoi validée dans Brevo
 //   DOMAINES_AUTORISES          ex. « interieur.gouv.fr » (sous-domaines compris), séparés par des virgules
 //   MODE_TEST = "1"             tests locaux uniquement : le code est renvoyé au lieu d'être envoyé par mail
+
+import { connect } from 'cloudflare:sockets';
 
 const JOUR = 86400;
 const DUREE_MESSAGE = 30 * JOUR;
@@ -54,6 +57,52 @@ async function appareilConnecte(env, requete) {
     return app ? { mail, appareil: app, compte } : null;
 }
 
+// Envoi SMTP (Brevo : smtp-relay.brevo.com, port 465 chiffré) — quand la clé API n'est pas disponible.
+async function envoyerSmtp(hote, port, utilisateur, motDePasse, de, a, sujet, texte) {
+    const socket = connect({ hostname: hote, port: port }, { secureTransport: 'on', allowHalfOpen: false });
+    const ecrivain = socket.writable.getWriter(), lecteur = socket.readable.getReader();
+    const enc = new TextEncoder(), dec = new TextDecoder();
+    let tampon = '';
+    async function reponse() {
+        // Réponse SMTP complète : dernière ligne « 250 texte » (sans tiret après le code).
+        for (;;) {
+            const lignes = tampon.split('\r\n');
+            for (let i = 0; i < lignes.length - 1; i++) {
+                if (/^\d{3} /.test(lignes[i])) { tampon = lignes.slice(i + 1).join('\r\n'); return lignes[i]; }
+            }
+            const { value, done } = await lecteur.read();
+            if (done) throw new Error('SMTP : connexion fermée');
+            tampon += dec.decode(value, { stream: true });
+        }
+    }
+    async function commande(ligne, attendu) {
+        if (ligne !== null) await ecrivain.write(enc.encode(ligne + '\r\n'));
+        const r = await reponse();
+        if (!r.startsWith(attendu)) throw new Error('SMTP : ' + r);
+        return r;
+    }
+    const b64 = t => btoa(String.fromCharCode.apply(null, enc.encode(t)));
+    try {
+        await commande(null, '220');
+        await commande('EHLO trigone', '250');
+        await commande('AUTH LOGIN', '334');
+        await commande(b64(utilisateur), '334');
+        await commande(b64(motDePasse), '235');
+        await commande('MAIL FROM:<' + de + '>', '250');
+        await commande('RCPT TO:<' + a + '>', '250');
+        await commande('DATA', '354');
+        const message = [
+            'From: TRIGONE <' + de + '>', 'To: <' + a + '>', 'Subject: =?UTF-8?B?' + b64(sujet) + '?=',
+            'Date: ' + new Date().toUTCString(), 'Message-ID: <' + crypto.randomUUID() + '@trigone>',
+            'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
+            b64(texte).replace(/.{1,76}/g, '$&\r\n'), '.'
+        ].join('\r\n');
+        await commande(message, '250');
+        await ecrivain.write(enc.encode('QUIT\r\n')).catch(() => {});
+        return true;
+    } finally { try { await socket.close(); } catch (e) {} }
+}
+
 // Envoi du code par mail : Brevo (BREVO_CLE) ou, à défaut, Mailjet (MAILJET_CLE + MAILJET_SECRET).
 async function envoyerCode(env, mail, code) {
     if (env.MODE_TEST === '1') return true;
@@ -70,6 +119,9 @@ async function envoyerCode(env, mail, code) {
             body: JSON.stringify({ sender: { email: env.EXPEDITEUR_MAIL, name: 'TRIGONE' }, to: [{ email: mail }], subject: sujet, textContent: texte, htmlContent: html })
         });
         return r.ok;
+    }
+    if (env.BREVO_SMTP_UTILISATEUR && env.BREVO_SMTP_CLE) {
+        return envoyerSmtp('smtp-relay.brevo.com', 465, env.BREVO_SMTP_UTILISATEUR, env.BREVO_SMTP_CLE, env.EXPEDITEUR_MAIL, mail, sujet, texte).catch(() => false);
     }
     if (env.MAILJET_CLE && env.MAILJET_SECRET) {
         const r = await fetch('https://api.mailjet.com/v3.1/send', {
