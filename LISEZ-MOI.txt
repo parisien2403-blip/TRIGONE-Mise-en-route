@@ -266,3 +266,5 @@ Version 34 : assistant Chorus DT sur PC — zone de dépôt (glisser le .json ou
 Version 35 : icône du Panier — dossier au trait à la place du caddie (menu PC, barre du bas, accueil).
 
 Version 36 : « Panier » renommé « Documents » (menu, barre du bas, titres, boutons, notice, démo, mails). Messages à chaque mouvement : ajout aux Documents, sortie pour modification, retrait (avec confirmation), refus reçu rangé dans Documents, envoi (les demandes passent dans la Bibliothèque).
+
+Version 37 : Espace valideur — bouton « Effacer » (avec confirmation) sur chaque demande reçue sans décision : elle est retirée sans être validée ni refusée ; réimporter le .json pour la retrouver.
