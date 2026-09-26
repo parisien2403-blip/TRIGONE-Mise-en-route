@@ -381,7 +381,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 31, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 32, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1375,6 +1375,11 @@
     if (DANS_CR && /[?&]mer=/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
     // Fichier .json ouvert depuis la messagerie (« Partager » / « Ouvrir avec » TRIGONE) : droit à Mise en route.
     if (!DANS_CR && (/[?&](partage|fichier)=/.test(location.search) || /\/partage-trigone\/?$/.test(location.pathname))) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
+    // Juste après une mise à jour (nouvelle publication chargée, quelle qu'en soit la cause) : retour à l'écran de choix.
+    var buildVu = +lireTxt('trigone_build_vu') || 0;
+    var fichierOuQr = /[?&](partage|fichier|mer)=/.test(location.search) || /\/partage-trigone\/?$/.test(location.pathname);
+    if (buildVu && buildVu < BUILD && !fichierOuQr) dejaChoisi = false;
+    ecrireTxt('trigone_build_vu', String(BUILD));
     if (!arrivee && !dejaChoisi) {
         if (document.body) window.JUMELAGE_CHOIX();
         else document.addEventListener('DOMContentLoaded', window.JUMELAGE_CHOIX);
