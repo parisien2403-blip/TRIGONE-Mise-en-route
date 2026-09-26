@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v102';
+const CACHE_NAME = 'trigone-mise-en-route-v103';
 const ASSETS = [
   './',
   './manifest.json',
@@ -28,9 +28,7 @@ const ASSETS = [
   './favicon-32.png',
   './vendor/jspdf.umd.min.js',
   './vendor/jspdf.plugin.autotable.min.js',
-  './vendor/qrcode.min.js',
   './vendor/pdf-lib.min.js',
-  './vendor/jsQR.js',
   './sw.js'
 ];
 
@@ -58,6 +56,7 @@ self.addEventListener('activate', function(event) {
   event.waitUntil(
     caches.keys().then(function(keys) {
       var anciens = keys.filter(function(k) { return k.indexOf('trigone-mise-en-route') === 0 && k !== CACHE_NAME; });
+      if (keys.indexOf('trigone-partage') >= 0) caches.delete('trigone-partage');   // ancienne réception par « Partager » (retirée)
       return Promise.all(anciens.map(function(k) { return caches.delete(k); })).then(function() { return anciens.length > 0; });
     }).then(function(miseAJour) {
       return self.clients.claim().then(function() {
@@ -141,36 +140,7 @@ function reseauDAbord(request, fin) {
   });
 }
 
-// « Partager » / « Ouvrir avec » TRIGONE (Android) : le fichier arrive ici en POST. Il est rangé dans un cache
-// dédié, puis l'appli s'ouvre et le traite (Espace valideur, assistant Chorus DT ou retour d'un refus).
-function recevoirPartage(request) {
-  var n = 0, erreur = '', recu = [];
-  return request.formData().then(function(form) {
-    // Détail de ce que la messagerie a transmis (noms des champs, types, tailles) : affiché si rien n'est exploitable.
-    form.forEach(function(v, k) { recu.push(k + ':' + (v && typeof v !== 'string' ? (v.type || 'fichier') + '/' + v.size + 'o' : 'texte/' + String(v || '').length + 'c')); });
-    // Tout fichier reçu, quel que soit le nom du champ ; et le contenu d'une demande partagée comme du texte
-    // (certaines messageries, dont Outlook, peuvent transmettre le contenu plutôt que le fichier).
-    var fichiers = [];
-    form.forEach(function(v) {
-      if (v && typeof v !== 'string') { if (v.size) fichiers.push(v); return; }
-      var t = String(v || '').trim();
-      if (t.charAt(0) === '{' && t.indexOf('TRIGONE-MISE-EN-ROUTE') !== -1) fichiers.push(new File([t], 'demande-partagee.json', { type: 'application/json' }));
-    });
-    n = fichiers.length;
-    return caches.open('trigone-partage').then(function(cache) {
-      return Promise.all(fichiers.map(function(f, i) {
-        return cache.put(new Request(self.registration.scope + '__recu__/' + Date.now() + '-' + i),
-          new Response(f, { headers: { 'Content-Type': f.type || 'application/json', 'X-Nom': encodeURIComponent(f.name || 'demande.json') } }));
-      }));
-    });
-  }).catch(function(e) { erreur = (e && e.message) || 'lecture'; }).then(function() {
-    return Response.redirect(self.registration.scope + '?partage=' + n + (erreur ? '&err=' + encodeURIComponent(erreur) : '') +
-      (n ? '' : '&recu=' + encodeURIComponent(recu.join(', ').slice(0, 300) || 'rien')), 303);
-  });
-}
-
 self.addEventListener('fetch', function(event) {
-  if (event.request.method === 'POST' && /\/partage-trigone$/.test(new URL(event.request.url).pathname)) { event.respondWith(recevoirPartage(event.request)); return; }
   if (event.request.method !== 'GET') return;
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;

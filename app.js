@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 95;
+var APP_CODE_VERSION = 96;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -185,8 +185,7 @@ var MER_ICONES = {
 };
 // ===================== FORMAT PC (écran large) =====================
 // À partir de 1100 px de large : menu à gauche à la place de la barre du bas, accueil en tableau de bord,
-// formulaire accompagné d'un récapitulatif, Espace valideur en tableau avec le détail à côté, dépôt des .json
-// par glisser-déposer. En dessous (téléphones, tablettes), rien ne change. La démonstration suit l'écran.
+// formulaire accompagné d'un récapitulatif, Espace valideur en tableau avec le détail à côté. En dessous (téléphones, tablettes), rien ne change. La démonstration suit l'écran.
 var MER_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
 function EST_PC() { return !!(MER_PC_MQ && MER_PC_MQ.matches); }
 MER_ICONES.ACCUEIL = '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>';
@@ -248,13 +247,13 @@ function TPL_ACCUEIL_PC() {
         var objet = e.demandes.map(function(x) { return x.objet || 'Mise en route'; }).join(' · ');
         return ligne('Envoyée le ' + new Date(e.envoyeLe).toLocaleDateString('fr-FR'), '', objet,
             [a.lieuArr || a.paysArr || '', a.dateDep ? FORMAT_DATE_COURT(a.dateDep) : ''].filter(Boolean).join(' · '), 'SHOW_PAGE(\'BIBLIOTHEQUE\')');
-    }).join('') + '<button type="button" class="BTN BTN-GHOST" style="margin-top:14px;" onclick="BIB_QR(\'' + bib[0].id + '\')">📱 Dernière demande sur un téléphone (QR code)</button>'
+    }).join('')
         : '<div class="PC-VIDE">Aucune demande envoyée pour l\'instant.</div>';
     var attente = panier.length ? panier.map(function(d) {
         var n = (d.personnes || []).length, a = (d.trajets && d.trajets.aller) || {};
         return ligne(n > 1 ? 'Collective · ' + n + ' pers.' : 'Individuelle', 'PC-BADGE-GRIS', d.objet || 'Mise en route',
             a.dateDep ? FORMAT_DATE_COURT(a.dateDep) : '', 'SHOW_PAGE(\'PANIER\')');
-    }).join('') + '<button type="button" class="BTN BTN-PRIMARY" style="margin-top:14px;" onclick="SHOW_PAGE(\'PANIER\')">📧 Ouvrir mes documents et transmettre</button>'
+    }).join('') + '<button type="button" class="BTN BTN-PRIMARY" style="margin-top:14px;" onclick="SHOW_PAGE(\'PANIER\')">📨 Ouvrir mes documents et transmettre</button>'
         : '<div class="PC-VIDE">Aucune demande en attente d\'envoi.</div>';
     return '<div class="PC-PAGE">' +
         '<h1 class="PC-TITRE">' + (qui ? 'Bonjour, ' + ESC(qui) : 'Bienvenue') + '</h1>' +
@@ -315,9 +314,7 @@ function TPL_ESPACE_VALIDATION_PC(v, h) {
     var entete = '<div class="PC-VAL-ENTETE"><span class="MER-BADGE">🔒 Connecté — ' + LIBELLE_ROLE(h.role) + '</span>' +
         '<b>' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</b><span class="PC-GRIS">' + ESC(h.fonction) + '</span>' +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin-left:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>';
-    var depot = '<label class="PC-DEPOT">📥 Glissez ici les fichiers .json reçus par mail, collez-les (Ctrl + V) ou cliquez pour les choisir' +
-        '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>';
-    if (!liste.length) return entete + depot + TPL_AIDE_RECEPTION();
+    if (!liste.length) return entete + TPL_AIDE_RECEPTION();
     // Détail affiché d'office : la première demande que la personne connectée peut valider, sinon la première.
     if (!MER_VAL_SEL || !liste.some(function(e) { return e.id === MER_VAL_SEL; })) {
         var aTraiter = liste.filter(function(e) {
@@ -344,7 +341,7 @@ function TPL_ESPACE_VALIDATION_PC(v, h) {
             '<td><span class="PC-BADGE ' + etat[1] + '">' + etat[0] + '</span></td></tr>';
     }).join('');
     var sel = liste.filter(function(e) { return e.id === MER_VAL_SEL; })[0];
-    return entete + depot +
+    return entete +
         '<div class="PC-VAL"><div class="PC-VAL-LISTE">' +
             '<div class="PC-CARTE PC-CARTE-TABLE"><table class="PC-TABLE"><thead><tr><th></th><th>Demandeur</th><th>Objet</th><th>Dates</th><th>Pièces</th><th>État</th></tr></thead><tbody>' + lignes + '</tbody></table></div>' +
             (cochables > 1 ? '<div class="MER-ACTIONS" style="margin:12px 0 4px;"><button type="button" class="BTN BTN-SECONDARY BTN-SMALL" onclick="COCHER_TOUT_VALIDATION()">Tout cocher</button>' +
@@ -368,31 +365,6 @@ function PC_VAL_CHOISIR(id) {
     var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0], el = document.getElementById('PC-VAL-DETAIL');
     if (el && e) el.innerHTML = TPL_DETAIL_VALIDATION_PC(e, HABILITATION_COURANTE());
 }
-
-// ---------- Glisser-déposer des fichiers (Espace valideur, assistant Chorus DT) ----------
-function DEPOT_POSSIBLE() {
-    if (PAGE_ACTUELLE === 'VERIFIER' || PAGE_ACTUELLE === 'CHORUS') return true;
-    var h = PAGE_ACTUELLE === 'VALIDATION' && HABILITATION_COURANTE();
-    return !!(h && !h.retire);
-}
-function AVEC_FICHIERS(e) { return e.dataTransfer && Array.prototype.indexOf.call(e.dataTransfer.types || [], 'Files') >= 0; }
-document.addEventListener('dragover', function(e) {
-    if (!AVEC_FICHIERS(e)) return;
-    e.preventDefault();   // jamais d'ouverture du fichier à la place de l'appli
-    // Ailleurs dans l'appli, un .json déposé est aiguillé comme une demande reçue (Espace valideur, Chorus DT, refus).
-    e.dataTransfer.dropEffect = 'copy';
-    document.body.classList.toggle('pc-depot', DEPOT_POSSIBLE());
-});
-document.addEventListener('dragleave', function(e) { if (!e.relatedTarget) document.body.classList.remove('pc-depot'); });
-document.addEventListener('drop', function(e) {
-    if (!AVEC_FICHIERS(e)) return;
-    e.preventDefault();
-    document.body.classList.remove('pc-depot');
-    if (!e.dataTransfer.files.length) return;
-    if (!DEPOT_POSSIBLE()) { MER_RECEVOIR_FICHIERS(e.dataTransfer.files); return; }
-    var faux = { files: e.dataTransfer.files, value: '' };
-    if (PAGE_ACTUELLE === 'VERIFIER' || PAGE_ACTUELLE === 'CHORUS') VERIFIER_FICHIERS(faux); else IMPORTER_A_VALIDER(faux);
-});
 
 // court : libellé abrégé pour les écrans étroits (5 onglets sur 320 px).
 function TPL_ONGLET_DOCK(page, icone, libelle, pastille, court) {
@@ -456,40 +428,21 @@ function TPL_BIBLIOTHEQUE() {
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(objets) + (e.destinataire ? '<br>À ' + ESC(e.destinataire) : '') + '</div>' +
             '<div class="MER-VAL-ACTIONS">' +
-                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_QR(\'' + e.id + '\')">📱 Sur un téléphone</button>' +
-                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_JSON(\'' + e.id + '\')">💾 .json</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_SUPPRIMER(\'' + e.id + '\')">Supprimer</button>' +
             '</div></div></div>';
     }).join('');
     return '<div class="CARD"><h2>Bibliothèque</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées. « 📱 Sur un téléphone » affiche un QR code à scanner avec TRIGONE Compte-rendu de mission pour y reprendre la mission, ou à envoyer en image au missionnaire concerné. « 💾 .json » réenregistre le fichier envoyé (pièces jointes comprises) pour le renvoyer si besoin.</p>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route ») sur cet appareil ; ailleurs, le missionnaire saisit sa mission directement dans Compte-rendu.</p>' +
         (items || '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 function BIB_TROUVER(id) { return GET_BIBLIOTHEQUE().filter(function(e) { return e.id === id; })[0]; }
-// QR code à scanner avec Compte-rendu sur le téléphone (la mise en route faite sur l'ordinateur y est reprise).
-function BIB_QR(id) { var e = BIB_TROUVER(id); if (e && window.JUMELAGE_AFFICHER_QR_MER) JUMELAGE_AFFICHER_QR_MER(e.demandes); }
 function BIB_PDF(id) {
     var e = BIB_TROUVER(id); if (!e) return;
     try { GENERER_PDF(e.demandes).save(NOM_FICHIER_BASE(e.demandes) + '.pdf'); }
     catch (err) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + err.message); }
-}
-// Réenregistre le .json envoyé (pièces jointes comprises) pour le renvoyer si besoin.
-function BIB_JSON(id) {
-    var e = BIB_TROUVER(id); if (!e) return;
-    var metas = [].concat.apply([], e.demandes.map(function(d) { return d.pieces || []; }));
-    Promise.all(metas.map(function(m) { return PJ_LIRE(m.id).then(function(p) { return p ? null : m.nom; }); })).then(function(manq) {
-        manq = manq.filter(Boolean);
-        var go = function() {
-            ENREGISTRER_JSON(NOM_FICHIER_BASE(e.demandes, 'DEMANDE') + '.json', function() { return GENERER_JSON_COMPLET(e.demandes, 'DEMANDE_INITIALE'); })
-                .then(function(ok) { if (ok) MSG_INFO('Fichier enregistré', 'Le fichier .json de votre demande (pièces jointes comprises) est enregistré : vous pouvez le joindre à un nouveau mail.', '✅', 'mascotte-ok.webp'); })
-                .catch(function(err) { MSG_ERREUR('Enregistrement impossible', err.message || String(err)); });
-        };
-        if (!manq.length) { go(); return; }
-        MSG_CONFIRM('Pièce(s) jointe(s) introuvable(s)', 'Ces fichiers ne sont plus sur cet appareil : ' + manq.join(', ') + '.\n\nEnregistrer quand même le .json sans eux ?', 'Enregistrer', go, '⚠️');
-    });
 }
 // Repart d'une demande envoyée (même objet, mêmes personnes) pour en créer une nouvelle.
 function BIB_REUTILISER(id) { PROTEGER_BROUILLON(function() { BIB_REUTILISER_OK(id); }, 'Refaire la demande'); }
@@ -1224,8 +1177,7 @@ function TPL_PANIER() {
             '<h2>Mes documents</h2>' +
             '<div class="MER-EMPTY">Aucune demande en attente.<br>Créez une nouvelle demande pour commencer.</div>' +
             '<button type="button" class="BTN BTN-PRIMARY" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Nouvelle demande</button>' +
-            '<label class="BTN BTN-GHOST BTN-SMALL" style="margin:6px 0 14px;">📥 Importer une demande refusée' +
-            '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
+            '<p class="MER-HINT" style="margin:10px 0 14px;">Une demande refusée par un valideur revient dans votre Boîte de réception TRIGONE : « Corriger dans Documents » la range ici, avec le motif du refus.</p>' +
             '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
         '</div>';
     }
@@ -1242,20 +1194,16 @@ function TPL_PANIER() {
     }).join('');
     return '<div class="CARD">' +
         '<h2>Mes documents</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 18px;">' + panier.length + ' demande(s) prête(s) à être envoyée(s) ensemble, en un seul mail.</p>' +
+        '<p class="MER-HINT" style="margin:4px 0 18px;">' + panier.length + ' demande(s) prête(s) à être envoyée(s) ensemble, en un seul envoi TRIGONE.</p>' +
         items +
-        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:8px;" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
-        '<label class="BTN BTN-GHOST BTN-SMALL" style="margin:6px 0 14px;">📥 Importer une demande refusée' +
-            '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_REFUS(this)"></label>' +
+        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
         '<div class="MER-SECTION-TITLE">Envoi</div>' +
-        '<div class="MER-FIELD"><label>Mail du 1er signataire (chef de service)</label>' +
+        '<div class="MER-FIELD"><label>Mail du 1er valideur (chef de service)</label>' +
         '<input type="email" id="MER-MAIL-DEST" value="' + ESC(reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
         'oninput="var r=GET_REGLAGES(); r.mailSignataire=this.value; SAVE_REGLAGES(r);"></div>' +
-        '<div class="MER-FIELD"><label>Votre mail</label>' +
-        '<input type="email" id="MER-MAIL-DEMANDEUR" value="' + ESC(reg.mailDemandeur || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
-        'oninput="var r=GET_REGLAGES(); r.mailDemandeur=this.value; SAVE_REGLAGES(r);">' +
-        '<p class="MER-HINT">Pour vous renvoyer la demande si un valideur la refuse.</p></div>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📧 Envoyer mes documents (' + panier.length + ')</button>' +
+        '<p class="MER-HINT" style="margin:-4px 0 14px;">' + (MER_COMPTE_ACTIF() ? 'Envoi chiffré, directement dans le TRIGONE du 1er valideur. Un refus éventuel vous revient dans votre Boîte de réception (' + ESC(JUMELAGE_COMPTE_MAIL()) + ').'
+            : 'L\'envoi se fait directement dans TRIGONE : activez d\'abord votre compte TRIGONE (roue crantée › Compte TRIGONE).') + '</p>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📨 Envoyer mes documents (' + panier.length + ')</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
     '</div>';
 }
@@ -1694,27 +1642,31 @@ function PROPOSER_INSTALLATION_PREMIERE_FOIS() {
 var MER_NOTICE_CLE = null;
 var MER_NOTICES = {
     DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · documents · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
-        etapes: ['<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
+        etapes: ['<b>Compte TRIGONE</b> (roue crantée › Compte TRIGONE) : activez-le une fois avec votre adresse mail, vérifiée par un code. Tous les envois passent par la <b>boîte TRIGONE</b>, chiffrés : plus de fichier à joindre à un mail.',
+            '<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
             '<b>Demande collective</b> : « + Ajouter une personne », ou <b>« 📥 Importer une liste »</b> depuis un tableau Excel (.xlsx), Calc (.ods) ou CSV aux colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID (« Télécharger le modèle »). Les personnes déjà présentes ne sont pas dupliquées.',
             '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), moyen de transport, ville (code postal automatique) ou pays étranger, dates et heures. Selon le moyen, TRIGONE demande la <b>gare</b> (voie ferrée), l\'<b>aéroport</b> (voie aérienne) ou le <b>port</b> (voie maritime) de départ et d\'arrivée. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
             '<b>Voie routière civile (VRC)</b> : joignez la <b>demande d\'autorisation VRC</b>, la <b>carte grise</b> et l\'<b>attestation d\'assurance</b> du véhicule ; un rappel s\'affiche jusqu\'à l\'envoi.',
             '<b>Alim./Héb.</b> : indiquez notamment si une <b>réservation ABT</b> est demandée (oui / non).',
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
-            '<b>Documents</b> : « Ajouter aux documents » y range la demande terminée (message de confirmation) ; plusieurs demandes peuvent partir dans un seul mail. « Modifier » la ressort des Documents le temps de la correction, « Retirer » la supprime (après confirmation). Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises, nommé « 1-DEMANDE MISSIONNAIRE - GRADE NOM - OMR INDIVIDUEL » ou « … COLLECTIF » selon le nombre de missionnaires) et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
+            '<b>Documents</b> : « Ajouter aux documents » y range la demande terminée (message de confirmation) ; plusieurs demandes peuvent partir ensemble. « Modifier » la ressort des Documents le temps de la correction, « Retirer » la supprime (après confirmation). Vérifiez le <b>mail du 1er valideur</b> et l\'<b>aperçu du PDF</b>, puis <b>« 📨 Envoyer »</b> : la demande (pièces jointes comprises) arrive, chiffrée, dans le TRIGONE du 1er valideur. S\'il n\'a pas encore de compte TRIGONE, l\'envoi est bloqué : demandez-lui de s\'inscrire ; votre demande reste dans Documents.',
             'Appli fermée avant la fin ? À la réouverture, l\'écran <b>Demande en cours</b> propose de <b>continuer</b> la saisie ou de revenir à l\'accueil (la demande reste enregistrée, bouton « ↩ Reprendre ma demande en cours »).',
-            'La demande est rangée dans la <b>Bibliothèque</b> : « 💾 .json » y réenregistre le fichier envoyé (pièces jointes comprises) pour le renvoyer si besoin. En cas de refus, importez le .json reçu depuis <b>Documents</b> (« Importer une demande refusée ») : elle y revient avec le motif du refus ; corrigez-la avec « Modifier » et renvoyez-la. À l\'envoi, les demandes quittent Documents et passent dans la Bibliothèque.'] },
-    VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
-        etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
-            'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
-            '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif. <b>Effacer</b> (après confirmation) retire une demande importée par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; réimportez le .json pour la retrouver.',
-            '<b>Transmettre</b> : pour chaque envoi, <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b> (le bouton s\'active une fois le fichier enregistré) ouvre le mail : joignez-y le fichier. Le nom du fichier dit qui l\'a produit : « 2-SIGNE VALIDEUR 1 - GRADE NOM - OMR … » après le 1er valideur, « 3-SIGNE VALIDEUR 2 - … » après le 2e, « REFUS VALIDEUR 1 (ou 2) - … » pour un refus. Le 1er valideur envoie au 2e valideur (« Demande de validation INDIVIDUEL / COLLECTIF pour GRADE NOM - objet ») ; le 2e valideur envoie à l\'assistant Chorus DT (« Demande de Mise en route INDIVIDUEL / COLLECTIF - GRADE NOM ») ; un refus repart vers le demandeur avec son motif.',
-            'Terminez par « Terminé » une fois tous les mails envoyés : les demandes traitées quittent votre liste.'] },
-    CHORUS: { titre: 'Assistant Chorus DT', sous: 'Vérifier le .json et générer le PDF', icone: MER_ICONES_NOTICE_CHECK(),
-        etapes: ['Sur l\'accueil, touchez <b>Espace valideur &amp; Chorus DT</b>, puis <b>Assistant Chorus DT</b> (aucun code n\'est nécessaire). Il ne sert qu\'à l\'assistant : un fichier qui n\'a pas les deux signatures y est refusé.',
-            'Enregistrez le fichier <b>.json</b> reçu du 2e valideur, puis choisissez-le : TRIGONE contrôle les signatures électroniques et les pièces jointes.',
+            'À l\'envoi, la demande quitte Documents pour la <b>Bibliothèque</b>. En cas de refus, elle revient dans votre <b>Boîte de réception</b> avec le motif : « Corriger dans Documents » l\'y range ; corrigez-la avec « Modifier » et renvoyez-la.',
+            'Au retour de mission, <b>TRIGONE Compte-rendu</b> reprend la mission envoyée depuis cet appareil (« À partir d\'une mise en route ») ; sinon, le missionnaire la saisit directement dans Compte-rendu.'] },
+    VALIDEUR: { titre: 'Valider une demande', sous: 'Rôle valideur · boîte de réception · signature', icone: MER_ICONES_NOTICE_CADENAS(),
+        etapes: ['<b>Réglages › Mes rôles</b> (roue crantée de l\'écran de choix) : cochez <b>1er valideur</b> ou <b>2e valideur</b>, saisissez votre fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur. Le rôle est déclaré à votre compte TRIGONE : votre boîte ne reçoit que les demandes de votre niveau.',
+            'Ou, dans l\'<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
+            'Les demandes à signer arrivent dans votre <b>Boîte de réception</b> (pastille rouge) : « Ouvrir et signer » les affiche dans l\'Espace valideur, avec leur <b>aperçu</b> et leurs pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
+            '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
+            '<b>Transmettre</b> : pour chaque envoi, <b>« 📨 Envoyer »</b>. Le 1er valideur envoie au 2e valideur, le 2e valideur à l\'assistant Chorus DT ; un refus repart vers le demandeur, avec son motif. Chaque envoi arrive, chiffré, dans le TRIGONE du destinataire ; un destinataire qui n\'a pas encore de compte (ou pas le bon rôle) est signalé et l\'envoi attend.',
+            'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.'] },
+    CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
+        etapes: ['<b>Réglages › Mes rôles</b> : cochez <b>Assistant Chorus DT</b> et saisissez le code remis par l\'administrateur. Votre espace apparaît au <b>centre de l\'écran de choix</b> (logo Assist Chorus-DT).',
+            '<b>Demandes de mise en route validées</b> : elles arrivent des 2e valideurs. « Ouvrir et contrôler » : TRIGONE contrôle les signatures électroniques et les pièces jointes. Un envoi qui n\'a pas les deux signatures est écarté.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
-            'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).'] }
+            'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).',
+            '<b>Comptes-rendus de mission</b> : envoyés par les missionnaires depuis TRIGONE Compte-rendu. « Ouvrir » liste le compte-rendu PDF et les justificatifs : téléchargez-les, puis « ✔ Traité ».'] }
 };
 function MER_ICONES_NOTICE_PERSO() { return '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'; }
 function MER_ICONES_NOTICE_CADENAS() { return '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'; }
@@ -1830,11 +1782,11 @@ var DEMO_ETAPES = [
       zones: ['[data-path="codeFD"]', '#MER-FD-INFO', '.MER-PANIER-ITEM'] },
     { page: 'PANIER', titre: 'Documents', texte: 'La demande y attend son envoi (plusieurs demandes peuvent partir ensemble). Vérifiez le mail du 1er valideur, puis « Envoyer mes documents ».',
       zones: ['.MER-PANIER-ITEM', '#MER-MAIL-DEST', '.CARD > .BTN-PRIMARY'] },
-    { page: 'PANIER', envoi: true, titre: 'Avant d\'envoyer', texte: 'Aperçu du PDF, puis 1. « Enregistrer le .json » (un seul fichier, pièces jointes comprises) et 2. « Envoyer », qui ouvre le mail au 1er valideur.',
-      zones: ['#MER-BTN-ENREGISTRER', '#MER-BTN-ENVOYER'] },
-    { page: 'BIBLIOTHEQUE', titre: 'Bibliothèque', texte: 'Chaque demande envoyée y reste. « Sur un téléphone » affiche un QR code : scanné dans TRIGONE Compte-rendu, il prépare le compte-rendu de la mission. Il s\'envoie aussi en image au missionnaire concerné.',
-      zones: ['.MER-VAL-ACTIONS button[onclick^="BIB_QR"]'] },
-    { page: 'ACCUEIL', titre: 'Et ensuite ?', texte: 'Le 1er valideur signe, puis le 2e valideur, et l\'assistant Chorus DT génère le PDF final : tout se passe dans « Espace valideur & Chorus DT ».',
+    { page: 'PANIER', envoi: true, titre: 'Avant d\'envoyer', texte: 'Aperçu du PDF, puis « Envoyer » : la demande et ses pièces jointes arrivent, chiffrées, directement dans le TRIGONE du 1er valideur.',
+      zones: ['#MER-BTN-DIRECT'] },
+    { page: 'BIBLIOTHEQUE', titre: 'Bibliothèque', texte: 'Chaque demande envoyée y reste : PDF, ou « Refaire une demande » à partir d\'elle. Au retour, TRIGONE Compte-rendu la propose pour préparer le compte-rendu de la mission.',
+      zones: ['.MER-VAL-ACTIONS button[onclick^="BIB_PDF"]'] },
+    { page: 'ACCUEIL', titre: 'Et ensuite ?', texte: 'Le 1er valideur reçoit la demande dans sa boîte TRIGONE et la signe, puis le 2e valideur, et l\'assistant Chorus DT génère le PDF final.',
       zones: ['.BTN-ACCUEIL-PETIT', '.PC-NAV[onclick*="VALIDATION"]'] },
     { page: 'ACCUEIL', derniere: true, titre: 'À vous de jouer !', texte: 'C\'était une démonstration : aucune donnée n\'a été enregistrée ni envoyée. Lancez votre première demande avec « Nouvelle demande ».',
       zones: ['.BTN-ACCUEIL:not(.BTN-ACCUEIL-PETIT)', '.PC-HERO-ACTIONS .BTN-PRIMARY'] }
@@ -1984,52 +1936,35 @@ function TELECHARGER_TEXTE(nomFichier, contenu, type) {
     setTimeout(function() { URL.revokeObjectURL(url); }, 4000);
 }
 
-// Enregistre un .json : l'utilisateur choisit l'emplacement quand le navigateur le permet (PC), sinon le fichier
-// part dans Téléchargements. Renvoie true une fois enregistré, false si l'utilisateur a annulé.
-function ENREGISTRER_JSON(nom, generer) {
-    var telecharger = function() { return generer().then(function(json) { TELECHARGER_TEXTE(nom, json, 'application/json'); return true; }); };
-    if (!window.showSaveFilePicker) return telecharger();
-    return window.showSaveFilePicker({ suggestedName: nom, types: [{ description: 'Fichier TRIGONE (.json)', accept: { 'application/json': ['.json'] } }] })
-        .then(function(h) {
-            return generer().then(function(json) {
-                return h.createWritable().then(function(w) { return w.write(json).then(function() { return w.close(); }); });
-            }).then(function() { return true; });
-        }, function(e) {
-            if (e && e.name === 'AbortError') return false;   // enregistrement annulé
-            return telecharger();                              // sélecteur indisponible : téléchargement classique
-        });
-}
-function OUVRIR_MAIL(dest, sujet, corps) {
-    window.location.href = 'mailto:' + encodeURIComponent(dest || '') + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
-}
-
-var MER_PANIER_ENREGISTRE = false;
 function PREPARER_ENVOI() {
     var reg = GET_REGLAGES();
-    var mail = (document.getElementById('MER-MAIL-DEST') || {}).value || reg.mailSignataire || '';
+    var mail = ((document.getElementById('MER-MAIL-DEST') || {}).value || reg.mailSignataire || '').trim();
     if (!mail || mail.indexOf('@') === -1) { MSG_ERREUR('Mail manquant', 'Merci de renseigner l\'adresse mail du 1er valideur avant l\'envoi.'); return; }
     reg.mailSignataire = mail; SAVE_REGLAGES(reg);
 
     var panier = GET_PANIER();
     if (!panier.length) return;
+    // Envoi uniquement par la boîte TRIGONE : sans compte actif, rien ne part (la demande reste dans Documents).
+    if (!MER_COMPTE_ACTIF() && !DEMO_ACTIF) {
+        AFFICHER_MODALE('Compte TRIGONE à activer',
+            '<p style="font-size:0.86em; line-height:1.5;">Les demandes partent directement dans le TRIGONE du 1er valideur, chiffrées. Activez d\'abord votre <b>compte TRIGONE</b> (votre adresse mail, vérifiée par un code) : une seule fois, sur cet appareil.</p>' +
+            '<p class="MER-HINT">Votre demande reste dans Documents en attendant.</p>',
+            '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="FERMER_MODALE()">Plus tard</button>' +
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE(); JUMELAGE_COMPTE()">Activer mon compte</button>');
+        return;
+    }
     var pj = [].concat.apply([], panier.map(function(d) { return d.pieces || []; }));
     var sansPJ = panier.filter(function(d) { return !(d.pieces || []).length; }).length;
-    MER_PANIER_ENREGISTRE = false;
     AFFICHER_MODALE('Avant d\'envoyer',
-        '<p style="font-size:0.86em; line-height:1.5;">Vérifiez votre demande dans l\'aperçu, puis envoyez-la. Le 1er valideur ne reçoit qu\'<b>un seul fichier</b> :</p>' +
-        '<p style="font-size:0.86em; line-height:1.7; background:rgba(90,122,148,0.07); padding:10px 12px; border-radius:10px;">📎 ' + ESC(NOM_FICHIER_BASE(panier)) + '.json' +
-            (pj.length ? '<br><span style="color:var(--sm2-muted);">avec, à l\'intérieur : ' + pj.map(function(p) { return ESC(p.nom); }).join(', ') + '</span>' : '') + '</p>' +
+        '<p style="font-size:0.86em; line-height:1.5;">Vérifiez votre demande dans l\'aperçu, puis envoyez-la. Elle arrive, chiffrée, dans le TRIGONE du 1er valideur (<b>' + ESC(mail) + '</b>) :</p>' +
+        '<p style="font-size:0.86em; line-height:1.7; background:rgba(90,122,148,0.07); padding:10px 12px; border-radius:10px;">📨 ' + panier.length + ' demande(s)' +
+            (pj.length ? '<br><span style="color:var(--sm2-muted);">avec : ' + pj.map(function(p) { return ESC(p.nom); }).join(', ') + '</span>' : '') + '</p>' +
         (sansPJ ? '<p class="MER-HINT" style="color:#b45309; font-weight:700;">⚠ ' + sansPJ + ' demande(s) sans NDS ni DAF jointe.</p>' : '') +
         (panier.some(UTILISE_VRC) ? '<div style="font-size:0.86em; line-height:1.5; background:rgba(180,83,9,0.09); border:1.5px solid rgba(180,83,9,0.35); color:#92400e; padding:10px 12px; border-radius:10px; margin:10px 0;">' +
             '🚗 <b>Rappel — voie routière civile (VRC)</b><br>Joignez ' + MER_PIECES_VRC + ' : ajoutez-les en pièces jointes de la demande (onglet Imputation) avant d\'envoyer.</div>' : '') +
-        '<button type="button" class="BTN BTN-GHOST" style="margin-top:8px;" onclick="VOIR_APERCU_PANIER()">👁 Aperçu du PDF</button>' +
-        // Compte TRIGONE actif : envoi direct dans la boîte du 1er valideur (chiffré), sans pièce jointe.
-        (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? '<button type="button" class="BTN BTN-PRIMARY" id="MER-BTN-DIRECT" style="margin-top:8px;" onclick="ENVOYER_PANIER_DIRECT()">📨 Envoyer directement dans TRIGONE</button>' +
-            '<p style="font-size:0.8em; color:var(--sm2-muted); margin:4px 0 10px;">Chiffré, il arrive dans le TRIGONE du 1er valideur (' + ESC(mail) + '). Ou, à l\'ancienne, par mail :</p>' : '') +
-        '<button type="button" class="BTN ' + (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? 'BTN-GHOST' : 'BTN-PRIMARY') + '" id="MER-BTN-ENREGISTRER" style="margin-top:8px;" onclick="ENREGISTRER_PANIER()">1. 💾 Enregistrer le .json</button>' +
-        '<p style="font-size:0.8em; color:var(--sm2-muted);">Enregistrez d\'abord le fichier .json, puis « Envoyer » ouvre le mail : joignez-y le fichier enregistré.</p>',
+        '<button type="button" class="BTN BTN-GHOST" style="margin-top:8px;" onclick="VOIR_APERCU_PANIER()">👁 Aperçu du PDF</button>',
         '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="FERMER_MODALE()">Annuler</button>' +
-        '<button type="button" class="BTN BTN-PRIMARY" id="MER-BTN-ENVOYER" disabled onclick="ENVOYER_PANIER()">2. Envoyer</button>'
+        '<button type="button" class="BTN BTN-PRIMARY" id="MER-BTN-DIRECT" onclick="ENVOYER_PANIER_DIRECT()">📨 Envoyer</button>'
     );
 }
 function VOIR_APERCU_PANIER() {
@@ -2059,18 +1994,10 @@ function SUJET_MAIL(etape, demandes) {
 
 function PANIER_A_ENVOYER() {
     var reg = GET_REGLAGES(), panier = GET_PANIER();
-    panier.forEach(function(d) { d.mailDemandeur = (reg.mailDemandeur || '').trim(); d.validations = []; delete d.refus; });
+    // Un refus revient au demandeur, dans sa boîte TRIGONE : l'adresse de son compte.
+    var moi = (window.JUMELAGE_COMPTE_MAIL && JUMELAGE_COMPTE_MAIL()) || (reg.mailDemandeur || '').trim();
+    panier.forEach(function(d) { d.mailDemandeur = moi; d.validations = []; delete d.refus; });
     return panier;
-}
-function ENREGISTRER_PANIER() {
-    var panier = PANIER_A_ENVOYER();
-    ENREGISTRER_JSON(NOM_FICHIER_BASE(panier) + '.json', function() { return GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE'); }).then(function(ok) {
-        if (!ok) return;
-        MER_PANIER_ENREGISTRE = true;
-        var b = document.getElementById('MER-BTN-ENREGISTRER'), e = document.getElementById('MER-BTN-ENVOYER');
-        if (b) { b.className = 'BTN BTN-GHOST'; b.textContent = '✔ .json enregistré — enregistrer à nouveau'; }
-        if (e) e.disabled = false;
-    }).catch(function(e) { MSG_ERREUR('Enregistrement impossible', e.message || String(e)); });
 }
 // Envoi direct (compte TRIGONE) : le .json complet, chiffré, déposé dans la boîte du 1er valideur.
 function ENVOYER_PANIER_DIRECT() {
@@ -2089,28 +2016,12 @@ function ENVOYER_PANIER_DIRECT() {
                 (panier.length > 1 ? 'sont rangées' : 'est rangée') + ' dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
         }, 300);
     }).catch(function(e) {
-        if (b) { b.disabled = false; b.textContent = '📨 Envoyer directement dans TRIGONE'; }
+        if (b) { b.disabled = false; b.textContent = '📨 Envoyer'; }
         MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : e.statut === 403 ? 'Mauvais destinataire' : 'Envoi impossible', e.pasDeCompte
-            ? 'Le 1er valideur (' + reg.mailSignataire + ') n\'a pas encore activé son compte TRIGONE. Envoyez la demande par mail (étapes 1 et 2), et invitez-le à activer son compte : roue crantée › Compte TRIGONE.'
-            : (e.message || String(e)));
+            ? 'Le 1er valideur (' + reg.mailSignataire + ') n\'a pas encore de compte TRIGONE : demandez-lui de s\'inscrire (roue crantée › Compte TRIGONE, puis Réglages › Mes rôles › 1er valideur). Votre demande reste dans Documents : renvoyez-la ensuite.'
+            : (e.message || String(e)) + '\n\nVotre demande reste dans Documents.');
     });
 }
-function ENVOYER_PANIER() {
-    if (!MER_PANIER_ENREGISTRE) return;
-    var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER();
-    var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier « ' + NOM_FICHIER_BASE(panier, 'DEMANDE') + '.json » (pièces jointes NDS / DAF incluses).\n' +
-        'Ouvrez-le dans TRIGONE Mise en route (« Espace valideur & Chorus DT »). Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur téléphone : enregistrez-la, puis dans TRIGONE touchez « Importer la demande reçue ».\n\nCordialement.';
-    ARCHIVER_ENVOI(panier, reg.mailSignataire);
-    FERMER_MODALE();
-    OUVRIR_MAIL(reg.mailSignataire, SUJET_MAIL('DEMANDE', panier), corps);
-    SAVE_PANIER([]);
-    MER_PANIER_ENREGISTRE = false;
-    setTimeout(function() {
-        SHOW_PAGE('ACCUEIL');
-        MSG_INFO(panier.length > 1 ? 'Demandes envoyées' : 'Demande envoyée', (panier.length > 1 ? 'Vos ' + panier.length + ' demandes ont été transmises' : 'Votre demande a été transmise') + ' au 1er valideur. ' + (panier.length > 1 ? 'Elles quittent' : 'Elle quitte') + ' Documents et ' + (panier.length > 1 ? 'sont rangées' : 'est rangée') + ' dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
-    }, 300);
-}
-
 // ===================== PIÈCES JOINTES (NDS / DAF) =====================
 // Le missionnaire joint sa NDS ou sa DAF (PDF ou photo) à la demande. Les fichiers sont rangés dans IndexedDB
 // (trop lourds pour localStorage) ; la demande ne garde que nom, type, taille et empreinte SHA-256 — empreinte
@@ -2187,7 +2098,7 @@ function OUVRIR_PJ(id, alteree) {
     if (alteree || MER_PJ_ALTEREES[id]) { MSG_ERREUR('Pièce jointe modifiée', 'Le fichier reçu ne correspond pas à celui signé : il a été modifié en cours de route.'); return; }
     var w = window.open('', '_blank');
     PJ_LIRE(id).then(function(p) {
-        if (!p) { if (w) w.close(); MSG_ERREUR('Pièce jointe absente', 'Ce fichier n\'est pas sur cet appareil. Importez le .json qui le contient.'); return; }
+        if (!p) { if (w) w.close(); MSG_ERREUR('Pièce jointe absente', 'Ce fichier n\'est pas sur cet appareil : rouvrez la demande depuis la Boîte de réception.'); return; }
         var url = URL.createObjectURL(new Blob([DEB64(p.b64)], { type: p.type }));
         if (w) w.location = url; else window.open(url, '_blank');
     });
@@ -2525,7 +2436,6 @@ function SE_CONNECTER(btn) {
     CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(function() {
         RENDER_VALIDATION_INPLACE();
         MER_DECLARER_ROLE_VALIDEUR();
-        if (MER_RECUS_ATTENTE) { MER_RECUS_ATTENTE = false; setTimeout(MER_TRAITER_RECUS, 300); }
         if (MER_BOITE_A_OUVRIR) { var idBoite = MER_BOITE_A_OUVRIR; MER_BOITE_A_OUVRIR = null; setTimeout(function() { OUVRIR_RECU(idBoite); }, 400); }
     }).catch(function() {
         AFFICHER_MSG_CENTRE({ titre: 'Code incorrect', texte: 'Ce code d\'accès n\'est pas reconnu. Vérifiez-le, en respectant les majuscules et les symboles.', icone: '⛔', mascotte: 'mascotte-code.webp' });
@@ -2594,9 +2504,7 @@ function TPL_ESPACE_VALIDATION(v, h) {
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + ESC(h.fonction) + '</div></div>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>' +
-        '<div class="MER-SECTION-TITLE">Demandes reçues</div>' +
-        '<label class="BTN BTN-GHOST" style="margin-bottom:14px;">📥 Importer un ou plusieurs fichiers .json' +
-        '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>';
+        '<div class="MER-SECTION-TITLE">Demandes reçues</div>';
     if (!liste.length) return html + TPL_AIDE_RECEPTION();
 
     var decidees = liste.filter(function(e) { return e.decision; }).length;
@@ -2623,17 +2531,17 @@ function TPL_TRANSMISSION_VALIDATION(v, h, liste) {
     return '<div class="MER-SECTION-TITLE">Transmission</div>' +
         (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
         (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
-              '<p class="MER-HINT">Il reçoit un seul fichier .json et génère le PDF depuis « Espace valideur &amp; Chorus DT » sur l\'accueil.</p></div>' : '') +
-        '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📧 Transmettre les décisions (' + decidees + ')</button>';
+              '<p class="MER-HINT">Il reçoit les demandes validées dans son espace Assistant Chorus DT, qui contrôle les signatures et produit le PDF.</p></div>' : '') +
+        '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📨 Transmettre les décisions (' + decidees + ')</button>';
 }
 
 function TPL_VALIDATION() {
     var v = GET_VALIDEUR();
     var h = HABILITATION_COURANTE();
     var corps, sous;
-    // L'assistant Chorus DT n'a pas de code : son accès est proposé ici, à côté de la connexion des valideurs.
-    var chorus = '<button type="button" class="NOTICE-CARD" onclick="SHOW_PAGE(\'VERIFIER\')"><span class="NOTICE-CARD-ICON">' + MER_ICONES.CHORUS + '</span>' +
-        '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Assistant Chorus DT</span><span class="NOTICE-CARD-SUB">Vérifier le .json signé et générer le PDF — sans code</span></span>' +
+    // L'assistant Chorus DT a son propre espace (rôle coché dans Réglages › Mes rôles) : il est rappelé ici.
+    var chorus = '<button type="button" class="NOTICE-CARD" onclick="MER_ALLER_CHORUS()"><span class="NOTICE-CARD-ICON">' + MER_ICONES.CHORUS + '</span>' +
+        '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Assistant Chorus DT</span><span class="NOTICE-CARD-SUB">Demandes validées et comptes-rendus reçus</span></span>' +
         '<span class="NOTICE-CARD-CHEV">›</span></button>';
     var connecte = h && !h.retire;
     if (!connecte) { sous = 'Valideurs : connexion · Assistant Chorus DT : accès direct'; corps = chorus + '<div class="MER-SECTION-TITLE">Connexion valideur</div>' + TPL_CONNEXION(v); }
@@ -2653,6 +2561,10 @@ function DESTINATIONS_DECISIONS(liste) {
     return r;
 }
 function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
+function MER_ALLER_CHORUS() {
+    if (MER_ROLE_CHORUS()) { SHOW_PAGE('CHORUS'); return; }
+    MSG_INFO('Espace Assistant Chorus DT', 'Réservé à l\'assistant Chorus DT. Cochez « Je suis assistant Chorus DT » dans les Réglages TRIGONE (roue crantée › Mes rôles), avec le code remis par l\'administrateur : son espace s\'ouvre alors au centre de l\'écran de choix.', '🔒', 'mascotte-code.webp');
+}
 
 function LIRE_FICHIERS(input, lire, traiter) {
     var fichiers = Array.prototype.slice.call(input.files || []);
@@ -2729,13 +2641,13 @@ function MAJ_ENTREES(ids, maj) {
 function EFFACER_RECUE(id) {
     var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0];
     if (!e) return;
-    MSG_CONFIRM('Effacer cette demande ?', 'La demande de ' + RESUME_DEMANDE(e.d).noms + ' sera retirée de votre Espace valideur, sans être validée ni refusée : rien n\'est signé, rien n\'est envoyé et le demandeur n\'est pas prévenu.\n\nPour la traiter plus tard, il suffira de réimporter le fichier .json reçu par mail.',
+    MSG_CONFIRM('Effacer cette demande ?', 'La demande de ' + RESUME_DEMANDE(e.d).noms + ' sera retirée de votre Espace valideur, sans être validée ni refusée : rien n\'est signé, rien n\'est envoyé et le demandeur n\'est pas prévenu.\n\nPour la traiter plus tard, rouvrez-la depuis votre Boîte de réception.',
         'Effacer', function() {
             SAVE_A_VALIDER(GET_A_VALIDER().filter(function(x) { return x.id !== id; }));
             delete MER_VERIF[id];
             if (MER_VAL_SEL === id) MER_VAL_SEL = null;
             RENDER_VALIDATION_INPLACE();
-            setTimeout(function() { MSG_INFO('Demande effacée', 'La demande de ' + RESUME_DEMANDE(e.d).noms + ' a été retirée de votre Espace valideur. Réimportez le fichier .json reçu par mail pour la retrouver.', '🗑', 'mascotte-poubelle.webp'); }, 350);
+            setTimeout(function() { MSG_INFO('Demande effacée', 'La demande de ' + RESUME_DEMANDE(e.d).noms + ' a été retirée de votre Espace valideur. Elle reste dans votre Boîte de réception : rouvrez-la pour la retrouver.', '🗑', 'mascotte-poubelle.webp'); }, 350);
         }, '⚠️', 'mascotte-poubelle.webp', true);
 }
 function ANNULER_DECISION(id) { MAJ_ENTREES([id], function(e) { e.decision = null; e.signature = null; }); }
@@ -2800,78 +2712,54 @@ function PREPARER_TRANSMISSION() {
     Object.keys(refusParMail).forEach(function(m) {
         var ds = refusParMail[m];
         MER_ENVOIS.push({ type: 'REFUS', demandes: ds, mail: m,
-            titre: 'Refus au demandeur' + (m ? '' : ' (adresse inconnue : à saisir dans le mail)'), pj: NOM_FICHIER_BASE(ds, 'REFUS') + '.json' });
+            titre: 'Refus au demandeur' + (m ? '' : ' (adresse inconnue)'), pj: NOM_FICHIER_BASE(ds, 'REFUS') + '.json' });
     });
     AFFICHER_TRANSMISSION();
 }
 function AFFICHER_TRANSMISSION() {
     FERMER_MODALE();
-    var direct = !!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF());
+    // Envoi uniquement par la boîte TRIGONE : sans compte actif, les décisions attendent (rien n'est perdu).
+    if (!MER_COMPTE_ACTIF()) {
+        AFFICHER_MODALE('Compte TRIGONE à activer',
+            '<p style="font-size:0.86em; line-height:1.5;">Les décisions partent directement dans le TRIGONE de leurs destinataires, chiffrées. Activez d\'abord votre <b>compte TRIGONE</b> : une seule fois, sur cet appareil. Vos décisions sont conservées en attendant.</p>',
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button>' +
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE(); JUMELAGE_COMPTE()">Activer mon compte</button>');
+        return;
+    }
     var lignes = MER_ENVOIS.map(function(env, i) {
         return '<div class="MER-PANIER-ITEM" style="flex-wrap:wrap;"><div class="MER-PANIER-ITEM-TXT" style="flex:1 1 100%;">' +
             '<div class="MER-PANIER-ITEM-TITRE">' + ESC(env.titre) + ' — ' + env.demandes.length + ' demande(s)</div>' +
-            '<div class="MER-PANIER-ITEM-SUB" style="word-break:break-all;">' + ESC(env.mail || '') + '<br>📎 ' + ESC(env.pj) + '</div></div>' +
-            (direct && env.mail && !env.fait ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:100%; margin:8px 0 0;" onclick="ENVOYER_ENVOI_DIRECT(' + i + ')">📨 Envoyer directement dans TRIGONE</button>' : '') +
-            (env.direct ? '<div class="MER-HINT" style="width:100%; margin-top:8px; color:#15803d; font-weight:800;">✔ Arrivé dans le TRIGONE du destinataire (chiffré)</div>' :
-            '<div style="display:flex; gap:8px; width:100%; margin-top:8px;">' +
-                '<button type="button" class="BTN ' + (env.enregistre ? 'BTN-GHOST' : direct ? 'BTN-GHOST' : 'BTN-PRIMARY') + ' BTN-SMALL" style="flex:1; margin:0;" onclick="ENREGISTRER_ENVOI(' + i + ')">' +
-                    (env.enregistre ? '✔ Enregistré' : '1. 💾 Enregistrer') + '</button>' +
-                '<button type="button" class="BTN ' + (env.enregistre && !env.fait ? 'BTN-PRIMARY' : 'BTN-GHOST') + ' BTN-SMALL" style="flex:1; margin:0;"' + (env.enregistre ? '' : ' disabled') +
-                    ' onclick="ENVOYER_ENVOI(' + i + ')">' + (env.fait ? '✔ Envoyé' : '2. ✉️ Envoyer') + '</button>' +
-            '</div>') + '</div>';
+            '<div class="MER-PANIER-ITEM-SUB" style="word-break:break-all;">' + ESC(env.mail || '') + '</div></div>' +
+            (env.direct ? '<div class="MER-HINT" style="width:100%; margin-top:8px; color:#15803d; font-weight:800;">✔ Arrivé dans le TRIGONE du destinataire (chiffré)</div>'
+            : env.fait ? '<div class="MER-HINT" style="width:100%; margin-top:8px; font-weight:800;">✔ Marqué comme fait</div>'
+            : env.mail ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:100%; margin:8px 0 0;" onclick="ENVOYER_ENVOI_DIRECT(' + i + ')">📨 Envoyer</button>'
+            : '<div class="MER-HINT" style="width:100%; margin-top:8px;">Adresse du demandeur inconnue : prévenez-le directement du refus et de son motif.</div>' +
+              '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:100%; margin:6px 0 0;" onclick="MER_ENVOIS[' + i + '].fait = true; AFFICHER_TRANSMISSION()">C\'est fait</button>') + '</div>';
     }).join('');
     var tousFaits = MER_ENVOIS.every(function(env) { return env.fait; });
     AFFICHER_MODALE('Transmettre',
-        '<p style="font-size:0.86em; line-height:1.5;">' + (direct ? 'Pour chaque envoi : <b>« Envoyer directement dans TRIGONE »</b> (chiffré, sans pièce jointe) ; ou par mail : <b>1. Enregistrer</b> le .json, puis <b>2. Envoyer</b>.' :
-            'Pour chaque envoi : <b>1. Enregistrer</b> le fichier .json, puis <b>2. Envoyer</b> ouvre le mail : joignez-y le fichier enregistré.') + '</p>' + lignes,
+        '<p style="font-size:0.86em; line-height:1.5;">Pour chaque envoi : <b>« Envoyer »</b>. Il arrive, chiffré, directement dans le TRIGONE du destinataire.</p>' + lignes,
         // « Plus tard » ferme sans rien perdre tant qu'un envoi reste à faire ; tout envoyé, seul « Terminé » reste.
         (tousFaits ? '' : '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button>') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (tousFaits ? '' : ' disabled') + ' onclick="TERMINER_TRANSMISSION()">Terminé</button>'
     );
 }
-// Contenu d'un envoi : étape du .json, objet et texte du mail.
-function CONTENU_ENVOI(env) {
-    var n = env.demandes.length;
-    if (env.type === 'CHORUS') return { etape: 'VALIDATION_2', sujet: SUJET_MAIL('CHORUS', env.demandes),
-        corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez-le dans TRIGONE Mise en route : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré. Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur téléphone : enregistrez-la, puis dans TRIGONE touchez « Importer la demande reçue ».\n\nCordialement.' };
-    if (env.type === 'VALIDATION_1') return { etape: 'VALIDATION_1', sujet: SUJET_MAIL('VALIDATION_1', env.demandes),
-        corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez-le dans TRIGONE Mise en route (« Espace valideur & Chorus DT »). Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur téléphone : enregistrez-la, puis dans TRIGONE touchez « Importer la demande reçue ».\n\nCordialement.' };
-    return { etape: 'REFUS', sujet: SUJET_MAIL('REFUS', env.demandes),
-        corps: 'Bonjour,\n\n' + env.demandes.map(function(d) {
-            return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
-        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Documents > Importer une demande refusée, puis importez le fichier « ' + env.pj + ' » joint.\n\nCordialement.' };
-}
-// 1. Enregistrer le .json (un seul fichier : demandes signées + NDS / DAF), 2. Envoyer : s'active une fois le fichier enregistré.
-function ENREGISTRER_ENVOI(i) {
-    var env = MER_ENVOIS[i], c = CONTENU_ENVOI(env);
-    ENREGISTRER_JSON(env.pj, function() { return GENERER_JSON_COMPLET(env.demandes, c.etape); }).then(function(ok) {
-        if (ok) { env.enregistre = true; AFFICHER_TRANSMISSION(); }
-    }).catch(function(e) { MSG_ERREUR('Enregistrement impossible', e.message || String(e)); });
-}
-function ENVOYER_ENVOI(i) {
-    var env = MER_ENVOIS[i];
-    if (!env.enregistre) return;
-    var c = CONTENU_ENVOI(env);
-    env.fait = true;
-    OUVRIR_MAIL(env.mail, c.sujet, c.corps);
-    AFFICHER_TRANSMISSION();
-}
+// Étape inscrite dans l'envoi (contrôlée à la réception : 1 signature pour le 2e valideur, 2 pour l'assistant Chorus DT).
+function ETAPE_ENVOI(env) { return env.type === 'CHORUS' ? 'VALIDATION_2' : env.type; }
 function ENVOYER_ENVOI_DIRECT(i) {
-    var env = MER_ENVOIS[i], c = CONTENU_ENVOI(env);
+    var env = MER_ENVOIS[i];
     AFFICHER_MSG_CENTRE({ titre: 'Envoi en cours…', texte: 'Chiffrement et dépôt dans le TRIGONE du destinataire.', icone: '⏳', mascotte: false, boutons: [] });
-    GENERER_JSON_COMPLET(env.demandes, c.etape).then(function(json) {
+    GENERER_JSON_COMPLET(env.demandes, ETAPE_ENVOI(env)).then(function(json) {
         return JUMELAGE_ENVOYER_DIRECT(env.mail, env.type, env.pj, json);
     }).then(function() {
         FERMER_MSG();
-        env.fait = env.enregistre = env.direct = true;
+        env.fait = env.direct = true;
         setTimeout(AFFICHER_TRANSMISSION, 300);
     }).catch(function(e) {
         FERMER_MSG();
         setTimeout(function() {
             MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : e.statut === 403 ? 'Mauvais destinataire' : 'Envoi impossible', e.pasDeCompte
-                ? env.mail + ' n\'a pas encore activé son compte TRIGONE : envoyez par mail (1. Enregistrer, 2. Envoyer), et invitez-le à activer son compte (roue crantée › Compte TRIGONE).'
+                ? env.mail + ' n\'a pas encore de compte TRIGONE : demandez-lui de s\'inscrire (roue crantée › Compte TRIGONE), puis renvoyez. Vos décisions restent en attente, rien n\'est perdu.'
                 : (e.message || String(e)));
         }, 350);
     });
@@ -2885,8 +2773,8 @@ function TERMINER_TRANSMISSION() {
 }
 
 // ===================== VÉRIFIER UNE MISE EN ROUTE (assistant Chorus DT) =====================
-// L'assistant Chorus DT importe le .json reçu du 2e valideur : TRIGONE contrôle les signatures et les pièces
-// jointes, puis génère le PDF (demande signée + pages de la NDS / DAF). Un PDF déjà produit peut aussi être contrôlé.
+// L'assistant Chorus DT ouvre une demande reçue du 2e valideur (boîte TRIGONE) : TRIGONE contrôle les signatures et les
+// pièces jointes, puis génère le PDF (demande signée + pages de la NDS / DAF). Un PDF déjà produit peut aussi être contrôlé.
 var MER_RESULTATS_VERIF = null;
 function EST_CONFORME(x) {
     return x.verif.length === 2 && x.verif.every(function(v) { return v.ok; }) && !(x.pjAlterees || []).length;
@@ -2894,11 +2782,9 @@ function EST_CONFORME(x) {
 function TPL_VERIFIER() {
     var res = MER_RESULTATS_VERIF;
     var html = '<div class="CARD"><h2>Assistant Chorus DT</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Réservé à l\'assistant Chorus DT. Importez le fichier « 3-SIGNE VALIDEUR 2 … .json » reçu du 2e valideur : TRIGONE contrôle les signatures et les pièces jointes, puis génère le PDF à traiter (demande + NDS / DAF). Un PDF TRIGONE peut aussi être contrôlé.</p>' +
-        // PC : zone de dépôt (glisser le .json ou le PDF, Ctrl + V, ou clic pour choisir) ; téléphone : bouton.
-        (EST_PC() ? '<label class="PC-DEPOT">📥 Glissez ici le fichier .json (ou le PDF), collez-le (Ctrl + V) ou cliquez pour le choisir'
-                  : '<label class="BTN BTN-PRIMARY" style="margin-bottom:16px;">📥 Choisir le fichier .json (ou le PDF)') +
-        '<input type="file" accept=".json,application/json,.pdf,application/pdf" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Réservé à l\'assistant Chorus DT. Les demandes validées par les deux valideurs arrivent dans la boîte de réception ci-dessus : « Ouvrir et contrôler » vérifie les signatures et les pièces jointes, puis génère le PDF à traiter (demande + NDS / DAF). Un PDF TRIGONE déjà produit peut aussi être contrôlé.</p>' +
+        '<label class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:16px;">📄 Contrôler un PDF TRIGONE' +
+        '<input type="file" accept=".pdf,application/pdf" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
     if (res) {
         var conformes = res.filter(function(x) { return x.source === 'json' && EST_CONFORME(x); });
         html += !res.length ? '<div class="MER-EMPTY">Aucune donnée TRIGONE dans ce fichier.<br>Seuls les fichiers produits par TRIGONE Mise en route peuvent être vérifiés.</div>'
@@ -2951,7 +2837,7 @@ function VERIFIER_FICHIERS(input) {
                 var une = res.some(function(x) { return (x.d.validations || []).length === 1; });
                 AFFICHER_MSG_CENTRE({ titre: 'Fichier non validé', icone: '⛔', mascotte: 'mascotte-erreur.webp',
                     texte: (une ? 'Ce fichier ne porte que la signature du 1er valideur.' : 'Ce fichier n\'a encore aucune signature de valideur.') +
-                        ' Cet espace est réservé à l\'assistant Chorus DT, qui traite le fichier « 3-SIGNE VALIDEUR 2 … » signé par les deux valideurs.',
+                        ' Cet espace est réservé à l\'assistant Chorus DT, qui traite les demandes signées par les deux valideurs.',
                     boutons: [{ label: 'J\'ai compris' }] });
                 return;
             }
@@ -3173,112 +3059,26 @@ window.addEventListener('DOMContentLoaded', function() {
     REGISTER_SERVICE_WORKER();
     setTimeout(MER_RAPPEL_SAUVEGARDE, 6000);
     INIT_VERIF_MAJ_AUTO();
-    MER_RECEPTION_INIT();
 });
 
-// ===================== DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE =====================
-// Android : TRIGONE installée apparaît dans « Partager » / « Ouvrir avec » (share_target du manifeste, reçu par
-// le service worker). Ordinateur (Chrome, Edge) : « Ouvrir avec TRIGONE » sur un .json (file_handlers, launchQueue).
-// iPhone : Apple ne le permet pas aux applis web ; l'Espace valideur guide l'import depuis « Fichiers ».
-// Les fichiers reçus attendent dans le cache « trigone-partage » jusqu'à leur traitement : une mise à jour ou une
-// connexion à faire ne les perd pas. Aucune lecture de la boîte mail, aucun serveur.
-var CACHE_RECUS = 'trigone-partage', MER_RECUS_ATTENTE = false;
 function MER_NB_A_SIGNER() { try { return GET_A_VALIDER().filter(function(e) { return !e.decision; }).length; } catch (e) { return 0; } }
-function EST_IPHONE() { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
-function RECUS_LIRE() {
-    if (!window.caches) return Promise.resolve([]);
-    return caches.open(CACHE_RECUS).then(function(c) { return c.keys().then(function(cles) {
-        return Promise.all(cles.map(function(k) { return c.match(k).then(function(r) { return r.blob().then(function(b) {
-            return { cle: k, fichier: new File([b], decodeURIComponent(r.headers.get('X-Nom') || 'demande.json'), { type: b.type || 'application/json' }) };
-        }); }); }));
-    }); }).catch(function() { return []; });
-}
-function RECUS_RANGER(fichiers) {
-    if (!window.caches) return Promise.resolve();
-    return caches.open(CACHE_RECUS).then(function(c) { return Promise.all(fichiers.map(function(f, i) {
-        return c.put(new Request('__recu__/' + Date.now() + '-' + i), new Response(f, { headers: { 'Content-Type': f.type || 'application/json', 'X-Nom': encodeURIComponent(f.name || 'demande.json') } }));
-    })); }).catch(function() {});
-}
-function RECUS_OUBLIER(elements) {
-    if (!window.caches || !elements.length) return Promise.resolve();
-    return caches.open(CACHE_RECUS).then(function(c) { return Promise.all(elements.map(function(x) { return c.delete(x.cle); })); }).catch(function() {});
-}
-function MER_RECEPTION_INIT() {
-    var p = new URLSearchParams(location.search || '');
-    var partage = p.get('partage'), erreur = p.get('err'), recu = p.get('recu');
-    // Page ouverte à l'adresse du partage : le service worker n'était pas encore à jour et n'a pas pu recevoir le fichier.
-    var nonRecu = /\/partage-trigone\/?$/.test(location.pathname);
-    if ((nonRecu || /[?&](partage|fichier)=/.test(location.search)) && history.replaceState)
-        history.replaceState(null, document.title, nonRecu ? location.pathname.replace(/partage-trigone\/?$/, '') : location.pathname);
-    if (nonRecu || partage === '0') {
-        ATTENDRE_ECRAN_LIBRE(function() {
-            AFFICHER_MSG_CENTRE({ titre: 'Fichier non reçu', icone: '⚠️', mascotte: 'mascotte-erreur.webp',
-                texte: nonRecu
-                    ? 'TRIGONE vient de se mettre à jour et n\'a pas pu recevoir ce partage. Partagez à nouveau la pièce jointe vers TRIGONE : cette fois, elle arrivera.'
-                    : 'TRIGONE s\'est ouverte, mais votre messagerie ne lui a transmis aucun fichier' + (erreur ? ' (' + erreur + ')' : '') + '. ' +
-                      'Enregistrez la pièce jointe (elle va dans Téléchargements), puis partagez-la vers TRIGONE depuis l\'appli Fichiers, ou dans l\'Espace valideur touchez « Importer la demande reçue ».' +
-                      (recu ? '\n\nDétail technique : ' + recu : ''),
-                boutons: [{ label: 'Compris' }] });
-        });
-    }
-    if ('launchQueue' in window && window.launchQueue.setConsumer) {
-        window.launchQueue.setConsumer(function(params) {
-            if (!params || !params.files || !params.files.length) return;
-            Promise.all(params.files.map(function(h) { return h.getFile(); })).then(RECUS_RANGER).then(MER_TRAITER_RECUS);
-        });
-    }
-    MER_TRAITER_RECUS();
-}
-// Chaque fichier va où il doit : signé deux fois → assistant Chorus DT ; refusé → Documents du demandeur ;
-// sinon → Espace valideur (connexion demandée si besoin, le fichier attend).
-function MER_TRAITER_RECUS() {
-    if (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF) return;
-    RECUS_LIRE().then(function(recus) {
-        if (!recus.length) return;
-        ATTENDRE_ECRAN_LIBRE(function() {
-            Promise.all(recus.map(function(x) { return x.fichier.text().then(function(t) {
-                try { return { x: x, data: LIRE_JSON_MER(t) }; } catch (e) { return { x: x, data: null }; }
-            }); })).then(function(lus) {
-                var inconnus = lus.filter(function(l) { return !l.data; });
-                var refus = lus.filter(function(l) { return l.data && l.data.demandes.some(function(d) { return d.refus; }); });
-                var chorus = lus.filter(function(l) { return l.data && refus.indexOf(l) < 0 && l.data.demandes.every(function(d) { return (d.validations || []).length >= 2; }); });
-                var aValider = lus.filter(function(l) { return l.data && refus.indexOf(l) < 0 && chorus.indexOf(l) < 0; });
-                var faux = function(liste) { return { files: liste.map(function(l) { return l.x.fichier; }), value: '' }; };
-                var cles = function(liste) { return liste.map(function(l) { return l.x; }); };
-                if (inconnus.length) {
-                    RECUS_OUBLIER(cles(inconnus));
-                    MSG_ERREUR('Fichier non reconnu', 'Ce fichier n\'est pas une demande TRIGONE Mise en route : ' + inconnus.map(function(l) { return l.x.fichier.name; }).join(', ') + '.');
-                }
-                if (refus.length) { RECUS_OUBLIER(cles(refus)); IMPORTER_REFUS(faux(refus)); }
-                if (chorus.length) { RECUS_OUBLIER(cles(chorus)); VERIFIER_FICHIERS(faux(chorus)); }
-                if (!aValider.length) return;
-                CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() {
-                    var h = HABILITATION_COURANTE();
-                    if (!h || h.retire) {
-                        MER_RECUS_ATTENTE = true;
-                        SHOW_PAGE('VALIDATION');
-                        AFFICHER_MSG_CENTRE({ titre: 'Demande reçue', icone: '📥', mascotte: 'mascotte-code.webp',
-                            texte: 'Connectez-vous avec votre code valideur : la demande s\'ouvrira aussitôt, prête à signer.', boutons: [{ label: 'Compris' }] });
-                        return;
-                    }
-                    RECUS_OUBLIER(cles(aValider));
-                    SHOW_PAGE('VALIDATION');
-                    IMPORTER_A_VALIDER(faux(aValider));
-                    var d = aValider[0].data.demandes[0] || {}, n = aValider.reduce(function(s, l) { return s + l.data.demandes.length; }, 0);
-                    MER_BANDEAU_RECU(n > 1 ? n + ' demandes reçues — prêtes à signer' : 'Demande reçue — prête à signer',
-                        'Reçue : ' + [RESUME_DEMANDE(d).noms, d.objet].filter(Boolean).join(' · '));
-                });
-            });
-        });
-    });
-}
 // ===================== BOÎTE DE RÉCEPTION (compte TRIGONE) =====================
 // Les envois reçus directement dans TRIGONE (jumelage.js : relève, déchiffrement, rangement sur l'appareil) sont listés
 // ici ; « Ouvrir » les mène où il faut : Espace valideur (à signer), assistant Chorus DT (à contrôler), Documents (refus).
 var MER_BOITE_A_OUVRIR = null;
 var MER_NATURES_BOITE = {
     niveau1: ['À signer — 1er niveau', 'Ouvrir et signer'], niveau2: ['À signer — 2e niveau', 'Ouvrir et signer'],
-    chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée', 'Corriger dans Documents'], inconnu: ['Fichier reçu', 'Ouvrir']
+    chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée', 'Corriger dans Documents'],
+    cr: ['Compte-rendu de mission', 'Ouvrir'], inconnu: ['Fichier reçu', 'Ouvrir']
+};
+function MER_EST_CHORUS(x) { return x.nature === 'chorus' || x.nature === 'cr'; }
+// Rôles changés dans les Réglages : la session valideur est reprise de la clé mémorisée (nouveau rôle, ou aucun).
+window.JUMELAGE_ROLES_CHANGES = function() {
+    MER_CLE_SESSION = null; MER_ACCES_SESSION = null;
+    CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() {
+        MER_DECLARER_ROLE_VALIDEUR();
+        if (PAGE_ACTUELLE === 'VALIDATION') RENDER_VALIDATION_INPLACE(); else RENDRE_MENU_PC();
+    });
 };
 // Valideur connecté : son rôle (1er ou 2e) est déclaré au compte TRIGONE, pour que sa boîte reçoive ce qui lui revient.
 function MER_DECLARER_ROLE_VALIDEUR() {
@@ -3297,6 +3097,7 @@ function TPL_ENVOI_RECU(x) {
         '<span class="MER-BADGE MER-RECU-' + ESC(x.nature || 'inconnu') + '">' + nat[0] + '</span>' + (x.statut === 'nouveau' ? ' <span class="MER-RECU-NOUVEAU">Nouveau</span>' : '') +
         '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(x.noms || x.nom || 'Demande') + '</div>' +
         '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
+        (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
         '<div class="MER-VAL-ACTIONS">' +
             (traite ? '' : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
@@ -3305,13 +3106,13 @@ function TPL_ENVOI_RECU(x) {
 }
 function TPL_RECEPTION() {
     var compte = MER_COMPTE_ACTIF();
-    var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return !MER_ROLE_CHORUS() || x.nature !== 'chorus'; });
+    var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return !MER_ROLE_CHORUS() || !MER_EST_CHORUS(x); });
     var aTraiter = l.filter(function(x) { return x.statut !== 'traite'; }), traites = l.filter(function(x) { return x.statut === 'traite'; });
     return '<div class="CARD"><h2>Boîte de réception</h2>' +
         (compte
-            ? '<p class="MER-HINT" style="margin:4px 0 12px;">Demandes reçues directement dans TRIGONE, à l\'adresse <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>. Elles arrivent toutes seules (relève automatique) ; « Ouvrir » les mène au bon endroit.</p>' +
+            ? '<p class="MER-HINT" style="margin:4px 0 12px;">Demandes reçues directement dans TRIGONE, à l\'adresse <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b> : à signer (valideurs) ou refusées (vos demandes). Elles arrivent toutes seules ; « Ouvrir » les mène au bon endroit.</p>' +
               '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>'
-            : '<p class="MER-HINT" style="margin:4px 0 12px;">Activez votre compte TRIGONE pour recevoir les demandes directement ici, sans pièce jointe.</p>' +
+            : '<p class="MER-HINT" style="margin:4px 0 12px;">Activez votre compte TRIGONE pour envoyer vos demandes et recevoir ici celles qui vous reviennent.</p>' +
               '<button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
         (compte ? '<div class="MER-SECTION-TITLE">À traiter' + (aTraiter.length ? ' (' + aTraiter.length + ')' : '') + '</div>' +
             (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Aucune demande en attente.</div>') +
@@ -3320,22 +3121,69 @@ function TPL_RECEPTION() {
 }
 // ===================== ESPACE ASSISTANT CHORUS DT =====================
 // Ouvert depuis le logo central de l'écran de choix (rôle activé dans les Réglages avec son code) : sa boîte de
-// réception (envois des 2e valideurs) et le contrôle des fichiers reçus par mail, sans passer par l'Espace valideur.
+// réception (demandes validées des 2e valideurs, comptes-rendus des missionnaires), sans passer par l'Espace valideur.
 var MER_ESPACE_CHORUS = false;
 window.MER_OUVRIR_CHORUS = function() { SHOW_PAGE('CHORUS'); };
 function TPL_CHORUS() {
     var compte = MER_COMPTE_ACTIF();
-    var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return x.nature === 'chorus'; });
-    var aTraiter = l.filter(function(x) { return x.statut !== 'traite'; }), traites = l.filter(function(x) { return x.statut === 'traite'; });
+    var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []);
+    function bloc(liste, vide) {
+        var aTraiter = liste.filter(function(x) { return x.statut !== 'traite'; }), traites = liste.filter(function(x) { return x.statut === 'traite'; });
+        return (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">' + vide + '</div>') +
+            (traites.length ? '<details class="MER-RECU-TRAITES"><summary>Traités (' + traites.length + ')</summary>' + traites.map(TPL_ENVOI_RECU).join('') + '</details>' : '');
+    }
+    var demandes = l.filter(function(x) { return x.nature === 'chorus'; }), crs = l.filter(function(x) { return x.nature === 'cr'; });
+    var nb = function(liste) { var n = liste.filter(function(x) { return x.statut !== 'traite'; }).length; return n ? ' (' + n + ')' : ''; };
     return '<div class="CARD MER-CHORUS-TETE"><img class="MER-CHORUS-LOGO" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT">' +
-        '<div class="MER-SECTION-TITLE">Boîte de réception' + (aTraiter.length ? ' (' + aTraiter.length + ')' : '') + '</div>' +
-        (compte ? '<p class="MER-HINT" style="margin:0 0 10px;">Demandes validées par les deux valideurs, envoyées à <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>. « Ouvrir et contrôler » vérifie les signatures et les pièces jointes, puis le PDF est prêt.</p>' +
+        (compte ? '<p class="MER-HINT" style="margin:0 0 10px;">Envois reçus à <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>, chiffrés, directement dans TRIGONE.</p>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:12px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>' +
-            (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Aucune demande en attente.</div>') +
-            (traites.length ? '<details class="MER-RECU-TRAITES"><summary>Traitées (' + traites.length + ')</summary>' + traites.map(TPL_ENVOI_RECU).join('') + '</details>' : '')
-          : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes des 2e valideurs, sans pièce jointe.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
+            '<div class="MER-SECTION-TITLE">Demandes de mise en route validées' + nb(demandes) + '</div>' +
+            '<p class="MER-HINT" style="margin:0 0 10px;">Validées par les deux valideurs. « Ouvrir et contrôler » vérifie les signatures et les pièces jointes, puis le PDF est prêt.</p>' +
+            bloc(demandes, 'Aucune demande en attente.') +
+            '<div class="MER-SECTION-TITLE">Comptes-rendus de mission' + nb(crs) + '</div>' +
+            '<p class="MER-HINT" style="margin:0 0 10px;">Envoyés par les missionnaires au retour de mission : compte-rendu PDF et justificatifs.</p>' +
+            bloc(crs, 'Aucun compte-rendu en attente.')
+          : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes validées et les comptes-rendus de mission.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
         '</div>' + TPL_VERIFIER() +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">← Écran de choix</button>';
+}
+// Compte-rendu de mission reçu : ses fichiers (PDF du compte-rendu, justificatifs) à télécharger.
+var MER_CR_OUVERT = null;
+function OUVRIR_CR_RECU(id) {
+    JUMELAGE_BOITE_FICHIER(id).then(function(f) { return f.text(); }).then(function(t) {
+        var cr = JSON.parse(t);
+        if (cr.app !== 'TRIGONE-CR') throw new Error('Envoi non reconnu.');
+        MER_CR_OUVERT = { id: id, cr: cr };
+        JUMELAGE_BOITE_MARQUER(id, 'ouvert');
+        var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(e) { return e.id === id; })[0] || {};
+        AFFICHER_MODALE('Compte-rendu de mission',
+            '<p style="font-size:0.9em; line-height:1.5; margin:0 0 6px;"><b>' + ESC(cr.missionnaire || '') + '</b><br>' + ESC([cr.libelle, cr.dates].filter(Boolean).join(' · ')) + '</p>' +
+            '<p class="MER-HINT">Reçu de ' + ESC(x.de || cr.de || '?') + (cr.envoyeLe ? ', le ' + ESC(new Date(cr.envoyeLe).toLocaleString('fr-FR')) : '') + '</p>' +
+            '<div class="MER-SECTION-TITLE">Fichiers</div>' +
+            (cr.fichiers || []).map(function(fi, i) {
+                return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT"><div class="MER-PANIER-ITEM-TITRE" style="word-break:break-all;">' + (i ? '📎 ' : '📄 ') + ESC(fi.nom) + '</div>' +
+                    '<div class="MER-PANIER-ITEM-SUB">' + (i ? 'Justificatif' : 'Compte-rendu') + ' · ' + TAILLE_LISIBLE(Math.floor((fi.b64 || '').length * 3 / 4)) + '</div></div>' +
+                    '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="TELECHARGER_FICHIER_CR(' + i + ')">⬇ Télécharger</button></div>';
+            }).join('') +
+            (cr.corps ? '<details class="MER-RECU-TRAITES" style="margin-top:10px;"><summary>Message du missionnaire</summary><pre style="white-space:pre-wrap; font:inherit; font-size:0.8em;">' + ESC(cr.corps) + '</pre></details>' : ''),
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Fermer</button>' +
+            '<button type="button" class="BTN BTN-GHOST" onclick="TELECHARGER_FICHIER_CR(-1)">⬇ Tout</button>' +
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="TRAITER_CR_RECU()">✔ Traité</button>');
+    }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
+}
+function TELECHARGER_FICHIER_CR(i) {
+    if (!MER_CR_OUVERT) return;
+    var fichiers = MER_CR_OUVERT.cr.fichiers || [];
+    (i < 0 ? fichiers : [fichiers[i]]).forEach(function(fi, k) {
+        if (!fi) return;
+        setTimeout(function() { TELECHARGER_OCTETS(fi.nom, new Uint8Array(DEB64(fi.b64)), fi.type || 'application/octet-stream'); }, k * 400);
+    });
+}
+function TRAITER_CR_RECU() {
+    if (MER_CR_OUVERT) JUMELAGE_BOITE_MARQUER(MER_CR_OUVERT.id, 'traite');
+    MER_CR_OUVERT = null;
+    FERMER_MODALE();
+    if (PAGE_ACTUELLE === 'CHORUS') SHOW_PAGE('CHORUS');
 }
 function ACTUALISER_RECEPTION(btn) {
     if (!window.JUMELAGE_RELEVER) return;
@@ -3350,6 +3198,7 @@ function OUVRIR_RECU(id) {
     if (!x) return;
     JUMELAGE_BOITE_FICHIER(id).then(function(f) {
         var faux = { files: [f], value: '' };
+        if (x.nature === 'cr') { OUVRIR_CR_RECU(id); return; }
         if (x.nature === 'refus') { IMPORTER_REFUS(faux); JUMELAGE_BOITE_MARQUER(id, 'traite'); return; }
         if (x.nature === 'chorus') { JUMELAGE_BOITE_MARQUER(id, 'ouvert'); VERIFIER_FICHIERS(faux); return; }
         CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() {
@@ -3375,8 +3224,8 @@ function SUPPRIMER_RECU(id) {
 // Nouveaux envois relevés : bandeau (touchable) et pages à jour.
 window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
     var x = nouveaux[0], n = nouveaux.length;
-    var chorus = MER_ROLE_CHORUS() && nouveaux.every(function(e) { return e.nature === 'chorus'; });
-    MER_BANDEAU_RECU(n > 1 ? n + ' demandes reçues' : 'Demande reçue', (n > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
+    var chorus = MER_ROLE_CHORUS() && nouveaux.every(MER_EST_CHORUS);
+    MER_BANDEAU_RECU(x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' envois reçus' : 'Demande reçue', (n > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
         (chorus ? 'l\'espace Assistant Chorus DT.' : 'la boîte de réception.'), function() { SHOW_PAGE(chorus ? 'CHORUS' : 'RECEPTION'); });
 };
 window.addEventListener('trigone-boite', function() {
@@ -3385,21 +3234,6 @@ window.addEventListener('trigone-boite', function() {
     else RENDRE_MENU_PC();
 });
 function MER_RELEVER_BOITE() { if (window.JUMELAGE_RELEVER) JUMELAGE_RELEVER(); }
-// Fichiers donnés à TRIGONE depuis la page (déposés ou collés) : même aiguillage que « Ouvrir avec ».
-function MER_RECEVOIR_FICHIERS(liste) {
-    var json = Array.prototype.filter.call(liste || [], function(f) { return /\.json$/i.test(f.name || '') || /json/.test(f.type || ''); });
-    if (!json.length) return false;
-    RECUS_RANGER(json).then(MER_TRAITER_RECUS);
-    return true;
-}
-// Outlook (nouvelle version, Windows) ne propose pas « Ouvrir avec » : « Copier » sur la pièce jointe, puis Ctrl+V dans TRIGONE.
-document.addEventListener('paste', function(e) {
-    var cd = e.clipboardData;
-    if (!cd || !cd.files || !cd.files.length || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
-    // Sur la page de l'assistant Chorus DT : contrôle direct du .json (ou du PDF) collé.
-    if (PAGE_ACTUELLE === 'VERIFIER' || PAGE_ACTUELLE === 'CHORUS') { e.preventDefault(); VERIFIER_FICHIERS({ files: cd.files, value: '' }); return; }
-    if (MER_RECEVOIR_FICHIERS(cd.files)) e.preventDefault();
-});
 function MER_BANDEAU_RECU(titre, texte, surClic) {
     var b = document.createElement('div');
     b.className = 'MER-BANDEAU-RECU' + (surClic ? ' cliquable' : '');
@@ -3409,19 +3243,12 @@ function MER_BANDEAU_RECU(titre, texte, surClic) {
     requestAnimationFrame(function() { b.classList.add('visible'); });
     setTimeout(function() { b.classList.remove('visible'); setTimeout(function() { b.remove(); }, 400); }, surClic ? 10000 : 6000);
 }
-// Espace valideur vide : comment faire arriver la demande reçue par mail, selon l'appareil.
+// Espace valideur vide : les demandes à signer arrivent dans la Boîte de réception TRIGONE.
 function TPL_AIDE_RECEPTION() {
-    var ios = EST_IPHONE();
-    var etapes = ios
-        ? '<li>Dans votre messagerie, touchez la pièce jointe <b>.json</b>, puis <b>Partager › Enregistrer dans Fichiers</b>.</li>' +
-          '<li>Revenez ici et touchez <b>« Importer la demande reçue »</b> : le fichier est en haut des <b>Récents</b>.</li>'
-        : EST_PC()
-        ? '<li>Dans Outlook, sur la pièce jointe <b>.json</b> : <b>Copier</b>, puis ici <b>Ctrl + V</b>. La demande s\'ouvre, prête à signer.</li>' +
-          '<li>Ou faites glisser la pièce jointe dans TRIGONE, ou clic droit sur le fichier › <b>Ouvrir avec › TRIGONE</b>.</li>'
-        : '<li>Dans votre messagerie, touchez la pièce jointe <b>.json</b> puis <b>Enregistrer</b> (ou Télécharger).</li>' +
-          '<li>Revenez ici et touchez <b>« Importer la demande reçue »</b> : le fichier est en haut des <b>Récents</b> / Téléchargements.</li>';
-    return '<div class="MER-AIDE-RECEPTION"><div class="MER-AIDE-RECEPTION-TETE"><span>📥</span><div><b>Une demande à signer ?</b><small>Elle arrive par mail, en pièce jointe .json</small></div></div>' +
-        '<ol>' + etapes + '</ol>' +
-        (EST_PC() ? '' : '<label class="BTN BTN-PRIMARY" style="margin:12px 0 0;">Importer la demande reçue' +
-            '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>') + '</div>';
+    return '<div class="MER-AIDE-RECEPTION"><div class="MER-AIDE-RECEPTION-TETE"><span>📥</span><div><b>Une demande à signer ?</b><small>Elle arrive dans votre Boîte de réception TRIGONE</small></div></div>' +
+        (MER_COMPTE_ACTIF()
+            ? '<ol><li>Les demandes qui vous sont envoyées arrivent toutes seules, chiffrées, dans votre <b>Boîte de réception</b>.</li><li>Touchez <b>« Ouvrir et signer »</b> : la demande s\'affiche ici, prête à valider.</li></ol>' +
+              '<button type="button" class="BTN BTN-PRIMARY" style="margin:12px 0 0;" onclick="SHOW_PAGE(\'RECEPTION\')">Ouvrir ma boîte de réception' + (MER_NB_BOITE() ? ' (' + MER_NB_BOITE() + ')' : '') + '</button>'
+            : '<ol><li>Activez votre <b>compte TRIGONE</b> (votre adresse mail, vérifiée par un code).</li><li>Cochez votre rôle dans <b>Réglages › Mes rôles</b> : les demandes à signer vous arrivent alors directement.</li></ol>' +
+              '<button type="button" class="BTN BTN-PRIMARY" style="margin:12px 0 0;" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') + '</div>';
 }
