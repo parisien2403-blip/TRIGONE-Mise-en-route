@@ -249,3 +249,10 @@ DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE (V21)
 - V26 : constaté sur Samsung + Outlook Android : le partage ouvre TRIGONE mais aucun fichier n'est transmis (même
   depuis Mes fichiers). Les aides et les mails recommandent donc sur téléphone : Enregistrer la pièce jointe, puis
   Espace valideur › « Importer la demande reçue ». Le partage reste en place (il peut marcher avec d'autres messageries).
+
+NOUVEAUTÉS ET MISE À JOUR SUR L'ÉCRAN DE CHOIX (V28)
+- Le message « Nouveautés » (appCodeMessage de updates-manifest.json, à la racine) s'affiche une seule fois, sur
+  l'écran de choix (clé trigone_nouveautes_vue). Les applis ne l'affichent plus (elles le marquent vu en silence).
+  Les messages obligatoires (taux de change, IK dans Compte-rendu) et appMessage restent inchangés.
+- Bouton « Mise à jour » en bas à gauche de l'écran de choix : vérifie build.json, se met à jour si besoin, sinon
+  « TRIGONE est à jour » avec les dernières nouveautés. Pastille de version en haut à droite.

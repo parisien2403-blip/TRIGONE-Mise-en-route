@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 75;
+var APP_CODE_VERSION = 76;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2892,8 +2892,8 @@ function VERIFIER_MISES_A_JOUR(manuel) {
         if (data.appCodeVersion > APP_CODE_VERSION && window.JUMELAGE_MAJ_DISPONIBLE) { window.JUMELAGE_MAJ_DISPONIBLE(); return; }
         if (data.appCodeVersion > APP_CODE_VERSION) aFaire.push({ type: 'code', version: data.appCodeVersion, texte: data.appCodeMessage });
         else if (data.appCodeVersion > 0 && vues.appCode !== data.appCodeVersion) {
-            if (premiere) SET_MAJ_VUE('appCode', data.appCodeVersion);      // première installation : rien à annoncer
-            else aFaire.push({ type: 'nouveautes', version: data.appCodeVersion, texte: data.appCodeMessage });
+            // Les nouveautés sont annoncées une seule fois, sur l'écran de choix (jumelage.js), pas dans chaque appli.
+            SET_MAJ_VUE('appCode', data.appCodeVersion);
         }
         if (data.appMessageVersion > 0 && vues.appMessage !== data.appMessageVersion) {
             if (premiere) SET_MAJ_VUE('appMessage', data.appMessageVersion);

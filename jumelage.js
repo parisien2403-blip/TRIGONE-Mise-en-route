@@ -106,6 +106,16 @@
         '.JUM-ROUE svg { width: 26px; height: 26px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; transition: transform 0.4s ease; }' +
         '.JUM-ROUE:hover svg, .JUM-ROUE:active svg { transform: rotate(60deg); }' +
         '.JUM-CHOIX.choisi .JUM-ROUE { opacity: 0; pointer-events: none; }' +
+        '.JUM-MAJ-BTN { right: auto; left: max(18px, env(safe-area-inset-left, 0px)); border-color: rgba(255,255,255,0.18); background: #1a1a1a; color: #f5f5f5; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }' +
+        '.JUM-MAJ-BTN.tourne svg { animation: jum-tourne 0.9s linear infinite; } @keyframes jum-tourne { to { transform: rotate(360deg); } }' +
+        '.JUM-CHOIX.choisi .JUM-MAJ-BTN { opacity: 0; pointer-events: none; }' +
+        '.JUM-NOUV { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,15,15,0.35); animation: jum-menu 0.2s ease both; }' +
+        '.JUM-NOUV.sortie { opacity: 0; transition: opacity 0.25s ease; }' +
+        '.JUM-NOUV-CARTE { width: 100%; max-width: 420px; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 24px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); font-family: Montserrat, system-ui, sans-serif; }' +
+        '.JUM-NOUV-IC { display: inline-flex; width: 58px; height: 58px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(90,122,148,0.1); color: #5a7a94; }' +
+        '.JUM-NOUV-IC svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-NOUV h2 { margin: 12px 0 8px; font-size: 1.15rem; } .JUM-NOUV p { margin: 0 0 18px; font-size: 0.9rem; line-height: 1.55; color: #404040; }' +
+        '.JUM-NOUV button { border: 0; border-radius: 14px; padding: 13px 34px; background: #1a1a1a; color: #fff; font: 800 0.8rem Montserrat, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-VERSION { position: absolute; top: max(16px, env(safe-area-inset-top, 0px)); right: max(18px, env(safe-area-inset-right, 0px)); z-index: 3; padding: 5px 12px; border-radius: 999px;' +
             ' border: 1px solid rgba(255,255,255,0.18); background: #1a1a1a; color: #f5f5f5; box-shadow: 0 4px 14px rgba(0,0,0,0.25); font: 700 12px Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; pointer-events: none; }' +
         '.JUM-CHOIX.choisi .JUM-VERSION { opacity: 0; }' +
@@ -366,7 +376,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 28, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 29, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1277,10 +1287,15 @@
             '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
             '<button type="button" class="JUM-ROUE" aria-label="Réglages et présentation de TRIGONE" title="Réglages TRIGONE · Découvrir TRIGONE">' + ROUE_SVG + '</button>' +
             // Numéro de version, en haut à droite (le même dans les deux applis).
-            (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '');
+            (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '') +
+            // Mise à jour, en bas à gauche (pendant de la roue crantée).
+            '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>';
         var roue = ecran.querySelector('.JUM-ROUE');
         ['pointerdown', 'pointerup'].forEach(function(t) { roue.addEventListener(t, function(e) { e.stopPropagation(); }); });
         roue.addEventListener('click', window.JUMELAGE_MENU_ROUE);
+        var majBtn = ecran.querySelector('.JUM-MAJ-BTN');
+        ['pointerdown', 'pointerup'].forEach(function(t) { majBtn.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        majBtn.addEventListener('click', function(e) { e.stopPropagation(); verifierMajManuelle(); });
         ecran.addEventListener('click', function(e) {
             var menu = document.querySelector('.JUM-ROUE-MENU');
             if (menu) { menu.remove(); return; }
@@ -1299,7 +1314,53 @@
         });
         document.body.appendChild(ecran);
         document.documentElement.classList.add('jum-choix');
+        setTimeout(annoncerNouveautes, 1200);
     };
+
+    // ---------- Nouveautés et mise à jour, sur l'écran de choix ----------
+    // Le message « Nouveautés » d'une version n'apparaît qu'une fois, ici, et plus dans chaque appli.
+    var CLE_NOUVEAUTES = 'trigone_nouveautes_vue';
+    function manifesteMaj() {
+        return fetch((DANS_CR ? '../' : '') + 'updates-manifest.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; });
+    }
+    function carteChoix(titre, texte, icone) {
+        if (!ecran) return;
+        var ancienne = ecran.querySelector('.JUM-NOUV'); if (ancienne) ancienne.remove();
+        var c = document.createElement('div');
+        c.className = 'JUM-NOUV';
+        c.innerHTML = '<div class="JUM-NOUV-CARTE"><span class="JUM-NOUV-IC">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE(icone) : '') + '</span>' +
+            '<h2></h2><p></p><button type="button">J\'ai compris</button></div>';
+        c.querySelector('h2').textContent = titre; c.querySelector('p').textContent = texte;
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { c.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        c.querySelector('button').addEventListener('click', function() { c.classList.add('sortie'); setTimeout(function() { c.remove(); }, 250); });
+        c.addEventListener('click', function(e) { if (e.target === c) c.querySelector('button').click(); });
+        ecran.appendChild(c);
+    }
+    function annoncerNouveautes() {
+        if (!ecran || !navigator.onLine || document.querySelector('.JUM-PRES, .JUM-REGLAGES')) return;
+        manifesteMaj().then(function(m) {
+            if (!m || !(m.appCodeVersion > 0) || !ecran) return;
+            var vue = +lireTxt(CLE_NOUVEAUTES) || 0;
+            // Toute première utilisation : rien à annoncer. Ancienne installation (versions vues dans une appli) : on annonce.
+            var ancien = lireTxt('mer_maj_vues') || lireTxt('trigone_update_versions_vues');
+            if (!vue && !ancien) { ecrireTxt(CLE_NOUVEAUTES, String(m.appCodeVersion)); return; }
+            if (m.appCodeVersion <= vue) return;
+            ecrireTxt(CLE_NOUVEAUTES, String(m.appCodeVersion));
+            carteChoix('Nouveautés' + (window.APP_VERSION_AFFICHEE ? ' — V' + window.APP_VERSION_AFFICHEE : ''), (m.appCodeMessage || 'TRIGONE vient d\'être mis à jour.').replace(/^Version \d+ :\s*/, ''), 'nouveau');
+        }).catch(function() {});
+    }
+    function verifierMajManuelle() {
+        if (!navigator.onLine) { carteChoix('Pas de connexion', 'Impossible de vérifier les mises à jour sans internet. Réessayez une fois connecté.', 'horsLigne'); return; }
+        var btn = ecran && ecran.querySelector('.JUM-MAJ-BTN'); if (btn) btn.classList.add('tourne');
+        fetch((DANS_CR ? '../' : '') + 'build.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+            if (d && d.build > BUILD) { try { sessionStorage.removeItem(CLE_RECHARGE); } catch (e) {} window.JUMELAGE_MAJ_DISPONIBLE(); return; }
+            return manifesteMaj().then(function(m) {
+                carteChoix('TRIGONE est à jour' + (window.APP_VERSION_AFFICHEE ? ' — V' + window.APP_VERSION_AFFICHEE : ''),
+                    (m && m.appCodeMessage) ? 'Dernières nouveautés : ' + m.appCodeMessage.replace(/^Version \d+ :\s*/, '') : 'Aucune mise à jour disponible pour le moment.', 'ok');
+            });
+        }).catch(function() { carteChoix('Vérification impossible', 'Impossible de vérifier les mises à jour pour le moment. Réessayez plus tard.', 'alerte'); })
+          .then(function() { setTimeout(function() { if (btn) btn.classList.remove('tourne'); }, 600); });
+    }
 
     // À l'ouverture de TRIGONE (pas en passant d'une appli à l'autre) : l'écran de choix, sous l'animation
     // d'ouverture, la présentation, le code d'accès et « Avant de commencer », qui gardent la priorité.
