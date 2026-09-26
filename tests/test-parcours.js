@@ -33,10 +33,10 @@ module.exports = async function(srv, options) {
         }
         return p;
     }
-    async function connecter(p, code) {
+    async function connecter(p, code, nom) {
         await p.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(800);
         await p.fill('#MER-VAL-grade', 'CNE'); await p.fill('#MER-VAL-fonction', 'Chef de service');
-        await p.fill('#MER-VAL-nom', 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
+        await p.fill('#MER-VAL-nom', nom || 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
         await p.fill('#MER-CODE-ACCES', code); await p.click('button:has-text("Se connecter")'); await attendre(2500);
         return p.evaluate(() => !!HABILITATION_COURANTE());
     }
@@ -103,9 +103,17 @@ module.exports = async function(srv, options) {
         const j1 = await ecrire(v1, '2-valideur1.json', 'x');
         verifier(JSON.parse(fs.readFileSync(j1)).demandes[0].validations.length === 1, 'demande signée par le 1er valideur');
 
+        // ---- Même personne aux deux niveaux : refusé ----
+        const vx = await page('VX');
+        await connecter(vx, code2);
+        await vx.evaluate(() => SHOW_PAGE('VALIDATION')); await recevoir(vx, 'IMPORTER_A_VALIDER', [j1]); await attendre(1500);
+        await vx.locator('button.BTN-PRIMARY:has-text("Valider")').first().click(); await attendre(1000);
+        verifier((await vx.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Déjà validée par vous' && await vx.evaluate(() => !GET_A_VALIDER()[0].decision),
+            'une même personne ne valide jamais les deux niveaux d\'une demande');
+
         // ---- 2e valideur ----
         const v2 = await page('V2');
-        verifier(await connecter(v2, code2), '2e valideur connecté');
+        verifier(await connecter(v2, code2, 'Martin'), '2e valideur connecté');
         await v2.evaluate(() => SHOW_PAGE('VALIDATION')); await recevoir(v2, 'IMPORTER_A_VALIDER', [j1]); await attendre(1500);
         await v2.locator('button.BTN-PRIMARY:has-text("Valider")').first().click(); await attendre(800);
         await v2.fill('input[type=email]', 'chorus@test.fr');

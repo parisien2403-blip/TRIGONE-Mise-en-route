@@ -28,9 +28,9 @@ const ROLES = ['valideur1', 'valideur2', 'chorus'];
 // mission du missionnaire, pour l'assistant Chorus DT).
 const ROLE_REQUIS = { DEMANDE: 'valideur1', VALIDATION_1: 'valideur2', CHORUS: 'chorus', REFUS: '', CR: 'chorus' };
 const MESSAGE_ROLE = {
-    valideur1: 'n\'est pas enregistré comme 1er valideur dans TRIGONE : vérifiez l\'adresse du 1er valideur. (Un 1er valideur est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)',
-    valideur2: 'n\'est pas enregistré comme 2e valideur dans TRIGONE : vérifiez l\'adresse du 2e valideur. (Un 2e valideur est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)',
-    chorus: 'n\'est pas enregistré comme assistant Chorus DT dans TRIGONE : vérifiez l\'adresse de l\'assistant Chorus DT. (Il est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)'
+    valideur1: 'n\'est pas enregistré comme VALIDEUR 1 dans TRIGONE : vérifiez l\'adresse du 1er valideur. (Un VALIDEUR 1 est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)',
+    valideur2: 'n\'est pas enregistré comme VALIDEUR 2 dans TRIGONE : vérifiez l\'adresse du 2e valideur. (Un VALIDEUR 2 est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)',
+    chorus: 'n\'est pas enregistré comme ASSIST CHORUS DT dans TRIGONE : vérifiez l\'adresse de l\'assistant Chorus DT. (Il est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code.)'
 };
 const DUREE_MESSAGE = 30 * JOUR;
 const TAILLE_MAX = 24 * 1024 * 1024;   // limite d'une valeur Workers KV : 25 Mo
@@ -47,6 +47,30 @@ async function baseBoite(env) {
         TABLES_PRETES = true;
     }
     return env.TRIGONE_DB;
+}
+
+// Remise à zéro des comptes TRIGONE (fin des essais, demandée par l'administrateur) : au premier appel après la
+// publication, une seule fois (garantie par D1), les comptes, codes, limites et envois en attente sont effacés.
+// Chacun réactive ensuite son compte. Pour une nouvelle remise à zéro, changer cette valeur.
+const REMISE_A_ZERO = '2026-09-27';
+let REMISE_FAITE = false;
+async function remiseAZero(env) {
+    if (REMISE_FAITE) return;
+    const db = await baseBoite(env);
+    await db.prepare('CREATE TABLE IF NOT EXISTS reglage (cle TEXT PRIMARY KEY, valeur TEXT)').run();
+    const r = await db.prepare('INSERT INTO reglage (cle, valeur) VALUES (?, ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur WHERE reglage.valeur <> excluded.valeur')
+        .bind('remise', REMISE_A_ZERO).run();
+    REMISE_FAITE = true;
+    if (!r.meta || !r.meta.changes) return;   // déjà faite (par cette requête ou une autre)
+    await db.prepare('DELETE FROM boite').run();
+    for (const prefixe of ['compte:', 'code:', 'limite:', 'msg:']) {
+        let curseur;
+        do {
+            const l = await env.TRIGONE_KV.list({ prefix: prefixe, cursor: curseur });
+            await Promise.all(l.keys.map(k => env.TRIGONE_KV.delete(k.name)));
+            curseur = l.list_complete ? null : l.cursor;
+        } while (curseur);
+    }
 }
 
 function json(corps, statut) {
@@ -160,6 +184,7 @@ async function envoyerCode(env, mail, code) {
 async function api(requete, env, url) {
     const kv = env.TRIGONE_KV;
     if (!kv || !env.TRIGONE_DB) return erreur(503, 'Boîte aux lettres non configurée.');
+    await remiseAZero(env);
     const chemin = url.pathname.replace(/^\/api\//, '');
     const methode = requete.method;
 

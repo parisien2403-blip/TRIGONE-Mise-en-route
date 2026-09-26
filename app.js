@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 96;
+var APP_CODE_VERSION = 97;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -311,7 +311,7 @@ function MAJ_RECAP_PC() { var el = document.getElementById('PC-RECAP'); if (el) 
 var MER_VAL_SEL = null;
 function TPL_ESPACE_VALIDATION_PC(v, h) {
     var liste = GET_A_VALIDER();
-    var entete = '<div class="PC-VAL-ENTETE"><span class="MER-BADGE">🔒 Connecté — ' + LIBELLE_ROLE(h.role) + '</span>' +
+    var entete = '<div class="PC-VAL-ENTETE"><span class="MER-BADGE">🔒 Connecté — VALIDEUR ' + h.role + '</span>' + TPL_BASCULE_ROLE(h) +
         '<b>' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</b><span class="PC-GRIS">' + ESC(h.fonction) + '</span>' +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin-left:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>';
     if (!liste.length) return entete + TPL_AIDE_RECEPTION();
@@ -1655,14 +1655,15 @@ var MER_NOTICES = {
             'À l\'envoi, la demande quitte Documents pour la <b>Bibliothèque</b>. En cas de refus, elle revient dans votre <b>Boîte de réception</b> avec le motif : « Corriger dans Documents » l\'y range ; corrigez-la avec « Modifier » et renvoyez-la.',
             'Au retour de mission, <b>TRIGONE Compte-rendu</b> reprend la mission envoyée depuis cet appareil (« À partir d\'une mise en route ») ; sinon, le missionnaire la saisit directement dans Compte-rendu.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Rôle valideur · boîte de réception · signature', icone: MER_ICONES_NOTICE_CADENAS(),
-        etapes: ['<b>Réglages › Mes rôles</b> (roue crantée de l\'écran de choix) : cochez <b>1er valideur</b> ou <b>2e valideur</b>, saisissez votre fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur. Le rôle est déclaré à votre compte TRIGONE : votre boîte ne reçoit que les demandes de votre niveau.',
+        etapes: ['<b>Réglages › Mes rôles</b> (roue crantée de l\'écran de choix) : cochez <b>VALIDEUR 1</b> et/ou <b>VALIDEUR 2</b>, saisissez votre fonction et le <b>code</b> de chaque rôle, remis par l\'administrateur. Les rôles sont déclarés à votre compte TRIGONE : votre boîte ne reçoit que les demandes de vos niveaux. Il peut y avoir plusieurs VALIDEUR 1 et plusieurs VALIDEUR 2 ; une même personne peut avoir tous les rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) et rester missionnaire.',
+            '<b>Les deux rôles valideur ?</b> Dans l\'Espace valideur, la bascule <b>VALIDEUR 1 / VALIDEUR 2</b> choisit le niveau ; une demande ouverte depuis la Boîte de réception passe d\'elle-même au bon niveau. Vous ne pouvez jamais valider les deux niveaux d\'une même demande.',
             'Ou, dans l\'<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Les demandes à signer arrivent dans votre <b>Boîte de réception</b> (pastille rouge) : « Ouvrir et signer » les affiche dans l\'Espace valideur, avec leur <b>aperçu</b> et leurs pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
             '<b>Transmettre</b> : pour chaque envoi, <b>« 📨 Envoyer »</b>. Le 1er valideur envoie au 2e valideur, le 2e valideur à l\'assistant Chorus DT ; un refus repart vers le demandeur, avec son motif. Chaque envoi arrive, chiffré, dans le TRIGONE du destinataire ; un destinataire qui n\'a pas encore de compte (ou pas le bon rôle) est signalé et l\'envoi attend.',
             'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
-        etapes: ['<b>Réglages › Mes rôles</b> : cochez <b>Assistant Chorus DT</b> et saisissez le code remis par l\'administrateur. Votre espace apparaît au <b>centre de l\'écran de choix</b> (logo Assist Chorus-DT).',
+        etapes: ['<b>Réglages › Mes rôles</b> : cochez <b>ASSIST CHORUS DT</b> et saisissez le code remis par l\'administrateur (il peut y avoir plusieurs assistants Chorus DT ; ce rôle se cumule avec VALIDEUR 1 / VALIDEUR 2). Votre espace apparaît au <b>centre de l\'écran de choix</b> (logo Assist Chorus-DT).',
             '<b>Demandes de mise en route validées</b> : elles arrivent des 2e valideurs. « Ouvrir et contrôler » : TRIGONE contrôle les signatures électroniques et les pièces jointes. Un envoi qui n\'a pas les deux signatures est écarté.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).',
@@ -2057,10 +2058,12 @@ function PJ_LIRE(id) {
 }
 // Accès valideur mémorisé sur l'appareil : la clé de signature déverrouillée est conservée NON EXPORTABLE
 // (le navigateur peut s'en servir pour signer mais jamais la révéler) ; le code d'accès, lui, n'est jamais stocké.
-function ACCES_MEMO(action, valeur) {
+// Clés : « valideur » (rôle en cours), « valideur1 » et « valideur2 » (une même personne peut avoir les deux rôles).
+function ACCES_MEMO(action, valeur, cle) {
+    cle = cle || 'valideur';
     return PJ_DB().then(function(db) { return new Promise(function(ok, ko) {
         var tx = db.transaction('acces', action === 'lire' ? 'readonly' : 'readwrite'), st = tx.objectStore('acces');
-        var r = action === 'lire' ? st.get('valideur') : action === 'effacer' ? st.delete('valideur') : st.put(valeur, 'valideur');
+        var r = action === 'lire' ? st.get(cle) : action === 'effacer' ? st.delete(cle) : st.put(valeur, cle);
         tx.oncomplete = function() { ok(action === 'lire' ? (r.result || null) : null); }; tx.onerror = function() { ko(tx.error); };
     }); });
 }
@@ -2319,22 +2322,56 @@ function DEVERROUILLER_ACCES(code) {
             }).then(function(pkcs8) {
                 return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
             }).then(function(k) {
-                MER_CLE_SESSION = k; MER_ACCES_SESSION = a;
-                return ACCES_MEMO('ecrire', { cle: k, pub: a.cle }).catch(function() {});
+                MER_CLE_SESSION = k; MER_ACCES_SESSION = a; MER_ROLES_MEMO[a.role] = true;
+                return Promise.all([ACCES_MEMO('ecrire', { cle: k, pub: a.cle }), ACCES_MEMO('ecrire', { cle: k, pub: a.cle }, 'valideur' + a.role)]).catch(function() {});
             });
         });
     }, Promise.reject(new Error('code')));
 }
 // Reconnexion automatique : reprend la clé mémorisée tant que son accès figure toujours, actif, dans valideurs.json
 // (un code remplacé ou retiré par l'administrateur déconnecte l'appareil).
+// Rôles valideur dont la clé est mémorisée sur l'appareil : { 1: true, 2: true } si la personne a les deux.
+var MER_ROLES_MEMO = {};
+function MER_ACCES_VALIDE(m) {
+    return m && m.cle ? ((MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || []).filter(function(x) { return x.cle === m.pub && !x.retire; })[0] || null : null;
+}
 function RESTAURER_ACCES() {
-    if (MER_CLE_SESSION) return Promise.resolve();
-    return ACCES_MEMO('lire').then(function(m) {
-        if (!m || !m.cle) return;
-        var a = ((MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || []).filter(function(x) { return x.cle === m.pub && !x.retire; })[0];
-        if (a) { MER_CLE_SESSION = m.cle; MER_ACCES_SESSION = a; }
-        else if (MER_LISTE_VALIDEURS && (MER_LISTE_VALIDEURS.valideurs || []).length) return ACCES_MEMO('effacer');
+    var listeConnue = !!(MER_LISTE_VALIDEURS && (MER_LISTE_VALIDEURS.valideurs || []).length);
+    return Promise.all(['valideur', 'valideur1', 'valideur2'].map(function(k) { return ACCES_MEMO('lire', null, k).catch(function() { return null; }); })).then(function(m) {
+        var suite = [];
+        // Ancienne mémoire (un seul rôle) : rangée aussi sous la clé de son rôle.
+        var a0 = MER_ACCES_VALIDE(m[0]);
+        if (a0 && !m[a0.role]) { m[a0.role] = m[0]; suite.push(ACCES_MEMO('ecrire', m[0], 'valideur' + a0.role)); }
+        MER_ROLES_MEMO = {};
+        [1, 2].forEach(function(n) {
+            var a = MER_ACCES_VALIDE(m[n]);
+            if (a && a.role === n) MER_ROLES_MEMO[n] = true;
+            else if (m[n] && listeConnue) suite.push(ACCES_MEMO('effacer', null, 'valideur' + n));
+        });
+        if (!MER_CLE_SESSION) {
+            var n = a0 ? 0 : MER_ROLES_MEMO[1] ? 1 : MER_ROLES_MEMO[2] ? 2 : -1;
+            if (n >= 0) { MER_CLE_SESSION = m[n].cle; MER_ACCES_SESSION = MER_ACCES_VALIDE(m[n]); if (n) suite.push(ACCES_MEMO('ecrire', m[n])); }
+            else if (m[0] && listeConnue) suite.push(ACCES_MEMO('effacer'));
+        }
+        return Promise.all(suite);
     }).catch(function() {});
+}
+// Passe au rôle valideur n (clé déjà mémorisée) : VALIDEUR 1 ⇄ VALIDEUR 2, sans ressaisir de code.
+function MER_PASSER_ROLE(n) {
+    return ACCES_MEMO('lire', null, 'valideur' + n).then(function(m) {
+        var a = MER_ACCES_VALIDE(m);
+        if (!a) return false;
+        MER_CLE_SESSION = m.cle; MER_ACCES_SESSION = a;
+        return ACCES_MEMO('ecrire', m).then(function() { MER_DECLARER_ROLE_VALIDEUR(); return true; });
+    }).catch(function() { return false; });
+}
+function MER_CHOISIR_ROLE(n) { MER_PASSER_ROLE(n).then(function() { MER_VAL_SEL = null; RENDER_VALIDATION_INPLACE(); }); }
+// Bascule affichée quand la personne est à la fois VALIDEUR 1 et VALIDEUR 2.
+function TPL_BASCULE_ROLE(h) {
+    if (!(MER_ROLES_MEMO[1] && MER_ROLES_MEMO[2])) return '';
+    return '<div class="MER-BASCULE-ROLE" role="group" aria-label="Valider en tant que">' + [1, 2].map(function(n) {
+        return '<button type="button" class="' + (h.role === n ? 'actif' : '') + '" onclick="MER_CHOISIR_ROLE(' + n + ')">VALIDEUR ' + n + '</button>';
+    }).join('') + '</div>';
 }
 function SIGNER_VALIDATION(d, h) {
     var niveau = (d.validations || []).length + 1;
@@ -2445,8 +2482,8 @@ function SE_CONNECTER(btn) {
 }
 function SE_DECONNECTER() {
     MSG_CONFIRM('Se déconnecter ?', 'Votre code d\'accès valideur vous sera redemandé à la prochaine connexion sur cet appareil.', 'Se déconnecter', function() {
-        MER_CLE_SESSION = null; MER_ACCES_SESSION = null;
-        ACCES_MEMO('effacer').catch(function() {}).then(RENDER_VALIDATION_INPLACE);
+        MER_CLE_SESSION = null; MER_ACCES_SESSION = null; MER_ROLES_MEMO = {};
+        Promise.all(['valideur', 'valideur1', 'valideur2'].map(function(k) { return ACCES_MEMO('effacer', null, k); })).catch(function() {}).then(RENDER_VALIDATION_INPLACE);
     });
 }
 function COPIER_TEXTE(t, btn) {
@@ -2500,7 +2537,7 @@ function TPL_ESPACE_VALIDATION(v, h) {
     if (EST_PC()) return TPL_ESPACE_VALIDATION_PC(v, h);
     var liste = GET_A_VALIDER();
     var html = '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
-            '<span class="MER-BADGE">🔒 Connecté — ' + LIBELLE_ROLE(h.role) + '</span>' +
+            '<span class="MER-BADGE">🔒 Connecté — VALIDEUR ' + h.role + '</span>' + TPL_BASCULE_ROLE(h) +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + ESC(h.fonction) + '</div></div>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>' +
@@ -2610,14 +2647,19 @@ function IMPORTER_A_VALIDER(input) {
 function VALIDER_DEMANDES(ids) {
     var h = HABILITATION_COURANTE();
     if (!MER_CLE_SESSION || !h || h.retire) { RENDER_VALIDATION_INPLACE(); return; }
-    var liste = GET_A_VALIDER();
+    var liste = GET_A_VALIDER(), memePersonne = [];
+    // Une même personne peut être VALIDEUR 1 et VALIDEUR 2, mais jamais valider les deux niveaux d'une même demande.
+    var moi = function(v) { return v && (v.nom || '').toUpperCase() === (h.nom || '').toUpperCase() && (v.prenom || '').toUpperCase() === (h.prenom || '').toUpperCase(); };
     Promise.all(liste.map(function(e) {
         var ko = (MER_VERIF[e.id] || []).some(function(x) { return !x.ok; }) || (e.pjAlterees || []).length;
         if (ids.indexOf(e.id) === -1 || e.decision || NIVEAU_VALIDATION(e.d) !== h.role || ko) return null;
+        if (h.role === 2 && moi((e.d.validations || [])[0])) { memePersonne.push(RESUME_DEMANDE(e.d).noms); return null; }
         return SIGNER_VALIDATION(e.d, h).then(function(s) { e.decision = 'VALIDEE'; e.signature = s; });
     })).then(function() {
         SAVE_A_VALIDER(liste);
         RENDER_VALIDATION_INPLACE();
+        if (memePersonne.length) MSG_ERREUR('Déjà validée par vous', 'Vous avez validé ' + (memePersonne.length > 1 ? 'ces demandes' : 'cette demande') + ' en VALIDEUR 1 (' + memePersonne.join(', ') +
+            ') : le 2e niveau doit être validé par une autre personne. Refusez-la ou laissez-la à un autre VALIDEUR 2.');
     }).catch(function(err) { MSG_ERREUR('Signature impossible', err.message); });
 }
 function COCHER_TOUT_VALIDATION() {
@@ -3201,7 +3243,12 @@ function OUVRIR_RECU(id) {
         if (x.nature === 'cr') { OUVRIR_CR_RECU(id); return; }
         if (x.nature === 'refus') { IMPORTER_REFUS(faux); JUMELAGE_BOITE_MARQUER(id, 'traite'); return; }
         if (x.nature === 'chorus') { JUMELAGE_BOITE_MARQUER(id, 'ouvert'); VERIFIER_FICHIERS(faux); return; }
+        var niveau = x.nature === 'niveau2' ? 2 : 1;
         CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() {
+            var h = HABILITATION_COURANTE();
+            // Personne à la fois VALIDEUR 1 et VALIDEUR 2 : on passe au rôle qu'attend la demande.
+            return (!h || h.role !== niveau) && MER_ROLES_MEMO[niveau] ? MER_PASSER_ROLE(niveau) : null;
+        }).then(function() {
             var h = HABILITATION_COURANTE();
             if (!h || h.retire) {
                 MER_BOITE_A_OUVRIR = id;
