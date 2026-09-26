@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=21"></script>
+<script src="jumelage.js?v=22"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -110,6 +110,21 @@ body.dark-mode .MER-LOGO-IMG { filter: brightness(0) invert(0.93); }
 .BTN-ACCUEIL:active { transform: scale(0.98); }
 /* Boutons secondaires de l'accueil : même style que « Nouvelle demande », en plus petit */
 .BTN-ACCUEIL-REPRISE { background: var(--tg-accent) !important; }
+.MER-PASTILLE-SIGNER { position: absolute; top: -9px; right: -4px; background: #b91c1c; color: #fff; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em; text-transform: none; padding: 4px 9px; border-radius: 999px; box-shadow: 0 4px 10px rgba(185,28,28,0.35); line-height: 1.2; }
+.BTN-ACCUEIL-PETIT { position: relative; }
+.MER-BANDEAU-RECU { position: fixed; left: 50%; top: calc(12px + var(--safe-top)); transform: translate(-50%, -20px); opacity: 0; transition: opacity .3s ease, transform .3s ease; z-index: 99997; width: min(520px, calc(100% - 24px));
+  display: flex; gap: 12px; align-items: center; background: #1a1a1a; color: #fff; border-radius: 16px; padding: 12px 14px; box-shadow: 0 14px 34px rgba(0,0,0,.28); font-size: 0.82rem; line-height: 1.4; }
+.MER-BANDEAU-RECU.visible { opacity: 1; transform: translate(-50%, 0); }
+.MER-BANDEAU-RECU b { font-size: 0.9rem; }
+.MER-BANDEAU-RECU-IC { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; background: rgba(122,157,181,.25); color: #a9c3d6; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
+.MER-AIDE-RECEPTION { border: 1.5px dashed rgba(90,122,148,0.4); border-radius: 16px; padding: 16px; margin: 4px 0 16px; background: rgba(90,122,148,0.05); }
+.MER-AIDE-RECEPTION-TETE { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+.MER-AIDE-RECEPTION-TETE > span { width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px; background: rgba(90,122,148,0.12); color: #5a7a94; display: flex; align-items: center; justify-content: center; font-size: 1.15rem; }
+.MER-AIDE-RECEPTION-TETE b { display: block; font-size: 0.95rem; } .MER-AIDE-RECEPTION-TETE small { color: var(--tg-muted); font-size: 0.76rem; }
+.MER-AIDE-RECEPTION ol { margin: 6px 0 0; padding-left: 20px; font-size: 0.82rem; line-height: 1.5; color: var(--tg-muted); } .MER-AIDE-RECEPTION ol li { margin: 4px 0; } .MER-AIDE-RECEPTION ol b { color: var(--sm2-text); }
+body.dark-mode .MER-AIDE-RECEPTION { border-color: rgba(169,195,214,0.3); background: rgba(169,195,214,0.05); }
+body.dark-mode .MER-AIDE-RECEPTION-TETE > span { background: rgba(169,195,214,0.12); color: #a9c3d6; }
+body.dark-mode .MER-AIDE-RECEPTION ol b { color: #ececec; }
 .BTN-ACCUEIL-PETIT { display: block; text-align: center; font-size: clamp(0.62rem, 3vw, 0.74rem); padding: 13px 16px; margin-bottom: 4px; box-shadow: 0 4px 14px rgba(0,0,0,0.12); }
 /* Le logo est centré entre le haut de la page et « Nouvelle demande » ; l'espace sous les boutons (jusqu'à
    « Conçu par ») équilibre l'ensemble pour garder les boutons vers le milieu de l'écran. */
@@ -819,6 +834,6 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
     </div>
   </div>
 </div>
-<script src="app.js?v=21"></script>
+<script src="app.js?v=22"></script>
 </body>
 </html>

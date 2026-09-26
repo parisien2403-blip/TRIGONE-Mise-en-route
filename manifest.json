@@ -27,5 +27,41 @@
       "purpose": "maskable"
     }
   ],
-  "description": "TRIGONE — mise en route et compte-rendu de mission"
+  "description": "TRIGONE — mise en route et compte-rendu de mission",
+  "share_target": {
+    "action": "./partage-trigone",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "titre",
+      "text": "texte",
+      "files": [
+        {
+          "name": "fichiers",
+          "accept": [
+            "application/json",
+            ".json",
+            "application/octet-stream",
+            "text/plain"
+          ]
+        }
+      ]
+    }
+  },
+  "file_handlers": [
+    {
+      "action": "./?fichier=1",
+      "accept": {
+        "application/json": [
+          ".json"
+        ]
+      }
+    }
+  ],
+  "launch_handler": {
+    "client_mode": [
+      "navigate-existing",
+      "auto"
+    ]
+  }
 }

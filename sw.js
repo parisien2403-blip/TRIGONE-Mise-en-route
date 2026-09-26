@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v75';
+const CACHE_NAME = 'trigone-mise-en-route-v76';
 const ASSETS = [
   './',
   './manifest.json',
@@ -136,7 +136,22 @@ function reseauDAbord(request, fin) {
   });
 }
 
+// « Partager » / « Ouvrir avec » TRIGONE (Android) : le fichier arrive ici en POST. Il est rangé dans un cache
+// dédié, puis l'appli s'ouvre et le traite (Espace valideur, assistant Chorus DT ou retour d'un refus).
+function recevoirPartage(request) {
+  return request.formData().then(function(form) {
+    var fichiers = form.getAll('fichiers').filter(function(f) { return f && typeof f !== 'string'; });
+    return caches.open('trigone-partage').then(function(cache) {
+      return Promise.all(fichiers.map(function(f, i) {
+        return cache.put(new Request(self.registration.scope + '__recu__/' + Date.now() + '-' + i),
+          new Response(f, { headers: { 'Content-Type': f.type || 'application/json', 'X-Nom': encodeURIComponent(f.name || 'demande.json') } }));
+      }));
+    });
+  }).catch(function() {}).then(function() { return Response.redirect(self.registration.scope + '?partage=1', 303); });
+}
+
 self.addEventListener('fetch', function(event) {
+  if (event.request.method === 'POST' && /\/partage-trigone$/.test(new URL(event.request.url).pathname)) { event.respondWith(recevoirPartage(event.request)); return; }
   if (event.request.method !== 'GET') return;
   var url = new URL(event.request.url);
   if (url.origin !== self.location.origin) return;
