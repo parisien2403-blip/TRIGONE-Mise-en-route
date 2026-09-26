@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=18"></script>
+<script src="jumelage.js?v=19"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -97,7 +97,7 @@ body.dark-mode .CARD:not(#MER-P0) { border-top-color: #525252; }
 .MER-LOGO-WRAP { width: calc(100% + 36px); margin: 0 -18px; display: flex; justify-content: center; align-items: center; overflow: hidden; min-height: 0; max-height: min(46vh, 300px); }
 /* 0.8025 : même largeur de « TRIGONE » que le logo du compte-rendu, qui doit tenir entier dans la carte */
 .MER-LOGO-IMG { width: min(300px, 70vw, calc((100vw - 90px) * 0.8025)); height: auto; max-height: 100%; object-fit: contain; transition: filter 0.3s ease; }
-body.dark-mode .MER-LOGO-IMG { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+body.dark-mode .MER-LOGO-IMG { filter: brightness(0) invert(0.93); }
 .MER-P0-HERO { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 12px; width: 100%; max-width: 360px; margin: 4px auto 0; flex-shrink: 0; }
 /* Accueil : bouton principal, liens et barre d'onglets, repris de TRIGONE compte-rendu */
 .MER-P0-HERO { gap: 4px; }
@@ -149,9 +149,9 @@ body.dark-mode .P0-LIEN { color: #f5f5f5; }
 }
 body.dark-mode .P0-DOCK-INNER { border-top-color: #404040; }
 body.dark-mode .P0-TAB { background: linear-gradient(165deg, #242424 0%, #1a1a1a 100%); border-color: #404040; color: #e5e5e5; box-shadow: 0 2px 8px rgba(0,0,0,0.25); }
-body.dark-mode .P0-TAB-ICON { background: rgba(34,211,238,0.08); border-color: rgba(34,211,238,0.18); }
-body.dark-mode .P0-TAB-ICON svg { stroke: #67e8f9; }
-body.dark-mode .P0-TAB-LBL { color: #94a3b8; }
+body.dark-mode .P0-TAB-ICON { background: rgba(122, 157, 181, 0.08); border-color: rgba(122, 157, 181, 0.18); }
+body.dark-mode .P0-TAB-ICON svg { stroke: #a9c3d6; }
+body.dark-mode .P0-TAB-LBL { color: #a3a3a3; }
 body.dark-mode .P0-TAB.has-badge::after { border-color: #1f1f1f; }
 .MER-CODE {
   width: 100%; box-sizing: border-box; min-height: 90px; padding: 9px 10px; font-family: 'Courier New', monospace;
@@ -327,7 +327,7 @@ body.dark-mode .NOTICE-CARD, body.dark-mode .notice-fold { background: #242424; 
 @media (max-width: 560px) { .P0-REF-BTN { right: 54px; top: 14px; } .P0-CHECK-UPDATE-BTN { top: 44px; } }
 .FOLD-ICON { display: inline-flex; width: 18px; height: 18px; margin-right: 8px; vertical-align: -4px; }
 .FOLD-ICON svg { width: 18px; height: 18px; stroke: var(--tg-accent); fill: none; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
-body.dark-mode .P0-REF-BTN { background: rgba(36,36,36,0.9); border-color: #404040; color: #94a3b8; }
+body.dark-mode .P0-REF-BTN { background: rgba(36,36,36,0.9); border-color: #404040; color: #a3a3a3; }
 
 /* Configuration initiale (« Avant de commencer »), reprise de TRIGONE compte-rendu */
 .config-page { position: fixed; inset: 0; z-index: 99994; background: var(--sm2-surface); display: flex; flex-direction: column; overflow: hidden; }
@@ -365,11 +365,11 @@ body.dark-mode .config-cta { background: #f5f5f5; color: #141414; }
 body.dark-mode .THEME-TOGGLE { background: rgba(26,26,26,0.94); border-color: rgba(255,255,255,0.1); color: #e5e5e5; }
 .APP-VERSION-TAG { opacity: 0.75; }
 .app-credit { margin: 18px 0 0; text-align: center; font-size: 0.68em; color: var(--tg-muted); letter-spacing: 0.02em; }
-body.dark-mode .app-credit { color: #d97706; }
+body.dark-mode .app-credit { color: #8fb0c7; }
 
 .MER-LOGO-BLOCK { text-align: center; margin: 10px 0 22px; }
 .MER-PHOENIX { width: min(150px, 42vw); height: auto; margin: 0 auto 14px; display: block; transition: filter 0.3s ease; }
-body.dark-mode .MER-PHOENIX { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+body.dark-mode .MER-PHOENIX { filter: brightness(0) invert(0.93); }
 .MER-WORDMARK { font-weight: 800; letter-spacing: 0.14em; font-size: 1.7em; line-height: 1; margin: 0; }
 .MER-SUBTITLE { color: var(--sm2-muted); font-size: 0.86em; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; margin: 6px 0 0; }
 
@@ -620,7 +620,7 @@ body.dark-mode .MER-FIELD .MER-VILLE-CP .MER-CP-IN { background: #1a1a1a; border
 }
 .PC-MARQUE { display: flex; justify-content: center; border: 0; background: none; padding: 4px 0 18px; margin-bottom: 10px; border-bottom: 1px solid var(--tg-border); cursor: pointer; }
 .PC-MARQUE img { width: 104px; height: auto; }
-body.dark-mode .PC-MARQUE img { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+body.dark-mode .PC-MARQUE img { filter: brightness(0) invert(0.93); }
 .PC-NAV { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0; border-radius: 12px; background: none; text-align: left;
   font-family: inherit; font-size: 0.84rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; line-height: 1.25; }
 .PC-NAV svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -645,7 +645,7 @@ body.dark-mode .PC-BASCULE img { filter: grayscale(1) invert(1); }
 .PC-CARTE-TITRE { font-size: 0.74rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; margin-bottom: 12px; }
 .PC-HERO { display: flex; align-items: center; gap: 30px; padding: 26px 30px; }
 .PC-HERO-LOGO { width: 160px; height: auto; flex-shrink: 0; }
-body.dark-mode .PC-HERO-LOGO { filter: brightness(0) saturate(100%) invert(48%) sepia(89%) saturate(1247%) hue-rotate(360deg) brightness(95%) contrast(93%); }
+body.dark-mode .PC-HERO-LOGO { filter: brightness(0) invert(0.93); }
 .PC-HERO-TXT { flex: 1; min-width: 0; }
 .PC-HERO-TITRE { font-size: 1.1rem; font-weight: 800; margin-bottom: 6px; }
 .PC-HERO-TXT p { margin: 0; font-size: 0.84rem; color: #64748b; line-height: 1.55; }
@@ -720,7 +720,7 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
   }, reduit ? 900 : 1900);
 })();
 </script>
-<button type="button" class="THEME-TOGGLE" id="THEME-TOGGLE-BTN" onclick="TOGGLE_THEME()" aria-label="Mode sombre">🌙</button>
+<button type="button" class="THEME-TOGGLE" id="THEME-TOGGLE-BTN" onclick="TOGGLE_THEME()" aria-label="Mode sombre"></button>
 <div id="DEMO-OVERLAY" class="HIDDEN">
   <div class="DEMO-RUBAN"><span class="DEMO-RUBAN-BAND DEMO-RUBAN-TOP"></span><span class="DEMO-RUBAN-BAND DEMO-RUBAN-BOTTOM"></span><span class="DEMO-RUBAN-BAND DEMO-RUBAN-GAUCHE"></span><span class="DEMO-RUBAN-BAND DEMO-RUBAN-DROITE"></span></div>
   <div class="DEMO-BANDEAU">
@@ -819,6 +819,6 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
     </div>
   </div>
 </div>
-<script src="app.js?v=18"></script>
+<script src="app.js?v=19"></script>
 </body>
 </html>

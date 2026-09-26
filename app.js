@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 65;
+var APP_CODE_VERSION = 66;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -144,14 +144,13 @@ function TOGGLE_THEME() {
     var dark = document.body.classList.contains('dark-mode');
     try { localStorage.setItem('mer_dark', dark ? '1' : '0'); } catch (e) {}
     if (window.JUMELAGE_THEME) JUMELAGE_THEME(dark);
-    document.getElementById('THEME-TOGGLE-BTN').textContent = dark ? '☀️' : '🌙';
 }
 function APPLIQUER_THEME_INITIAL() {
     var dark = false;
     try { dark = localStorage.getItem('mer_dark') === '1'; } catch (e) {}
     var commun = window.JUMELAGE_THEME ? JUMELAGE_THEME() : null;   // choix fait dans l'une ou l'autre appli
     if (commun !== null) dark = commun;
-    if (dark) { document.body.classList.add('dark-mode'); document.getElementById('THEME-TOGGLE-BTN').textContent = '☀️'; }
+    if (dark) document.body.classList.add('dark-mode');
 }
 
 // ===================== PAGE ACCUEIL =====================
@@ -1657,17 +1656,17 @@ function TPL_NOTICE() {
                 '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">' + c.titre + '</span><span class="NOTICE-CARD-SUB">' + c.sous + '</span></span>' +
                 '<span class="NOTICE-CARD-CHEV">›</span></button>';
         }).join('') +
-        '<details class="notice-fold"><summary>🔒 Code d\'accès de l\'appli (4 chiffres)</summary><ul>' +
+        '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Code d\'accès de l\'appli (4 chiffres)</summary><ul>' +
             '<li>Avec la <b>roue crantée</b> de l\'écran de choix (Réglages TRIGONE), activez un code à 4 chiffres demandé à <b>chaque ouverture</b> de TRIGONE, pour les deux applis.</li>' +
             '<li>Le code ne quitte jamais votre appareil.</li>' +
             '<li><b>Code oublié</b> : le lien « Code oublié ? » efface toutes les données de l\'appli sur cet appareil. Il n\'existe aucun autre moyen.</li></ul></details>' +
-        '<details class="notice-fold"><summary>🔁 Mise en route &amp; Compte-rendu</summary><ul>' +
+        '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg></span>Mise en route &amp; Compte-rendu</summary><ul>' +
             '<li>TRIGONE réunit les deux applis : la <b>mise en route</b> avant de partir, le <b>compte-rendu de mission</b> au retour.</li>' +
             '<li>À l\'ouverture, l\'écran est coupé en deux en diagonale : touchez <b>Mise en route</b> (en haut à gauche) ou <b>Compte-rendu</b> (en bas à droite). Pour changer ensuite, <b>touchez le logo</b> de l\'accueil : l\'écran de choix revient.</li>' +
             '<li>Votre <b>identité</b> (grade, nom, prénom, matricule, CIE) n\'est saisie qu\'<b>une fois</b> : toute modification dans l\'une est reprise dans l\'autre.</li>' +
             '<li>Dans Compte-rendu, <b>« 📋 À partir d\'une mise en route »</b> liste vos demandes envoyées : en choisir une remplit la mission (identité, libellé, lieux de départ et de retour, transports, gares, ABT, et les horaires des billets dans Frais › Trajets).</li>' +
             '<li>Le code à 4 chiffres n\'est pas redemandé en passant d\'une appli à l\'autre ; chaque partie garde ses propres données.</li></ul></details>' +
-        '<details class="notice-fold"><summary>🔄 Mises à jour</summary><ul>' +
+        '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg></span>Mises à jour</summary><ul>' +
             '<li>L\'appli recherche une nouvelle version à l\'ouverture et à la fermeture ; trouvée à la fermeture, elle s\'installe d\'elle-même au retour dans l\'appli.</li>' +
             '<li>L\'appli se met à jour toute seule dès qu\'il y a du réseau ; un message « Mise à jour » s\'affiche quand une nouvelle version est prête.</li>' +
             '<li>Votre saisie en cours, votre panier et votre bibliothèque sont conservés.</li></ul></details>' +

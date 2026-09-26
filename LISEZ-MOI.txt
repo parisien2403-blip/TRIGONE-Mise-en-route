@@ -202,3 +202,11 @@ MISE EN ROUTE → COMPTE-RENDU PAR QR CODE (ordinateur → téléphone)
   et « Enregistrer l'image » (PNG avec libellé, missionnaire, trajet et dates). Compte-rendu lit l'image depuis la
   galerie : « Depuis une photo » (BarcodeDetector, sinon jsQR à plusieurs tailles). Le QR contient toutes les personnes
   de la demande (le téléphone retrouve la sienne par son nom), sauf grande collective : seulement la personne des réglages.
+
+MODE SOMBRE HARMONISÉ (V18)
+- Une seule palette sombre pour les deux applis : fond #141414, surfaces #1f1f1f / #262626, texte #ececec,
+  secondaire #a3a3a3, accent bleu ardoise clair #a9c3d6 (plus de cyan, d'orange, de violet ni de bleu marine).
+  Logos en blanc cassé en mode sombre. Sélections actives : pastille claire, texte foncé.
+- Couche commune dans jumelage.js (« Thème sombre commun », sélecteurs html body.dark-mode, prioritaires).
+- Bouton clair / sombre : icônes au trait (lune / soleil) posées par jumelage.js, qui suit la classe dark-mode.
+- Contrôle : script d'audit (contraste de chaque texte visible sur son fond réel, page par page).
