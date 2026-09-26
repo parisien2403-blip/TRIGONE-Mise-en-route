@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 79;
+var APP_CODE_VERSION = 80;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2925,6 +2925,7 @@ function AFFICHER_MAJ(liste) {
 }
 // Vide le cache de l'appli et recharge : les données (localStorage) ne sont jamais touchées.
 function APPLIQUER_MISE_A_JOUR() {
+    MARQUER_RETOUR_CHOIX();
     AFFICHER_MSG_CENTRE({ titre: 'Mise à jour en cours…', texte: 'Merci de patienter quelques instants.', icone: '⏳', mascotte: 'mascotte-maj.webp', boutons: [] });
     var etapes = [];
     if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.filter(function(c) { return c.indexOf('trigone-mise-en-route') === 0; }).map(function(c) { return caches.delete(c); })); }));
@@ -2966,8 +2967,11 @@ window.JUMELAGE_APRES_REGLAGES = function() {
 window.JUMELAGE_AVANT_RECHARGE = function() { if (PAGE_ACTUELLE === 'FORMULAIRE') SAVE_BROUILLON(); };
 // Mise à jour forcée (jumelage.js) : seulement sur l'accueil, sans fenêtre ouverte.
 window.JUMELAGE_PEUT_RECHARGER = function() { return PAGE_ACTUELLE === 'ACCUEIL' && ECRAN_LIBRE() && !document.getElementById('MER-MODALE-FOND'); };
+// Après une mise à jour, TRIGONE rouvre sur l'écran de choix des applis.
+function MARQUER_RETOUR_CHOIX() { try { sessionStorage.setItem('trigone_apres_maj', '1'); sessionStorage.removeItem('trigone_choix_fait'); } catch (e) {} }
 function REDEMARRER_SUR_NOUVELLE_VERSION() {
     SAVE_BROUILLON();
+    MARQUER_RETOUR_CHOIX();
     var etapes = [];
     if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.filter(function(c) { return c.indexOf('trigone-mise-en-route') === 0; }).map(function(c) { return caches.delete(c); })); }));
     Promise.all(etapes).catch(function() {}).then(function() { location.reload(); });
