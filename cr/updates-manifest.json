@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 126,
-  "appCodeMessage": "Version 28 : les nouveautés s'affichent une seule fois, ici sur l'écran de choix, et plus dans chaque appli. Nouveau bouton « Mise à jour » en bas à gauche pour vérifier à tout moment.",
+  "appCodeVersion": 127,
+  "appCodeMessage": "Version 29 : « TRIGONE est à jour » s'affiche avec la coche verte et la mascotte pouce levé.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

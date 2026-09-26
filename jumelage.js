@@ -114,6 +114,10 @@
         '.JUM-NOUV-CARTE { width: 100%; max-width: 420px; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 24px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); font-family: Montserrat, system-ui, sans-serif; }' +
         '.JUM-NOUV-IC { display: inline-flex; width: 58px; height: 58px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(90,122,148,0.1); color: #5a7a94; }' +
         '.JUM-NOUV-IC svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-NOUV-IC[data-ton="ok"] { background: rgba(21,128,61,0.1); color: #15803d; }' +
+        '.JUM-NOUV-CARTE { position: relative; } .JUM-NOUV-CARTE.avec-mascotte { padding-bottom: 24px; }' +
+        '.JUM-NOUV-MASCOTTE { position: absolute; right: -122px; bottom: -10px; width: 140px; height: auto; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.25)); pointer-events: none; }' +
+        '@media (max-width: 560px) { .JUM-NOUV-MASCOTTE { right: -10px; bottom: -34px; width: 96px; } .JUM-NOUV-CARTE.avec-mascotte { padding-bottom: 60px; } }' +
         '.JUM-NOUV h2 { margin: 12px 0 8px; font-size: 1.15rem; } .JUM-NOUV p { margin: 0 0 18px; font-size: 0.9rem; line-height: 1.55; color: #404040; }' +
         '.JUM-NOUV button { border: 0; border-radius: 14px; padding: 13px 34px; background: #1a1a1a; color: #fff; font: 800 0.8rem Montserrat, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-VERSION { position: absolute; top: max(16px, env(safe-area-inset-top, 0px)); right: max(18px, env(safe-area-inset-right, 0px)); z-index: 3; padding: 5px 12px; border-radius: 999px;' +
@@ -376,7 +380,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 29, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 30, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1323,13 +1327,13 @@
     function manifesteMaj() {
         return fetch((DANS_CR ? '../' : '') + 'updates-manifest.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; });
     }
-    function carteChoix(titre, texte, icone) {
+    function carteChoix(titre, texte, icone, ton, mascotte) {
         if (!ecran) return;
         var ancienne = ecran.querySelector('.JUM-NOUV'); if (ancienne) ancienne.remove();
         var c = document.createElement('div');
         c.className = 'JUM-NOUV';
-        c.innerHTML = '<div class="JUM-NOUV-CARTE"><span class="JUM-NOUV-IC">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE(icone) : '') + '</span>' +
-            '<h2></h2><p></p><button type="button">J\'ai compris</button></div>';
+        c.innerHTML = '<div class="JUM-NOUV-CARTE' + (mascotte ? ' avec-mascotte' : '') + '"><span class="JUM-NOUV-IC"' + (ton ? ' data-ton="' + ton + '"' : '') + '>' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE(icone) : '') + '</span>' +
+            '<h2></h2><p></p><button type="button">J\'ai compris</button>' + (mascotte ? '<img class="JUM-NOUV-MASCOTTE" src="' + mascotte + '" alt="">' : '') + '</div>';
         c.querySelector('h2').textContent = titre; c.querySelector('p').textContent = texte;
         ['pointerdown', 'pointerup', 'click'].forEach(function(t) { c.addEventListener(t, function(e) { e.stopPropagation(); }); });
         c.querySelector('button').addEventListener('click', function() { c.classList.add('sortie'); setTimeout(function() { c.remove(); }, 250); });
@@ -1356,7 +1360,7 @@
             if (d && d.build > BUILD) { try { sessionStorage.removeItem(CLE_RECHARGE); } catch (e) {} window.JUMELAGE_MAJ_DISPONIBLE(); return; }
             return manifesteMaj().then(function(m) {
                 carteChoix('TRIGONE est à jour' + (window.APP_VERSION_AFFICHEE ? ' — V' + window.APP_VERSION_AFFICHEE : ''),
-                    (m && m.appCodeMessage) ? 'Dernières nouveautés : ' + m.appCodeMessage.replace(/^Version \d+ :\s*/, '') : 'Aucune mise à jour disponible pour le moment.', 'ok');
+                    (m && m.appCodeMessage) ? 'Dernières nouveautés : ' + m.appCodeMessage.replace(/^Version \d+ :\s*/, '') : 'Aucune mise à jour disponible pour le moment.', 'ok', 'ok', 'mascotte-pouce.webp');
             });
         }).catch(function() { carteChoix('Vérification impossible', 'Impossible de vérifier les mises à jour pour le moment. Réessayez plus tard.', 'alerte'); })
           .then(function() { setTimeout(function() { if (btn) btn.classList.remove('tourne'); }, 600); });
