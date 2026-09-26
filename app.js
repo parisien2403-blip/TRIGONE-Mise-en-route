@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 66;
+var APP_CODE_VERSION = 67;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -209,6 +209,7 @@ function TPL_MENU_PC() {
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
             '<button type="button" class="PC-NAV' + (actif === 'REFERENCES' ? ' actif' : '') + '" onclick="SHOW_PAGE(\'REFERENCES\')">' + MER_ICONES.REFERENCES + '<span>Références</span></button>' +
             '<button type="button" class="PC-NAV" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()">' + MER_ICONES.MAJ + '<span>Mise à jour</span></button>' +
+            '<button type="button" class="PC-NAV" onclick="MER_SIGNALER()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/></svg><span>Signaler un problème</span></button>' +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';
 }
@@ -396,8 +397,9 @@ function TPL_ACCUEIL() {
     return '' +
     '<div id="MER-P0">' +
       '<div class="MER-P0-SHELL">' +
-        '<button type="button" id="BTN-REFERENCES" class="P0-REF-BTN" onclick="SHOW_PAGE(\'REFERENCES\')" title="Référentiels utilisés par TRIGONE Mise en route">Références</button>' +
+        '<button type="button" id="BTN-REFERENCES" class="P0-REF-BTN" onclick="SHOW_PAGE(\'REFERENCES\')" title="Référentiels utilisés par TRIGONE Mise en route">📖 Références</button>' +
         '<button type="button" id="BTN-CHECK-UPDATE" class="P0-REF-BTN P0-CHECK-UPDATE-BTN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()" title="Vérifier si une mise à jour est disponible">🔄 Mise à jour</button>' +
+        '<button type="button" id="BTN-SIGNALER" class="P0-REF-BTN P0-SIGNALER-BTN" onclick="MER_SIGNALER()" title="Signaler un problème à l\'équipe TRIGONE">🛟 Signaler</button>' +
         '<div class="MER-P0-INNER">' +
           '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG JUM-LOGO-CHOIX" src="logo_mer.webp" alt="TRIGONE — Mise en route" title="Revenir au choix Mise en route / Compte-rendu" onclick="JUMELAGE_CHOIX()"></div>' +
         '</div>' +
@@ -2908,6 +2910,14 @@ function APPLIQUER_MISE_A_JOUR() {
     if (window.caches) etapes.push(caches.keys().then(function(k) { return Promise.all(k.filter(function(c) { return c.indexOf('trigone-mise-en-route') === 0; }).map(function(c) { return caches.delete(c); })); }));
     if (navigator.serviceWorker) etapes.push(navigator.serviceWorker.getRegistration().then(function(r) { return r && r.update(); }));
     Promise.all(etapes).catch(function() {}).then(function() { setTimeout(function() { location.reload(); }, 400); });
+}
+// Signaler un problème : mail prérempli (appli, version, écran), commun aux deux applis.
+var MER_LIBELLES_ECRANS = { ACCUEIL: 'Accueil', FORMULAIRE: 'Nouvelle demande', PANIER: 'Panier', BIBLIOTHEQUE: 'Bibliothèque', NOTICE: 'Notice',
+    ESPACE: 'Mon espace', REFERENCES: 'Références', VALIDATION: 'Espace valideur', VERIFIER: 'Assistant Chorus DT', REPRISE: 'Reprise' };
+function MER_SIGNALER() {
+    var e = MER_LIBELLES_ECRANS[PAGE_ACTUELLE] || PAGE_ACTUELLE;
+    if (PAGE_ACTUELLE === 'FORMULAIRE' && MER_TABS_LABELS[MER_ACTIVE_TAB]) e += ' — ' + MER_TABS_LABELS[MER_ACTIVE_TAB];
+    JUMELAGE_SIGNALER(e);
 }
 function VERIFIER_MISE_A_JOUR_MANUELLE() {
     var btn = document.getElementById('BTN-CHECK-UPDATE');

@@ -210,3 +210,11 @@ MODE SOMBRE HARMONISÉ (V18)
 - Couche commune dans jumelage.js (« Thème sombre commun », sélecteurs html body.dark-mode, prioritaires).
 - Bouton clair / sombre : icônes au trait (lune / soleil) posées par jumelage.js, qui suit la classe dark-mode.
 - Contrôle : script d'audit (contraste de chaque texte visible sur son fond réel, page par page).
+
+ICÔNES AU TRAIT ET SIGNALER UN PROBLÈME (V19)
+- jumelage.js remplace à l'affichage chaque emoji couleur par une icône au trait (table EMOJI → icônes P, observateur
+  sur le DOM). Les textes du code gardent leurs emoji : rien ne change dans les mails, PDF et notifications.
+  Tons : ✅ vert, ⛔ rouge, ⚠️ ambre ; en tête des messages, l'icône est posée dans une pastille.
+  Pour garder un emoji tel quel : l'entourer d'un élément avec l'attribut data-emoji.
+- « Signaler un problème » : roue crantée de l'écran de choix, pastille « Signaler » de l'accueil (téléphone) et menu PC
+  des deux applis. Mail prérempli à trigone.app@outlook.fr (appli, version, écran, appareil) : JUMELAGE_SIGNALER.
