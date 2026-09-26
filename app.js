@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 83;
+var APP_CODE_VERSION = 84;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -117,7 +117,7 @@ function LOAD_BROUILLON() {
         }
     } catch (e) {}
 }
-// Demande commencée et pas encore mise au panier : l'appli propose de la reprendre (comme TRIGONE compte-rendu).
+// Demande commencée et pas encore rangée dans Documents : l'appli propose de la reprendre (comme TRIGONE compte-rendu).
 function BROUILLON_EN_COURS() {
     if (DEMO_ACTIF) return false;
     try { if (!localStorage.getItem(STORAGE_BROUILLON)) return false; } catch (e) { return false; }
@@ -200,7 +200,7 @@ function TPL_MENU_PC() {
     return '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_mer.webp" alt="TRIGONE Mise en route"></button>' +
         item('ACCUEIL', MER_ICONES.ACCUEIL, 'Accueil') +
         item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
-        item('PANIER', MER_ICONES.PANIER, 'Panier', n || '') +
+        item('PANIER', MER_ICONES.PANIER, 'Documents', n || '') +
         item('NOTICE', MER_ICONES.NOTICE, 'Notice') +
         item('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
         '<div class="PC-SEP"></div>' +
@@ -247,7 +247,7 @@ function TPL_ACCUEIL_PC() {
         var n = (d.personnes || []).length, a = (d.trajets && d.trajets.aller) || {};
         return ligne(n > 1 ? 'Collective · ' + n + ' pers.' : 'Individuelle', 'PC-BADGE-GRIS', d.objet || 'Mise en route',
             a.dateDep ? FORMAT_DATE_COURT(a.dateDep) : '', 'SHOW_PAGE(\'PANIER\')');
-    }).join('') + '<button type="button" class="BTN BTN-PRIMARY" style="margin-top:14px;" onclick="SHOW_PAGE(\'PANIER\')">📧 Ouvrir le panier et transmettre</button>'
+    }).join('') + '<button type="button" class="BTN BTN-PRIMARY" style="margin-top:14px;" onclick="SHOW_PAGE(\'PANIER\')">📧 Ouvrir mes documents et transmettre</button>'
         : '<div class="PC-VIDE">Aucune demande en attente d\'envoi.</div>';
     return '<div class="PC-PAGE">' +
         '<h1 class="PC-TITRE">' + (qui ? 'Bonjour, ' + ESC(qui) : 'Bienvenue') + '</h1>' +
@@ -263,7 +263,7 @@ function TPL_ACCUEIL_PC() {
             '</div></div>' +
         '<div class="PC-GRILLE2">' +
             '<div class="PC-CARTE"><div class="PC-CARTE-TITRE">Dernières demandes envoyées</div>' + envois + '</div>' +
-            '<div class="PC-CARTE"><div class="PC-CARTE-TITRE">Panier' + (panier.length ? ' — ' + panier.length + ' demande(s) à envoyer' : '') + '</div>' + attente + '</div>' +
+            '<div class="PC-CARTE"><div class="PC-CARTE-TITRE">Documents' + (panier.length ? ' — ' + panier.length + ' demande(s) à envoyer' : '') + '</div>' + attente + '</div>' +
         '</div>' +
         '<p class="app-credit" style="margin-top:22px;">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_VERSION_AFFICHEE + '</span></p>' +
     '</div>';
@@ -416,7 +416,7 @@ function TPL_ACCUEIL() {
         '<p class="app-credit">Conçu par Germain-Pierre BOUQUET <span class="APP-VERSION-TAG">- V' + APP_VERSION_AFFICHEE + '</span></p>' +
         '<nav class="P0-TAB-BAR" aria-label="Navigation accueil"><div class="P0-DOCK-INNER">' +
           TPL_ONGLET_DOCK('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque', false, 'Biblio') +
-          TPL_ONGLET_DOCK('PANIER', MER_ICONES.PANIER, 'Panier' + (n ? ' (' + n + ')' : ''), n > 0) +
+          TPL_ONGLET_DOCK('PANIER', MER_ICONES.PANIER, 'Documents' + (n ? ' (' + n + ')' : ''), n > 0, 'Docs') +
           TPL_ONGLET_DOCK('NOTICE', MER_ICONES.NOTICE, 'Notice') +
           TPL_ONGLET_DOCK('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
         '</div></nav>' +
@@ -1112,7 +1112,7 @@ function TPL_FORMULAIRE() {
         (idx === 0
             ? '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="SHOW_PAGE(\'ACCUEIL\')">Annuler</button>'
             : '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="MER_TAB_PRECEDENT()">← Précédent</button>') +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="MER_TAB_SUIVANT()">' + (dernier ? 'Ajouter au panier →' : 'Étape suivante →') + '</button>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="MER_TAB_SUIVANT()">' + (dernier ? 'Ajouter aux documents →' : 'Étape suivante →') + '</button>' +
       '</div>' +
     '</div>';
 }
@@ -1129,14 +1129,21 @@ function AJOUTER_AU_PANIER() {
     SAVE_REGLAGES(reg);
     delete D.refus;
     D.validations = [];
-    var panier = GET_PANIER();
+    var panier = GET_PANIER(), noms = RESUME_DEMANDE(D).noms;
     panier.push(D);
     SAVE_PANIER(panier);
     CLEAR_BROUILLON();
     SHOW_PAGE('PANIER');
+    MSG_INFO('Ajoutée à vos Documents', 'La demande de ' + noms + ' est rangée dans Documents, où elle attend son envoi au 1er valideur. Vous pouvez y ajouter d\'autres demandes pour les envoyer ensemble, en un seul mail.', '✅', 'mascotte-ok.webp');
 }
 
 function RETIRER_DU_PANIER(id) {
+    var d = GET_PANIER().filter(function(x) { return x.id === id; })[0];
+    if (!d) return;
+    MSG_CONFIRM('Retirer cette demande ?', 'La demande de ' + RESUME_DEMANDE(d).noms + ' sera retirée de vos Documents et supprimée : elle ne sera pas envoyée. Cette action est irréversible.',
+        'Retirer', function() { RETIRER_DU_PANIER_OK(id); }, '⚠️', 'mascotte-poubelle.webp', true);
+}
+function RETIRER_DU_PANIER_OK(id) {
     var panier = GET_PANIER().filter(function(d) { return d.id !== id; });
     SAVE_PANIER(panier);
     RENDER_PANIER_INPLACE();
@@ -1158,7 +1165,7 @@ function TPL_PANIER() {
     var reg = GET_REGLAGES();
     if (!panier.length) {
         return '<div class="CARD">' +
-            '<h2>Mon panier</h2>' +
+            '<h2>Mes documents</h2>' +
             '<div class="MER-EMPTY">Aucune demande en attente.<br>Créez une nouvelle demande pour commencer.</div>' +
             '<button type="button" class="BTN BTN-PRIMARY" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Nouvelle demande</button>' +
             '<label class="BTN BTN-GHOST BTN-SMALL" style="margin:6px 0 14px;">📥 Importer une demande refusée' +
@@ -1178,7 +1185,7 @@ function TPL_PANIER() {
             '<button type="button" class="BTN-DANGER-TEXT" onclick="RETIRER_DU_PANIER(\'' + d.id + '\')">Retirer</button></div></div>';
     }).join('');
     return '<div class="CARD">' +
-        '<h2>Mon panier</h2>' +
+        '<h2>Mes documents</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 18px;">' + panier.length + ' demande(s) prête(s) à être envoyée(s) ensemble, en un seul mail.</p>' +
         items +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:8px;" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
@@ -1192,7 +1199,7 @@ function TPL_PANIER() {
         '<input type="email" id="MER-MAIL-DEMANDEUR" value="' + ESC(reg.mailDemandeur || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
         'oninput="var r=GET_REGLAGES(); r.mailDemandeur=this.value; SAVE_REGLAGES(r);">' +
         '<p class="MER-HINT">Pour vous renvoyer la demande si un valideur la refuse.</p></div>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📧 Envoyer le panier (' + panier.length + ')</button>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📧 Envoyer mes documents (' + panier.length + ')</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
     '</div>';
 }
@@ -1487,7 +1494,7 @@ function PIN_VALIDER() {
 }
 function PIN_CODE_OUBLIE() {
     MSG_CONFIRM('Code oublié ?',
-        'Il n\'existe aucun moyen de récupérer votre code. La seule solution est d\'effacer toutes les données de TRIGONE Mise en route sur cet appareil (demande en cours, panier, bibliothèque, réglages). Cette action est irréversible.',
+        'Il n\'existe aucun moyen de récupérer votre code. La seule solution est d\'effacer toutes les données de TRIGONE Mise en route sur cet appareil (demande en cours, documents, bibliothèque, réglages). Cette action est irréversible.',
         'Oui, tout effacer et recommencer', function() {
             try { localStorage.clear(); } catch (e) {}
             location.reload();
@@ -1622,7 +1629,7 @@ function PROPOSER_INSTALLATION_PREMIERE_FOIS() {
 // ===================== NOTICE =====================
 var MER_NOTICE_CLE = null;
 var MER_NOTICES = {
-    DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · panier · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
+    DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · documents · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
         etapes: ['<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
             '<b>Demande collective</b> : « + Ajouter une personne », ou <b>« 📥 Importer une liste »</b> depuis un tableau Excel (.xlsx), Calc (.ods) ou CSV aux colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID (« Télécharger le modèle »). Les personnes déjà présentes ne sont pas dupliquées.',
@@ -1630,9 +1637,9 @@ var MER_NOTICES = {
             '<b>Voie routière civile (VRC)</b> : joignez la <b>demande d\'autorisation VRC</b>, la <b>carte grise</b> et l\'<b>attestation d\'assurance</b> du véhicule ; un rappel s\'affiche jusqu\'à l\'envoi.',
             '<b>Alim./Héb.</b> : indiquez notamment si une <b>réservation ABT</b> est demandée (oui / non).',
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
-            '<b>Panier</b> : plusieurs demandes peuvent partir dans un seul mail. Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises, nommé « 1-DEMANDE MISSIONNAIRE - GRADE NOM - OMR INDIVIDUEL » ou « … COLLECTIF » selon le nombre de missionnaires) et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
+            '<b>Documents</b> : « Ajouter aux documents » y range la demande terminée (message de confirmation) ; plusieurs demandes peuvent partir dans un seul mail. « Modifier » la ressort des Documents le temps de la correction, « Retirer » la supprime (après confirmation). Vérifiez l\'<b>aperçu du PDF</b>, puis <b>1. Enregistrer le .json</b> (un <b>seul fichier</b>, pièces jointes comprises, nommé « 1-DEMANDE MISSIONNAIRE - GRADE NOM - OMR INDIVIDUEL » ou « … COLLECTIF » selon le nombre de missionnaires) et <b>2. Envoyer</b> : le mail au 1er valideur s\'ouvre, avec l\'objet « GRADE NOM - objet de la mission ». Joignez-y le fichier enregistré.',
             'Appli fermée avant la fin ? À la réouverture, l\'écran <b>Demande en cours</b> propose de <b>continuer</b> la saisie ou de revenir à l\'accueil (la demande reste enregistrée, bouton « ↩ Reprendre ma demande en cours »).',
-            'La demande est rangée dans la <b>Bibliothèque</b> : « 💾 .json » y réenregistre le fichier envoyé (pièces jointes comprises) pour le renvoyer si besoin. En cas de refus, importez le .json reçu depuis le <b>Panier</b> (« Importer une demande refusée »), corrigez et renvoyez.'] },
+            'La demande est rangée dans la <b>Bibliothèque</b> : « 💾 .json » y réenregistre le fichier envoyé (pièces jointes comprises) pour le renvoyer si besoin. En cas de refus, importez le .json reçu depuis <b>Documents</b> (« Importer une demande refusée ») : elle y revient avec le motif du refus ; corrigez-la avec « Modifier » et renvoyez-la. À l\'envoi, les demandes quittent Documents et passent dans la Bibliothèque.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Code d\'accès valideur · import · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Importez le ou les fichiers .json reçus par mail : chaque demande apparaît avec son <b>aperçu</b> et ses pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
@@ -1676,7 +1683,7 @@ function TPL_NOTICE() {
         '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg></span>Mises à jour</summary><ul>' +
             '<li>L\'appli recherche une nouvelle version à l\'ouverture et à la fermeture ; trouvée à la fermeture, elle s\'installe d\'elle-même au retour dans l\'appli.</li>' +
             '<li>L\'appli se met à jour toute seule dès qu\'il y a du réseau ; un message « Mise à jour » s\'affiche quand une nouvelle version est prête.</li>' +
-            '<li>Votre saisie en cours, votre panier et votre bibliothèque sont conservés.</li></ul></details>' +
+            '<li>Votre saisie en cours, vos documents et votre bibliothèque sont conservés.</li></ul></details>' +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
         '<button type="button" class="BTN BTN-GHOST" style="margin-top:6px;" onclick="JUMELAGE_PRESENTATION()">Découvrir TRIGONE (présentation)</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
@@ -1718,14 +1725,14 @@ function TPL_REFERENCES() {
             'Il garde ses propres références (repas, hébergement, étranger, indemnité kilométrique), consultables depuis son propre bouton « Références ».']) +
         MER_FOLD('<svg viewBox="0 0 24 24"><path d="M21 12a9 9 0 1 1-3-6.7L21 8"/><path d="M21 3v5h-5"/></svg>', 'Mises à jour de l\'application', [
             'L\'appli vérifie à chaque ouverture si une nouvelle version existe ; le bouton « Mise à jour » de l\'accueil permet de le faire à la main.',
-            'Votre saisie en cours, votre panier et votre bibliothèque sont conservés.',
+            'Votre saisie en cours, vos documents et votre bibliothèque sont conservés.',
             'Version actuelle : <b>V' + APP_VERSION_AFFICHEE + '</b>.']) +
         '<button type="button" class="BTN BTN-SECONDARY" style="margin-top:6px;" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 
 // ===================== DÉMONSTRATION (comme TRIGONE compte-rendu) =====================
 // Une demande d'exemple est remplie étape par étape, la mascotte explique chaque écran et la zone concernée
-// est mise en évidence. Pendant la démo, rien n'est enregistré (brouillon, panier, réglages, bibliothèque) :
+// est mise en évidence. Pendant la démo, rien n'est enregistré (brouillon, documents, réglages, bibliothèque) :
 // « Quitter » recharge l'appli, qui retrouve exactement les vraies données.
 var DEMO_ACTIF = false, DEMO_IDX = 0, DEMO_PANIER = [];
 var DEMO_REGLAGES = { mailSignataire: 'chef.service@interieur.gouv.fr', mailDemandeur: 'jean.dupont@interieur.gouv.fr' };
@@ -1757,7 +1764,7 @@ var DEMO_ETAPES = [
       zones: ['[data-champ="reservationABT"]', '[data-champ="nourriMission"]', '[data-champ="logeMission"]'] },
     { page: 'FORMULAIRE', onglet: 'IMPUTATION', titre: 'Étape 5 — Imputation', texte: 'Le code FD suffit : TRIGONE affiche le centre financier, le centre de coût et le code activité. Joignez ensuite la NDS ou la DAF (PDF ou photo).',
       zones: ['[data-path="codeFD"]', '#MER-FD-INFO', '.MER-PANIER-ITEM'] },
-    { page: 'PANIER', titre: 'Panier', texte: 'La demande y attend son envoi (plusieurs demandes peuvent partir ensemble). Vérifiez le mail du 1er valideur, puis « Envoyer le panier ».',
+    { page: 'PANIER', titre: 'Documents', texte: 'La demande y attend son envoi (plusieurs demandes peuvent partir ensemble). Vérifiez le mail du 1er valideur, puis « Envoyer mes documents ».',
       zones: ['.MER-PANIER-ITEM', '#MER-MAIL-DEST', '.CARD > .BTN-PRIMARY'] },
     { page: 'PANIER', envoi: true, titre: 'Avant d\'envoyer', texte: 'Aperçu du PDF, puis 1. « Enregistrer le .json » (un seul fichier, pièces jointes comprises) et 2. « Envoyer », qui ouvre le mail au 1er valideur.',
       zones: ['#MER-BTN-ENREGISTRER', '#MER-BTN-ENVOYER'] },
@@ -2010,7 +2017,7 @@ function ENVOYER_PANIER() {
     MER_PANIER_ENREGISTRE = false;
     setTimeout(function() {
         SHOW_PAGE('ACCUEIL');
-        MSG_INFO('Demande envoyée', 'Votre demande a été transmise au 1er valideur. Vous la retrouvez dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
+        MSG_INFO(panier.length > 1 ? 'Demandes envoyées' : 'Demande envoyée', (panier.length > 1 ? 'Vos ' + panier.length + ' demandes ont été transmises' : 'Votre demande a été transmise') + ' au 1er valideur. ' + (panier.length > 1 ? 'Elles quittent' : 'Elle quitte') + ' Documents et ' + (panier.length > 1 ? 'sont rangées' : 'est rangée') + ' dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
     }, 300);
 }
 
@@ -2717,7 +2724,7 @@ function CONTENU_ENVOI(env) {
     return { etape: 'REFUS', sujet: SUJET_MAIL('REFUS', env.demandes),
         corps: 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
-        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Panier > Importer une demande refusée, puis importez le fichier « ' + env.pj + ' » joint.\n\nCordialement.' };
+        }).join('\n') + '\n\nPour corriger : ouvrez TRIGONE Mise en route > Documents > Importer une demande refusée, puis importez le fichier « ' + env.pj + ' » joint.\n\nCordialement.' };
 }
 // 1. Enregistrer le .json (un seul fichier : demandes signées + NDS / DAF), 2. Envoyer : s'active une fois le fichier enregistré.
 function ENREGISTRER_ENVOI(i) {
@@ -2845,6 +2852,8 @@ function IMPORTER_REFUS(input) {
         if (!n) { MSG_INFO('Aucun refus', 'Aucune demande refusée dans ce fichier.'); return; }
         SAVE_PANIER(panier);
         SHOW_PAGE('PANIER');
+        MSG_INFO(n > 1 ? n + ' demandes refusées rangées dans Documents' : 'Demande refusée rangée dans Documents',
+            'Le motif du refus s\'affiche sous ' + (n > 1 ? 'chaque demande' : 'la demande') + '. Touchez « Modifier » pour la corriger : elle ressort des Documents le temps de la correction, puis « Ajouter aux documents » l\'y remet, prête à être renvoyée.', '📥');
     }); });
 }
 function MODIFIER_DEMANDE(id) { PROTEGER_BROUILLON(function() { MODIFIER_DEMANDE_OK(id); }, 'Modifier'); }
@@ -2856,6 +2865,7 @@ function MODIFIER_DEMANDE_OK(id) {
     MER_ACTIVE_TAB = 'IDENTITE';
     SAVE_BROUILLON();
     SHOW_PAGE('FORMULAIRE');
+    MSG_INFO('Demande sortie des Documents', 'La demande de ' + RESUME_DEMANDE(d).noms + ' est ouverte pour modification : elle quitte Documents le temps de la correction. À la dernière étape, « Ajouter aux documents » l\'y remettra, prête à être envoyée.', '📂');
 }
 
 // ===================== DÉMARRAGE =====================
@@ -2917,7 +2927,7 @@ function AFFICHER_MAJ(liste) {
     function suite() { AFFICHER_MAJ(liste); }
     if (item.type === 'code') {
         AFFICHER_MSG_CENTRE({ titre: 'Mise à jour obligatoire', icone: '📢', mascotte: 'mascotte-maj.webp',
-            texte: (item.texte || 'Une nouvelle version de TRIGONE Mise en route est disponible.') + ' Vos données (demande en cours, panier, bibliothèque) ne sont pas affectées.',
+            texte: (item.texte || 'Une nouvelle version de TRIGONE Mise en route est disponible.') + ' Vos données (demande en cours, documents, bibliothèque) ne sont pas affectées.',
             boutons: [{ label: 'Mettre à jour', action: APPLIQUER_MISE_A_JOUR }] });
         return;
     }
@@ -2935,7 +2945,7 @@ function APPLIQUER_MISE_A_JOUR() {
     Promise.all(etapes).catch(function() {}).then(function() { setTimeout(function() { location.reload(); }, 400); });
 }
 // Signaler un problème : mail prérempli (appli, version, écran), commun aux deux applis.
-var MER_LIBELLES_ECRANS = { ACCUEIL: 'Accueil', FORMULAIRE: 'Nouvelle demande', PANIER: 'Panier', BIBLIOTHEQUE: 'Bibliothèque', NOTICE: 'Notice',
+var MER_LIBELLES_ECRANS = { ACCUEIL: 'Accueil', FORMULAIRE: 'Nouvelle demande', PANIER: 'Documents', BIBLIOTHEQUE: 'Bibliothèque', NOTICE: 'Notice',
     ESPACE: 'Mon espace', REFERENCES: 'Références', VALIDATION: 'Espace valideur', VERIFIER: 'Assistant Chorus DT', REPRISE: 'Reprise' };
 function MER_SIGNALER() {
     var e = MER_LIBELLES_ECRANS[PAGE_ACTUELLE] || PAGE_ACTUELLE;
@@ -3077,7 +3087,7 @@ function MER_RECEPTION_INIT() {
     }
     MER_TRAITER_RECUS();
 }
-// Chaque fichier va où il doit : signé deux fois → assistant Chorus DT ; refusé → panier du demandeur ;
+// Chaque fichier va où il doit : signé deux fois → assistant Chorus DT ; refusé → Documents du demandeur ;
 // sinon → Espace valideur (connexion demandée si besoin, le fichier attend).
 function MER_TRAITER_RECUS() {
     if (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF) return;
