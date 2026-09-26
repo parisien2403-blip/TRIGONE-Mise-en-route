@@ -184,3 +184,8 @@ PRÉSENTATION TRIGONE
 - Une seule présentation (jumelage.js, JUMELAGE_PRESENTATION) remplace les écrans « Pourquoi TRIGONE » des deux
   applis : affichée à la toute première ouverture, avant « Avant de commencer », puis accessible à tout moment
   avec la roue crantée de l'écran de choix (menu : Réglages TRIGONE · Découvrir TRIGONE).
+
+RÉINITIALISER TRIGONE
+- Roue crantée de l'écran de choix > « Réinitialiser TRIGONE » : avertissement avec la mascotte, puis effacement de
+  toutes les données des deux applis sur l'appareil (localStorage, sessionStorage, IndexedDB) et retour au premier jour.
+  Le lien « Code oublié ? » du code d'accès commun utilise le même avertissement.
