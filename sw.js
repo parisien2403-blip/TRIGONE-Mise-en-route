@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v78';
+const CACHE_NAME = 'trigone-mise-en-route-v79';
 const ASSETS = [
   './',
   './manifest.json',
@@ -139,15 +139,26 @@ function reseauDAbord(request, fin) {
 // « Partager » / « Ouvrir avec » TRIGONE (Android) : le fichier arrive ici en POST. Il est rangé dans un cache
 // dédié, puis l'appli s'ouvre et le traite (Espace valideur, assistant Chorus DT ou retour d'un refus).
 function recevoirPartage(request) {
+  var n = 0, erreur = '';
   return request.formData().then(function(form) {
-    var fichiers = form.getAll('fichiers').filter(function(f) { return f && typeof f !== 'string'; });
+    // Tout fichier reçu, quel que soit le nom du champ ; et le contenu d'une demande partagée comme du texte
+    // (certaines messageries, dont Outlook, peuvent transmettre le contenu plutôt que le fichier).
+    var fichiers = [];
+    form.forEach(function(v) {
+      if (v && typeof v !== 'string') { if (v.size) fichiers.push(v); return; }
+      var t = String(v || '').trim();
+      if (t.charAt(0) === '{' && t.indexOf('TRIGONE-MISE-EN-ROUTE') !== -1) fichiers.push(new File([t], 'demande-partagee.json', { type: 'application/json' }));
+    });
+    n = fichiers.length;
     return caches.open('trigone-partage').then(function(cache) {
       return Promise.all(fichiers.map(function(f, i) {
         return cache.put(new Request(self.registration.scope + '__recu__/' + Date.now() + '-' + i),
           new Response(f, { headers: { 'Content-Type': f.type || 'application/json', 'X-Nom': encodeURIComponent(f.name || 'demande.json') } }));
       }));
     });
-  }).catch(function() {}).then(function() { return Response.redirect(self.registration.scope + '?partage=1', 303); });
+  }).catch(function(e) { erreur = (e && e.message) || 'lecture'; }).then(function() {
+    return Response.redirect(self.registration.scope + '?partage=' + n + (erreur ? '&err=' + encodeURIComponent(erreur) : ''), 303);
+  });
 }
 
 self.addEventListener('fetch', function(event) {
