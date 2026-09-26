@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 123,
-  "appCodeMessage": "Version 25 : si une messagerie partage vers TRIGONE sans transmettre le fichier, le message indique ce qu'elle a envoyé et la marche à suivre (Fichiers › Partager › TRIGONE).",
+  "appCodeVersion": 124,
+  "appCodeMessage": "Version 26 : sur téléphone, une demande reçue par mail s'importe ainsi : enregistrer la pièce jointe, puis Espace valideur › « Importer la demande reçue ». Aides et mails mis à jour.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

@@ -246,3 +246,6 @@ DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE (V21)
 - V24 : sw.js reçoit tout fichier du partage (quel que soit le nom du champ) et une demande partagée comme texte ;
   redirection ?partage=<nombre>. L'appli affiche « Fichier non reçu » si le partage est vide, ou si la page s'ouvre à
   l'adresse /partage-trigone (service worker pas encore à jour : repartager).
+- V26 : constaté sur Samsung + Outlook Android : le partage ouvre TRIGONE mais aucun fichier n'est transmis (même
+  depuis Mes fichiers). Les aides et les mails recommandent donc sur téléphone : Enregistrer la pièce jointe, puis
+  Espace valideur › « Importer la demande reçue ». Le partage reste en place (il peut marcher avec d'autres messageries).
