@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v70';
+const CACHE_NAME = 'trigone-mise-en-route-v71';
 const ASSETS = [
   './',
   './manifest.json',
@@ -25,6 +25,7 @@ const ASSETS = [
   './vendor/jspdf.plugin.autotable.min.js',
   './vendor/qrcode.min.js',
   './vendor/pdf-lib.min.js',
+  './vendor/jsQR.js',
   './sw.js'
 ];
 

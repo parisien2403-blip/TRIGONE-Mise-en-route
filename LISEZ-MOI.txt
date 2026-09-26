@@ -189,3 +189,12 @@ RÉINITIALISER TRIGONE
 - Roue crantée de l'écran de choix > « Réinitialiser TRIGONE » : avertissement avec la mascotte, puis effacement de
   toutes les données des deux applis sur l'appareil (localStorage, sessionStorage, IndexedDB) et retour au premier jour.
   Le lien « Code oublié ? » du code d'accès commun utilise le même avertissement.
+
+MISE EN ROUTE → COMPTE-RENDU PAR QR CODE (ordinateur → téléphone)
+- Mise en route > Bibliothèque > « 📱 Sur mon téléphone » (et sur l'accueil PC) : QR code d'une adresse cr/?mer=…
+  qui ne contient que ce dont le compte-rendu a besoin (identité du missionnaire, libellé, lieux, transports, horaires,
+  ABT), compressé (deflate-raw, base64url). Aucun serveur.
+- Compte-rendu > « À partir d'une mise en route » (toujours proposé avant le départ) > « Scanner le QR code » :
+  caméra arrière, BarcodeDetector sinon vendor/jsQR.js (Apache-2.0, chargé à la demande). L'adresse lue par
+  l'appareil photo ouvre aussi Compte-rendu directement (sans écran de choix) et pré-remplit la mission.
+- Code commun : jumelage.js (JUMELAGE_MER_VERS_QR, JUMELAGE_QR_VERS_MER, JUMELAGE_AFFICHER_QR_MER, JUMELAGE_SCANNER_QR).

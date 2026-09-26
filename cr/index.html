@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=16"></script>
+<script src="../jumelage.js?v=17"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="apple-touch-icon" href="apple-touch-icon.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -5216,7 +5216,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <h2 class="medaille-titre">À partir d'une mise en route</h2>
 <p class="medaille-texte MER-LISTE-SOUS">Choisissez votre demande : identité, libellé, lieux, transports, gares et horaires sont repris automatiquement.</p>
 <div id="MER-LISTE-ITEMS"></div>
-<div class="msg-boutons"><button type="button" class="BTN-ADMIN-CLOSE" onclick="FERMER_LISTE_MISES_EN_ROUTE()">Annuler</button></div>
+<div class="msg-boutons"><button type="button" class="BTN BTN-START" onclick="FERMER_LISTE_MISES_EN_ROUTE(); setTimeout(SCANNER_MISE_EN_ROUTE, 320);">📷 Scanner le QR code de l'ordinateur</button><button type="button" class="BTN-ADMIN-CLOSE" onclick="FERMER_LISTE_MISES_EN_ROUTE()">Annuler</button></div>
 </div>
 </div>
 </div>
@@ -11513,7 +11513,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 113;
+var APP_CODE_VERSION = 114;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13380,6 +13380,7 @@ function FINALISER_DEMARRAGE() {
         SHOW_PAGE('P0');
     }
     const urlParams = new URLSearchParams(window.location.search);
+    TRAITER_MER_QR_URL();
     if (urlParams.has('data')) {
         try {
             var paxUser = (M.USER || '').trim();
@@ -13656,7 +13657,7 @@ function DEMO_QUITTER() {
 // Menu à gauche à la place de la barre du bas (même menu que TRIGONE Mise en route) ; page « Départ mission »
 // sur deux colonnes. En dessous de 1100 px, rien ne change.
 // Après les réglages communs : l'accueil suit (nom du tableau de bord PC).
-window.JUMELAGE_APRES_REGLAGES = function() { if (M.PAGE === 'P0') RENDRE_P0_PC(); };
+window.JUMELAGE_APRES_REGLAGES = function() { if (M.PAGE === 'P0') RENDRE_P0_PC(); if (MER_QR_EN_ATTENTE) setTimeout(LANCER_MER_QR_EN_ATTENTE, 600); };
 var CR_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
 var CR_ICONES_PC = {
     ACCUEIL: '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -13784,7 +13785,8 @@ function LIRE_MISES_EN_ROUTE() {
 }
 function MAJ_BOUTON_DEPUIS_MER() {
     var b = document.getElementById('BTN-DEPUIS-MER');
-    if (b) b.classList.toggle('HIDDEN', !!(M.IS_PAX || M.DEBUT || M.ARR_SITE || M.MAIL_SENT) || !LIRE_MISES_EN_ROUTE().length);
+    // Toujours proposé avant le départ : la mise en route peut venir de cet appareil ou d'un QR code (ordinateur).
+    if (b) b.classList.toggle('HIDDEN', !!(M.IS_PAX || M.DEBUT || M.ARR_SITE || M.MAIL_SENT));
 }
 function MER_LIEU(nom, cp, pays) {
     nom = (nom || '').trim();
@@ -13808,11 +13810,13 @@ function OUVRIR_LISTE_MISES_EN_ROUTE() {
     }).join('') : '';
     if (!MER_LISTE_DEMANDES.length) {
         AFFICHER_MSG_CENTRE({
-            titre: 'Aucune mise en route',
-            texte: 'Aucune demande envoyée pour l\'instant. Faites-la d\'abord dans TRIGONE Mise en route.',
+            titre: 'À partir d\'une mise en route',
+            texte: 'Faite sur l\'ordinateur ? Dans Mise en route : Bibliothèque › « 📱 Sur mon téléphone », puis scannez le QR code.',
             icone: '📋',
+            mascotteImage: 'mascotte.webp',
             boutons: [
-                { label: 'Ouvrir Mise en route', style: 'BTN BTN-START', action: ALLER_VERS_MISE_EN_ROUTE },
+                { label: '📷 Scanner le QR code', style: 'BTN BTN-START', action: SCANNER_MISE_EN_ROUTE },
+                { label: 'Mise en route sur ce téléphone', style: 'BTN-ADMIN-CLOSE', action: ALLER_VERS_MISE_EN_ROUTE },
                 { label: 'Fermer', style: 'BTN-ADMIN-CLOSE' }
             ]
         });
@@ -13836,14 +13840,50 @@ function CHOISIR_MISE_EN_ROUTE(i) {
     if (!x) return;
     FERMER_LISTE_MISES_EN_ROUTE();
     // Les messages s'enchaînent après la fermeture animée de la liste.
-    setTimeout(function() {
-        if (M.DEBUT || M.ARR_SITE) { MSG_INFO('Mission déjà commencée', 'Une mission est déjà en cours : terminez-la avant d\'en commencer une autre.', '⛔'); return; }
-        if (HAS_ACTIVE_MISSION_DATA(M)) {
-            MSG_CONFIRM('Remplacer la mission préparée ?', 'Une mission est déjà préparée (pas encore commencée). Elle sera remplacée par cette mise en route.', 'Remplacer', function() { APPLIQUER_MISE_EN_ROUTE(x.d); }, '⚠️', 'mascotte-poubelle.webp', true);
-            return;
-        }
-        APPLIQUER_MISE_EN_ROUTE(x.d);
-    }, 320);
+    setTimeout(function() { PRENDRE_MISE_EN_ROUTE(x.d); }, 320);
+}
+function PRENDRE_MISE_EN_ROUTE(d) {
+    if (M.IS_PAX) { MSG_INFO('Mission de groupe en cours', 'Vous participez à une mission de groupe : terminez-la avant d\'en commencer une autre.', '⛔'); return; }
+    if (M.DEBUT || M.ARR_SITE) { MSG_INFO('Mission déjà commencée', 'Une mission est déjà en cours : terminez-la avant d\'en commencer une autre.', '⛔'); return; }
+    if (HAS_ACTIVE_MISSION_DATA(M)) {
+        MSG_CONFIRM('Remplacer la mission préparée ?', 'Une mission est déjà préparée (pas encore commencée). Elle sera remplacée par cette mise en route.', 'Remplacer', function() { APPLIQUER_MISE_EN_ROUTE(d); }, '⚠️', 'mascotte-poubelle.webp', true);
+        return;
+    }
+    APPLIQUER_MISE_EN_ROUTE(d);
+}
+// QR code affiché par Mise en route sur l'ordinateur (Bibliothèque > « Sur mon téléphone »).
+function SCANNER_MISE_EN_ROUTE() {
+    JUMELAGE_SCANNER_QR(function(texte) { IMPORTER_MISE_EN_ROUTE_QR(texte); },
+        function(message) { AFFICHER_MSG_CENTRE({ titre: 'Caméra indisponible', texte: message, icone: '📷', mascotteImage: 'mascotte-erreur.webp', boutons: [{ label: 'Compris', style: 'BTN BTN-START' }] }); });
+}
+function IMPORTER_MISE_EN_ROUTE_QR(texte) {
+    JUMELAGE_QR_VERS_MER(texte).then(PRENDRE_MISE_EN_ROUTE, function(e) {
+        var ancien = e && e.message === 'ancien';
+        AFFICHER_MSG_CENTRE({
+            titre: ancien ? 'Téléphone trop ancien' : 'QR code non reconnu',
+            texte: ancien ? 'Ce téléphone ne sait pas lire ce QR code : mettez à jour son système, puis réessayez.'
+                : 'Ce QR code ne vient pas de TRIGONE Mise en route. Dans Mise en route, ouvrez la Bibliothèque et touchez « 📱 Sur mon téléphone ».',
+            icone: '⛔', mascotteImage: 'mascotte-erreur.webp',
+            boutons: ancien ? [{ label: 'Compris', style: 'BTN BTN-START' }]
+                : [{ label: '📷 Réessayer', style: 'BTN BTN-START', action: SCANNER_MISE_EN_ROUTE }, { label: 'Fermer', style: 'BTN-ADMIN-CLOSE' }]
+        });
+    });
+}
+// QR code lu avec l'appareil photo du téléphone : l'adresse « cr/?mer=… » ouvre Compte-rendu.
+var MER_QR_EN_ATTENTE = '';
+function TRAITER_MER_QR_URL() {
+    var val = new URLSearchParams(window.location.search || '').get('mer');
+    if (!val) return;
+    STRIP_QR_FROM_URL();
+    MER_QR_EN_ATTENTE = '?mer=' + val;
+    // Première ouverture : la mission est reprise une fois la présentation et les réglages faits.
+    if (window.JUMELAGE_REGLAGES_FAITS && !JUMELAGE_REGLAGES_FAITS()) return;
+    setTimeout(LANCER_MER_QR_EN_ATTENTE, 900);
+}
+function LANCER_MER_QR_EN_ATTENTE() {
+    if (!MER_QR_EN_ATTENTE) return;
+    var t = MER_QR_EN_ATTENTE; MER_QR_EN_ATTENTE = '';
+    IMPORTER_MISE_EN_ROUTE_QR(t);
 }
 function APPLIQUER_MISE_EN_ROUTE(d) {
     // La personne concernée : celle dont le nom est l'identité enregistrée, sinon la première de la demande.
