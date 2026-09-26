@@ -116,6 +116,65 @@
         '.JUM-ROUE-SEP { height: 1px; background: #e2e8f0; margin: 4px 10px; }' +
         '.JUM-ROUE-MENU .JUM-ROUE-DANGER svg { stroke: #b91c1c; } .JUM-ROUE-MENU .JUM-ROUE-DANGER b { color: #b91c1c; } .JUM-ROUE-MENU .JUM-ROUE-DANGER:hover { background: #fef2f2; }' +
         '.JUM-ROUE-MENU b { display: block; font-size: 0.84rem; } .JUM-ROUE-MENU small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 2px; }' +
+        '.THEME-TOGGLE svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }' +
+        '.THEME-TOGGLE { color: #5a7a94; } body.dark-mode .THEME-TOGGLE { color: #e5e5e5; }' +
+        '@media (max-width: 480px) { .THEME-TOGGLE svg { width: 17px; height: 17px; } }' +
+        /* ===== Thème sombre commun : une seule palette pour les deux applis (gris neutres + bleu ardoise TRIGONE) =====
+           Fond #141414, surfaces #1f1f1f / #262626, texte #ececec, secondaire #a3a3a3, accent #a9c3d6 (bleu ardoise clair). */
+        'html body.dark-mode { --tg-muted: #a3a3a3; --tg-soft: #8f8f8f; --tg-border: rgba(255,255,255,0.09); }' +
+        /* Notice : dépliants identiques dans les deux applis (« + » à droite, couleur d'accent, pas de triangle) */
+        '.notice-fold > summary { list-style: none; } .notice-fold > summary::-webkit-details-marker { display: none; }' +
+        '.notice-fold > summary::after { content: " +"; float: right; color: #5a7a94; font-weight: 900; font-size: 1.15em; line-height: 1; }' +
+        '.notice-fold[open] > summary::after { content: " −"; }' +
+        'html body.dark-mode .notice-fold > summary::after { color: #a9c3d6; }' +
+        'html body.dark-mode .notice-fold > summary { color: #ececec; }' +
+        'html body.dark-mode .notice-fold li, html body.dark-mode .notice-fold p, html body.dark-mode .notice-mini li { color: #c8c8c8; }' +
+        'html body.dark-mode .notice-fold b, html body.dark-mode .notice-mini b { color: #ececec; }' +
+        /* Textes secondaires : lisibles partout */
+        'html body.dark-mode .NOTICE-CARD-SUB, html body.dark-mode .NOTICE-CARD-CHEV, html body.dark-mode .BIB-HEADER-TXT p, html body.dark-mode .NOTICE-LEAD-HINT,' +
+        ' html body.dark-mode .BIB-EMPTY span, html body.dark-mode .MER-HINT, html body.dark-mode .PC-SOUS { color: #a3a3a3; }' +
+        'html body.dark-mode .NOTICE-CARD-TITLE, html body.dark-mode .BIB-EMPTY p, html body.dark-mode .P1-SECTION-LBL { color: #ececec; }' +
+        'html body.dark-mode .P0-TAB.is-active .P0-TAB-LBL, html body.dark-mode .MER-DOCK-BTN.actif span, html body.dark-mode .P0-TAB.is-active .P0-LBL-COURT { color: #ececec; }' +
+        /* Liens, boutons texte, danger */
+        'html body.dark-mode a:not([class]) { color: #a9c3d6; }' +
+        'html body.dark-mode .BTN-DANGER-TEXT { color: #f87171; border-color: rgba(248,113,113,0.35); background: transparent; }' +
+        /* Libellés de sections et sélections actives : une seule règle (pastille claire, texte foncé) */
+        'html body.dark-mode .P1-SECTION-LBL, html body.dark-mode #P1 .P1-SECTION-LBL, html body.dark-mode #P1-IDENTITY-ZONE .P1-SECTION-LBL { color: #ececec; }' +
+        'html body.dark-mode .MZ-TAB.active { background: #ececec; border-color: #ececec; color: #141414; }' +
+        'html body.dark-mode .collective-zone, html body.dark-mode #P1 .collective-zone { background: rgba(169,195,214,0.08) !important; border-color: rgba(169,195,214,0.25) !important; }' +
+        'html body.dark-mode .collective-zone label { color: #a9c3d6 !important; }' +
+        'html body.dark-mode .LIB-CLEAR-ALL-BTN { color: #a9c3d6; border-color: rgba(169,195,214,0.3); background: transparent; }' +
+        'html body.dark-mode .BTN-ALERT, html body.dark-mode .ADMIN-SECTION .BTN-ALERT { background: #262626; color: #ececec; border-color: rgba(255,255,255,0.1); }' +
+        'html body.dark-mode .NOTICE-HELP { background: #262626; color: #ececec; border-color: rgba(255,255,255,0.1); }' +
+        /* Voile derrière les fenêtres : noir neutre (plus de voile bleu marine) */
+        'html body.dark-mode .VALIDATION-MODAL, html body.dark-mode .NOTICE-MODAL, html body.dark-mode .QR-OVERLAY, html body.dark-mode #REFERENCES-MODAL, html body.dark-mode #PARAMS-MODAL { background: rgba(0,0,0,0.72); }' +
+        'html body.dark-mode .FOLD-ICON svg { stroke: #a9c3d6; }' +
+        'html body.dark-mode #FORFAIT-EXPORT-BTN, html body.dark-mode #FORFAIT-EXPORT-BTN.LIB-CLEAR-ALL-BTN { color: #a9c3d6 !important; border-color: rgba(169,195,214,0.3) !important; background: transparent !important; }' +
+        'html body.dark-mode .PC-BADGE { background: rgba(169,195,214,0.14); color: #a9c3d6; } html body.dark-mode .PC-BADGE.PC-BADGE-GRIS { background: rgba(255,255,255,0.07); color: #a3a3a3; }' +
+        /* Fenêtres de Compte-rendu : sans liseré violet, comme celles de Mise en route */
+        '.ADMIN-BOX { border-left: 0 !important; }' +
+        /* Présentation TRIGONE en mode sombre */
+        'html body.dark-mode .JUM-PRES { background: linear-gradient(165deg, #1a1a1a 0%, #111 100%); color: #ececec; }' +
+        'html body.dark-mode .JUM-PRES-LOGO { filter: brightness(0) invert(0.93); }' +
+        'html body.dark-mode .JUM-PRES-LIGNE, html body.dark-mode .JUM-PRES h1 em { color: #a9c3d6; }' +
+        'html body.dark-mode .JUM-PRES-CHAPO { color: #a3a3a3; }' +
+        'html body.dark-mode .JUM-PRES-TRAIT { background: linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(169,195,214,0.18) 50%, transparent calc(50% + 1px)); }' +
+        'html body.dark-mode .JUM-PRES-CLAIR { background: #1f1f1f; border-color: rgba(255,255,255,0.09); color: #ececec; box-shadow: none; }' +
+        'html body.dark-mode .JUM-PRES-SOMBRE { background: #ececec; color: #1a1a1a; }' +
+        'html body.dark-mode .JUM-PRES-CLAIR .JUM-PRES-NUM { color: #a9c3d6; } html body.dark-mode .JUM-PRES-SOMBRE .JUM-PRES-NUM { color: #5a7a94; }' +
+        'html body.dark-mode .JUM-PRES-CLAIR li::before { background: #a9c3d6; } html body.dark-mode .JUM-PRES-SOMBRE li::before { background: #5a7a94; }' +
+        'html body.dark-mode .JUM-PRES-CLAIR li { border-top-color: rgba(255,255,255,0.08); } html body.dark-mode .JUM-PRES-SOMBRE li { border-top-color: rgba(0,0,0,0.08); }' +
+        'html body.dark-mode .JUM-PRES-GARANTIES div { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); color: #d4d4d4; }' +
+        'html body.dark-mode .JUM-PRES-GARANTIES svg { stroke: #a9c3d6; }' +
+        'html body.dark-mode .JUM-PRES-BTN { background: #ececec; color: #141414; } html body.dark-mode .JUM-PRES-BTN:hover { background: #fff; }' +
+        /* Fenêtre du QR code en mode sombre (le QR garde son cadre blanc, indispensable à la lecture) */
+        'html body.dark-mode .JUM-QR-CARTE { background: #1f1f1f; color: #ececec; }' +
+        'html body.dark-mode .JUM-QR-TETE p, html body.dark-mode .JUM-QR-ETAPES { color: #a3a3a3; } html body.dark-mode .JUM-QR-ETAPES b { color: #ececec; }' +
+        'html body.dark-mode .JUM-QR-TEL { background: rgba(169,195,214,0.12); } html body.dark-mode .JUM-QR-TEL svg, html body.dark-mode .JUM-QR-NOTE svg { stroke: #a9c3d6; }' +
+        'html body.dark-mode .JUM-QR-ACTIONS button, html body.dark-mode .JUM-QR-CHOIX button { background: #262626; border-color: rgba(255,255,255,0.1); color: #ececec; }' +
+        'html body.dark-mode .JUM-QR-ACTIONS button:hover { background: #2e2e2e; } html body.dark-mode .JUM-QR-CHOIX button.actif { background: #ececec; color: #141414; border-color: #ececec; }' +
+        'html body.dark-mode .JUM-QR-NOTE { background: #262626; color: #a3a3a3; } html body.dark-mode .JUM-QR-CADRE { border-color: transparent; }' +
+        'html body.dark-mode .JUM-R-X { background: #262626; color: #d4d4d4; border-color: rgba(255,255,255,0.1); }' +
         /* QR code Mise en route → Compte-rendu, et scanner */
         '.JUM-QR { position: fixed; inset: 0; z-index: 99990; background: rgba(15,15,15,0.72); display: flex; align-items: center; justify-content: center; padding: 16px; font-family: Montserrat, system-ui, sans-serif; }' +
         '.JUM-QR-CARTE { position: relative; background: #fff; color: #1a1a1a; border-radius: 20px; width: 100%; max-width: 440px; max-height: 100%; overflow-y: auto; padding: 22px 22px 18px; box-shadow: 0 24px 60px rgba(0,0,0,0.4); }' +
@@ -244,7 +303,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 18, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 19, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -298,6 +357,24 @@
     var ICI = DANS_CR ? 'cr' : 'mer', CLE_CHOIX = 'trigone_choix_fait';
     var ecran = null;
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
+    // Bouton clair / sombre : symboles au trait, comme les autres icônes de TRIGONE (lune en clair, soleil en sombre).
+    var LUNE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M20.5 14.2A8.5 8.5 0 0 1 9.8 3.5a8.5 8.5 0 1 0 10.7 10.7Z"/></svg>';
+    var SOLEIL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2.2M12 19.3v2.2M4.6 4.6l1.6 1.6M17.8 17.8l1.6 1.6M2.5 12h2.2M19.3 12h2.2M4.6 19.4l1.6-1.6M17.8 6.2l1.6-1.6"/></svg>';
+    window.JUMELAGE_ICONE_THEME = function(sombre) { return sombre ? SOLEIL_SVG : LUNE_SVG; };
+    function iconesTheme() {
+        var sombre = document.body && document.body.classList.contains('dark-mode');
+        Array.prototype.forEach.call(document.querySelectorAll('.THEME-TOGGLE'), function(b) {
+            if (b.getAttribute('data-icone') === (sombre ? 's' : 'l')) return;
+            b.innerHTML = sombre ? SOLEIL_SVG : LUNE_SVG; b.setAttribute('data-icone', sombre ? 's' : 'l');
+            b.setAttribute('aria-label', sombre ? 'Passer en mode clair' : 'Passer en mode sombre'); b.title = sombre ? 'Mode clair' : 'Mode sombre';
+        });
+    }
+    // Les applis changent le thème de leur côté : l'icône suit toute bascule de la classe dark-mode.
+    function suivreTheme() {
+        iconesTheme();
+        if (window.MutationObserver) new MutationObserver(iconesTheme).observe(document.body, { attributes: true, attributeFilter: ['class'] });
+    }
+    if (document.body) suivreTheme(); else document.addEventListener('DOMContentLoaded', suivreTheme);
     var CORBEILLE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6M10 11v6M14 11v6"/></svg>';
     var ROUE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.9l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.9-.3 1.7 1.7 0 0 0-1 1.6V21a2 2 0 1 1-4 0v-.2a1.7 1.7 0 0 0-1-1.5 1.7 1.7 0 0 0-1.9.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.9 1.7 1.7 0 0 0-1.6-1H3a2 2 0 1 1 0-4h.2a1.7 1.7 0 0 0 1.5-1 1.7 1.7 0 0 0-.3-1.9l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.9.3H9a1.7 1.7 0 0 0 1-1.6V3a2 2 0 1 1 4 0v.2a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.9-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.9V9a1.7 1.7 0 0 0 1.6 1H21a2 2 0 1 1 0 4h-.2a1.7 1.7 0 0 0-1.5 1Z"/></svg>';
     // ---------- Réglages TRIGONE communs (roue crantée de l'écran de choix) ----------
