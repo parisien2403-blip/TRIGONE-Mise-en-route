@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 71;
+var APP_CODE_VERSION = 72;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3046,7 +3046,22 @@ function RECUS_OUBLIER(elements) {
     return caches.open(CACHE_RECUS).then(function(c) { return Promise.all(elements.map(function(x) { return c.delete(x.cle); })); }).catch(function() {});
 }
 function MER_RECEPTION_INIT() {
-    if (/[?&](partage|fichier)=/.test(location.search) && history.replaceState) history.replaceState(null, document.title, location.pathname);
+    var p = new URLSearchParams(location.search || '');
+    var partage = p.get('partage'), erreur = p.get('err');
+    // Page ouverte à l'adresse du partage : le service worker n'était pas encore à jour et n'a pas pu recevoir le fichier.
+    var nonRecu = /\/partage-trigone\/?$/.test(location.pathname);
+    if ((nonRecu || /[?&](partage|fichier)=/.test(location.search)) && history.replaceState)
+        history.replaceState(null, document.title, nonRecu ? location.pathname.replace(/partage-trigone\/?$/, '') : location.pathname);
+    if (nonRecu || partage === '0') {
+        ATTENDRE_ECRAN_LIBRE(function() {
+            AFFICHER_MSG_CENTRE({ titre: 'Fichier non reçu', icone: '⚠️', mascotte: 'mascotte-erreur.webp',
+                texte: nonRecu
+                    ? 'TRIGONE vient de se mettre à jour et n\'a pas pu recevoir ce partage. Partagez à nouveau la pièce jointe vers TRIGONE : cette fois, elle arrivera.'
+                    : 'TRIGONE s\'est ouverte, mais votre messagerie ne lui a transmis aucun fichier' + (erreur ? ' (' + erreur + ')' : '') + '. ' +
+                      'Enregistrez la pièce jointe (elle va dans Téléchargements), puis dans l\'Espace valideur touchez « Importer la demande reçue ».',
+                boutons: [{ label: 'Compris' }] });
+        });
+    }
     if ('launchQueue' in window && window.launchQueue.setConsumer) {
         window.launchQueue.setConsumer(function(params) {
             if (!params || !params.files || !params.files.length) return;

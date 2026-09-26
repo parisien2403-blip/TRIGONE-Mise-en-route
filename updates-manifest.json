@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 71,
-  "appCodeMessage": "Version 23 : sur Android, TRIGONE apparaît dans « Partager » pour tous les types de pièces jointes (les messageries n'annoncent pas toujours un .json comme tel). Réinstallez TRIGONE depuis Chrome pour en profiter.",
+  "appCodeVersion": 72,
+  "appCodeMessage": "Version 24 : réception des pièces jointes partagées depuis Android plus robuste (fichier ou contenu), et message clair si le partage arrive vide.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

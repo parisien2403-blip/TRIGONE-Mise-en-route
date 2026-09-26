@@ -243,3 +243,6 @@ DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE (V21)
 - V23 : share_target accepte */* (des messageries Android partagent le .json en type générique) ; les fichiers qui
   ne sont pas des demandes TRIGONE sont refusés avec un message. Android ne permet aux applis web que « Partager »
   (pas « Ouvrir avec ») ; après un changement du manifeste, réinstaller TRIGONE depuis Chrome.
+- V24 : sw.js reçoit tout fichier du partage (quel que soit le nom du champ) et une demande partagée comme texte ;
+  redirection ?partage=<nombre>. L'appli affiche « Fichier non reçu » si le partage est vide, ou si la page s'ouvre à
+  l'adresse /partage-trigone (service worker pas encore à jour : repartager).
