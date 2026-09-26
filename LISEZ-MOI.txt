@@ -272,3 +272,5 @@ Version 37 : Espace valideur — bouton « Effacer » (avec confirmation) sur ch
 Version 38 : code d'accès unique pour TRIGONE (jumelage.js), demandé à l'ouverture avant l'écran de choix, dans les deux applis. Les anciens codes propres à chaque appli (Compte-rendu « Mon espace », Mise en route) restent acceptés et deviennent le code TRIGONE à la première saisie. Activer / désactiver le code depuis Compte-rendu ou les Réglages TRIGONE agit sur le code commun. PC : nouvel écran d'accès (panneau TRIGONE + cases de saisie au clavier) ; téléphone inchangé.
 
 Version 39 : nouvelle icône d'application (logo phénix + TRIGONE fourni) : icon-192/512, maskable, apple-touch-icon (racine et cr/), favicon-32 (phénix seul). Adresses suffixées ?v=2 pour forcer le rafraîchissement.
+
+Version 40 : hors ligne — valideurs.json rangé à l'installation (connexion valideur et contrôle Chorus DT possibles sans réseau, même sans connexion préalable) ; police Montserrat hébergée dans fonts/ (plus de Google Fonts) ; villes déjà trouvées mémorisées (mer_villes_connues) et message « Hors connexion » invitant à taper le code postal.
