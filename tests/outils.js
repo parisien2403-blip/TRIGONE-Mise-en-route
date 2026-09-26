@@ -25,7 +25,7 @@ function serveur() {
         res.writeHead(200, { 'Content-Type': TYPES[path.extname(f)] || 'application/octet-stream', 'Cache-Control': 'no-cache' });
         fs.createReadStream(f).pipe(res);
     });
-    return new Promise(ok => s.listen(0, '127.0.0.1', () => ok({
+    return new Promise(ok => s.listen(0, () => ok({
         url: 'http://localhost:' + s.address().port + '/',
         dossier: d => { dossier = d; },
         fermer: () => new Promise(r => s.close(r))
