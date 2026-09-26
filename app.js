@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 69;
+var APP_CODE_VERSION = 70;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -308,7 +308,7 @@ function TPL_ESPACE_VALIDATION_PC(v, h) {
     var entete = '<div class="PC-VAL-ENTETE"><span class="MER-BADGE">🔒 Connecté — ' + LIBELLE_ROLE(h.role) + '</span>' +
         '<b>' + ESC(h.grade + ' ' + h.nom + ' ' + h.prenom) + '</b><span class="PC-GRIS">' + ESC(h.fonction) + '</span>' +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin-left:auto;" onclick="SE_DECONNECTER()">Déconnexion</button></div>';
-    var depot = '<label class="PC-DEPOT">📥 Glissez ici les fichiers .json reçus par mail, ou cliquez pour les choisir' +
+    var depot = '<label class="PC-DEPOT">📥 Glissez ici les fichiers .json reçus par mail, collez-les (Ctrl + V) ou cliquez pour les choisir' +
         '<input type="file" accept=".json,application/json" multiple style="display:none;" onchange="IMPORTER_A_VALIDER(this)"></label>';
     if (!liste.length) return entete + depot + TPL_AIDE_RECEPTION();
     // Détail affiché d'office : la première demande que la personne connectée peut valider, sinon la première.
@@ -372,7 +372,8 @@ function AVEC_FICHIERS(e) { return e.dataTransfer && Array.prototype.indexOf.cal
 document.addEventListener('dragover', function(e) {
     if (!AVEC_FICHIERS(e)) return;
     e.preventDefault();   // jamais d'ouverture du fichier à la place de l'appli
-    e.dataTransfer.dropEffect = DEPOT_POSSIBLE() ? 'copy' : 'none';
+    // Ailleurs dans l'appli, un .json déposé est aiguillé comme une demande reçue (Espace valideur, Chorus DT, refus).
+    e.dataTransfer.dropEffect = 'copy';
     document.body.classList.toggle('pc-depot', DEPOT_POSSIBLE());
 });
 document.addEventListener('dragleave', function(e) { if (!e.relatedTarget) document.body.classList.remove('pc-depot'); });
@@ -380,7 +381,8 @@ document.addEventListener('drop', function(e) {
     if (!AVEC_FICHIERS(e)) return;
     e.preventDefault();
     document.body.classList.remove('pc-depot');
-    if (!DEPOT_POSSIBLE() || !e.dataTransfer.files.length) return;
+    if (!e.dataTransfer.files.length) return;
+    if (!DEPOT_POSSIBLE()) { MER_RECEVOIR_FICHIERS(e.dataTransfer.files); return; }
     var faux = { files: e.dataTransfer.files, value: '' };
     if (PAGE_ACTUELLE === 'VERIFIER') VERIFIER_FICHIERS(faux); else IMPORTER_A_VALIDER(faux);
 });
@@ -2000,7 +2002,7 @@ function ENVOYER_PANIER() {
     if (!MER_PANIER_ENREGISTRE) return;
     var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER();
     var corps = 'Bonjour,\n\nVeuillez trouver ci-joint ' + panier.length + ' demande(s) d\'ordre de mise en route, dans le fichier « ' + NOM_FICHIER_BASE(panier, 'DEMANDE') + '.json » (pièces jointes NDS / DAF incluses).\n' +
-        'Ouvrez TRIGONE Mise en route > « Espace valideur & Chorus DT », puis importez ce fichier.\n\nCordialement.';
+        'Ouvrez-le dans TRIGONE Mise en route (« Espace valideur & Chorus DT »). Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : touchez-la puis Ouvrir avec / Partager > TRIGONE.\n\nCordialement.';
     ARCHIVER_ENVOI(panier, reg.mailSignataire);
     FERMER_MODALE();
     OUVRIR_MAIL(reg.mailSignataire, SUJET_MAIL('DEMANDE', panier), corps);
@@ -2708,10 +2710,10 @@ function CONTENU_ENVOI(env) {
     var n = env.demandes.length;
     if (env.type === 'CHORUS') return { etape: 'VALIDATION_2', sujet: SUJET_MAIL('CHORUS', env.demandes),
         corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) d\'ordre de mise en route validée(s), pour traitement, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez TRIGONE Mise en route > « Espace valideur & Chorus DT » > « Assistant Chorus DT », importez ce fichier : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré.\n\nCordialement.' };
+            'Ouvrez-le dans TRIGONE Mise en route : les signatures sont contrôlées et le PDF (demande + NDS / DAF) est généré. Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : touchez-la puis Ouvrir avec / Partager > TRIGONE.\n\nCordialement.' };
     if (env.type === 'VALIDATION_1') return { etape: 'VALIDATION_1', sujet: SUJET_MAIL('VALIDATION_1', env.demandes),
         corps: 'Bonjour,\n\nVeuillez trouver ci-joint ' + n + ' demande(s) de mise en route validée(s) en 1er niveau, pour votre validation, dans le fichier « ' + env.pj + ' » (pièces jointes NDS / DAF incluses).\n' +
-            'Ouvrez TRIGONE Mise en route > « Espace valideur & Chorus DT », puis importez ce fichier.\n\nCordialement.' };
+            'Ouvrez-le dans TRIGONE Mise en route (« Espace valideur & Chorus DT »). Sur ordinateur : clic sur la pièce jointe > Copier, puis Ctrl+V dans TRIGONE (ou glissez-la dans TRIGONE). Sur Android : touchez-la puis Ouvrir avec / Partager > TRIGONE.\n\nCordialement.' };
     return { etape: 'REFUS', sujet: SUJET_MAIL('REFUS', env.demandes),
         corps: 'Bonjour,\n\n' + env.demandes.map(function(d) {
             return '- ' + RESUME_DEMANDE(d).noms + ' (' + (d.objet || '') + ') : ' + d.refus.motif;
@@ -3096,6 +3098,19 @@ function MER_TRAITER_RECUS() {
         });
     });
 }
+// Fichiers donnés à TRIGONE depuis la page (déposés ou collés) : même aiguillage que « Ouvrir avec ».
+function MER_RECEVOIR_FICHIERS(liste) {
+    var json = Array.prototype.filter.call(liste || [], function(f) { return /\.json$/i.test(f.name || '') || /json/.test(f.type || ''); });
+    if (!json.length) return false;
+    RECUS_RANGER(json).then(MER_TRAITER_RECUS);
+    return true;
+}
+// Outlook (nouvelle version, Windows) ne propose pas « Ouvrir avec » : « Copier » sur la pièce jointe, puis Ctrl+V dans TRIGONE.
+document.addEventListener('paste', function(e) {
+    var cd = e.clipboardData;
+    if (!cd || !cd.files || !cd.files.length || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
+    if (MER_RECEVOIR_FICHIERS(cd.files)) e.preventDefault();
+});
 function MER_BANDEAU_RECU(titre, texte) {
     var b = document.createElement('div');
     b.className = 'MER-BANDEAU-RECU';
@@ -3111,8 +3126,8 @@ function TPL_AIDE_RECEPTION() {
         ? '<li>Dans votre messagerie, touchez la pièce jointe <b>.json</b>, puis <b>Partager › Enregistrer dans Fichiers</b>.</li>' +
           '<li>Revenez ici et touchez <b>« Importer la demande reçue »</b> : le fichier est en haut des <b>Récents</b>.</li>'
         : EST_PC()
-        ? '<li>Clic droit sur la pièce jointe <b>.json</b> › <b>Ouvrir avec › TRIGONE</b> : la demande s\'ouvre ici, prête à signer.</li>' +
-          '<li>Ou glissez le fichier dans le cadre ci-dessus.</li>'
+        ? '<li>Dans Outlook, sur la pièce jointe <b>.json</b> : <b>Copier</b>, puis ici <b>Ctrl + V</b>. La demande s\'ouvre, prête à signer.</li>' +
+          '<li>Ou faites glisser la pièce jointe dans TRIGONE, ou clic droit sur le fichier › <b>Ouvrir avec › TRIGONE</b>.</li>'
         : '<li>Dans votre messagerie, touchez la pièce jointe <b>.json</b>, puis <b>Ouvrir avec</b> (ou <b>Partager</b>) › <b>TRIGONE</b>.</li>' +
           '<li>La demande s\'ouvre directement ici, prête à signer. Sinon, touchez <b>« Importer la demande reçue »</b>.</li>';
     return '<div class="MER-AIDE-RECEPTION"><div class="MER-AIDE-RECEPTION-TETE"><span>📥</span><div><b>Une demande à signer ?</b><small>Elle arrive par mail, en pièce jointe .json</small></div></div>' +

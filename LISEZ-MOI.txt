@@ -237,3 +237,6 @@ DEMANDES REÇUES PAR MAIL : « OUVRIR AVEC » / « PARTAGER » TRIGONE (V21)
 - Pastille « n à signer » (demandes importées sans décision) sur l'accueil et le menu PC.
 - iPhone : Apple ne le permet pas aux applis web → carte d'aide dans l'Espace valideur (Fichiers › Importer).
 - Aucune lecture de la boîte mail, aucun serveur.
+- V22 : le nouvel Outlook (Windows) n'a pas « Ouvrir avec » : « Copier » sur la pièce jointe puis Ctrl+V n'importe où
+  dans TRIGONE (événement paste), ou glisser la pièce jointe n'importe où dans l'appli : même aiguillage (MER_RECEVOIR_FICHIERS).
+  Les mails envoyés par TRIGONE expliquent ces gestes.
