@@ -99,6 +99,13 @@
             ' .JUM-PAN-MER .JUM-BLOC { left: 30%; top: 34%; } .JUM-PAN-CR .JUM-BLOC { left: 70%; top: 66%; } }' +
         '.JUM-SOUS { font: 800 0.62rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }' +
         '.JUM-PAN-MER .JUM-SOUS { color: #5a7a94; }' +
+        /* Médaillon Assistant Chorus DT : au centre, sur la diagonale */
+        '.JUM-CHORUS { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); width: min(30vw, 22vh, 190px); aspect-ratio: 1; border-radius: 50%; border: 2px solid #d6a756; background: #fff; box-shadow: 0 14px 40px rgba(0,0,0,0.35), 0 0 0 6px rgba(214,167,86,0.15); padding: 0; box-sizing: border-box; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: transform 0.2s ease, box-shadow 0.2s ease; }' +
+        '.JUM-CHORUS img { width: 74%; height: auto; display: block; }' +
+        '.JUM-CHORUS:hover { transform: translate(-50%, -50%) scale(1.05); box-shadow: 0 18px 46px rgba(0,0,0,0.4), 0 0 0 8px rgba(214,167,86,0.22); }' +
+        '.JUM-CHOIX.choix-chorus .JUM-CHORUS { transform: translate(-50%, -50%) scale(1.12); }' +
+        '.JUM-CHORUS-NB { position: absolute; top: 2%; right: 2%; min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.75rem/24px Montserrat, system-ui, sans-serif; box-shadow: 0 4px 10px rgba(185,28,28,0.4); }' +
+        '.JUM-R-CASE { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; cursor: pointer; margin: 4px 0 8px; } .JUM-R-CASE input { width: 18px; height: 18px; }' +
         '.JUM-BOITE-PASTILLE { display: inline-block; margin-top: 12px; padding: 6px 13px; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.72rem Montserrat, system-ui, sans-serif; letter-spacing: 0.02em; box-shadow: 0 4px 12px rgba(185,28,28,0.3); animation: jum-pulse 2s ease-in-out infinite; }' +
         '@keyframes jum-pulse { 50% { transform: scale(1.06); } }' +
         '.JUM-PAN-CR .JUM-SOUS { color: #d6a756; }' +
@@ -433,7 +440,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 46, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 47, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -486,6 +493,25 @@
         cr: { url: DANS_CR ? './' : 'cr/', logo: (DANS_CR ? '' : 'cr/') + 'logo_cr_accueil.png', nom: 'TRIGONE Compte-rendu de mission', sous: 'Au retour de mission' }
     };
     var ICI = DANS_CR ? 'cr' : 'mer', CLE_CHOIX = 'trigone_choix_fait';
+    // Rôle « Assistant Chorus DT » : activé dans les Réglages avec le code remis par l'administrateur (seule son
+    // empreinte figure ici). Son espace s'ouvre depuis le logo placé au centre de l'écran de choix.
+    var CLE_ROLE_CHORUS = 'trigone_role_chorus', EMPREINTE_CODE_CHORUS = '1873312e8bec44f88043df4b267191cf334946fa92ae71e40c3d3d4867c9e49a';
+    var LOGO_CHORUS = (DANS_CR ? '../' : '') + 'logo_chorus.webp';
+    function roleChorus() { try { return localStorage.getItem(CLE_ROLE_CHORUS) === '1'; } catch (e) { return false; } }
+    window.JUMELAGE_ROLE_CHORUS = roleChorus;
+    function empreinteCodeChorus(code) {
+        return crypto.subtle.digest('SHA-256', new TextEncoder().encode('TRIGONE-CHORUS:' + String(code || '').trim().toUpperCase())).then(function(b) {
+            return Array.prototype.map.call(new Uint8Array(b), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
+        });
+    }
+    // Ouvre l'espace Assistant Chorus DT (Mise en route, page dédiée).
+    window.JUMELAGE_OUVRIR_CHORUS = function() {
+        try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {}
+        if (!DANS_CR && typeof window.MER_OUVRIR_CHORUS === 'function') { window.MER_OUVRIR_CHORUS(); return true; }
+        try { sessionStorage.setItem(CLE_BASCULE, '1'); } catch (e) {}
+        location.replace(APPLIS.mer.url + '?espace=chorus');
+        return false;
+    };
     var ecran = null;
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     // Bouton clair / sombre : symboles au trait, comme les autres icônes de TRIGONE (lune en clair, soleil en sombre).
@@ -639,6 +665,10 @@
                 '<div class="JUM-R-GRILLE">' + champ('CODE1', codeDefini() ? 'Nouveau code' : 'Code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') +
                     champ('CODE2', 'Confirmer le code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') + '</div>' +
                 (codeDefini() ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_SUPPRIMER_CODE()">Supprimer le code d\'accès</button>' : '') +
+                '<div class="JUM-R-TITRE">Rôle particulier</div>' +
+                '<label class="JUM-R-CASE"><input type="checkbox" id="JUM-R-CHORUS"' + (roleChorus() ? ' checked' : '') + '><span>Je suis l\'<b>assistant Chorus DT</b></span></label>' +
+                '<div id="JUM-R-CHORUS-CODE" style="display:none;">' + champ('CODECHORUS', 'Code Assistant Chorus DT', '', 'type="password" autocomplete="off" placeholder="Code remis par l\'administrateur"') + '</div>' +
+                '<p class="JUM-R-AIDE" style="margin-top:6px;">' + (roleChorus() ? '✓ Rôle actif : votre espace Assistant Chorus DT est au centre de l\'écran de choix.' : 'Réservé à l\'assistant Chorus DT : un code est demandé. Son espace apparaît alors au centre de l\'écran de choix.') + '</p>' +
                 '<p class="JUM-R-ERREUR" id="JUM-R-ERREUR"></p>' +
             '</div>' +
             '<div class="JUM-R-PIED">' +
@@ -649,6 +679,11 @@
         document.body.appendChild(reglages);
         var m = document.getElementById('JUM-R-MATRICULE');
         m.addEventListener('input', function() { m.value = formatMatricule(m.value); });
+        var caseChorus = document.getElementById('JUM-R-CHORUS');
+        caseChorus.addEventListener('change', function() {
+            document.getElementById('JUM-R-CHORUS-CODE').style.display = caseChorus.checked && !roleChorus() ? '' : 'none';
+            if (caseChorus.checked && !roleChorus()) document.getElementById('JUM-R-CODECHORUS').focus();
+        });
     };
     window.JUMELAGE_FERMER_REGLAGES = function() { if (reglages) { reglages.remove(); reglages = null; } };
     window.JUMELAGE_PASSER_REGLAGES = function() {
@@ -678,12 +713,22 @@
             if (!/^\d{4}$/.test(c1)) return refuser('Le code doit contenir exactement 4 chiffres.');
             if (c1 !== c2) return refuser('Les deux codes ne correspondent pas.');
         }
+        // Rôle Assistant Chorus DT : vérifié avec le code avant tout enregistrement.
+        var veutChorus = document.getElementById('JUM-R-CHORUS').checked, codeChorus = v('CODECHORUS');
+        var etapeRole = !veutChorus || roleChorus() ? Promise.resolve() : !codeChorus ? Promise.reject('Saisissez le code Assistant Chorus DT, ou décochez la case.')
+            : empreinteCodeChorus(codeChorus).then(function(h) { if (h !== EMPREINTE_CODE_CHORUS) throw 'Code Assistant Chorus DT incorrect.'; });
+        etapeRole.then(function() {
+        var roleAvant = roleChorus();
+        try { if (veutChorus) localStorage.setItem(CLE_ROLE_CHORUS, '1'); else localStorage.removeItem(CLE_ROLE_CHORUS); } catch (e) {}
         ecrireReglages(r);
         (c1 ? poserCode(c1) : Promise.resolve()).then(function() {
             window.JUMELAGE_FERMER_REGLAGES();
-            bandeau(premiere ? 'C\'est prêt : vos informations pré-rempliront Mise en route et Compte-rendu.' : 'Réglages enregistrés.');
+            if (roleAvant !== veutChorus && ecran) { ecran.remove(); ecran = null; window.JUMELAGE_CHOIX(); }
+            bandeau(!roleAvant && veutChorus ? 'Rôle Assistant Chorus DT activé : votre espace est au centre de l\'écran de choix.' :
+                premiere ? 'C\'est prêt : vos informations pré-rempliront Mise en route et Compte-rendu.' : 'Réglages enregistrés.');
             if (window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
         });
+        }, function(message) { refuser(message); });
     };
     function bandeau(texte) {
         var b = document.createElement('div');
@@ -989,7 +1034,10 @@
         } catch (e) { return { nature: 'inconnu', n: 0, ids: [] }; }
     }
     window.JUMELAGE_BOITE_LISTE = function() { return boiteLire(); };
-    window.JUMELAGE_BOITE_NB = function() { return boiteLire().filter(function(x) { return x.statut !== 'traite'; }).length; };
+    // filtre : 'chorus' (envois pour l'assistant Chorus DT), 'autres' (tout le reste), sinon tout.
+    window.JUMELAGE_BOITE_NB = function(filtre) {
+        return boiteLire().filter(function(x) { return x.statut !== 'traite' && (filtre === 'chorus' ? x.nature === 'chorus' : filtre === 'autres' ? x.nature !== 'chorus' : true); }).length;
+    };
     window.JUMELAGE_BOITE_FICHIER = function(id) {
         var x = boiteLire().filter(function(e) { return e.id === id; })[0];
         return caches.open(CACHE_BOITE).then(function(c) { return c.match('__boite__/' + id); }).then(function(r) {
@@ -1017,10 +1065,16 @@
     function majPastilleHub() {
         if (!ecran) return;
         var bloc = ecran.querySelector('.JUM-PAN-MER .JUM-BLOC'); if (!bloc) return;
-        var n = window.JUMELAGE_BOITE_NB(), p = bloc.querySelector('.JUM-BOITE-PASTILLE');
-        if (!n) { if (p) p.remove(); return; }
-        if (!p) { p = document.createElement('span'); p.className = 'JUM-BOITE-PASTILLE'; bloc.appendChild(p); }
-        p.textContent = '📥 ' + n + (n > 1 ? ' demandes reçues' : ' demande reçue');
+        var n = window.JUMELAGE_BOITE_NB(roleChorus() ? 'autres' : ''), p = bloc.querySelector('.JUM-BOITE-PASTILLE');
+        if (!n) { if (p) p.remove(); } else {
+            if (!p) { p = document.createElement('span'); p.className = 'JUM-BOITE-PASTILLE'; bloc.appendChild(p); }
+            p.textContent = '📥 ' + n + (n > 1 ? ' demandes reçues' : ' demande reçue');
+        }
+        var med = ecran.querySelector('.JUM-CHORUS'); if (!med) return;
+        var nc = window.JUMELAGE_BOITE_NB('chorus'), pc = med.querySelector('.JUM-CHORUS-NB');
+        if (!nc) { if (pc) pc.remove(); return; }
+        if (!pc) { pc = document.createElement('span'); pc.className = 'JUM-CHORUS-NB'; med.appendChild(pc); }
+        pc.textContent = nc;
     }
 
     // Relève : nouveaux envois du serveur → boîte de réception de l'appareil.
@@ -1850,6 +1904,14 @@
 
     function choisir(cle) {
         if (!ecran || ecran.classList.contains('choisi')) return;
+        if (cle === 'chorus') {
+            ecran.classList.add('choisi', 'choix-chorus');
+            var surPlace = !DANS_CR && typeof window.MER_OUVRIR_CHORUS === 'function';
+            setTimeout(function() {
+                if (window.JUMELAGE_OUVRIR_CHORUS() || surPlace) { ecran.classList.add('sortie'); setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 380); }
+            }, 380);
+            return;
+        }
         ecran.classList.add('choisi');
         try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {}
         var pan = ecran.querySelector('.JUM-PAN-' + cle.toUpperCase());
@@ -1882,12 +1944,19 @@
         ecran.innerHTML = panneau('mer') + panneau('cr') +
             '<svg class="JUM-TRAIT" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
             '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
+            // Assistant Chorus DT : son logo au centre, sur la diagonale, entre Mise en route et Compte-rendu.
+            (roleChorus() ? '<button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button>' : '') +
             '<button type="button" class="JUM-ROUE" aria-label="Réglages et présentation de TRIGONE" title="Réglages TRIGONE · Découvrir TRIGONE">' + ROUE_SVG + '</button>' +
             // Numéro de version, en haut à droite (le même dans les deux applis).
             (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '') +
             // Mise à jour, en bas à gauche (pendant de la roue crantée).
             '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>';
         majPastilleHub();
+        var btnChorus = ecran.querySelector('.JUM-CHORUS');
+        if (btnChorus) {
+            ['pointerdown', 'pointerup'].forEach(function(t) { btnChorus.addEventListener(t, function(e) { e.stopPropagation(); }); });
+            btnChorus.addEventListener('click', function(e) { e.stopPropagation(); choisir('chorus'); });
+        }
         var roue = ecran.querySelector('.JUM-ROUE');
         ['pointerdown', 'pointerup'].forEach(function(t) { roue.addEventListener(t, function(e) { e.stopPropagation(); }); });
         roue.addEventListener('click', window.JUMELAGE_MENU_ROUE);
