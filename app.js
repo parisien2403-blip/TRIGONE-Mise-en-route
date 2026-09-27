@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 101;
+var APP_CODE_VERSION = 102;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2873,7 +2873,11 @@ function ENVOYER_ENVOI_DIRECT(i) {
 }
 function TERMINER_TRANSMISSION() {
     FERMER_MODALE();
-    if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(GET_A_VALIDER().filter(function(e) { return e.decision; }).map(function(e) { return e.d.id; }));
+    // Seuls les envois du niveau traité passent en « traité » (la demande peut déjà être revenue au niveau suivant).
+    if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) [1, 2].forEach(function(n) {
+        var ids = GET_A_VALIDER().filter(function(e) { return e.decision && NIVEAU_VALIDATION(e.d) === n; }).map(function(e) { return e.d.id; });
+        JUMELAGE_BOITE_TRAITER_DEMANDES(ids, n === 1 ? ['niveau1', 'renvoi'] : ['niveau2']);
+    });
     SAVE_A_VALIDER(GET_A_VALIDER().filter(function(e) { return !e.decision; }));
     MER_ENVOIS = [];
     RENDER_VALIDATION_INPLACE();
@@ -2965,7 +2969,7 @@ function TELECHARGER_PDF_VERIFIE(indices) {
     GENERER_PDF_FINAL(demandes).then(function(octets) {
         FERMER_MSG();
         TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes, 'PDF_FINAL') + '.pdf', octets, 'application/pdf');
-        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(demandes.map(function(d) { return d.id; }));
+        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(demandes.map(function(d) { return d.id; }), ['chorus']);
     }).catch(function(e) { FERMER_MSG(); setTimeout(function() { MSG_ERREUR('PDF impossible', e.message || String(e)); }, 350); });
 }
 
@@ -2996,7 +3000,7 @@ function CHORUS_RENVOYER_OK(i) {
     }).then(function() {
         FERMER_MSG();
         x.renvoyee = motif;
-        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES([x.d.id]);
+        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES([x.d.id], ['chorus']);
         SHOW_PAGE(PAGE_ACTUELLE);
         setTimeout(function() { MSG_INFO('Demande renvoyée', 'La demande est arrivée dans la boîte TRIGONE du demandeur (' + d.mailDemandeur + '), avec votre commentaire.', '✅', 'mascotte-ok.webp'); }, 300);
     }).catch(function(e) {
@@ -3249,7 +3253,8 @@ function TPL_ENVOI_RECU(x) {
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
         '<div class="MER-VAL-ACTIONS">' +
-            (traite ? '' : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
+            (traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ROUVRIR_RECU(\'' + x.id + '\')">↺ Rouvrir</button>'
+                : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="SUPPRIMER_RECU(\'' + x.id + '\')">Supprimer</button>' +
         '</div></div></div>';
 }
@@ -3365,11 +3370,17 @@ function OUVRIR_RECU(id) {
                 return;
             }
             JUMELAGE_BOITE_MARQUER(id, 'ouvert');
-            var deja = (x.ids || []).length && x.ids.every(function(i) { return GET_A_VALIDER().some(function(e) { return e.d.id === i; }); });
+            // Déjà dans l'Espace valideur à ce niveau-là (une même demande peut y être aussi au niveau précédent).
+            var deja = (x.ids || []).length && x.ids.every(function(i) { return GET_A_VALIDER().some(function(e) { return e.id === i + '#' + (niveau - 1); }); });
             SHOW_PAGE('VALIDATION');
             if (!deja) IMPORTER_A_VALIDER(faux);
         });
     }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
+}
+// Envoi classé « traité » : il repasse « à traiter » (ex. classé trop tôt), puis s'ouvre.
+function ROUVRIR_RECU(id) {
+    JUMELAGE_BOITE_ROUVRIR(id);
+    OUVRIR_RECU(id);
 }
 function SUPPRIMER_RECU(id) {
     MSG_CONFIRM('Supprimer de la boîte ?', 'Cet envoi sera retiré de votre boîte de réception sur cet appareil. S\'il n\'a pas été traité, demandez à l\'expéditeur de le renvoyer.',
