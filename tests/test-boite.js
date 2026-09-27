@@ -159,6 +159,18 @@ module.exports = async function() {
     verifier(await v1.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 2, '1er valideur : les 2 envois sont arrivés');
     await v1.click('#MER-MODALE-FOND button:has-text("Terminé")'); await attendre(800);
     verifier(await v1.evaluate(() => JUMELAGE_BOITE_NB() === 0 && JUMELAGE_BOITE_LISTE()[0].statut === 'traite'), '1er valideur : l\'envoi passe en « Traitées » dans la boîte');
+    // Même personne VALIDEUR 1 et VALIDEUR 2 : la demande revenue au 2e niveau n'est pas classée avec celle du 1er niveau.
+    verifier(await v1.evaluate(() => {
+        const l = JSON.parse(localStorage.getItem('trigone_boite'));
+        l.push({ id: 't1', nature: 'niveau1', statut: 'ouvert', ids: ['zz'] }, { id: 't2', nature: 'niveau2', statut: 'nouveau', ids: ['zz'] });
+        localStorage.setItem('trigone_boite', JSON.stringify(l));
+        JUMELAGE_BOITE_TRAITER_DEMANDES(['zz'], ['niveau1', 'renvoi']);
+        const r = JUMELAGE_BOITE_LISTE(), ok = r.find(x => x.id === 't1').statut === 'traite' && r.find(x => x.id === 't2').statut === 'nouveau';
+        JUMELAGE_BOITE_TRAITER_DEMANDES(['zz'], ['niveau2']); JUMELAGE_BOITE_ROUVRIR('t2');
+        const ok2 = JUMELAGE_BOITE_LISTE().find(x => x.id === 't2').statut === 'ouvert';
+        localStorage.setItem('trigone_boite', JSON.stringify(JUMELAGE_BOITE_LISTE().filter(x => x.id !== 't1' && x.id !== 't2')));
+        return ok && ok2;
+    }), 'même personne aux deux niveaux : l\'envoi du 2e niveau reste « à traiter » ; « Rouvrir » remet un envoi traité');
 
     // Demandeur : le refus revient dans Documents
     await relever(m);

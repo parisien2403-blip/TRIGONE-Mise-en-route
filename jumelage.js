@@ -414,7 +414,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 54, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 55, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1317,13 +1317,20 @@
         var l = boiteLire(); l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') x.statut = statut; }); boiteEcrire(l);
     };
     // Demandes traitées (validées / refusées puis transmises, PDF Chorus produit) : les envois qui les contiennent passent en « traité ».
-    window.JUMELAGE_BOITE_TRAITER_DEMANDES = function(ids) {
+    // natures : seulement les envois de ces natures (ex. ['niveau1', 'renvoi'] après une transmission du VALIDEUR 1) ;
+    // une même demande peut déjà être revenue à un autre niveau (même personne VALIDEUR 1 et VALIDEUR 2).
+    window.JUMELAGE_BOITE_TRAITER_DEMANDES = function(ids, natures) {
         if (!ids || !ids.length) return;
         var l = boiteLire(), change = false;
         l.forEach(function(x) {
+            if (natures && natures.indexOf(x.nature) < 0) return;
             if (x.statut !== 'traite' && (x.ids || []).length && x.ids.every(function(i) { return ids.indexOf(i) >= 0; })) { x.statut = 'traite'; x.traiteLe = Date.now(); change = true; }
         });
         if (change) boiteEcrire(l);
+    };
+    // Envoi classé « traité » trop tôt : il repasse « à traiter ».
+    window.JUMELAGE_BOITE_ROUVRIR = function(id) {
+        var l = boiteLire(); l.forEach(function(x) { if (x.id === id) { x.statut = 'ouvert'; delete x.traiteLe; } }); boiteEcrire(l);
     };
     window.JUMELAGE_BOITE_SUPPRIMER = function(id) {
         boiteEcrire(boiteLire().filter(function(x) { return x.id !== id; }));
