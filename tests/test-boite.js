@@ -234,7 +234,17 @@ module.exports = async function() {
     await c.evaluate(() => { const n = document.querySelector('.JUM-NOUV button'); if (n) n.click(); }); await attendre(300);
     await c.click('.JUM-CHORUS'); await attendre(1500);
     verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'CHORUS', 'Chorus DT : le logo ouvre l\'espace Assistant Chorus DT');
-    await c.locator('.MER-RECU .BTN-PRIMARY').first().click(); await attendre(2500);
+    // Sur la ligne de la demande reçue : aperçu et PDF directement (contrôle fait avant).
+    verifier(await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Aperçu")').count() === 1, 'Chorus DT : bouton « Aperçu » sur la ligne de la demande reçue');
+    const telechargement = c.waitForEvent('download', { timeout: 20000 });
+    await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Télécharger le PDF")').click();
+    const pdf = await telechargement;
+    verifier(/^4-OMR VALIDE/.test(pdf.suggestedFilename()), 'Chorus DT : « Télécharger le PDF » depuis la ligne donne le PDF final (' + pdf.suggestedFilename() + ')');
+    await attendre(800);
+    verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().find(x => x.nature === 'chorus').statut === 'traite'), 'Chorus DT : la demande passe en « Traités » après le PDF');
+    await c.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
+    await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Contrôle détaillé")').first().click(); await attendre(2500);
+    verifier(await c.evaluate(() => scrollY) === 0 && (await c.textContent('.CARD h2')) === 'Contrôle détaillé', 'Chorus DT : « Contrôle détaillé » s\'affiche en haut de la page');
     const cartes = await c.locator('.MER-PANIER-ITEM').allInnerTexts();
     verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'CHORUS' && cartes.some(t => t.includes('Conforme : validée par les deux valideurs')),
         'assistant Chorus DT : la demande arrive, conforme (signatures et NDS vérifiées)');

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 102;
+var APP_CODE_VERSION = 103;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1705,7 +1705,7 @@ var MER_NOTICES = {
             'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['<b>Réglages › Mes rôles</b> : cochez <b>ASSIST CHORUS DT</b> et saisissez le code remis par l\'administrateur (il peut y avoir plusieurs assistants Chorus DT ; ce rôle se cumule avec VALIDEUR 1 / VALIDEUR 2). Votre espace apparaît au <b>centre de l\'écran de choix</b> (logo Assist Chorus-DT).',
-            '<b>Demandes de mise en route validées</b> : elles arrivent des 2e valideurs. « Ouvrir et contrôler » : TRIGONE contrôle les signatures électroniques et les pièces jointes. Un envoi qui n\'a pas les deux signatures est écarté.',
+            '<b>Demandes de mise en route validées</b> : elles arrivent des 2e valideurs. Sur chaque ligne : <b>👁 Aperçu</b> ou <b>📄 Télécharger le PDF</b> (demande signée + NDS / DAF) ; TRIGONE contrôle d\'abord les signatures électroniques et les pièces jointes. <b>Contrôle détaillé</b> montre le résultat demande par demande. Un envoi qui n\'a pas les deux signatures est écarté.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).',
             '<b>↩ Renvoyer au demandeur</b> : sur une demande reçue, renvoyez-la directement au demandeur avec un commentaire, sans repasser par les valideurs ; il la corrige et la renvoie (nouveau circuit de validation).',
@@ -2892,8 +2892,9 @@ function EST_CONFORME(x) {
 }
 function TPL_VERIFIER() {
     var res = MER_RESULTATS_VERIF;
-    var html = '<div class="CARD"><h2>Assistant Chorus DT</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Réservé à l\'assistant Chorus DT. Les demandes validées par les deux valideurs arrivent dans la boîte de réception ci-dessus : « Ouvrir et contrôler » vérifie les signatures et les pièces jointes, puis génère le PDF à traiter (demande + NDS / DAF). Un PDF TRIGONE déjà produit peut aussi être contrôlé.</p>' +
+    var html = res && MER_ESPACE_CHORUS ? '<div class="CARD"><h2>Contrôle détaillé</h2><p class="MER-HINT" style="margin:4px 0 16px;">Signatures des deux valideurs et pièces jointes, demande par demande.</p>'
+        : '<div class="CARD"><h2>Assistant Chorus DT</h2>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Réservé à l\'assistant Chorus DT. Sur chaque demande reçue ci-dessus : « 👁 Aperçu » ou « 📄 Télécharger le PDF » (demande + NDS / DAF), après contrôle des signatures et des pièces jointes ; « Contrôle détaillé » montre le détail et permet de la renvoyer au demandeur. Un PDF TRIGONE déjà produit peut aussi être contrôlé.</p>' +
         '<label class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:16px;">📄 Contrôler un PDF TRIGONE' +
         '<input type="file" accept=".pdf,application/pdf" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
     if (res) {
@@ -2926,7 +2927,7 @@ function TPL_VERIFIER() {
             html += '<button type="button" class="BTN BTN-PRIMARY" onclick="TELECHARGER_PDF_VERIFIE(null)">📄 Un seul PDF pour les ' + conformes.length + ' demandes conformes</button>';
         }
     }
-    return html + (MER_ESPACE_CHORUS ? '</div>' : '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'VALIDATION\')">← Retour</button></div>');
+    return html + (MER_ESPACE_CHORUS ? (res ? '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'CHORUS\')">✕ Fermer le contrôle</button>' : '') + '</div>' : '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; SHOW_PAGE(\'VALIDATION\')">← Retour</button></div>');
 }
 function VERIFIER_FICHIERS(input) {
     LIRE_FICHIERS(input, function(contenu, f) {
@@ -2956,7 +2957,8 @@ function VERIFIER_FICHIERS(input) {
             }
             MER_RESULTATS_VERIF = res;
             SHOW_PAGE('VERIFIER');
-        });
+            window.scrollTo(0, 0);
+        }).catch(function(e) { MSG_ERREUR('Contrôle impossible', e.message || String(e)); });
     });
 }
 // indices : demandes choisies ; null = toutes les demandes conformes, dans un seul PDF.
@@ -3253,7 +3255,12 @@ function TPL_ENVOI_RECU(x) {
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
         '<div class="MER-VAL-ACTIONS">' +
-            (traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ROUVRIR_RECU(\'' + x.id + '\')">↺ Rouvrir</button>'
+            // Demande validée pour l'ASSIST CHORUS DT : aperçu et PDF directement depuis la ligne (contrôle fait avant).
+            (x.nature === 'chorus'
+                ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', true)">👁 Aperçu</button>' +
+                  '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">📄 Télécharger le PDF</button>' +
+                  '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="' + (traite ? 'ROUVRIR_RECU' : 'OUVRIR_RECU') + '(\'' + x.id + '\')">Contrôle détaillé</button>'
+            : traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ROUVRIR_RECU(\'' + x.id + '\')">↺ Rouvrir</button>'
                 : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="SUPPRIMER_RECU(\'' + x.id + '\')">Supprimer</button>' +
         '</div></div></div>';
@@ -3288,17 +3295,19 @@ function TPL_CHORUS() {
     }
     var demandes = l.filter(function(x) { return x.nature === 'chorus'; }), crs = l.filter(function(x) { return x.nature === 'cr'; });
     var nb = function(liste) { var n = liste.filter(function(x) { return x.statut !== 'traite'; }).length; return n ? ' (' + n + ')' : ''; };
-    return '<div class="CARD MER-CHORUS-TETE"><img class="MER-CHORUS-LOGO" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT">' +
+    // Résultat d'un « Contrôle détaillé » : en tête de page, bien visible (fermé par « Fermer le contrôle »).
+    return (MER_RESULTATS_VERIF ? TPL_VERIFIER() : '') +
+        '<div class="CARD MER-CHORUS-TETE"><img class="MER-CHORUS-LOGO" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT">' +
         (compte ? '<p class="MER-HINT" style="margin:0 0 10px;">Envois reçus à <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>, chiffrés, directement dans TRIGONE.</p>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:12px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>' +
             '<div class="MER-SECTION-TITLE">Demandes de mise en route validées' + nb(demandes) + '</div>' +
-            '<p class="MER-HINT" style="margin:0 0 10px;">Validées par les deux valideurs. « Ouvrir et contrôler » vérifie les signatures et les pièces jointes, puis le PDF est prêt.</p>' +
+            '<p class="MER-HINT" style="margin:0 0 10px;">Validées par les deux valideurs. « Aperçu » ou « Télécharger le PDF » : TRIGONE vérifie d\'abord les signatures et les pièces jointes.</p>' +
             bloc(demandes, 'Aucune demande en attente.') +
             '<div class="MER-SECTION-TITLE">Comptes-rendus de mission' + nb(crs) + '</div>' +
             '<p class="MER-HINT" style="margin:0 0 10px;">Envoyés par les missionnaires au retour de mission : compte-rendu PDF et justificatifs.</p>' +
             bloc(crs, 'Aucun compte-rendu en attente.')
           : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes validées et les comptes-rendus de mission.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
-        '</div>' + TPL_VERIFIER() +
+        '</div>' + (MER_RESULTATS_VERIF ? '' : TPL_VERIFIER()) +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">← Écran de choix</button>';
 }
 // Compte-rendu de mission reçu : ses fichiers (PDF du compte-rendu, justificatifs) à télécharger.
@@ -3376,6 +3385,45 @@ function OUVRIR_RECU(id) {
             if (!deja) IMPORTER_A_VALIDER(faux);
         });
     }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
+}
+// ASSIST CHORUS DT : PDF final (demande signée + NDS / DAF) d'un envoi reçu, en aperçu ou téléchargé.
+// Les signatures et les pièces jointes sont contrôlées d'abord : une demande non conforme ne donne pas de PDF.
+function CHORUS_PDF_RECU(id, apercu) {
+    var w = apercu ? window.open('', '_blank') : null;   // ouverte tout de suite, sinon le navigateur la bloque
+    AFFICHER_MSG_CENTRE({ titre: apercu ? 'Préparation de l\'aperçu…' : 'Génération du PDF…', texte: 'Contrôle des signatures et des pièces jointes, puis assemblage du PDF.', icone: '⏳', mascotte: false, boutons: [] });
+    var demandes;
+    JUMELAGE_BOITE_FICHIER(id).then(function(f) { return f.text(); }).then(function(t) {
+        var data = LIRE_JSON_MER(t);
+        return Promise.all([CHARGER_LISTE_VALIDEURS(), STOCKER_PJ_IMPORTEES([data])]).then(function(r) {
+            var alterees = r[1];
+            return Promise.all(data.demandes.map(function(d) {
+                return VERIFIER_VALIDATIONS(d).then(function(verif) { return { d: d, source: 'json', verif: verif, pjAlterees: alterees[d.id] || [] }; });
+            }));
+        });
+    }).then(function(res) {
+        var ko = res.filter(function(x) { return !EST_CONFORME(x); });
+        if (ko.length) {
+            var e = new Error((ko.length > 1 ? ko.length + ' demandes ne sont pas conformes' : 'La demande de ' + RESUME_DEMANDE(ko[0].d).noms + ' n\'est pas conforme') +
+                ' (signature manquante ou invalide, ou pièce jointe modifiée). Touchez « Contrôle détaillé » pour voir le détail, et renvoyez-la si besoin.');
+            e.nonConforme = true; throw e;
+        }
+        demandes = res.map(function(x) { return x.d; });
+        return GENERER_PDF_FINAL(demandes);
+    }).then(function(octets) {
+        FERMER_MSG();
+        if (apercu) {
+            var url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+            if (w) w.location = url; else window.open(url, '_blank');
+            JUMELAGE_BOITE_MARQUER(id, 'ouvert');
+            return;
+        }
+        TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes, 'PDF_FINAL') + '.pdf', octets, 'application/pdf');
+        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(demandes.map(function(d) { return d.id; }), ['chorus']);
+    }).catch(function(e) {
+        if (w) w.close();
+        FERMER_MSG();
+        setTimeout(function() { MSG_ERREUR(e.nonConforme ? 'Demande non conforme' : 'PDF impossible', e.message || String(e)); }, 350);
+    });
 }
 // Envoi classé « traité » : il repasse « à traiter » (ex. classé trop tôt), puis s'ouvre.
 function ROUVRIR_RECU(id) {
