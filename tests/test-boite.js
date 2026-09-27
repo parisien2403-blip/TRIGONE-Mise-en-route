@@ -343,6 +343,7 @@ module.exports = async function() {
     verifier((await v2.textContent('#JUM-R-ABS-ETAT')).includes('remplacé par'), 'Réglages › Absence : « Absent jusqu\'au …, remplacé par … » affiché');
     await v2.evaluate(() => JUMELAGE_FERMER_REGLAGES());
     await m.goto(URL); await attendre(2500);
+    await m.goto(URL); await attendre(2500);
     await m.evaluate(() => SHOW_PAGE('PANIER')); await m.evaluate(v => MER_AFFICHER_ABSENCE('MER-ABS-DEST', v), MAILS.V2); await attendre(1200);
     verifier((await m.textContent('#MER-ABS-DEST')).includes('partira chez son remplaçant'), 'absence : l\'expéditeur est prévenu avant l\'envoi (« absent jusqu\'au … : votre envoi partira chez son remplaçant »)');
     const envoiAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'VALIDATION_1', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
