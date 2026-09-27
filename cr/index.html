@@ -11,9 +11,9 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=58"></script>
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2">
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
+<script src="../jumelage.js?v=59"></script>
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 
 <style>
@@ -715,6 +715,16 @@ body.dark-mode .app-credit {
 .P0-REF-BTN:active { transform: scale(0.95); }
 .P0-CHECK-UPDATE-BTN { top: 40px; }
 .P0-SIGNALER-BTN { top: 70px; }
+/* Petits écrans : les trois boutons (Références, Mise à jour, Signaler) passent en rangée de pastilles rondes,
+   icône seule (le nom reste en info-bulle et pour les lecteurs d'écran), au-dessus du logo sans le recouvrir. */
+@media (max-width: 400px), (orientation: portrait) and (max-height: 700px) {
+  #P0 .P0-INNER { padding-top: 44px; }
+  #P0 .P0-REF-BTN { top: 4px; width: 34px; height: 34px; padding: 0; font-size: 0; gap: 0; justify-content: center; }
+  #P0 .P0-REF-BTN .JUM-IC { width: 16px; height: 16px; }
+  #P0 #BTN-SIGNALER { right: 10px; }
+  #P0 #BTN-CHECK-UPDATE { right: 52px; }
+  #P0 #BTN-REFERENCES { right: 94px; }
+}
 .P0-REF-BTN:hover { border-color: var(--tg-accent-light); color: var(--tg-ink); }
 body.dark-mode .P0-REF-BTN { background: rgba(36, 36, 36, 0.9); border-color: #404040; color: #a3a3a3; }
 .P0-COLOR-SWATCHES { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -11513,7 +11523,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 155;
+var APP_CODE_VERSION = 156;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
