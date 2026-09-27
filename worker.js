@@ -287,6 +287,14 @@ async function relancer(env, origine, maintenant, forcer) {
     const r = await db.prepare('SELECT ref, demandeur, genre, etape, detenteur FROM suivi WHERE etape IN (\'val1\', \'val2\', \'chorus\', \'recu\') AND le <= ? AND (relance IS NULL OR relance <= ?)')
         .bind(maintenant - RELANCE, maintenant - RELANCE).all();
     const lignes = r.results || [];
+    // Demandes refusées que le demandeur n'a pas encore corrigées : rappel après 48 h, puis toutes les 48 h (14 jours au plus).
+    const refus = (await db.prepare('SELECT ref, demandeur FROM suivi WHERE etape = \'refus\' AND genre = \'mer\' AND le <= ? AND le > ? AND (relance IS NULL OR relance <= ?)')
+        .bind(maintenant - 2 * RELANCE, maintenant - 14 * JOUR * 1000, maintenant - 2 * RELANCE).all()).results || [];
+    const parDemandeur = {};
+    refus.forEach(l => { parDemandeur[l.demandeur] = (parDemandeur[l.demandeur] || 0) + 1; });
+    await Promise.all(Object.keys(parDemandeur).map(m => { const n = parDemandeur[m];
+        return notifierCompte(env, m, { titre: 'Rappel TRIGONE', texte: (n > 1 ? n + ' demandes refusées attendent' : '1 demande refusée attend') + ' votre correction depuis plus de 48 h (Documents).', type: 'RELANCE', url: '/?espace=documents' }, origine).catch(() => {}); }));
+    if (refus.length) await db.batch(refus.map(l => db.prepare('UPDATE suivi SET relance = ? WHERE ref = ? AND demandeur = ?').bind(maintenant, l.ref, l.demandeur)));
     const parDetenteur = {};
     lignes.forEach(l => { const d = parDetenteur[l.detenteur] = parDetenteur[l.detenteur] || { signer: 0, chorus: 0, cr: 0 };
         if (l.genre === 'cr') d.cr++; else if (l.etape === 'chorus') d.chorus++; else d.signer++; });
@@ -299,7 +307,7 @@ async function relancer(env, origine, maintenant, forcer) {
             url: d.signer ? '/?espace=boite' : '/?espace=chorus' }, origine).catch(() => {});
     }));
     if (lignes.length) await db.batch(lignes.map(l => db.prepare('UPDATE suivi SET relance = ? WHERE ref = ? AND demandeur = ?').bind(maintenant, l.ref, l.demandeur)));
-    return lignes.length;
+    return lignes.length + refus.length;
 }
 async function origineConnue(env, origine) {
     const db = await tableReglage(env);
@@ -514,7 +522,9 @@ async function api(requete, env, url, ctx) {
         const mail = normaliser(url.searchParams.get('mail'));
         const compte = await kv.get('compte:' + mail, 'json');
         if (!compte || !compte.appareils.length) return json({ ok: true, compte: false });
-        return json({ ok: true, compte: true, mail, roles: compte.roles || {}, appareils: compte.appareils.map(a => ({ id: a.id, cle: a.cle })) });
+        // Absence déclarée (valideur, assistant Chorus DT) : l'appli de l'expéditeur envoie à son remplaçant.
+        const rp = compte.remplacant && compte.remplacant.jusqu > Date.now() ? compte.remplacant : null;
+        return json({ ok: true, compte: true, mail, roles: compte.roles || {}, remplacant: rp, appareils: compte.appareils.map(a => ({ id: a.id, cle: a.cle })) });
     }
 
     // Dépôt d'un envoi chiffré : le contenu une fois, une enveloppe (clé du contenu chiffrée) par appareil destinataire.
@@ -579,6 +589,28 @@ async function api(requete, env, url, ctx) {
         }
     }
 
+    // Absence : remplaçant (compte TRIGONE existant) jusqu'à une date (90 jours au plus) ; mail vide = fin de l'absence.
+    if (chemin === 'remplacant' && methode === 'POST') {
+        const corps = await requete.json().catch(() => ({}));
+        const rmail = normaliser(corps.mail);
+        if (!rmail) { delete moi.compte.remplacant; await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte)); return json({ ok: true, remplacant: null }); }
+        if (!mailValide(rmail) || rmail === moi.mail) return erreur(400, 'Adresse du remplaçant invalide.');
+        const jusqu = +corps.jusqu || 0;
+        if (jusqu <= Date.now() || jusqu > Date.now() + 90 * JOUR * 1000) return erreur(400, 'Date de fin d\'absence invalide (dans les 90 jours).');
+        const cr = await kv.get('compte:' + rmail, 'json');
+        if (!cr || !cr.appareils.length) return erreur(404, rmail + ' n\'a pas encore de compte TRIGONE : demandez-lui de l\'activer.');
+        const manque = Object.keys(moi.compte.roles || {}).filter(r => !(cr.roles || {})[r]);
+        moi.compte.remplacant = { mail: rmail, jusqu };
+        await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
+        return json({ ok: true, remplacant: moi.compte.remplacant, rolesManquants: manque });
+    }
+    // Demandes abandonnées par leur demandeur (retirées de Documents après un refus) : plus de relance.
+    if (chemin === 'suivi/abandon' && methode === 'POST') {
+        const refs = nettoyerRefs((await requete.json().catch(() => ({}))).refs);
+        if (refs.length) await (await baseBoite(env)).prepare('UPDATE suivi SET etape = \'abandon\', relance = NULL WHERE genre = \'mer\' AND etape = \'refus\' AND demandeur = ? AND ref IN (' + refs.map(() => '?').join(',') + ')')
+            .bind(moi.mail, ...refs).run();
+        return json({ ok: true });
+    }
     // Suivi : où en sont mes demandes et mes comptes-rendus (seulement les miens).
     if (chemin === 'suivi' && methode === 'GET') {
         // Mes demandes et comptes-rendus, et les demandes où je suis intervenu (valideur, assistant Chorus DT).

@@ -332,6 +332,30 @@ module.exports = async function() {
     verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().filter(x => x.nature === 'cr').every(x => x.statut === 'traite')), 'Chorus DT : compte-rendu marqué « traité »');
     verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'traite'), 'suivi : compte-rendu « traité par l\'assistant Chorus DT »');
 
+    // Absence : le VALIDEUR 2 déclare un remplaçant (le VALIDEUR 1, qui a aussi le rôle VALIDEUR 2).
+    const api = (p, chemin, corps) => p.evaluate(async ([chemin, corps]) => { const x = JSON.parse(localStorage.getItem('trigone_compte'));
+        const r = await fetch((location.pathname.includes('/cr/') ? '../' : '') + 'api/' + chemin, { method: corps ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', Authorization: 'TRIGONE ' + encodeURIComponent(x.mail) + ' ' + x.appareil + ' ' + x.jeton }, body: corps ? JSON.stringify(corps) : undefined });
+        return r.json(); }, [chemin, corps]);
+    const abs = await api(v2, 'remplacant', { mail: MAILS.V1, jusqu: Date.now() + 2 * 864e5 });
+    verifier(abs.ok && abs.remplacant.mail === MAILS.V1 && abs.rolesManquants.length === 0, 'absence : remplaçant enregistré (compte et rôle vérifiés)');
+    verifier((await api(v2, 'remplacant', { mail: 'inconnu@interieur.gouv.fr', jusqu: Date.now() + 864e5 })).ok === false, 'absence : un remplaçant sans compte TRIGONE est refusé');
+    await v2.evaluate(() => JUMELAGE_REGLAGES()); await attendre(1500);
+    verifier((await v2.textContent('#JUM-R-ABS-ETAT')).includes('remplacé par'), 'Réglages › Absence : « Absent jusqu\'au …, remplacé par … » affiché');
+    await v2.evaluate(() => JUMELAGE_FERMER_REGLAGES());
+    const envoiAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'VALIDATION_1', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
+    verifier(envoiAbs.remplacant === MAILS.V1 && envoiAbs.absent === MAILS.V2, 'absence : l\'envoi destiné au VALIDEUR 2 part chez son remplaçant');
+    const refusAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'REFUS', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
+    verifier(!refusAbs.remplacant, 'absence : un refus (retour au demandeur) n\'est jamais redirigé');
+    await api(v2, 'remplacant', { mail: '' });
+    verifier(!(await api(m, 'cles?mail=' + encodeURIComponent(MAILS.V2))).remplacant, 'absence : « Fin de l\'absence » rétablit les envois directs');
+    await relever(v1); await relever(v2);
+
+    // Demande refusée retirée de Documents par le demandeur : suivi « abandon », plus de rappel « à corriger ».
+    await m.goto(URL); await attendre(2500);
+    const refusee = await m.evaluate(() => (GET_PANIER().find(d => d.refus) || {}).id);
+    await m.evaluate(id => RETIRER_DU_PANIER_OK(id), refusee); await attendre(1500);
+    verifier(((await suivi(m))[refusee] || {}).etape === 'abandon', 'refus : demande retirée de Documents → plus de rappel au demandeur');
+
     // Boîtes vides après relève
     const reste = await v1.evaluate(async () => { const c = JSON.parse(localStorage.getItem('trigone_compte'));
         return (await (await fetch('api/boite', { headers: { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton } })).json()).envois.length; });

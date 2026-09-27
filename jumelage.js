@@ -428,7 +428,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 74, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 75, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -662,6 +662,14 @@
                 '<div id="JUM-R-FONCTION-BLOC" style="display:none;">' + champ('FONCTION', 'Ma fonction de valideur', (lireJSON('mer_valideur') || {}).fonction || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE SERVICE"') + '</div>' +
                 caseRole('CHORUS', 'chorus', '<b>ASSIST CHORUS DT</b>', 'Code ASSIST CHORUS DT') +
                 '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>' +
+                // Absence (valideur, assistant Chorus DT déjà actifs, compte TRIGONE actif) : remplaçant jusqu'à une date.
+                (!premiere && monCompte() && ['valideur1', 'valideur2', 'chorus'].some(roleActif) ? '<div class="JUM-R-TITRE">Absence</div>' +
+                    '<p class="JUM-R-AIDE">En permission ou en mission ? Indiquez votre <b>remplaçant</b> (il doit avoir un compte TRIGONE et le même rôle) : jusqu\'à la date choisie, tout ce qui vous est envoyé part directement chez lui, et l\'expéditeur en est informé.</p>' +
+                    '<div id="JUM-R-ABS-ETAT" class="JUM-R-AIDE"></div>' +
+                    '<div class="JUM-R-GRILLE">' + champ('ABSMAIL', 'Mail du remplaçant', '', 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
+                        champ('ABSFIN', 'Absent jusqu\'au (inclus)', '', 'type="date"') + '</div>' +
+                    '<button type="button" class="JUM-R-SECOND" id="JUM-R-ABS-OK" style="width:100%; margin:4px 0 0;">Déclarer mon absence</button>' +
+                    '<p class="JUM-R-ERREUR" id="JUM-R-ABS-ERR" style="min-height:0;"></p>' : '') +
                 // Android, première ouverture : réglage batterie, sans lequel les notifications arrivent en retard appli fermée.
                 // (Une appli web ne peut pas ouvrir elle-même les paramètres d'Android : on guide pas à pas.)
                 (premiere && /Android/i.test(navigator.userAgent || '') ? '<div class="JUM-R-TITRE">Notifications sur Android</div>' +
@@ -687,7 +695,38 @@
             c.addEventListener('change', function() { majCasesRoles(c.checked && !roleActif(c.getAttribute('data-role')) ? id : null); });
         });
         majCasesRoles(null);
+        if (document.getElementById('JUM-R-ABS-OK')) initAbsence();
     };
+    // Absence : état actuel (lu sur le serveur), déclaration et fin.
+    function initAbsence() {
+        var etat = document.getElementById('JUM-R-ABS-ETAT'), err = document.getElementById('JUM-R-ABS-ERR'), btn = document.getElementById('JUM-R-ABS-OK');
+        var champMail = document.getElementById('JUM-R-ABSMAIL'), champFin = document.getElementById('JUM-R-ABSFIN');
+        var jour = function(ms) { return new Date(ms).toLocaleDateString('fr-FR'); }, actuel = null;
+        function afficher(rp) {
+            actuel = rp;
+            etat.innerHTML = rp ? '🟠 <b>Absent jusqu\'au ' + jour(rp.jusqu) + '</b> : remplacé par <b>' + esc(rp.mail) + '</b>.' : '';
+            btn.textContent = rp ? 'Fin de l\'absence (je suis de retour)' : 'Déclarer mon absence';
+            champMail.parentNode.parentNode.style.display = rp ? 'none' : '';
+        }
+        var d = new Date(); d.setDate(d.getDate() + 1); champFin.min = d.toISOString().slice(0, 10);
+        appelApi('cles?mail=' + encodeURIComponent(monCompte().mail)).then(function(r) { afficher(r.remplacant || null); }).catch(function() {});
+        btn.addEventListener('click', function() {
+            err.textContent = '';
+            var corps = { mail: '' };
+            if (!actuel) {
+                var mail = champMail.value.trim().toLowerCase(), fin = champFin.value;
+                if (!mail || !fin) { err.textContent = 'Indiquez le mail du remplaçant et la date de fin.'; return; }
+                corps = { mail: mail, jusqu: new Date(fin + 'T23:59:59').getTime() };
+            }
+            btn.disabled = true;
+            appelApi('remplacant', { methode: 'POST', corps: corps }).then(function(r) {
+                afficher(r.remplacant);
+                if (r.remplacant && r.rolesManquants && r.rolesManquants.length) err.textContent = 'Attention : ' + r.remplacant.mail + ' n\'a pas le rôle ' +
+                    r.rolesManquants.map(function(x) { return { valideur1: 'VALIDEUR 1', valideur2: 'VALIDEUR 2', chorus: 'ASSIST CHORUS DT' }[x]; }).join(', ') + ' : les envois de ce type lui seront refusés tant qu\'il ne l\'a pas.';
+                bandeau(r.remplacant ? 'Absence enregistrée : vos envois partent chez ' + r.remplacant.mail + '.' : 'Fin de l\'absence : vos envois vous reviennent.');
+            }).catch(function(e) { err.textContent = e.message; }).then(function() { btn.disabled = false; });
+        });
+    }
     // Rôles : case cochée pas encore active → champ du code ; valideur → fonction (reprise dans ses signatures).
     function roleActif(role) { return role === 'chorus' ? roleChorus() : !!(lireJSON(CLE_ROLES_LOCAUX) || {})[role]; }
     function caseRole(id, role, libelle, libelleCode) {
@@ -1137,8 +1176,17 @@
     window.JUMELAGE_ENVOYER_DIRECT = function(destinataire, type, nom, texte) {
         if (!monCompte()) return Promise.reject(Object.assign(new Error('Activez d\'abord votre compte TRIGONE.'), { sansCompte: true }));
         if (!navigator.onLine) return Promise.reject(new Error('Pas de connexion : l\'envoi direct demande du réseau.'));
-        var dest = String(destinataire || '').trim().toLowerCase();
+        var dest = String(destinataire || '').trim().toLowerCase(), absent = null;
         return appelApi('cles?mail=' + encodeURIComponent(dest)).then(function(r) {
+            // Destinataire absent (valideur, assistant Chorus DT) : l'envoi part chez son remplaçant (un refus, lui, va
+            // toujours au demandeur).
+            if (r.compte && r.remplacant && r.remplacant.mail && type !== 'REFUS') {
+                absent = { mail: dest, jusqu: r.remplacant.jusqu };
+                dest = r.remplacant.mail;
+                return appelApi('cles?mail=' + encodeURIComponent(dest));
+            }
+            return r;
+        }).then(function(r) {
             if (!r.compte) throw Object.assign(new Error(dest + ' n\'a pas encore de compte TRIGONE.'), { pasDeCompte: true });
             // Le nom du fichier (qui contient le nom du demandeur) est chiffré avec le contenu : le serveur n'en voit rien.
             return chiffrerPour(r.appareils, JSON.stringify({ nom: nom, contenu: texte }));
@@ -1149,7 +1197,13 @@
             var nombre = 1, refs = [];
             try { var o = JSON.parse(texte); if (o && Array.isArray(o.demandes)) { nombre = o.demandes.length || 1; refs = o.demandes.map(function(d) { return d && d.id; }).filter(Boolean); } } catch (e) {}
             return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, nombre: nombre, refs: refs, qui: window.JUMELAGE_QUI(), enveloppes: ch.enveloppes, donnees: ch.donnees } });
-        }).then(function(r) { if (type === 'DEMANDE' || type === 'CR') setTimeout(window.JUMELAGE_SUIVI_ACTUALISER, 800); return r;
+        }).then(function(r) {
+            if (type === 'DEMANDE' || type === 'CR') setTimeout(window.JUMELAGE_SUIVI_ACTUALISER, 800);
+            if (absent) {
+                r.remplacant = dest; r.absent = absent.mail;
+                setTimeout(function() { bandeau(absent.mail + ' est absent jusqu\'au ' + new Date(absent.jusqu).toLocaleDateString('fr-FR') + ' : envoyé à son remplaçant, ' + dest + '.'); }, 400);
+            }
+            return r;
         });
     };
     // Compte-rendu de fin de mission → boîte TRIGONE de l'assistant Chorus DT : le PDF du compte-rendu (produit par
@@ -1301,6 +1355,10 @@
     // « trigone-suivi » à chaque mise à jour.
     var CLE_SUIVI = 'trigone_suivi', suiviEnCours = null;
     window.JUMELAGE_SUIVI = function() { return lireJSON(CLE_SUIVI) || {}; };
+    // Demandes refusées que le demandeur abandonne (retirées de Documents) : plus de rappel.
+    window.JUMELAGE_SUIVI_ABANDON = function(ids) {
+        if (monCompte() && ids && ids.length) appelApi('suivi/abandon', { methode: 'POST', corps: { refs: ids } }).then(window.JUMELAGE_SUIVI_ACTUALISER).catch(function() {});
+    };
     window.JUMELAGE_SUIVI_ACTUALISER = function() {
         if (!monCompte() || !navigator.onLine) return Promise.resolve(window.JUMELAGE_SUIVI());
         if (suiviEnCours) return suiviEnCours;
@@ -2203,7 +2261,7 @@
     var dejaChoisi = false;
     try { dejaChoisi = sessionStorage.getItem(CLE_CHOIX) === '1'; } catch (e) {}
     // Ouverture depuis une notification (boîte de réception ou espace Assistant Chorus DT) : droit à l'espace visé.
-    if (!DANS_CR && /[?&]espace=(boite|chorus|suivi)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
+    if (!DANS_CR && /[?&]espace=(boite|chorus|suivi|documents)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
     // Juste après une mise à jour (nouvelle publication chargée, quelle qu'en soit la cause) : retour à l'écran de choix.
     var buildVu = +lireTxt('trigone_build_vu') || 0;
     var apresMaj = false;
