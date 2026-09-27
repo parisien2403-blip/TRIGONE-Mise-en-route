@@ -54,7 +54,9 @@ async function baseBoite(env) {
             env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_envoi ON suivi (envoi)'),
             // Intervenants d'une demande (valideurs, assistant Chorus DT) : ils en voient aussi la suite.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS suivi_acteur (ref TEXT NOT NULL, demandeur TEXT NOT NULL, mail TEXT NOT NULL, PRIMARY KEY (ref, demandeur, mail))'),
-            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_acteur_mail ON suivi_acteur (mail)')
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_acteur_mail ON suivi_acteur (mail)'),
+            // Appareils dont l'utilisateur a coupé les notifications (ex. téléphone, quand le PC suffit au bureau).
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS muet (mail TEXT NOT NULL, appareil TEXT NOT NULL, PRIMARY KEY (mail, appareil))')
         ]);
         TABLES_PRETES = true;
     }
@@ -156,12 +158,15 @@ function textePush(type, n) {
     return t || ['TRIGONE', 'Nouvel envoi dans votre boîte TRIGONE.', 'boite'];
 }
 // Abonnements d'un compte (table abonnement ; repli : ancien abonnement rangé dans le compte).
-async function abonnements(env, mail, compte) {
+// Sans « avecMuets », les appareils aux notifications coupées sont écartés.
+async function abonnements(env, mail, compte, avecMuets) {
     const db = await baseBoite(env);
     const r = await db.prepare('SELECT appareil, endpoint, p256dh, auth FROM abonnement WHERE mail = ?').bind(mail).all();
     const liste = (r.results || []).map(x => ({ appareil: x.appareil, push: { endpoint: x.endpoint, keys: { p256dh: x.p256dh, auth: x.auth } } }));
     ((compte && compte.appareils) || []).forEach(a => { if (a.push && a.push.endpoint && !liste.some(x => x.appareil === a.id)) liste.push({ appareil: a.id, push: a.push }); });
-    return liste;
+    if (avecMuets) return liste;
+    const muets = ((await db.prepare('SELECT appareil FROM muet WHERE mail = ?').bind(mail).all()).results || []).map(x => x.appareil);
+    return liste.filter(x => muets.indexOf(x.appareil) < 0);
 }
 // Prévient chaque appareil destinataire abonné ; un abonnement expiré (404 / 410) est retiré.
 async function notifier(env, dest, compte, idsAppareils, type, de, origine, nombre) {
@@ -502,12 +507,22 @@ async function api(requete, env, url, ctx) {
             .bind(moi.mail, moi.appareil.id, String(abonnement.endpoint).slice(0, 1000), String(abonnement.keys.p256dh).slice(0, 200), String(abonnement.keys.auth).slice(0, 100), Date.now()).run();
         return json({ ok: true });
     }
+    // Notifications coupées / rétablies sur cet appareil (les autres appareils du compte continuent de les recevoir).
+    if (chemin === 'push/muet' && methode === 'POST') {
+        const { muet } = await requete.json().catch(() => ({}));
+        const db = await baseBoite(env);
+        if (muet) await db.prepare('INSERT OR IGNORE INTO muet (mail, appareil) VALUES (?, ?)').bind(moi.mail, moi.appareil.id).run();
+        else await db.prepare('DELETE FROM muet WHERE mail = ? AND appareil = ?').bind(moi.mail, moi.appareil.id).run();
+        return json({ ok: true, muet: !!muet });
+    }
     // Test : une notification vers chacun de mes appareils, avec la réponse du service de notification (diagnostic).
     if (chemin === 'push/test' && methode === 'POST') {
-        const liste = await abonnements(env, moi.mail, moi.compte);
+        const liste = await abonnements(env, moi.mail, moi.compte, true);
+        const muets = ((await (await baseBoite(env)).prepare('SELECT appareil FROM muet WHERE mail = ?').bind(moi.mail).all()).results || []).map(x => x.appareil);
         const resultats = await Promise.all(moi.compte.appareils.map(async a => {
             const x = liste.find(y => y.appareil === a.id);
             if (!x) return { appareil: a.id, nom: a.nom, ceci: a.id === moi.appareil.id, statut: 0, detail: 'pas abonné aux notifications' };
+            if (muets.indexOf(a.id) >= 0) return { appareil: a.id, nom: a.nom, ceci: a.id === moi.appareil.id, statut: 0, detail: 'notifications coupées sur cet appareil' };
             try {
                 const r = await envoyerPush(env, x.push, { titre: 'Test TRIGONE', texte: 'Les notifications fonctionnent sur cet appareil (' + a.nom + ').', type: 'TEST', url: '/?espace=boite' }, url.origin);
                 const detail = r.ok ? 'envoyée' : (await r.text().catch(() => '')).slice(0, 200);
@@ -643,6 +658,7 @@ async function api(requete, env, url, ctx) {
     // Déconnexion de cet appareil (ou suppression du compte s'il n'en reste aucun).
     if (chemin === 'appareil' && methode === 'DELETE') {
         await (await baseBoite(env)).prepare('DELETE FROM abonnement WHERE mail = ? AND appareil = ?').bind(moi.mail, moi.appareil.id).run();
+        await (await baseBoite(env)).prepare('DELETE FROM muet WHERE mail = ? AND appareil = ?').bind(moi.mail, moi.appareil.id).run();
         moi.compte.appareils = moi.compte.appareils.filter(a => a.id !== moi.appareil.id);
         if (moi.compte.appareils.length) await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
         else await kv.delete('compte:' + moi.mail);
