@@ -421,7 +421,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 64, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 65, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1252,9 +1252,12 @@
                 });
             });
         }).then(function(ab) {
-            var j = ab.toJSON(), marque = c.appareil + '|' + j.endpoint;
-            if (lireTxt(CLE_NOTIF) === marque) return true;
-            return appelApi('push', { methode: 'POST', corps: { abonnement: { endpoint: j.endpoint, keys: j.keys } } }).then(function() { ecrireTxt(CLE_NOTIF, marque); return true; });
+            // Redonné au serveur si l'abonnement a changé, ou au plus tard toutes les 6 heures (le serveur ne le perd jamais longtemps).
+            var j = ab.toJSON(), marque = c.appareil + '|' + j.endpoint, memo = lireJSON(CLE_NOTIF) || {};
+            if (memo.m === marque && Date.now() - (memo.t || 0) < 6 * 3600 * 1000) return true;
+            return appelApi('push', { methode: 'POST', corps: { abonnement: { endpoint: j.endpoint, keys: j.keys } } }).then(function() {
+                ecrireTxt(CLE_NOTIF, JSON.stringify({ m: marque, t: Date.now() })); return true;
+            });
         });
     }
     window.JUMELAGE_ACTIVER_NOTIF = function() {
@@ -1274,7 +1277,8 @@
     });
     function blocNotif() {
         var e = notifEtat();
-        if (e === 'active') return '<p class="JUM-R-AIDE">🔔 <b>Notifications activées</b> sur cet appareil : vous êtes prévenu de chaque envoi, même TRIGONE fermée.</p>';
+        if (e === 'active') return '<p class="JUM-R-AIDE">🔔 <b>Notifications activées</b> sur cet appareil : vous êtes prévenu de chaque envoi, même TRIGONE fermée.</p>' +
+            '<button type="button" class="JUM-R-SECOND" id="JUM-C-TEST" style="margin:8px 0 0; width:100%;">🔔 Tester les notifications</button><div id="JUM-C-TEST-RES"></div>';
         if (e === 'impossible') return '<p class="JUM-R-AIDE">🔕 Ce navigateur ne permet pas les notifications : ouvrez TRIGONE pour relever vos envois.</p>';
         return '<div class="JUM-R-TITRE">Notifications</div><p class="JUM-R-AIDE">' + (e === 'ios'
             ? 'Sur iPhone / iPad, les notifications demandent TRIGONE <b>installée sur l\'écran d\'accueil</b> (Partager › Sur l\'écran d\'accueil) : ouvrez-la depuis cette icône, puis revenez ici.'
@@ -1446,6 +1450,21 @@
                 '<button type="button" class="JUM-R-LIEN" id="JUM-C-DECO">Déconnecter cet appareil</button><p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
                 '<div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_COMPTE()">Fermer</button></div></div>';
             document.body.appendChild(fenCompte);
+            // Test : une vraie notification vers chacun de mes appareils ; la réponse du service est affichée pour chacun.
+            var btnTest = fenCompte.querySelector('#JUM-C-TEST');
+            if (btnTest) btnTest.addEventListener('click', function() {
+                var zone = fenCompte.querySelector('#JUM-C-TEST-RES');
+                btnTest.disabled = true; btnTest.textContent = 'Envoi du test…';
+                abonnerNotif().catch(function() {}).then(function() { return appelApi('push/test', { methode: 'POST' }); }).then(function(r) {
+                    zone.innerHTML = '<p class="JUM-R-AIDE" style="margin-top:10px;">' + r.resultats.map(function(x) {
+                        var ok = x.statut >= 200 && x.statut < 300;
+                        return (ok ? '✔ ' : '✖ ') + '<b>' + esc(x.nom || 'Appareil') + '</b>' + (x.ceci ? ' (cet appareil)' : '') + ' : ' +
+                            (ok ? 'notification envoyée — elle doit apparaître dans quelques secondes.' : x.statut === 0 ? 'pas abonné : ouvrez TRIGONE sur cet appareil et activez les notifications.'
+                                : 'refusée par le service (' + x.statut + (x.service ? ', ' + esc(x.service) : '') + ') ' + esc(x.detail || ''));
+                    }).join('<br>') + '</p>';
+                }).catch(function(e) { zone.innerHTML = '<p class="JUM-R-ERREUR">⛔ ' + esc(e.message || e) + '</p>'; })
+                  .then(function() { btnTest.disabled = false; btnTest.textContent = '🔔 Tester les notifications'; });
+            });
             var btnNotif = fenCompte.querySelector('#JUM-C-NOTIF');
             if (btnNotif) btnNotif.addEventListener('click', function() {
                 var err = fenCompte.querySelector('#JUM-C-ERR');

@@ -43,7 +43,10 @@ async function baseBoite(env) {
     if (!TABLES_PRETES) {
         await env.TRIGONE_DB.batch([
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS boite (id TEXT NOT NULL, dest TEXT NOT NULL, appareil TEXT NOT NULL, de TEXT, type TEXT, le INTEGER, enveloppe TEXT, PRIMARY KEY (id, appareil))'),
-            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_dest ON boite (dest, appareil)')
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_dest ON boite (dest, appareil)'),
+            // Abonnements aux notifications, un par appareil : table à part (écriture simple et cohérente, jamais
+            // écrasée par une autre mise à jour du compte).
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS abonnement (mail TEXT NOT NULL, appareil TEXT NOT NULL, endpoint TEXT NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, le INTEGER, PRIMARY KEY (mail, appareil))')
         ]);
         TABLES_PRETES = true;
     }
@@ -63,6 +66,7 @@ async function remiseAZero(env) {
     REMISE_FAITE = true;
     if (!r.meta || !r.meta.changes) return;   // déjà faite (par cette requête ou une autre)
     await db.prepare('DELETE FROM boite').run();
+    await (await baseBoite(env)).prepare('DELETE FROM abonnement').run();
     for (const prefixe of ['compte:', 'code:', 'limite:', 'msg:']) {
         let curseur;
         do {
@@ -143,21 +147,25 @@ function textePush(type, n) {
     }[type];
     return t || ['TRIGONE', 'Nouvel envoi dans votre boîte TRIGONE.', 'boite'];
 }
+// Abonnements d'un compte (table abonnement ; repli : ancien abonnement rangé dans le compte).
+async function abonnements(env, mail, compte) {
+    const db = await baseBoite(env);
+    const r = await db.prepare('SELECT appareil, endpoint, p256dh, auth FROM abonnement WHERE mail = ?').bind(mail).all();
+    const liste = (r.results || []).map(x => ({ appareil: x.appareil, push: { endpoint: x.endpoint, keys: { p256dh: x.p256dh, auth: x.auth } } }));
+    ((compte && compte.appareils) || []).forEach(a => { if (a.push && a.push.endpoint && !liste.some(x => x.appareil === a.id)) liste.push({ appareil: a.id, push: a.push }); });
+    return liste;
+}
 // Prévient chaque appareil destinataire abonné ; un abonnement expiré (404 / 410) est retiré.
-async function notifier(env, dest, appareils, type, de, origine, nombre) {
+async function notifier(env, dest, compte, idsAppareils, type, de, origine, nombre) {
     const t = textePush(type, nombre || 1);
-    const expires = [];
-    await Promise.all(appareils.filter(a => a.push && a.push.endpoint).map(async a => {
+    const liste = (await abonnements(env, dest, compte)).filter(x => idsAppareils.indexOf(x.appareil) >= 0);
+    const db = await baseBoite(env);
+    await Promise.all(liste.map(async x => {
         try {
-            const r = await envoyerPush(env, a.push, { titre: t[0], texte: t[1] + (de ? ' — de ' + de : ''), type, nombre: nombre || 1, url: '/?espace=' + t[2] }, origine);
-            if (r.status === 404 || r.status === 410) expires.push(a.id);
+            const r = await envoyerPush(env, x.push, { titre: t[0], texte: t[1] + (de ? ' — de ' + de : ''), type, nombre: nombre || 1, url: '/?espace=' + t[2] }, origine);
+            if (r.status === 404 || r.status === 410) await db.prepare('DELETE FROM abonnement WHERE mail = ? AND appareil = ?').bind(dest, x.appareil).run();
         } catch (e) {}
     }));
-    if (!expires.length) return;
-    const compte = await env.TRIGONE_KV.get('compte:' + dest, 'json');
-    if (!compte) return;
-    compte.appareils.forEach(a => { if (expires.indexOf(a.id) >= 0) delete a.push; });
-    await env.TRIGONE_KV.put('compte:' + dest, JSON.stringify(compte));
 }
 
 function json(corps, statut) {
@@ -335,14 +343,30 @@ async function api(requete, env, url, ctx) {
 
     // Abonnement de cet appareil aux notifications (POST : enregistrer, DELETE : retirer).
     if (chemin === 'push' && (methode === 'POST' || methode === 'DELETE')) {
-        const { abonnement } = methode === 'POST' ? await requete.json().catch(() => ({})) : {};
-        const app = moi.compte.appareils.find(a => a.id === moi.appareil.id);
-        if (methode === 'POST') {
-            if (!abonnement || !/^https:\/\//.test(abonnement.endpoint || '') || !abonnement.keys || !abonnement.keys.p256dh || !abonnement.keys.auth) return erreur(400, 'Abonnement invalide.');
-            app.push = { endpoint: String(abonnement.endpoint).slice(0, 1000), keys: { p256dh: String(abonnement.keys.p256dh).slice(0, 200), auth: String(abonnement.keys.auth).slice(0, 100) } };
-        } else delete app.push;
-        await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
+        const db = await baseBoite(env);
+        if (methode === 'DELETE') {
+            await db.prepare('DELETE FROM abonnement WHERE mail = ? AND appareil = ?').bind(moi.mail, moi.appareil.id).run();
+            return json({ ok: true });
+        }
+        const { abonnement } = await requete.json().catch(() => ({}));
+        if (!abonnement || !/^https:\/\//.test(abonnement.endpoint || '') || !abonnement.keys || !abonnement.keys.p256dh || !abonnement.keys.auth) return erreur(400, 'Abonnement invalide.');
+        await db.prepare('INSERT INTO abonnement (mail, appareil, endpoint, p256dh, auth, le) VALUES (?, ?, ?, ?, ?, ?) ON CONFLICT (mail, appareil) DO UPDATE SET endpoint = excluded.endpoint, p256dh = excluded.p256dh, auth = excluded.auth, le = excluded.le')
+            .bind(moi.mail, moi.appareil.id, String(abonnement.endpoint).slice(0, 1000), String(abonnement.keys.p256dh).slice(0, 200), String(abonnement.keys.auth).slice(0, 100), Date.now()).run();
         return json({ ok: true });
+    }
+    // Test : une notification vers chacun de mes appareils, avec la réponse du service de notification (diagnostic).
+    if (chemin === 'push/test' && methode === 'POST') {
+        const liste = await abonnements(env, moi.mail, moi.compte);
+        const resultats = await Promise.all(moi.compte.appareils.map(async a => {
+            const x = liste.find(y => y.appareil === a.id);
+            if (!x) return { appareil: a.id, nom: a.nom, ceci: a.id === moi.appareil.id, statut: 0, detail: 'pas abonné aux notifications' };
+            try {
+                const r = await envoyerPush(env, x.push, { titre: 'Test TRIGONE', texte: 'Les notifications fonctionnent sur cet appareil (' + a.nom + ').', type: 'TEST', url: '/?espace=boite' }, url.origin);
+                const detail = r.ok ? 'envoyée' : (await r.text().catch(() => '')).slice(0, 200);
+                return { appareil: a.id, nom: a.nom, ceci: a.id === moi.appareil.id, statut: r.status, service: new URL(x.push.endpoint).host, detail };
+            } catch (e) { return { appareil: a.id, nom: a.nom, ceci: a.id === moi.appareil.id, statut: -1, detail: String(e && e.message || e).slice(0, 200) }; }
+        }));
+        return json({ ok: true, resultats });
     }
 
     // Clés publiques des appareils d'un destinataire (pour chiffrer un envoi).
@@ -377,7 +401,7 @@ async function api(requete, env, url, ctx) {
             .bind(id, dest, e.appareil, moi.mail, type, le, JSON.stringify({ epk: e.epk, iv: e.iv, ct: e.ct })))
             .concat(db.prepare('DELETE FROM boite WHERE le < ?').bind(le - DUREE_MESSAGE * 1000)));
         const nombre = Math.min(500, Math.max(1, parseInt(corps.nombre, 10) || 1));   // nombre de demandes (l'expéditeur le donne ; le contenu reste chiffré)
-        const prevenir = notifier(env, dest, compte.appareils.filter(a => enveloppes.some(e => e.appareil === a.id)), type, moi.mail, url.origin, nombre).catch(() => {});
+        const prevenir = notifier(env, dest, compte, enveloppes.map(e => e.appareil), type, moi.mail, url.origin, nombre).catch(() => {});
         if (ctx && ctx.waitUntil) ctx.waitUntil(prevenir); else await prevenir;
         return json({ ok: true, id });
     }
@@ -407,6 +431,7 @@ async function api(requete, env, url, ctx) {
 
     // Déconnexion de cet appareil (ou suppression du compte s'il n'en reste aucun).
     if (chemin === 'appareil' && methode === 'DELETE') {
+        await (await baseBoite(env)).prepare('DELETE FROM abonnement WHERE mail = ? AND appareil = ?').bind(moi.mail, moi.appareil.id).run();
         moi.compte.appareils = moi.compte.appareils.filter(a => a.id !== moi.appareil.id);
         if (moi.compte.appareils.length) await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
         else await kv.delete('compte:' + moi.mail);

@@ -185,6 +185,11 @@ module.exports = async function() {
         return cle.ok && cle.cle.length > 80 && r.ok;
     });
     verifier(abonne, 'notifications : clé VAPID du serveur et abonnement de l\'appareil enregistré');
+    const testNotif = await v1.evaluate(async () => {
+        const c = JSON.parse(localStorage.getItem('trigone_compte')), h = { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton, 'Content-Type': 'application/json' };
+        return (await (await fetch('api/push/test', { method: 'POST', headers: h })).json());
+    });
+    verifier(testNotif.ok && testNotif.resultats.some(x => x.ceci && x.statut !== 0), '« Tester les notifications » : l\'abonnement est retrouvé et le service de notification interrogé (réponse par appareil)');
 
     // 2e valideur : renvoie la demande au VALIDEUR 1, avec un motif
     await relever(v2);
