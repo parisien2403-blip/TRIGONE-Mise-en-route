@@ -15,5 +15,7 @@
     "BREVO_SMTP_UTILISATEUR": "bb488f001@smtp-brevo.com"
   },
   "keep_vars": true,
+  // Toutes les heures : relance des valideurs et de l'assistant Chorus DT (demandes en attente depuis plus de 24 h).
+  "triggers": { "crons": ["0 * * * *"] },
   "observability": { "enabled": true }
 }
