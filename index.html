@@ -5,12 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=58"></script>
+<script src="jumelage.js?v=59"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
-<link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
-<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=2">
-<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2">
+<link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
+<link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png?v=3">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
@@ -354,6 +354,14 @@ body.dark-mode .NOTICE-CARD, body.dark-mode .notice-fold { background: #242424; 
 /* « Références » en haut, « Mise à jour » juste en dessous, comme TRIGONE compte-rendu */
 .P0-CHECK-UPDATE-BTN { top: 40px; } .P0-SIGNALER-BTN { top: 70px; }
 @media (max-width: 560px) { .P0-REF-BTN { right: 54px; top: 14px; } .P0-CHECK-UPDATE-BTN { top: 44px; } .P0-SIGNALER-BTN { top: 74px; } }
+/* Petits écrans : Références, Mise à jour et Signaler en rangée de pastilles rondes (icône seule, nom en info-bulle),
+   au-dessus du logo sans le recouvrir (comme dans Compte-rendu). */
+@media (max-width: 400px), (orientation: portrait) and (max-height: 700px) {
+  .MER-P0-INNER { padding-top: 52px; }
+  .P0-REF-BTN { top: 14px; width: 34px; height: 34px; padding: 0; font-size: 0; gap: 0; justify-content: center; }
+  .P0-REF-BTN .JUM-IC { width: 16px; height: 16px; }
+  .P0-SIGNALER-BTN { top: 14px; right: 54px; } .P0-CHECK-UPDATE-BTN { top: 14px; right: 96px; } #BTN-REFERENCES { right: 138px; }
+}
 .FOLD-ICON { display: inline-flex; width: 18px; height: 18px; margin-right: 8px; vertical-align: -4px; }
 .FOLD-ICON svg { width: 18px; height: 18px; stroke: var(--tg-accent); fill: none; stroke-width: 1.85; stroke-linecap: round; stroke-linejoin: round; }
 body.dark-mode .P0-REF-BTN { background: rgba(36,36,36,0.9); border-color: #404040; color: #a3a3a3; }
@@ -854,6 +862,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=58"></script>
+<script src="app.js?v=59"></script>
 </body>
 </html>

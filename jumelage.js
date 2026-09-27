@@ -115,6 +115,7 @@
         '.JUM-CR-AJOUT { display: block; text-align: center; margin: 10px 0 0; cursor: pointer; }' +
         'html body.dark-mode .JUM-CR-FICHIER { border-color: rgba(255,255,255,0.1); } html body.dark-mode .JUM-CR-FICHIER small { color: #a3a3a3; }' +
         '.JUM-BONJOUR { margin: 0 0 4px; text-align: center; font: 600 clamp(0.74rem, 3.5vw, 0.9rem)/1.3 Montserrat, system-ui, sans-serif; color: #5a7a94; letter-spacing: 0.01em; }' +
+        '@media (max-height: 600px) and (orientation: portrait) { .JUM-BONJOUR { display: none; } }' +
         '.JUM-BONJOUR b { color: #1a1a1a; font-weight: 800; white-space: nowrap; } body.dark-mode .JUM-BONJOUR { color: #a9c3d6; } body.dark-mode .JUM-BONJOUR b { color: #f5f5f5; }' +
         '.JUM-R-ACTIF { font-style: normal; font-size: 0.72rem; font-weight: 800; color: #15803d; background: rgba(21,128,61,0.1); border-radius: 999px; padding: 2px 8px; margin-left: 4px; white-space: nowrap; }' +
         '.JUM-BOITE-PASTILLE { display: inline-block; margin-top: 12px; padding: 6px 13px; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.72rem Montserrat, system-ui, sans-serif; letter-spacing: 0.02em; box-shadow: 0 4px 12px rgba(185,28,28,0.3); animation: jum-pulse 2s ease-in-out infinite; }' +
@@ -416,7 +417,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 58, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 59, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
