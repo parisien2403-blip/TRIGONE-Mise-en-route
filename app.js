@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 119;
+var APP_CODE_VERSION = 120;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -156,6 +156,7 @@ function APPLIQUER_THEME_INITIAL() {
 // ===================== PAGE ACCUEIL =====================
 function SHOW_PAGE(page) {
     if (page !== 'CHORUS' && page !== 'VERIFIER') MER_ESPACE_CHORUS = false;
+    if (page !== 'BIBLIOTHEQUE') MER_BIB_SELECTION = null;
     PAGE_ACTUELLE = page;
     var zone = document.getElementById('PAGE-STAGE');
     zone.classList.toggle('avec-marge', page !== 'ACCUEIL');
@@ -456,27 +457,58 @@ window.addEventListener('trigone-suivi', function() {
     if (typeof PAGE_ACTUELLE === 'undefined' || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
     if (PAGE_ACTUELLE === 'BIBLIOTHEQUE' || PAGE_ACTUELLE === 'RECEPTION' || (PAGE_ACTUELLE === 'CHORUS' && !MER_RESULTATS_VERIF)) { var y = window.scrollY; SHOW_PAGE(PAGE_ACTUELLE); window.scrollTo(0, y); }
 });
+// Sélection pour supprimer plusieurs demandes d'un coup : null = mode normal, sinon { id: true } des cochées.
+var MER_BIB_SELECTION = null;
+function BIB_SELECTION(active) { MER_BIB_SELECTION = active ? {} : null; SHOW_PAGE('BIBLIOTHEQUE'); }
+function BIB_COCHER(id, oui) { if (!MER_BIB_SELECTION) return; if (oui) MER_BIB_SELECTION[id] = true; else delete MER_BIB_SELECTION[id]; BIB_MAJ_BARRE(); }
+function BIB_TOUT_COCHER() {
+    var l = GET_BIBLIOTHEQUE(), tout = l.every(function(e) { return MER_BIB_SELECTION[e.id]; });
+    MER_BIB_SELECTION = {}; if (!tout) l.forEach(function(e) { MER_BIB_SELECTION[e.id] = true; });
+    var y = window.scrollY; SHOW_PAGE('BIBLIOTHEQUE'); window.scrollTo(0, y);
+}
+function BIB_MAJ_BARRE() {
+    var n = Object.keys(MER_BIB_SELECTION || {}).length, b = document.getElementById('MER-BIB-SUPPR');
+    if (b) { b.disabled = !n; b.textContent = '🗑 Supprimer' + (n ? ' (' + n + ')' : ''); }
+}
+function BIB_SUPPRIMER_SELECTION() {
+    var ids = Object.keys(MER_BIB_SELECTION || {}); if (!ids.length) return;
+    MSG_CONFIRM('Supprimer ' + ids.length + ' demande' + (ids.length > 1 ? 's' : '') + ' ?', (ids.length > 1 ? 'Ces demandes seront retirées' : 'Cette demande sera retirée') + ' de la bibliothèque de cet appareil.', 'Supprimer', function() {
+        SAVE_BIBLIOTHEQUE(GET_BIBLIOTHEQUE().filter(function(e) { return ids.indexOf(e.id) < 0; }));
+        MER_BIB_SELECTION = null;
+        SHOW_PAGE('BIBLIOTHEQUE');
+    }, '🗑️', 'mascotte-poubelle.webp', true);
+}
 function TPL_BIBLIOTHEQUE() {
-    var l = GET_BIBLIOTHEQUE();
+    var l = GET_BIBLIOTHEQUE(), sel = MER_BIB_SELECTION;
+    if (sel) Object.keys(sel).forEach(function(id) { if (!BIB_TROUVER(id)) delete sel[id]; });
     if (!DEMO_ACTIF && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
     var items = l.map(function(e) {
         var noms = e.demandes.map(function(d) { return RESUME_DEMANDE(d).noms; }).join(' · ');
         var objets = e.demandes.map(function(d) { return d.objet || ''; }).join(' · ');
-        return '<div class="MER-PANIER-ITEM" style="align-items:flex-start;"><div class="MER-PANIER-ITEM-TXT">' +
+        return '<div class="MER-PANIER-ITEM' + (sel && sel[e.id] ? ' MER-BIB-COCHEE' : '') + '" style="align-items:flex-start;">' +
+            (sel ? '<label class="MER-BIB-CASE"><input type="checkbox"' + (sel[e.id] ? ' checked' : '') + ' onchange="BIB_COCHER(\'' + e.id + '\', this.checked); this.closest(\'.MER-PANIER-ITEM\').classList.toggle(\'MER-BIB-COCHEE\', this.checked)" aria-label="Sélectionner"></label>' : '') +
+            '<div class="MER-PANIER-ITEM-TXT">' +
             '<span class="MER-BADGE">Envoyée le ' + ESC(new Date(e.envoyeLe).toLocaleDateString('fr-FR')) + '</span>' +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(objets) + (e.destinataire ? '<br>À ' + ESC(e.destinataire) : '') + '</div>' +
             (DEMO_ACTIF ? '' : e.demandes.map(function(d) { return TPL_SUIVI_DEMANDE(d.id, e.demandes.length > 1 ? RESUME_DEMANDE(d).noms : ''); }).join('')) +
-            '<div class="MER-VAL-ACTIONS">' +
+            (sel ? '' : '<div class="MER-VAL-ACTIONS">' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_SUPPRIMER(\'' + e.id + '\')">Supprimer</button>' +
-            '</div></div></div>';
+            '</div>') + '</div></div>';
     }).join('');
+    var n = sel ? Object.keys(sel).length : 0;
+    // Barre de sélection (plusieurs demandes à supprimer d'un coup), dès qu'il y en a au moins deux.
+    var barre = DEMO_ACTIF || l.length < 2 ? '' : sel
+        ? '<div class="MER-BIB-BARRE"><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_TOUT_COCHER()">' + (l.every(function(e) { return sel[e.id]; }) ? 'Tout décocher' : 'Tout cocher') + '</button>' +
+            '<button type="button" class="BTN BTN-SMALL MER-BIB-SUPPR" id="MER-BIB-SUPPR" onclick="BIB_SUPPRIMER_SELECTION()"' + (n ? '' : ' disabled') + '>🗑 Supprimer' + (n ? ' (' + n + ')' : '') + '</button>' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_SELECTION(false)">Annuler</button></div>'
+        : '<div class="MER-BIB-BARRE"><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_SELECTION(true)">☑ Sélectionner</button></div>';
     return '<div class="CARD"><h2>Bibliothèque</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées, avec leur <b>suivi</b> (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT) : une notification vous prévient à chaque étape. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route ») sur cet appareil ; ailleurs, le missionnaire saisit sa mission directement dans Compte-rendu.</p>' +
-        (items || '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+        barre + (items || '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_BIB_SELECTION = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 function BIB_TROUVER(id) { return GET_BIBLIOTHEQUE().filter(function(e) { return e.id === id; })[0]; }
 function BIB_PDF(id) {
@@ -1735,7 +1767,7 @@ var MER_NOTICES = {
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
             '<b>Documents</b> : « Ajouter aux documents » y range la demande terminée (message de confirmation) ; plusieurs demandes peuvent partir ensemble. « Modifier » la ressort des Documents le temps de la correction, « Retirer » la supprime (après confirmation). Vérifiez le <b>mail du 1er valideur</b> et l\'<b>aperçu du PDF</b>, puis <b>« 📨 Envoyer »</b> : la demande (pièces jointes comprises) arrive, chiffrée, dans le TRIGONE du 1er valideur. S\'il n\'a pas encore de compte TRIGONE, l\'envoi est bloqué : demandez-lui de s\'inscrire ; votre demande reste dans Documents.',
             'Appli fermée avant la fin ? À la réouverture, l\'écran <b>Demande en cours</b> propose de <b>continuer</b> la saisie ou de revenir à l\'accueil (la demande reste enregistrée, bouton « ↩ Reprendre ma demande en cours »).',
-            '<b>Suivi</b> : dans la <b>Bibliothèque</b>, chaque demande envoyée affiche sa frise Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT, avec qui a validé, quand, et depuis combien de temps elle attend. Une notification vous prévient à chaque étape, jusqu\'à la prise en charge par l\'assistant Chorus DT.',
+            '<b>Suivi</b> : dans la <b>Bibliothèque</b>, chaque demande envoyée affiche sa frise Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT, avec qui a validé, quand, et depuis combien de temps elle attend. Une notification vous prévient à chaque étape, jusqu\'à la prise en charge par l\'assistant Chorus DT. Pour faire du tri, <b>« ☑ Sélectionner »</b> permet de cocher plusieurs demandes (ou « Tout cocher ») et de les supprimer d\'un coup.',
             'À l\'envoi, la demande quitte Documents pour la <b>Bibliothèque</b>. En cas de refus, elle revient dans votre <b>Boîte de réception</b> avec le motif : « Corriger dans Documents » l\'y range ; corrigez-la avec « Modifier » et renvoyez-la.',
             'Au retour de mission, <b>TRIGONE Compte-rendu</b> reprend la mission envoyée depuis cet appareil (« À partir d\'une mise en route ») ; sinon, le missionnaire la saisit directement dans Compte-rendu.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Rôle valideur · boîte de réception · signature', icone: MER_ICONES_NOTICE_CADENAS(),
