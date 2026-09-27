@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 116,
-  "appCodeMessage": "Version 68 : écran de choix plus propre — le logo choisi entre seul dans l'appli, les autres s'effacent sans se superposer.",
+  "appCodeVersion": 117,
+  "appCodeMessage": "Version 69 : suivi de vos demandes dans la Bibliothèque (VALIDEUR 1 → VALIDEUR 2 → Chorus DT), avec une notification à chaque étape ; notification quand l'assistant Chorus DT récupère puis traite votre compte-rendu ; rappel aux valideurs et à l'assistant Chorus DT toutes les 24 h pour ce qui les attend.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

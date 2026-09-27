@@ -428,7 +428,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 69, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 70, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -897,7 +897,7 @@
     // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
     // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
     var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
-    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares)$/;
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi)$/;
     function basePieces(creer) {
         return new Promise(function(ok) {
             if (!window.indexedDB) { ok(null); return; }
@@ -1144,9 +1144,12 @@
             return chiffrerPour(r.appareils, JSON.stringify({ nom: nom, contenu: texte }));
         }).then(function(ch) {
             // Nombre de demandes de l'envoi (pour la notification « 3 demandes à signer ») : seul ce chiffre est visible du serveur.
-            var nombre = 1;
-            try { var o = JSON.parse(texte); if (o && Array.isArray(o.demandes)) nombre = o.demandes.length || 1; } catch (e) {}
-            return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, nombre: nombre, enveloppes: ch.enveloppes, donnees: ch.donnees } });
+            // Identifiants des demandes (refs) et nom de l'expéditeur (qui) : le serveur fait avancer le suivi de chaque
+            // demande et prévient le demandeur (« validée par le VALIDEUR 1 (CNE DUPONT) »). Rien d'autre n'est visible.
+            var nombre = 1, refs = [];
+            try { var o = JSON.parse(texte); if (o && Array.isArray(o.demandes)) { nombre = o.demandes.length || 1; refs = o.demandes.map(function(d) { return d && d.id; }).filter(Boolean); } } catch (e) {}
+            return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, nombre: nombre, refs: refs, qui: window.JUMELAGE_QUI(), enveloppes: ch.enveloppes, donnees: ch.donnees } });
+        }).then(function(r) { if (type === 'DEMANDE' || type === 'CR') setTimeout(window.JUMELAGE_SUIVI_ACTUALISER, 800); return r;
         });
     };
     // Compte-rendu de fin de mission → boîte TRIGONE de l'assistant Chorus DT : le PDF du compte-rendu (produit par
@@ -1291,8 +1294,25 @@
     // Déjà autorisées : l'abonnement est tenu à jour à chaque ouverture (nouvel appareil, compte réactivé…).
     function suivreNotif() { if (monCompte() && notifPossible() && Notification.permission === 'granted' && navigator.onLine) abonnerNotif().catch(function() {}); }
     if ('serviceWorker' in navigator) navigator.serviceWorker.addEventListener('message', function(ev) {
-        if (ev.data && ev.data.type === 'trigone-push' && window.JUMELAGE_RELEVER) window.JUMELAGE_RELEVER();
+        if (ev.data && ev.data.type === 'trigone-push' && window.JUMELAGE_RELEVER) { window.JUMELAGE_RELEVER(); window.JUMELAGE_SUIVI_ACTUALISER(); }
     });
+    // ---------- Suivi de mes demandes et comptes-rendus (étapes tenues par le serveur, sans contenu) ----------
+    // Copie locale « trigone_suivi » : { ref: { genre, etape, envoi, le, etapes: [{ e, le, qui }] } } ; événement
+    // « trigone-suivi » à chaque mise à jour.
+    var CLE_SUIVI = 'trigone_suivi', suiviEnCours = null;
+    window.JUMELAGE_SUIVI = function() { return lireJSON(CLE_SUIVI) || {}; };
+    window.JUMELAGE_SUIVI_ACTUALISER = function() {
+        if (!monCompte() || !navigator.onLine) return Promise.resolve(window.JUMELAGE_SUIVI());
+        if (suiviEnCours) return suiviEnCours;
+        suiviEnCours = appelApi('suivi').then(function(r) {
+            var avant = lireTxt(CLE_SUIVI), o = {};
+            (r.suivi || []).forEach(function(x) { o[x.ref] = { genre: x.genre, etape: x.etape, envoi: x.envoi, le: x.le, etapes: x.etapes || [] }; });
+            var txt = JSON.stringify(o);
+            if (txt !== avant) { ecrireTxt(CLE_SUIVI, txt); try { window.dispatchEvent(new Event('trigone-suivi')); } catch (e) {} }
+            return o;
+        }).catch(function() { return window.JUMELAGE_SUIVI(); }).then(function(o) { suiviEnCours = null; return o; });
+        return suiviEnCours;
+    };
     function blocNotif() {
         var e = notifEtat();
         var android = /Android/i.test(navigator.userAgent || '');
@@ -1353,13 +1373,24 @@
         }).then(function(b) { return new File([b], (x && x.nom) || 'demande.json', { type: 'application/json' }); });
     };
     window.JUMELAGE_BOITE_MARQUER = function(id, statut) {
-        var l = boiteLire(); l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') x.statut = statut; }); boiteEcrire(l);
+        var l = boiteLire(), cr = false;
+        l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') { x.statut = statut; if (statut === 'traite' && x.nature === 'cr') cr = true; } });
+        boiteEcrire(l);
+        // Compte-rendu traité par l'assistant Chorus DT : le missionnaire est prévenu.
+        if (cr) suiviTraite({ envois: [id] });
     };
+    function suiviTraite(corps) {
+        if (!monCompte()) return;
+        corps.qui = window.JUMELAGE_QUI();
+        appelApi('suivi/traite', { methode: 'POST', corps: corps }).catch(function() {});
+    }
     // Demandes traitées (validées / refusées puis transmises, PDF Chorus produit) : les envois qui les contiennent passent en « traité ».
     // natures : seulement les envois de ces natures (ex. ['niveau1', 'renvoi'] après une transmission du VALIDEUR 1) ;
     // une même demande peut déjà être revenue à un autre niveau (même personne VALIDEUR 1 et VALIDEUR 2).
     window.JUMELAGE_BOITE_TRAITER_DEMANDES = function(ids, natures) {
         if (!ids || !ids.length) return;
+        // Demandes traitées par l'assistant Chorus DT (PDF produit) : le demandeur est prévenu.
+        if (natures && natures.indexOf('chorus') >= 0) suiviTraite({ refs: ids });
         var l = boiteLire(), change = false;
         l.forEach(function(x) {
             if (natures && natures.indexOf(x.nature) < 0) return;
@@ -1445,10 +1476,10 @@
     // (et aussitôt qu'une notification arrive, appli ouverte).
     function releveAuto() { if (document.visibilityState === 'visible' && !document.body.classList.contains('demo-active')) window.JUMELAGE_RELEVER(); }
     if (monCompte()) {
-        var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); setTimeout(declarerRoles, 2500); setTimeout(suivreNotif, 3500); };
+        var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); setTimeout(declarerRoles, 2500); setTimeout(suivreNotif, 3500); setTimeout(window.JUMELAGE_SUIVI_ACTUALISER, 3000); };
         if (document.body) lancerReleve(); else document.addEventListener('DOMContentLoaded', lancerReleve);
     }
-    document.addEventListener('visibilitychange', function() { if (monCompte()) releveAuto(); });
+    document.addEventListener('visibilitychange', function() { if (monCompte()) { releveAuto(); if (document.visibilityState === 'visible') window.JUMELAGE_SUIVI_ACTUALISER(); } });
     setInterval(function() { if (monCompte()) releveAuto(); }, 20000);
 
     // Fenêtre « Compte TRIGONE » : activer (mail pro → code reçu), état, déconnexion de l'appareil.
@@ -2168,7 +2199,7 @@
     var dejaChoisi = false;
     try { dejaChoisi = sessionStorage.getItem(CLE_CHOIX) === '1'; } catch (e) {}
     // Ouverture depuis une notification (boîte de réception ou espace Assistant Chorus DT) : droit à l'espace visé.
-    if (!DANS_CR && /[?&]espace=(boite|chorus)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
+    if (!DANS_CR && /[?&]espace=(boite|chorus|suivi)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
     // Juste après une mise à jour (nouvelle publication chargée, quelle qu'en soit la cause) : retour à l'écran de choix.
     var buildVu = +lireTxt('trigone_build_vu') || 0;
     var apresMaj = false;

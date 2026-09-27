@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 116;
+var APP_CODE_VERSION = 117;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -423,8 +423,40 @@ function ARCHIVER_ENVOI(demandes, destinataire) {
     l.unshift({ id: 'e' + Date.now(), envoyeLe: new Date().toISOString(), destinataire: destinataire, demandes: demandes });
     SAVE_BIBLIOTHEQUE(l);
 }
+// Suivi d'une demande envoyée (tenu par le serveur : étape, date, auteur) : frise Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT.
+var MER_SUIVI_ETAPES = [['envoyee', 'Envoyée'], ['val1', 'VALIDEUR 1'], ['val2', 'VALIDEUR 2'], ['chorus', 'Chorus DT']];
+function MER_DATE_HEURE(ms) {
+    var d = new Date(ms);
+    return d.toLocaleDateString('fr-FR') + ' à ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+}
+function MER_DEPUIS(ms) {
+    var h = Math.floor((Date.now() - ms) / 3600000);
+    return h < 1 ? 'moins d\'une heure' : h < 24 ? h + ' h' : Math.floor(h / 24) + ' j';
+}
+function TPL_SUIVI_DEMANDE(d, avecNom) {
+    var s = window.JUMELAGE_SUIVI && JUMELAGE_SUIVI()[d.id];
+    if (!s) return '';
+    // Rang de l'étape en cours : 1 chez le VALIDEUR 1, 2 chez le VALIDEUR 2, 3 chez Chorus DT, 4 traitée.
+    var rang = { val1: 1, val2: 2, chorus: 3, traite: 4 }[s.etape], refus = s.etape === 'refus';
+    var der = (s.etapes || [])[s.etapes.length - 1] || {};
+    var puces = MER_SUIVI_ETAPES.map(function(x, i) {
+        var etat = refus ? (i === 0 ? 'fait' : 'avenir') : i < rang ? 'fait' : i === rang ? 'encours' : 'avenir';
+        return '<span class="MER-SUIVI-PT ' + etat + '"><i>' + (etat === 'fait' ? '✓' : etat === 'encours' ? '…' : '') + '</i>' + x[1] + '</span>';
+    }).join('<span class="MER-SUIVI-TRAIT"></span>');
+    var par = der.qui ? ' (' + ESC(der.qui) + ')' : '';
+    var texte = refus ? '<b style="color:#b91c1c;">Refusée</b>' + par + ' le ' + MER_DATE_HEURE(der.le) + ' : voir votre Boîte de réception.'
+        : rang === 4 ? '<b style="color:#15803d;">Prise en charge par l\'assistant Chorus DT</b>' + par + ' le ' + MER_DATE_HEURE(der.le) + ' : ordre de mission en cours de création.'
+        : ({ envoyee: 'Envoyée', val1: 'Validée par le VALIDEUR 1', val2: 'Validée par le VALIDEUR 2', renvoi: 'Renvoyée au VALIDEUR 1 par le VALIDEUR 2' }[der.e] || 'Mise à jour') + par + ' le ' + MER_DATE_HEURE(der.le) +
+          '. <b>En attente ' + (rang === 3 ? 'de l\'assistant Chorus DT' : 'du VALIDEUR ' + rang) + ' depuis ' + MER_DEPUIS(s.le) + '.</b>';
+    return '<div class="MER-SUIVI' + (refus ? ' refus' : '') + '">' + (avecNom ? '<div class="MER-SUIVI-NOM">' + ESC(RESUME_DEMANDE(d).noms) + '</div>' : '') +
+        '<div class="MER-SUIVI-FRISE">' + puces + '</div><div class="MER-SUIVI-TXT">' + texte + '</div></div>';
+}
+window.addEventListener('trigone-suivi', function() {
+    if (typeof PAGE_ACTUELLE !== 'undefined' && PAGE_ACTUELLE === 'BIBLIOTHEQUE' && !(typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) { var y = window.scrollY; SHOW_PAGE('BIBLIOTHEQUE'); window.scrollTo(0, y); }
+});
 function TPL_BIBLIOTHEQUE() {
     var l = GET_BIBLIOTHEQUE();
+    if (!DEMO_ACTIF && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
     var items = l.map(function(e) {
         var noms = e.demandes.map(function(d) { return RESUME_DEMANDE(d).noms; }).join(' · ');
         var objets = e.demandes.map(function(d) { return d.objet || ''; }).join(' · ');
@@ -432,6 +464,7 @@ function TPL_BIBLIOTHEQUE() {
             '<span class="MER-BADGE">Envoyée le ' + ESC(new Date(e.envoyeLe).toLocaleDateString('fr-FR')) + '</span>' +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(objets) + (e.destinataire ? '<br>À ' + ESC(e.destinataire) : '') + '</div>' +
+            (DEMO_ACTIF ? '' : e.demandes.map(function(d) { return TPL_SUIVI_DEMANDE(d, e.demandes.length > 1); }).join('')) +
             '<div class="MER-VAL-ACTIONS">' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
@@ -439,7 +472,7 @@ function TPL_BIBLIOTHEQUE() {
             '</div></div></div>';
     }).join('');
     return '<div class="CARD"><h2>Bibliothèque</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route ») sur cet appareil ; ailleurs, le missionnaire saisit sa mission directement dans Compte-rendu.</p>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées, avec leur <b>suivi</b> (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT) : une notification vous prévient à chaque étape. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route ») sur cet appareil ; ailleurs, le missionnaire saisit sa mission directement dans Compte-rendu.</p>' +
         (items || '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
@@ -1700,6 +1733,7 @@ var MER_NOTICES = {
             '<b>Imputation</b> : saisissez le code FD, TRIGONE affiche le centre financier, le centre de coût et le code activité. <b>Joignez la NDS ou la DAF</b> (et les pièces VRC le cas échéant), en PDF ou photo : elles voyagent avec la demande.',
             '<b>Documents</b> : « Ajouter aux documents » y range la demande terminée (message de confirmation) ; plusieurs demandes peuvent partir ensemble. « Modifier » la ressort des Documents le temps de la correction, « Retirer » la supprime (après confirmation). Vérifiez le <b>mail du 1er valideur</b> et l\'<b>aperçu du PDF</b>, puis <b>« 📨 Envoyer »</b> : la demande (pièces jointes comprises) arrive, chiffrée, dans le TRIGONE du 1er valideur. S\'il n\'a pas encore de compte TRIGONE, l\'envoi est bloqué : demandez-lui de s\'inscrire ; votre demande reste dans Documents.',
             'Appli fermée avant la fin ? À la réouverture, l\'écran <b>Demande en cours</b> propose de <b>continuer</b> la saisie ou de revenir à l\'accueil (la demande reste enregistrée, bouton « ↩ Reprendre ma demande en cours »).',
+            '<b>Suivi</b> : dans la <b>Bibliothèque</b>, chaque demande envoyée affiche sa frise Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT, avec qui a validé, quand, et depuis combien de temps elle attend. Une notification vous prévient à chaque étape, jusqu\'à la prise en charge par l\'assistant Chorus DT.',
             'À l\'envoi, la demande quitte Documents pour la <b>Bibliothèque</b>. En cas de refus, elle revient dans votre <b>Boîte de réception</b> avec le motif : « Corriger dans Documents » l\'y range ; corrigez-la avec « Modifier » et renvoyez-la.',
             'Au retour de mission, <b>TRIGONE Compte-rendu</b> reprend la mission envoyée depuis cet appareil (« À partir d\'une mise en route ») ; sinon, le missionnaire la saisit directement dans Compte-rendu.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Rôle valideur · boîte de réception · signature', icone: MER_ICONES_NOTICE_CADENAS(),
@@ -1709,14 +1743,16 @@ var MER_NOTICES = {
             'Les demandes à signer arrivent dans votre <b>Boîte de réception</b> (pastille rouge) : « Ouvrir et signer » les affiche dans l\'Espace valideur, avec leur <b>aperçu</b> et leurs pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif : le VALIDEUR 1 refuse au demandeur ; le VALIDEUR 2 choisit de <b>renvoyer au VALIDEUR 1</b> ou directement au demandeur. Une demande renvoyée par le VALIDEUR 2 arrive chez le VALIDEUR 1 (« Renvoyée par le VALIDEUR 2 », avec le motif) : il la <b>✎ Corrige</b> à son niveau puis la revalide, la revalide telle quelle, ou la <b>refuse au demandeur</b>. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
             '<b>Transmettre</b> : pour chaque envoi, <b>« 📨 Envoyer »</b>. Le 1er valideur envoie au 2e valideur, le 2e valideur à l\'assistant Chorus DT ; un refus repart vers le demandeur, avec son motif. Chaque envoi arrive, chiffré, dans le TRIGONE du destinataire ; un destinataire qui n\'a pas encore de compte (ou pas le bon rôle) est signalé et l\'envoi attend.',
-            'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.'] },
+            'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.',
+            '<b>Rappels</b> : une demande qui vous attend depuis plus de 24 h vous vaut une notification de rappel, puis une par 24 h tant qu\'elle n\'a pas avancé (du lundi au vendredi, de 8 h à 19 h). Le demandeur voit dans son suivi depuis quand elle attend.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['<b>Réglages › Mes rôles</b> : cochez <b>ASSIST CHORUS DT</b> et saisissez le code remis par l\'administrateur (il peut y avoir plusieurs assistants Chorus DT ; ce rôle se cumule avec VALIDEUR 1 / VALIDEUR 2). Votre espace apparaît au <b>centre de l\'écran de choix</b> (logo Assist Chorus-DT).',
             '<b>Demandes de mise en route validées</b> : elles arrivent des 2e valideurs. Sur chaque ligne : <b>👁 Aperçu</b> ou <b>📄 Télécharger le PDF</b> (demande signée + NDS / DAF) ; TRIGONE contrôle d\'abord les signatures électroniques et les pièces jointes. <b>Contrôle détaillé</b> montre le résultat demande par demande. Un envoi qui n\'a pas les deux signatures est écarté.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).',
             '<b>↩ Renvoyer au demandeur</b> : sur une demande reçue, renvoyez-la directement au demandeur avec un commentaire, sans repasser par les valideurs ; il la corrige et la renvoie (nouveau circuit de validation).',
-            '<b>Comptes-rendus de mission</b> : envoyés par les missionnaires depuis TRIGONE Compte-rendu. « Ouvrir » liste le compte-rendu PDF et les justificatifs : téléchargez-les, puis « ✔ Traité ».'] }
+            '<b>Comptes-rendus de mission</b> : envoyés par les missionnaires depuis TRIGONE Compte-rendu. « Ouvrir » liste le compte-rendu PDF et les justificatifs : téléchargez-les, puis « ✔ Traité ». Le missionnaire est prévenu quand vous récupérez son compte-rendu, puis quand vous le marquez traité.',
+            '<b>Le demandeur est prévenu</b> quand vous produisez le PDF d\'une demande (« prise en charge par l\'assistant Chorus DT »). Demande ou compte-rendu en attente depuis plus de 24 h : notification de rappel, puis une par 24 h (jours ouvrés, 8 h – 19 h).'] }
 };
 // Rubrique « Notifications » de la notice (même texte dans TRIGONE Compte-rendu).
 var MER_NOTICE_NOTIF = [
@@ -3216,8 +3252,10 @@ window.addEventListener('DOMContentLoaded', function() {
     var versChorus = /[?&]espace=chorus/.test(location.search) && window.JUMELAGE_ROLE_CHORUS && JUMELAGE_ROLE_CHORUS();
     // Notification touchée : boîte de réception (demande à signer, renvoi, refus).
     var versBoite = /[?&]espace=boite/.test(location.search) && MER_COMPTE_ACTIF();
+    // Notification de suivi (demande validée, prise en charge…) : Bibliothèque.
+    var versSuivi = /[?&]espace=suivi/.test(location.search);
     if (/[?&]espace=/.test(location.search) && history.replaceState) history.replaceState(null, document.title, location.pathname);
-    SHOW_PAGE(versChorus ? 'CHORUS' : versBoite ? 'RECEPTION' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
+    SHOW_PAGE(versChorus ? 'CHORUS' : versBoite ? 'RECEPTION' : versSuivi ? 'BIBLIOTHEQUE' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
     if (window.JUMELAGE_ANIMER_ARRIVEE) setTimeout(JUMELAGE_ANIMER_ARRIVEE, 30);
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;

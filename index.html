@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=69"></script>
+<script src="jumelage.js?v=70"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -457,6 +457,21 @@ body.dark-mode .MER-TOGGLE-BTN { background: #262626; border-color: #404040; }
 .MER-PERSONNE-CARD .MER-RETIRER { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #b91c1c; font-size: 1em; cursor: pointer; padding: 6px; }
 
 .MER-HINT { font-size: 0.76em; color: var(--sm2-muted); margin-top: 4px; line-height: 1.4; }
+.MER-SUIVI { margin: 10px 0 4px; padding: 10px 12px; border-radius: 12px; background: rgba(90,122,148,0.07); border: 1px solid rgba(90,122,148,0.18); }
+.MER-SUIVI.refus { background: rgba(185,28,28,0.06); border-color: rgba(185,28,28,0.25); }
+.MER-SUIVI-NOM { font-size: 0.72em; font-weight: 800; margin-bottom: 6px; }
+.MER-SUIVI-FRISE { display: flex; align-items: flex-start; }
+.MER-SUIVI-PT { display: flex; flex-direction: column; align-items: center; gap: 4px; font-size: 0.6em; font-weight: 800; letter-spacing: 0.02em; color: var(--sm2-muted); text-align: center; flex: 0 0 auto; white-space: nowrap; }
+.MER-SUIVI-PT i { font-style: normal; width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; border: 2px solid #cbd5e1; background: #fff; color: #fff; }
+.MER-SUIVI-PT.fait { color: #15803d; } .MER-SUIVI-PT.fait i { background: #15803d; border-color: #15803d; }
+.MER-SUIVI-PT.encours { color: #a16207; } .MER-SUIVI-PT.encours i { border-color: #d6a756; color: #a16207; background: #fff8eb; }
+.MER-SUIVI-TRAIT { flex: 1 1 auto; height: 2px; background: #cbd5e1; margin-top: 10px; min-width: 6px; }
+.MER-SUIVI-TXT { font-size: 0.72em; line-height: 1.45; margin-top: 8px; color: var(--sm2-text, #334155); }
+body.dark-mode .MER-SUIVI { background: rgba(122,157,181,0.08); border-color: rgba(122,157,181,0.2); }
+body.dark-mode .MER-SUIVI-PT i { background: #242424; border-color: #525252; }
+body.dark-mode .MER-SUIVI-PT.fait i { background: #15803d; border-color: #15803d; }
+body.dark-mode .MER-SUIVI-PT.encours i { background: #2a2418; border-color: #d6a756; color: #d6a756; } body.dark-mode .MER-SUIVI-PT.encours { color: #d6a756; }
+body.dark-mode .MER-SUIVI-TRAIT { background: #525252; } body.dark-mode .MER-SUIVI-TXT { color: #d4d4d4; }
 .MER-BADGE { display: inline-block; background: rgba(90,122,148,0.12); color: var(--tg-accent); font-size: 0.7em; font-weight: 800; padding: 3px 9px; border-radius: 20px; letter-spacing: 0.03em; }
 
 .MER-PANIER-ITEM { border: 1.5px solid var(--sm2-border); border-radius: 12px; padding: 14px; margin-bottom: 10px; display: flex; align-items: center; gap: 10px; }
@@ -862,6 +877,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=69"></script>
+<script src="app.js?v=70"></script>
 </body>
 </html>

@@ -39,6 +39,8 @@ module.exports = async function() {
         await p.fill('#MER-CODE-ACCES', code); await p.click('button:has-text("Se connecter")'); await attendre(2500);
     }
     async function relever(p) { await p.evaluate(() => JUMELAGE_RELEVER()); await attendre(2500); }
+    // Suivi (tenu par le serveur) des demandes et comptes-rendus du compte de cette page : { ref: { genre, etape, etapes } }.
+    async function suivi(p) { await attendre(1200); return p.evaluate(() => JUMELAGE_SUIVI_ACTUALISER()); }
     // Boîte de réception : bouton « Ouvrir… » du premier envoi à traiter.
     async function ouvrirBoite(p) { await p.evaluate(() => SHOW_PAGE('RECEPTION')); await attendre(400); await p.locator('.MER-RECU .BTN-PRIMARY').first().click(); await attendre(2500); }
 
@@ -172,6 +174,11 @@ module.exports = async function() {
         return ok && ok2;
     }), 'même personne aux deux niveaux : l\'envoi du 2e niveau reste « à traiter » ; « Rouvrir » remet un envoi traité');
 
+    // Suivi : le demandeur voit une demande validée par le VALIDEUR 1 (avec son nom), l'autre refusée.
+    const s1 = Object.values(await suivi(m)).filter(x => x.genre === 'mer');
+    verifier(s1.length === 2 && s1.some(x => x.etape === 'val2' && x.etapes.some(t => t.e === 'val1' && t.qui)) && s1.some(x => x.etape === 'refus'),
+        'suivi : demande « validée par le VALIDEUR 1 » (nom du valideur), l\'autre « refusée »');
+
     // Demandeur : le refus revient dans Documents
     await relever(m);
     await ouvrirBoite(m);
@@ -230,6 +237,13 @@ module.exports = async function() {
     await v2.evaluate(() => PREPARER_TRANSMISSION()); await attendre(600);
     await v2.locator('#MER-MODALE-FOND .MER-PANIER-ITEM button:has-text("Envoyer")').first().click(); await attendre(3500);
     verifier(await v2.locator('#MER-MODALE-FOND >> text=Arrivé dans le TRIGONE').count() === 1, '2e valideur : envoi direct à l\'assistant Chorus DT');
+    verifier(Object.values(await suivi(m)).some(x => x.etape === 'chorus' && x.etapes.map(t => t.e).join() === 'envoyee,val1,renvoi,val1,val2'),
+        'suivi : VALIDEUR 1 → renvoi par le VALIDEUR 2 → revalidée → VALIDEUR 2 → chez l\'assistant Chorus DT');
+    // Relances : rien avant 24 h ; après 24 h, le détenteur (assistant Chorus DT) est relancé, une seule fois par 24 h.
+    const relance = d => c.evaluate(async d => { const x = JSON.parse(localStorage.getItem('trigone_compte'));
+        return (await (await fetch('api/test/relance', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: 'TRIGONE ' + encodeURIComponent(x.mail) + ' ' + x.appareil + ' ' + x.jeton }, body: JSON.stringify({ decalage: d }) })).json()).n; }, d);
+    const r0 = await relance(0), r1 = await relance(25 * 3600 * 1000), r2 = await relance(25 * 3600 * 1000), r3 = await relance(49 * 3600 * 1000 + 60000);
+    verifier(r0 === 0 && r1 >= 1 && r2 === 0 && r3 >= 1, 'relances : aucune avant 24 h, puis une toutes les 24 h (' + [r0, r1, r2, r3].join(' / ') + ')');
 
     // Assistant Chorus DT
 
@@ -260,6 +274,10 @@ module.exports = async function() {
     verifier(/^4-OMR VALIDE/.test(pdf.suggestedFilename()), 'Chorus DT : « Télécharger le PDF » depuis la ligne donne le PDF final (' + pdf.suggestedFilename() + ')');
     await attendre(800);
     verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().find(x => x.nature === 'chorus').statut === 'traite'), 'Chorus DT : la demande passe en « Traités » après le PDF');
+    verifier(Object.values(await suivi(m)).some(x => x.etape === 'traite'), 'suivi : demande « prise en charge par l\'assistant Chorus DT » après le PDF');
+    await m.evaluate(() => SHOW_PAGE('BIBLIOTHEQUE')); await attendre(1500);
+    verifier(await m.locator('.MER-SUIVI-TXT:has-text("Prise en charge par l\'assistant Chorus DT")').count() >= 1 && await m.locator('.MER-SUIVI-PT.fait').count() >= 4,
+        'Bibliothèque : frise de suivi Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT');
     await c.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
     await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Contrôle détaillé")').first().click(); await attendre(2500);
     verifier(await c.evaluate(() => scrollY) === 0 && (await c.textContent('.CARD h2')) === 'Contrôle détaillé', 'Chorus DT : « Contrôle détaillé » s\'affiche en haut de la page');
@@ -275,6 +293,7 @@ module.exports = async function() {
     await relever(m); await ouvrirBoite(m);
     verifier(await m.evaluate(() => GET_PANIER().some(d => d.refus && d.refus.niveau === 3 && d.refus.motif === 'Code FD à revoir')), 'demandeur : la demande renvoyée par l\'ASSIST CHORUS DT revient dans Documents, avec le commentaire');
     verifier((await m.textContent('#PAGE-STAGE')).includes('ASSIST CHORUS DT'), 'demandeur : Documents indique « Refusée par l\'ASSIST CHORUS DT »');
+    verifier(Object.values(await suivi(m)).some(x => x.etape === 'refus' && x.etapes.map(t => t.e).pop() === 'refus' && x.etapes.some(t => t.e === 'traite')), 'suivi : demande renvoyée par l\'assistant Chorus DT → « refusée »');
 
     // Compte-rendu de fin de mission : le missionnaire l'envoie (PDF + justificatif) à l'assistant Chorus DT.
     await m.goto(URL + 'cr/'); await attendre(3000);
@@ -292,12 +311,14 @@ module.exports = async function() {
     verifier(await m.evaluate(() => window.__crEnvoye === true && !document.querySelector('.JUM-REGLAGES')), 'compte-rendu : envoyé à l\'assistant Chorus DT');
     await relever(c); await c.evaluate(() => SHOW_PAGE('CHORUS')); await attendre(600);
     verifier((await c.textContent('#PAGE-STAGE')).includes('ADJ BOUQUET GP'), 'Chorus DT : le compte-rendu arrive dans la section « Comptes-rendus de mission »');
+    verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'recu'), 'suivi : compte-rendu « récupéré par l\'assistant Chorus DT » (le missionnaire est prévenu)');
     await c.locator('.MER-RECU:has(.MER-RECU-cr) .BTN-PRIMARY').click(); await attendre(1200);
     const dl = c.waitForEvent('download');
     await c.locator('#MER-MODALE-FOND button:has-text("Télécharger")').nth(1).click();
     verifier((await dl).suggestedFilename() === 'nds_test.pdf', 'Chorus DT : le justificatif se télécharge');
     await c.click('#MER-MODALE-FOND button:has-text("Traité")'); await attendre(500);
     verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().filter(x => x.nature === 'cr').every(x => x.statut === 'traite')), 'Chorus DT : compte-rendu marqué « traité »');
+    verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'traite'), 'suivi : compte-rendu « traité par l\'assistant Chorus DT »');
 
     // Boîtes vides après relève
     const reste = await v1.evaluate(async () => { const c = JSON.parse(localStorage.getItem('trigone_compte'));

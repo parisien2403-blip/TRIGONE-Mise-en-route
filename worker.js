@@ -46,7 +46,12 @@ async function baseBoite(env) {
             env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_dest ON boite (dest, appareil)'),
             // Abonnements aux notifications, un par appareil : table à part (écriture simple et cohérente, jamais
             // écrasée par une autre mise à jour du compte).
-            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS abonnement (mail TEXT NOT NULL, appareil TEXT NOT NULL, endpoint TEXT NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, le INTEGER, PRIMARY KEY (mail, appareil))')
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS abonnement (mail TEXT NOT NULL, appareil TEXT NOT NULL, endpoint TEXT NOT NULL, p256dh TEXT NOT NULL, auth TEXT NOT NULL, le INTEGER, PRIMARY KEY (mail, appareil))'),
+            // Suivi des demandes et des comptes-rendus (voir « Suivi » plus bas) : une ligne par demande (ref = identifiant
+            // de la demande) ou par compte-rendu (ref = identifiant de l'envoi). Rien du contenu, seulement l'étape.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS suivi (ref TEXT NOT NULL, demandeur TEXT NOT NULL, genre TEXT, etape TEXT, detenteur TEXT, envoi TEXT, le INTEGER, relance INTEGER, etapes TEXT, PRIMARY KEY (ref, demandeur))'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_detenteur ON suivi (detenteur, etape)'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_envoi ON suivi (envoi)')
         ]);
         TABLES_PRETES = true;
     }
@@ -166,6 +171,119 @@ async function notifier(env, dest, compte, idsAppareils, type, de, origine, nomb
             if (r.status === 404 || r.status === 410) await db.prepare('DELETE FROM abonnement WHERE mail = ? AND appareil = ?').bind(dest, x.appareil).run();
         } catch (e) {}
     }));
+}
+
+// ---------- Suivi : où en est chaque demande (et chaque compte-rendu), pour le demandeur ----------
+// Étapes d'une demande : val1 (chez le VALIDEUR 1) → val2 → chorus (chez l'assistant Chorus DT) → traite ; ou refus.
+// Compte-rendu : chorus (déposé) → recu (récupéré par l'assistant Chorus DT) → traite.
+// Chaque envoi fait avancer les demandes qu'il contient (identifiants donnés par l'expéditeur, « refs ») ; seul le
+// détenteur actuel d'une demande peut la faire avancer. Le demandeur est prévenu à chaque étape, et le détenteur est
+// relancé toutes les 24 h (jours ouvrés) tant qu'il ne l'a pas fait avancer.
+const DUREE_SUIVI = 180 * JOUR;
+const RELANCE = 24 * 3600 * 1000;
+function nettoyerRefs(refs) {
+    return Array.isArray(refs) ? refs.map(r => String(r || '').slice(0, 64)).filter(r => /^[\w.-]+$/.test(r)).slice(0, 90) : [];   // D1 : 100 paramètres au plus par requête
+}
+// Texte de la notification au demandeur (n demandes ; qui : grade nom prénom de l'auteur de l'étape, s'il l'a donné).
+function texteSuivi(etape, genre, n, qui) {
+    const p = n > 1, par = qui ? ' (' + qui + ')' : '';
+    if (genre === 'cr') return {
+        recu: ['Compte-rendu récupéré', 'Votre compte-rendu de mission a été récupéré par l\'assistant Chorus DT.'],
+        traite: ['Compte-rendu traité', 'Votre compte-rendu de mission a été traité par l\'assistant Chorus DT' + par + '.']
+    }[etape];
+    const x = p ? n + ' de vos demandes ont' : 'Votre demande a';
+    return {
+        val2: [p ? n + ' demandes validées' : 'Demande validée', x + ' été validée' + (p ? 's' : '') + ' par le VALIDEUR 1' + par + ' ; en attente du VALIDEUR 2.'],
+        chorus: [p ? n + ' demandes validées' : 'Demande validée', x + ' été validée' + (p ? 's' : '') + ' par le VALIDEUR 2' + par + ' et transmise' + (p ? 's' : '') + ' à l\'assistant Chorus DT.'],
+        renvoi: [p ? n + ' demandes renvoyées' : 'Demande renvoyée', x + ' été renvoyée' + (p ? 's' : '') + ' au VALIDEUR 1 par le VALIDEUR 2' + par + ', pour correction.'],
+        traite: [p ? n + ' demandes traitées' : 'Demande traitée', x + ' été prise' + (p ? 's' : '') + ' en charge par l\'assistant Chorus DT' + par + ' : votre ordre de mission est en cours de création.']
+    }[etape];
+}
+// Prévient tous les appareils abonnés d'un compte.
+async function notifierCompte(env, mail, message, origine) {
+    const liste = await abonnements(env, mail, await env.TRIGONE_KV.get('compte:' + mail, 'json'));
+    const db = await baseBoite(env);
+    await Promise.all(liste.map(async x => {
+        try {
+            const r = await envoyerPush(env, x.push, message, origine);
+            if (r.status === 404 || r.status === 410) await db.prepare('DELETE FROM abonnement WHERE mail = ? AND appareil = ?').bind(mail, x.appareil).run();
+        } catch (e) {}
+    }));
+}
+// Fait avancer des lignes de suivi (déjà lues) à une étape ; prévient chaque demandeur (une notification par demandeur).
+async function avancerSuivi(env, lignes, etape, nouvelle, origine, cleNotif) {
+    if (!lignes.length) return;
+    const db = await baseBoite(env), le = Date.now();
+    await db.batch(lignes.map(l => {
+        const etapes = JSON.parse(l.etapes || '[]'); etapes.push(nouvelle.trace);
+        return db.prepare('UPDATE suivi SET etape = ?, detenteur = ?, envoi = COALESCE(?, envoi), le = ?, relance = NULL, etapes = ? WHERE ref = ? AND demandeur = ?')
+            .bind(etape, nouvelle.detenteur || l.detenteur, nouvelle.envoi || null, le, JSON.stringify(etapes.slice(-30)), l.ref, l.demandeur);
+    }));
+    const parDemandeur = {};
+    lignes.forEach(l => { if (l.demandeur !== nouvelle.auteur) (parDemandeur[l.demandeur] = parDemandeur[l.demandeur] || { genre: l.genre, n: 0 }).n++; });
+    if (!cleNotif) return;
+    await Promise.all(Object.keys(parDemandeur).map(m => {
+        const d = parDemandeur[m], t = texteSuivi(cleNotif, d.genre, d.n, nouvelle.trace.qui);
+        if (!t) return null;
+        return notifierCompte(env, m, { titre: t[0], texte: t[1], type: 'SUIVI', url: d.genre === 'cr' ? '/cr/' : '/?espace=suivi' }, origine).catch(() => {});
+    }));
+}
+// Un envoi vient d'être déposé : les demandes (ou le compte-rendu) qu'il contient avancent.
+async function suiviEnvoi(env, moi, type, dest, id, refs, qui, origine) {
+    const db = await baseBoite(env), le = Date.now();
+    const trace = e => ({ e, le, qui: qui || '', par: moi.mail });
+    if (type === 'CR') {
+        await db.prepare('INSERT OR REPLACE INTO suivi (ref, demandeur, genre, etape, detenteur, envoi, le, relance, etapes) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)')
+            .bind(id, moi.mail, 'cr', 'chorus', dest, id, le, JSON.stringify([trace('envoyee')])).run();
+        return;
+    }
+    if (!refs.length) return;
+    if (type === 'DEMANDE') {
+        // Nouvelle demande, ou demande renvoyée après correction : le suivi repart du début.
+        await db.batch(refs.map(r => db.prepare('INSERT OR REPLACE INTO suivi (ref, demandeur, genre, etape, detenteur, envoi, le, relance, etapes) VALUES (?, ?, ?, ?, ?, ?, ?, NULL, ?)')
+            .bind(r, moi.mail, 'mer', 'val1', dest, id, le, JSON.stringify([trace('envoyee')]))));
+        return;
+    }
+    // [nouvelle étape, étape franchie (trace), notification au demandeur (le refus lui arrive déjà comme envoi)]
+    const cible = { VALIDATION_1: ['val2', 'val1', 'val2'], CHORUS: ['chorus', 'val2', 'chorus'], RENVOI: ['val1', 'renvoi', 'renvoi'], REFUS: ['refus', 'refus', null] }[type];
+    if (!cible) return;
+    const lignes = (await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur = ? AND ref IN (' + refs.map(() => '?').join(',') + ')')
+        .bind('mer', moi.mail, ...refs).all()).results || [];
+    await avancerSuivi(env, lignes, cible[0], { detenteur: dest, envoi: id, auteur: moi.mail, trace: trace(cible[1]) }, origine, cible[2]);
+}
+// Relances : toutes les heures (déclencheur planifié), les demandes et comptes-rendus qui attendent le même détenteur
+// depuis plus de 24 h (et pas relancés depuis 24 h) lui valent une notification, du lundi au vendredi, de 8 h à 19 h (Paris).
+function heureParis(ms) {
+    const f = new Intl.DateTimeFormat('fr-FR', { timeZone: 'Europe/Paris', weekday: 'short', hour: 'numeric', hour12: false }).formatToParts(new Date(ms));
+    return { jour: (f.find(x => x.type === 'weekday') || {}).value || '', heure: +((f.find(x => x.type === 'hour') || {}).value || 0) };
+}
+async function relancer(env, origine, maintenant, forcer) {
+    const h = heureParis(maintenant);
+    if (!forcer && (/^(sam|dim)/.test(h.jour) || h.heure < 8 || h.heure >= 19)) return 0;
+    const db = await baseBoite(env);
+    await db.prepare('DELETE FROM suivi WHERE le < ?').bind(maintenant - DUREE_SUIVI * 1000).run();
+    const r = await db.prepare('SELECT ref, demandeur, genre, etape, detenteur FROM suivi WHERE etape IN (\'val1\', \'val2\', \'chorus\', \'recu\') AND le <= ? AND (relance IS NULL OR relance <= ?)')
+        .bind(maintenant - RELANCE, maintenant - RELANCE).all();
+    const lignes = r.results || [];
+    const parDetenteur = {};
+    lignes.forEach(l => { const d = parDetenteur[l.detenteur] = parDetenteur[l.detenteur] || { signer: 0, chorus: 0, cr: 0 };
+        if (l.genre === 'cr') d.cr++; else if (l.etape === 'chorus') d.chorus++; else d.signer++; });
+    await Promise.all(Object.keys(parDetenteur).map(m => {
+        const d = parDetenteur[m];
+        const txt = [d.signer ? (d.signer > 1 ? d.signer + ' demandes attendent' : '1 demande attend') + ' votre signature' : '',
+            d.chorus ? (d.chorus > 1 ? d.chorus + ' demandes validées attendent' : '1 demande validée attend') + ' votre traitement' : '',
+            d.cr ? (d.cr > 1 ? d.cr + ' comptes-rendus attendent' : '1 compte-rendu attend') + ' votre traitement' : ''].filter(Boolean).join(', ');
+        return notifierCompte(env, m, { titre: 'Rappel TRIGONE', texte: txt.charAt(0).toUpperCase() + txt.slice(1) + ' depuis plus de 24 h.', type: 'RELANCE',
+            url: d.signer ? '/?espace=boite' : '/?espace=chorus' }, origine).catch(() => {});
+    }));
+    if (lignes.length) await db.batch(lignes.map(l => db.prepare('UPDATE suivi SET relance = ? WHERE ref = ? AND demandeur = ?').bind(maintenant, l.ref, l.demandeur)));
+    return lignes.length;
+}
+async function origineConnue(env, origine) {
+    const db = await tableReglage(env);
+    if (origine) { await db.prepare('INSERT INTO reglage (cle, valeur) VALUES (?, ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur WHERE reglage.valeur <> excluded.valeur').bind('origine', origine).run(); return origine; }
+    const l = await db.prepare('SELECT valeur FROM reglage WHERE cle = ?').bind('origine').first();
+    return l ? l.valeur : 'https://trigone-mise-en-route.parisien2403.workers.dev';
 }
 
 function json(corps, statut) {
@@ -401,7 +519,11 @@ async function api(requete, env, url, ctx) {
             .bind(id, dest, e.appareil, moi.mail, type, le, JSON.stringify({ epk: e.epk, iv: e.iv, ct: e.ct })))
             .concat(db.prepare('DELETE FROM boite WHERE le < ?').bind(le - DUREE_MESSAGE * 1000)));
         const nombre = Math.min(500, Math.max(1, parseInt(corps.nombre, 10) || 1));   // nombre de demandes (l'expéditeur le donne ; le contenu reste chiffré)
-        const prevenir = notifier(env, dest, compte, enveloppes.map(e => e.appareil), type, moi.mail, url.origin, nombre).catch(() => {});
+        const prevenir = Promise.all([
+            notifier(env, dest, compte, enveloppes.map(e => e.appareil), type, moi.mail, url.origin, nombre).catch(() => {}),
+            suiviEnvoi(env, moi, type, dest, id, nettoyerRefs(corps.refs), String(corps.qui || '').slice(0, 80), url.origin).catch(() => {}),
+            origineConnue(env, url.origin).catch(() => {})
+        ]);
         if (ctx && ctx.waitUntil) ctx.waitUntil(prevenir); else await prevenir;
         return json({ ok: true, id });
     }
@@ -425,8 +547,40 @@ async function api(requete, env, url, ctx) {
         }
         if (methode === 'DELETE') {
             await db.prepare('DELETE FROM boite WHERE id = ? AND dest = ? AND appareil = ?').bind(m[1], moi.mail, moi.appareil.id).run();
+            // Compte-rendu relevé par l'assistant Chorus DT : le missionnaire est prévenu qu'il a été récupéré.
+            const cr = (await db.prepare('SELECT * FROM suivi WHERE envoi = ? AND genre = ? AND etape = ? AND detenteur = ?').bind(m[1], 'cr', 'chorus', moi.mail).all()).results || [];
+            if (cr.length) {
+                const p = avancerSuivi(env, cr, 'recu', { auteur: moi.mail, trace: { e: 'recu', le: Date.now(), qui: '', par: moi.mail } }, url.origin, 'recu').catch(() => {});
+                if (ctx && ctx.waitUntil) ctx.waitUntil(p); else await p;
+            }
             return json({ ok: true });
         }
+    }
+
+    // Suivi : où en sont mes demandes et mes comptes-rendus (seulement les miens).
+    if (chemin === 'suivi' && methode === 'GET') {
+        const r = await (await baseBoite(env)).prepare('SELECT ref, genre, etape, envoi, le, etapes FROM suivi WHERE demandeur = ? ORDER BY le DESC LIMIT 300').bind(moi.mail).all();
+        return json({ ok: true, suivi: (r.results || []).map(x => ({ ref: x.ref, genre: x.genre, etape: x.etape, envoi: x.envoi, le: x.le,
+            etapes: JSON.parse(x.etapes || '[]').map(t => ({ e: t.e, le: t.le, qui: t.qui })) })) });
+    }
+    // L'assistant Chorus DT a traité des demandes (refs) ou des comptes-rendus (envois) qu'il détient.
+    if (chemin === 'suivi/traite' && methode === 'POST') {
+        const corps = await requete.json().catch(() => ({}));
+        const refs = nettoyerRefs(corps.refs), envois = nettoyerRefs(corps.envois);
+        const db = await baseBoite(env);
+        const lignes = [];
+        if (refs.length) lignes.push(...((await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur = ? AND etape = ? AND ref IN (' + refs.map(() => '?').join(',') + ')')
+            .bind('mer', moi.mail, 'chorus', ...refs).all()).results || []));
+        if (envois.length) lignes.push(...((await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur = ? AND etape IN (\'chorus\', \'recu\') AND envoi IN (' + envois.map(() => '?').join(',') + ')')
+            .bind('cr', moi.mail, ...envois).all()).results || []));
+        const qui = String(corps.qui || '').slice(0, 80);
+        await avancerSuivi(env, lignes, 'traite', { auteur: moi.mail, trace: { e: 'traite', le: Date.now(), qui, par: moi.mail } }, url.origin, 'traite');
+        return json({ ok: true, n: lignes.length });
+    }
+    // Tests locaux : lancer les relances maintenant, comme si « decalage » ms s'étaient écoulées.
+    if (chemin === 'test/relance' && methode === 'POST' && env.MODE_TEST === '1') {
+        const corps = await requete.json().catch(() => ({}));
+        return json({ ok: true, n: await relancer(env, url.origin, Date.now() + (+corps.decalage || 0), true) });
     }
 
     // Déconnexion de cet appareil (ou suppression du compte s'il n'en reste aucun).
@@ -448,5 +602,10 @@ export default {
             catch (e) { return erreur(500, 'Erreur du serveur.'); }
         }
         return env.ASSETS.fetch(requete);
+    },
+    // Déclencheur planifié (wrangler.jsonc › triggers.crons, toutes les heures) : relances des détenteurs.
+    async scheduled(evenement, env, ctx) {
+        if (!env.TRIGONE_DB) return;
+        ctx.waitUntil(origineConnue(env).then(o => relancer(env, o, Date.now(), false)).catch(() => {}));
     }
 };
