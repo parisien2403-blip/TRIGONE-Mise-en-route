@@ -422,7 +422,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 67, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 68, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -662,6 +662,10 @@
                     '<p class="JUM-R-AIDE">Pour recevoir les notifications TRIGONE sans retard, même appli fermée, retirez l\'économie de batterie de Chrome :</p>' +
                     '<ol class="JUM-R-AIDE JUM-R-ETAPES"><li>Ouvrez les <b>Paramètres</b> du téléphone</li><li><b>Applications</b> › <b>Chrome</b></li><li><b>Batterie</b></li><li>Choisissez <b>« Non restreinte »</b></li></ol>' +
                     '<p class="JUM-R-AIDE">À faire une seule fois. Rappel : Notice › Notifications.</p>' : '') +
+                (premiere && estIOS() ? '<div class="JUM-R-TITRE">Notifications sur iPhone / iPad</div>' +
+                    '<p class="JUM-R-AIDE">Pour être prévenu de chaque envoi, même TRIGONE fermée (iOS 16.4 ou plus récent) :</p>' +
+                    '<ol class="JUM-R-AIDE JUM-R-ETAPES"><li>Dans <b>Safari</b> : bouton <b>Partager</b> › <b>« Sur l\'écran d\'accueil »</b></li><li>Ouvrez TRIGONE <b>depuis cette icône</b></li><li>Roue crantée › <b>Compte TRIGONE</b> › « 🔔 Activer les notifications » › <b>Autoriser</b></li><li><b>Réglages › Notifications</b> : laissez TRIGONE <b>hors du Résumé programmé</b>, et autorisez-la dans vos <b>modes de concentration</b></li></ol>' +
+                    '<p class="JUM-R-AIDE">Ne supprimez pas l\'icône TRIGONE : l\'abonnement aux notifications serait perdu. Rappel : Notice › Notifications.</p>' : '') +
                 '<p class="JUM-R-ERREUR" id="JUM-R-ERREUR"></p>' +
             '</div>' +
             '<div class="JUM-R-PIED">' +
@@ -1236,8 +1240,9 @@
     // TRIGONE installée sur l'écran d'accueil (iOS 16.4 ou plus). La permission se demande sur un geste (bouton).
     var CLE_NOTIF = 'trigone_notif';
     function notifPossible() { return 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window; }
+    function estIOS() { return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1); }
     function notifEtat() {
-        if (!notifPossible()) return /iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1) ? 'ios' : 'impossible';
+        if (!notifPossible()) return estIOS() ? 'ios' : 'impossible';
         return Notification.permission === 'granted' ? (lireTxt(CLE_NOTIF) ? 'active' : 'autorisee') : Notification.permission === 'denied' ? 'refusee' : 'a-demander';
     }
     function enregistrementRacine() {
@@ -1287,6 +1292,7 @@
         var android = /Android/i.test(navigator.userAgent || '');
         if (e === 'active') return '<p class="JUM-R-AIDE">🔔 <b>Notifications activées</b> sur cet appareil : vous êtes prévenu de chaque envoi, même TRIGONE fermée.</p>' +
             (android ? '<p class="JUM-R-AIDE">Notification en retard ou absente quand TRIGONE est fermée ? <b>Paramètres › Applications › Chrome › Batterie › « Non restreinte »</b>.</p>' : '') +
+            (estIOS() ? '<p class="JUM-R-AIDE">Notification en retard ou silencieuse ? Dans <b>Réglages › Notifications</b>, laissez TRIGONE <b>hors du Résumé programmé</b>, et ajoutez-la aux applis autorisées de vos <b>modes de concentration</b>. Ne supprimez pas l\'icône TRIGONE de l\'écran d\'accueil : l\'abonnement serait perdu.</p>' : '') +
             '<button type="button" class="JUM-R-SECOND" id="JUM-C-TEST" style="margin:8px 0 0; width:100%;">🔔 Tester les notifications</button><div id="JUM-C-TEST-RES"></div>';
         if (e === 'impossible') return '<p class="JUM-R-AIDE">🔕 Ce navigateur ne permet pas les notifications : ouvrez TRIGONE pour relever vos envois.</p>';
         return '<div class="JUM-R-TITRE">Notifications</div><p class="JUM-R-AIDE">' + (e === 'ios'

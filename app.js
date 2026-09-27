@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 114;
+var APP_CODE_VERSION = 115;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1723,7 +1723,7 @@ var MER_NOTICE_NOTIF = [
     '<b>Activer</b> : roue crantée › <b>Compte TRIGONE</b> › « 🔔 Activer les notifications », <b>sur chaque appareil</b> (PC, téléphone, tablette). Vous êtes prévenu de chaque envoi reçu : demande à signer, demande validée, refus ou renvoi, compte-rendu, avec le nombre de demandes.',
     '<b>Tester</b> : dans Compte TRIGONE, « 🔔 Tester les notifications » envoie une notification à tous vos appareils et affiche le résultat appareil par appareil.',
     '<b>Android</b> : si la notification arrive en retard ou pas du tout quand TRIGONE est fermée, retirez l\'économie de batterie : <b>Paramètres › Applications › Chrome › Batterie › « Non restreinte »</b>. Vérifiez aussi que les notifications de Chrome sont autorisées (Paramètres › Applications › Chrome › Notifications).',
-    '<b>iPhone / iPad</b> : les notifications demandent TRIGONE <b>installée sur l\'écran d\'accueil</b> (Safari › Partager › Sur l\'écran d\'accueil), puis ouverte depuis cette icône pour les activer.',
+    '<b>iPhone / iPad</b> (iOS 16.4 ou plus récent) : pas de réglage batterie. Les notifications demandent TRIGONE <b>installée sur l\'écran d\'accueil</b> (Safari › Partager › Sur l\'écran d\'accueil), puis ouverte depuis cette icône pour les activer. Dans <b>Réglages › Notifications</b> : TRIGONE autorisée (bannières, sons), <b>hors du Résumé programmé</b> (sinon elles n\'arrivent qu\'aux heures du résumé), et ajoutée aux applis autorisées de vos <b>modes de concentration</b> (Ne pas déranger, Travail, Sommeil). Supprimer l\'icône TRIGONE efface l\'abonnement : il faut alors la réinstaller et réactiver les notifications.',
     '<b>PC</b> : les notifications arrivent tant que le navigateur (Chrome, Edge) tourne, même TRIGONE fermée. Sous Windows, vérifiez qu\'elles sont autorisées pour le navigateur (Paramètres › Système › Notifications) et que le mode « Ne pas déranger » est coupé.',
     'Même sans notification, votre boîte TRIGONE se relève d\'elle-même à l\'ouverture de l\'appli, puis toutes les 20 secondes tant qu\'elle est ouverte.'
 ];

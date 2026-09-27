@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 114,
-  "appCodeMessage": "Version 66 : à la première ouverture sur Android, rappel du réglage batterie de Chrome (« Non restreinte ») pour recevoir les notifications sans retard.",
+  "appCodeVersion": 115,
+  "appCodeMessage": "Version 67 : réglages iPhone / iPad pour les notifications (écran d'accueil, Résumé programmé, modes de concentration) à la première ouverture, dans Compte TRIGONE et dans la notice.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
