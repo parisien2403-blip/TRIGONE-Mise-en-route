@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 100;
+var APP_CODE_VERSION = 101;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -204,13 +204,12 @@ function TPL_MENU_PC() {
     return '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_mer.webp" alt="TRIGONE Mise en route"></button>' +
         item('ACCUEIL', MER_ICONES.ACCUEIL, 'Accueil') +
         (MER_COMPTE_ACTIF() ? item('RECEPTION', MER_ICONES.RECEPTION, 'Boîte de réception', MER_NB_BOITE() || '') : '') +
-        (MER_ROLE_CHORUS() ? item('CHORUS', MER_ICONES.CHORUS, 'Assistant Chorus DT', MER_NB_CHORUS() || '') : '') +
         item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
         item('PANIER', MER_ICONES.PANIER, 'Documents', n || '') +
         item('NOTICE', MER_ICONES.NOTICE, 'Notice') +
         item('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
         '<div class="PC-SEP"></div>' +
-        item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur &amp; Chorus DT', MER_NB_A_SIGNER() || '') +
+        item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur', MER_NB_A_SIGNER() || '') +
         '<div class="PC-BAS">' +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
             '<button type="button" class="PC-NAV' + (actif === 'REFERENCES' ? ' actif' : '') + '" onclick="SHOW_PAGE(\'REFERENCES\')">' + MER_ICONES.REFERENCES + '<span>Références</span></button>' +
@@ -390,7 +389,7 @@ function TPL_ACCUEIL() {
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
           (MER_COMPTE_ACTIF() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-BOITE" onclick="SHOW_PAGE(\'RECEPTION\')">📥 Boîte de réception' +
             (MER_NB_BOITE() ? '<span class="MER-PASTILLE-SIGNER MER-PASTILLE-BOITE">' + MER_NB_BOITE() + '</span>' : '') + '</button>' : '') +
-          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur &amp; Chorus DT' +
+          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur' +
             (MER_NB_A_SIGNER() ? '<span class="MER-PASTILLE-SIGNER">' + MER_NB_A_SIGNER() + ' à signer</span>' : '') + '</button>' +
           '<button type="button" class="P0-LIEN" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
         '</div>' +
@@ -2632,15 +2631,12 @@ function TPL_VALIDATION() {
     var v = GET_VALIDEUR();
     var h = HABILITATION_COURANTE();
     var corps, sous;
-    // L'assistant Chorus DT a son propre espace (rôle coché dans Réglages › Mes rôles) : il est rappelé ici.
-    var chorus = '<button type="button" class="NOTICE-CARD" onclick="MER_ALLER_CHORUS()"><span class="NOTICE-CARD-ICON">' + MER_ICONES.CHORUS + '</span>' +
-        '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Assistant Chorus DT</span><span class="NOTICE-CARD-SUB">Demandes validées et comptes-rendus reçus</span></span>' +
-        '<span class="NOTICE-CARD-CHEV">›</span></button>';
+    // L'espace Assistant Chorus DT ne s'ouvre que par son logo, au centre de l'écran de choix.
     var connecte = h && !h.retire;
-    if (!connecte) { sous = 'Valideurs : connexion · Assistant Chorus DT : accès direct'; corps = chorus + '<div class="MER-SECTION-TITLE">Connexion valideur</div>' + TPL_CONNEXION(v); }
+    if (!connecte) { sous = 'VALIDEUR 1 et VALIDEUR 2 : connexion'; corps = '<div class="MER-SECTION-TITLE">Connexion valideur</div>' + TPL_CONNEXION(v); }
     else { sous = 'Validation des demandes reçues'; corps = TPL_ESPACE_VALIDATION(v, h); }
     return '<div class="CARD' + (connecte && EST_PC() ? ' PC-LARGE' : '') + '">' +
-        '<h2>Espace valideur &amp; Chorus DT</h2>' +
+        '<h2>Espace valideur</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 16px;">' + sous + '</p>' + corps +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
@@ -2655,10 +2651,6 @@ function DESTINATIONS_DECISIONS(liste) {
     return r;
 }
 function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
-function MER_ALLER_CHORUS() {
-    if (MER_ROLE_CHORUS()) { SHOW_PAGE('CHORUS'); return; }
-    MSG_INFO('Espace Assistant Chorus DT', 'Réservé à l\'assistant Chorus DT. Cochez « Je suis assistant Chorus DT » dans les Réglages TRIGONE (roue crantée › Mes rôles), avec le code remis par l\'administrateur : son espace s\'ouvre alors au centre de l\'écran de choix.', '🔒', 'mascotte-code.webp');
-}
 
 function LIRE_FICHIERS(input, lire, traiter) {
     var fichiers = Array.prototype.slice.call(input.files || []);
