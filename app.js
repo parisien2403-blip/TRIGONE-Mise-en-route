@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 120;
+var APP_CODE_VERSION = 121;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -157,6 +157,7 @@ function APPLIQUER_THEME_INITIAL() {
 function SHOW_PAGE(page) {
     if (page !== 'CHORUS' && page !== 'VERIFIER') MER_ESPACE_CHORUS = false;
     if (page !== 'BIBLIOTHEQUE') MER_BIB_SELECTION = null;
+    if (page !== PAGE_ACTUELLE) MER_RECU_SELECTION = null;
     PAGE_ACTUELLE = page;
     var zone = document.getElementById('PAGE-STAGE');
     zone.classList.toggle('avec-marge', page !== 'ACCUEIL');
@@ -1787,7 +1788,8 @@ var MER_NOTICES = {
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).',
             '<b>↩ Renvoyer au demandeur</b> : sur une demande reçue, renvoyez-la directement au demandeur avec un commentaire, sans repasser par les valideurs ; il la corrige et la renvoie (nouveau circuit de validation).',
             '<b>Comptes-rendus de mission</b> : envoyés par les missionnaires depuis TRIGONE Compte-rendu. « Ouvrir » liste le compte-rendu PDF et les justificatifs : téléchargez-les, puis « ✔ Traité ». Le missionnaire est prévenu quand vous récupérez son compte-rendu, puis quand vous le marquez traité.',
-            '<b>Le demandeur est prévenu</b> quand vous produisez le PDF d\'une demande (« prise en charge par l\'assistant Chorus DT »). Demande ou compte-rendu en attente depuis plus de 24 h : notification de rappel, puis une par 24 h (jours ouvrés, 8 h – 19 h).'] }
+            '<b>Le demandeur est prévenu</b> quand vous produisez le PDF d\'une demande (« prise en charge par l\'assistant Chorus DT »). Demande ou compte-rendu en attente depuis plus de 24 h : notification de rappel, puis une par 24 h (jours ouvrés, 8 h – 19 h).',
+            '<b>Faire du tri</b> : dans chaque section « Traités », « ☑ Sélectionner » permet de cocher plusieurs éléments (ou « Tout cocher ») et de les supprimer d\'un coup. Même principe dans la Boîte de réception des valideurs.'] }
 };
 // Rubrique « Notifications » de la notice (même texte dans TRIGONE Compte-rendu).
 var MER_NOTICE_NOTIF = [
@@ -3338,7 +3340,10 @@ function MER_COMPTE_ACTIF() { return !!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE
 function TPL_ENVOI_RECU(x) {
     var nat = MER_NATURES_BOITE[x.nature] || MER_NATURES_BOITE.inconnu, traite = x.statut === 'traite';
     var le = x.le ? new Date(x.le).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
-    return '<div class="MER-PANIER-ITEM MER-RECU' + (x.statut === 'nouveau' ? ' nouveau' : '') + '" style="align-items:flex-start;"><div class="MER-PANIER-ITEM-TXT">' +
+    var cocher = MER_RECU_SELECTION && traite, coche = cocher && MER_RECU_SELECTION[x.id];
+    return '<div class="MER-PANIER-ITEM MER-RECU' + (x.statut === 'nouveau' ? ' nouveau' : '') + (coche ? ' MER-BIB-COCHEE' : '') + '" style="align-items:flex-start;">' +
+        (cocher ? '<label class="MER-BIB-CASE"><input type="checkbox"' + (coche ? ' checked' : '') + ' onchange="RECU_COCHER(\'' + x.id + '\', this.checked); this.closest(\'.MER-PANIER-ITEM\').classList.toggle(\'MER-BIB-COCHEE\', this.checked)" aria-label="Sélectionner"></label>' : '') +
+        '<div class="MER-PANIER-ITEM-TXT">' +
         '<span class="MER-BADGE MER-RECU-' + ESC(x.nature || 'inconnu') + '">' + nat[0] + '</span>' + (x.statut === 'nouveau' ? ' <span class="MER-RECU-NOUVEAU">Nouveau</span>' : '') +
         (x.n > 1 ? ' <span class="MER-RECU-NOUVEAU" style="background:#1a1a1a;">' + x.n + ' demandes</span>' : '') +
         '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(x.noms || x.nom || 'Demande') + '</div>' +
@@ -3347,7 +3352,7 @@ function TPL_ENVOI_RECU(x) {
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
         // Demande traitée par ce valideur : la suite de son circuit (VALIDEUR 2, assistant Chorus DT).
         (traite && x.nature !== 'cr' && x.nature !== 'refus' ? (x.ids || []).map(function(id, i) { return TPL_SUIVI_DEMANDE(id, x.ids.length > 1 ? 'Demande ' + (i + 1) : ''); }).join('') : '') +
-        '<div class="MER-VAL-ACTIONS">' +
+        (cocher ? '' : '<div class="MER-VAL-ACTIONS">' +
             // Demande validée pour l'ASSIST CHORUS DT : aperçu et PDF directement depuis la ligne (contrôle fait avant).
             (x.nature === 'chorus'
                 ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', true)">👁 Aperçu</button>' +
@@ -3356,7 +3361,46 @@ function TPL_ENVOI_RECU(x) {
             : traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ROUVRIR_RECU(\'' + x.id + '\')">↺ Rouvrir</button>'
                 : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="SUPPRIMER_RECU(\'' + x.id + '\')">Supprimer</button>' +
-        '</div></div></div>';
+        '</div>') + '</div></div>';
+}
+// Envois traités : « Sélectionner » pour en supprimer plusieurs d'un coup (Boîte de réception, espace Assistant Chorus DT).
+// MER_RECU_SELECTION : null = mode normal, sinon { id: true } des cochés ; MER_RECU_LISTES : ids de chaque section.
+var MER_RECU_SELECTION = null, MER_RECU_LISTES = {};
+function TPL_RECU_TRAITES(cle, titre, traites) {
+    if (!traites.length) return '';
+    MER_RECU_LISTES[cle] = traites.map(function(x) { return x.id; });
+    var sel = MER_RECU_SELECTION, ids = MER_RECU_LISTES[cle];
+    var n = sel ? ids.filter(function(id) { return sel[id]; }).length : 0, tout = sel && n === ids.length;
+    var barre = traites.length < 2 ? '' : sel
+        ? '<div class="MER-BIB-BARRE"><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="RECU_TOUT_COCHER(\'' + cle + '\')">' + (tout ? 'Tout décocher' : 'Tout cocher') + '</button>' +
+            '<button type="button" class="BTN BTN-SMALL MER-BIB-SUPPR" data-cle="' + cle + '" onclick="RECU_SUPPRIMER_SELECTION(\'' + cle + '\')"' + (n ? '' : ' disabled') + '>🗑 Supprimer' + (n ? ' (' + n + ')' : '') + '</button>' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="RECU_SELECTION(false)">Annuler</button></div>'
+        : '<div class="MER-BIB-BARRE"><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="RECU_SELECTION(true)">☑ Sélectionner</button></div>';
+    return '<details class="MER-RECU-TRAITES"' + (sel ? ' open' : '') + '><summary>' + titre + ' (' + traites.length + ')</summary>' + barre + traites.map(TPL_ENVOI_RECU).join('') + '</details>';
+}
+function RECU_REAFFICHER() { var y = window.scrollY; SHOW_PAGE(PAGE_ACTUELLE); window.scrollTo(0, y); }
+function RECU_SELECTION(active) { MER_RECU_SELECTION = active ? {} : null; RECU_REAFFICHER(); }
+function RECU_COCHER(id, oui) {
+    if (!MER_RECU_SELECTION) return;
+    if (oui) MER_RECU_SELECTION[id] = true; else delete MER_RECU_SELECTION[id];
+    Array.prototype.forEach.call(document.querySelectorAll('.MER-BIB-SUPPR[data-cle]'), function(b) {
+        var n = (MER_RECU_LISTES[b.getAttribute('data-cle')] || []).filter(function(i) { return MER_RECU_SELECTION[i]; }).length;
+        b.disabled = !n; b.textContent = '🗑 Supprimer' + (n ? ' (' + n + ')' : '');
+    });
+}
+function RECU_TOUT_COCHER(cle) {
+    var ids = MER_RECU_LISTES[cle] || [], tout = ids.every(function(id) { return MER_RECU_SELECTION[id]; });
+    ids.forEach(function(id) { if (tout) delete MER_RECU_SELECTION[id]; else MER_RECU_SELECTION[id] = true; });
+    RECU_REAFFICHER();
+}
+function RECU_SUPPRIMER_SELECTION(cle) {
+    var ids = (MER_RECU_LISTES[cle] || []).filter(function(id) { return MER_RECU_SELECTION && MER_RECU_SELECTION[id]; });
+    if (!ids.length) return;
+    MSG_CONFIRM('Supprimer ' + ids.length + ' élément' + (ids.length > 1 ? 's' : '') + ' ?', (ids.length > 1 ? 'Ces envois traités seront retirés' : 'Cet envoi traité sera retiré') + ' de votre boîte sur cet appareil.', 'Supprimer', function() {
+        ids.reduce(function(suite, id) { return suite.then(function() { return JUMELAGE_BOITE_SUPPRIMER(id); }); }, Promise.resolve()).then(function() {
+            MER_RECU_SELECTION = null; RECU_REAFFICHER();
+        });
+    }, '🗑️', 'mascotte-poubelle.webp', true);
 }
 function TPL_RECEPTION() {
     var compte = MER_COMPTE_ACTIF();
@@ -3371,7 +3415,7 @@ function TPL_RECEPTION() {
               '<button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
         (compte ? '<div class="MER-SECTION-TITLE">À traiter' + (aTraiter.length ? ' (' + aTraiter.length + ')' : '') + '</div>' +
             (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Aucune demande en attente.</div>') +
-            (traites.length ? '<details class="MER-RECU-TRAITES"><summary>Traitées (' + traites.length + ')</summary>' + traites.map(TPL_ENVOI_RECU).join('') + '</details>' : '') : '') +
+            TPL_RECU_TRAITES('reception', 'Traitées', traites) : '') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 // ===================== ESPACE ASSISTANT CHORUS DT =====================
@@ -3382,10 +3426,10 @@ window.MER_OUVRIR_CHORUS = function() { SHOW_PAGE('CHORUS'); };
 function TPL_CHORUS() {
     var compte = MER_COMPTE_ACTIF();
     var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []);
-    function bloc(liste, vide) {
+    function bloc(liste, vide, cle) {
         var aTraiter = liste.filter(function(x) { return x.statut !== 'traite'; }), traites = liste.filter(function(x) { return x.statut === 'traite'; });
         return (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">' + vide + '</div>') +
-            (traites.length ? '<details class="MER-RECU-TRAITES"><summary>Traités (' + traites.length + ')</summary>' + traites.map(TPL_ENVOI_RECU).join('') + '</details>' : '');
+            TPL_RECU_TRAITES(cle, 'Traités', traites);
     }
     var demandes = l.filter(function(x) { return x.nature === 'chorus'; }), crs = l.filter(function(x) { return x.nature === 'cr'; });
     var nb = function(liste) { var n = liste.filter(function(x) { return x.statut !== 'traite'; }).length; return n ? ' (' + n + ')' : ''; };
@@ -3396,10 +3440,10 @@ function TPL_CHORUS() {
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:12px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>' +
             '<div class="MER-SECTION-TITLE">Demandes de mise en route validées' + nb(demandes) + '</div>' +
             '<p class="MER-HINT" style="margin:0 0 10px;">Validées par les deux valideurs. « Aperçu » ou « Télécharger le PDF » : TRIGONE vérifie d\'abord les signatures et les pièces jointes.</p>' +
-            bloc(demandes, 'Aucune demande en attente.') +
+            bloc(demandes, 'Aucune demande en attente.', 'chorus') +
             '<div class="MER-SECTION-TITLE">Comptes-rendus de mission' + nb(crs) + '</div>' +
             '<p class="MER-HINT" style="margin:0 0 10px;">Envoyés par les missionnaires au retour de mission : compte-rendu PDF et justificatifs.</p>' +
-            bloc(crs, 'Aucun compte-rendu en attente.')
+            bloc(crs, 'Aucun compte-rendu en attente.', 'cr')
           : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes validées et les comptes-rendus de mission.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
         '</div>' + (MER_RESULTATS_VERIF ? '' : TPL_VERIFIER()) +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">← Écran de choix</button>';
