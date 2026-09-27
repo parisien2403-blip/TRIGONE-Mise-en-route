@@ -51,7 +51,10 @@ async function baseBoite(env) {
             // de la demande) ou par compte-rendu (ref = identifiant de l'envoi). Rien du contenu, seulement l'étape.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS suivi (ref TEXT NOT NULL, demandeur TEXT NOT NULL, genre TEXT, etape TEXT, detenteur TEXT, envoi TEXT, le INTEGER, relance INTEGER, etapes TEXT, PRIMARY KEY (ref, demandeur))'),
             env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_detenteur ON suivi (detenteur, etape)'),
-            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_envoi ON suivi (envoi)')
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_envoi ON suivi (envoi)'),
+            // Intervenants d'une demande (valideurs, assistant Chorus DT) : ils en voient aussi la suite.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS suivi_acteur (ref TEXT NOT NULL, demandeur TEXT NOT NULL, mail TEXT NOT NULL, PRIMARY KEY (ref, demandeur, mail))'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_acteur_mail ON suivi_acteur (mail)')
         ]);
         TABLES_PRETES = true;
     }
@@ -219,6 +222,24 @@ async function avancerSuivi(env, lignes, etape, nouvelle, origine, cleNotif) {
         return db.prepare('UPDATE suivi SET etape = ?, detenteur = ?, envoi = COALESCE(?, envoi), le = ?, relance = NULL, etapes = ? WHERE ref = ? AND demandeur = ?')
             .bind(etape, nouvelle.detenteur || l.detenteur, nouvelle.envoi || null, le, JSON.stringify(etapes.slice(-30)), l.ref, l.demandeur);
     }));
+    // L'auteur de l'étape devient intervenant : il verra la suite de la demande.
+    if (nouvelle.auteur && lignes[0].genre === 'mer') await db.batch(lignes.filter(l => l.demandeur !== nouvelle.auteur).map(l =>
+        db.prepare('INSERT OR IGNORE INTO suivi_acteur (ref, demandeur, mail) VALUES (?, ?, ?)').bind(l.ref, l.demandeur, nouvelle.auteur)));
+    // Refus ou renvoi plus loin dans le circuit : les valideurs qui l'avaient déjà validée sont prévenus.
+    if (lignes[0].genre === 'mer' && (nouvelle.trace.e === 'refus' || nouvelle.trace.e === 'renvoi')) {
+        const acteurs = {};
+        for (const l of lignes) {
+            const r = (await db.prepare('SELECT mail FROM suivi_acteur WHERE ref = ? AND demandeur = ?').bind(l.ref, l.demandeur).all()).results || [];
+            r.forEach(a => { if (a.mail !== nouvelle.auteur && a.mail !== l.demandeur && a.mail !== nouvelle.detenteur) acteurs[a.mail] = (acteurs[a.mail] || 0) + 1; });
+        }
+        const qui = nouvelle.trace.qui ? ' (' + nouvelle.trace.qui + ')' : '';
+        await Promise.all(Object.keys(acteurs).map(m => {
+            const n = acteurs[m], p = n > 1;
+            return notifierCompte(env, m, { titre: p ? n + ' demandes refusées' : 'Demande refusée',
+                texte: (p ? n + ' demandes que vous aviez validées ont été ' : 'Une demande que vous aviez validée a été ') + (nouvelle.trace.e === 'renvoi' ? 'renvoyée' + (p ? 's' : '') + ' au VALIDEUR 1' : 'refusée' + (p ? 's' : '') + ' au demandeur') + qui + '.',
+                type: 'SUIVI', url: '/?espace=boite' }, origine).catch(() => {});
+        }));
+    }
     const parDemandeur = {};
     lignes.forEach(l => { if (l.demandeur !== nouvelle.auteur) (parDemandeur[l.demandeur] = parDemandeur[l.demandeur] || { genre: l.genre, n: 0 }).n++; });
     if (!cleNotif) return;
@@ -262,6 +283,7 @@ async function relancer(env, origine, maintenant, forcer) {
     if (!forcer && (/^(sam|dim)/.test(h.jour) || h.heure < 8 || h.heure >= 19)) return 0;
     const db = await baseBoite(env);
     await db.prepare('DELETE FROM suivi WHERE le < ?').bind(maintenant - DUREE_SUIVI * 1000).run();
+    await db.prepare('DELETE FROM suivi_acteur WHERE NOT EXISTS (SELECT 1 FROM suivi s WHERE s.ref = suivi_acteur.ref AND s.demandeur = suivi_acteur.demandeur)').run();
     const r = await db.prepare('SELECT ref, demandeur, genre, etape, detenteur FROM suivi WHERE etape IN (\'val1\', \'val2\', \'chorus\', \'recu\') AND le <= ? AND (relance IS NULL OR relance <= ?)')
         .bind(maintenant - RELANCE, maintenant - RELANCE).all();
     const lignes = r.results || [];
@@ -559,8 +581,11 @@ async function api(requete, env, url, ctx) {
 
     // Suivi : où en sont mes demandes et mes comptes-rendus (seulement les miens).
     if (chemin === 'suivi' && methode === 'GET') {
-        const r = await (await baseBoite(env)).prepare('SELECT ref, genre, etape, envoi, le, etapes FROM suivi WHERE demandeur = ? ORDER BY le DESC LIMIT 300').bind(moi.mail).all();
-        return json({ ok: true, suivi: (r.results || []).map(x => ({ ref: x.ref, genre: x.genre, etape: x.etape, envoi: x.envoi, le: x.le,
+        // Mes demandes et comptes-rendus, et les demandes où je suis intervenu (valideur, assistant Chorus DT).
+        const r = await (await baseBoite(env)).prepare('SELECT ref, genre, etape, envoi, le, etapes, 1 AS moi FROM suivi WHERE demandeur = ? ' +
+            'UNION ALL SELECT s.ref, s.genre, s.etape, s.envoi, s.le, s.etapes, 0 AS moi FROM suivi s JOIN suivi_acteur a ON a.ref = s.ref AND a.demandeur = s.demandeur WHERE a.mail = ? ' +
+            'ORDER BY le DESC LIMIT 500').bind(moi.mail, moi.mail).all();
+        return json({ ok: true, suivi: (r.results || []).map(x => ({ ref: x.ref, genre: x.genre, etape: x.etape, envoi: x.envoi, le: x.le, intervenant: !x.moi,
             etapes: JSON.parse(x.etapes || '[]').map(t => ({ e: t.e, le: t.le, qui: t.qui })) })) });
     }
     // L'assistant Chorus DT a traité des demandes (refs) ou des comptes-rendus (envois) qu'il détient.

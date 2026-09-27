@@ -428,7 +428,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 71, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 72, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1306,7 +1306,9 @@
         if (suiviEnCours) return suiviEnCours;
         suiviEnCours = appelApi('suivi').then(function(r) {
             var avant = lireTxt(CLE_SUIVI), o = {};
-            (r.suivi || []).forEach(function(x) { o[x.ref] = { genre: x.genre, etape: x.etape, envoi: x.envoi, le: x.le, etapes: x.etapes || [] }; });
+            // intervenant : demande d'un autre, que j'ai validée ou traitée (j'en vois la suite).
+            (r.suivi || []).forEach(function(x) { if (o[x.ref] && !o[x.ref].intervenant) return;
+                o[x.ref] = { genre: x.genre, etape: x.etape, envoi: x.envoi, le: x.le, etapes: x.etapes || [], intervenant: !!x.intervenant }; });
             var txt = JSON.stringify(o);
             if (txt !== avant) { ecrireTxt(CLE_SUIVI, txt); try { window.dispatchEvent(new Event('trigone-suivi')); } catch (e) {} }
             return o;
