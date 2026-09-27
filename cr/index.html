@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=57"></script>
+<script src="../jumelage.js?v=58"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=2">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -5273,6 +5273,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <h1 class="HIDDEN" aria-hidden="true">Compte-rendu de mission</h1>
 <div class="P0-HERO">
+<p id="P0-BONJOUR" class="JUM-BONJOUR HIDDEN"></p>
 <button class="BTN-ACCUEIL" onclick="ENTRER()">LA MISSION COMMENCE ICI</button>
 <button type="button" id="BTN-DEPUIS-MER" class="BTN BTN-CONTINUE HIDDEN" onclick="OUVRIR_LISTE_MISES_EN_ROUTE()">📋 À partir d'une mise en route</button>
 <button type="button" class="P0-SIMU-LINK" onclick="SHOW_PAGE('P-SIMU')">Simuler une mission à venir</button>
@@ -11512,7 +11513,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 154;
+var APP_CODE_VERSION = 155;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13668,7 +13669,15 @@ function DEMO_QUITTER() {
 // Menu à gauche à la place de la barre du bas (même menu que TRIGONE Mise en route) ; page « Départ mission »
 // sur deux colonnes. En dessous de 1100 px, rien ne change.
 // Après les réglages communs : l'accueil suit (nom du tableau de bord PC).
-window.JUMELAGE_APRES_REGLAGES = function() { if (M.PAGE === 'P0') RENDRE_P0_PC(); };
+window.JUMELAGE_APRES_REGLAGES = function() { if (M.PAGE === 'P0') RENDRE_P0_PC(); MAJ_BONJOUR_P0(); };
+// Accueil téléphone : « Bonjour, GRADE NOM Prénom » (Réglages TRIGONE), comme sur l'accueil PC.
+function MAJ_BONJOUR_P0() {
+    var el = document.getElementById('P0-BONJOUR'); if (!el) return;
+    var qui = window.JUMELAGE_QUI ? JUMELAGE_QUI() : '';
+    el.innerHTML = qui ? 'Bonjour, <b>' + ESC_HTML(qui) + '</b>' : '';
+    el.classList.toggle('HIDDEN', !qui);
+}
+document.addEventListener('DOMContentLoaded', MAJ_BONJOUR_P0);
 var CR_PC_MQ = window.matchMedia ? window.matchMedia('(min-width: 1100px)') : null;
 var CR_ICONES_PC = {
     ACCUEIL: '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6h-6v6H4a1 1 0 0 1-1-1z"/></svg>',
@@ -13712,7 +13721,7 @@ function RENDRE_P0_PC() {
     if (!z) return;
     if (!(CR_PC_MQ && CR_PC_MQ.matches)) { z.innerHTML = ''; return; }
     var lire = function(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } };
-    var qui = [lire('mission_saved_grade'), lire('mission_saved_user')].filter(Boolean).join(' ');
+    var qui = (window.JUMELAGE_QUI && JUMELAGE_QUI()) || [lire('mission_saved_grade'), lire('mission_saved_user')].filter(Boolean).join(' ');
     // Démonstration : l'accueil montre le point de départ, « La mission commence ici ».
     var enCours = !DEMO_MODE_ACTIF && !M.IS_PAX && !M.MAIL_SENT && HAS_ACTIVE_MISSION_DATA(M);
     var btnMer = document.getElementById('BTN-DEPUIS-MER');

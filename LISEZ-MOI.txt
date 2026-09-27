@@ -323,3 +323,5 @@ Version 54 : CUMUL VALIDEUR 1 + VALIDEUR 2 SUR UN MÊME COMPTE. Constat : la dem
 Version 55 : ESPACE ASSIST CHORUS DT. Sur chaque ligne « Demandes de mise en route validées » : « 👁 Aperçu » et « 📄 Télécharger le PDF » (CHORUS_PDF_RECU : contrôle des signatures et des pièces jointes, puis PDF final demande + NDS / DAF ; refus clair si non conforme) et « Contrôle détaillé ». Le résultat du contrôle détaillé s'affiche en tête de page (il tombait hors de l'écran sur téléphone, sous la boîte), avec « ✕ Fermer le contrôle ». Erreur de contrôle affichée au lieu d'être silencieuse.
 
 Version 56 : logo de l'espace ASSIST CHORUS DT cliquable (JUM-LOGO-CHOIX) : retour à l'écran de choix, comme les logos de Mise en route et de Compte-rendu.
+
+Version 57 : « Bonjour, GRADE NOM Prénom » : prénom ajouté sur l'accueil PC de Mise en route ; nouveau sur les accueils téléphone de Mise en route et de Compte-rendu (classe JUM-BONJOUR, nom insécable, taille adaptée aux petits écrans). Identité : Réglages TRIGONE (JUMELAGE_QUI), Mon espace en priorité dans Mise en route.
