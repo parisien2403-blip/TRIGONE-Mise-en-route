@@ -231,6 +231,16 @@ module.exports = async function() {
     await relever(c);
     await c.evaluate(() => { document.querySelectorAll('.JUM-CHOIX').forEach(e => e.remove()); JUMELAGE_CHOIX(); }); await attendre(600);
     verifier(await c.evaluate(() => !!document.querySelector('.JUM-CHORUS') && document.querySelector('.JUM-CHORUS-NB').textContent === '1'), 'Chorus DT : logo au centre de l\'écran de choix, pastille « 1 »');
+    // Écran presque carré (téléphone pliant ouvert) : le logo Chorus ne recouvre jamais les deux autres.
+    for (const [w, h] of [[882, 916], [700, 700], [360, 640]]) {
+        await c.setViewportSize({ width: w, height: h }); await attendre(500);
+        const touche = await c.evaluate(() => {
+            const a = document.querySelector('.JUM-CHORUS').getBoundingClientRect();
+            return Array.prototype.some.call(document.querySelectorAll('.JUM-BLOC'), bl => { const b = bl.getBoundingClientRect(); return a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom; });
+        });
+        verifier(!touche, 'écran de choix ' + w + ' × ' + h + ' : le logo Chorus ne recouvre pas les logos Mise en route et Compte-rendu');
+    }
+    await c.setViewportSize({ width: 480, height: 1000 }); await attendre(400);
     await c.evaluate(() => { const n = document.querySelector('.JUM-NOUV button'); if (n) n.click(); }); await attendre(300);
     await c.click('.JUM-CHORUS'); await attendre(1500);
     verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'CHORUS', 'Chorus DT : le logo ouvre l\'espace Assistant Chorus DT');
