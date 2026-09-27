@@ -342,6 +342,7 @@
         '.JUM-R-CHAMP input { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font: 500 0.9rem Montserrat, system-ui, sans-serif; color: #1a1a1a; background: #fff; }' +
         '.JUM-R-CHAMP input:focus { outline: none; border-color: #5a7a94; }' +
         '.JUM-R-AIDE { font-size: 0.76rem; color: #64748b; margin: 0 0 10px; line-height: 1.45; }' +
+        '.JUM-R-ETAPES { padding-left: 20px; } .JUM-R-ETAPES li { margin: 2px 0; }' +
         '.JUM-R-ERREUR { color: #b91c1c; font-size: 0.8rem; font-weight: 700; margin: 12px 0 0; min-height: 1em; }' +
         '.JUM-R-PIED { display: flex; align-items: center; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid #eef2f6; }' +
         '.JUM-R-PIED > .JUM-R-PRINCIPAL:only-child { flex: 1; padding: 15px 22px; }' +
@@ -421,7 +422,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 66, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 67, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -655,6 +656,12 @@
                 '<div id="JUM-R-FONCTION-BLOC" style="display:none;">' + champ('FONCTION', 'Ma fonction de valideur', (lireJSON('mer_valideur') || {}).fonction || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE SERVICE"') + '</div>' +
                 caseRole('CHORUS', 'chorus', '<b>ASSIST CHORUS DT</b>', 'Code ASSIST CHORUS DT') +
                 '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>' +
+                // Android, première ouverture : réglage batterie, sans lequel les notifications arrivent en retard appli fermée.
+                // (Une appli web ne peut pas ouvrir elle-même les paramètres d'Android : on guide pas à pas.)
+                (premiere && /Android/i.test(navigator.userAgent || '') ? '<div class="JUM-R-TITRE">Notifications sur Android</div>' +
+                    '<p class="JUM-R-AIDE">Pour recevoir les notifications TRIGONE sans retard, même appli fermée, retirez l\'économie de batterie de Chrome :</p>' +
+                    '<ol class="JUM-R-AIDE JUM-R-ETAPES"><li>Ouvrez les <b>Paramètres</b> du téléphone</li><li><b>Applications</b> › <b>Chrome</b></li><li><b>Batterie</b></li><li>Choisissez <b>« Non restreinte »</b></li></ol>' +
+                    '<p class="JUM-R-AIDE">À faire une seule fois. Rappel : Notice › Notifications.</p>' : '') +
                 '<p class="JUM-R-ERREUR" id="JUM-R-ERREUR"></p>' +
             '</div>' +
             '<div class="JUM-R-PIED">' +

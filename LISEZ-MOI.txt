@@ -342,3 +342,5 @@ Version 64 : NOTIFICATIONS FIABILISÉES. Constat : notification absente appli fe
 
 
 Version 65 : NOTICE « NOTIFICATIONS ». Nouvelle rubrique dans la Notice de Mise en route (MER_NOTICE_NOTIF) et de Compte-rendu (« Notifications TRIGONE ») : activation sur chaque appareil, bouton « Tester les notifications » (conservé comme outil de diagnostic), Android : Paramètres › Applications › Chrome › Batterie › « Non restreinte » (+ notifications Chrome autorisées), iPhone / iPad : TRIGONE sur l'écran d'accueil, PC : navigateur ouvert, notifications Windows autorisées, « Ne pas déranger » coupé. Compte TRIGONE, notifications activées sur Android : rappel du réglage batterie.
+
+Version 66 : PREMIÈRE OUVERTURE SUR ANDROID. L'écran « Avant de commencer » (Réglages TRIGONE, première fois) ajoute une rubrique « Notifications sur Android » : Paramètres › Applications › Chrome › Batterie › « Non restreinte », en 4 étapes. Pas de bouton d'ouverture directe : une appli web ne peut pas ouvrir les paramètres d'Android (Chrome n'autorise que les liens vers des applis prévues pour le web).
