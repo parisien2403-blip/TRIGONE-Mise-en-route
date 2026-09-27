@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 123;
+var APP_CODE_VERSION = 124;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1770,6 +1770,7 @@ var MER_NOTICE_CLE = null;
 var MER_NOTICES = {
     DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · documents · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
         etapes: ['<b>Compte TRIGONE</b> (roue crantée › Compte TRIGONE) : activez-le une fois avec votre adresse mail, vérifiée par un code. Tous les envois passent par la <b>boîte TRIGONE</b>, chiffrés : plus de fichier à joindre à un mail.',
+            '<b>Plusieurs appareils</b> (téléphone et PC) : inutile de tout refaire. Sur l\'appareil déjà configuré, Compte TRIGONE › <b>« 📲 Ajouter un autre appareil »</b> affiche un code (valable 15 minutes, une seule fois) ; sur le nouvel appareil, saisissez-le à la première ouverture (« Déjà TRIGONE sur votre téléphone ou votre PC ? ») ou dans son Compte TRIGONE : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés, chiffrés. <b>« Me déconnecter et effacer cet appareil »</b> retire le compte et toutes les données d\'un appareil (PC partagé, appareil rendu) ; un code de liaison depuis l\'autre appareil les remet en place.',
             '<b>Notifications</b> : dans Compte TRIGONE, « 🔔 Activer les notifications » vous prévient de chaque envoi reçu (demande à signer, refus, compte-rendu), même TRIGONE fermée — PC, Android, et iPhone / iPad avec TRIGONE installée sur l\'écran d\'accueil. Réglages utiles par appareil : rubrique <b>Notifications</b> de la Notice.',
             '<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',

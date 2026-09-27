@@ -77,7 +77,7 @@ async function remiseAZero(env) {
     if (!r.meta || !r.meta.changes) return;   // déjà faite (par cette requête ou une autre)
     await db.prepare('DELETE FROM boite').run();
     await (await baseBoite(env)).prepare('DELETE FROM abonnement').run();
-    for (const prefixe of ['compte:', 'code:', 'limite:', 'msg:']) {
+    for (const prefixe of ['compte:', 'code:', 'limite:', 'msg:', 'liaison:']) {
         let curseur;
         do {
             const l = await env.TRIGONE_KV.list({ prefix: prefixe, cursor: curseur });
@@ -479,8 +479,45 @@ async function api(requete, env, url, ctx) {
         return json({ ok: true, mail, appareil: app.id, jeton });
     }
 
+    // Liaison d'un nouvel appareil (code affiché sur un appareil déjà configuré) : l'appareil est ajouté au compte, sans
+    // code par mail, et reçoit le paquet chiffré (réglages, rôles, données) — le code, qui le déchiffre, ne vient jamais ici.
+    if (chemin === 'liaison/utiliser' && methode === 'POST') {
+        const corps = await requete.json().catch(() => ({}));
+        const ip = requete.headers.get('CF-Connecting-IP') || 'local';
+        const n = +(await kv.get('limite-liaison:' + ip)) || 0;
+        if (n >= 60) return erreur(429, 'Trop d\'essais. Réessayez dans un quart d\'heure.');   // par adresse réseau (tout un site peut partager la même)
+        await kv.put('limite-liaison:' + ip, String(n + 1), { expirationTtl: 900 });
+        const id = String(corps.id || '');
+        if (!/^[\w-]{20,64}$/.test(id)) return erreur(400, 'Code de liaison invalide.');
+        const l = await kv.get('liaison:' + id, 'json');
+        if (!l) return erreur(404, 'Code inconnu ou expiré : affichez-en un nouveau sur l\'autre appareil.');
+        const cle = corps.cle;
+        if (!cle || cle.kty !== 'EC' || cle.crv !== 'P-256' || !cle.x || !cle.y || cle.d) return erreur(400, 'Clé d\'appareil invalide.');
+        await kv.delete('liaison:' + id);
+        const compte = await kv.get('compte:' + l.mail, 'json');
+        if (!compte) return erreur(404, 'Le compte TRIGONE de l\'autre appareil n\'existe plus.');
+        const jeton = b64url(hasard(32));
+        const app = { id: b64url(hasard(9)), cle: { kty: 'EC', crv: 'P-256', x: cle.x, y: cle.y }, jeton: await empreinte(jeton),
+            nom: String(corps.nom || 'Appareil').slice(0, 60), cree: Date.now() };
+        compte.appareils = compte.appareils.concat(app).slice(-10);
+        await kv.put('compte:' + l.mail, JSON.stringify(compte));
+        return json({ ok: true, mail: l.mail, appareil: app.id, jeton, paquet: l.paquet });
+    }
+
     const moi = await appareilConnecte(env, requete);
     if (!moi) return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
+
+    // Liaison : un appareil configuré dépose son paquet chiffré (15 minutes, une seule utilisation), rangé sous
+    // l'empreinte du code (id) : le serveur ne connaît ni le code ni le contenu.
+    if (chemin === 'liaison' && methode === 'POST') {
+        const texte = await requete.text();
+        if (texte.length > 22 * 1024 * 1024) return erreur(413, 'Données trop volumineuses (20 Mo au plus).');
+        let corps; try { corps = JSON.parse(texte); } catch (e) { return erreur(400, 'Envoi illisible.'); }
+        const id = String(corps.id || '');
+        if (!/^[\w-]{20,64}$/.test(id) || !corps.paquet || !corps.paquet.ct) return erreur(400, 'Liaison incomplète.');
+        await kv.put('liaison:' + id, JSON.stringify({ mail: moi.mail, paquet: corps.paquet }), { expirationTtl: 900 });
+        return json({ ok: true, expire: Date.now() + 900 * 1000 });
+    }
 
     // Rôles du compte (déclarés par l'appli après le code valideur ou le code Assistant Chorus DT) : ils décident de ce
     // que chaque boîte peut recevoir. 1er valideur : les demandes des missionnaires ; 2e valideur : les envois des

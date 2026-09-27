@@ -367,6 +367,35 @@ module.exports = async function() {
     await m.evaluate(id => RETIRER_DU_PANIER_OK(id), refusee); await attendre(1500);
     verifier(((await suivi(m))[refusee] || {}).etape === 'abandon', 'refus : demande retirée de Documents → plus de rappel au demandeur');
 
+    // Liaison : le demandeur installe TRIGONE sur un autre appareil avec un code (sans mail ni ressaisie).
+    const nbAppareils = async () => ((await api(m, 'cles?mail=' + encodeURIComponent(MAILS.M))).appareils || []).length;
+    const avant = await nbAppareils();
+    await m.evaluate(() => { SHOW_PAGE('ACCUEIL'); JUMELAGE_COMPTE(); }); await attendre(600);
+    await m.click('#JUM-C-LIAISON'); await attendre(3500);
+    const codeLiaison = (await m.textContent('.JUM-LIAISON-CODE')).trim();
+    verifier(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(codeLiaison) && (await m.textContent('#JUM-C-LIAISON-T')).includes('Valable encore'), 'liaison : code affiché (' + codeLiaison + '), valable 15 min');
+    await m.evaluate(() => JUMELAGE_FERMER_COMPTE());
+    const ctxN = await b.newContext({ viewport: { width: 480, height: 1000 } });
+    const n = await ctxN.newPage(); n.on('pageerror', e => erreurs.push('N : ' + e.message)); n.on('dialog', d => d.accept());
+    await n.goto(URL); await attendre(2500);
+    verifier(!!(await n.evaluate(() => JUMELAGE_LIAISON_UTILISER('ZZZZ-ZZZZ').then(() => '', e => e.message))), 'liaison : un code erroné est refusé');
+    const lie = await n.evaluate(c => JUMELAGE_LIAISON_UTILISER(c.toLowerCase().replace('-', ' ')).then(m => m, e => 'ERREUR ' + e.message), codeLiaison);
+    verifier(lie === MAILS.M, 'liaison : le nouvel appareil rejoint le compte du demandeur (' + lie + ')');
+    await n.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1'));
+    await n.goto(URL); await attendre(3000);
+    const [qm, qn] = [await m.evaluate(() => JUMELAGE_QUI()), await n.evaluate(() => JUMELAGE_QUI())];
+    const [bm, bn] = [await m.evaluate(() => GET_BIBLIOTHEQUE().length), await n.evaluate(() => GET_BIBLIOTHEQUE().length)];
+    verifier(await n.evaluate(() => JUMELAGE_COMPTE_ACTIF()) && qn === qm && bn === bm && bn > 0, 'liaison : identité (' + qn + '), compte et bibliothèque (' + bn + ') recopiés');
+    verifier(await nbAppareils() === avant + 1, 'liaison : l\'appareil est ajouté au compte TRIGONE');
+    verifier(!!(await n.evaluate(c => JUMELAGE_LIAISON_UTILISER(c).then(() => '', e => e.message), codeLiaison)), 'liaison : le code ne sert qu\'une fois');
+    // « Me déconnecter et effacer cet appareil »
+    await n.evaluate(() => { document.querySelectorAll('.JUM-PRES,.JUM-NOUV,.JUM-VERROU,.JUM-PAVE').forEach(x => x.remove()); JUMELAGE_COMPTE(); }); await attendre(600);
+    await n.click('#JUM-C-EFFACER'); await attendre(500);
+    await n.click('button:has-text("Oui, déconnecter et effacer")'); await attendre(3500);
+    verifier(await n.evaluate(() => !localStorage.getItem('trigone_compte') && !localStorage.getItem('mer_bibliotheque')) && await nbAppareils() === avant,
+        'déconnexion et effacement : compte retiré de l\'appareil, données effacées');
+    await ctxN.close();
+
     // Boîtes vides après relève
     const reste = await v1.evaluate(async () => { const c = JSON.parse(localStorage.getItem('trigone_compte'));
         return (await (await fetch('api/boite', { headers: { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton } })).json()).envois.length; });
