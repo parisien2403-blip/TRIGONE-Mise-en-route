@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 103;
+var APP_CODE_VERSION = 104;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3297,7 +3297,7 @@ function TPL_CHORUS() {
     var nb = function(liste) { var n = liste.filter(function(x) { return x.statut !== 'traite'; }).length; return n ? ' (' + n + ')' : ''; };
     // Résultat d'un « Contrôle détaillé » : en tête de page, bien visible (fermé par « Fermer le contrôle »).
     return (MER_RESULTATS_VERIF ? TPL_VERIFIER() : '') +
-        '<div class="CARD MER-CHORUS-TETE"><img class="MER-CHORUS-LOGO" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT">' +
+        '<div class="CARD MER-CHORUS-TETE"><img class="MER-CHORUS-LOGO JUM-LOGO-CHOIX" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT" title="Revenir à l\'écran de choix" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">' +
         (compte ? '<p class="MER-HINT" style="margin:0 0 10px;">Envois reçus à <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>, chiffrés, directement dans TRIGONE.</p>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:12px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>' +
             '<div class="MER-SECTION-TITLE">Demandes de mise en route validées' + nb(demandes) + '</div>' +
