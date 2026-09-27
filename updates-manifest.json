@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 123,
-  "appCodeMessage": "Version 75 : PC et téléphone ? Bouton « Notifications » en haut à gauche de l'écran de choix pour couper les notifications sur l'appareil utilisé (orange « Notifications coupées ici ») et éviter les doublons. Valideur absent : l'expéditeur est prévenu avant l'envoi que sa demande partira chez le remplaçant.",
+  "appCodeVersion": 124,
+  "appCodeMessage": "Version 76 : téléphone et PC sans tout refaire — Compte TRIGONE › « Ajouter un autre appareil » donne un code (15 min, une seule fois) qui recopie compte, réglages, rôles et données sur l'autre appareil ; « Me déconnecter et effacer cet appareil » pour un appareil partagé ou rendu.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

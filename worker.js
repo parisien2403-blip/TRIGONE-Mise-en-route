@@ -485,7 +485,7 @@ async function api(requete, env, url, ctx) {
         const corps = await requete.json().catch(() => ({}));
         const ip = requete.headers.get('CF-Connecting-IP') || 'local';
         const n = +(await kv.get('limite-liaison:' + ip)) || 0;
-        if (n >= 10) return erreur(429, 'Trop d\'essais. Réessayez dans un quart d\'heure.');
+        if (n >= 60) return erreur(429, 'Trop d\'essais. Réessayez dans un quart d\'heure.');   // par adresse réseau (tout un site peut partager la même)
         await kv.put('limite-liaison:' + ip, String(n + 1), { expirationTtl: 900 });
         const id = String(corps.id || '');
         if (!/^[\w-]{20,64}$/.test(id)) return erreur(400, 'Code de liaison invalide.');

@@ -355,6 +355,11 @@
         '.JUM-R-CHAMP input:focus { outline: none; border-color: #5a7a94; }' +
         '.JUM-R-AIDE { font-size: 0.76rem; color: #64748b; margin: 0 0 10px; line-height: 1.45; }' +
         '.JUM-R-ETAPES { padding-left: 20px; } .JUM-R-ETAPES li { margin: 2px 0; }' +
+        '.JUM-LIAISON-BLOC { margin: 0 0 14px; padding: 10px 12px; border-radius: 12px; background: #EEF2F6; border: 1px solid #cfdbe6; font-size: 0.8rem; }' +
+        '.JUM-LIAISON-BLOC summary { cursor: pointer; line-height: 1.4; } .JUM-LIAISON-BLOC b { color: #1a1a1a; }' +
+        '.JUM-LIAISON-CODE { text-align: center; font: 800 2rem/1.1 Montserrat, system-ui, sans-serif; letter-spacing: 0.14em; padding: 14px 8px 10px; margin: 10px 0 4px; border-radius: 14px; background: #1a1a1a; color: #fff; user-select: all; }' +
+        '.JUM-LIAISON-TEMPS { text-align: center; font-size: 0.78rem; font-weight: 700; color: #a16207; margin-bottom: 8px; }' +
+        'html body.dark-mode .JUM-LIAISON-BLOC { background: rgba(122,157,181,0.1); border-color: rgba(122,157,181,0.25); } html body.dark-mode .JUM-LIAISON-BLOC b { color: #f5f5f5; }' +
         '.JUM-R-ERREUR { color: #b91c1c; font-size: 0.8rem; font-weight: 700; margin: 12px 0 0; min-height: 1em; }' +
         '.JUM-R-PIED { display: flex; align-items: center; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid #eef2f6; }' +
         '.JUM-R-PIED > .JUM-R-PRINCIPAL:only-child { flex: 1; padding: 15px 22px; }' +
@@ -434,7 +439,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 76, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 77, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -642,6 +647,10 @@
                 '<p>Communs à Mise en route et Compte-rendu de mission. Enregistrés sur cet appareil uniquement.</p></div>' +
                 (premiere ? '' : '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_REGLAGES()">✕</button>') + '</div>' +
             '<div class="JUM-R-CORPS">' +
+                // Déjà configuré sur un autre appareil : un code de liaison suffit (rien à ressaisir).
+                (premiere ? '<details class="JUM-LIAISON-BLOC"><summary>📲 Déjà TRIGONE sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
+                    '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : roue crantée › <b>Compte TRIGONE</b> › <b>« Ajouter un autre appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte TRIGONE, demandes et bibliothèque sont recopiés.</p>' +
+                    htmlSaisieLiaison() + '</details>' : '') +
                 '<div class="JUM-R-TITRE">Mon identité</div>' +
                 '<div class="JUM-R-GRILLE">' + champ('UNITE', 'Unité / entité', r.unite, 'type="text" autocomplete="off" placeholder="EX : 4°RIISC"') +
                     champ('CIE', 'CIE', r.cie, 'type="text" autocomplete="off" placeholder="EX : 4CIE"') +
@@ -694,6 +703,7 @@
                 '<button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_ENREGISTRER_REGLAGES(' + (premiere ? 'true' : 'false') + ')">' + (premiere ? 'Continuer →' : 'Enregistrer') + '</button>' +
             '</div></div>';
         document.body.appendChild(reglages);
+        if (premiere) brancherSaisieLiaison(reglages, false);
         var m = document.getElementById('JUM-R-MATRICULE');
         m.addEventListener('input', function() { m.value = formatMatricule(m.value); });
         ['VAL1', 'VAL2', 'CHORUS'].forEach(function(id) {
@@ -1146,6 +1156,93 @@
             ' — ' + new Date().toLocaleDateString('fr-FR');
     }
 
+    // ---------- Liaison : installer TRIGONE sur un autre appareil sans tout refaire ----------
+    // L'appareil déjà configuré tire un code de 8 caractères (valable 15 minutes, une seule fois), chiffre avec lui une
+    // copie de toutes ses données (réglages, rôles, code d'accès, demandes, bibliothèque, comptes-rendus, pièces
+    // jointes) et la dépose sur le serveur sous l'empreinte du code. Le nouvel appareil saisit le code : il est ajouté au
+    // compte TRIGONE (sans code par mail) et déchiffre la copie. Le serveur ne voit jamais ni le code ni les données.
+    // Les clés de signature des valideurs ne se copient pas (bloquées sur leur appareil) : le code VALIDEUR 1 / 2 sera
+    // redemandé une fois, à la première signature.
+    var ALPHA_LIAISON = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789', TAILLE_MAX_LIAISON = 15 * 1024 * 1024;
+    function codeLiaisonNouveau() {
+        var o = crypto.getRandomValues(new Uint8Array(8)), c = '';
+        for (var i = 0; i < 8; i++) c += ALPHA_LIAISON.charAt(o[i] % 32);
+        return c;
+    }
+    function codeLiaisonNormal(t) { return String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, ''); }
+    function b64u(buf) { return versB64(buf).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+    function idLiaison(code) { return SUBTLE.digest('SHA-256', new TextEncoder().encode('trigone-liaison:' + code)).then(b64u); }
+    function cleLiaison(code, sel) {
+        return SUBTLE.importKey('raw', new TextEncoder().encode(code), 'PBKDF2', false, ['deriveKey']).then(function(base) {
+            return SUBTLE.deriveKey({ name: 'PBKDF2', salt: sel, iterations: 200000, hash: 'SHA-256' }, base, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+        });
+    }
+    // Appareil configuré : { code, expire, sansPieces }.
+    window.JUMELAGE_LIAISON_CREER = function() {
+        if (!monCompte()) return Promise.reject(new Error('Activez d\'abord votre compte TRIGONE.'));
+        if (!navigator.onLine) return Promise.reject(new Error('Pas de connexion.'));
+        var code = codeLiaisonNouveau(), sansPieces = false, sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
+        return collecterSauvegarde().then(function(sv) {
+            var txt = JSON.stringify(sv);
+            // Trop lourd avec les pièces jointes : on transmet tout sauf elles (elles restent sur cet appareil).
+            if (txt.length > TAILLE_MAX_LIAISON) { sv.pieces = {}; sansPieces = true; txt = JSON.stringify(sv); }
+            return cleLiaison(code, sel).then(function(k) { return SUBTLE.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(txt)); });
+        }).then(function(ct) {
+            return idLiaison(code).then(function(id) {
+                return appelApi('liaison', { methode: 'POST', corps: { id: id, paquet: { sel: versB64(sel), iv: versB64(iv), ct: versB64(ct) } } });
+            });
+        }).then(function(r) { return { code: code.slice(0, 4) + '-' + code.slice(4), expire: r.expire, sansPieces: sansPieces }; });
+    };
+    // Nouvel appareil : ajouté au compte, données de l'autre appareil mises en place (celles d'ici sont remplacées).
+    window.JUMELAGE_LIAISON_UTILISER = function(saisie) {
+        var code = codeLiaisonNormal(saisie), paire, rep;
+        if (code.length !== 8) return Promise.reject(new Error('Le code de liaison contient 8 caractères (ex. K7P2-9XQM).'));
+        if (!navigator.onLine) return Promise.reject(new Error('Pas de connexion.'));
+        return SUBTLE.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']).then(function(p) {
+            paire = p; return Promise.all([SUBTLE.exportKey('jwk', p.publicKey), idLiaison(code)]);
+        }).then(function(x) {
+            var pub = x[0];
+            return appelApi('liaison/utiliser', { methode: 'POST', corps: { id: x[1], nom: nomAppareil(), cle: { kty: pub.kty, crv: pub.crv, x: pub.x, y: pub.y } } });
+        }).then(function(r) {
+            rep = r;
+            return cleLiaison(code, depuisB64(r.paquet.sel)).then(function(k) { return SUBTLE.decrypt({ name: 'AES-GCM', iv: depuisB64(r.paquet.iv) }, k, depuisB64(r.paquet.ct)); })
+                .catch(function() { throw new Error('Code de liaison incorrect.'); });
+        }).then(function(clair) {
+            var sv = JSON.parse(new TextDecoder().decode(clair));
+            // Propre à chaque appareil : abonnement aux notifications, sourdine, suivi (relu sur le serveur).
+            ['trigone_notif', 'trigone_notif_muet', 'trigone_suivi', 'trigone_boite'].forEach(function(k) { delete sv.donnees[k]; });
+            return appliquerSauvegarde(sv, true);
+        }).then(function() {
+            return cleIdb('ecrire', { prive: paire.privateKey });
+        }).then(function() {
+            ecrireTxt(CLE_COMPTE, JSON.stringify({ mail: rep.mail, appareil: rep.appareil, jeton: rep.jeton }));
+            ecrireTxt('trigone_liaison_faite', String(Date.now()));
+            return rep.mail;
+        });
+    };
+    // Zone de saisie du code (nouvel appareil) : champ + bouton + message ; après réussite, TRIGONE redémarre.
+    function htmlSaisieLiaison() {
+        return '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;"><div class="JUM-R-CHAMP"><label for="JUM-L-CODE">Code de liaison</label>' +
+            '<input id="JUM-L-CODE" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="EX : K7P2-9XQM" style="letter-spacing:0.12em; font-weight:800; text-transform:uppercase;"></div></div>' +
+            '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-L-OK" style="width:100%; margin:6px 0 0;">Récupérer mon compte et mes données</button>' +
+            '<p class="JUM-R-ERREUR" id="JUM-L-ERR" style="min-height:0;"></p>';
+    }
+    function brancherSaisieLiaison(racine, avertir) {
+        var btn = racine.querySelector('#JUM-L-OK'), champ = racine.querySelector('#JUM-L-CODE'), err = racine.querySelector('#JUM-L-ERR');
+        if (!btn) return;
+        champ.addEventListener('input', function() { var c = codeLiaisonNormal(champ.value).slice(0, 8); champ.value = c.length > 4 ? c.slice(0, 4) + '-' + c.slice(4) : c; });
+        btn.addEventListener('click', function() {
+            err.style.color = ''; err.textContent = '';
+            if (avertir && !window.confirm('Les données TRIGONE de cet appareil vont être remplacées par celles de votre autre appareil. Continuer ?')) return;
+            btn.disabled = true; btn.textContent = 'Récupération…';
+            window.JUMELAGE_LIAISON_UTILISER(champ.value).then(function(mail) {
+                err.style.color = '#15803d'; err.textContent = '✓ Compte ' + mail + ' relié : TRIGONE redémarre…';
+                try { sessionStorage.setItem('trigone_apres_liaison', '1'); } catch (e) {}
+                setTimeout(function() { location.replace(DANS_CR ? '../' : './'); }, 1200);
+            }).catch(function(e) { err.textContent = '⛔ ' + e.message; btn.disabled = false; btn.textContent = 'Récupérer mon compte et mes données'; });
+        });
+    }
+
     window.JUMELAGE_COMPTE_ACTIF = function() { return !!monCompte(); };
     // Rôles de cet appareil (1er / 2e valideur après le code valideur, assistant Chorus DT après son code) : déclarés au
     // compte TRIGONE, ils décident de ce que la boîte peut recevoir (règle appliquée par le serveur).
@@ -1581,6 +1678,16 @@
         var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); setTimeout(declarerRoles, 2500); setTimeout(suivreNotif, 3500); setTimeout(window.JUMELAGE_SUIVI_ACTUALISER, 3000); };
         if (document.body) lancerReleve(); else document.addEventListener('DOMContentLoaded', lancerReleve);
     }
+    // Juste après une liaison : bienvenue sur ce nouvel appareil.
+    try {
+        if (sessionStorage.getItem('trigone_apres_liaison') === '1') {
+            sessionStorage.removeItem('trigone_apres_liaison');
+            var rl = lireJSON(CLE_ROLES_LOCAUX) || {};
+            setTimeout(function() { annoncer('Appareil relié', 'Cet appareil est relié à votre compte TRIGONE : identité, mails, rôles, code d\'accès, demandes et bibliothèque ont été recopiés.' +
+                (rl.valideur1 || rl.valideur2 ? ' Votre code VALIDEUR vous sera redemandé une fois, à la première signature sur cet appareil.' : '') +
+                ' Pensez à activer les notifications ici aussi (roue crantée › Compte TRIGONE).', 'ok', 'ok'); }, 2500);
+        }
+    } catch (e) {}
     document.addEventListener('visibilitychange', function() { if (monCompte()) { releveAuto(); if (document.visibilityState === 'visible') window.JUMELAGE_SUIVI_ACTUALISER(); } });
     setInterval(function() { if (monCompte()) releveAuto(); }, 20000);
 
@@ -1601,7 +1708,11 @@
                 '<p class="JUM-R-AIDE" style="margin-top:14px;">✓ <b>Compte actif : ' + esc(c.mail) + '</b><br>Cet appareil reçoit les demandes qui vous sont envoyées ; elles arrivent à l\'ouverture de Mise en route.</p>' +
                 '<p class="JUM-R-AIDE">Sur un autre appareil (PC, téléphone), activez aussi votre compte avec la même adresse : chacun recevra les envois.</p>' +
                 blocNotif() +
-                '<button type="button" class="JUM-R-LIEN" id="JUM-C-DECO">Déconnecter cet appareil</button><p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
+                '<div class="JUM-R-TITRE">Autres appareils</div>' +
+                '<p class="JUM-R-AIDE">Installer TRIGONE sur votre PC ou votre téléphone sans tout refaire : touchez le bouton, puis saisissez le code sur l\'autre appareil (à sa première ouverture, ou dans son Compte TRIGONE).</p>' +
+                '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-LIAISON" style="margin:4px 0 0; width:100%;">📲 Ajouter un autre appareil</button><div id="JUM-C-LIAISON-ZONE"></div>' +
+                '<button type="button" class="JUM-R-LIEN" id="JUM-C-DECO">Déconnecter cet appareil</button>' +
+                '<button type="button" class="JUM-R-LIEN" id="JUM-C-EFFACER" style="color:#b91c1c;">Me déconnecter et effacer cet appareil</button><p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
                 '<div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_COMPTE()">Fermer</button></div></div>';
             document.body.appendChild(fenCompte);
             // Test : une vraie notification vers chacun de mes appareils ; la réponse du service est affichée pour chacun.
@@ -1629,6 +1740,34 @@
                     window.JUMELAGE_FERMER_COMPTE(); bandeau('🔔 Notifications activées : vous serez prévenu de chaque envoi.');
                 }, function(e) { btnNotif.disabled = false; btnNotif.textContent = '🔔 Activer les notifications'; err.textContent = '⛔ ' + (e.message || e); });
             });
+            // Code de liaison : affiché en grand, avec le temps restant ; un nouveau appui en tire un autre.
+            var minuteur = null;
+            fenCompte.querySelector('#JUM-C-LIAISON').addEventListener('click', function() {
+                var b = this, zone = fenCompte.querySelector('#JUM-C-LIAISON-ZONE');
+                b.disabled = true; zone.innerHTML = '<p class="JUM-R-AIDE" style="margin-top:8px;">Préparation du code (copie chiffrée de vos données)…</p>';
+                if (minuteur) clearInterval(minuteur);
+                window.JUMELAGE_LIAISON_CREER().then(function(l) {
+                    zone.innerHTML = '<div class="JUM-LIAISON-CODE">' + l.code + '</div><div class="JUM-LIAISON-TEMPS" id="JUM-C-LIAISON-T"></div>' +
+                        '<p class="JUM-R-AIDE">Sur l\'autre appareil, ouvrez TRIGONE : à la première ouverture, « Déjà TRIGONE sur votre téléphone ou votre PC ? » ; sinon roue crantée › Compte TRIGONE › « Utiliser un code de liaison ». Code à usage unique : ne le communiquez à personne.' +
+                        (l.sansPieces ? ' <b>Pièces jointes trop lourdes : elles restent sur cet appareil</b> (le reste est copié).' : '') + '</p>';
+                    var t = fenCompte.querySelector('#JUM-C-LIAISON-T');
+                    var maj = function() {
+                        var s = Math.max(0, Math.round((l.expire - Date.now()) / 1000));
+                        if (!document.body.contains(t)) { clearInterval(minuteur); return; }
+                        t.textContent = s ? 'Valable encore ' + Math.floor(s / 60) + ' min ' + ('0' + s % 60).slice(-2) + ' s · une seule fois' : 'Code expiré : touchez à nouveau « Ajouter un autre appareil ».';
+                        if (!s) { clearInterval(minuteur); fenCompte.querySelector('.JUM-LIAISON-CODE').style.opacity = '0.3'; }
+                    };
+                    maj(); minuteur = setInterval(maj, 1000);
+                }).catch(function(e) { zone.innerHTML = '<p class="JUM-R-ERREUR">⛔ ' + esc(e.message) + '</p>'; }).then(function() { b.disabled = false; });
+            });
+            // Déconnexion complète : le compte quitte l'appareil et toutes les données TRIGONE en sont effacées.
+            fenCompte.querySelector('#JUM-C-EFFACER').addEventListener('click', function() {
+                var texte = 'Cet appareil sera déconnecté de votre compte TRIGONE et TOUTES ses données TRIGONE seront effacées (demandes, bibliothèque, comptes-rendus, réglages, code d\'accès).\n\n' +
+                    'Pour tout retrouver ensuite : un code de liaison depuis votre autre appareil (Compte TRIGONE › « Ajouter un autre appareil »), ou une sauvegarde. Sans autre appareil ni sauvegarde, les données seront perdues.';
+                var go = function() { appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() { cleIdb('effacer').catch(function() {}).then(toutEffacer); }); };
+                if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Se déconnecter et effacer ?', texte, 'Oui, déconnecter et effacer', go, '⚠️', 'mascotte-poubelle.webp', true);
+                else if (window.confirm(texte)) go();
+            });
             fenCompte.querySelector('#JUM-C-DECO').addEventListener('click', function() {
                 if (!window.confirm('Déconnecter cet appareil ? Il ne pourra plus envoyer ni recevoir d\'envois TRIGONE.')) return;
                 appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() {
@@ -1646,10 +1785,14 @@
             '<div id="JUM-C-ETAPE2" style="display:none;"><div class="JUM-R-TITRE">2. Code reçu par mail</div>' +
                 '<div class="JUM-R-CHAMP"><label for="JUM-C-CODE">Code à 6 chiffres</label><input id="JUM-C-CODE" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••"></div>' +
                 '<p class="JUM-R-AIDE" style="margin-top:8px;">Pas reçu ? Regardez dans les courriers indésirables, ou redemandez un code.</p></div>' +
-            '<p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
+            '<p class="JUM-R-ERREUR" id="JUM-C-ERR"></p>' +
+            '<details class="JUM-LIAISON-BLOC" style="margin-top:12px;"><summary>📲 Compte déjà actif sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
+                '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : Compte TRIGONE › <b>« Ajouter un autre appareil »</b>, puis saisissez le code ici. Pas de mail à attendre ; les données de l\'autre appareil remplacent celles d\'ici.</p>' +
+                htmlSaisieLiaison() + '</details></div>' +
             '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_COMPTE()">Annuler</button>' +
             '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-VALIDER" disabled>Activer</button></div></div>';
         document.body.appendChild(fenCompte);
+        brancherSaisieLiaison(fenCompte, lireTxt('mer_config_faite') === '1' || lireTxt('trigone_premier_lancement_fait') === '1');
         var err = fenCompte.querySelector('#JUM-C-ERR'), champMail = fenCompte.querySelector('#JUM-C-MAIL'), mailDemande = '';
         var btnEnvoi = fenCompte.querySelector('#JUM-C-ENVOI'), btnValider = fenCompte.querySelector('#JUM-C-VALIDER');
         serviceDisponible().then(function(ok) {
