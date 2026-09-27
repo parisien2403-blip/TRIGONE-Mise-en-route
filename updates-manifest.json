@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 109,
-  "appCodeMessage": "Version 61 : formulaire Alim./Héb. — la phrase sous « Nourri à titre onéreux » (durant la mission) est retirée.",
+  "appCodeVersion": 110,
+  "appCodeMessage": "Version 62 : plusieurs demandes envoyées ensemble — la notification, le bandeau et les pastilles indiquent leur nombre (ex. « 3 demandes à signer »). Réception plus rapide : relève immédiate à chaque notification, et toutes les 20 secondes appli ouverte.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

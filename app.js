@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 109;
+var APP_CODE_VERSION = 110;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3255,6 +3255,7 @@ function TPL_ENVOI_RECU(x) {
     var le = x.le ? new Date(x.le).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
     return '<div class="MER-PANIER-ITEM MER-RECU' + (x.statut === 'nouveau' ? ' nouveau' : '') + '" style="align-items:flex-start;"><div class="MER-PANIER-ITEM-TXT">' +
         '<span class="MER-BADGE MER-RECU-' + ESC(x.nature || 'inconnu') + '">' + nat[0] + '</span>' + (x.statut === 'nouveau' ? ' <span class="MER-RECU-NOUVEAU">Nouveau</span>' : '') +
+        (x.n > 1 ? ' <span class="MER-RECU-NOUVEAU" style="background:#1a1a1a;">' + x.n + ' demandes</span>' : '') +
         '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(x.noms || x.nom || 'Demande') + '</div>' +
         '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
@@ -3441,9 +3442,10 @@ function SUPPRIMER_RECU(id) {
 }
 // Nouveaux envois relevés : bandeau (touchable) et pages à jour.
 window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
-    var x = nouveaux[0], n = nouveaux.length;
+    // n : nombre de demandes (un envoi peut en contenir plusieurs).
+    var x = nouveaux[0], n = nouveaux.reduce(function(t, e) { return t + (e.n > 1 ? e.n : 1); }, 0);
     var chorus = MER_ROLE_CHORUS() && nouveaux.every(MER_EST_CHORUS);
-    MER_BANDEAU_RECU(x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' envois reçus' : 'Demande reçue', (n > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
+    MER_BANDEAU_RECU(x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' demandes reçues' : 'Demande reçue', (nouveaux.length > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
         (chorus ? 'l\'espace Assistant Chorus DT.' : 'la boîte de réception.'), function() { SHOW_PAGE(chorus ? 'CHORUS' : 'RECEPTION'); });
 };
 window.addEventListener('trigone-boite', function() {

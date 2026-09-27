@@ -421,7 +421,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 62, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 63, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1126,7 +1126,10 @@
             // Le nom du fichier (qui contient le nom du demandeur) est chiffré avec le contenu : le serveur n'en voit rien.
             return chiffrerPour(r.appareils, JSON.stringify({ nom: nom, contenu: texte }));
         }).then(function(ch) {
-            return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, enveloppes: ch.enveloppes, donnees: ch.donnees } });
+            // Nombre de demandes de l'envoi (pour la notification « 3 demandes à signer ») : seul ce chiffre est visible du serveur.
+            var nombre = 1;
+            try { var o = JSON.parse(texte); if (o && Array.isArray(o.demandes)) nombre = o.demandes.length || 1; } catch (e) {}
+            return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, nombre: nombre, enveloppes: ch.enveloppes, donnees: ch.donnees } });
         });
     };
     // Compte-rendu de fin de mission → boîte TRIGONE de l'assistant Chorus DT : le PDF du compte-rendu (produit par
@@ -1313,7 +1316,9 @@
     window.JUMELAGE_BOITE_LISTE = function() { return boiteLire(); };
     // filtre : 'chorus' (envois pour l'assistant Chorus DT), 'autres' (tout le reste), sinon tout.
     window.JUMELAGE_BOITE_NB = function(filtre) {
-        return boiteLire().filter(function(x) { var c = x.nature === 'chorus' || x.nature === 'cr'; return x.statut !== 'traite' && (filtre === 'chorus' ? c : filtre === 'autres' ? !c : true); }).length;
+        // Nombre de demandes (un envoi peut en contenir plusieurs), pas d'envois.
+        return boiteLire().filter(function(x) { var c = x.nature === 'chorus' || x.nature === 'cr'; return x.statut !== 'traite' && (filtre === 'chorus' ? c : filtre === 'autres' ? !c : true); })
+            .reduce(function(t, x) { return t + (x.n > 1 ? x.n : 1); }, 0);
     };
     window.JUMELAGE_BOITE_FICHIER = function(id) {
         var x = boiteLire().filter(function(e) { return e.id === id; })[0];
@@ -1362,10 +1367,19 @@
     }
 
     // Relève : nouveaux envois du serveur → boîte de réception de l'appareil.
-    var releveEnCours = false;
+    // Une relève demandée pendant une autre (notification arrivée en cours de relève) est refaite juste après, pas oubliée.
+    var releveEnCours = null, releveARefaire = false;
     window.JUMELAGE_RELEVER = function() {
-        if (releveEnCours || !monCompte() || !navigator.onLine || !SUBTLE || !window.caches) return Promise.resolve(0);
-        releveEnCours = true;
+        if (!monCompte() || !navigator.onLine || !SUBTLE || !window.caches) return Promise.resolve(0);
+        if (releveEnCours) { releveARefaire = true; return releveEnCours; }
+        releveEnCours = releverUneFois().then(function(n) {
+            releveEnCours = null;
+            if (releveARefaire) { releveARefaire = false; return window.JUMELAGE_RELEVER().then(function(m) { return n + m; }); }
+            return n;
+        });
+        return releveEnCours;
+    };
+    function releverUneFois() {
         var nouveaux = [], ecartes = 0;
         return appelApi('boite').then(function(r) {
             return r.envois.reduce(function(suite, e) {
@@ -1392,24 +1406,25 @@
         }).catch(function(e) {
             if (e.statut === 401) { try { localStorage.removeItem(CLE_COMPTE); } catch (x) {} }
         }).then(function() {
-            releveEnCours = false;
+            var nb = nouveaux.reduce(function(t, x) { return t + (x.n > 1 ? x.n : 1); }, 0);   // nombre de demandes reçues
             if (ecartes) bandeau(ecartes + ' envoi(s) non conforme(s) écarté(s) de votre boîte de réception.');
             if (nouveaux.length) {
                 if (typeof window.JUMELAGE_APRES_RELEVE === 'function') { try { window.JUMELAGE_APRES_RELEVE(nouveaux); } catch (e) {} }
-                else if (roleChorus() && nouveaux.every(function(x) { return x.nature === 'chorus' || x.nature === 'cr'; })) bandeau((nouveaux.length > 1 ? nouveaux.length + ' envois reçus' : 'Envoi reçu') + ' : ouvrez l\'espace Assistant Chorus DT (écran de choix).');
-                else bandeau(nouveaux.length > 1 ? nouveaux.length + ' demandes reçues : ouvrez Mise en route › Boîte de réception.' : 'Demande reçue : ouvrez Mise en route › Boîte de réception.');
+                else if (roleChorus() && nouveaux.every(function(x) { return x.nature === 'chorus' || x.nature === 'cr'; })) bandeau((nb > 1 ? nb + ' envois reçus' : 'Envoi reçu') + ' : ouvrez l\'espace Assistant Chorus DT (écran de choix).');
+                else bandeau(nb > 1 ? nb + ' demandes reçues : ouvrez Mise en route › Boîte de réception.' : 'Demande reçue : ouvrez Mise en route › Boîte de réception.');
             }
             return nouveaux.length;
         });
     };
-    // Relève automatique : à l'ouverture, au retour dans l'appli, puis toutes les 45 secondes tant qu'elle est affichée.
+    // Relève automatique : à l'ouverture, au retour dans l'appli, puis toutes les 20 secondes tant qu'elle est affichée
+    // (et aussitôt qu'une notification arrive, appli ouverte).
     function releveAuto() { if (document.visibilityState === 'visible' && !document.body.classList.contains('demo-active')) window.JUMELAGE_RELEVER(); }
     if (monCompte()) {
         var lancerReleve = function() { setTimeout(releveAuto, 1500); majPastilleHub(); setTimeout(declarerRoles, 2500); setTimeout(suivreNotif, 3500); };
         if (document.body) lancerReleve(); else document.addEventListener('DOMContentLoaded', lancerReleve);
     }
     document.addEventListener('visibilitychange', function() { if (monCompte()) releveAuto(); });
-    setInterval(function() { if (monCompte()) releveAuto(); }, 45000);
+    setInterval(function() { if (monCompte()) releveAuto(); }, 20000);
 
     // Fenêtre « Compte TRIGONE » : activer (mail pro → code reçu), état, déconnexion de l'appareil.
     var fenCompte = null;
