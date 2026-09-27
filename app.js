@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 107;
+var APP_CODE_VERSION = 108;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -288,16 +288,15 @@ function TPL_PAGE_FORMULAIRE() {
 function TPL_RECAP_PC() {
     var t = D.trajets || {}, a = t.aller || {}, r = t.retour || {};
     var pers = (D.personnes || []).filter(function(p) { return p.nom || p.prenom; });
-    function quand(x, sens) {
-        var d = sens === 'aller' ? x.dateDep : x.dateDep;
-        if (!d) return '';
-        var dt = new Date(d);
-        return isNaN(dt) ? '' : dt.toLocaleDateString('fr-FR') + ' · ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    // Départ et arrivée du trajet, chacun sur sa ligne (date · heure), puis le moyen de transport.
+    function moment(v) {
+        var d = v ? new Date(v) : null;
+        return d && !isNaN(d) ? d.toLocaleDateString('fr-FR') + ' · ' + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : '';
     }
     function trajet(x) {
         var lieux = [x.lieuDep, x.paysArr || x.lieuArr].filter(Boolean).join(' → ');
-        var info = [quand(x), x.moyen ? MOYENS[x.moyen] : ''].filter(Boolean).join(' · ');
-        return lieux || info ? ESC(lieux) + (info ? '<br><span class="PC-GRIS">' + ESC(info) + '</span>' : '') : '<span class="PC-GRIS">à compléter</span>';
+        var lignes = [moment(x.dateDep) ? 'Départ : ' + moment(x.dateDep) : '', moment(x.dateArr) ? 'Arrivée : ' + moment(x.dateArr) : '', x.moyen ? MOYENS[x.moyen] : ''].filter(Boolean);
+        return lieux || lignes.length ? ESC(lieux) + lignes.map(function(l) { return '<br><span class="PC-GRIS">' + ESC(l) + '</span>'; }).join('') : '<span class="PC-GRIS">à compléter</span>';
     }
     function kv(k, v) { return '<div class="PC-KV"><span>' + k + '</span><div>' + v + '</div></div>'; }
     return '<div class="PC-CARTE-TITRE">Récapitulatif</div>' +
