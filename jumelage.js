@@ -428,7 +428,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 70, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 71, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2051,6 +2051,8 @@
         // Le panneau s'étend une fois les autres logos effacés.
         setTimeout(function() { pan.classList.add('plein'); }, 120);
         if (cle === ICI) {
+            // L'appli était peut-être restée sur une autre page (espace Assistant Chorus DT) : elle revient à son accueil.
+            if (typeof window.JUMELAGE_APRES_CHOIX === 'function') { try { window.JUMELAGE_APRES_CHOIX(cle); } catch (e) {} }
             setTimeout(function() { ecran.classList.add('sortie'); }, 540);
             setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 1000);
         } else {
