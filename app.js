@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 104;
+var APP_CODE_VERSION = 105;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -233,10 +233,15 @@ if (MER_PC_MQ) {
     if (MER_PC_MQ.addEventListener) MER_PC_MQ.addEventListener('change', MER_PC_CHANGE); else if (MER_PC_MQ.addListener) MER_PC_MQ.addListener(MER_PC_CHANGE);
 }
 
+// « GRADE NOM Prénom » pour le « Bonjour » de l'accueil (identité de Mon espace, sinon celle des Réglages TRIGONE).
+function MER_QUI() {
+    var id = GET_REGLAGES().identite || {}, qui = [id.grade, id.nom, id.prenom].filter(Boolean).join(' ');
+    return qui || (window.JUMELAGE_QUI ? JUMELAGE_QUI() : '');
+}
 // ---------- Accueil PC ----------
 function TPL_ACCUEIL_PC() {
     var id = GET_REGLAGES().identite || {}, panier = GET_PANIER(), bib = DEMO_ACTIF ? [] : GET_BIBLIOTHEQUE().slice(0, 5);
-    var qui = [id.grade, id.nom].filter(Boolean).join(' ');
+    var qui = MER_QUI();
     function ligne(badge, classe, titre, droite, action) {
         return '<button type="button" class="PC-LIGNE" onclick="' + action + '"><span class="PC-BADGE ' + classe + '">' + badge + '</span>' +
             '<b>' + ESC(titre) + '</b><span class="PC-LIGNE-DROITE">' + ESC(droite) + '</span></button>';
@@ -385,6 +390,7 @@ function TPL_ACCUEIL() {
           '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG JUM-LOGO-CHOIX" src="logo_mer.webp" alt="TRIGONE — Mise en route" title="Revenir au choix Mise en route / Compte-rendu" onclick="JUMELAGE_CHOIX()"></div>' +
         '</div>' +
         '<div class="MER-P0-HERO">' +
+          (MER_QUI() ? '<p class="JUM-BONJOUR">Bonjour, <b>' + ESC(MER_QUI()) + '</b></p>' : '') +
           (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
           (MER_COMPTE_ACTIF() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-BOITE" onclick="SHOW_PAGE(\'RECEPTION\')">📥 Boîte de réception' +
