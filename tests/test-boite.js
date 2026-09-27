@@ -69,6 +69,19 @@ module.exports = async function() {
     await v1.click('.MER-BASCULE-ROLE button:has-text("VALIDEUR 2")'); await attendre(1500);
     verifier(await v1.evaluate(() => HABILITATION_COURANTE().role === 2), 'bascule : passage en VALIDEUR 2 sans ressaisir de code');
     await v1.click('.MER-BASCULE-ROLE button:has-text("VALIDEUR 1")'); await attendre(1500);
+    // Rôle coché sur l'appareil mais perdu côté serveur (ex. compte réactivé) : TRIGONE le redéclare à l'ouverture.
+    const rolesServeur = p => p.evaluate(async () => {
+        const c = JSON.parse(localStorage.getItem('trigone_compte')), h = { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton, 'Content-Type': 'application/json' };
+        return (await (await fetch('api/cles?mail=' + encodeURIComponent(c.mail), { headers: h })).json()).roles;
+    });
+    await v1.evaluate(async () => {
+        const c = JSON.parse(localStorage.getItem('trigone_compte')), h = { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton, 'Content-Type': 'application/json' };
+        await fetch('api/role', { method: 'POST', headers: h, body: JSON.stringify({ role: 'valideur1', actif: false }) });
+    });
+    verifier(!(await rolesServeur(v1)).valideur1, 'rôle VALIDEUR 1 retiré côté serveur seulement (simulation)');
+    await v1.reload(); await attendre(4500);
+    verifier(!!(await rolesServeur(v1)).valideur1, 'rôle VALIDEUR 1 redéclaré automatiquement à l\'ouverture de TRIGONE');
+    await v1.evaluate(() => { const n = document.querySelector('.JUM-CHOIX'); if (n) n.remove(); document.documentElement.classList.remove('jum-choix'); });
     await connecter(v2, code2, 'Martin'); await attendre(1500);
     const codeChorus = process.env.TRIGONE_CODE_CHORUS;
     if (codeChorus) {

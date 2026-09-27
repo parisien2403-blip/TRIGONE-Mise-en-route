@@ -414,7 +414,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 52, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 53, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1080,18 +1080,29 @@
     // compte TRIGONE, ils décident de ce que la boîte peut recevoir (règle appliquée par le serveur).
     var CLE_ROLES_LOCAUX = 'trigone_roles_locaux', CLE_ROLES_DECLARES = 'trigone_roles_declares';
     function rolesLocaux() { var r = lireJSON(CLE_ROLES_LOCAUX) || {}; if (roleChorus()) r.chorus = true; return r; }
+    // Les rôles cochés sur l'appareil sont comparés à ceux que le serveur connaît pour le compte, et ceux qui manquent
+    // sont redéclarés (compte réactivé, remise à zéro, déclaration perdue…) : à l'ouverture, au retour dans l'appli.
+    var dernierControleRoles = 0;
     function declarerRoles() {
-        var c = monCompte(); if (!c || !navigator.onLine) return;
-        var r = rolesLocaux(), cle = c.mail + '|' + Object.keys(r).sort().join(',');
-        if (lireTxt(CLE_ROLES_DECLARES) === cle) return;
-        Promise.all(Object.keys(r).map(function(role) { return appelApi('role', { methode: 'POST', corps: { role: role, actif: true } }); }))
-            .then(function() { ecrireTxt(CLE_ROLES_DECLARES, cle); }).catch(function() {});
+        var c = monCompte(); if (!c || !navigator.onLine) return Promise.resolve();
+        var voulus = Object.keys(rolesLocaux());
+        if (!voulus.length) return Promise.resolve();
+        dernierControleRoles = Date.now();
+        return appelApi('cles?mail=' + encodeURIComponent(c.mail)).then(function(x) {
+            var serveur = x.roles || {};
+            return Promise.all(voulus.filter(function(role) { return !serveur[role]; }).map(function(role) {
+                return appelApi('role', { methode: 'POST', corps: { role: role, actif: true } });
+            }));
+        }).catch(function() {});
     }
+    document.addEventListener('visibilitychange', function() {
+        if (document.visibilityState === 'visible' && Date.now() - dernierControleRoles > 5 * 60 * 1000) declarerRoles();
+    });
     window.JUMELAGE_DECLARER_ROLE = function(role, actif) {
         var r = lireJSON(CLE_ROLES_LOCAUX) || {};
         if (actif) r[role] = true; else delete r[role];
         ecrireTxt(CLE_ROLES_LOCAUX, JSON.stringify(r));
-        if (!actif && monCompte()) { try { localStorage.removeItem(CLE_ROLES_DECLARES); } catch (e) {} appelApi('role', { methode: 'POST', corps: { role: role, actif: false } }).catch(function() {}); }
+        if (!actif && monCompte()) appelApi('role', { methode: 'POST', corps: { role: role, actif: false } }).catch(function() {});
         declarerRoles();
     };
     window.JUMELAGE_COMPTE_MAIL = function() { var c = monCompte(); return c ? c.mail : ''; };
@@ -1467,7 +1478,6 @@
                     window.JUMELAGE_FERMER_COMPTE();
                     bandeau('Compte TRIGONE actif : les demandes vous arrivent directement dans TRIGONE.');
                     if (window.JUMELAGE_APRES_COMPTE) try { window.JUMELAGE_APRES_COMPTE(); } catch (e) {}
-                    try { localStorage.removeItem(CLE_ROLES_DECLARES); } catch (e) {}
                     declarerRoles();
                     window.JUMELAGE_RELEVER();
                     // Compte actif : la fenêtre se rouvre pour proposer les notifications (sur un geste de l'utilisateur).

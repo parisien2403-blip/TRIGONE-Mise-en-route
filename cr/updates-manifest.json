@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 149,
-  "appCodeMessage": "Version 51 : notifications (PC, Android, iPhone avec TRIGONE installée) à chaque envoi reçu — activez-les dans Compte TRIGONE. Le VALIDEUR 2 peut renvoyer une demande au VALIDEUR 1 (qui la corrige, la revalide ou la refuse au demandeur) ; l'ASSIST CHORUS DT peut la renvoyer directement au demandeur avec un commentaire.",
+  "appCodeVersion": 150,
+  "appCodeMessage": "Version 52 : les rôles cochés (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) sont revérifiés auprès du serveur à chaque ouverture de TRIGONE et redéclarés s'il le faut.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
