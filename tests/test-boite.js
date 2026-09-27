@@ -265,6 +265,10 @@ module.exports = async function() {
     verifier(await c.evaluate(() => PAGE_ACTUELLE) === 'CHORUS', 'Chorus DT : le logo ouvre l\'espace Assistant Chorus DT');
     await c.click('.MER-CHORUS-LOGO'); await attendre(900);
     verifier(await c.evaluate(() => !!document.querySelector('.JUM-CHOIX .JUM-CHORUS')), 'Chorus DT : toucher le logo de l\'espace ramène à l\'écran de choix');
+    // Puis « Mise en route » : l'accueil de Mise en route, et non l'espace Chorus resté dessous.
+    await c.click('.JUM-PAN-MER .JUM-BLOC img', { force: true }); await attendre(1500);
+    verifier(await c.evaluate(() => PAGE_ACTUELLE === 'ACCUEIL' && !document.querySelector('.JUM-CHOIX')), 'écran de choix après l\'espace Chorus : « Mise en route » ouvre bien l\'accueil de Mise en route');
+    await c.evaluate(() => JUMELAGE_CHOIX()); await attendre(600);
     await c.click('.JUM-CHORUS'); await attendre(1500);
     // Sur la ligne de la demande reçue : aperçu et PDF directement (contrôle fait avant).
     verifier(await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Aperçu")').count() === 1, 'Chorus DT : bouton « Aperçu » sur la ligne de la demande reçue');

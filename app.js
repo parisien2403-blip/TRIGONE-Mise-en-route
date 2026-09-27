@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 117;
+var APP_CODE_VERSION = 118;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3497,6 +3497,10 @@ window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
     var chorus = MER_ROLE_CHORUS() && nouveaux.every(MER_EST_CHORUS);
     MER_BANDEAU_RECU(x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' demandes reçues' : 'Demande reçue', (nouveaux.length > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
         (chorus ? 'l\'espace Assistant Chorus DT.' : 'la boîte de réception.'), function() { SHOW_PAGE(chorus ? 'CHORUS' : 'RECEPTION'); });
+};
+// Mise en route choisie sur l'écran de choix alors que l'espace Assistant Chorus DT était affiché dessous : accueil.
+window.JUMELAGE_APRES_CHOIX = function() {
+    if (typeof PAGE_ACTUELLE !== 'undefined' && (PAGE_ACTUELLE === 'CHORUS' || PAGE_ACTUELLE === 'VERIFIER')) { MER_RESULTATS_VERIF = null; SHOW_PAGE('ACCUEIL'); window.scrollTo(0, 0); }
 };
 window.addEventListener('trigone-boite', function() {
     if (typeof PAGE_ACTUELLE === 'undefined' || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
