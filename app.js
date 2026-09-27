@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 121;
+var APP_CODE_VERSION = 122;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -440,7 +440,7 @@ function TPL_SUIVI_DEMANDE(id, nom) {
     var s = window.JUMELAGE_SUIVI && JUMELAGE_SUIVI()[id];
     if (!s) return '';
     // Rang de l'étape en cours : 1 chez le VALIDEUR 1, 2 chez le VALIDEUR 2, 3 chez Chorus DT, 4 traitée.
-    var rang = { val1: 1, val2: 2, chorus: 3, traite: 4 }[s.etape], refus = s.etape === 'refus';
+    var rang = { val1: 1, val2: 2, chorus: 3, traite: 4 }[s.etape], refus = s.etape === 'refus' || s.etape === 'abandon';
     var der = (s.etapes || [])[s.etapes.length - 1] || {};
     var puces = MER_SUIVI_ETAPES.map(function(x, i) {
         var etat = refus ? (i === 0 ? 'fait' : 'avenir') : i < rang ? 'fait' : i === rang ? 'encours' : 'avenir';
@@ -1266,6 +1266,8 @@ function RETIRER_DU_PANIER(id) {
         'Retirer', function() { RETIRER_DU_PANIER_OK(id); }, '⚠️', 'mascotte-poubelle.webp', true);
 }
 function RETIRER_DU_PANIER_OK(id) {
+    // Demande refusée abandonnée : le suivi s'arrête (plus de rappel « à corriger »).
+    if (GET_PANIER().some(function(d) { return d.id === id && d.refus; }) && window.JUMELAGE_SUIVI_ABANDON) JUMELAGE_SUIVI_ABANDON([id]);
     var panier = GET_PANIER().filter(function(d) { return d.id !== id; });
     SAVE_PANIER(panier);
     RENDER_PANIER_INPLACE();
@@ -1769,7 +1771,7 @@ var MER_NOTICES = {
             '<b>Documents</b> : « Ajouter aux documents » y range la demande terminée (message de confirmation) ; plusieurs demandes peuvent partir ensemble. « Modifier » la ressort des Documents le temps de la correction, « Retirer » la supprime (après confirmation). Vérifiez le <b>mail du 1er valideur</b> et l\'<b>aperçu du PDF</b>, puis <b>« 📨 Envoyer »</b> : la demande (pièces jointes comprises) arrive, chiffrée, dans le TRIGONE du 1er valideur. S\'il n\'a pas encore de compte TRIGONE, l\'envoi est bloqué : demandez-lui de s\'inscrire ; votre demande reste dans Documents.',
             'Appli fermée avant la fin ? À la réouverture, l\'écran <b>Demande en cours</b> propose de <b>continuer</b> la saisie ou de revenir à l\'accueil (la demande reste enregistrée, bouton « ↩ Reprendre ma demande en cours »).',
             '<b>Suivi</b> : dans la <b>Bibliothèque</b>, chaque demande envoyée affiche sa frise Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT, avec qui a validé, quand, et depuis combien de temps elle attend. Une notification vous prévient à chaque étape, jusqu\'à la prise en charge par l\'assistant Chorus DT. Pour faire du tri, <b>« ☑ Sélectionner »</b> permet de cocher plusieurs demandes (ou « Tout cocher ») et de les supprimer d\'un coup.',
-            'À l\'envoi, la demande quitte Documents pour la <b>Bibliothèque</b>. En cas de refus, elle revient dans votre <b>Boîte de réception</b> avec le motif : « Corriger dans Documents » l\'y range ; corrigez-la avec « Modifier » et renvoyez-la.',
+            'À l\'envoi, la demande quitte Documents pour la <b>Bibliothèque</b>. En cas de refus, elle revient dans votre <b>Boîte de réception</b> avec le motif : « Corriger dans Documents » l\'y range ; corrigez-la avec « Modifier » et renvoyez-la. Tant qu\'elle n\'est pas corrigée, un <b>rappel</b> vous est envoyé après 48 h, puis toutes les 48 h (14 jours au plus) ; « Retirer » la demande de Documents arrête les rappels.',
             'Au retour de mission, <b>TRIGONE Compte-rendu</b> reprend la mission envoyée depuis cet appareil (« À partir d\'une mise en route ») ; sinon, le missionnaire la saisit directement dans Compte-rendu.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Rôle valideur · boîte de réception · signature', icone: MER_ICONES_NOTICE_CADENAS(),
         etapes: ['<b>Réglages › Mes rôles</b> (roue crantée de l\'écran de choix) : cochez <b>VALIDEUR 1</b> et/ou <b>VALIDEUR 2</b>, saisissez votre fonction et le <b>code</b> de chaque rôle, remis par l\'administrateur. Les rôles sont déclarés à votre compte TRIGONE : votre boîte ne reçoit que les demandes de vos niveaux. Il peut y avoir plusieurs VALIDEUR 1 et plusieurs VALIDEUR 2 ; une même personne peut avoir tous les rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) et rester missionnaire.',
@@ -1779,6 +1781,7 @@ var MER_NOTICES = {
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif : le VALIDEUR 1 refuse au demandeur ; le VALIDEUR 2 choisit de <b>renvoyer au VALIDEUR 1</b> ou directement au demandeur. Une demande renvoyée par le VALIDEUR 2 arrive chez le VALIDEUR 1 (« Renvoyée par le VALIDEUR 2 », avec le motif) : il la <b>✎ Corrige</b> à son niveau puis la revalide, la revalide telle quelle, ou la <b>refuse au demandeur</b>. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
             '<b>Transmettre</b> : pour chaque envoi, <b>« 📨 Envoyer »</b>. Le 1er valideur envoie au 2e valideur, le 2e valideur à l\'assistant Chorus DT ; un refus repart vers le demandeur, avec son motif. Chaque envoi arrive, chiffré, dans le TRIGONE du destinataire ; un destinataire qui n\'a pas encore de compte (ou pas le bon rôle) est signalé et l\'envoi attend.',
             'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.',
+            '<b>Absence</b> (permission, mission) : roue crantée › Réglages TRIGONE › <b>Absence</b> : indiquez le mail de votre remplaçant (compte TRIGONE et même rôle) et la date de retour. Jusqu\'à cette date, tout ce qui vous est envoyé part chez lui, et l\'expéditeur en est informé. « Fin de l\'absence » rétablit les envois dès votre retour. Ce qui était déjà dans votre boîte y reste.',
             '<b>Suite de vos demandes</b> : dans la Boîte de réception, section « Traitées », chaque demande que vous avez validée montre sa frise (VALIDEUR 2, assistant Chorus DT) : qui l\'a traitée, quand, et depuis combien de temps elle attend. Si elle est refusée ou renvoyée plus loin dans le circuit, une notification vous prévient.',
             '<b>Rappels</b> : une demande qui vous attend depuis plus de 24 h vous vaut une notification de rappel, puis une par 24 h tant qu\'elle n\'a pas avancé (du lundi au vendredi, de 8 h à 19 h). Le demandeur voit dans son suivi depuis quand elle attend.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
@@ -3291,8 +3294,10 @@ window.addEventListener('DOMContentLoaded', function() {
     var versBoite = /[?&]espace=boite/.test(location.search) && MER_COMPTE_ACTIF();
     // Notification de suivi (demande validée, prise en charge…) : Bibliothèque.
     var versSuivi = /[?&]espace=suivi/.test(location.search);
+    // Rappel « demande refusée à corriger » : Documents.
+    var versDocuments = /[?&]espace=documents/.test(location.search);
     if (/[?&]espace=/.test(location.search) && history.replaceState) history.replaceState(null, document.title, location.pathname);
-    SHOW_PAGE(versChorus ? 'CHORUS' : versBoite ? 'RECEPTION' : versSuivi ? 'BIBLIOTHEQUE' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
+    SHOW_PAGE(versChorus ? 'CHORUS' : versBoite ? 'RECEPTION' : versSuivi ? 'BIBLIOTHEQUE' : versDocuments ? 'PANIER' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
     if (window.JUMELAGE_ANIMER_ARRIVEE) setTimeout(JUMELAGE_ANIMER_ARRIVEE, 30);
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
