@@ -421,7 +421,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 65, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 66, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1277,7 +1277,9 @@
     });
     function blocNotif() {
         var e = notifEtat();
+        var android = /Android/i.test(navigator.userAgent || '');
         if (e === 'active') return '<p class="JUM-R-AIDE">🔔 <b>Notifications activées</b> sur cet appareil : vous êtes prévenu de chaque envoi, même TRIGONE fermée.</p>' +
+            (android ? '<p class="JUM-R-AIDE">Notification en retard ou absente quand TRIGONE est fermée ? <b>Paramètres › Applications › Chrome › Batterie › « Non restreinte »</b>.</p>' : '') +
             '<button type="button" class="JUM-R-SECOND" id="JUM-C-TEST" style="margin:8px 0 0; width:100%;">🔔 Tester les notifications</button><div id="JUM-C-TEST-RES"></div>';
         if (e === 'impossible') return '<p class="JUM-R-AIDE">🔕 Ce navigateur ne permet pas les notifications : ouvrez TRIGONE pour relever vos envois.</p>';
         return '<div class="JUM-R-TITRE">Notifications</div><p class="JUM-R-AIDE">' + (e === 'ios'
