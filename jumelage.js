@@ -97,6 +97,10 @@
         '.JUM-PAN-CR img { width: calc(min(40vw, 26vh, 230px) * 1.246); filter: brightness(0) invert(1); }' +
         '@media (orientation: landscape) { .JUM-PAN-MER img { width: min(22vw, 38vh, 230px); } .JUM-PAN-CR img { width: calc(min(22vw, 38vh, 230px) * 1.246); }' +
             ' .JUM-PAN-MER .JUM-BLOC { left: 30%; top: 34%; } .JUM-PAN-CR .JUM-BLOC { left: 70%; top: 66%; } }' +
+        /* Écran presque carré (téléphone pliant ouvert, petite tablette) avec le logo Assist Chorus-DT au centre : les deux
+           logos s'écartent vers les coins et rapetissent un peu, pour ne jamais passer sous celui du centre. */
+        '@media (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) { .JUM-CHOIX.avec-chorus .JUM-PAN-MER .JUM-BLOC { left: 30%; top: 26%; } .JUM-CHOIX.avec-chorus .JUM-PAN-CR .JUM-BLOC { left: 70%; top: 74%; }' +
+            ' .JUM-CHOIX.avec-chorus .JUM-PAN-MER img { width: min(30vw, 22vh, 210px); } .JUM-CHOIX.avec-chorus .JUM-PAN-CR img { width: calc(min(30vw, 22vh, 210px) * 1.246); } }' +
         '.JUM-SOUS { font: 800 0.62rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }' +
         '.JUM-PAN-MER .JUM-SOUS { color: #5a7a94; }' +
         /* Médaillon Assistant Chorus DT : au centre, sur la diagonale */
@@ -417,7 +421,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 59, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 60, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1968,6 +1972,25 @@
         }
     }
 
+    // Le logo Assist Chorus-DT ne doit jamais recouvrir les deux autres (sinon un appui sur eux ouvrirait Chorus) :
+    // s'il les touche encore (écran de forme inhabituelle), il rétrécit jusqu'à laisser un petit écart.
+    function placerChorus() {
+        if (!ecran) return;
+        var c = ecran.querySelector('.JUM-CHORUS'); if (!c) return;
+        ecran.style.removeProperty('--jum-chorus');
+        var blocs = Array.prototype.slice.call(ecran.querySelectorAll('.JUM-BLOC'));
+        function touche() {
+            var a = c.getBoundingClientRect();
+            return blocs.some(function(bl) {
+                var b = bl.getBoundingClientRect(), m = 8;
+                return a.left < b.right + m && b.left < a.right + m && a.top < b.bottom + m && b.top < a.bottom + m;
+            });
+        }
+        var w = c.getBoundingClientRect().width;
+        while (w > 56 && touche()) { w -= 6; ecran.style.setProperty('--jum-chorus', w + 'px'); }
+    }
+    window.addEventListener('resize', function() { if (ecran) requestAnimationFrame(placerChorus); });
+
     // Passage direct à l'autre appli (menu PC) : sans écran de choix ni entrée d'historique.
     window.JUMELAGE_ALLER = function(cle) {
         if (!APPLIS[cle]) return;
@@ -2023,6 +2046,11 @@
         });
         document.body.appendChild(ecran);
         document.documentElement.classList.add('jum-choix');
+        if (btnChorus) {
+            ecran.classList.add('avec-chorus');
+            placerChorus();
+            Array.prototype.forEach.call(ecran.querySelectorAll('img'), function(im) { if (!im.complete) im.addEventListener('load', placerChorus); });
+        }
         setTimeout(annoncerNouveautes, 1200);
     };
 
