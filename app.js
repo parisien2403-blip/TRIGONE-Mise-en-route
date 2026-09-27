@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 108;
+var APP_CODE_VERSION = 109;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1048,7 +1048,7 @@ function TPL_ONGLET_CONDITIONS() {
       TOGGLE_OUI_NON('Nourri à titre onéreux', 'nourriDeplacement') +
       TOGGLE_OUI_NON('Transport en commun', 'transportCommun') +
       '<div class="MER-SECTION-TITLE">Durant la mission</div>' +
-      TOGGLE_OUI_NON('Nourri à titre onéreux', 'nourriMission', 'Repas midi gratuit, repas du soir secteur privé, sauf indication contraire.') +
+      TOGGLE_OUI_NON('Nourri à titre onéreux', 'nourriMission') +
       TOGGLE_OUI_NON('Logé à titre onéreux', 'logeMission');
 }
 
