@@ -335,3 +335,5 @@ Version 60 : récapitulatif PC du formulaire de Mise en route : pour l'aller et 
 Version 61 : onglet Alim./Héb., « Durant la mission › Nourri à titre onéreux » : phrase « Repas midi gratuit, repas du soir secteur privé, sauf indication contraire. » retirée.
 
 Version 62 : NOMBRE DE DEMANDES ET RAPIDITÉ DE RÉCEPTION. L'expéditeur joint à l'envoi le nombre de demandes qu'il contient (champ « nombre », seul chiffre visible du serveur) : notification « 3 demandes à signer », bandeau « 3 demandes reçues », pastilles et compteurs (JUMELAGE_BOITE_NB) en nombre de demandes, badge « 3 demandes » sur la ligne de la boîte. Relève : une relève demandée pendant une autre (notification arrivée en cours de relève) est refaite juste après au lieu d'être ignorée (l'envoi attendait jusqu'à la relève suivante) ; relève automatique toutes les 20 s (au lieu de 45 s) appli affichée.
+
+Version 63 : PDF de la demande, tableau TRAJETS dans l'ordre chronologique : Intermédiaire (aller) → Aller → Retour → Intermédiaire (retour) (les intermédiaires étaient placés entre l'aller et le retour).

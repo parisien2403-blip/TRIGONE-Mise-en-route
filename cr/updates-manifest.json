@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 160,
-  "appCodeMessage": "Version 62 : plusieurs demandes envoyées ensemble — la notification, le bandeau et les pastilles indiquent leur nombre (ex. « 3 demandes à signer »). Réception plus rapide : relève immédiate à chaque notification, et toutes les 20 secondes appli ouverte.",
+  "appCodeVersion": 161,
+  "appCodeMessage": "Version 63 : PDF de la demande — trajets dans l'ordre chronologique : intermédiaire aller, aller, retour, intermédiaire retour.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

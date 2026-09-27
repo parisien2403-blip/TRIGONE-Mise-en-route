@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 110;
+var APP_CODE_VERSION = 111;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1324,10 +1324,12 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
     });
 
     var t = d.trajets;
-    var trajets = [['Aller', t.aller]];
+    // Ordre chronologique : le trajet intermédiaire aller mène au départ de l'aller (ex. LIBOURNE → TOULON avant
+    // TOULON → BASTIA) ; le trajet intermédiaire retour prolonge le retour (BASTIA → TOULON, puis TOULON → LIBOURNE).
+    var trajets = [];
     if (t.intermediaireAllerActif) trajets.push(['Intermédiaire (aller)', t.intermediaireAller]);
+    trajets.push(['Aller', t.aller], ['Retour', t.retour]);
     if (t.intermediaireRetourActif) trajets.push(['Intermédiaire (retour)', t.intermediaireRetour]);
-    trajets.push(['Retour', t.retour]);
     function lieu(nom, cp, pays) { return (nom || '').toUpperCase() + (pays ? ' — ' + pays : (cp ? ' (' + cp + ')' : '')); }
     y = PDF_SECTION(doc, 'TRAJETS', X, y, P);
     y = PDF_TABLEAU(doc, y, M, L, P, {
