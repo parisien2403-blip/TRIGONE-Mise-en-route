@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 118;
+var APP_CODE_VERSION = 119;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -433,8 +433,9 @@ function MER_DEPUIS(ms) {
     var h = Math.floor((Date.now() - ms) / 3600000);
     return h < 1 ? 'moins d\'une heure' : h < 24 ? h + ' h' : Math.floor(h / 24) + ' j';
 }
-function TPL_SUIVI_DEMANDE(d, avecNom) {
-    var s = window.JUMELAGE_SUIVI && JUMELAGE_SUIVI()[d.id];
+// id : identifiant de la demande ; nom : affiché au-dessus de la frise (demandes groupées), ou vide.
+function TPL_SUIVI_DEMANDE(id, nom) {
+    var s = window.JUMELAGE_SUIVI && JUMELAGE_SUIVI()[id];
     if (!s) return '';
     // Rang de l'étape en cours : 1 chez le VALIDEUR 1, 2 chez le VALIDEUR 2, 3 chez Chorus DT, 4 traitée.
     var rang = { val1: 1, val2: 2, chorus: 3, traite: 4 }[s.etape], refus = s.etape === 'refus';
@@ -444,15 +445,16 @@ function TPL_SUIVI_DEMANDE(d, avecNom) {
         return '<span class="MER-SUIVI-PT ' + etat + '"><i>' + (etat === 'fait' ? '✓' : etat === 'encours' ? '…' : '') + '</i>' + x[1] + '</span>';
     }).join('<span class="MER-SUIVI-TRAIT"></span>');
     var par = der.qui ? ' (' + ESC(der.qui) + ')' : '';
-    var texte = refus ? '<b style="color:#b91c1c;">Refusée</b>' + par + ' le ' + MER_DATE_HEURE(der.le) + ' : voir votre Boîte de réception.'
+    var texte = refus ? '<b style="color:#b91c1c;">Refusée</b>' + par + ' le ' + MER_DATE_HEURE(der.le) + (s.intervenant ? ' : renvoyée au demandeur.' : ' : voir votre Boîte de réception.')
         : rang === 4 ? '<b style="color:#15803d;">Prise en charge par l\'assistant Chorus DT</b>' + par + ' le ' + MER_DATE_HEURE(der.le) + ' : ordre de mission en cours de création.'
         : ({ envoyee: 'Envoyée', val1: 'Validée par le VALIDEUR 1', val2: 'Validée par le VALIDEUR 2', renvoi: 'Renvoyée au VALIDEUR 1 par le VALIDEUR 2' }[der.e] || 'Mise à jour') + par + ' le ' + MER_DATE_HEURE(der.le) +
           '. <b>En attente ' + (rang === 3 ? 'de l\'assistant Chorus DT' : 'du VALIDEUR ' + rang) + ' depuis ' + MER_DEPUIS(s.le) + '.</b>';
-    return '<div class="MER-SUIVI' + (refus ? ' refus' : '') + '">' + (avecNom ? '<div class="MER-SUIVI-NOM">' + ESC(RESUME_DEMANDE(d).noms) + '</div>' : '') +
+    return '<div class="MER-SUIVI' + (refus ? ' refus' : '') + '">' + (nom ? '<div class="MER-SUIVI-NOM">' + ESC(nom) + '</div>' : '') +
         '<div class="MER-SUIVI-FRISE">' + puces + '</div><div class="MER-SUIVI-TXT">' + texte + '</div></div>';
 }
 window.addEventListener('trigone-suivi', function() {
-    if (typeof PAGE_ACTUELLE !== 'undefined' && PAGE_ACTUELLE === 'BIBLIOTHEQUE' && !(typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) { var y = window.scrollY; SHOW_PAGE('BIBLIOTHEQUE'); window.scrollTo(0, y); }
+    if (typeof PAGE_ACTUELLE === 'undefined' || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
+    if (PAGE_ACTUELLE === 'BIBLIOTHEQUE' || PAGE_ACTUELLE === 'RECEPTION' || (PAGE_ACTUELLE === 'CHORUS' && !MER_RESULTATS_VERIF)) { var y = window.scrollY; SHOW_PAGE(PAGE_ACTUELLE); window.scrollTo(0, y); }
 });
 function TPL_BIBLIOTHEQUE() {
     var l = GET_BIBLIOTHEQUE();
@@ -464,7 +466,7 @@ function TPL_BIBLIOTHEQUE() {
             '<span class="MER-BADGE">Envoyée le ' + ESC(new Date(e.envoyeLe).toLocaleDateString('fr-FR')) + '</span>' +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(objets) + (e.destinataire ? '<br>À ' + ESC(e.destinataire) : '') + '</div>' +
-            (DEMO_ACTIF ? '' : e.demandes.map(function(d) { return TPL_SUIVI_DEMANDE(d, e.demandes.length > 1); }).join('')) +
+            (DEMO_ACTIF ? '' : e.demandes.map(function(d) { return TPL_SUIVI_DEMANDE(d.id, e.demandes.length > 1 ? RESUME_DEMANDE(d).noms : ''); }).join('')) +
             '<div class="MER-VAL-ACTIONS">' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
@@ -1744,6 +1746,7 @@ var MER_NOTICES = {
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif : le VALIDEUR 1 refuse au demandeur ; le VALIDEUR 2 choisit de <b>renvoyer au VALIDEUR 1</b> ou directement au demandeur. Une demande renvoyée par le VALIDEUR 2 arrive chez le VALIDEUR 1 (« Renvoyée par le VALIDEUR 2 », avec le motif) : il la <b>✎ Corrige</b> à son niveau puis la revalide, la revalide telle quelle, ou la <b>refuse au demandeur</b>. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
             '<b>Transmettre</b> : pour chaque envoi, <b>« 📨 Envoyer »</b>. Le 1er valideur envoie au 2e valideur, le 2e valideur à l\'assistant Chorus DT ; un refus repart vers le demandeur, avec son motif. Chaque envoi arrive, chiffré, dans le TRIGONE du destinataire ; un destinataire qui n\'a pas encore de compte (ou pas le bon rôle) est signalé et l\'envoi attend.',
             'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.',
+            '<b>Suite de vos demandes</b> : dans la Boîte de réception, section « Traitées », chaque demande que vous avez validée montre sa frise (VALIDEUR 2, assistant Chorus DT) : qui l\'a traitée, quand, et depuis combien de temps elle attend. Si elle est refusée ou renvoyée plus loin dans le circuit, une notification vous prévient.',
             '<b>Rappels</b> : une demande qui vous attend depuis plus de 24 h vous vaut une notification de rappel, puis une par 24 h tant qu\'elle n\'a pas avancé (du lundi au vendredi, de 8 h à 19 h). Le demandeur voit dans son suivi depuis quand elle attend.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['<b>Réglages › Mes rôles</b> : cochez <b>ASSIST CHORUS DT</b> et saisissez le code remis par l\'administrateur (il peut y avoir plusieurs assistants Chorus DT ; ce rôle se cumule avec VALIDEUR 1 / VALIDEUR 2). Votre espace apparaît au <b>centre de l\'écran de choix</b> (logo Assist Chorus-DT).',
@@ -3310,6 +3313,8 @@ function TPL_ENVOI_RECU(x) {
         '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
+        // Demande traitée par ce valideur : la suite de son circuit (VALIDEUR 2, assistant Chorus DT).
+        (traite && x.nature !== 'cr' && x.nature !== 'refus' ? (x.ids || []).map(function(id, i) { return TPL_SUIVI_DEMANDE(id, x.ids.length > 1 ? 'Demande ' + (i + 1) : ''); }).join('') : '') +
         '<div class="MER-VAL-ACTIONS">' +
             // Demande validée pour l'ASSIST CHORUS DT : aperçu et PDF directement depuis la ligne (contrôle fait avant).
             (x.nature === 'chorus'
@@ -3323,6 +3328,7 @@ function TPL_ENVOI_RECU(x) {
 }
 function TPL_RECEPTION() {
     var compte = MER_COMPTE_ACTIF();
+    if (compte && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
     var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return !MER_ROLE_CHORUS() || !MER_EST_CHORUS(x); });
     var aTraiter = l.filter(function(x) { return x.statut !== 'traite'; }), traites = l.filter(function(x) { return x.statut === 'traite'; });
     return '<div class="CARD"><h2>Boîte de réception</h2>' +

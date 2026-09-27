@@ -279,6 +279,13 @@ module.exports = async function() {
     await attendre(800);
     verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().find(x => x.nature === 'chorus').statut === 'traite'), 'Chorus DT : la demande passe en « Traités » après le PDF');
     verifier(Object.values(await suivi(m)).some(x => x.etape === 'traite'), 'suivi : demande « prise en charge par l\'assistant Chorus DT » après le PDF');
+    // Les valideurs voient aussi la suite des demandes qu'ils ont validées.
+    const sv1 = Object.values(await suivi(v1)), sv2 = Object.values(await suivi(v2));
+    verifier(sv1.some(x => x.intervenant && x.etape === 'traite') && sv2.some(x => x.intervenant && x.etape === 'traite'),
+        'suivi : le VALIDEUR 1 et le VALIDEUR 2 voient la prise en charge par l\'assistant Chorus DT');
+    await v2.evaluate(() => SHOW_PAGE('RECEPTION')); await attendre(1200);
+    verifier(await v2.locator('.MER-RECU .MER-SUIVI-TXT:has-text("Prise en charge par l\'assistant Chorus DT")').count() >= 1,
+        'Boîte de réception du VALIDEUR 2 : frise de suivi sur la demande traitée');
     await m.evaluate(() => SHOW_PAGE('BIBLIOTHEQUE')); await attendre(1500);
     verifier(await m.locator('.MER-SUIVI-TXT:has-text("Prise en charge par l\'assistant Chorus DT")').count() >= 1 && await m.locator('.MER-SUIVI-PT.fait').count() >= 4,
         'Bibliothèque : frise de suivi Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT');
@@ -298,6 +305,7 @@ module.exports = async function() {
     verifier(await m.evaluate(() => GET_PANIER().some(d => d.refus && d.refus.niveau === 3 && d.refus.motif === 'Code FD à revoir')), 'demandeur : la demande renvoyée par l\'ASSIST CHORUS DT revient dans Documents, avec le commentaire');
     verifier((await m.textContent('#PAGE-STAGE')).includes('ASSIST CHORUS DT'), 'demandeur : Documents indique « Refusée par l\'ASSIST CHORUS DT »');
     verifier(Object.values(await suivi(m)).some(x => x.etape === 'refus' && x.etapes.map(t => t.e).pop() === 'refus' && x.etapes.some(t => t.e === 'traite')), 'suivi : demande renvoyée par l\'assistant Chorus DT → « refusée »');
+    verifier(Object.values(await suivi(v2)).some(x => x.intervenant && x.etape === 'refus'), 'suivi : le VALIDEUR 2 voit que l\'assistant Chorus DT a renvoyé la demande au demandeur');
 
     // Compte-rendu de fin de mission : le missionnaire l'envoie (PDF + justificatif) à l'assistant Chorus DT.
     await m.goto(URL + 'cr/'); await attendre(3000);
