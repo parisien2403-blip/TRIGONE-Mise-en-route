@@ -315,3 +315,5 @@ Version 51 : NOTIFICATIONS ET RENVOIS.
 - ASSIST CHORUS DT : « ↩ Renvoyer au demandeur » avec un commentaire (refus niveau 3, type REFUS) ; Documents affiche « Refusée par l'ASSIST CHORUS DT ».
 
 Version 52 : RÔLES TOUJOURS À JOUR SUR LE SERVEUR. Constat : après la remise à zéro des comptes, un appareil pouvait garder ses rôles cochés sans les redéclarer (mémoire locale « trigone_roles_declares »), d'où « Mauvais destinataire » chez l'expéditeur. Désormais declarerRoles() compare les rôles cochés sur l'appareil à ceux du serveur (GET /api/cles?mail=soi) et redéclare ceux qui manquent : à l'ouverture, au retour dans l'appli (au plus toutes les 5 min), après l'activation du compte. Message « Mauvais destinataire » complété.
+
+Version 53 : « Espace valideur & Chorus DT » devient « Espace valideur » (accueil téléphone, menu PC, titre de la page) ; la carte Assistant Chorus DT de cette page et l'entrée « Assistant Chorus DT » du menu PC sont retirées : l'espace Chorus s'ouvre uniquement par le logo Assist Chorus-DT de l'écran de choix (ou une notification).
