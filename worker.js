@@ -130,21 +130,26 @@ async function envoyerPush(env, abonnement, message, origine) {
         Authorization: 'vapid t=' + tete + '.' + corpsJwt + '.' + b64url(sig) + ', k=' + vapid.pub,
         'Content-Encoding': 'aes128gcm', 'Content-Type': 'application/octet-stream', TTL: '86400', Urgency: 'high' } });
 }
-const TEXTES_PUSH = {
-    DEMANDE: ['Demande à signer', 'Nouvelle demande de mise en route à valider (VALIDEUR 1).', 'boite'],
-    VALIDATION_1: ['Demande à signer', 'Demande validée par le VALIDEUR 1, à valider (VALIDEUR 2).', 'boite'],
-    RENVOI: ['Demande renvoyée', 'Le VALIDEUR 2 vous renvoie une demande : à corriger, revalider ou refuser.', 'boite'],
-    REFUS: ['Demande refusée', 'Une de vos demandes vous est renvoyée avec un motif : corrigez-la et renvoyez-la.', 'boite'],
-    CHORUS: ['Demande validée', 'Demande validée par les deux valideurs, à contrôler (ASSIST CHORUS DT).', 'chorus'],
-    CR: ['Compte-rendu de mission', 'Un compte-rendu de fin de mission vous est parvenu.', 'chorus']
-};
+// Texte de la notification selon le type d'envoi et le nombre de demandes qu'il contient (n, donné par l'expéditeur).
+function textePush(type, n) {
+    const p = n > 1, x = p ? n + ' ' : '';
+    const t = {
+        DEMANDE: [p ? n + ' demandes à signer' : 'Demande à signer', (p ? x + 'nouvelles demandes' : 'Nouvelle demande') + ' de mise en route à valider (VALIDEUR 1).', 'boite'],
+        VALIDATION_1: [p ? n + ' demandes à signer' : 'Demande à signer', (p ? x + 'demandes validées' : 'Demande validée') + ' par le VALIDEUR 1, à valider (VALIDEUR 2).', 'boite'],
+        RENVOI: [p ? n + ' demandes renvoyées' : 'Demande renvoyée', 'Le VALIDEUR 2 vous renvoie ' + (p ? x + 'demandes' : 'une demande') + ' : à corriger, revalider ou refuser.', 'boite'],
+        REFUS: [p ? n + ' demandes refusées' : 'Demande refusée', (p ? x + 'de vos demandes vous sont renvoyées' : 'Une de vos demandes vous est renvoyée') + ' avec un motif : corrigez puis renvoyez.', 'boite'],
+        CHORUS: [p ? n + ' demandes validées' : 'Demande validée', (p ? x + 'demandes validées' : 'Demande validée') + ' par les deux valideurs, à contrôler (ASSIST CHORUS DT).', 'chorus'],
+        CR: ['Compte-rendu de mission', 'Un compte-rendu de fin de mission vous est parvenu.', 'chorus']
+    }[type];
+    return t || ['TRIGONE', 'Nouvel envoi dans votre boîte TRIGONE.', 'boite'];
+}
 // Prévient chaque appareil destinataire abonné ; un abonnement expiré (404 / 410) est retiré.
-async function notifier(env, dest, appareils, type, de, origine) {
-    const t = TEXTES_PUSH[type] || ['TRIGONE', 'Nouvel envoi dans votre boîte TRIGONE.', 'boite'];
+async function notifier(env, dest, appareils, type, de, origine, nombre) {
+    const t = textePush(type, nombre || 1);
     const expires = [];
     await Promise.all(appareils.filter(a => a.push && a.push.endpoint).map(async a => {
         try {
-            const r = await envoyerPush(env, a.push, { titre: t[0], texte: t[1] + (de ? ' — de ' + de : ''), type, url: '/?espace=' + t[2] }, origine);
+            const r = await envoyerPush(env, a.push, { titre: t[0], texte: t[1] + (de ? ' — de ' + de : ''), type, nombre: nombre || 1, url: '/?espace=' + t[2] }, origine);
             if (r.status === 404 || r.status === 410) expires.push(a.id);
         } catch (e) {}
     }));
@@ -371,7 +376,8 @@ async function api(requete, env, url, ctx) {
         await db.batch(enveloppes.map(e => db.prepare('INSERT INTO boite (id, dest, appareil, de, type, le, enveloppe) VALUES (?, ?, ?, ?, ?, ?, ?)')
             .bind(id, dest, e.appareil, moi.mail, type, le, JSON.stringify({ epk: e.epk, iv: e.iv, ct: e.ct })))
             .concat(db.prepare('DELETE FROM boite WHERE le < ?').bind(le - DUREE_MESSAGE * 1000)));
-        const prevenir = notifier(env, dest, compte.appareils.filter(a => enveloppes.some(e => e.appareil === a.id)), type, moi.mail, url.origin).catch(() => {});
+        const nombre = Math.min(500, Math.max(1, parseInt(corps.nombre, 10) || 1));   // nombre de demandes (l'expéditeur le donne ; le contenu reste chiffré)
+        const prevenir = notifier(env, dest, compte.appareils.filter(a => enveloppes.some(e => e.appareil === a.id)), type, moi.mail, url.origin, nombre).catch(() => {});
         if (ctx && ctx.waitUntil) ctx.waitUntil(prevenir); else await prevenir;
         return json({ ok: true, id });
     }

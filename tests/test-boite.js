@@ -135,9 +135,9 @@ module.exports = async function() {
 
     // 1er valideur : relève, valide Bouquet, refuse Martin, transmet directement
     await relever(v1);
-    verifier(await v1.evaluate(() => JUMELAGE_BOITE_NB()) === 1, '1er valideur : l\'envoi arrive dans la boîte de réception');
+    verifier(await v1.evaluate(() => JUMELAGE_BOITE_NB()) === 2, '1er valideur : l\'envoi arrive dans la boîte de réception (compté 2 : il contient 2 demandes)');
     await v1.evaluate(() => SHOW_PAGE('ACCUEIL')); await attendre(300);
-    verifier((await v1.textContent('.BTN-ACCUEIL-BOITE')).includes('1'), '1er valideur : pastille « 1 » sur le bouton Boîte de réception de l\'accueil');
+    verifier((await v1.textContent('.BTN-ACCUEIL-BOITE')).includes('2'), '1er valideur : pastille « 2 » (deux demandes) sur le bouton Boîte de réception de l\'accueil');
     await v1.evaluate(() => { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; return Promise.all(['valideur', 'valideur1', 'valideur2'].map(k => ACCES_MEMO('effacer', null, k))); });
     await ouvrirBoite(v1);
     verifier((await v1.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Connexion valideur', '1er valideur non connecté : « Ouvrir » demande le code valideur');
