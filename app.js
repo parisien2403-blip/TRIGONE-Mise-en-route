@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 112;
+var APP_CODE_VERSION = 113;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1690,7 +1690,7 @@ var MER_NOTICE_CLE = null;
 var MER_NOTICES = {
     DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · documents · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
         etapes: ['<b>Compte TRIGONE</b> (roue crantée › Compte TRIGONE) : activez-le une fois avec votre adresse mail, vérifiée par un code. Tous les envois passent par la <b>boîte TRIGONE</b>, chiffrés : plus de fichier à joindre à un mail.',
-            '<b>Notifications</b> : dans Compte TRIGONE, « 🔔 Activer les notifications » vous prévient de chaque envoi reçu (demande à signer, refus, compte-rendu), même TRIGONE fermée — PC, Android, et iPhone / iPad avec TRIGONE installée sur l\'écran d\'accueil.',
+            '<b>Notifications</b> : dans Compte TRIGONE, « 🔔 Activer les notifications » vous prévient de chaque envoi reçu (demande à signer, refus, compte-rendu), même TRIGONE fermée — PC, Android, et iPhone / iPad avec TRIGONE installée sur l\'écran d\'accueil. Réglages utiles par appareil : rubrique <b>Notifications</b> de la Notice.',
             '<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
             '<b>Demande collective</b> : « + Ajouter une personne », ou <b>« 📥 Importer une liste »</b> depuis un tableau Excel (.xlsx), Calc (.ods) ou CSV aux colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID (« Télécharger le modèle »). Les personnes déjà présentes ne sont pas dupliquées.',
@@ -1718,6 +1718,15 @@ var MER_NOTICES = {
             '<b>↩ Renvoyer au demandeur</b> : sur une demande reçue, renvoyez-la directement au demandeur avec un commentaire, sans repasser par les valideurs ; il la corrige et la renvoie (nouveau circuit de validation).',
             '<b>Comptes-rendus de mission</b> : envoyés par les missionnaires depuis TRIGONE Compte-rendu. « Ouvrir » liste le compte-rendu PDF et les justificatifs : téléchargez-les, puis « ✔ Traité ».'] }
 };
+// Rubrique « Notifications » de la notice (même texte dans TRIGONE Compte-rendu).
+var MER_NOTICE_NOTIF = [
+    '<b>Activer</b> : roue crantée › <b>Compte TRIGONE</b> › « 🔔 Activer les notifications », <b>sur chaque appareil</b> (PC, téléphone, tablette). Vous êtes prévenu de chaque envoi reçu : demande à signer, demande validée, refus ou renvoi, compte-rendu, avec le nombre de demandes.',
+    '<b>Tester</b> : dans Compte TRIGONE, « 🔔 Tester les notifications » envoie une notification à tous vos appareils et affiche le résultat appareil par appareil.',
+    '<b>Android</b> : si la notification arrive en retard ou pas du tout quand TRIGONE est fermée, retirez l\'économie de batterie : <b>Paramètres › Applications › Chrome › Batterie › « Non restreinte »</b>. Vérifiez aussi que les notifications de Chrome sont autorisées (Paramètres › Applications › Chrome › Notifications).',
+    '<b>iPhone / iPad</b> : les notifications demandent TRIGONE <b>installée sur l\'écran d\'accueil</b> (Safari › Partager › Sur l\'écran d\'accueil), puis ouverte depuis cette icône pour les activer.',
+    '<b>PC</b> : les notifications arrivent tant que le navigateur (Chrome, Edge) tourne, même TRIGONE fermée. Sous Windows, vérifiez qu\'elles sont autorisées pour le navigateur (Paramètres › Système › Notifications) et que le mode « Ne pas déranger » est coupé.',
+    'Même sans notification, votre boîte TRIGONE se relève d\'elle-même à l\'ouverture de l\'appli, puis toutes les 20 secondes tant qu\'elle est ouverte.'
+];
 function MER_ICONES_NOTICE_PERSO() { return '<svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>'; }
 function MER_ICONES_NOTICE_CADENAS() { return '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>'; }
 function MER_ICONES_NOTICE_CHECK() { return '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.7 2.7L16 9.8"/></svg>'; }
@@ -1746,6 +1755,7 @@ function TPL_NOTICE() {
             '<li>Votre <b>identité</b> (grade, nom, prénom, matricule, CIE) n\'est saisie qu\'<b>une fois</b> : toute modification dans l\'une est reprise dans l\'autre.</li>' +
             '<li>Dans Compte-rendu, <b>« 📋 À partir d\'une mise en route »</b> liste vos demandes envoyées : en choisir une remplit la mission (identité, libellé, lieux de départ et de retour, transports, gares, ABT, et les horaires des billets dans Frais › Trajets).</li>' +
             '<li>Le code à 4 chiffres n\'est pas redemandé en passant d\'une appli à l\'autre ; chaque partie garde ses propres données.</li></ul></details>' +
+        '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg></span>Notifications</summary><ul>' + MER_NOTICE_NOTIF.map(function(l) { return '<li>' + l + '</li>'; }).join('') + '</ul></details>' +
         '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg></span>Mises à jour</summary><ul>' +
             '<li>L\'appli recherche une nouvelle version à l\'ouverture et à la fermeture ; trouvée à la fermeture, elle s\'installe d\'elle-même au retour dans l\'appli.</li>' +
             '<li>L\'appli se met à jour toute seule dès qu\'il y a du réseau ; un message « Mise à jour » s\'affiche quand une nouvelle version est prête.</li>' +
