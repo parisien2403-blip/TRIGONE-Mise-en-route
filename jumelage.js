@@ -78,7 +78,9 @@
         /* Écran de choix : deux triangles, coupe de la diagonale haut-droite → bas-gauche */
         '.JUM-CHOIX { position: fixed; inset: 0; z-index: 99985; overflow: hidden; background: #0f0f0f; -webkit-tap-highlight-color: transparent;' +
             ' user-select: none; -webkit-user-select: none; transition: opacity 0.32s ease; }' +
-        '.JUM-CHOIX.sortie { opacity: 0; pointer-events: none; }' +
+        '.JUM-CHOIX.sortie { opacity: 0; pointer-events: none; transition-delay: 0.1s; }' +
+        /* L'écran de choix s'efface : son logo part d'abord, pour ne pas se superposer à celui de l'accueil. */
+        '.JUM-CHOIX.sortie .JUM-BLOC, .JUM-CHOIX.sortie .JUM-CHORUS { opacity: 0; transition: opacity 0.1s ease; }' +
         '.JUM-PAN { position: absolute; inset: 0; cursor: pointer; transition: clip-path 0.5s cubic-bezier(0.65,0,0.25,1), filter 0.2s ease; }' +
         '.JUM-PAN-MER { background: linear-gradient(150deg, #ffffff 0%, #eef2f6 55%, #dde5ee 100%); clip-path: polygon(0 0, 100% 0, 100% 0, 0 100%); }' +
         '.JUM-PAN-CR { background: linear-gradient(150deg, #2a2a2a 0%, #161616 60%, #0b0b0b 100%); clip-path: polygon(100% 0, 100% 100%, 0 100%, 0 100%); }' +
@@ -111,6 +113,10 @@
         '.JUM-CHORUS img { width: 100%; height: auto; display: block; filter: invert(1); }' +
         '.JUM-CHORUS:hover { transform: translate(-50%, -50%) scale(1.05); } .JUM-CHORUS:focus-visible { outline: 2px solid #d6a756; outline-offset: 6px; }' +
         '.JUM-CHOIX.choix-chorus .JUM-CHORUS { transform: translate(-50%, -50%) scale(1.12); }' +
+        /* Au choix, seul le logo choisi reste : les autres s'effacent aussitôt, avant que le panneau ne s'étende
+           (sinon le logo choisi glisse par-dessus eux en allant au centre). */
+        '.JUM-CHOIX.choix-mer .JUM-PAN-CR .JUM-BLOC, .JUM-CHOIX.choix-cr .JUM-PAN-MER .JUM-BLOC, .JUM-CHOIX.choix-chorus .JUM-BLOC,' +
+            ' .JUM-CHOIX.choix-mer .JUM-CHORUS, .JUM-CHOIX.choix-cr .JUM-CHORUS, .JUM-CHOIX.choisi .JUM-CHORUS-NB { opacity: 0; transition: opacity 0.12s ease; pointer-events: none; }' +
         '.JUM-CHORUS-NB { position: absolute; z-index: 4; left: calc(50% + var(--jum-chorus) * 0.36); top: calc(50% - var(--jum-chorus) * 0.5); min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.75rem/24px Montserrat, system-ui, sans-serif; text-align: center; box-shadow: 0 4px 10px rgba(185,28,28,0.4); pointer-events: none; }' +
         '.JUM-R-CASE { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; cursor: pointer; margin: 4px 0 8px; } .JUM-R-CASE input { width: 18px; height: 18px; flex-shrink: 0; }' +
         '.JUM-CR-FICHIER { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 6px 0; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.82rem; }' +
@@ -422,7 +428,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 68, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 69, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2003,21 +2009,23 @@
             ecran.classList.add('choisi', 'choix-chorus');
             var surPlace = !DANS_CR && typeof window.MER_OUVRIR_CHORUS === 'function';
             setTimeout(function() {
-                if (window.JUMELAGE_OUVRIR_CHORUS() || surPlace) { ecran.classList.add('sortie'); setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 380); }
+                if (window.JUMELAGE_OUVRIR_CHORUS() || surPlace) { ecran.classList.add('sortie'); setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 460); }
             }, 380);
             return;
         }
-        ecran.classList.add('choisi');
+        ecran.classList.add('choisi', 'choix-' + cle);
         try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {}
         var pan = ecran.querySelector('.JUM-PAN-' + cle.toUpperCase());
-        pan.classList.remove('appuye'); pan.classList.add('plein');
+        pan.classList.remove('appuye');
+        // Le panneau s'étend une fois les autres logos effacés.
+        setTimeout(function() { pan.classList.add('plein'); }, 120);
         if (cle === ICI) {
-            setTimeout(function() { ecran.classList.add('sortie'); }, 420);
-            setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 800);
+            setTimeout(function() { ecran.classList.add('sortie'); }, 540);
+            setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 1000);
         } else {
             try { sessionStorage.setItem(CLE_BASCULE, '1'); } catch (e) {}
             // replace : pas d'entrée dans l'historique, la flèche retour du téléphone ne ramène pas à l'autre appli.
-            setTimeout(function() { location.replace(APPLIS[cle].url); }, 480);
+            setTimeout(function() { location.replace(APPLIS[cle].url); }, 600);
         }
     }
 
