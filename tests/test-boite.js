@@ -342,6 +342,10 @@ module.exports = async function() {
     await v2.evaluate(() => JUMELAGE_REGLAGES()); await attendre(1500);
     verifier((await v2.textContent('#JUM-R-ABS-ETAT')).includes('remplacé par'), 'Réglages › Absence : « Absent jusqu\'au …, remplacé par … » affiché');
     await v2.evaluate(() => JUMELAGE_FERMER_REGLAGES());
+    await m.goto(URL); await attendre(2500);
+    await m.goto(URL); await attendre(2500);
+    await m.evaluate(() => SHOW_PAGE('PANIER')); await m.evaluate(v => MER_AFFICHER_ABSENCE('MER-ABS-DEST', v), MAILS.V2); await attendre(1200);
+    verifier((await m.textContent('#MER-ABS-DEST')).includes('partira chez son remplaçant'), 'absence : l\'expéditeur est prévenu avant l\'envoi (« absent jusqu\'au … : votre envoi partira chez son remplaçant »)');
     const envoiAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'VALIDATION_1', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
     verifier(envoiAbs.remplacant === MAILS.V1 && envoiAbs.absent === MAILS.V2, 'absence : l\'envoi destiné au VALIDEUR 2 part chez son remplaçant');
     const refusAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'REFUS', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
@@ -349,6 +353,13 @@ module.exports = async function() {
     await api(v2, 'remplacant', { mail: '' });
     verifier(!(await api(m, 'cles?mail=' + encodeURIComponent(MAILS.V2))).remplacant, 'absence : « Fin de l\'absence » rétablit les envois directs');
     await relever(v1); await relever(v2);
+
+    // Notifications coupées sur un appareil : le serveur ne lui envoie plus rien (le test le signale), puis rétablies.
+    await api(v1, 'push/muet', { muet: true });
+    const tm = await api(v1, 'push/test', {});
+    verifier(tm.resultats.some(x => x.ceci && /coupées/.test(x.detail)), 'notifications coupées sur cet appareil : plus rien ne lui est envoyé');
+    await api(v1, 'push/muet', { muet: false });
+    verifier((await api(v1, 'push/test', {})).resultats.some(x => x.ceci && !/coupées/.test(x.detail) && x.statut !== 0), 'notifications rétablies sur cet appareil');
 
     // Demande refusée retirée de Documents par le demandeur : suivi « abandon », plus de rappel « à corriger ».
     await m.goto(URL); await attendre(2500);

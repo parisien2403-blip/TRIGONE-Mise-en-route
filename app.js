@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 122;
+var APP_CODE_VERSION = 123;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1284,6 +1284,14 @@ function FORMAT_DATE_COURT(v) {
     try { var dt = new Date(v); return dt.toLocaleDateString('fr-FR'); } catch (e) { return ''; }
 }
 
+// Destinataire absent (valideur, assistant Chorus DT) : prévenir avant l'envoi, dans l'élément « id ».
+function MER_AFFICHER_ABSENCE(id, mail) {
+    if (!window.JUMELAGE_ABSENCE) return;
+    JUMELAGE_ABSENCE(mail).then(function(rp) {
+        var el = document.getElementById(id); if (!el) return;
+        el.innerHTML = rp ? '<div class="MER-ABSENCE">🟠 <b>' + ESC(mail) + '</b> est absent jusqu\'au <b>' + new Date(rp.jusqu).toLocaleDateString('fr-FR') + '</b> : votre envoi partira chez son remplaçant, <b>' + ESC(rp.mail) + '</b>.</div>' : '';
+    });
+}
 function TPL_PANIER() {
     var panier = GET_PANIER();
     var reg = GET_REGLAGES();
@@ -1307,6 +1315,7 @@ function TPL_PANIER() {
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MODIFIER_DEMANDE(\'' + d.id + '\')">Modifier</button>' +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="RETIRER_DU_PANIER(\'' + d.id + '\')">Retirer</button></div></div>';
     }).join('');
+    setTimeout(function() { MER_AFFICHER_ABSENCE('MER-ABS-DEST', reg.mailSignataire); }, 0);
     return '<div class="CARD">' +
         '<h2>Mes documents</h2>' +
         '<p class="MER-HINT" style="margin:4px 0 18px;">' + panier.length + ' demande(s) prête(s) à être envoyée(s) ensemble, en un seul envoi TRIGONE.</p>' +
@@ -1315,7 +1324,8 @@ function TPL_PANIER() {
         '<div class="MER-SECTION-TITLE">Envoi</div>' +
         '<div class="MER-FIELD"><label>Mail du 1er valideur (chef de service)</label>' +
         '<input type="email" id="MER-MAIL-DEST" value="' + ESC(reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
-        'oninput="var r=GET_REGLAGES(); r.mailSignataire=this.value; SAVE_REGLAGES(r);"></div>' +
+        'oninput="var r=GET_REGLAGES(); r.mailSignataire=this.value; SAVE_REGLAGES(r);" onchange="MER_AFFICHER_ABSENCE(\'MER-ABS-DEST\', this.value)"></div>' +
+        '<div id="MER-ABS-DEST"></div>' +
         '<p class="MER-HINT" style="margin:-4px 0 14px;">' + (MER_COMPTE_ACTIF() ? 'Envoi chiffré, directement dans le TRIGONE du 1er valideur. Un refus éventuel vous revient dans votre Boîte de réception (' + ESC(JUMELAGE_COMPTE_MAIL()) + ').'
             : 'L\'envoi se fait directement dans TRIGONE : activez d\'abord votre compte TRIGONE (roue crantée › Compte TRIGONE).') + '</p>' +
         '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📨 Envoyer mes documents (' + panier.length + ')</button>' +
@@ -1798,6 +1808,7 @@ var MER_NOTICES = {
 var MER_NOTICE_NOTIF = [
     '<b>Activer</b> : roue crantée › <b>Compte TRIGONE</b> › « 🔔 Activer les notifications », <b>sur chaque appareil</b> (PC, téléphone, tablette). Vous êtes prévenu de chaque envoi reçu : demande à signer, demande validée, refus ou renvoi, compte-rendu, avec le nombre de demandes.',
     '<b>Tester</b> : dans Compte TRIGONE, « 🔔 Tester les notifications » envoie une notification à tous vos appareils et affiche le résultat appareil par appareil.',
+    '<b>PC et téléphone à la fois ?</b> Pour ne pas tout recevoir en double, coupez les notifications sur l\'un d\'eux : bouton <b>« Notifications »</b> en haut à gauche de l\'écran de choix (ou Compte TRIGONE › « Couper les notifications sur cet appareil »). Coupées, il affiche <b>« Notifications coupées ici »</b> en orange ; touchez-le pour les rétablir. Vos autres appareils les reçoivent toujours, et la boîte TRIGONE se relève quand vous ouvrez l\'appli.',
     '<b>Android</b> : si la notification arrive en retard ou pas du tout quand TRIGONE est fermée, retirez l\'économie de batterie : <b>Paramètres › Applications › Chrome › Batterie › « Non restreinte »</b>. Vérifiez aussi que les notifications de Chrome sont autorisées (Paramètres › Applications › Chrome › Notifications).',
     '<b>iPhone / iPad</b> (iOS 16.4 ou plus récent) : pas de réglage batterie. Les notifications demandent TRIGONE <b>installée sur l\'écran d\'accueil</b> (Safari › Partager › Sur l\'écran d\'accueil), puis ouverte depuis cette icône pour les activer. Dans <b>Réglages › Notifications</b> : TRIGONE autorisée (bannières, sons), <b>hors du Résumé programmé</b> (sinon elles n\'arrivent qu\'aux heures du résumé), et ajoutée aux applis autorisées de vos <b>modes de concentration</b> (Ne pas déranger, Travail, Sommeil). Supprimer l\'icône TRIGONE efface l\'abonnement : il faut alors la réinstaller et réactiver les notifications.',
     '<b>PC</b> : les notifications arrivent tant que le navigateur (Chrome, Edge) tourne, même TRIGONE fermée. Sous Windows, vérifiez qu\'elles sont autorisées pour le navigateur (Paramètres › Système › Notifications) et que le mode « Ne pas déranger » est coupé.',
@@ -2929,13 +2940,15 @@ function AFFICHER_TRANSMISSION() {
     var lignes = MER_ENVOIS.map(function(env, i) {
         return '<div class="MER-PANIER-ITEM" style="flex-wrap:wrap;"><div class="MER-PANIER-ITEM-TXT" style="flex:1 1 100%;">' +
             '<div class="MER-PANIER-ITEM-TITRE">' + ESC(env.titre) + ' — ' + env.demandes.length + ' demande(s)</div>' +
-            '<div class="MER-PANIER-ITEM-SUB" style="word-break:break-all;">' + ESC(env.mail || '') + '</div></div>' +
+            '<div class="MER-PANIER-ITEM-SUB" style="word-break:break-all;">' + ESC(env.mail || '') + '</div>' +
+            (env.mail && env.type !== 'REFUS' && !env.fait ? '<div id="MER-ABS-ENV-' + i + '"></div>' : '') + '</div>' +
             (env.direct ? '<div class="MER-HINT" style="width:100%; margin-top:8px; color:#15803d; font-weight:800;">✔ Arrivé dans le TRIGONE du destinataire (chiffré)</div>'
             : env.fait ? '<div class="MER-HINT" style="width:100%; margin-top:8px; font-weight:800;">✔ Marqué comme fait</div>'
             : env.mail ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:100%; margin:8px 0 0;" onclick="ENVOYER_ENVOI_DIRECT(' + i + ')">📨 Envoyer</button>'
             : '<div class="MER-HINT" style="width:100%; margin-top:8px;">Adresse du demandeur inconnue : prévenez-le directement du refus et de son motif.</div>' +
               '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:100%; margin:6px 0 0;" onclick="MER_ENVOIS[' + i + '].fait = true; AFFICHER_TRANSMISSION()">C\'est fait</button>') + '</div>';
     }).join('');
+    MER_ENVOIS.forEach(function(env, i) { if (env.mail && env.type !== 'REFUS' && !env.fait) setTimeout(function() { MER_AFFICHER_ABSENCE('MER-ABS-ENV-' + i, env.mail); }, 0); });
     var tousFaits = MER_ENVOIS.every(function(env) { return env.fait; });
     AFFICHER_MODALE('Transmettre',
         '<p style="font-size:0.86em; line-height:1.5;">Pour chaque envoi : <b>« Envoyer »</b>. Il arrive, chiffré, directement dans le TRIGONE du destinataire.</p>' + lignes,

@@ -140,6 +140,12 @@
         '.JUM-MAJ-BTN { right: auto; left: max(18px, env(safe-area-inset-left, 0px)); border-color: rgba(255,255,255,0.18); background: #1a1a1a; color: #f5f5f5; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }' +
         '.JUM-MAJ-BTN.tourne svg { animation: jum-tourne 0.9s linear infinite; } @keyframes jum-tourne { to { transform: rotate(360deg); } }' +
         '.JUM-CHOIX.choisi .JUM-MAJ-BTN { opacity: 0; pointer-events: none; }' +
+        /* Notifications de cet appareil (en haut à gauche) : actives, ou coupées (bien visible, en orange). */
+        '.JUM-CLOCHE { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); left: max(16px, env(safe-area-inset-left, 0px)); z-index: 3; display: flex; align-items: center; gap: 7px; padding: 7px 13px 7px 10px; border-radius: 999px;' +
+            ' border: 1.5px solid rgba(26,26,26,0.15); background: #1a1a1a; color: #f5f5f5; font: 800 0.7rem/1 Montserrat, system-ui, sans-serif; letter-spacing: 0.02em; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.18); }' +
+        '.JUM-CLOCHE svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-CLOCHE.muet { background: #d97706; border-color: #b45309; color: #fff; animation: jum-pulse 2.4s ease-in-out infinite; }' +
+        '.JUM-CHOIX.choisi .JUM-CLOCHE { opacity: 0; pointer-events: none; }' +
         '.JUM-NOUV { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,15,15,0.35); animation: jum-menu 0.2s ease both; }' +
         '.JUM-NOUV.sortie { opacity: 0; transition: opacity 0.25s ease; }' +
         '.JUM-NOUV-CARTE { width: 100%; max-width: 420px; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 24px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); font-family: Montserrat, system-ui, sans-serif; }' +
@@ -428,7 +434,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 75, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 76, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -936,7 +942,7 @@
     // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
     // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
     var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
-    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi)$/;
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi|trigone_notif_muet)$/;
     function basePieces(creer) {
         return new Promise(function(ok) {
             if (!window.indexedDB) { ok(null); return; }
@@ -1171,6 +1177,18 @@
         declarerRoles();
     };
     window.JUMELAGE_COMPTE_MAIL = function() { var c = monCompte(); return c ? c.mail : ''; };
+    // Absence d'un destinataire (avant l'envoi) : { mail du remplaçant, jusqu } ou null. Mémorisée 5 minutes.
+    var absences = {};
+    window.JUMELAGE_ABSENCE = function(mail) {
+        mail = String(mail || '').trim().toLowerCase();
+        if (!monCompte() || !navigator.onLine || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return Promise.resolve(null);
+        var a = absences[mail];
+        if (a && Date.now() - a.le < 5 * 60 * 1000) return Promise.resolve(a.r);
+        return appelApi('cles?mail=' + encodeURIComponent(mail)).then(function(r) {
+            var rp = r.compte && r.remplacant ? r.remplacant : null;
+            absences[mail] = { le: Date.now(), r: rp }; return rp;
+        }).catch(function() { return null; });
+    };
     // Envoi direct : chiffré pour tous les appareils du destinataire. Rejette avec e.pasDeCompte si le destinataire
     // n'a pas encore de compte TRIGONE (l'envoi est alors bloqué : il doit d'abord activer son compte).
     window.JUMELAGE_ENVOYER_DIRECT = function(destinataire, type, nom, texte) {
@@ -1373,12 +1391,36 @@
         }).catch(function() { return window.JUMELAGE_SUIVI(); }).then(function(o) { suiviEnCours = null; return o; });
         return suiviEnCours;
     };
+    // Notifications coupées sur cet appareil seulement (ex. téléphone, quand le PC du bureau suffit) : le serveur
+    // n'envoie plus rien à cet appareil ; les autres appareils du compte continuent de les recevoir.
+    var CLE_MUET = 'trigone_notif_muet';
+    function notifMuet() { return lireTxt(CLE_MUET) === '1'; }
+    var SVG_CLOCHE = '<svg viewBox="0 0 24 24"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>';
+    var SVG_CLOCHE_OFF = '<svg viewBox="0 0 24 24"><path d="M8.7 3.4A6 6 0 0 1 18 8c0 2.8.5 4.7 1.1 6M17 17H3s3-2 3-9c0-.8.1-1.5.4-2.2M10.3 21a1.94 1.94 0 0 0 3.4 0M2 2l20 20"/></svg>';
+    function htmlCloche() { return notifMuet() ? SVG_CLOCHE_OFF + '<span>Notifications coupées ici</span>' : SVG_CLOCHE + '<span>Notifications</span>'; }
+    function majCloches() {
+        Array.prototype.forEach.call(document.querySelectorAll('.JUM-CLOCHE'), function(b) {
+            b.classList.toggle('muet', notifMuet()); b.innerHTML = htmlCloche();
+            b.title = notifMuet() ? 'Notifications coupées sur cet appareil : touchez pour les rétablir' : 'Notifications actives sur cet appareil : touchez pour les couper ici';
+        });
+        var c = document.getElementById('JUM-C-MUET');
+        if (c) c.textContent = notifMuet() ? '🔔 Rétablir les notifications sur cet appareil' : '🔕 Couper les notifications sur cet appareil';
+    }
+    window.JUMELAGE_NOTIF_MUET = function(muet) {
+        if (typeof muet !== 'boolean') muet = !notifMuet();
+        return appelApi('push/muet', { methode: 'POST', corps: { muet: muet } }).then(function() {
+            if (muet) ecrireTxt(CLE_MUET, '1'); else { try { localStorage.removeItem(CLE_MUET); } catch (e) {} }
+            majCloches();
+            bandeau(muet ? 'Notifications coupées sur cet appareil. Vos autres appareils les reçoivent toujours ; la boîte TRIGONE se relève quand vous ouvrez l\'appli.' : 'Notifications rétablies sur cet appareil.');
+        }).catch(function(e) { bandeau('Impossible pour l\'instant : ' + e.message); });
+    };
     function blocNotif() {
         var e = notifEtat();
         var android = /Android/i.test(navigator.userAgent || '');
         if (e === 'active') return '<p class="JUM-R-AIDE">🔔 <b>Notifications activées</b> sur cet appareil : vous êtes prévenu de chaque envoi, même TRIGONE fermée.</p>' +
             (android ? '<p class="JUM-R-AIDE">Notification en retard ou absente quand TRIGONE est fermée ? <b>Paramètres › Applications › Chrome › Batterie › « Non restreinte »</b>.</p>' : '') +
             (estIOS() ? '<p class="JUM-R-AIDE">Notification en retard ou silencieuse ? Dans <b>Réglages › Notifications</b>, laissez TRIGONE <b>hors du Résumé programmé</b>, et ajoutez-la aux applis autorisées de vos <b>modes de concentration</b>. Ne supprimez pas l\'icône TRIGONE de l\'écran d\'accueil : l\'abonnement serait perdu.</p>' : '') +
+            '<button type="button" class="JUM-R-SECOND" id="JUM-C-MUET" style="margin:8px 0 0; width:100%;"></button>' +
             '<button type="button" class="JUM-R-SECOND" id="JUM-C-TEST" style="margin:8px 0 0; width:100%;">🔔 Tester les notifications</button><div id="JUM-C-TEST-RES"></div>';
         if (e === 'impossible') return '<p class="JUM-R-AIDE">🔕 Ce navigateur ne permet pas les notifications : ouvrez TRIGONE pour relever vos envois.</p>';
         return '<div class="JUM-R-TITRE">Notifications</div><p class="JUM-R-AIDE">' + (e === 'ios'
@@ -1563,6 +1605,8 @@
                 '<div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_COMPTE()">Fermer</button></div></div>';
             document.body.appendChild(fenCompte);
             // Test : une vraie notification vers chacun de mes appareils ; la réponse du service est affichée pour chacun.
+            var btnMuet = fenCompte.querySelector('#JUM-C-MUET');
+            if (btnMuet) { majCloches(); btnMuet.addEventListener('click', function() { window.JUMELAGE_NOTIF_MUET(); }); }
             var btnTest = fenCompte.querySelector('#JUM-C-TEST');
             if (btnTest) btnTest.addEventListener('click', function() {
                 var zone = fenCompte.querySelector('#JUM-C-TEST-RES');
@@ -1588,7 +1632,7 @@
             fenCompte.querySelector('#JUM-C-DECO').addEventListener('click', function() {
                 if (!window.confirm('Déconnecter cet appareil ? Il ne pourra plus envoyer ni recevoir d\'envois TRIGONE.')) return;
                 appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() {
-                    try { localStorage.removeItem(CLE_COMPTE); } catch (e) {}
+                    try { localStorage.removeItem(CLE_COMPTE); localStorage.removeItem(CLE_MUET); } catch (e) {}
                     cleIdb('effacer').catch(function() {});
                     window.JUMELAGE_FERMER_COMPTE(); bandeau('Appareil déconnecté du compte TRIGONE.');
                 });
@@ -2165,7 +2209,9 @@
             // Numéro de version, en haut à droite (le même dans les deux applis).
             (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '') +
             // Mise à jour, en bas à gauche (pendant de la roue crantée).
-            '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>';
+            '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>' +
+            // Notifications de cet appareil (compte actif, notifications activées) : les couper ici, ou les rétablir.
+            (monCompte() && notifEtat() === 'active' ? '<button type="button" class="JUM-CLOCHE' + (notifMuet() ? ' muet' : '') + '" aria-label="Notifications de cet appareil">' + htmlCloche() + '</button>' : '');
         majPastilleHub();
         var btnChorus = ecran.querySelector('.JUM-CHORUS');
         if (btnChorus) {
@@ -2178,6 +2224,12 @@
         var majBtn = ecran.querySelector('.JUM-MAJ-BTN');
         ['pointerdown', 'pointerup'].forEach(function(t) { majBtn.addEventListener(t, function(e) { e.stopPropagation(); }); });
         majBtn.addEventListener('click', function(e) { e.stopPropagation(); verifierMajManuelle(); });
+        var cloche = ecran.querySelector('.JUM-CLOCHE');
+        if (cloche) {
+            ['pointerdown', 'pointerup'].forEach(function(t) { cloche.addEventListener(t, function(e) { e.stopPropagation(); }); });
+            cloche.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_NOTIF_MUET(); });
+            majCloches();
+        }
         ecran.addEventListener('click', function(e) {
             var menu = document.querySelector('.JUM-ROUE-MENU');
             if (menu) { menu.remove(); return; }
