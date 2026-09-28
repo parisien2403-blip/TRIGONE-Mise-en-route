@@ -609,7 +609,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 85, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 86, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -720,12 +720,17 @@
             unite: id.unite || mer.derniereUnite || cr.unitName || '', cie: id.cie || mer.derniereCie || lireTxt('mission_saved_cie'),
             grade: id.grade || lireTxt('mission_saved_grade'), nom: id.nom || nomCr[0] || '', prenom: id.prenom || nomCr.slice(1).join(' '),
             matricule: id.matricule || lireTxt('mission_saved_nid'),
-            mailVal1: mer.mailSignataire || '', monMail: mer.mailDemandeur || '', mailChorus: cr.mailAssist || ''
+            mailVal1: mer.mailSignataire || '', monMail: mer.mailDemandeur || '', mailChorus: cr.mailAssist || '',
+            // Option « Demande de réservation » (hébergement / transport) : réglage de Compte-rendu, commun aux deux applis.
+            resaActive: cr.abtEnabled !== false, resaLibelle: cr.abtLabel && cr.abtLabel !== 'ABT' && cr.abtLabel !== RESA_DEFAUT ? cr.abtLabel : ''
         };
-        Object.keys(s).forEach(function(k) { if (!d[k] && s[k]) d[k] = s[k]; });
+        Object.keys(s).forEach(function(k) { if (!d[k] && s[k] && k !== 'resaActive' && k !== 'resaLibelle') d[k] = s[k]; });
         return d;
     }
     // « GRADE NOM Prénom » des Réglages TRIGONE : le « Bonjour » des accueils (PC et téléphone, les deux applis).
+    var RESA_DEFAUT = 'Demande de réservation';
+    // Option « Demande de réservation » : { active, libelle } (libellé choisi par l'unité, sinon « Demande de réservation »).
+    window.JUMELAGE_RESA = function() { var r = lireReglages(); return { active: r.resaActive !== false, libelle: r.resaLibelle || RESA_DEFAUT, defaut: !r.resaLibelle }; };
     window.JUMELAGE_QUI = function() { var r = lireReglages(); return [r.grade, r.nom, r.prenom].filter(Boolean).join(' '); };
     function chiffres(v) { return String(v || '').replace(/\D/g, ''); }
     function formatMatricule(v) { var c = chiffres(v).slice(0, 10); return [c.slice(0, 3), c.slice(3, 5), c.slice(5, 7), c.slice(7)].filter(Boolean).join(' '); }
@@ -747,12 +752,17 @@
         var cr = lireJSON('trigone_app_settings') || {};
         if (r.unite) cr.unitName = r.unite;
         if (r.mailChorus) cr.mailAssist = r.mailChorus;
+        if (typeof r.resaActive === 'boolean') { cr.abtEnabled = r.resaActive; cr.abtLabel = r.resaLibelle || RESA_DEFAUT; }
         try { localStorage.setItem('trigone_app_settings', JSON.stringify(cr)); } catch (e) {}
         ecrireTxt('trigone_premier_lancement_fait', '1');
         // Page Compte-rendu ouverte : ses valeurs en mémoire suivent tout de suite.
         if (DANS_CR) {
             if (r.unite && 'UNIT_NAME' in window) window.UNIT_NAME = r.unite;
             if (r.mailChorus && 'MAIL_ASSIST' in window) window.MAIL_ASSIST = r.mailChorus;
+            if (typeof r.resaActive === 'boolean' && 'ABT_LABEL' in window) {
+                window.ABT_ENABLED = r.resaActive; window.ABT_LABEL = r.resaLibelle || RESA_DEFAUT;
+                try { if (typeof window.APPLY_ABT_SETTINGS === 'function') window.APPLY_ABT_SETTINGS(); } catch (e) {}
+            }
         }
     }
     function codeDefini() { return !!lireTxt(CLE_CODE); }
@@ -845,6 +855,10 @@
                 '<div class="JUM-R-GRILLE">' + champ('MAILVAL1', 'Mail du 1er valideur (chef de service)', r.mailVal1, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
                     champ('MONMAIL', 'Mon mail', r.monMail, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
                     champ('MAILCHORUS', 'Mail de l\'assistant Chorus DT (compte-rendu)', r.mailChorus, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') + '</div>' +
+                '<div class="JUM-R-TITRE">Option Demande de réservation</div>' +
+                '<p class="JUM-R-AIDE">Si votre unité passe par un organisme de réservation pour l\'hébergement et le transport (ex. Amplitude), laissez la case cochée et indiquez son nom : il apparaîtra dans Mise en route et Compte-rendu.</p>' +
+                '<label class="JUM-R-CASE"><input type="checkbox" id="JUM-R-RESA"' + (r.resaActive !== false ? ' checked' : '') + '><span>Utiliser cette option (certains régiments ne l\'utilisent pas)</span></label>' +
+                '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;">' + champ('RESALIB', 'Libellé affiché (vide : « Demande de réservation »)', r.resaLibelle || '', 'type="text" autocomplete="off" data-no-uppercase="1" placeholder="EX : Amplitude (ABT)"') + '</div>' +
                 '<div class="JUM-R-TITRE">Code d\'accès à 4 chiffres</div>' +
                 '<p class="JUM-R-AIDE">' + (codeDefini() ? '🔒 Code actif : demandé à chaque ouverture de TRIGONE. Pour le changer, saisissez-en un nouveau.'
                     : ancienCode ? 'Un ancien code est encore actif dans l\'une des applis : définissez le code TRIGONE pour le remplacer.'
@@ -1023,7 +1037,8 @@
         var err = document.getElementById('JUM-R-ERREUR');
         function refuser(t) { err.textContent = '⛔ ' + t; err.scrollIntoView({ block: 'nearest' }); }
         var r = { unite: v('UNITE').toUpperCase(), cie: v('CIE').toUpperCase(), grade: v('GRADE').toUpperCase(), nom: v('NOM').toUpperCase(), prenom: v('PRENOM'),
-            matricule: formatMatricule(v('MATRICULE')), mailVal1: v('MAILVAL1'), monMail: v('MONMAIL'), mailChorus: v('MAILCHORUS') };
+            matricule: formatMatricule(v('MATRICULE')), mailVal1: v('MAILVAL1'), monMail: v('MONMAIL'), mailChorus: v('MAILCHORUS'),
+            resaActive: !!(document.getElementById('JUM-R-RESA') || {}).checked, resaLibelle: v('RESALIB') };
         var c1 = v('CODE1'), c2 = v('CODE2');
         if (premiere && (!r.unite || !r.cie || !r.grade || !r.nom || !r.prenom || !r.matricule || !r.mailVal1 || !r.monMail || !r.mailChorus))
             return refuser('Merci de remplir tous les champs avant de continuer.');

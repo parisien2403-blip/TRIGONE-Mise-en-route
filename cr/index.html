@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=85"></script>
+<script src="../jumelage.js?v=86"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -3114,6 +3114,8 @@ body.dark-mode #P2-FIN .FRAIS-TC-ROW { background: #1a1a1a; border-color: #40404
 .FST-MNT { font-size: 0.78em; font-weight: 800; text-align: right; color: var(--tg-ink); }
 .FST-TOTAL { display: flex; justify-content: space-between; align-items: center; padding: 9px 12px; background: #f5f0ff; font-size: 0.85em; font-weight: 800; color: #7c3aed; border-top: 2px solid #e2e8f0; }
 .FRAIS-NUIT-SECTION { margin: 0 0 12px; }
+.FRAIS-RESA-NOTE { margin: 0 0 10px; padding: 9px 12px; border-radius: 10px; background: #fbf4e6; border: 1px solid #e8d3a8; color: #7a5a1e; font-size: 0.78em; line-height: 1.45; }
+body.dark-mode .FRAIS-RESA-NOTE { background: rgba(214,167,86,0.1); border-color: rgba(214,167,86,0.3); color: #e0b86a; }
 .FRAIS-NUIT-TITLE { font-size: 0.74em; font-weight: 700; color: var(--tg-muted); text-transform: uppercase; letter-spacing: 0.08em; margin: 0 0 8px; padding: 0; }
 .FRAIS-NUIT-ROW { background: #fff; border: 1.5px solid #e2e8f0; border-radius: 10px; padding: 11px 13px; margin-bottom: 8px; }
 .FRAIS-NUIT-DATE { display: block; font-size: 0.78em; font-weight: 700; color: var(--tg-muted); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
@@ -5764,7 +5766,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <option value="VRC">VRC (CIVIL)</option>
 </select>
 </div>
-<label id="ABT-ROW-A" class="abt-check HIDDEN"><input type="checkbox" id="ABT-A" onchange="TOGGLE_TRANSPORT_ABT('A')"><span class="abt-label-txt">ABT</span></label>
+<label id="ABT-ROW-A" class="abt-check HIDDEN"><input type="checkbox" id="ABT-A" onchange="TOGGLE_TRANSPORT_ABT('A')"><span class="abt-label-txt">Demande de réservation</span></label>
 <label id="IK-ROW-A" class="abt-check HIDDEN"><input type="checkbox" id="IK-A" onchange="TOGGLE_IK('A')"><span>IK — indemnité kilométrique</span></label>
 <div id="IK-ZONE-A" class="SPEC-ZONE HIDDEN">
 <label for="IK-CV-A">Puissance fiscale du véhicule</label>
@@ -5801,7 +5803,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <option value="VRC">VRC (CIVIL)</option>
 </select>
 </div>
-<label id="ABT-ROW-A-ANX" class="abt-check HIDDEN"><input type="checkbox" id="ABT-A-ANX" onchange="TOGGLE_TRANSPORT_ABT('A-ANX')"><span class="abt-label-txt">ABT</span></label>
+<label id="ABT-ROW-A-ANX" class="abt-check HIDDEN"><input type="checkbox" id="ABT-A-ANX" onchange="TOGGLE_TRANSPORT_ABT('A-ANX')"><span class="abt-label-txt">Demande de réservation</span></label>
 <label id="IK-ROW-A-ANX" class="abt-check HIDDEN"><input type="checkbox" id="IK-A-ANX" onchange="TOGGLE_IK('A-ANX')"><span>IK — indemnité kilométrique</span></label>
 <div id="IK-ZONE-A-ANX" class="SPEC-ZONE HIDDEN">
 <label for="IK-CV-A-ANX">Puissance fiscale du véhicule</label>
@@ -5844,7 +5846,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <option value="VRC">VRC (CIVIL)</option>
 </select>
 </div>
-<label id="ABT-ROW-R" class="abt-check HIDDEN"><input type="checkbox" id="ABT-R" onchange="TOGGLE_TRANSPORT_ABT('R')"><span class="abt-label-txt">ABT</span></label>
+<label id="ABT-ROW-R" class="abt-check HIDDEN"><input type="checkbox" id="ABT-R" onchange="TOGGLE_TRANSPORT_ABT('R')"><span class="abt-label-txt">Demande de réservation</span></label>
 <label id="IK-ROW-R" class="abt-check HIDDEN"><input type="checkbox" id="IK-R" onchange="TOGGLE_IK('R')"><span>IK — indemnité kilométrique</span></label>
 <div id="IK-ZONE-R" class="SPEC-ZONE HIDDEN">
 <label for="IK-CV-R">Puissance fiscale du véhicule</label>
@@ -5881,7 +5883,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <option value="VRC">VRC (CIVIL)</option>
 </select>
 </div>
-<label id="ABT-ROW-R-ANX" class="abt-check HIDDEN"><input type="checkbox" id="ABT-R-ANX" onchange="TOGGLE_TRANSPORT_ABT('R-ANX')"><span class="abt-label-txt">ABT</span></label>
+<label id="ABT-ROW-R-ANX" class="abt-check HIDDEN"><input type="checkbox" id="ABT-R-ANX" onchange="TOGGLE_TRANSPORT_ABT('R-ANX')"><span class="abt-label-txt">Demande de réservation</span></label>
 <label id="IK-ROW-R-ANX" class="abt-check HIDDEN"><input type="checkbox" id="IK-R-ANX" onchange="TOGGLE_IK('R-ANX')"><span>IK — indemnité kilométrique</span></label>
 <div id="IK-ZONE-R-ANX" class="SPEC-ZONE HIDDEN">
 <label for="IK-CV-R-ANX">Puissance fiscale du véhicule</label>
@@ -6273,13 +6275,13 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <details class="notice-fold">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>Calculs &amp; barèmes</summary>
 <div class="ADMIN-SECTION">
-<p style="font-size:0.8em; font-weight:700; margin:0 0 8px;">Option ABT (abonnement transport / hébergement)</p>
+<p style="font-size:0.8em; font-weight:700; margin:0 0 8px;">Option Demande de réservation (hébergement / transport)</p>
 <div class="check-container" style="margin-bottom:10px;">
 <input type="checkbox" id="PARAM-ABT-ENABLED" onchange="TOGGLE_PARAM_ABT_FIELD()">
 <label for="PARAM-ABT-ENABLED">Utiliser cette option (certains régiments ne l'utilisent pas)</label>
 </div>
-<label for="PARAM-ABT-LABEL" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Libellé affiché (ex : « ABT »)</label>
-<input type="text" id="PARAM-ABT-LABEL" data-no-uppercase="1" placeholder="EX : ABT" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em;">
+<label for="PARAM-ABT-LABEL" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Libellé affiché (ex : « Amplitude (ABT) » ; vide : « Demande de réservation »)</label>
+<input type="text" id="PARAM-ABT-LABEL" data-no-uppercase="1" placeholder="EX : Amplitude (ABT)" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em;">
 </div>
 <div class="ADMIN-SECTION">
 <p style="font-size:0.8em; font-weight:700; margin:0 0 4px;">Indemnité kilométrique (IK) — véhicule personnel</p>
@@ -6888,7 +6890,7 @@ var MAIL_ASSIST = '';
 var ASSIST_CHORUS_LABEL = "l'assist. Chorus DT";
 var UNIT_NAME = '';
 var ABT_ENABLED = true;
-var ABT_LABEL = 'ABT';
+var ABT_LABEL = 'Demande de réservation';   // libellé choisi par l'unité (ex : « Amplitude (ABT) »), commun à Mise en route
 var IK_RATES_KEY = 'trigone_ik_rates';
 var IK_RATES_DATE_KEY = 'trigone_ik_rates_date';
 var DEFAULT_IK_RATES = { "5cv": 0.32, "6-7cv": 0.41, "8cv": 0.45 };
@@ -7001,7 +7003,8 @@ var APP_SETTINGS_KEY = 'trigone_app_settings';
             if (saved.mailAssist) MAIL_ASSIST = saved.mailAssist;
             if (saved.unitName) UNIT_NAME = saved.unitName;
             if (typeof saved.abtEnabled === 'boolean') ABT_ENABLED = saved.abtEnabled;
-            if (saved.abtLabel) ABT_LABEL = saved.abtLabel;
+            // « ABT » était l'ancien libellé par défaut : remplacé par « Demande de réservation ».
+            if (saved.abtLabel && saved.abtLabel !== 'ABT') ABT_LABEL = saved.abtLabel;
             if (saved.cieLabel) CIE_LABEL = saved.cieLabel;
             if (Array.isArray(saved.cieOptions) && saved.cieOptions.length) CIE_OPTIONS = saved.cieOptions;
             if (typeof saved.mailBodyText === 'string' && saved.mailBodyText.trim()) MAIL_BODY_TEXT = saved.mailBodyText;
@@ -11571,7 +11574,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 182;
+var APP_CODE_VERSION = 183;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13950,6 +13953,8 @@ function APPLIQUER_MISE_EN_ROUTE(d) {
     M.PAYS_MISSION = a.paysArr || '';
     // Horaires des billets : proposés par défaut dans Frais > Trajets (où Compte-rendu les saisit).
     M.MER_HORAIRES = {};
+    // Réservation « Hébergement » demandée dans la mise en route : rappelée dans Frais › hébergement (choix nuit par nuit).
+    M.MER_RESA_HEBERG = !!d.resaHeberg;
     var abt = [];
     function trajet(pk, tr, retour) {
         var type = tr && MER_MOYEN_VERS_CR[tr.moyen];
@@ -13961,7 +13966,8 @@ function APPLIQUER_MISE_EN_ROUTE(d) {
             M['G_' + pk + '_DEP'] = dep; M['G_' + pk + '_ARR'] = arr; M['G_' + pk] = arr || dep;
             M.MER_HORAIRES[pk + '_DEP'] = LOCAL_INPUT_TO_FR_DATETIME(tr.dateDep);
             M.MER_HORAIRES[pk + '_ARR'] = LOCAL_INPUT_TO_FR_DATETIME(tr.dateArr);
-            if (d.reservationABT) abt.push(pk);
+            // Réservation « Transport » de la mise en route (ou ancienne « Réservation ABT ») : train, avion, bateau.
+            if (d.resaTransport || d.reservationABT) abt.push(pk);
         } else {
             M['G_' + pk] = arr;
         }
@@ -15491,6 +15497,7 @@ function RENDER() {
     if (nightEntries.length > 0) {
         html += '<div class="FRAIS-NUIT-SECTION">';
         html += '<h4 class="FRAIS-NUIT-TITLE">Hébergement — nuit par nuit</h4>';
+        if (M.MER_RESA_HEBERG && ABT_ENABLED) html += '<p class="FRAIS-RESA-NOTE">Votre mise en route demandait une réservation d\'hébergement (« ' + ESC_HTML(ABT_LABEL) + ' ») : choisissez-la pour les nuits concernées.</p>';
         nightEntries.forEach(function(entry) {
             var J = entry.J;
             var li = entry.legIdx, ji = entry.jourIdx;

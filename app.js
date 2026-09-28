@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 132;
+var APP_CODE_VERSION = 133;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -44,7 +44,7 @@ function VIDE_DEMANDE() {
             intermediaireRetourActif: false, intermediaireRetour: VIDE_TRAJET(),
             retourAuto: true      // le retour reprend l'aller inversé tant que le missionnaire ne le modifie pas
         },
-        reservationABT: false, nourriDeplacement: false, transportCommun: false, autresDeplacement: false, autresDeplacementTexte: '',
+        resaHeberg: false, resaTransport: false, nourriDeplacement: false, transportCommun: false, autresDeplacement: false, autresDeplacementTexte: '',
         nourriMission: false, logeMission: false,
         demandeAvance: false,
         missionImputee: true,
@@ -1112,9 +1112,24 @@ function TPL_ONGLET_RETOUR() {
       (inter ? TPL_TRAJET('Trajet intermédiaire (retour)', 'trajets.intermediaireRetour') : '');
 }
 
+// Option « Demande de réservation » (profil TRIGONE) : libellé de l'unité (ex : « Amplitude (ABT) »), deux choix.
+function MER_RESA() { return window.JUMELAGE_RESA ? JUMELAGE_RESA() : { active: true, libelle: 'Demande de réservation', defaut: true }; }
+function MER_RESA_TITRE() { var o = MER_RESA(); return o.defaut ? 'Demande de réservation' : 'Demande de réservation — ' + o.libelle; }
+// Anciennes demandes : « Réservation ABT » OUI valait pour le transport.
+function MER_RESA_TRANSPORT(d) { return !!(d.resaTransport || d.reservationABT); }
+function TPL_RESERVATION() {
+    if (!MER_RESA().active) return '';
+    var bouton = function(libelle, path, v) {
+        return '<button type="button" class="MER-TOGGLE-BTN' + (v ? ' actif' : '') + '" aria-pressed="' + v + '" onclick="' + (path === 'resaTransport' ? 'D.reservationABT = false; ' : '') + 'ON_CHAMP_BOOL(\'' + path + '\', ' + !v + ')">' + (v ? '✓ ' : '') + libelle + '</button>';
+    };
+    return '<div class="MER-FIELD" data-champ="reservation"><label>' + ESC(MER_RESA_TITRE()) + '</label>' +
+        '<div class="MER-TOGGLE-PAIR">' + bouton('Hébergement', 'resaHeberg', !!D.resaHeberg) + bouton('Transport', 'resaTransport', MER_RESA_TRANSPORT(D)) + '</div>' +
+        '<p class="MER-HINT">Cochez ce qui doit être réservé (l\'un, l\'autre ou les deux). Au retour, Compte-rendu le reprend : transport sur les trajets en train, avion ou bateau ; hébergement à choisir nuit par nuit.</p></div>';
+}
+
 function TPL_ONGLET_CONDITIONS() {
     return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Durant le déplacement</div>' +
-      TOGGLE_OUI_NON('Réservation ABT', 'reservationABT') +
+      TPL_RESERVATION() +
       TOGGLE_OUI_NON('Nourri à titre onéreux', 'nourriDeplacement') +
       TOGGLE_OUI_NON('Transport en commun', 'transportCommun') +
       '<div class="MER-SECTION-TITLE">Durant la mission</div>' +
@@ -1351,6 +1366,11 @@ function PDF_DATE(v) {
 }
 function PDF_OUI_NON(v) { return v ? 'OUI' : 'NON'; }
 // Réponse à signaler (demande d'avance, réservation ABT) : un OUI ressort en rouge gras.
+// Demande de réservation : « HÉBERGEMENT + TRANSPORT » (en rouge), ou NON.
+function PDF_RESA(d) {
+    var l = [d.resaHeberg ? 'HÉBERGEMENT' : '', MER_RESA_TRANSPORT(d) ? 'TRANSPORT' : ''].filter(Boolean);
+    return l.length ? { content: l.join(' + '), styles: { textColor: [200, 16, 16], fontStyle: 'bold' } } : 'NON';
+}
 function PDF_OUI_NON_ALERTE(v) { return v ? { content: 'OUI', styles: { textColor: [200, 16, 16], fontStyle: 'bold' } } : 'NON'; }
 
 function PDF_BANDEAU(doc, d, M, L, edition) {
@@ -1431,10 +1451,10 @@ function PDF_DEMANDE(doc, d, M, L, P, edition) {
     y = PDF_SECTION(doc, 'ALIMENTATION & HÉBERGEMENT', X, y, P);
     y = PDF_TABLEAU(doc, y, M, L, P, {
         head: [['Durant le déplacement', ''], ],
-        body: [['Réservation ABT', PDF_OUI_NON_ALERTE(d.reservationABT)],
+        body: (MER_RESA().active || d.resaHeberg || MER_RESA_TRANSPORT(d) ? [[MER_RESA_TITRE(), PDF_RESA(d)]] : []).concat([
                ['Nourri à titre onéreux', PDF_OUI_NON(d.nourriDeplacement)],
-               ['Transport en commun', PDF_OUI_NON(d.transportCommun)]],
-        columnStyles: { 1: { halign: 'right', fontStyle: 'bold', cellWidth: 30 } }
+               ['Transport en commun', PDF_OUI_NON(d.transportCommun)]]),
+        columnStyles: { 1: { halign: 'right', fontStyle: 'bold', cellWidth: 44 } }
     }) - P.ecart + 1;
     y = PDF_TABLEAU(doc, y, M, L, P, {
         head: [['Durant la mission', '']],
@@ -1913,7 +1933,7 @@ function DEMO_DEMANDE() {
         lieuArr: 'PARIS', cpArr: '75001', paysArr: '', dateArr: '2026-10-12T11:40' };
     d.trajets.retour = { residenceArr: 'ADMINISTRATIVE', moyen: 'FERREE', lieuDep: 'PARIS', cpDep: '75001', paysDep: '', dateDep: '2026-10-16T16:00',
         lieuArr: 'BORDEAUX', cpArr: '33000', paysArr: '', dateArr: '2026-10-16T20:10' };
-    d.reservationABT = true; d.nourriMission = true; d.logeMission = true;
+    d.resaTransport = true; d.nourriMission = true; d.logeMission = true;
     d.codeFD = 'FD1ADNK11F';
     d.pieces = [{ id: 'demo-nds', nom: 'NDS_formation_facteur_humain.pdf', type: 'application/pdf', taille: 184320, sha256: '' }];
     return d;
@@ -1929,8 +1949,8 @@ var DEMO_ETAPES = [
       zones: ['[data-path="trajets.aller.residenceDep"]', '[data-path="trajets.aller.moyen"]', '[data-path="trajets.aller.lieuDep"]', '[data-path="trajets.aller.lieuArr"]'] },
     { page: 'FORMULAIRE', onglet: 'RETOUR', titre: 'Étape 3 — Trajet retour', texte: 'Il est prérempli avec l\'aller inversé : il ne reste que les dates et heures du retour.',
       zones: ['[data-path="trajets.retour.dateDep"]', '[data-path="trajets.retour.dateArr"]'] },
-    { page: 'FORMULAIRE', onglet: 'CONDITIONS', titre: 'Étape 4 — Alimentation et hébergement', texte: 'Réservation ABT, repas et hébergement, pendant le déplacement et sur place. Un OUI à l\'ABT ressort en rouge sur le PDF.',
-      zones: ['[data-champ="reservationABT"]', '[data-champ="nourriMission"]', '[data-champ="logeMission"]'] },
+    { page: 'FORMULAIRE', onglet: 'CONDITIONS', titre: 'Étape 4 — Alimentation et hébergement', texte: 'Demande de réservation (hébergement, transport), repas et hébergement, pendant le déplacement et sur place. Une réservation demandée ressort en rouge sur le PDF.',
+      zones: ['[data-champ="reservation"]', '[data-champ="nourriMission"]', '[data-champ="logeMission"]'] },
     { page: 'FORMULAIRE', onglet: 'IMPUTATION', titre: 'Étape 5 — Imputation', texte: 'Le code FD suffit : TRIGONE affiche le centre financier, le centre de coût et le code activité. Joignez ensuite la NDS ou la DAF (PDF ou photo).',
       zones: ['[data-path="codeFD"]', '#MER-FD-INFO', '.MER-PANIER-ITEM'] },
     { page: 'PANIER', titre: 'Documents', texte: 'La demande y attend son envoi (plusieurs demandes peuvent partir ensemble). Vérifiez le mail du 1er valideur, puis « Envoyer mes documents ».',
