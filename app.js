@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 125;
+var APP_CODE_VERSION = 126;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3377,6 +3377,10 @@ function TPL_ENVOI_RECU(x) {
                 ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', true)">👁 Aperçu</button>' +
                   '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">📄 Télécharger le PDF</button>' +
                   '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="' + (traite ? 'ROUVRIR_RECU' : 'OUVRIR_RECU') + '(\'' + x.id + '\')">Contrôle détaillé</button>'
+            // Compte-rendu : aperçu du PDF directement depuis la ligne, et détail (justificatifs).
+            : x.nature === 'cr'
+                ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="APERCU_CR_RECU(\'' + x.id + '\')">👁 Aperçu</button>' +
+                  '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_CR_RECU(\'' + x.id + '\')">📎 Compte-rendu et justificatifs</button>'
             : traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ROUVRIR_RECU(\'' + x.id + '\')">↺ Rouvrir</button>'
                 : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="SUPPRIMER_RECU(\'' + x.id + '\')">Supprimer</button>' +
@@ -3483,7 +3487,8 @@ function OUVRIR_CR_RECU(id) {
             (cr.fichiers || []).map(function(fi, i) {
                 return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT"><div class="MER-PANIER-ITEM-TITRE" style="word-break:break-all;">' + (i ? '📎 ' : '📄 ') + ESC(fi.nom) + '</div>' +
                     '<div class="MER-PANIER-ITEM-SUB">' + (i ? 'Justificatif' : 'Compte-rendu') + ' · ' + TAILLE_LISIBLE(Math.floor((fi.b64 || '').length * 3 / 4)) + '</div></div>' +
-                    '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto;" onclick="TELECHARGER_FICHIER_CR(' + i + ')">⬇ Télécharger</button></div>';
+                    '<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:auto; margin:0;" onclick="APERCU_FICHIER_CR(' + i + ')">👁 Aperçu</button>' +
+                    '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin:0;" onclick="TELECHARGER_FICHIER_CR(' + i + ')">⬇ Télécharger</button></div></div>';
             }).join('') +
             (cr.corps ? '<details class="MER-RECU-TRAITES" style="margin-top:10px;"><summary>Message du missionnaire</summary><pre style="white-space:pre-wrap; font:inherit; font-size:0.8em;">' + ESC(cr.corps) + '</pre></details>' : ''),
             '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Fermer</button>' +
@@ -3491,12 +3496,50 @@ function OUVRIR_CR_RECU(id) {
             '<button type="button" class="BTN BTN-PRIMARY" onclick="TRAITER_CR_RECU()">✔ Traité</button>');
     }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
 }
+// Nom de fichier avec son extension (sinon le téléphone ne sait pas avec quoi l'ouvrir).
+function MER_NOM_AVEC_EXT(nom, type) {
+    nom = String(nom || 'fichier');
+    var ext = { 'application/pdf': '.pdf', 'image/jpeg': '.jpg', 'image/png': '.png', 'image/webp': '.webp', 'image/heic': '.heic' }[type];
+    return ext && !/\.[a-z0-9]{2,5}$/i.test(nom) ? nom + ext : nom;
+}
+// Aperçu d'un fichier du compte-rendu : photo affichée dans TRIGONE ; PDF ouvert dans un nouvel onglet (ou la
+// visionneuse du téléphone), à défaut téléchargé.
+function APERCU_FICHIER_CR(i) {
+    if (!MER_CR_OUVERT) return;
+    var fi = (MER_CR_OUVERT.cr.fichiers || [])[i]; if (!fi) return;
+    var type = fi.type || (/\.pdf$/i.test(fi.nom) ? 'application/pdf' : 'application/octet-stream');
+    var url = URL.createObjectURL(new Blob([new Uint8Array(DEB64(fi.b64))], { type: type }));
+    if (/^image\//.test(type)) {
+        var v = document.createElement('div');
+        v.className = 'MER-VISIONNEUSE';
+        v.innerHTML = '<img alt=""><button type="button" aria-label="Fermer">✕</button>';
+        v.querySelector('img').src = url;
+        v.addEventListener('click', function() { v.remove(); URL.revokeObjectURL(url); });
+        document.body.appendChild(v);
+        return;
+    }
+    var w = window.open(url, '_blank');
+    if (!w) TELECHARGER_OCTETS(MER_NOM_AVEC_EXT(fi.nom, type), new Uint8Array(DEB64(fi.b64)), type);
+    setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+}
+// Depuis la ligne du compte-rendu : aperçu du PDF sans passer par la fenêtre de détail.
+function APERCU_CR_RECU(id) {
+    var w = window.open('', '_blank');   // ouverte tout de suite, sinon le navigateur la bloque
+    JUMELAGE_BOITE_FICHIER(id).then(function(f) { return f.text(); }).then(function(t) {
+        var cr = JSON.parse(t), fi = (cr.fichiers || [])[0];
+        if (cr.app !== 'TRIGONE-CR' || !fi) throw new Error('Compte-rendu illisible.');
+        var url = URL.createObjectURL(new Blob([new Uint8Array(DEB64(fi.b64))], { type: fi.type || 'application/pdf' }));
+        if (w) w.location = url; else window.open(url, '_blank');
+        JUMELAGE_BOITE_MARQUER(id, 'ouvert');
+        setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+    }).catch(function(e) { if (w) w.close(); MSG_ERREUR('Ouverture impossible', (e.message || String(e)) + ' Si le problème continue, demandez au missionnaire de renvoyer son compte-rendu.'); });
+}
 function TELECHARGER_FICHIER_CR(i) {
     if (!MER_CR_OUVERT) return;
     var fichiers = MER_CR_OUVERT.cr.fichiers || [];
     (i < 0 ? fichiers : [fichiers[i]]).forEach(function(fi, k) {
         if (!fi) return;
-        setTimeout(function() { TELECHARGER_OCTETS(fi.nom, new Uint8Array(DEB64(fi.b64)), fi.type || 'application/octet-stream'); }, k * 400);
+        setTimeout(function() { TELECHARGER_OCTETS(MER_NOM_AVEC_EXT(fi.nom, fi.type), new Uint8Array(DEB64(fi.b64)), fi.type || 'application/octet-stream'); }, k * 400);
     });
 }
 function TRAITER_CR_RECU() {

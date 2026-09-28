@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=78"></script>
+<script src="jumelage.js?v=79"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -462,6 +462,9 @@ body.dark-mode .MER-TOGGLE-BTN { background: #262626; border-color: #404040; }
 .MER-BIB-SUPPR { background: #b91c1c; color: #fff; border: 0; } .MER-BIB-SUPPR:disabled { opacity: 0.45; }
 .MER-BIB-CASE { display: flex; align-items: center; padding: 2px 12px 0 0; cursor: pointer; } .MER-BIB-CASE input { width: 22px; height: 22px; accent-color: #b91c1c; }
 .MER-PANIER-ITEM.MER-BIB-COCHEE { outline: 2px solid rgba(185,28,28,0.5); background: rgba(185,28,28,0.04); }
+.MER-VISIONNEUSE { position: fixed; inset: 0; z-index: 100000; background: rgba(0,0,0,0.9); display: flex; align-items: center; justify-content: center; padding: 16px; }
+.MER-VISIONNEUSE img { max-width: 100%; max-height: 100%; object-fit: contain; border-radius: 6px; }
+.MER-VISIONNEUSE button { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); right: 14px; width: 44px; height: 44px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.15); color: #fff; font-size: 1.2rem; cursor: pointer; }
 .MER-ABSENCE { margin: 6px 0 12px; padding: 9px 12px; border-radius: 10px; background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; font-size: 0.76em; line-height: 1.45; }
 body.dark-mode .MER-ABSENCE { background: rgba(217,119,6,0.12); border-color: rgba(217,119,6,0.4); color: #fdba74; }
 .MER-SUIVI { margin: 10px 0 4px; padding: 10px 12px; border-radius: 12px; background: rgba(90,122,148,0.07); border: 1px solid rgba(90,122,148,0.18); }
@@ -884,6 +887,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=78"></script>
+<script src="app.js?v=79"></script>
 </body>
 </html>
