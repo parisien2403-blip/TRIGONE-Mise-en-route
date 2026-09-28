@@ -312,7 +312,7 @@ module.exports = async function() {
     const envoyerCr = async dest => {
         await m.evaluate(d => JUMELAGE_ENVOYER_CR({ destinataire: d, missionnaire: 'ADJ BOUQUET GP', libelle: 'Stage Bouquet', dates: '01/10/2026 → 03/10/2026',
             corps: 'Bonjour', pieces: ['FACTURE HÔTEL'], pdf: () => ({ nom: 'CR_MISSION_BOUQUET.pdf', blob: new Blob(['%PDF-1.4 test'], { type: 'application/pdf' }) }),
-            succes: () => { window.__crEnvoye = true; } }), dest); await attendre(400);
+            succes: r => { window.__crEnvoye = true; window.__crId = r && r.id; } }), dest); await attendre(400);
         await m.setInputFiles('#JUM-CR-FICHIERS', path.join(FICHIERS, 'nds_test.pdf')); await attendre(500);
         await m.click('#JUM-CR-ENVOYER'); await attendre(3000);
     };
@@ -339,6 +339,8 @@ module.exports = async function() {
     await c.click('#MER-MODALE-FOND button:has-text("Traité")'); await attendre(500);
     verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().filter(x => x.nature === 'cr').every(x => x.statut === 'traite')), 'Chorus DT : compte-rendu marqué « traité »');
     verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'traite'), 'suivi : compte-rendu « traité par l\'assistant Chorus DT »');
+    const frise = await m.evaluate(() => TPL_BIB_SUIVI({ envoiId: window.__crId }));
+    verifier(/Traité par/.test(frise) && (frise.match(/BIB-SUIVI-PT fait/g) || []).length === 3, 'Compte-rendu › Bibliothèque : frise Envoyé → Récupéré → Traité');
 
     // Absence : le VALIDEUR 2 déclare un remplaçant (le VALIDEUR 1, qui a aussi le rôle VALIDEUR 2).
     const api = (p, chemin, corps) => p.evaluate(async ([chemin, corps]) => { const x = JSON.parse(localStorage.getItem('trigone_compte'));
