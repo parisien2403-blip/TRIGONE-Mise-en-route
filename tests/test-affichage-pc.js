@@ -23,5 +23,15 @@ module.exports = async function(srv) {
     await q.goto(srv.url); await q.evaluate(preparer, APP_CODE); await q.evaluate(() => localStorage.setItem('trigone_affichage_pc', '1')); await q.reload(); await attendre(2500);
     verifier(await q.evaluate(() => document.documentElement.clientWidth) === 360 && await q.evaluate(() => { const b = document.querySelector('.JUM-MODE'); return !b || getComputedStyle(b).display === 'none'; }),
         'petit écran (téléphone, pliable refermé) : affichage téléphone, pas de bouton');
-    await ctx.close(); await ctx2.close(); await b.close();
+    // Navigateur qui annonce un petit écran (screen) alors que la fenêtre est grande : la taille de la fenêtre décide ;
+    // affichage PC stable (pas d'aller-retour).
+    const ctx3 = await b.newContext({ viewport: { width: 700, height: 840 }, screen: { width: 360, height: 780 }, isMobile: true, hasTouch: true, deviceScaleFactor: 2 });
+    const r = await ctx3.newPage();
+    await r.goto(srv.url); await r.evaluate(preparer, APP_CODE); await r.reload(); await attendre(2500);
+    verifier(await r.evaluate(() => { const b = document.querySelector('.JUM-CHOIX .JUM-MODE'); return !!b && getComputedStyle(b).display !== 'none'; }), 'écran annoncé petit mais fenêtre grande : bouton présent');
+    await r.tap('.JUM-CHOIX .JUM-MODE'); await attendre(2000);
+    verifier(await r.evaluate(() => document.documentElement.clientWidth) === 1280, 'écran annoncé petit : affichage PC appliqué et stable');
+    await r.click('.JUM-VERSION'); await attendre(500);
+    verifier((await r.evaluate(() => (document.querySelector('.JUM-NOUV') || {}).textContent || '')).includes('Écran : 360 × 780'), 'numéro de version touché : diagnostic de l\'écran affiché');
+    await ctx.close(); await ctx2.close(); await ctx3.close(); await b.close();
 };
