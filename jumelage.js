@@ -443,7 +443,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 79, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 80, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1408,9 +1408,10 @@
                         corps: o.corps || '', de: compte.mail, envoyeLe: new Date().toISOString(), fichiers: fichiers });
                     return window.JUMELAGE_ENVOYER_DIRECT(o.destinataire, 'CR', pdf.nom, contenu);
                 });
-            }).then(function() {
+            }).then(function(r) {
                 window.JUMELAGE_FERMER_ENVOI_CR();
-                if (o.succes) o.succes();
+                // r.id : identifiant de l'envoi, qui sert aussi au suivi (récupéré, traité par l'assistant Chorus DT).
+                if (o.succes) o.succes(r || {});
             }).catch(function(e) {
                 btn.disabled = false; btn.textContent = 'Envoyer';
                 err.textContent = '⛔ ' + (e.pasDeCompte ? o.destinataire + ' n\'a pas encore de compte TRIGONE : demandez-lui de l\'activer (roue crantée › Compte TRIGONE), puis renvoyez votre compte-rendu.' : (e.message || String(e)));
