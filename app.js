@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 134;
+var APP_CODE_VERSION = 135;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -205,26 +205,25 @@ function TPL_MENU_PC() {
         return '<button type="button" class="PC-NAV' + (actif === page ? ' actif' : '') + '" onclick="SHOW_PAGE(\'' + page + '\')">' + icone +
             '<span>' + libelle + '</span>' + (pastille ? '<span class="PC-PASTILLE">' + pastille + '</span>' : '') + '</button>';
     }
+    // Menu de travail seulement : profil, notice, références, mise à jour, signalement et sauvegarde sont dans le
+    // menu du compte (en haut du menu, jumelage.js).
     return '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_mer.webp" alt="TRIGONE Mise en route"></button>' +
+        '<div class="PC-COMPTE-SLOT"></div>' +
         item('ACCUEIL', MER_ICONES.ACCUEIL, 'Accueil') +
         (MER_COMPTE_ACTIF() ? item('RECEPTION', MER_ICONES.RECEPTION, 'Boîte de réception', MER_NB_BOITE() || '') : '') +
         item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
         item('PANIER', MER_ICONES.PANIER, 'Documents', n || '') +
-        item('NOTICE', MER_ICONES.NOTICE, 'Notice') +
-        item('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
         '<div class="PC-SEP"></div>' +
         item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur', MER_NB_A_SIGNER() || '') +
         '<div class="PC-BAS">' +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
-            '<button type="button" class="PC-NAV' + (actif === 'REFERENCES' ? ' actif' : '') + '" onclick="SHOW_PAGE(\'REFERENCES\')">' + MER_ICONES.REFERENCES + '<span>Références</span></button>' +
-            '<button type="button" class="PC-NAV" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()">' + MER_ICONES.MAJ + '<span>Mise à jour</span></button>' +
-            '<button type="button" class="PC-NAV" onclick="MER_SIGNALER()"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/></svg><span>Signaler un problème</span></button>' +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';
 }
 function RENDRE_MENU_PC() {
     var m = document.getElementById('PC-MENU');
     if (m) m.innerHTML = EST_PC() ? TPL_MENU_PC() : '';
+    if (m && EST_PC() && window.JUMELAGE_PLACER_COMPTE) JUMELAGE_PLACER_COMPTE(m);
 }
 // Passage téléphone ⇄ PC (fenêtre redimensionnée, écran pliable) : l'affichage suit.
 if (MER_PC_MQ) {
@@ -386,9 +385,6 @@ function TPL_ACCUEIL() {
     return '' +
     '<div id="MER-P0">' +
       '<div class="MER-P0-SHELL">' +
-        '<button type="button" id="BTN-REFERENCES" class="P0-REF-BTN" onclick="SHOW_PAGE(\'REFERENCES\')" title="Référentiels utilisés par TRIGONE Mise en route">📖 Références</button>' +
-        '<button type="button" id="BTN-CHECK-UPDATE" class="P0-REF-BTN P0-CHECK-UPDATE-BTN" onclick="VERIFIER_MISE_A_JOUR_MANUELLE()" title="Vérifier si une mise à jour est disponible">🔄 Mise à jour</button>' +
-        '<button type="button" id="BTN-SIGNALER" class="P0-REF-BTN P0-SIGNALER-BTN" onclick="MER_SIGNALER()" title="Signaler un problème à l\'équipe TRIGONE">🛟 Signaler</button>' +
         '<div class="MER-P0-INNER">' +
           '<div class="MER-LOGO-WRAP"><img class="MER-LOGO-IMG JUM-LOGO-CHOIX" src="logo_mer.webp" alt="TRIGONE — Mise en route" title="Revenir au choix Mise en route / Compte-rendu" onclick="JUMELAGE_CHOIX()"></div>' +
         '</div>' +
@@ -407,8 +403,6 @@ function TPL_ACCUEIL() {
         '<nav class="P0-TAB-BAR" aria-label="Navigation accueil"><div class="P0-DOCK-INNER">' +
           TPL_ONGLET_DOCK('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque', false, 'Biblio') +
           TPL_ONGLET_DOCK('PANIER', MER_ICONES.PANIER, 'Documents' + (n ? ' (' + n + ')' : ''), n > 0, 'Docs') +
-          TPL_ONGLET_DOCK('NOTICE', MER_ICONES.NOTICE, 'Notice') +
-          TPL_ONGLET_DOCK('ESPACE', MER_ICONES.ESPACE, 'Mon espace') +
         '</div></nav>' +
       '</div>' +
     '</div>';
@@ -1797,7 +1791,7 @@ var MER_NOTICES = {
         etapes: ['<b>Se connecter</b> (bouton <b>en haut à droite</b> de l\'écran d\'accueil) : une fois, avec votre adresse mail professionnelle, vérifiée par un code ; TRIGONE demande ensuite votre profil (identité, destinataires). Un toucher sur votre pastille ouvre le menu du compte : profil, rôles, notifications, appareils, déconnexion. Tous les envois passent par la <b>boîte TRIGONE</b>, chiffrés : plus de fichier à joindre à un mail.',
             '<b>Plusieurs appareils</b> (téléphone et PC) : inutile de tout refaire. Sur l\'appareil déjà configuré, menu du compte › <b>« Ajouter un appareil »</b> affiche un code (valable 15 minutes, une seule fois) ; sur le nouvel appareil, « Se connecter » › <b>« J\'ai déjà TRIGONE sur un autre appareil »</b> : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés, chiffrés. <b>« Me déconnecter et effacer cet appareil »</b> retire le compte et toutes les données d\'un appareil (PC partagé, appareil rendu) ; un code de liaison depuis l\'autre appareil les remet en place.',
             '<b>Notifications</b> : menu du compte › <b>Notifications</b> › « 🔔 Activer les notifications » vous prévient de chaque envoi reçu (demande à signer, refus, compte-rendu), même TRIGONE fermée — PC, Android, et iPhone / iPad avec TRIGONE installée sur l\'écran d\'accueil. Réglages utiles par appareil : rubrique <b>Notifications</b> de la Notice.',
-            '<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
+            '<b>Où trouver quoi ?</b> Les onglets ne gardent que le travail (Accueil, Boîte de réception, Bibliothèque, Documents, Espace valideur). Le reste est dans le <b>menu du compte</b> (votre pastille, en haut) : Mon profil (identité et mails, qui pré-remplissent chaque demande), Mes rôles, notifications, Notice, Références, Mise à jour, Signaler un problème, sauvegarde.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
             '<b>Demande collective</b> : « + Ajouter une personne », ou <b>« 📥 Importer une liste »</b> depuis un tableau Excel (.xlsx), Calc (.ods) ou CSV aux colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID (« Télécharger le modèle »). Les personnes déjà présentes ne sont pas dupliquées.',
             '<b>Aller</b> : lieu de départ de mission (résidence administrative ou familiale), moyen de transport, ville (code postal automatique) ou pays étranger, dates et heures. Selon le moyen, TRIGONE demande la <b>gare</b> (voie ferrée), l\'<b>aéroport</b> (voie aérienne) ou le <b>port</b> (voie maritime) de départ et d\'arrivée. Le <b>retour</b> est pré-rempli avec l\'aller inversé.',
@@ -3354,6 +3348,16 @@ window.addEventListener('DOMContentLoaded', function() {
     INIT_VERIF_MAJ_AUTO();
 });
 
+// Menu du compte (jumelage.js) : ce qui n'est pas du travail quotidien.
+window.JUMELAGE_MENU_APPLI = function() {
+    var aller = function(page) { return function() { if (PAGE_ACTUELLE === 'FORMULAIRE') SAVE_BROUILLON(); SHOW_PAGE(page); }; };
+    return [
+        { icone: 'info', titre: 'Notice', sous: 'Faire une demande, valider, notifications', action: aller('NOTICE') },
+        { icone: 'document', titre: 'Références', sous: 'Textes et référentiels utilisés', action: aller('REFERENCES') },
+        { icone: 'maj', titre: 'Mise à jour', sous: 'Vérifier la version de TRIGONE', action: VERIFIER_MISE_A_JOUR_MANUELLE },
+        { icone: 'bouee', titre: 'Signaler un problème', sous: 'Écrire à l\'équipe TRIGONE', action: MER_SIGNALER }
+    ];
+};
 function MER_NB_A_SIGNER() { try { return GET_A_VALIDER().filter(function(e) { return !e.decision; }).length; } catch (e) { return 0; } }
 // ===================== BOÎTE DE RÉCEPTION (compte TRIGONE) =====================
 // Les envois reçus directement dans TRIGONE (jumelage.js : relève, déchiffrement, rangement sur l'appareil) sont listés

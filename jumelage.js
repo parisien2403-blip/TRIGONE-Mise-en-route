@@ -281,7 +281,9 @@
         '.JUM-CPT-APPLI { padding: 3px; gap: 0; position: relative; }' +
         '.JUM-CPT-APPLI .JUM-CPT-NOM { display: none; } .JUM-CPT-APPLI.deconnecte { padding: 7px 12px 7px 9px; gap: 6px; } .JUM-CPT-APPLI.deconnecte .JUM-CPT-NOM { display: inline; }' +
         '.JUM-CPT-APPLI .JUM-CPT-PT { position: absolute; right: 1px; bottom: 1px; }' +
-        '@media (min-width: 1100px) { .JUM-CPT-ZONE { left: auto; right: 24px; top: 14px; flex-direction: row-reverse; } .JUM-CPT-APPLI { padding: 5px 13px 5px 5px; gap: 8px; } .JUM-CPT-APPLI .JUM-CPT-NOM { display: inline; } .JUM-CPT-APPLI .JUM-CPT-PT { position: static; } }' +
+        '@media (min-width: 1100px) { .JUM-CPT-ZONE { display: none !important; } }' +
+        '.PC-COMPTE-SLOT { display: flex; align-items: center; gap: 8px; margin: 2px 0 10px; } .PC-COMPTE-SLOT .JUM-CPT { flex: 1; max-width: none; min-width: 0; }' +
+        '.JUM-CPT-RUB { padding: 6px 12px 2px; font-size: 0.62rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #94a3b8; }' +
         'html.jum-choix .JUM-CPT-ZONE, body.demo-active .JUM-CPT-ZONE { display: none !important; }' +
         /* Bouton « affichage PC » (tablettes, pliables ouverts) */
         '.JUM-MODE { width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid rgba(26,26,26,0.14); background: #fff; color: #1a1a1a; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.14); padding: 0; }' +
@@ -610,7 +612,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 87, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 88, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2153,9 +2155,15 @@
         b.type = 'button'; b.className = 'JUM-CPT' + (classe ? ' ' + classe : '') + (monCompte() ? '' : ' deconnecte');
         b.innerHTML = htmlBoutonCompte(); b.title = titreBoutonCompte(); b.setAttribute('aria-label', titreBoutonCompte());
         ['pointerdown', 'pointerup'].forEach(function(t) { b.addEventListener(t, function(e) { e.stopPropagation(); }); });
-        b.addEventListener('click', function(e) { e.stopPropagation(); if (monCompte()) ouvrirMenuCompte(b); else window.JUMELAGE_CONNEXION(); });
+        b.addEventListener('click', function(e) { e.stopPropagation(); if (monCompte() || (!ecran && window.JUMELAGE_MENU_APPLI)) ouvrirMenuCompte(b); else window.JUMELAGE_CONNEXION(); });
         return b;
     }
+    // PC : le bouton de compte (et l'affichage PC d'un pliable) prend place en haut du menu de gauche des applis.
+    window.JUMELAGE_PLACER_COMPTE = function(menu) {
+        var slot = menu && menu.querySelector('.PC-COMPTE-SLOT'); if (!slot) return;
+        slot.appendChild(creerBoutonCompte('JUM-CPT-PC')); slot.appendChild(creerBoutonModePc());
+        majBoutonsCompte();
+    };
     // Dans Mise en route et Compte-rendu : le même bouton, sur la page d'accueil de l'appli (appelé à chaque changement de page).
     var boutonAppli = null;
     window.JUMELAGE_BOUTON_APPLI = function(visible) {
@@ -2172,12 +2180,24 @@
     window.JUMELAGE_FERMER_MENU_COMPTE = fermerMenuCompte;
     function ouvrirMenuCompte(bouton) {
         if (fermerMenuCompte()) return;
-        var c = monCompte(); if (!c) return;
+        var c = monCompte();
         var ic = function(n) { return window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE(n) : ''; };
         var roles = rolesLocaux(), aRole = Object.keys(roles).length > 0, e = notifEtat();
+        // Entrées propres à l'appli ouverte (notice, réglages, références…) : pas sur l'écran de choix.
+        var appli = !ecran && window.JUMELAGE_MENU_APPLI ? (window.JUMELAGE_MENU_APPLI() || []) : [];
+        var actionsAppli = {};
+        var htmlAppli = appli.map(function(x, i) { actionsAppli['appli' + i] = x.action;
+            return '<button type="button" data-action="appli' + i + '">' + ic(x.icone) + '<span><b>' + esc(x.titre) + '</b><small>' + esc(x.sous || '') + '</small></span></button>'; }).join('');
+        var htmlOutils = (htmlAppli ? '<div class="JUM-CPT-SEP"></div><div class="JUM-CPT-RUB">' + (DANS_CR ? 'Compte-rendu de mission' : 'Mise en route') + '</div>' + htmlAppli : '') +
+            '<div class="JUM-CPT-SEP"></div>' +
+            '<button type="button" data-action="sauver">' + ic('disquette') + '<span><b>Sauvegarder mes données</b><small>Un fichier pour tout TRIGONE</small></span></button>' +
+            '<button type="button" data-action="restaurer">' + ic('importer') + '<span><b>Restaurer une sauvegarde</b><small>Sur cet appareil ou un nouveau</small></span></button>';
         var m = document.createElement('div');
         m.className = 'JUM-CPT-MENU'; m.setAttribute('role', 'menu');
-        m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">' + esc(initiales()) + '</span><div><b>' + esc([lireReglages().grade, lireReglages().nom, lireReglages().prenom].filter(Boolean).join(' ') || nomCompte()) + '</b><small>' + esc(c.mail) + '</small></div></div>' +
+        if (!c) m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">?</span><div><b>Pas connecté</b><small>Connectez-vous pour envoyer et recevoir vos demandes et comptes-rendus.</small></div></div>' +
+            '<button type="button" data-action="connexion">' + ic('personne') + '<span><b>Se connecter</b><small>Première connexion, ou autre appareil</small></span></button>' +
+            '<button type="button" data-action="profil">' + ic('personne') + '<span><b>Mon profil</b><small>Identité, destinataires, code d\'accès</small></span></button>' + htmlOutils;
+        else m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">' + esc(initiales()) + '</span><div><b>' + esc([lireReglages().grade, lireReglages().nom, lireReglages().prenom].filter(Boolean).join(' ') || nomCompte()) + '</b><small>' + esc(c.mail) + '</small></div></div>' +
             '<div class="JUM-CPT-ROLES"><span>MISSIONNAIRE</span>' + Object.keys(LIBELLES_ROLES).filter(function(k) { return roles[k]; }).map(function(k) { return '<span class="' + (k === 'chorus' ? 'or' : '') + '">' + LIBELLES_ROLES[k] + '</span>'; }).join('') + '</div>' +
             '<div class="JUM-CPT-SEP"></div>' +
             '<button type="button" data-action="profil">' + ic('personne') + '<span><b>Mon profil</b><small>Identité, destinataires, code d\'accès</small></span></button>' +
@@ -2186,6 +2206,7 @@
             '<button type="button" data-action="notif">' + ic('cloche') + '<span><b>Notifications</b><small>' + (e === 'active' ? (notifMuet() ? 'Coupées sur cet appareil' : 'Actives sur cet appareil') + ' · tester' : 'Les activer sur cet appareil') + '</small></span></button>' +
             (e === 'active' ? '<button type="button" data-action="muet">' + ic('cloche') + '<span><b>' + (notifMuet() ? 'Rétablir les notifications ici' : 'Couper les notifications ici') + '</b><small>Vos autres appareils ne changent pas</small></span></button>' : '') +
             '<button type="button" data-action="appareil">' + ic('telephone') + '<span><b>Ajouter un appareil</b><small>PC ou téléphone, sans rien ressaisir</small></span></button>' +
+            htmlOutils +
             '<div class="JUM-CPT-SEP"></div>' +
             '<button type="button" data-action="deco">' + ic('exporter') + '<span><b>Se déconnecter</b><small>Vos données restent sur l\'appareil</small></span></button>' +
             '<button type="button" data-action="effacer" class="JUM-CPT-DANGER">' + CORBEILLE_SVG + '<span><b>Se déconnecter et effacer</b><small>Retirer le compte et les données de cet appareil</small></span></button>';
@@ -2194,7 +2215,11 @@
             var b = ev.target.closest('button'); if (!b) return;
             m.remove();
             var a = b.getAttribute('data-action');
-            if (a === 'profil') window.JUMELAGE_REGLAGES({ vue: 'profil' });
+            if (actionsAppli[a]) actionsAppli[a]();
+            else if (a === 'connexion') window.JUMELAGE_CONNEXION();
+            else if (a === 'sauver') window.JUMELAGE_SAUVEGARDER();
+            else if (a === 'restaurer') window.JUMELAGE_RESTAURER();
+            else if (a === 'profil') window.JUMELAGE_REGLAGES({ vue: 'profil' });
             else if (a === 'roles') window.JUMELAGE_REGLAGES({ vue: 'roles' });
             else if (a === 'absence') window.JUMELAGE_REGLAGES({ vue: 'roles', section: 'absence' });
             else if (a === 'notif') window.JUMELAGE_COMPTE();
