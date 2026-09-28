@@ -150,6 +150,53 @@
         '.JUM-CLOCHE svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-CLOCHE.muet { background: #d97706; border-color: #b45309; color: #fff; animation: jum-pulse 2.4s ease-in-out infinite; }' +
         '.JUM-CHOIX.choisi .JUM-CLOCHE { opacity: 0; pointer-events: none; }' +
+        /* Mon compte : bouton en haut à droite (« Se connecter », ou pastille du compte), menu déroulant, fenêtre de connexion. */
+        '.JUM-CPT { display: inline-flex; align-items: center; gap: 8px; max-width: min(62vw, 300px); padding: 5px 13px 5px 5px; border-radius: 999px; border: 1.5px solid rgba(255,255,255,0.16);' +
+            ' background: #1a1a1a; color: #f5f5f5; font: 800 0.72rem/1 Montserrat, system-ui, sans-serif; letter-spacing: 0.02em; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.22); -webkit-tap-highlight-color: transparent; }' +
+        '.JUM-CPT:hover { background: #262626; } .JUM-CPT:focus-visible { outline: 3px solid #d6a756; outline-offset: 2px; }' +
+        '.JUM-CPT.deconnecte { padding: 8px 15px 8px 11px; background: #fff; color: #1a1a1a; border-color: rgba(26,26,26,0.14); box-shadow: 0 4px 14px rgba(0,0,0,0.14); }' +
+        '.JUM-CPT.deconnecte:hover { background: #f1f5f9; }' +
+        '.JUM-CPT > svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-AV { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #5a7a94; color: #fff; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; }' +
+        '.JUM-CPT-NOM { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
+        '.JUM-CPT-PT { width: 9px; height: 9px; flex-shrink: 0; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 2px #1a1a1a; }' +
+        '.JUM-CPT-PT.ok { background: #22c55e; } .JUM-CPT-PT.muet { background: #f59e0b; }' +
+        '.JUM-CHOIX > .JUM-CPT { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 3; }' +
+        '.JUM-CHOIX.choisi > .JUM-CPT { opacity: 0; pointer-events: none; }' +
+        /* Dans les applis (page d'accueil) : sur téléphone, pastille compacte en haut à gauche (le haut à droite porte le mode sombre
+           et les raccourcis) ; sur PC, pastille complète en haut à droite. Masquée sous l'écran de choix et pendant la démonstration. */
+        '.JUM-CPT-APPLI { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: calc(8px + env(safe-area-inset-left, 0px)); z-index: 900; padding: 3px; gap: 0; position: fixed; }' +
+        '.JUM-CPT-APPLI .JUM-CPT-NOM { display: none; } .JUM-CPT-APPLI.deconnecte { padding: 7px 12px 7px 9px; gap: 6px; } .JUM-CPT-APPLI.deconnecte .JUM-CPT-NOM { display: inline; }' +
+        '.JUM-CPT-APPLI .JUM-CPT-PT { position: absolute; right: 1px; bottom: 1px; }' +
+        '@media (min-width: 1100px) { .JUM-CPT-APPLI { left: auto; right: 24px; top: 14px; padding: 5px 13px 5px 5px; gap: 8px; } .JUM-CPT-APPLI .JUM-CPT-NOM { display: inline; } .JUM-CPT-APPLI .JUM-CPT-PT { position: static; } }' +
+        'html.jum-choix .JUM-CPT-APPLI, body.demo-active .JUM-CPT-APPLI { display: none !important; }' +
+        /* Compte-rendu, téléphone : la médaille de l'accueil se décale pour laisser la place au bouton de compte. */
+        '@media (max-width: 1099px) { .P0-MEDAILLE-BADGE { left: 54px !important; } }' +
+        '.JUM-CPT-MENU { position: fixed; z-index: 99988; width: min(320px, calc(100vw - 24px)); background: #fff; color: #1a1a1a; border-radius: 18px; padding: 6px; box-shadow: 0 18px 44px rgba(0,0,0,0.4);' +
+            ' font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; max-height: calc(100vh - 90px); overflow-y: auto; }' +
+        '.JUM-CPT-TETE { display: flex; gap: 12px; align-items: center; padding: 12px 12px 10px; }' +
+        '.JUM-CPT-TETE .JUM-AV { width: 44px; height: 44px; font-size: 0.95rem; }' +
+        '.JUM-CPT-TETE b { display: block; font-size: 0.9rem; } .JUM-CPT-TETE small { display: block; font-size: 0.72rem; color: #64748b; margin-top: 2px; word-break: break-all; }' +
+        '.JUM-CPT-ROLES { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 12px 10px; }' +
+        '.JUM-CPT-ROLES span { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 999px; background: #eef2f6; color: #5a7a94; }' +
+        '.JUM-CPT-ROLES span.or { background: #fbf4e6; color: #a87a2a; }' +
+        '.JUM-CPT-MENU button { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 10px 12px; border-radius: 12px; text-align: left; cursor: pointer; color: #1a1a1a; font-family: inherit; }' +
+        '.JUM-CPT-MENU button:hover { background: #f1f5f9; }' +
+        '.JUM-CPT-MENU button svg { width: 22px; height: 22px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-CPT-MENU button b { display: block; font-size: 0.82rem; } .JUM-CPT-MENU button small { display: block; font-size: 0.68rem; color: #64748b; margin-top: 2px; }' +
+        '.JUM-CPT-MENU .JUM-CPT-DANGER svg { stroke: #b91c1c; } .JUM-CPT-MENU .JUM-CPT-DANGER b { color: #b91c1c; } .JUM-CPT-MENU .JUM-CPT-DANGER:hover { background: #fef2f2; }' +
+        '.JUM-CPT-SEP { height: 1px; background: #e2e8f0; margin: 4px 10px; }' +
+        'html body.dark-mode .JUM-CPT-MENU, .JUM-CHOIX ~ .JUM-CPT-MENU.sombre { background: #1f1f1f; color: #ececec; }' +
+        'html body.dark-mode .JUM-CPT-MENU button { color: #ececec; } html body.dark-mode .JUM-CPT-MENU button:hover { background: #2a2a2a; }' +
+        'html body.dark-mode .JUM-CPT-MENU button small, html body.dark-mode .JUM-CPT-TETE small { color: #a3a3a3; } html body.dark-mode .JUM-CPT-SEP { background: #333; }' +
+        'html body.dark-mode .JUM-CPT-ROLES span { background: #2a2f35; color: #a9c3d6; } html body.dark-mode .JUM-CPT-ROLES span.or { background: #3a2f1c; color: #e0b86a; }' +
+        'html body.dark-mode .JUM-CPT.deconnecte { background: #262626; color: #f5f5f5; border-color: rgba(255,255,255,0.14); }' +
+        /* Fenêtre « Se connecter » : deux onglets */
+        '.JUM-CX-ONGLETS { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin: 14px 0 6px; border-radius: 14px; background: #eef2f6; }' +
+        '.JUM-CX-ONGLETS button { border: 0; border-radius: 11px; padding: 10px 8px; background: none; color: #5a7a94; font: 800 0.72rem/1.25 Montserrat, system-ui, sans-serif; cursor: pointer; }' +
+        '.JUM-CX-ONGLETS button.actif { background: #fff; color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }' +
+        'html body.dark-mode .JUM-CX-ONGLETS { background: #262626; } html body.dark-mode .JUM-CX-ONGLETS button.actif { background: #3a3a3a; color: #f5f5f5; }' +
+        '.JUM-CX-SANS { display: block; margin: 14px auto 0; border: 0; background: none; color: #5a7a94; font: 700 0.74rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; }' +
         '.JUM-NOUV { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,15,15,0.35); animation: jum-menu 0.2s ease both; }' +
         '.JUM-NOUV.sortie { opacity: 0; transition: opacity 0.25s ease; }' +
         '.JUM-NOUV-CARTE { width: 100%; max-width: 420px; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 24px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); font-family: Montserrat, system-ui, sans-serif; }' +
@@ -173,7 +220,7 @@
         '@media (max-width: 560px) { .JUM-NOUV-MASCOTTE { right: 12px; bottom: auto; top: -84px; width: 110px; } }' +
         '.JUM-NOUV h2 { margin: 12px 0 8px; font-size: 1.15rem; } .JUM-NOUV p { margin: 0 0 18px; font-size: 0.9rem; line-height: 1.55; color: #404040; }' +
         '.JUM-NOUV button { border: 0; border-radius: 14px; padding: 13px 34px; background: #1a1a1a; color: #fff; font: 800 0.8rem Montserrat, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }' +
-        '.JUM-VERSION { position: absolute; top: max(16px, env(safe-area-inset-top, 0px)); right: max(18px, env(safe-area-inset-right, 0px)); z-index: 3; padding: 5px 12px; border-radius: 999px;' +
+        '.JUM-VERSION { position: absolute; bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 12px); left: 50%; transform: translateX(-50%); z-index: 3; padding: 5px 12px; border-radius: 999px;' +
             ' border: 1px solid rgba(255,255,255,0.18); background: #1a1a1a; color: #f5f5f5; box-shadow: 0 4px 14px rgba(0,0,0,0.25); font: 700 12px Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; pointer-events: none; }' +
         '.JUM-CHOIX.choisi .JUM-VERSION { opacity: 0; }' +
         /* Menu de la roue crantée */
@@ -443,7 +490,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 81, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 82, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -638,7 +685,20 @@
             window.JUMELAGE_PRESENTATION({ premiere: true, apres: function() { window.JUMELAGE_REGLAGES(opts); } });
             return;
         }
+        // Première ouverture : plus de réglages imposés. TRIGONE s'ouvre librement (démonstration, écran d'accueil) ;
+        // la fenêtre « Se connecter » est proposée une fois (refermable), et reste au bouton de compte en haut à droite.
+        // Compte déjà relié (code de liaison) sans identité : « Compléter mon profil ».
+        if (opts.premiere && !opts.profil) {
+            var suite = function() { if (window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {} };
+            if (window.JUMELAGE_REGLAGES_FAITS()) { suite(); return; }
+            if (monCompte()) { window.JUMELAGE_REGLAGES({ premiere: true, profil: true }); return; }
+            if (lireTxt(CLE_CONNEXION_PROPOSEE) === '1') { suite(); return; }
+            ecrireTxt(CLE_CONNEXION_PROPOSEE, '1');
+            window.JUMELAGE_CONNEXION({ premiere: true });
+            return;
+        }
         var r = lireReglages(), premiere = !!opts.premiere;
+        if (!r.monMail && monCompte()) r.monMail = monCompte().mail;
         var ancienCode = !codeDefini() && (lireTxt('mer_pin_hash') || lireTxt('trigone_pin_hash'));
         function champ(id, label, val, attrs) {
             return '<div class="JUM-R-CHAMP"><label for="JUM-R-' + id + '">' + label + '</label><input id="JUM-R-' + id + '" value="' + esc(val) + '" ' + (attrs || 'type="text" autocomplete="off"') + '></div>';
@@ -647,13 +707,13 @@
         reglages.className = 'JUM-REGLAGES';
         reglages.setAttribute('role', 'dialog');
         reglages.innerHTML = '<div class="JUM-R-CARTE">' +
-            '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + ROUE_SVG + '</span><div><h2>' + (premiere ? 'Avant de commencer' : 'Réglages TRIGONE') + '</h2>' +
-                '<p>Communs à Mise en route et Compte-rendu de mission. Enregistrés sur cet appareil uniquement.</p></div>' +
+            '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : ROUE_SVG) + '</span><div><h2>' + (premiere ? 'Compléter mon profil' : 'Mon profil') + '</h2>' +
+                '<p>' + (premiere ? 'Une seule fois : ces informations pré-rempliront Mise en route et Compte-rendu de mission.' : 'Commun à Mise en route et Compte-rendu de mission.') + ' Enregistré sur cet appareil uniquement.</p></div>' +
                 (premiere ? '' : '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_REGLAGES()">✕</button>') + '</div>' +
             '<div class="JUM-R-CORPS">' +
                 // Déjà configuré sur un autre appareil : un code de liaison suffit (rien à ressaisir).
-                (premiere ? '<details class="JUM-LIAISON-BLOC"><summary>📲 Déjà TRIGONE sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
-                    '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : roue crantée › <b>Compte TRIGONE</b> › <b>« Ajouter un autre appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte TRIGONE, demandes et bibliothèque sont recopiés.</p>' +
+                (premiere && !monCompte() ? '<details class="JUM-LIAISON-BLOC"><summary>📲 Déjà TRIGONE sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
+                    '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte TRIGONE, demandes et bibliothèque sont recopiés.</p>' +
                     htmlSaisieLiaison() + '</details>' : '') +
                 '<div class="JUM-R-TITRE">Mon identité</div>' +
                 '<div class="JUM-R-GRILLE">' + champ('UNITE', 'Unité / entité', r.unite, 'type="text" autocomplete="off" placeholder="EX : 4°RIISC"') +
@@ -674,7 +734,7 @@
                     champ('CODE2', 'Confirmer le code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') + '</div>' +
                 (codeDefini() ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_SUPPRIMER_CODE()">Supprimer le code d\'accès</button>' : '') +
                 // Mes rôles : chacun est missionnaire ; valideurs et assistant Chorus DT cochent en plus leur rôle, avec son code.
-                '<div class="JUM-R-TITRE">Mes rôles</div>' +
+                '<div class="JUM-R-TITRE" id="JUM-R-SECTION-ROLES">Mes rôles</div>' +
                 '<p class="JUM-R-AIDE">Vous êtes missionnaire. Si un ou plusieurs de ces rôles vous ont été confiés, cochez-les (vous pouvez les avoir tous) : chaque code, remis par l\'administrateur, est demandé une seule fois.</p>' +
                 caseRole('VAL1', 'valideur1', '<b>VALIDEUR 1</b> (chef de service)', 'Code VALIDEUR 1') +
                 caseRole('VAL2', 'valideur2', '<b>VALIDEUR 2</b>', 'Code VALIDEUR 2') +
@@ -682,7 +742,7 @@
                 caseRole('CHORUS', 'chorus', '<b>ASSIST CHORUS DT</b>', 'Code ASSIST CHORUS DT') +
                 '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>' +
                 // Absence (valideur, assistant Chorus DT déjà actifs, compte TRIGONE actif) : remplaçant jusqu'à une date.
-                (!premiere && monCompte() && ['valideur1', 'valideur2', 'chorus'].some(roleActif) ? '<div class="JUM-R-TITRE">Absence</div>' +
+                (!premiere && monCompte() && ['valideur1', 'valideur2', 'chorus'].some(roleActif) ? '<div class="JUM-R-TITRE" id="JUM-R-SECTION-ABSENCE">Absence</div>' +
                     '<p class="JUM-R-AIDE">En permission ou en mission ? Indiquez votre <b>remplaçant</b> (il doit avoir un compte TRIGONE et le même rôle) : jusqu\'à la date choisie, tout ce qui vous est envoyé part directement chez lui, et l\'expéditeur en est informé.</p>' +
                     '<div id="JUM-R-ABS-ETAT" class="JUM-R-AIDE"></div>' +
                     '<div class="JUM-R-GRILLE">' + champ('ABSMAIL', 'Mail du remplaçant', '', 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
@@ -716,6 +776,9 @@
         });
         majCasesRoles(null);
         if (document.getElementById('JUM-R-ABS-OK')) initAbsence();
+        // Ouvert depuis le menu du compte (« Mes rôles », « Absence ») : la fenêtre s'ouvre sur la bonne rubrique.
+        var ancre = opts.section && document.getElementById('JUM-R-SECTION-' + opts.section.toUpperCase());
+        if (ancre) setTimeout(function() { ancre.scrollIntoView({ block: 'start' }); }, 60);
     };
     // Absence : état actuel (lu sur le serveur), déclaration et fin.
     function initAbsence() {
@@ -895,6 +958,11 @@
                 premiere ? 'C\'est prêt : vos informations pré-rempliront Mise en route et Compte-rendu.' : 'Réglages enregistrés.');
             if (changes.length && window.JUMELAGE_ROLES_CHANGES) try { window.JUMELAGE_ROLES_CHANGES(); } catch (e) {}
             if (window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
+            majBoutonsCompte();
+            if (profilApresConnexion) {
+                profilApresConnexion = false;
+                if (monCompte() && (notifEtat() === 'a-demander' || notifEtat() === 'autorisee')) setTimeout(window.JUMELAGE_COMPTE, 2900); else suivreNotif();
+            }
         });
         }, function(message) { refuser(message); });
     };
@@ -1353,10 +1421,10 @@
             '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_ENVOI_CR()">✕</button></div>';
         if (!compte || !o.destinataire) {
             fenCr.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS"><p class="JUM-R-AIDE" style="margin-top:14px;">' +
-                (!compte ? 'Pour envoyer votre compte-rendu, activez d\'abord votre <b>compte TRIGONE</b> (votre adresse mail, vérifiée par un code) : une seule fois, sur cet appareil.'
-                    : 'Renseignez d\'abord le <b>mail de l\'assistant Chorus DT</b> dans les Réglages TRIGONE (roue crantée de l\'écran de choix).') + '</p></div>' +
+                (!compte ? 'Pour envoyer votre compte-rendu, <b>connectez-vous</b> d\'abord à TRIGONE (votre adresse mail professionnelle, vérifiée par un code) : une seule fois, sur cet appareil.'
+                    : 'Renseignez d\'abord le <b>mail de l\'assistant Chorus DT</b> dans <b>Mon profil</b> (bouton de compte en haut à droite).') + '</p></div>' +
                 '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_ENVOI_CR()">Fermer</button>' +
-                '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-CR-ALLER">' + (!compte ? 'Activer mon compte TRIGONE' : 'Ouvrir les réglages') + '</button></div></div>';
+                '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-CR-ALLER">' + (!compte ? 'Se connecter' : 'Ouvrir mon profil') + '</button></div></div>';
             document.body.appendChild(fenCr);
             fenCr.querySelector('#JUM-CR-ALLER').addEventListener('click', function() { window.JUMELAGE_FERMER_ENVOI_CR(); if (!compte) window.JUMELAGE_COMPTE(); else window.JUMELAGE_REGLAGES(); });
             return;
@@ -1414,7 +1482,7 @@
                 if (o.succes) o.succes(r || {});
             }).catch(function(e) {
                 btn.disabled = false; btn.textContent = 'Envoyer';
-                err.textContent = '⛔ ' + (e.pasDeCompte ? o.destinataire + ' n\'a pas encore de compte TRIGONE : demandez-lui de l\'activer (roue crantée › Compte TRIGONE), puis renvoyez votre compte-rendu.' : (e.message || String(e)));
+                err.textContent = '⛔ ' + (e.pasDeCompte ? o.destinataire + ' n\'a pas encore de compte TRIGONE : demandez-lui de se connecter (bouton « Se connecter » en haut à droite), puis renvoyez votre compte-rendu.' : (e.message || String(e)));
             });
         });
     };
@@ -1505,6 +1573,7 @@
             b.classList.toggle('muet', notifMuet()); b.innerHTML = htmlCloche();
             b.title = notifMuet() ? 'Notifications coupées sur cet appareil : touchez pour les rétablir' : 'Notifications actives sur cet appareil : touchez pour les couper ici';
         });
+        majBoutonsCompte();
         var c = document.getElementById('JUM-C-MUET');
         if (c) c.textContent = notifMuet() ? '🔔 Rétablir les notifications sur cet appareil' : '🔕 Couper les notifications sur cet appareil';
     }
@@ -1699,7 +1768,7 @@
             var rl = lireJSON(CLE_ROLES_LOCAUX) || {};
             setTimeout(function() { annoncer('Appareil relié', 'Cet appareil est relié à votre compte TRIGONE : identité, mails, rôles, code d\'accès, demandes et bibliothèque ont été recopiés.' +
                 (rl.valideur1 || rl.valideur2 ? ' Votre code VALIDEUR vous sera redemandé une fois, à la première signature sur cet appareil.' : '') +
-                ' Pensez à activer les notifications ici aussi (roue crantée › Compte TRIGONE).', 'ok', 'ok'); }, 2500);
+                ' Pensez à activer les notifications ici aussi (bouton de compte en haut à droite › Notifications).', 'ok', 'ok'); }, 2500);
         }
     } catch (e) {}
     document.addEventListener('visibilitychange', function() { if (monCompte()) { releveAuto(); if (document.visibilityState === 'visible') window.JUMELAGE_SUIVI_ACTUALISER(); } });
@@ -1708,8 +1777,11 @@
     // Fenêtre « Compte TRIGONE » : activer (mail pro → code reçu), état, déconnexion de l'appareil.
     var fenCompte = null;
     window.JUMELAGE_FERMER_COMPTE = function() { if (fenCompte) { fenCompte.remove(); fenCompte = null; } };
-    window.JUMELAGE_COMPTE = function() {
+    window.JUMELAGE_COMPTE = function(opts) {
+        opts = opts || {};
         if (fenCompte || !document.body) return;
+        // Pas encore connecté : la fenêtre « Se connecter » (première connexion, ou code de liaison).
+        if (!monCompte()) { window.JUMELAGE_CONNEXION(opts); return; }
         var c = monCompte(), r = lireReglages();
         fenCompte = document.createElement('div');
         fenCompte.className = 'JUM-REGLAGES';
@@ -1725,7 +1797,7 @@
                 '<div class="JUM-R-TITRE">Autres appareils</div>' +
                 '<p class="JUM-R-AIDE">Installer TRIGONE sur votre PC ou votre téléphone sans tout refaire : touchez le bouton, puis saisissez le code sur l\'autre appareil (à sa première ouverture, ou dans son Compte TRIGONE).</p>' +
                 '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-LIAISON" style="margin:4px 0 0; width:100%;">📲 Ajouter un autre appareil</button><div id="JUM-C-LIAISON-ZONE"></div>' +
-                '<button type="button" class="JUM-R-LIEN" id="JUM-C-DECO">Déconnecter cet appareil</button>' +
+                '<button type="button" class="JUM-R-LIEN" id="JUM-C-DECO">Se déconnecter (garder les données)</button>' +
                 '<button type="button" class="JUM-R-LIEN" id="JUM-C-EFFACER" style="color:#b91c1c;">Me déconnecter et effacer cet appareil</button><p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
                 '<div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_COMPTE()">Fermer</button></div></div>';
             document.body.appendChild(fenCompte);
@@ -1762,7 +1834,7 @@
                 if (minuteur) clearInterval(minuteur);
                 window.JUMELAGE_LIAISON_CREER().then(function(l) {
                     zone.innerHTML = '<div class="JUM-LIAISON-CODE">' + l.code + '</div><div class="JUM-LIAISON-TEMPS" id="JUM-C-LIAISON-T"></div>' +
-                        '<p class="JUM-R-AIDE">Sur l\'autre appareil, ouvrez TRIGONE : à la première ouverture, « Déjà TRIGONE sur votre téléphone ou votre PC ? » ; sinon roue crantée › Compte TRIGONE › « Utiliser un code de liaison ». Code à usage unique : ne le communiquez à personne.' +
+                        '<p class="JUM-R-AIDE">Sur l\'autre appareil, ouvrez TRIGONE : bouton « Se connecter » en haut à droite › « J\'ai déjà TRIGONE sur un autre appareil ». Code à usage unique : ne le communiquez à personne.' +
                         (l.sansPieces ? ' <b>Pièces jointes trop lourdes : elles restent sur cet appareil</b> (le reste est copié).' : '') + '</p>';
                     var t = fenCompte.querySelector('#JUM-C-LIAISON-T');
                     var maj = function() {
@@ -1775,38 +1847,65 @@
                 }).catch(function(e) { zone.innerHTML = '<p class="JUM-R-ERREUR">⛔ ' + esc(e.message) + '</p>'; }).then(function() { b.disabled = false; });
             });
             // Déconnexion complète : le compte quitte l'appareil et toutes les données TRIGONE en sont effacées.
-            fenCompte.querySelector('#JUM-C-EFFACER').addEventListener('click', function() {
-                var texte = 'Cet appareil sera déconnecté de votre compte TRIGONE et TOUTES ses données TRIGONE seront effacées (demandes, bibliothèque, comptes-rendus, réglages, code d\'accès).\n\n' +
-                    'Pour tout retrouver ensuite : un code de liaison depuis votre autre appareil (Compte TRIGONE › « Ajouter un autre appareil »), ou une sauvegarde. Sans autre appareil ni sauvegarde, les données seront perdues.';
-                var go = function() { appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() { cleIdb('effacer').catch(function() {}).then(toutEffacer); }); };
-                if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Se déconnecter et effacer ?', texte, 'Oui, déconnecter et effacer', go, '⚠️', 'mascotte-poubelle.webp', true);
-                else if (window.confirm(texte)) go();
-            });
-            fenCompte.querySelector('#JUM-C-DECO').addEventListener('click', function() {
-                if (!window.confirm('Déconnecter cet appareil ? Il ne pourra plus envoyer ni recevoir d\'envois TRIGONE.')) return;
-                appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() {
-                    try { localStorage.removeItem(CLE_COMPTE); localStorage.removeItem(CLE_MUET); } catch (e) {}
-                    cleIdb('effacer').catch(function() {});
-                    window.JUMELAGE_FERMER_COMPTE(); bandeau('Appareil déconnecté du compte TRIGONE.');
-                });
-            });
+            fenCompte.querySelector('#JUM-C-EFFACER').addEventListener('click', deconnecterEtEffacer);
+            fenCompte.querySelector('#JUM-C-DECO').addEventListener('click', deconnecter);
+            if (opts.liaison) fenCompte.querySelector('#JUM-C-LIAISON').click();
             return;
         }
-        fenCompte.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS">' +
-            '<div class="JUM-R-TITRE">1. Votre adresse mail</div>' +
+    };
+    // Fenêtre « Se connecter » (bouton de compte en haut à droite) : première connexion (mail professionnel → code
+    // reçu par mail), ou « J'ai déjà TRIGONE sur un autre appareil » (code de liaison, rien à ressaisir).
+    // opts.premiere : proposée à la première ouverture, refermable (« Plus tard »).
+    var CLE_CONNEXION_PROPOSEE = 'trigone_connexion_proposee', profilApresConnexion = false;
+    window.JUMELAGE_CONNEXION = function(opts) {
+        opts = opts || {};
+        if (fenCompte || !document.body) return;
+        if (monCompte()) { window.JUMELAGE_COMPTE(opts); return; }
+        var r = lireReglages();
+        fenCompte = document.createElement('div');
+        fenCompte.className = 'JUM-REGLAGES JUM-CONNEXION';
+        fenCompte.setAttribute('role', 'dialog');
+        var fermer = function() {
+            window.JUMELAGE_FERMER_COMPTE();
+            if (opts.premiere && window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
+        };
+        fenCompte.innerHTML = '<div class="JUM-R-CARTE">' +
+            '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : '') + '</span><div><h2>Se connecter à TRIGONE</h2>' +
+                '<p>Un compte à votre adresse professionnelle : vos demandes et comptes-rendus arrivent directement dans TRIGONE, chiffrés. Seul le destinataire peut les lire.</p></div>' +
+                '<button type="button" class="JUM-R-X" aria-label="Fermer" id="JUM-C-X">✕</button></div>' +
+            '<div class="JUM-R-CORPS">' +
+            '<div class="JUM-CX-ONGLETS" role="tablist"><button type="button" role="tab" class="actif" data-onglet="mail">Première connexion</button>' +
+                '<button type="button" role="tab" data-onglet="liaison">J\'ai déjà TRIGONE sur un autre appareil</button></div>' +
+            '<div data-volet="mail">' +
+            '<div class="JUM-R-TITRE">1. Votre adresse professionnelle</div>' +
             '<div class="JUM-R-CHAMP"><label for="JUM-C-MAIL">Adresse mail</label><input id="JUM-C-MAIL" type="email" autocomplete="email" value="' + esc(r.monMail || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr"></div>' +
             '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-ENVOI" style="margin:12px 0 0;">Recevoir le code par mail</button>' +
             '<div id="JUM-C-ETAPE2" style="display:none;"><div class="JUM-R-TITRE">2. Code reçu par mail</div>' +
                 '<div class="JUM-R-CHAMP"><label for="JUM-C-CODE">Code à 6 chiffres</label><input id="JUM-C-CODE" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••"></div>' +
                 '<p class="JUM-R-AIDE" style="margin-top:8px;">Pas reçu ? Regardez dans les courriers indésirables, ou redemandez un code.</p></div>' +
             '<p class="JUM-R-ERREUR" id="JUM-C-ERR"></p>' +
-            '<details class="JUM-LIAISON-BLOC" style="margin-top:12px;"><summary>📲 Compte déjà actif sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
-                '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : Compte TRIGONE › <b>« Ajouter un autre appareil »</b>, puis saisissez le code ici. Pas de mail à attendre ; les données de l\'autre appareil remplacent celles d\'ici.</p>' +
-                htmlSaisieLiaison() + '</details></div>' +
-            '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_COMPTE()">Annuler</button>' +
-            '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-VALIDER" disabled>Activer</button></div></div>';
+            (window.JUMELAGE_REGLAGES_FAITS() ? '' : '<p class="JUM-R-AIDE" style="margin-top:10px;">Ensuite, TRIGONE vous demande une seule fois votre identité (grade, nom, compagnie…) et vos destinataires.</p>') +
+            '</div>' +
+            '<div data-volet="liaison" style="display:none;">' +
+                '<p class="JUM-R-AIDE" style="margin-top:12px;">Sur l\'appareil où TRIGONE est déjà installé : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés. Pas de mail à attendre.</p>' +
+                htmlSaisieLiaison() + '</div>' +
+            '<button type="button" class="JUM-CX-SANS" id="JUM-C-SANS">Pas de réseau pour l\'instant ? Remplir mon profil sans compte</button>' +
+            '</div>' +
+            '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" id="JUM-C-PLUSTARD">' + (opts.premiere ? 'Plus tard' : 'Annuler') + '</button>' +
+            '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-VALIDER" disabled>Se connecter</button></div></div>';
         document.body.appendChild(fenCompte);
         brancherSaisieLiaison(fenCompte, lireTxt('mer_config_faite') === '1' || lireTxt('trigone_premier_lancement_fait') === '1');
+        fenCompte.querySelector('#JUM-C-X').addEventListener('click', fermer);
+        fenCompte.querySelector('#JUM-C-PLUSTARD').addEventListener('click', fermer);
+        fenCompte.querySelector('#JUM-C-SANS').addEventListener('click', function() { window.JUMELAGE_FERMER_COMPTE(); window.JUMELAGE_REGLAGES(); });
+        Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-CX-ONGLETS button'), function(b) {
+            b.addEventListener('click', function() {
+                var o = b.getAttribute('data-onglet');
+                Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-CX-ONGLETS button'), function(x) { x.classList.toggle('actif', x === b); });
+                Array.prototype.forEach.call(fenCompte.querySelectorAll('[data-volet]'), function(v) { v.style.display = v.getAttribute('data-volet') === o ? '' : 'none'; });
+                fenCompte.querySelector('#JUM-C-VALIDER').style.display = o === 'mail' ? '' : 'none';
+            });
+        });
         var err = fenCompte.querySelector('#JUM-C-ERR'), champMail = fenCompte.querySelector('#JUM-C-MAIL'), mailDemande = '';
         var btnEnvoi = fenCompte.querySelector('#JUM-C-ENVOI'), btnValider = fenCompte.querySelector('#JUM-C-VALIDER');
         serviceDisponible().then(function(ok) {
@@ -1843,12 +1942,135 @@
                     if (window.JUMELAGE_APRES_COMPTE) try { window.JUMELAGE_APRES_COMPTE(); } catch (e) {}
                     declarerRoles();
                     window.JUMELAGE_RELEVER();
+                    majBoutonsCompte();
+                    // Première connexion : l'identité est demandée une fois (« Compléter mon profil »), puis les notifications.
+                    if (!window.JUMELAGE_REGLAGES_FAITS()) { profilApresConnexion = true; setTimeout(function() { window.JUMELAGE_REGLAGES({ premiere: true, profil: true }); }, 500); return; }
                     // Compte actif : la fenêtre se rouvre pour proposer les notifications (sur un geste de l'utilisateur).
                     if (notifEtat() === 'a-demander' || notifEtat() === 'autorisee') setTimeout(window.JUMELAGE_COMPTE, 600); else suivreNotif();
                 });
             }).catch(function(e) { err.textContent = '⛔ ' + e.message; btnValider.disabled = false; });
         });
     };
+    // ---------- Déconnexion ----------
+    // Se déconnecter : l'appareil quitte le compte (plus d'envois ni de réception), ses données restent.
+    function deconnecter() {
+        var go = function() {
+            appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() {
+                try { localStorage.removeItem(CLE_COMPTE); localStorage.removeItem(CLE_MUET); } catch (e) {}
+                cleIdb('effacer').catch(function() {});
+                window.JUMELAGE_FERMER_COMPTE(); majBoutonsCompte();
+                bandeau('Déconnecté : vos données restent sur cet appareil. « Se connecter », en haut à droite, pour reprendre.');
+            });
+        };
+        var texte = 'Cet appareil ne pourra plus envoyer ni recevoir d\'envois TRIGONE. Vos demandes, comptes-rendus et réglages restent sur l\'appareil.';
+        if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Se déconnecter ?', texte, 'Oui, me déconnecter', go, '⚠️', null, true);
+        else if (window.confirm(texte)) go();
+    }
+    // Se déconnecter et effacer : le compte quitte l'appareil et toutes les données TRIGONE en sont effacées.
+    function deconnecterEtEffacer() {
+        var texte = 'Cet appareil sera déconnecté de votre compte TRIGONE et TOUTES ses données TRIGONE seront effacées (demandes, bibliothèque, comptes-rendus, réglages, code d\'accès).\n\n' +
+            'Pour tout retrouver ensuite : un code de liaison depuis votre autre appareil (bouton de compte en haut à droite › « Ajouter un appareil »), ou une sauvegarde. Sans autre appareil ni sauvegarde, les données seront perdues.';
+        var go = function() { appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() { cleIdb('effacer').catch(function() {}).then(toutEffacer); }); };
+        if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Se déconnecter et effacer ?', texte, 'Oui, déconnecter et effacer', go, '⚠️', 'mascotte-poubelle.webp', true);
+        else if (window.confirm(texte)) go();
+    }
+
+    // ---------- Mon compte : bouton en haut à droite ----------
+    // Pas connecté : « Se connecter ». Connecté : initiales, grade et nom, point d'état des notifications
+    // (vert : actives ; orange : coupées sur cet appareil ; gris : pas activées). Un toucher ouvre le menu du compte.
+    var LIBELLES_ROLES = { valideur1: 'VALIDEUR 1', valideur2: 'VALIDEUR 2', chorus: 'ASSIST CHORUS DT' };
+    function initiales() {
+        var r = lireReglages(), c = monCompte();
+        var i = ((r.prenom || '').charAt(0) + (r.nom || '').charAt(0)).toUpperCase();
+        return i || (c ? c.mail.charAt(0).toUpperCase() : '?');
+    }
+    function nomCompte() {
+        var r = lireReglages(), c = monCompte();
+        return [r.grade, r.nom].filter(Boolean).join(' ') || (c ? c.mail.split('@')[0] : '');
+    }
+    function etatPoint() { return notifEtat() !== 'active' ? 'off' : notifMuet() ? 'muet' : 'ok'; }
+    function htmlBoutonCompte() {
+        if (!monCompte()) return (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : '') + '<span class="JUM-CPT-NOM">Se connecter</span>';
+        return '<span class="JUM-AV">' + esc(initiales()) + '</span><span class="JUM-CPT-NOM">' + esc(nomCompte()) + '</span><i class="JUM-CPT-PT ' + etatPoint() + '"></i>';
+    }
+    function titreBoutonCompte() {
+        if (!monCompte()) return 'Se connecter à TRIGONE';
+        var e = etatPoint();
+        return 'Mon compte (' + monCompte().mail + ') — notifications ' + (e === 'ok' ? 'actives' : e === 'muet' ? 'coupées sur cet appareil' : 'non activées');
+    }
+    function majBoutonsCompte() {
+        Array.prototype.forEach.call(document.querySelectorAll('.JUM-CPT'), function(b) {
+            b.classList.toggle('deconnecte', !monCompte());
+            b.innerHTML = htmlBoutonCompte(); b.title = titreBoutonCompte(); b.setAttribute('aria-label', titreBoutonCompte());
+        });
+    }
+    window.JUMELAGE_MAJ_COMPTE = majBoutonsCompte;
+    function creerBoutonCompte(classe) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'JUM-CPT' + (classe ? ' ' + classe : '') + (monCompte() ? '' : ' deconnecte');
+        b.innerHTML = htmlBoutonCompte(); b.title = titreBoutonCompte(); b.setAttribute('aria-label', titreBoutonCompte());
+        ['pointerdown', 'pointerup'].forEach(function(t) { b.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        b.addEventListener('click', function(e) { e.stopPropagation(); if (monCompte()) ouvrirMenuCompte(b); else window.JUMELAGE_CONNEXION(); });
+        return b;
+    }
+    // Dans Mise en route et Compte-rendu : le même bouton, sur la page d'accueil de l'appli (appelé à chaque changement de page).
+    var boutonAppli = null;
+    window.JUMELAGE_BOUTON_APPLI = function(visible) {
+        if (!document.body) return;
+        if (!boutonAppli) { boutonAppli = creerBoutonCompte('JUM-CPT-APPLI'); document.body.appendChild(boutonAppli); }
+        boutonAppli.style.display = visible ? '' : 'none';
+        if (!visible) fermerMenuCompte(); else majBoutonsCompte();
+    };
+    function fermerMenuCompte() { var m = document.querySelector('.JUM-CPT-MENU'); if (m) { m.remove(); return true; } return false; }
+    window.JUMELAGE_FERMER_MENU_COMPTE = fermerMenuCompte;
+    function ouvrirMenuCompte(bouton) {
+        if (fermerMenuCompte()) return;
+        var c = monCompte(); if (!c) return;
+        var ic = function(n) { return window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE(n) : ''; };
+        var roles = rolesLocaux(), aRole = Object.keys(roles).length > 0, e = notifEtat();
+        var m = document.createElement('div');
+        m.className = 'JUM-CPT-MENU'; m.setAttribute('role', 'menu');
+        m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">' + esc(initiales()) + '</span><div><b>' + esc([lireReglages().grade, lireReglages().nom, lireReglages().prenom].filter(Boolean).join(' ') || nomCompte()) + '</b><small>' + esc(c.mail) + '</small></div></div>' +
+            '<div class="JUM-CPT-ROLES"><span>MISSIONNAIRE</span>' + Object.keys(LIBELLES_ROLES).filter(function(k) { return roles[k]; }).map(function(k) { return '<span class="' + (k === 'chorus' ? 'or' : '') + '">' + LIBELLES_ROLES[k] + '</span>'; }).join('') + '</div>' +
+            '<div class="JUM-CPT-SEP"></div>' +
+            '<button type="button" data-action="profil">' + ic('personne') + '<span><b>Mon profil</b><small>Identité, destinataires, code d\'accès</small></span></button>' +
+            '<button type="button" data-action="roles">' + ic('groupe') + '<span><b>Mes rôles</b><small>' + (aRole ? 'Valideur, assistant Chorus DT : gérer' : 'Ajouter un rôle avec son code') + '</small></span></button>' +
+            (aRole ? '<button type="button" data-action="absence">' + ic('sablier') + '<span><b>Absence</b><small>Désigner un remplaçant</small></span></button>' : '') +
+            '<button type="button" data-action="notif">' + ic('cloche') + '<span><b>Notifications</b><small>' + (e === 'active' ? (notifMuet() ? 'Coupées sur cet appareil' : 'Actives sur cet appareil') + ' · tester' : 'Les activer sur cet appareil') + '</small></span></button>' +
+            (e === 'active' ? '<button type="button" data-action="muet">' + ic('cloche') + '<span><b>' + (notifMuet() ? 'Rétablir les notifications ici' : 'Couper les notifications ici') + '</b><small>Vos autres appareils ne changent pas</small></span></button>' : '') +
+            '<button type="button" data-action="appareil">' + ic('telephone') + '<span><b>Ajouter un appareil</b><small>PC ou téléphone, sans rien ressaisir</small></span></button>' +
+            '<div class="JUM-CPT-SEP"></div>' +
+            '<button type="button" data-action="deco">' + ic('exporter') + '<span><b>Se déconnecter</b><small>Vos données restent sur l\'appareil</small></span></button>' +
+            '<button type="button" data-action="effacer" class="JUM-CPT-DANGER">' + CORBEILLE_SVG + '<span><b>Se déconnecter et effacer</b><small>Retirer le compte et les données de cet appareil</small></span></button>';
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { m.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
+        m.addEventListener('click', function(ev) {
+            var b = ev.target.closest('button'); if (!b) return;
+            m.remove();
+            var a = b.getAttribute('data-action');
+            if (a === 'profil') window.JUMELAGE_REGLAGES();
+            else if (a === 'roles') window.JUMELAGE_REGLAGES({ section: 'roles' });
+            else if (a === 'absence') window.JUMELAGE_REGLAGES({ section: 'absence' });
+            else if (a === 'notif') window.JUMELAGE_COMPTE();
+            else if (a === 'muet') window.JUMELAGE_NOTIF_MUET();
+            else if (a === 'appareil') window.JUMELAGE_COMPTE({ liaison: true });
+            else if (a === 'deco') deconnecter();
+            else if (a === 'effacer') deconnecterEtEffacer();
+        });
+        var rect = bouton.getBoundingClientRect();
+        m.style.top = Math.round(rect.bottom + 8) + 'px';
+        m.style.right = Math.max(12, Math.round(window.innerWidth - rect.right)) + 'px';
+        document.body.appendChild(m);
+        // Menu sous un bouton placé à gauche (menu PC) : il s'aligne à gauche du bouton.
+        if (rect.left < window.innerWidth / 2) { m.style.right = 'auto'; m.style.left = Math.max(12, Math.round(rect.left)) + 'px'; }
+        setTimeout(function() {
+            document.addEventListener('click', function fermer(ev) {
+                if (!document.body.contains(m)) { document.removeEventListener('click', fermer, true); return; }
+                if (m.contains(ev.target) || bouton.contains(ev.target)) return;
+                m.remove(); document.removeEventListener('click', fermer, true);
+            }, true);
+        }, 0);
+    }
+
     // ---------- Déménagement : l'adresse officielle de TRIGONE est celle de Cloudflare ----------
     // L'ancienne adresse (GitHub Pages) ne sert plus qu'à publier. Le navigateur range les données par adresse :
     // à l'ancienne, TRIGONE propose de les transférer (fenêtre ouverte sur la nouvelle adresse, échange direct
@@ -1935,10 +2157,8 @@
         if (!ecran) return;
         m = document.createElement('div');
         m.className = 'JUM-ROUE-MENU';
-        m.innerHTML = '<button type="button" data-action="reglages">' + ROUE_SVG + '<span><b>Réglages TRIGONE</b><small>Identité, mails, code d\'accès</small></span></button>' +
-            '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>' +
+        m.innerHTML = '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>' +
             '<button type="button" data-action="signaler">' + window.JUMELAGE_ICONE('bouee') + '<span><b>Signaler un problème</b><small>Écrire à l\'équipe TRIGONE</small></span></button>' +
-            '<button type="button" data-action="compte">' + window.JUMELAGE_ICONE('mail') + '<span><b>Compte TRIGONE</b><small>' + (monCompte() ? 'Actif : ' + esc(monCompte().mail) : 'Envois directs et chiffrés') + '</small></span></button>' +
             '<div class="JUM-ROUE-SEP"></div>' +
             '<button type="button" data-action="sauvegarder">' + window.JUMELAGE_ICONE('disquette') + '<span><b>Sauvegarder mes données</b><small>Un fichier pour tout TRIGONE</small></span></button>' +
             '<button type="button" data-action="restaurer">' + window.JUMELAGE_ICONE('importer') + '<span><b>Restaurer une sauvegarde</b><small>Remettre en place un fichier de sauvegarde</small></span></button>' +
@@ -2362,13 +2582,14 @@
             '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
             // Assistant Chorus DT : son logo au centre, sur la diagonale, entre Mise en route et Compte-rendu.
             (roleChorus() ? '<button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button>' : '') +
-            '<button type="button" class="JUM-ROUE" aria-label="Réglages et présentation de TRIGONE" title="Réglages TRIGONE · Découvrir TRIGONE">' + ROUE_SVG + '</button>' +
+            '<button type="button" class="JUM-ROUE" aria-label="Présentation, aide et sauvegarde de TRIGONE" title="Découvrir TRIGONE · Signaler un problème · Sauvegarde">' + ROUE_SVG + '</button>' +
             // Numéro de version, en haut à droite (le même dans les deux applis).
             (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '') +
             // Mise à jour, en bas à gauche (pendant de la roue crantée).
-            '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>' +
-            // Notifications de cet appareil (compte actif, notifications activées) : les couper ici, ou les rétablir.
-            (monCompte() && notifEtat() === 'active' ? '<button type="button" class="JUM-CLOCHE' + (notifMuet() ? ' muet' : '') + '" aria-label="Notifications de cet appareil">' + htmlCloche() + '</button>' : '');
+            '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>';
+        // Mon compte, en haut à droite : « Se connecter », ou la pastille du compte et son menu.
+        ecran.appendChild(creerBoutonCompte());
+        majBoutonsCompte();
         majPastilleHub();
         var btnChorus = ecran.querySelector('.JUM-CHORUS');
         if (btnChorus) {
@@ -2381,15 +2602,10 @@
         var majBtn = ecran.querySelector('.JUM-MAJ-BTN');
         ['pointerdown', 'pointerup'].forEach(function(t) { majBtn.addEventListener(t, function(e) { e.stopPropagation(); }); });
         majBtn.addEventListener('click', function(e) { e.stopPropagation(); verifierMajManuelle(); });
-        var cloche = ecran.querySelector('.JUM-CLOCHE');
-        if (cloche) {
-            ['pointerdown', 'pointerup'].forEach(function(t) { cloche.addEventListener(t, function(e) { e.stopPropagation(); }); });
-            cloche.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_NOTIF_MUET(); });
-            majCloches();
-        }
         ecran.addEventListener('click', function(e) {
             var menu = document.querySelector('.JUM-ROUE-MENU');
             if (menu) { menu.remove(); return; }
+            if (fermerMenuCompte()) return;
             choisir(coteDuPoint(e.clientX, e.clientY));
         });
         ecran.addEventListener('pointerdown', function(e) {
