@@ -14,6 +14,22 @@ module.exports = async function() {
     const MAILS = { M: 'demandeur.' + suffixe + '@interieur.gouv.fr', V1: 'chef.' + suffixe + '@interieur.gouv.fr',
         V2: 'colonel.' + suffixe + '@interieur.gouv.fr', C: 'chorus.' + suffixe + '@interieur.gouv.fr' };
 
+    const MAILS_M = MAILS.M;
+    // Première ouverture d'un appareil neuf : présentation, puis « Se connecter » proposé (refermable) ; plus de réglages imposés.
+    {
+        const ctx = await b.newContext({ viewport: { width: 480, height: 1000 } }); const f = await ctx.newPage();
+        f.on('pageerror', e => erreurs.push('neuf : ' + e.message));
+        await f.goto(URL); await attendre(3500);
+        await f.click('.JUM-PRES-BTN'); await attendre(1200);
+        verifier(await f.isVisible('.JUM-CONNEXION #JUM-C-MAIL') && (await f.textContent('.JUM-CX-ONGLETS')).includes('autre appareil') && !(await f.$('.JUM-REGLAGES:not(.JUM-CONNEXION)')),
+            'première ouverture : « Se connecter » proposé (mail ou code de liaison), sans réglages imposés');
+        await f.click('#JUM-C-PLUSTARD'); await attendre(600);
+        verifier(!(await f.$('.JUM-REGLAGES')) && (await f.textContent('.JUM-CHOIX .JUM-CPT')).includes('Se connecter'),
+            'première ouverture : « Plus tard » → écran d\'accueil libre, « Se connecter » en haut à droite');
+        await f.reload(); await attendre(3500);
+        verifier(!(await f.$('.JUM-REGLAGES')), 'réouverture : la connexion n\'est plus imposée');
+        await ctx.close();
+    }
     async function appareil(nom) {
         const ctx = await b.newContext({ acceptDownloads: true, viewport: { width: 480, height: 1000 } });
         const p = await ctx.newPage();
@@ -31,6 +47,17 @@ module.exports = async function() {
         await attendre(800);
         if (nom === 'M') verifier(await p.isVisible('#JUM-C-NOTIF'), 'après activation : « Activer les notifications » proposé');
         await p.evaluate(() => JUMELAGE_FERMER_COMPTE());
+        if (nom === 'M') {
+            // Bouton de compte (accueil de l'appli) : pastille « grade nom », menu du compte.
+            await p.evaluate(() => SHOW_PAGE('ACCUEIL')); await attendre(300);
+            verifier(await p.evaluate(() => { const b = document.querySelector('.JUM-CPT-APPLI'); return !!b && !b.classList.contains('deconnecte') && b.textContent.includes('ADJ TEST'); }),
+                'bouton de compte : connecté, « ADJ TEST » affiché');
+            await p.click('.JUM-CPT-APPLI'); await attendre(400);
+            const menu = await p.evaluate(() => (document.querySelector('.JUM-CPT-MENU') || {}).textContent || '');
+            verifier(['Mon profil', 'Mes rôles', 'Notifications', 'Ajouter un appareil', 'Se déconnecter'].every(t => menu.includes(t)) && menu.includes(MAILS_M),
+                'menu du compte : profil, rôles, notifications, appareils, déconnexion');
+            await p.evaluate(() => JUMELAGE_FERMER_MENU_COMPTE());
+        }
         return p;
     }
     async function connecter(p, code, nom) {

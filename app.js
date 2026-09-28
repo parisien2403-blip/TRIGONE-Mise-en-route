@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 128;
+var APP_CODE_VERSION = 129;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -159,6 +159,8 @@ function SHOW_PAGE(page) {
     if (page !== 'BIBLIOTHEQUE') MER_BIB_SELECTION = null;
     if (page !== PAGE_ACTUELLE) MER_RECU_SELECTION = null;
     PAGE_ACTUELLE = page;
+    // Bouton de compte (jumelage.js) : sur l'accueil seulement.
+    if (window.JUMELAGE_BOUTON_APPLI) JUMELAGE_BOUTON_APPLI(page === 'ACCUEIL');
     var zone = document.getElementById('PAGE-STAGE');
     zone.classList.toggle('avec-marge', page !== 'ACCUEIL');
     if (page === 'ACCUEIL') zone.innerHTML = TPL_ACCUEIL();
@@ -546,9 +548,9 @@ function TPL_MON_ESPACE() {
             'oninput="SET_REGLAGE(\'' + k + '\', this.value)">' + (hint ? '<p class="MER-HINT">' + hint + '</p>' : '') + '</div>';
     }
     return '<div class="CARD"><h2>Mon espace</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Votre identité, vos mails et le code d\'accès se règlent une seule fois pour Mise en route et Compte-rendu, avec la roue crantée de l\'écran de choix.</p>' +
+        '<p class="MER-HINT" style="margin:4px 0 16px;">Votre identité, vos mails et le code d\'accès se règlent une seule fois pour Mise en route et Compte-rendu, dans <b>Mon profil</b> (bouton de compte en haut à droite).</p>' +
         '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_REGLAGES()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg></span>' +
-            '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Réglages TRIGONE</span><span class="NOTICE-CARD-SUB">Identité, mails (1er valideur, assistant Chorus DT) et code d\'accès — communs aux deux applis</span></span>' +
+            '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Mon profil</span><span class="NOTICE-CARD-SUB">Identité, mails (1er valideur, assistant Chorus DT) et code d\'accès — communs aux deux applis</span></span>' +
             '<span class="NOTICE-CARD-CHEV">›</span></button>' +
         '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_COMPTE()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg></span>' +
             '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Compte TRIGONE</span><span class="NOTICE-CARD-SUB">' + (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? 'Actif : ' + ESC(JUMELAGE_COMPTE_MAIL()) + ' — les demandes arrivent directement dans TRIGONE' : 'Envoyer et recevoir les demandes directement dans TRIGONE, chiffrées, sans pièce jointe') + '</span></span>' +
@@ -1330,7 +1332,7 @@ function TPL_PANIER() {
         'oninput="var r=GET_REGLAGES(); r.mailSignataire=this.value; SAVE_REGLAGES(r);" onchange="MER_AFFICHER_ABSENCE(\'MER-ABS-DEST\', this.value)"></div>' +
         '<div id="MER-ABS-DEST"></div>' +
         '<p class="MER-HINT" style="margin:-4px 0 14px;">' + (MER_COMPTE_ACTIF() ? 'Envoi chiffré, directement dans le TRIGONE du 1er valideur. Un refus éventuel vous revient dans votre Boîte de réception (' + ESC(JUMELAGE_COMPTE_MAIL()) + ').'
-            : 'L\'envoi se fait directement dans TRIGONE : activez d\'abord votre compte TRIGONE (roue crantée › Compte TRIGONE).') + '</p>' +
+            : 'L\'envoi se fait directement dans TRIGONE : connectez-vous d\'abord (bouton « Se connecter » en haut à droite).') + '</p>' +
         '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📨 Envoyer mes documents (' + panier.length + ')</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
     '</div>';
@@ -1772,9 +1774,9 @@ function PROPOSER_INSTALLATION_PREMIERE_FOIS() {
 var MER_NOTICE_CLE = null;
 var MER_NOTICES = {
     DEMANDEUR: { titre: 'Faire une demande', sous: 'Saisie · documents · envoi au 1er valideur', icone: MER_ICONES_NOTICE_PERSO(),
-        etapes: ['<b>Compte TRIGONE</b> (roue crantée › Compte TRIGONE) : activez-le une fois avec votre adresse mail, vérifiée par un code. Tous les envois passent par la <b>boîte TRIGONE</b>, chiffrés : plus de fichier à joindre à un mail.',
-            '<b>Plusieurs appareils</b> (téléphone et PC) : inutile de tout refaire. Sur l\'appareil déjà configuré, Compte TRIGONE › <b>« 📲 Ajouter un autre appareil »</b> affiche un code (valable 15 minutes, une seule fois) ; sur le nouvel appareil, saisissez-le à la première ouverture (« Déjà TRIGONE sur votre téléphone ou votre PC ? ») ou dans son Compte TRIGONE : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés, chiffrés. <b>« Me déconnecter et effacer cet appareil »</b> retire le compte et toutes les données d\'un appareil (PC partagé, appareil rendu) ; un code de liaison depuis l\'autre appareil les remet en place.',
-            '<b>Notifications</b> : dans Compte TRIGONE, « 🔔 Activer les notifications » vous prévient de chaque envoi reçu (demande à signer, refus, compte-rendu), même TRIGONE fermée — PC, Android, et iPhone / iPad avec TRIGONE installée sur l\'écran d\'accueil. Réglages utiles par appareil : rubrique <b>Notifications</b> de la Notice.',
+        etapes: ['<b>Se connecter</b> (bouton <b>en haut à droite</b> de l\'écran d\'accueil) : une fois, avec votre adresse mail professionnelle, vérifiée par un code ; TRIGONE demande ensuite votre profil (identité, destinataires). Un toucher sur votre pastille ouvre le menu du compte : profil, rôles, notifications, appareils, déconnexion. Tous les envois passent par la <b>boîte TRIGONE</b>, chiffrés : plus de fichier à joindre à un mail.',
+            '<b>Plusieurs appareils</b> (téléphone et PC) : inutile de tout refaire. Sur l\'appareil déjà configuré, menu du compte › <b>« Ajouter un appareil »</b> affiche un code (valable 15 minutes, une seule fois) ; sur le nouvel appareil, « Se connecter » › <b>« J\'ai déjà TRIGONE sur un autre appareil »</b> : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés, chiffrés. <b>« Me déconnecter et effacer cet appareil »</b> retire le compte et toutes les données d\'un appareil (PC partagé, appareil rendu) ; un code de liaison depuis l\'autre appareil les remet en place.',
+            '<b>Notifications</b> : menu du compte › <b>Notifications</b> › « 🔔 Activer les notifications » vous prévient de chaque envoi reçu (demande à signer, refus, compte-rendu), même TRIGONE fermée — PC, Android, et iPhone / iPad avec TRIGONE installée sur l\'écran d\'accueil. Réglages utiles par appareil : rubrique <b>Notifications</b> de la Notice.',
             '<b>Mon espace</b> : renseignez une fois votre identité et vos mails, ils pré-remplissent chaque demande.',
             '<b>Nouvelle demande</b> : 5 étapes (Identité, Aller, Retour, Alim./Héb., Imputation). Une étape doit être complète pour passer à la suivante.',
             '<b>Demande collective</b> : « + Ajouter une personne », ou <b>« 📥 Importer une liste »</b> depuis un tableau Excel (.xlsx), Calc (.ods) ou CSV aux colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID (« Télécharger le modèle »). Les personnes déjà présentes ne sont pas dupliquées.',
@@ -1788,14 +1790,14 @@ var MER_NOTICES = {
             'À l\'envoi, la demande quitte Documents pour la <b>Bibliothèque</b>. En cas de refus, elle revient dans votre <b>Boîte de réception</b> avec le motif : « Corriger dans Documents » l\'y range ; corrigez-la avec « Modifier » et renvoyez-la. Tant qu\'elle n\'est pas corrigée, un <b>rappel</b> vous est envoyé après 48 h, puis toutes les 48 h (14 jours au plus) ; « Retirer » la demande de Documents arrête les rappels.',
             'Au retour de mission, <b>TRIGONE Compte-rendu</b> reprend la mission envoyée depuis cet appareil (« À partir d\'une mise en route ») ; sinon, le missionnaire la saisit directement dans Compte-rendu.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Rôle valideur · boîte de réception · signature', icone: MER_ICONES_NOTICE_CADENAS(),
-        etapes: ['<b>Réglages › Mes rôles</b> (roue crantée de l\'écran de choix) : cochez <b>VALIDEUR 1</b> et/ou <b>VALIDEUR 2</b>, saisissez votre fonction et le <b>code</b> de chaque rôle, remis par l\'administrateur. Les rôles sont déclarés à votre compte TRIGONE : votre boîte ne reçoit que les demandes de vos niveaux. Il peut y avoir plusieurs VALIDEUR 1 et plusieurs VALIDEUR 2 ; une même personne peut avoir tous les rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) et rester missionnaire.',
+        etapes: ['<b>Mes rôles</b> (menu du compte, en haut à droite) : cochez <b>VALIDEUR 1</b> et/ou <b>VALIDEUR 2</b>, saisissez votre fonction et le <b>code</b> de chaque rôle, remis par l\'administrateur. Les rôles sont déclarés à votre compte TRIGONE : votre boîte ne reçoit que les demandes de vos niveaux. Il peut y avoir plusieurs VALIDEUR 1 et plusieurs VALIDEUR 2 ; une même personne peut avoir tous les rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) et rester missionnaire.',
             '<b>Les deux rôles valideur ?</b> Dans l\'Espace valideur, la bascule <b>VALIDEUR 1 / VALIDEUR 2</b> choisit le niveau ; une demande ouverte depuis la Boîte de réception passe d\'elle-même au bon niveau. Une personne qui a les deux rôles peut valider les deux niveaux d\'une même demande.',
             'Ou, dans l\'<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Les demandes à signer arrivent dans votre <b>Boîte de réception</b> (pastille rouge) : « Ouvrir et signer » les affiche dans l\'Espace valideur, avec leur <b>aperçu</b> et leurs pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif : le VALIDEUR 1 refuse au demandeur ; le VALIDEUR 2 choisit de <b>renvoyer au VALIDEUR 1</b> ou directement au demandeur. Une demande renvoyée par le VALIDEUR 2 arrive chez le VALIDEUR 1 (« Renvoyée par le VALIDEUR 2 », avec le motif) : il la <b>✎ Corrige</b> à son niveau puis la revalide, la revalide telle quelle, ou la <b>refuse au demandeur</b>. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
             '<b>Transmettre</b> : pour chaque envoi, <b>« 📨 Envoyer »</b>. Le 1er valideur envoie au 2e valideur, le 2e valideur à l\'assistant Chorus DT ; un refus repart vers le demandeur, avec son motif. Chaque envoi arrive, chiffré, dans le TRIGONE du destinataire ; un destinataire qui n\'a pas encore de compte (ou pas le bon rôle) est signalé et l\'envoi attend.',
             'Terminez par « Terminé » une fois tout envoyé : les demandes traitées quittent votre liste.',
-            '<b>Absence</b> (permission, mission) : roue crantée › Réglages TRIGONE › <b>Absence</b> : indiquez le mail de votre remplaçant (compte TRIGONE et même rôle) et la date de retour. Jusqu\'à cette date, tout ce qui vous est envoyé part chez lui, et l\'expéditeur en est informé. « Fin de l\'absence » rétablit les envois dès votre retour. Ce qui était déjà dans votre boîte y reste.',
+            '<b>Absence</b> (permission, mission) : menu du compte (en haut à droite) › <b>Absence</b> : indiquez le mail de votre remplaçant (compte TRIGONE et même rôle) et la date de retour. Jusqu\'à cette date, tout ce qui vous est envoyé part chez lui, et l\'expéditeur en est informé. « Fin de l\'absence » rétablit les envois dès votre retour. Ce qui était déjà dans votre boîte y reste.',
             '<b>Suite de vos demandes</b> : dans la Boîte de réception, section « Traitées », chaque demande que vous avez validée montre sa frise (VALIDEUR 2, assistant Chorus DT) : qui l\'a traitée, quand, et depuis combien de temps elle attend. Si elle est refusée ou renvoyée plus loin dans le circuit, une notification vous prévient.',
             '<b>Rappels</b> : une demande qui vous attend depuis plus de 24 h vous vaut une notification de rappel, puis une par 24 h tant qu\'elle n\'a pas avancé (du lundi au vendredi, de 8 h à 19 h). Le demandeur voit dans son suivi depuis quand elle attend.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
@@ -1810,9 +1812,9 @@ var MER_NOTICES = {
 };
 // Rubrique « Notifications » de la notice (même texte dans TRIGONE Compte-rendu).
 var MER_NOTICE_NOTIF = [
-    '<b>Activer</b> : roue crantée › <b>Compte TRIGONE</b> › « 🔔 Activer les notifications », <b>sur chaque appareil</b> (PC, téléphone, tablette). Vous êtes prévenu de chaque envoi reçu : demande à signer, demande validée, refus ou renvoi, compte-rendu, avec le nombre de demandes.',
-    '<b>Tester</b> : dans Compte TRIGONE, « 🔔 Tester les notifications » envoie une notification à tous vos appareils et affiche le résultat appareil par appareil.',
-    '<b>PC et téléphone à la fois ?</b> Pour ne pas tout recevoir en double, coupez les notifications sur l\'un d\'eux : bouton <b>« Notifications »</b> en haut à gauche de l\'écran de choix (ou Compte TRIGONE › « Couper les notifications sur cet appareil »). Coupées, il affiche <b>« Notifications coupées ici »</b> en orange ; touchez-le pour les rétablir. Vos autres appareils les reçoivent toujours, et la boîte TRIGONE se relève quand vous ouvrez l\'appli.',
+    '<b>Activer</b> : menu du compte (en haut à droite) › <b>Notifications</b> › « 🔔 Activer les notifications », <b>sur chaque appareil</b> (PC, téléphone, tablette). Vous êtes prévenu de chaque envoi reçu : demande à signer, demande validée, refus ou renvoi, compte-rendu, avec le nombre de demandes.',
+    '<b>Tester</b> : menu du compte › Notifications, « 🔔 Tester les notifications » envoie une notification à tous vos appareils et affiche le résultat appareil par appareil.',
+    '<b>PC et téléphone à la fois ?</b> Pour ne pas tout recevoir en double, coupez les notifications sur l\'un d\'eux : menu du compte (en haut à droite) › <b>« Couper les notifications ici »</b>. Coupées, le point de votre pastille de compte passe à l\'<b>orange</b> (vert : actives) ; le même menu les rétablit. Vos autres appareils les reçoivent toujours, et la boîte TRIGONE se relève quand vous ouvrez l\'appli.',
     '<b>Android</b> : si la notification arrive en retard ou pas du tout quand TRIGONE est fermée, retirez l\'économie de batterie : <b>Paramètres › Applications › Chrome › Batterie › « Non restreinte »</b>. Vérifiez aussi que les notifications de Chrome sont autorisées (Paramètres › Applications › Chrome › Notifications).',
     '<b>iPhone / iPad</b> (iOS 16.4 ou plus récent) : pas de réglage batterie. Les notifications demandent TRIGONE <b>installée sur l\'écran d\'accueil</b> (Safari › Partager › Sur l\'écran d\'accueil), puis ouverte depuis cette icône pour les activer. Dans <b>Réglages › Notifications</b> : TRIGONE autorisée (bannières, sons), <b>hors du Résumé programmé</b> (sinon elles n\'arrivent qu\'aux heures du résumé), et ajoutée aux applis autorisées de vos <b>modes de concentration</b> (Ne pas déranger, Travail, Sommeil). Supprimer l\'icône TRIGONE efface l\'abonnement : il faut alors la réinstaller et réactiver les notifications.',
     '<b>PC</b> : les notifications arrivent tant que le navigateur (Chrome, Edge) tourne, même TRIGONE fermée. Sous Windows, vérifiez qu\'elles sont autorisées pour le navigateur (Paramètres › Système › Notifications) et que le mode « Ne pas déranger » est coupé.',
@@ -1837,7 +1839,7 @@ function TPL_NOTICE() {
                 '<span class="NOTICE-CARD-CHEV">›</span></button>';
         }).join('') +
         '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg></span>Code d\'accès de l\'appli (4 chiffres)</summary><ul>' +
-            '<li>Avec la <b>roue crantée</b> de l\'écran de choix (Réglages TRIGONE), activez un code à 4 chiffres demandé à <b>chaque ouverture</b> de TRIGONE, pour les deux applis.</li>' +
+            '<li>Dans <b>Mon profil</b> (bouton de compte en haut à droite), activez un code à 4 chiffres demandé à <b>chaque ouverture</b> de TRIGONE, pour les deux applis.</li>' +
             '<li>Le code ne quitte jamais votre appareil.</li>' +
             '<li><b>Code oublié</b> : le lien « Code oublié ? » efface toutes les données de l\'appli sur cet appareil. Il n\'existe aucun autre moyen.</li></ul></details>' +
         '<details class="notice-fold"><summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg></span>Mise en route &amp; Compte-rendu</summary><ul>' +
@@ -1917,7 +1919,7 @@ function DEMO_DEMANDE() {
     return d;
 }
 var DEMO_ETAPES = [
-    { page: 'ACCUEIL', titre: 'Accueil', texte: 'Pour préparer une mission, appuyez sur « Nouvelle demande ». Votre identité et vos mails viennent des Réglages TRIGONE (roue crantée de l\'écran de choix) : rien à retaper.',
+    { page: 'ACCUEIL', titre: 'Accueil', texte: 'Pour préparer une mission, appuyez sur « Nouvelle demande ». Votre identité et vos mails viennent de votre profil (bouton de compte en haut à droite) : rien à retaper.',
       zones: ['.BTN-ACCUEIL:not(.BTN-ACCUEIL-PETIT)', '.PC-HERO-ACTIONS .BTN-PRIMARY'] },
     { page: 'FORMULAIRE', onglet: 'IDENTITE', titre: 'Étape 1 — Identité', texte: 'Mission ou formation, l\'objet, puis le personnel concerné, déjà rempli avec votre identité. « Ajouter une personne » ou l\'import Excel en font une demande collective.',
       zones: ['.MER-TOGGLE-PAIR', '[data-path="objet"]', '.MER-PERSONNE-CARD'] },
@@ -2104,7 +2106,7 @@ function PREPARER_ENVOI() {
             '<p style="font-size:0.86em; line-height:1.5;">Les demandes partent directement dans le TRIGONE du 1er valideur, chiffrées. Activez d\'abord votre <b>compte TRIGONE</b> (votre adresse mail, vérifiée par un code) : une seule fois, sur cet appareil.</p>' +
             '<p class="MER-HINT">Votre demande reste dans Documents en attendant.</p>',
             '<button type="button" class="BTN BTN-SECONDARY" style="flex:0 0 auto;" onclick="FERMER_MODALE()">Plus tard</button>' +
-            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE(); JUMELAGE_COMPTE()">Activer mon compte</button>');
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE(); JUMELAGE_COMPTE()">Se connecter</button>');
         return;
     }
     var pj = [].concat.apply([], panier.map(function(d) { return d.pieces || []; }));
@@ -2172,7 +2174,7 @@ function ENVOYER_PANIER_DIRECT() {
     }).catch(function(e) {
         if (b) { b.disabled = false; b.textContent = '📨 Envoyer'; }
         MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : e.statut === 403 ? 'Mauvais destinataire' : 'Envoi impossible', e.pasDeCompte
-            ? 'Le 1er valideur (' + reg.mailSignataire + ') n\'a pas encore de compte TRIGONE : demandez-lui de s\'inscrire (roue crantée › Compte TRIGONE, puis Réglages › Mes rôles › 1er valideur). Votre demande reste dans Documents : renvoyez-la ensuite.'
+            ? 'Le 1er valideur (' + reg.mailSignataire + ') n\'a pas encore de compte TRIGONE : demandez-lui de se connecter (bouton « Se connecter » en haut à droite), puis d\'ajouter son rôle (menu du compte › Mes rôles › VALIDEUR 1). Votre demande reste dans Documents : renvoyez-la ensuite.'
             : (e.message || String(e)) + '\n\nVotre demande reste dans Documents.');
     });
 }
@@ -2938,7 +2940,7 @@ function AFFICHER_TRANSMISSION() {
         AFFICHER_MODALE('Compte TRIGONE à activer',
             '<p style="font-size:0.86em; line-height:1.5;">Les décisions partent directement dans le TRIGONE de leurs destinataires, chiffrées. Activez d\'abord votre <b>compte TRIGONE</b> : une seule fois, sur cet appareil. Vos décisions sont conservées en attendant.</p>',
             '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button>' +
-            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE(); JUMELAGE_COMPTE()">Activer mon compte</button>');
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="FERMER_MODALE(); JUMELAGE_COMPTE()">Se connecter</button>');
         return;
     }
     var lignes = MER_ENVOIS.map(function(env, i) {
@@ -2976,7 +2978,7 @@ function ENVOYER_ENVOI_DIRECT(i) {
         FERMER_MSG();
         setTimeout(function() {
             MSG_ERREUR(e.pasDeCompte ? 'Pas encore de compte TRIGONE' : e.statut === 403 ? 'Mauvais destinataire' : 'Envoi impossible', e.pasDeCompte
-                ? env.mail + ' n\'a pas encore de compte TRIGONE : demandez-lui de s\'inscrire (roue crantée › Compte TRIGONE), puis renvoyez. Vos décisions restent en attente, rien n\'est perdu.'
+                ? env.mail + ' n\'a pas encore de compte TRIGONE : demandez-lui de se connecter (bouton « Se connecter » en haut à droite), puis renvoyez. Vos décisions restent en attente, rien n\'est perdu.'
                 : (e.message || String(e)));
         }, 350);
     });
@@ -3438,7 +3440,7 @@ function TPL_RECEPTION() {
             ? '<p class="MER-HINT" style="margin:4px 0 12px;">Demandes reçues directement dans TRIGONE, à l\'adresse <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b> : à signer (valideurs) ou refusées (vos demandes). Elles arrivent toutes seules ; « Ouvrir » les mène au bon endroit.</p>' +
               '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>'
             : '<p class="MER-HINT" style="margin:4px 0 12px;">Activez votre compte TRIGONE pour envoyer vos demandes et recevoir ici celles qui vous reviennent.</p>' +
-              '<button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
+              '<button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button>') +
         (compte ? '<div class="MER-SECTION-TITLE">À traiter' + (aTraiter.length ? ' (' + aTraiter.length + ')' : '') + '</div>' +
             (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Aucune demande en attente.</div>') +
             TPL_RECU_TRAITES('reception', 'Traitées', traites) : '') +
@@ -3470,7 +3472,7 @@ function TPL_CHORUS() {
             '<div class="MER-SECTION-TITLE">Comptes-rendus de mission' + nb(crs) + '</div>' +
             '<p class="MER-HINT" style="margin:0 0 10px;">Envoyés par les missionnaires au retour de mission : compte-rendu PDF et justificatifs.</p>' +
             bloc(crs, 'Aucun compte-rendu en attente.', 'cr')
-          : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes validées et les comptes-rendus de mission.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') +
+          : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes validées et les comptes-rendus de mission.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button>') +
         '</div>' + (MER_RESULTATS_VERIF ? '' : TPL_VERIFIER()) +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">← Écran de choix</button>';
 }
@@ -3671,5 +3673,5 @@ function TPL_AIDE_RECEPTION() {
             ? '<ol><li>Les demandes qui vous sont envoyées arrivent toutes seules, chiffrées, dans votre <b>Boîte de réception</b>.</li><li>Touchez <b>« Ouvrir et signer »</b> : la demande s\'affiche ici, prête à valider.</li></ol>' +
               '<button type="button" class="BTN BTN-PRIMARY" style="margin:12px 0 0;" onclick="SHOW_PAGE(\'RECEPTION\')">Ouvrir ma boîte de réception' + (MER_NB_BOITE() ? ' (' + MER_NB_BOITE() + ')' : '') + '</button>'
             : '<ol><li>Activez votre <b>compte TRIGONE</b> (votre adresse mail, vérifiée par un code).</li><li>Cochez votre rôle dans <b>Réglages › Mes rôles</b> : les demandes à signer vous arrivent alors directement.</li></ol>' +
-              '<button type="button" class="BTN BTN-PRIMARY" style="margin:12px 0 0;" onclick="JUMELAGE_COMPTE()">Activer mon compte TRIGONE</button>') + '</div>';
+              '<button type="button" class="BTN BTN-PRIMARY" style="margin:12px 0 0;" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button>') + '</div>';
 }
