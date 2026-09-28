@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 182,
-  "appCodeMessage": "Version 84 : affichage PC sur tablette et pliable — la page entière tient désormais toujours dans l'écran (zoom ajusté automatiquement).",
+  "appCodeVersion": 183,
+  "appCodeMessage": "Version 85 : « Demande de réservation » (ex. Amplitude (ABT)) — réglée une fois dans votre profil, deux choix dans la mise en route (Hébergement, Transport), repris dans le compte-rendu (trajets en train, avion ou bateau ; hébergement nuit par nuit).",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
