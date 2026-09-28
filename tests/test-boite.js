@@ -321,13 +321,21 @@ module.exports = async function() {
     await m.evaluate(() => JUMELAGE_FERMER_ENVOI_CR());
     await envoyerCr(MAILS.C);
     verifier(await m.evaluate(() => window.__crEnvoye === true && !document.querySelector('.JUM-REGLAGES')), 'compte-rendu : envoyé à l\'assistant Chorus DT');
-    await relever(c); await c.evaluate(() => SHOW_PAGE('CHORUS')); await attendre(600);
+    // Relève faite depuis Compte-rendu (l'assistant avait cette appli ouverte), ouverture depuis l'espace Chorus DT.
+    await c.goto(URL + 'cr/'); await attendre(2500); await relever(c);
+    await c.goto(URL); await attendre(2500);
+    await c.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-PRES,.JUM-NOUV').forEach(x => x.remove()); document.documentElement.classList.remove('jum-choix'); SHOW_PAGE('CHORUS'); }); await attendre(600);
     verifier((await c.textContent('#PAGE-STAGE')).includes('ADJ BOUQUET GP'), 'Chorus DT : le compte-rendu arrive dans la section « Comptes-rendus de mission »');
     verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'recu'), 'suivi : compte-rendu « récupéré par l\'assistant Chorus DT » (le missionnaire est prévenu)');
     await c.locator('.MER-RECU:has(.MER-RECU-cr) .BTN-PRIMARY').click(); await attendre(1200);
     const dl = c.waitForEvent('download');
     await c.locator('#MER-MODALE-FOND button:has-text("Télécharger")').nth(1).click();
     verifier((await dl).suggestedFilename() === 'nds_test.pdf', 'Chorus DT : le justificatif se télécharge');
+    const fen = c.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
+    await c.locator('#MER-MODALE-FOND button:has-text("Aperçu")').first().click();
+    const pop = await fen;
+    verifier(!!pop && /^blob:/.test(pop.url()), 'Chorus DT : « Aperçu » ouvre le PDF du compte-rendu');
+    if (pop) await pop.close();
     await c.click('#MER-MODALE-FOND button:has-text("Traité")'); await attendre(500);
     verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().filter(x => x.nature === 'cr').every(x => x.statut === 'traite')), 'Chorus DT : compte-rendu marqué « traité »');
     verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'traite'), 'suivi : compte-rendu « traité par l\'assistant Chorus DT »');

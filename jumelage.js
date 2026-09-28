@@ -443,7 +443,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 78, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 79, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1535,6 +1535,12 @@
     // Chaque envoi reçu est déchiffré, rangé sur l'appareil (Cache « trigone-boite-reception » + index localStorage
     // « trigone_boite »), puis supprimé du serveur. Il reste dans la boîte jusqu'à ce qu'on le traite ou le supprime.
     var CLE_BOITE = 'trigone_boite', CACHE_BOITE = 'trigone-boite-reception';
+    // Adresse du fichier d'un envoi dans le cache : la même depuis Mise en route et depuis Compte-rendu (une adresse
+    // relative dépendait de l'appli ouverte pendant la relève : « Fichier introuvable » dans l'autre).
+    // ancienne : l'adresse qu'avait une relève faite depuis Compte-rendu (versions ≤ 77).
+    function cleFichierBoite(id, ancienne) {
+        return new URL((ancienne ? 'cr/' : '') + '__boite__/' + id, new URL(APPLIS.mer.url, location.href)).href;
+    }
     function boiteLire() { var l = lireJSON(CLE_BOITE); return Array.isArray(l) ? l : []; }
     function boiteEcrire(l) {
         ecrireTxt(CLE_BOITE, JSON.stringify(l));
@@ -1570,7 +1576,10 @@
     };
     window.JUMELAGE_BOITE_FICHIER = function(id) {
         var x = boiteLire().filter(function(e) { return e.id === id; })[0];
-        return caches.open(CACHE_BOITE).then(function(c) { return c.match('__boite__/' + id); }).then(function(r) {
+        return caches.open(CACHE_BOITE).then(function(c) {
+            // Adresse commune aux deux applis ; à défaut, celle d'une relève faite depuis Compte-rendu (avant la V78).
+            return c.match(cleFichierBoite(id)).then(function(r) { return r || c.match(cleFichierBoite(id, true)); });
+        }).then(function(r) {
             if (!r) throw new Error('Fichier introuvable sur cet appareil.');
             return r.blob();
         }).then(function(b) { return new File([b], (x && x.nom) || 'demande.json', { type: 'application/json' }); });
@@ -1607,7 +1616,7 @@
     };
     window.JUMELAGE_BOITE_SUPPRIMER = function(id) {
         boiteEcrire(boiteLire().filter(function(x) { return x.id !== id; }));
-        return caches.open(CACHE_BOITE).then(function(c) { return c.delete('__boite__/' + id); }).catch(function() {});
+        return caches.open(CACHE_BOITE).then(function(c) { return Promise.all([c.delete(cleFichierBoite(id)), c.delete(cleFichierBoite(id, true))]); }).catch(function() {});
     };
     // Pastille sur l'écran de choix (côté Mise en route) : envois reçus pas encore traités.
     function majPastilleHub() {
@@ -1652,7 +1661,7 @@
                             var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus', CR: 'cr', RENVOI: 'renvoi' }[x.type];
                             if (attendu && info.nature !== attendu) { ecartes++; return appelApi('boite/' + e.id, { methode: 'DELETE' }); }
                             return caches.open(CACHE_BOITE).then(function(c) {
-                                return c.put('__boite__/' + e.id, new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));
+                                return c.put(cleFichierBoite(e.id), new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));
                             }).then(function() {
                                 var el = Object.assign({ id: e.id, nom: o.nom || 'demande.json', de: x.de, le: x.le, type: x.type, statut: 'nouveau' }, info);
                                 var l = boiteLire(); l.unshift(el); boiteEcrire(l); nouveaux.push(el);
