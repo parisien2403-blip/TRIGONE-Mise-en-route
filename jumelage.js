@@ -233,6 +233,7 @@
         '.JUM-CHOIX.choix-mer .JUM-PAN-CR .JUM-BLOC, .JUM-CHOIX.choix-cr .JUM-PAN-MER .JUM-BLOC, .JUM-CHOIX.choix-chorus .JUM-BLOC,' +
             ' .JUM-CHOIX.choix-mer .JUM-CHORUS, .JUM-CHOIX.choix-cr .JUM-CHORUS, .JUM-CHOIX.choisi .JUM-CHORUS-NB { opacity: 0; transition: opacity 0.12s ease; pointer-events: none; }' +
         '.JUM-CHORUS-NB { position: absolute; z-index: 4; left: calc(50% + var(--jum-chorus) * 0.36); top: calc(50% - var(--jum-chorus) * 0.5); min-width: 24px; height: 24px; padding: 0 7px; box-sizing: border-box; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.75rem/24px Montserrat, system-ui, sans-serif; text-align: center; box-shadow: 0 4px 10px rgba(185,28,28,0.4); pointer-events: none; }' +
+        '.JUM-REGLAGES[data-vue="profil"] [data-vue="roles"], .JUM-REGLAGES[data-vue="roles"] [data-vue="profil"] { display: none; }' +
         '.JUM-R-CASE { display: flex; align-items: center; gap: 10px; font-size: 0.86rem; cursor: pointer; margin: 4px 0 8px; } .JUM-R-CASE input { width: 18px; height: 18px; flex-shrink: 0; }' +
         '.JUM-CR-FICHIER { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin: 6px 0; border: 1px solid #e2e8f0; border-radius: 12px; font-size: 0.82rem; }' +
         '.JUM-CR-FICHIER b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .JUM-CR-FICHIER small { color: #64748b; white-space: nowrap; }' +
@@ -609,7 +610,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 86, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 87, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -828,23 +829,27 @@
         }
         var r = lireReglages(), premiere = !!opts.premiere;
         if (!r.monMail && monCompte()) r.monMail = monCompte().mail;
+        // Vue : « profil » (identité, destinataires, réservation, code) ou « roles » (rôles, fonctions, absence) ; sans vue, tout.
+        var vue = opts.vue || (premiere ? 'profil' : opts.section === 'roles' || opts.section === 'absence' ? 'roles' : '');
+        var val = lireJSON('mer_valideur') || {};
         var ancienCode = !codeDefini() && (lireTxt('mer_pin_hash') || lireTxt('trigone_pin_hash'));
         function champ(id, label, val, attrs) {
             return '<div class="JUM-R-CHAMP"><label for="JUM-R-' + id + '">' + label + '</label><input id="JUM-R-' + id + '" value="' + esc(val) + '" ' + (attrs || 'type="text" autocomplete="off"') + '></div>';
         }
         reglages = document.createElement('div');
         reglages.className = 'JUM-REGLAGES';
+        if (vue) reglages.setAttribute('data-vue', vue);
         reglages.setAttribute('role', 'dialog');
         reglages.innerHTML = '<div class="JUM-R-CARTE">' +
-            '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : ROUE_SVG) + '</span><div><h2>' + (premiere ? 'Compléter mon profil' : 'Mon profil') + '</h2>' +
-                '<p>' + (premiere ? 'Une seule fois : ces informations pré-rempliront Mise en route et Compte-rendu de mission.' : 'Commun à Mise en route et Compte-rendu de mission.') + ' Enregistré sur cet appareil uniquement.</p></div>' +
+            '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : ROUE_SVG) + '</span><div><h2>' + (premiere ? 'Compléter mon profil' : vue === 'roles' ? 'Mes rôles' : 'Mon profil') + '</h2>' +
+                '<p>' + (premiere ? 'Une seule fois : ces informations pré-rempliront Mise en route et Compte-rendu de mission.' : vue === 'roles' ? 'VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT : chacun avec son code.' : 'Commun à Mise en route et Compte-rendu de mission.') + ' Enregistré sur cet appareil uniquement.</p></div>' +
                 (premiere ? '' : '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_REGLAGES()">✕</button>') + '</div>' +
             '<div class="JUM-R-CORPS">' +
                 // Déjà configuré sur un autre appareil : un code de liaison suffit (rien à ressaisir).
                 (premiere && !monCompte() ? '<details class="JUM-LIAISON-BLOC"><summary>📲 Déjà TRIGONE sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
                     '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte TRIGONE, demandes et bibliothèque sont recopiés.</p>' +
                     htmlSaisieLiaison() + '</details>' : '') +
-                '<div class="JUM-R-TITRE">Mon identité</div>' +
+                '<div data-vue="profil"><div class="JUM-R-TITRE">Mon identité</div>' +
                 '<div class="JUM-R-GRILLE">' + champ('UNITE', 'Unité / entité', r.unite, 'type="text" autocomplete="off" placeholder="EX : 4°RIISC"') +
                     champ('CIE', 'CIE', r.cie, 'type="text" autocomplete="off" placeholder="EX : 4CIE"') +
                     champ('GRADE', 'Grade', r.grade, 'type="text" autocomplete="off" placeholder="EX : ADJUDANT"') +
@@ -866,12 +871,14 @@
                 '<div class="JUM-R-GRILLE">' + champ('CODE1', codeDefini() ? 'Nouveau code' : 'Code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') +
                     champ('CODE2', 'Confirmer le code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') + '</div>' +
                 (codeDefini() ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_SUPPRIMER_CODE()">Supprimer le code d\'accès</button>' : '') +
+                '</div>' +
                 // Mes rôles : chacun est missionnaire ; valideurs et assistant Chorus DT cochent en plus leur rôle, avec son code.
-                '<div class="JUM-R-TITRE" id="JUM-R-SECTION-ROLES">Mes rôles</div>' +
+                '<div data-vue="roles"><div class="JUM-R-TITRE" id="JUM-R-SECTION-ROLES">Mes rôles</div>' +
                 '<p class="JUM-R-AIDE">Vous êtes missionnaire. Si un ou plusieurs de ces rôles vous ont été confiés, cochez-les (vous pouvez les avoir tous) : chaque code, remis par l\'administrateur, est demandé une seule fois.</p>' +
                 caseRole('VAL1', 'valideur1', '<b>VALIDEUR 1</b> (chef de service)', 'Code VALIDEUR 1') +
+                '<div id="JUM-R-FONCTION1-BLOC" style="display:none;">' + champ('FONCTION1', 'Ma fonction de VALIDEUR 1 (sur la signature)', val.fonction1 || (roleActif('valideur1') ? val.fonction : '') || '', 'type="text" autocomplete="off" placeholder="EX : COMMANDANT D\'UNITÉ"') + '</div>' +
                 caseRole('VAL2', 'valideur2', '<b>VALIDEUR 2</b>', 'Code VALIDEUR 2') +
-                '<div id="JUM-R-FONCTION-BLOC" style="display:none;">' + champ('FONCTION', 'Ma fonction de valideur', (lireJSON('mer_valideur') || {}).fonction || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE SERVICE"') + '</div>' +
+                '<div id="JUM-R-FONCTION2-BLOC" style="display:none;">' + champ('FONCTION2', 'Ma fonction de VALIDEUR 2 (sur la signature)', val.fonction2 || (roleActif('valideur2') && !roleActif('valideur1') ? val.fonction : '') || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE CORPS"') + '</div>' +
                 caseRole('CHORUS', 'chorus', '<b>ASSIST CHORUS DT</b>', 'Code ASSIST CHORUS DT') +
                 '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>' +
                 // Absence (valideur, assistant Chorus DT déjà actifs, compte TRIGONE actif) : remplaçant jusqu'à une date.
@@ -881,7 +888,7 @@
                     '<div class="JUM-R-GRILLE">' + champ('ABSMAIL', 'Mail du remplaçant', '', 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
                         champ('ABSFIN', 'Absent jusqu\'au (inclus)', '', 'type="date"') + '</div>' +
                     '<button type="button" class="JUM-R-SECOND" id="JUM-R-ABS-OK" style="width:100%; margin:4px 0 0;">Déclarer mon absence</button>' +
-                    '<p class="JUM-R-ERREUR" id="JUM-R-ABS-ERR" style="min-height:0;"></p>' : '') +
+                    '<p class="JUM-R-ERREUR" id="JUM-R-ABS-ERR" style="min-height:0;"></p>' : '') + '</div>' +
                 // Android, première ouverture : réglage batterie, sans lequel les notifications arrivent en retard appli fermée.
                 // (Une appli web ne peut pas ouvrir elle-même les paramètres d'Android : on guide pas à pas.)
                 (premiere && /Android/i.test(navigator.userAgent || '') ? '<div class="JUM-R-TITRE">Notifications sur Android</div>' +
@@ -953,13 +960,11 @@
             '<input id="JUM-R-CODE' + id + '" type="password" autocomplete="off" placeholder="Code remis par l\'administrateur"></div></div>';
     }
     function majCasesRoles(focus) {
-        var val = false;
         ['VAL1', 'VAL2', 'CHORUS'].forEach(function(id) {
             var c = document.getElementById('JUM-R-' + id); if (!c) return;
             document.getElementById('JUM-R-' + id + '-CODE').style.display = c.checked && !roleActif(c.getAttribute('data-role')) ? '' : 'none';
-            if (id !== 'CHORUS' && c.checked) val = true;
+            var f = document.getElementById('JUM-R-FONCTION' + id.slice(3) + '-BLOC'); if (f) f.style.display = c.checked ? '' : 'none';
         });
-        var f = document.getElementById('JUM-R-FONCTION-BLOC'); if (f) f.style.display = val ? '' : 'none';
         if (focus) document.getElementById('JUM-R-CODE' + focus).focus();
     }
     // Codes valideurs : le code déchiffre la clé de signature de son rôle, publiée chiffrée dans valideurs.json (comme
@@ -1055,11 +1060,12 @@
             var c = document.getElementById('JUM-R-' + id), role = c.getAttribute('data-role');
             return { id: id, role: role, niveau: id === 'VAL1' ? 1 : id === 'VAL2' ? 2 : 0, veut: c.checked, actif: roleActif(role), code: v('CODE' + id) };
         });
-        var fonction = v('FONCTION').toUpperCase();
+        var fonctions = { 1: v('FONCTION1').toUpperCase(), 2: v('FONCTION2').toUpperCase() };
         var nouveaux = roles.filter(function(x) { return x.veut && !x.actif; });
         var sansCode = nouveaux.filter(function(x) { return !x.code; })[0];
         if (sansCode) return refuser('Saisissez le code ' + { VAL1: 'VALIDEUR 1', VAL2: 'VALIDEUR 2', CHORUS: 'ASSIST CHORUS DT' }[sansCode.id] + ', ou décochez la case.');
-        if (roles.some(function(x) { return x.niveau && x.veut; }) && !fonction) return refuser('Indiquez votre fonction de valideur (ex : CHEF DE SERVICE).');
+        var sansFonction = roles.filter(function(x) { return x.niveau && x.veut && !fonctions[x.niveau]; })[0];
+        if (sansFonction) return refuser('Indiquez votre fonction de VALIDEUR ' + sansFonction.niveau + ' (ex : ' + (sansFonction.niveau === 1 ? 'COMMANDANT D\'UNITÉ' : 'CHEF DE CORPS') + ').');
         if (roles.some(function(x) { return x.niveau && x.veut; }) && (!r.grade || !r.nom || !r.prenom)) return refuser('Un valideur signe avec son grade, son nom et son prénom : renseignez-les.');
         var acces = {};
         var etapeRole = nouveaux.reduce(function(prec, x) {
@@ -1076,7 +1082,10 @@
         // Valideur : identité de signature (Espace valideur de Mise en route) et clé déverrouillée.
         if (roles.some(function(x) { return x.niveau && x.veut; })) {
             var val = lireJSON('mer_valideur') || {};
-            val.grade = r.grade; val.nom = r.nom; val.prenom = r.prenom; val.fonction = fonction;
+            val.grade = r.grade; val.nom = r.nom; val.prenom = r.prenom;
+            // Une fonction par niveau (signature du PDF) ; « fonction » : celle du premier rôle (ancien format).
+            if (roles[0].veut) val.fonction1 = fonctions[1]; if (roles[1].veut) val.fonction2 = fonctions[2];
+            val.fonction = roles[0].veut ? fonctions[1] : fonctions[2];
             ecrireTxt('mer_valideur', JSON.stringify(val));
         }
         // Une clé par rôle ; le rôle en cours de l'Espace valideur devient le premier rôle nouvellement activé.
@@ -2185,9 +2194,9 @@
             var b = ev.target.closest('button'); if (!b) return;
             m.remove();
             var a = b.getAttribute('data-action');
-            if (a === 'profil') window.JUMELAGE_REGLAGES();
-            else if (a === 'roles') window.JUMELAGE_REGLAGES({ section: 'roles' });
-            else if (a === 'absence') window.JUMELAGE_REGLAGES({ section: 'absence' });
+            if (a === 'profil') window.JUMELAGE_REGLAGES({ vue: 'profil' });
+            else if (a === 'roles') window.JUMELAGE_REGLAGES({ vue: 'roles' });
+            else if (a === 'absence') window.JUMELAGE_REGLAGES({ vue: 'roles', section: 'absence' });
             else if (a === 'notif') window.JUMELAGE_COMPTE();
             else if (a === 'muet') window.JUMELAGE_NOTIF_MUET();
             else if (a === 'appareil') window.JUMELAGE_COMPTE({ liaison: true });
