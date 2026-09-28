@@ -104,11 +104,15 @@
         '@media (min-aspect-ratio: 3/4) and (max-aspect-ratio: 4/3) { .JUM-CHOIX.avec-chorus .JUM-PAN-MER .JUM-BLOC { left: 30%; top: 26%; } .JUM-CHOIX.avec-chorus .JUM-PAN-CR .JUM-BLOC { left: 70%; top: 74%; }' +
             ' .JUM-CHOIX.avec-chorus .JUM-PAN-MER img { width: min(30vw, 22vh, 210px); } .JUM-CHOIX.avec-chorus .JUM-PAN-CR img { width: calc(min(30vw, 22vh, 210px) * 1.246); } }' +
         '.JUM-SOUS { font: 800 0.62rem/1.2 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; letter-spacing: 0.18em; text-transform: uppercase; white-space: nowrap; }' +
-        '.JUM-PAN-MER .JUM-SOUS { color: #5a7a94; }' +
+        /* PC (grand écran en paysage) : logos 40 % plus grands (Assist Chorus-DT compris), sous-titres à proportion. */
+        '@media (orientation: landscape) and (min-width: 1000px) and (min-height: 600px) { .JUM-PAN-MER img { width: min(30.8vw, 53.2vh, 322px); } .JUM-PAN-CR img { width: calc(min(30.8vw, 53.2vh, 322px) * 1.246); }' +
+            ' .JUM-SOUS { font-size: 0.82rem; } }' +
+        '.JUM-PAN-MER .JUM-SOUS { color: #d6a756; }' +
         /* Médaillon Assistant Chorus DT : au centre, sur la diagonale */
         /* Logo Assist Chorus-DT : comme les deux autres (le logo seul), en plus petit. Posé sur la diagonale, il se met en
            négatif (mix-blend-mode : difference) : noir sur la partie claire, blanc sur la partie sombre, sans couleur ajoutée. */
         '.JUM-CHOIX { --jum-chorus: min(24vw, 17vh, 150px); }' +
+        '@media (orientation: landscape) and (min-width: 1000px) and (min-height: 600px) { .JUM-CHOIX { --jum-chorus: min(33.6vw, 23.8vh, 210px); } }' +
         '.JUM-CHORUS { position: absolute; left: 50%; top: 50%; z-index: 3; transform: translate(-50%, -50%); width: var(--jum-chorus); aspect-ratio: 1; border: 0; border-radius: 0; background: none; box-shadow: none; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; mix-blend-mode: difference; transition: transform 0.2s ease; -webkit-tap-highlight-color: transparent; }' +
         '.JUM-CHORUS img { width: 100%; height: auto; display: block; filter: invert(1); }' +
         '.JUM-CHORUS:hover { transform: translate(-50%, -50%) scale(1.05); } .JUM-CHORUS:focus-visible { outline: 2px solid #d6a756; outline-offset: 6px; }' +
@@ -439,7 +443,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 77, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 78, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
