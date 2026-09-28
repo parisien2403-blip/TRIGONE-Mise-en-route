@@ -46,11 +46,34 @@
     // Pas de plein écran : en plein écran, Chrome ignore la largeur demandée et l'affichage PC ne s'appliquerait plus.
     var CLE_MODE_PC = 'trigone_affichage_pc', LARGEUR_PC = 1280;
     var metaVue = document.querySelector('meta[name="viewport"]'), vueOrigine = metaVue ? metaVue.getAttribute('content') : '';
-    function grandTactile() {
-        var tactile = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches) || (navigator.maxTouchPoints || 0) > 0;
-        var e = window.screen || {};
-        return tactile && Math.min(e.width || 0, e.height || 0) >= 600;
+    // Écran tactile d'au moins 560 px de côté. Taille lue à la fois sur l'écran (screen) et sur la fenêtre hors affichage PC :
+    // selon le navigateur (Chrome, Samsung Internet, appli installée, « version ordinateur »), l'une ou l'autre est fiable.
+    function tactile() {
+        var mq = function(q) { return !!(window.matchMedia && matchMedia(q).matches); };
+        return mq('(pointer: coarse)') || mq('(any-pointer: coarse)') || (navigator.maxTouchPoints || 0) > 0 || 'ontouchstart' in window;
     }
+    // Taille « naturelle » de la fenêtre (hors affichage PC), mesurée tant que la largeur n'a pas été forcée ; elle reste
+    // valable tant que l'écran ne change pas (pliable ouvert / refermé).
+    var naturel = { cote: 0, ecran: '' };
+    function cleEcran() { var e = window.screen || {}; return (e.width || 0) + 'x' + (e.height || 0); }
+    function mesurerNaturel() {
+        if (metaVue && metaVue.getAttribute('content') !== vueOrigine) return;
+        naturel = { cote: Math.min(window.innerWidth || 0, window.innerHeight || 0), ecran: cleEcran() };
+    }
+    function petitCote() {
+        var e = window.screen || {}, cote = Math.min(e.width || 0, e.height || 0);
+        if (naturel.ecran === cleEcran()) cote = Math.max(cote, naturel.cote);
+        return cote;
+    }
+    function grandTactile() { return tactile() && petitCote() >= 560; }
+    // Diagnostic (toucher le numéro de version de l'écran de choix) : ce que le navigateur annonce de l'écran.
+    window.JUMELAGE_INFOS_ECRAN = function() {
+        var e = window.screen || {};
+        return 'Écran : ' + (e.width || '?') + ' × ' + (e.height || '?') + ' · fenêtre : ' + window.innerWidth + ' × ' + window.innerHeight +
+            ' · densité : ' + (window.devicePixelRatio || 1) + ' · tactile : ' + (tactile() ? 'oui' : 'non') + ' (' + (navigator.maxTouchPoints || 0) + ' points)' +
+            ' · affichage PC possible : ' + (grandTactile() ? 'oui' : 'non') + (modePcVoulu() ? ' (activé)' : '') +
+            ' · navigateur : ' + (navigator.userAgent || '').replace(/^Mozilla\/5\.0 /, '').slice(0, 120);
+    };
     function modePcVoulu() { try { return localStorage.getItem(CLE_MODE_PC) === '1'; } catch (e) { return false; } }
     function modePcActif() { return modePcVoulu() && grandTactile(); }
     var SVG_ECRAN = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8 20.5h8M12 16.5v4"/></svg>';
@@ -74,10 +97,22 @@
         document.documentElement.classList.toggle('jum-mode-pc', actif);
         majBoutonsModePc();
     }
+    mesurerNaturel();
     appliquerVue();
-    // Pliable ouvert / refermé, rotation : l'affichage suit.
+    // Pliable ouvert / refermé, rotation : l'affichage suit. Écran changé en affichage PC : on revient un instant à la
+    // largeur d'origine pour mesurer la nouvelle taille réelle, puis on décide.
     var minuteurVue = null;
-    window.addEventListener('resize', function() { clearTimeout(minuteurVue); minuteurVue = setTimeout(appliquerVue, 150); });
+    window.addEventListener('resize', function() {
+        clearTimeout(minuteurVue);
+        minuteurVue = setTimeout(function() {
+            if (metaVue && naturel.ecran !== cleEcran() && metaVue.getAttribute('content') !== vueOrigine) {
+                metaVue.setAttribute('content', vueOrigine);
+                setTimeout(function() { mesurerNaturel(); appliquerVue(); }, 200);
+                return;
+            }
+            mesurerNaturel(); appliquerVue();
+        }, 150);
+    });
     function verrouillerPaysage() {
         return window.screen && screen.orientation && screen.orientation.lock ? screen.orientation.lock('landscape') : Promise.reject(new Error('orientation'));
     }
@@ -296,7 +331,7 @@
         '.JUM-NOUV h2 { margin: 12px 0 8px; font-size: 1.15rem; } .JUM-NOUV p { margin: 0 0 18px; font-size: 0.9rem; line-height: 1.55; color: #404040; }' +
         '.JUM-NOUV button { border: 0; border-radius: 14px; padding: 13px 34px; background: #1a1a1a; color: #fff; font: 800 0.8rem Montserrat, system-ui, sans-serif; letter-spacing: 0.1em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-VERSION { position: absolute; bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 12px); left: 50%; transform: translateX(-50%); z-index: 3; padding: 5px 12px; border-radius: 999px;' +
-            ' border: 1px solid rgba(255,255,255,0.18); background: #1a1a1a; color: #f5f5f5; box-shadow: 0 4px 14px rgba(0,0,0,0.25); font: 700 12px Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; pointer-events: none; }' +
+            ' border: 1px solid rgba(255,255,255,0.18); background: #1a1a1a; color: #f5f5f5; box-shadow: 0 4px 14px rgba(0,0,0,0.25); font: 700 12px Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; cursor: pointer; }' +
         '.JUM-CHOIX.choisi .JUM-VERSION { opacity: 0; }' +
         /* Menu de la roue crantée */
         '.JUM-ROUE-MENU { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 62px); z-index: 4;' +
@@ -565,7 +600,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 83, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 84, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2465,7 +2500,7 @@
             'Appli : ' + appli + '\n' + (v ? 'Version TRIGONE : V' + v + '\n' : '') +
             (ecran && ecran !== 'choix' ? 'Écran concerné : ' + ecran + '\n' : '') +
             'Appareil : ' + (window.matchMedia && matchMedia('(min-width: 1100px)').matches ? 'ordinateur' : 'téléphone / tablette') + '\n' +
-            'Connecté à internet : ' + (navigator.onLine ? 'oui' : 'non');
+            'Connecté à internet : ' + (navigator.onLine ? 'oui' : 'non') + '\n' + window.JUMELAGE_INFOS_ECRAN();
         window.location.href = 'mailto:' + MAIL_SUPPORT + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
     };
 
@@ -2670,6 +2705,11 @@
         ecran.appendChild(creerBoutonCompte());
         // Affichage PC (tablette, pliable ouvert), en bas à gauche à côté de la mise à jour.
         ecran.appendChild(creerBoutonModePc());
+        var badge = ecran.querySelector('.JUM-VERSION');
+        if (badge) {
+            ['pointerdown', 'pointerup'].forEach(function(t) { badge.addEventListener(t, function(e) { e.stopPropagation(); }); });
+            badge.addEventListener('click', function(e) { e.stopPropagation(); carteChoix('TRIGONE V' + (window.APP_VERSION_AFFICHEE || ''), window.JUMELAGE_INFOS_ECRAN(), 'info'); });
+        }
         majBoutonsCompte();
         majPastilleHub();
         var btnChorus = ecran.querySelector('.JUM-CHORUS');
