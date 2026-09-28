@@ -37,6 +37,73 @@
         try { localStorage.setItem(CLE_THEME, sombre ? '1' : '0'); } catch (e) {}
     };
 
+    // ---------- Affichage PC sur tablette et téléphone pliable ouvert ----------
+    // Sur un grand écran tactile (tablette, pliable ouvert : au moins 600 px de côté), un bouton « écran » fait passer
+    // TRIGONE en affichage PC : l'appli se met en page sur 1 280 px de large (balise viewport), ce qui déclenche la mise
+    // en page PC des deux applis (menu à gauche, colonnes…). Mémorisé sur l'appareil ; pliable refermé (petit écran),
+    // retour automatique à l'affichage téléphone. Paysage : TRIGONE demande le blocage en paysage (accepté par Chrome
+    // pour l'appli installée) ; s'il est refusé (navigateur, iPhone / iPad), un conseil « tournez l'appareil ».
+    // Pas de plein écran : en plein écran, Chrome ignore la largeur demandée et l'affichage PC ne s'appliquerait plus.
+    var CLE_MODE_PC = 'trigone_affichage_pc', LARGEUR_PC = 1280;
+    var metaVue = document.querySelector('meta[name="viewport"]'), vueOrigine = metaVue ? metaVue.getAttribute('content') : '';
+    function grandTactile() {
+        var tactile = !!(window.matchMedia && matchMedia('(pointer: coarse)').matches) || (navigator.maxTouchPoints || 0) > 0;
+        var e = window.screen || {};
+        return tactile && Math.min(e.width || 0, e.height || 0) >= 600;
+    }
+    function modePcVoulu() { try { return localStorage.getItem(CLE_MODE_PC) === '1'; } catch (e) { return false; } }
+    function modePcActif() { return modePcVoulu() && grandTactile(); }
+    var SVG_ECRAN = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8 20.5h8M12 16.5v4"/></svg>';
+    var SVG_TEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
+    function majBoutonsModePc() {
+        var actif = modePcActif(), visible = grandTactile();
+        Array.prototype.forEach.call(document.querySelectorAll('.JUM-MODE'), function(b) {
+            b.style.display = visible ? '' : 'none';
+            b.classList.toggle('actif', actif);
+            b.innerHTML = actif ? SVG_TEL : SVG_ECRAN;
+            b.title = actif ? 'Revenir à l\'affichage téléphone' : 'Affichage PC (tablette, écran pliable ouvert)';
+            b.setAttribute('aria-label', b.title);
+        });
+    }
+    function appliquerVue() {
+        var actif = modePcActif();
+        if (metaVue) {
+            var voulu = actif ? 'width=' + LARGEUR_PC + ', viewport-fit=cover' : vueOrigine;
+            if (metaVue.getAttribute('content') !== voulu) metaVue.setAttribute('content', voulu);
+        }
+        document.documentElement.classList.toggle('jum-mode-pc', actif);
+        majBoutonsModePc();
+    }
+    appliquerVue();
+    // Pliable ouvert / refermé, rotation : l'affichage suit.
+    var minuteurVue = null;
+    window.addEventListener('resize', function() { clearTimeout(minuteurVue); minuteurVue = setTimeout(appliquerVue, 150); });
+    function verrouillerPaysage() {
+        return window.screen && screen.orientation && screen.orientation.lock ? screen.orientation.lock('landscape') : Promise.reject(new Error('orientation'));
+    }
+    function libererOrientation() { try { if (window.screen && screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {} }
+    function conseilPaysage() { if (modePcActif() && window.innerHeight > window.innerWidth) bandeau('Affichage PC : tournez l\'appareil en paysage pour plus de confort.'); }
+    window.JUMELAGE_MODE_PC_ACTIF = modePcActif;
+    window.JUMELAGE_MODE_PC = function(actif) {
+        if (typeof actif !== 'boolean') actif = !modePcVoulu();
+        try { if (actif) localStorage.setItem(CLE_MODE_PC, '1'); else localStorage.removeItem(CLE_MODE_PC); } catch (e) {}
+        if (!actif) libererOrientation();
+        appliquerVue();
+        if (!actif) { bandeau('Affichage téléphone.'); return; }
+        bandeau('Affichage PC : le même bouton ramène l\'affichage téléphone.');
+        verrouillerPaysage().catch(function() { setTimeout(conseilPaysage, 3200); });
+    };
+    // Nouvelle page (changement d'appli) : le blocage en paysage est redemandé.
+    if (modePcActif()) verrouillerPaysage().catch(function() {});
+    function creerBoutonModePc(classe) {
+        var b = document.createElement('button');
+        b.type = 'button'; b.className = 'JUM-MODE ' + (classe || '');
+        ['pointerdown', 'pointerup'].forEach(function(t) { b.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        b.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_MODE_PC(); });
+        setTimeout(majBoutonsModePc, 0);
+        return b;
+    }
+
     // Hauteur réelle de l'écran (--vh-reel), utilisée par l'accueil des deux applis à la place de 100dvh : sur un
     // écran pliable (Galaxy Z Fold…) ou après la fermeture du clavier, 100dvh peut rester périmé et l'accueil
     // déborde en bas jusqu'à une rotation. Remesurée à chaque changement ; pas pendant la saisie (clavier ouvert).
@@ -165,11 +232,19 @@
         '.JUM-CHOIX.choisi > .JUM-CPT { opacity: 0; pointer-events: none; }' +
         /* Dans les applis (page d'accueil) : sur téléphone, pastille compacte en haut à gauche (le haut à droite porte le mode sombre
            et les raccourcis) ; sur PC, pastille complète en haut à droite. Masquée sous l'écran de choix et pendant la démonstration. */
-        '.JUM-CPT-APPLI { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: calc(8px + env(safe-area-inset-left, 0px)); z-index: 900; padding: 3px; gap: 0; position: fixed; }' +
+        '.JUM-CPT-ZONE { position: fixed; top: calc(8px + env(safe-area-inset-top, 0px)); left: calc(8px + env(safe-area-inset-left, 0px)); z-index: 900; display: flex; align-items: center; gap: 8px; }' +
+        '.JUM-CPT-APPLI { padding: 3px; gap: 0; position: relative; }' +
         '.JUM-CPT-APPLI .JUM-CPT-NOM { display: none; } .JUM-CPT-APPLI.deconnecte { padding: 7px 12px 7px 9px; gap: 6px; } .JUM-CPT-APPLI.deconnecte .JUM-CPT-NOM { display: inline; }' +
         '.JUM-CPT-APPLI .JUM-CPT-PT { position: absolute; right: 1px; bottom: 1px; }' +
-        '@media (min-width: 1100px) { .JUM-CPT-APPLI { left: auto; right: 24px; top: 14px; padding: 5px 13px 5px 5px; gap: 8px; } .JUM-CPT-APPLI .JUM-CPT-NOM { display: inline; } .JUM-CPT-APPLI .JUM-CPT-PT { position: static; } }' +
-        'html.jum-choix .JUM-CPT-APPLI, body.demo-active .JUM-CPT-APPLI { display: none !important; }' +
+        '@media (min-width: 1100px) { .JUM-CPT-ZONE { left: auto; right: 24px; top: 14px; flex-direction: row-reverse; } .JUM-CPT-APPLI { padding: 5px 13px 5px 5px; gap: 8px; } .JUM-CPT-APPLI .JUM-CPT-NOM { display: inline; } .JUM-CPT-APPLI .JUM-CPT-PT { position: static; } }' +
+        'html.jum-choix .JUM-CPT-ZONE, body.demo-active .JUM-CPT-ZONE { display: none !important; }' +
+        /* Bouton « affichage PC » (tablettes, pliables ouverts) */
+        '.JUM-MODE { width: 38px; height: 38px; flex-shrink: 0; border-radius: 50%; border: 1.5px solid rgba(26,26,26,0.14); background: #fff; color: #1a1a1a; display: inline-flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.14); padding: 0; }' +
+        '.JUM-MODE svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-MODE.actif { border-color: #d6a756; color: #a87a2a; }' +
+        'html body.dark-mode .JUM-MODE { background: #262626; color: #f5f5f5; border-color: rgba(255,255,255,0.14); } html body.dark-mode .JUM-MODE.actif { color: #e0b86a; border-color: #d6a756; }' +
+        '.JUM-CHOIX > .JUM-MODE { position: absolute; z-index: 3; bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 5px); left: calc(max(18px, env(safe-area-inset-left, 0px)) + 66px); width: 42px; height: 42px; background: #1a1a1a; color: #f5f5f5; border-color: rgba(255,255,255,0.18); }' +
+        '.JUM-CHOIX.choisi > .JUM-MODE { opacity: 0; pointer-events: none; }' +
         /* Compte-rendu, téléphone : la médaille de l'accueil se décale pour laisser la place au bouton de compte. */
         '@media (max-width: 1099px) { .P0-MEDAILLE-BADGE { left: 54px !important; } }' +
         '.JUM-CPT-MENU { position: fixed; z-index: 99988; width: min(320px, calc(100vw - 24px)); background: #fff; color: #1a1a1a; border-radius: 18px; padding: 6px; box-shadow: 0 18px 44px rgba(0,0,0,0.4);' +
@@ -490,7 +565,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 82, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 83, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2017,7 +2092,11 @@
     var boutonAppli = null;
     window.JUMELAGE_BOUTON_APPLI = function(visible) {
         if (!document.body) return;
-        if (!boutonAppli) { boutonAppli = creerBoutonCompte('JUM-CPT-APPLI'); document.body.appendChild(boutonAppli); }
+        if (!boutonAppli) {
+            boutonAppli = document.createElement('div'); boutonAppli.className = 'JUM-CPT-ZONE';
+            boutonAppli.appendChild(creerBoutonCompte('JUM-CPT-APPLI')); boutonAppli.appendChild(creerBoutonModePc());
+            document.body.appendChild(boutonAppli);
+        }
         boutonAppli.style.display = visible ? '' : 'none';
         if (!visible) fermerMenuCompte(); else majBoutonsCompte();
     };
@@ -2589,6 +2668,8 @@
             '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>';
         // Mon compte, en haut à droite : « Se connecter », ou la pastille du compte et son menu.
         ecran.appendChild(creerBoutonCompte());
+        // Affichage PC (tablette, pliable ouvert), en bas à gauche à côté de la mise à jour.
+        ecran.appendChild(creerBoutonModePc());
         majBoutonsCompte();
         majPastilleHub();
         var btnChorus = ecran.querySelector('.JUM-CHORUS');
