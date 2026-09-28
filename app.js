@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 133;
+var APP_CODE_VERSION = 134;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2586,7 +2586,7 @@ function HABILITATION_COURANTE() {
     if (!MER_CLE_SESSION || !MER_ACCES_SESSION) return null;
     var v = GET_VALIDEUR();
     return { role: MER_ACCES_SESSION.role, cle: MER_ACCES_SESSION.cle, retire: MER_ACCES_SESSION.retire,
-        grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v.fonction };
+        grade: v.grade, nom: v.nom, prenom: v.prenom, fonction: v['fonction' + MER_ACCES_SESSION.role] || v.fonction };
 }
 
 // Recharge la liste des habilités et revérifie les validations reçues avant d'afficher la page.
@@ -2648,6 +2648,8 @@ function SE_CONNECTER(btn) {
     var bouton = document.querySelector('#PAGE-STAGE .BTN-PRIMARY');
     if (bouton) { bouton.disabled = true; bouton.textContent = 'Vérification…'; }
     CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(function() {
+        // La fonction saisie ici devient celle du niveau déverrouillé (VALIDEUR 1 ou 2).
+        if (MER_ACCES_SESSION && MER_ACCES_SESSION.role) { var w = GET_VALIDEUR(); w['fonction' + MER_ACCES_SESSION.role] = v.fonction; SAVE_VALIDEUR(w); }
         RENDER_VALIDATION_INPLACE();
         MER_DECLARER_ROLE_VALIDEUR();
         if (MER_BOITE_A_OUVRIR) { var idBoite = MER_BOITE_A_OUVRIR; MER_BOITE_A_OUVRIR = null; setTimeout(function() { OUVRIR_RECU(idBoite); }, 400); }

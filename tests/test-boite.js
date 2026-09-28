@@ -80,15 +80,16 @@ module.exports = async function() {
     const m = await appareil('M'), v1 = await appareil('V1'), v2 = await appareil('V2'), c = await appareil('C');
 
     // Rôles : le 1er valideur coche son rôle dans Réglages › Mes rôles (avec son code) ; le 2e se connecte à l'Espace valideur.
-    await v1.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
+    await v1.evaluate(() => JUMELAGE_REGLAGES({ vue: 'roles' })); await attendre(400);
+    verifier(await v1.evaluate(() => !document.getElementById('JUM-R-NOM').offsetParent && !!document.getElementById('JUM-R-VAL1').offsetParent), '« Mes rôles » : les rôles seuls, sans l\'identité');
     await v1.check('#JUM-R-VAL1'); await attendre(200);
-    verifier(await v1.isVisible('#JUM-R-CODEVAL1') && await v1.isVisible('#JUM-R-FONCTION'), 'Réglages › Mes rôles : 1er valideur coché → code et fonction demandés');
-    await v1.fill('#JUM-R-FONCTION', 'Chef de service'); await v1.fill('#JUM-R-CODEVAL1', 'MAUVAIS'); await v1.click('.JUM-R-PRINCIPAL'); await attendre(3000);
+    verifier(await v1.isVisible('#JUM-R-CODEVAL1') && await v1.isVisible('#JUM-R-FONCTION1'), 'Réglages › Mes rôles : 1er valideur coché → code et fonction demandés');
+    await v1.fill('#JUM-R-FONCTION1', 'Chef de service'); await v1.fill('#JUM-R-CODEVAL1', 'MAUVAIS'); await v1.click('.JUM-R-PRINCIPAL'); await attendre(3000);
     verifier((await v1.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Mes rôles : un mauvais code valideur ne donne pas le rôle');
     await v1.fill('#JUM-R-CODEVAL1', code2); await v1.click('.JUM-R-PRINCIPAL'); await attendre(3000);
     verifier((await v1.textContent('#JUM-R-ERREUR')).includes('incorrect'), 'Mes rôles : le code du 2e valideur ne donne pas le rôle de 1er valideur');
     // Une même personne peut cumuler VALIDEUR 1 et VALIDEUR 2 (et ASSIST CHORUS DT).
-    await v1.check('#JUM-R-VAL2'); await v1.fill('#JUM-R-CODEVAL2', code2);
+    await v1.check('#JUM-R-VAL2'); await v1.fill('#JUM-R-CODEVAL2', code2); await v1.fill('#JUM-R-FONCTION2', 'Chef de corps');
     await v1.fill('#JUM-R-CODEVAL1', code1); await v1.click('.JUM-R-PRINCIPAL'); await attendre(6000);
     verifier(await v1.evaluate(() => { const r = JSON.parse(localStorage.getItem('trigone_roles_locaux')); return !document.querySelector('.JUM-REGLAGES') && r.valideur1 === true && r.valideur2 === true; }),
         'Mes rôles : VALIDEUR 1 et VALIDEUR 2 activés ensemble, chacun avec son code');
@@ -96,7 +97,7 @@ module.exports = async function() {
     verifier(await v1.evaluate(() => { const h = HABILITATION_COURANTE(); return !!h && h.role === 1 && h.fonction === 'CHEF DE SERVICE'; }), 'Mes rôles : l\'Espace valideur est connecté d\'office (VALIDEUR 1)');
     verifier(await v1.locator('.MER-BASCULE-ROLE button').count() === 2, 'deux rôles valideur : bascule VALIDEUR 1 / VALIDEUR 2 affichée');
     await v1.click('.MER-BASCULE-ROLE button:has-text("VALIDEUR 2")'); await attendre(1500);
-    verifier(await v1.evaluate(() => HABILITATION_COURANTE().role === 2), 'bascule : passage en VALIDEUR 2 sans ressaisir de code');
+    verifier(await v1.evaluate(() => HABILITATION_COURANTE().role === 2 && HABILITATION_COURANTE().fonction === 'CHEF DE CORPS'), 'bascule : passage en VALIDEUR 2 sans ressaisir de code, avec sa fonction (CHEF DE CORPS)');
     await v1.click('.MER-BASCULE-ROLE button:has-text("VALIDEUR 1")'); await attendre(1500);
     // Rôle coché sur l'appareil mais perdu côté serveur (ex. compte réactivé) : TRIGONE le redéclare à l'ouverture.
     const rolesServeur = p => p.evaluate(async () => {
