@@ -58,7 +58,7 @@
     function cleEcran() { var e = window.screen || {}; return (e.width || 0) + 'x' + (e.height || 0); }
     function mesurerNaturel() {
         if (metaVue && metaVue.getAttribute('content') !== vueOrigine) return;
-        naturel = { cote: Math.min(window.innerWidth || 0, window.innerHeight || 0), ecran: cleEcran() };
+        naturel = { cote: Math.min(window.innerWidth || 0, window.innerHeight || 0), largeur: window.innerWidth || 0, ecran: cleEcran() };
     }
     function petitCote() {
         var e = window.screen || {}, cote = Math.min(e.width || 0, e.height || 0);
@@ -91,8 +91,17 @@
     function appliquerVue() {
         var actif = modePcActif();
         if (metaVue) {
-            var voulu = actif ? 'width=' + LARGEUR_PC + ', viewport-fit=cover' : vueOrigine;
-            if (metaVue.getAttribute('content') !== voulu) metaVue.setAttribute('content', voulu);
+            // Zoom imposé (initial et minimum) : toute la largeur tient dans l'écran, même si le navigateur avait gardé
+            // un zoom précédent (rechargement, champ de saisie agrandi). Zoom avant toujours possible.
+            var zoom = Math.min(1, Math.round(((naturel.ecran === cleEcran() && naturel.largeur) || (window.screen && screen.width) || LARGEUR_PC) / LARGEUR_PC * 1000) / 1000);
+            var voulu = actif ? 'width=' + LARGEUR_PC + ', initial-scale=' + zoom + ', minimum-scale=' + zoom + ', viewport-fit=cover' : vueOrigine;
+            if (metaVue.getAttribute('content') !== voulu) {
+                if (actif && !(window.visualViewport && Math.abs(visualViewport.scale - zoom) < 0.02)) {
+                    // Zoom bloqué un instant à la bonne valeur (le navigateur l'applique), puis zoom avant de nouveau permis.
+                    metaVue.setAttribute('content', voulu + ', maximum-scale=' + zoom);
+                    setTimeout(function() { if (modePcActif()) metaVue.setAttribute('content', voulu); }, 350);
+                } else metaVue.setAttribute('content', voulu);
+            }
         }
         document.documentElement.classList.toggle('jum-mode-pc', actif);
         majBoutonsModePc();
@@ -600,7 +609,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 84, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 85, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
