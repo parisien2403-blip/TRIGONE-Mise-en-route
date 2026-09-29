@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=96"></script>
+<script src="../jumelage.js?v=97"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -2278,6 +2278,31 @@ body.dark-mode .pj-check-item.pj-is-strict { background: rgba(248, 113, 113, 0.1
   -webkit-overflow-scrolling: touch;
 }
 .QR-OVERLAY.HIDDEN { display: none !important; }
+/* Dossiers (Bibliothèque, Remboursement) — même présentation que la boîte de réception de Mise en route */
+.MER-DOSSIERS { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin: 0 0 14px; }
+.MER-DOSSIER { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 14px; border: 1px solid var(--sm2-border, #e2e8f0); border-radius: 14px; background: var(--sm2-surface, #fff); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.MER-DOSSIER:hover { box-shadow: 0 4px 14px rgba(15,23,42,.08); }
+.MER-DOSSIER:active { transform: scale(.985); }
+.MER-DOSSIER-ICONE { position: relative; flex: 0 0 auto; width: 52px; height: 44px; }
+.MER-DOSSIER-ICONE svg { width: 100%; height: 100%; display: block; }
+.MER-DOSSIER-ICONE.petit { width: 26px; height: 22px; }
+.MER-DOSSIER.vide .MER-DOSSIER-ICONE svg { opacity: .75; }
+.MER-DOSSIER-NB { position: absolute; top: -6px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #dc2626; color: #fff; font-size: 12px; font-weight: 800; line-height: 22px; text-align: center; box-shadow: 0 0 0 2px var(--sm2-surface, #fff); }
+.MER-DOSSIER-NB.gris { background: #64748b; }
+.MER-DOSSIER-NB.en-ligne { position: static; display: inline-block; margin-left: 8px; box-shadow: none; }
+.MER-DOSSIER-TXT { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.MER-DOSSIER-TXT b { font-size: 0.95em; font-weight: 700; }
+.MER-DOSSIER.nouveau .MER-DOSSIER-TXT b { font-weight: 900; }
+.MER-DOSSIER-TXT small { font-size: 0.74em; color: var(--sm2-muted, #64748b); }
+.MER-DOSSIER-DET { font-weight: 700; }
+.MER-DOSSIER-ATT { color: #dc2626; }
+.MER-DOSSIER-CHEV { font-size: 1.6em; color: var(--sm2-muted, #94a3b8); }
+.MER-DOSSIER-TETE { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--sm2-border, #e2e8f0); }
+.MER-DOSSIER-TETE b { font-size: 1em; }
+.MER-DOSSIER-RETOUR { border: 1px solid var(--sm2-border, #e2e8f0); background: transparent; color: inherit; font: inherit; font-weight: 700; font-size: 0.8em; padding: 6px 12px; border-radius: 999px; cursor: pointer; margin-right: 4px; white-space: nowrap; flex: 0 0 auto; }
+.MER-DOSSIER-NB.gris { background: #64748b; }
+.CR-DOSSIERS-AN { margin: 14px 2px 8px; font-size: 0.78em; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; color: var(--sm2-muted, #64748b); display: flex; justify-content: space-between; }
+
 .FST-NOTE { grid-column: 1 / -1; font-size: 0.72em; color: #64748b; padding: 4px 8px 8px; }
 .MONTRE-ILLUS { display: flex; gap: 10px; margin: 4px 0 10px; }
 .MONTRE-ILLUS figure { flex: 1; margin: 0; text-align: center; }
@@ -8331,7 +8356,7 @@ function INIT_REMINDERS() {
     } else UPDATE_REMINDER_BANNER();
 }
 
-var BIB_UI = { selectedIdx: null };
+var BIB_UI = { selectedIdx: null, dossier: null };
 
 function GET_BIBLIOTHEQUE() {
     try { return JSON.parse(localStorage.getItem(BIBLIOTHEQUE_KEY) || '[]'); } catch(e) { return []; }
@@ -8816,6 +8841,29 @@ window.addEventListener('trigone-suivi', function() {
     var liste = document.getElementById('BIB-LIST');
     if (liste && !liste.classList.contains('HIDDEN') && liste.offsetParent) RENDER_BIBLIOTHEQUE();
 });
+// ----- Dossiers (Bibliothèque, Remboursement) : comme une messagerie, des dossiers jaunes avec leur compteur -----
+var CR_ICONE_DOSSIER = '<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M3 7a4 4 0 0 1 4-4h11l5 5h18a4 4 0 0 1 4 4v3H3Z" fill="#E0A800"/><path d="M3 13a3 3 0 0 1 3-3h36a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3Z" fill="#F6C343"/><path d="M3 15h42" stroke="#FBD970" stroke-width="1.5"/></svg>';
+// d = { id, titre, sous, nb, gris, det (HTML), nouveau } ; action(id) : nom de la fonction appelée au toucher.
+function CR_GRILLE_DOSSIERS(ds, action) {
+    return '<div class="MER-DOSSIERS">' + ds.map(function(d) {
+        return '<button type="button" class="MER-DOSSIER' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + ESC_HTML(d.id) + '" onclick="' + action + '(\'' + ESC_HTML(d.id) + '\')">' +
+            '<span class="MER-DOSSIER-ICONE">' + CR_ICONE_DOSSIER + (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</span>' +
+            '<span class="MER-DOSSIER-TXT"><b>' + ESC_HTML(d.titre) + '</b><small>' + ESC_HTML(d.sous) + '</small><small class="MER-DOSSIER-DET">' + d.det + '</small></span>' +
+            '<span class="MER-DOSSIER-CHEV" aria-hidden="true">›</span></button>';
+    }).join('') + '</div>';
+}
+function CR_TETE_DOSSIER(d, retour) {
+    return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="' + retour + '">‹ Dossiers</button>' +
+        '<span class="MER-DOSSIER-ICONE petit">' + CR_ICONE_DOSSIER + '</span><b>' + ESC_HTML(d.titre) + '</b>' + (d.nb ? '<span class="MER-DOSSIER-NB en-ligne' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</div>';
+}
+// Bibliothèque : dossier d'un compte-rendu selon son suivi.
+function BIB_ETAT(item) {
+    if (item.preview) return 'aenvoyer';
+    var s = CR_SUIVI_DE(item.entry);
+    return s && s.etape === 'traite' ? 'traites' : 'envoyes';
+}
+function BIB_OUVRIR_DOSSIER(id) { BIB_UI.dossier = id || null; BIB_UI.selectedIdx = null; RENDER_BIBLIOTHEQUE(); window.scrollTo(0, 0); }
+
 function RENDER_BIBLIOTHEQUE() {
     if (window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
     var items = GET_BIBLIOTHEQUE_DISPLAY_LIST();
@@ -8833,8 +8881,28 @@ function RENDER_BIBLIOTHEQUE() {
     }
     list.classList.remove('HIDDEN');
     if (empty) empty.classList.add('HIDDEN');
-    if (toolbar) toolbar.classList.toggle('HIDDEN', !GET_BIBLIOTHEQUE().length);
+    var ds = [
+        { id: 'aenvoyer', titre: 'À envoyer', sous: 'Compte-rendu en cours, pas encore envoyé' },
+        { id: 'envoyes', titre: 'Envoyés', sous: 'En attente de traitement par l\'assistant Chorus DT' },
+        { id: 'traites', titre: 'Traités', sous: 'Pris en charge par l\'assistant Chorus DT' }
+    ];
+    ds.forEach(function(d) {
+        d.n = items.filter(function(it) { return BIB_ETAT(it) === d.id; }).length;
+        d.nb = d.n; d.gris = d.id !== 'aenvoyer'; d.nouveau = d.id === 'aenvoyer' && d.n > 0;
+        d.det = d.n ? (d.id === 'aenvoyer' ? '<span class="MER-DOSSIER-ATT">' : '<span>') + d.n + ' compte' + (d.n > 1 ? 's' : '') + '-rendu' + (d.n > 1 ? 's' : '') + '</span>' : 'Aucun compte-rendu';
+    });
+    var ouvertB = ds.filter(function(d) { return d.id === BIB_UI.dossier; })[0];
+    if (!ouvertB) {
+        BIB_UI.dossier = null;
+        if (toolbar) toolbar.classList.toggle('HIDDEN', !GET_BIBLIOTHEQUE().length);
+        list.innerHTML = CR_GRILLE_DOSSIERS(ds, 'BIB_OUVRIR_DOSSIER');
+        return;
+    }
+    if (toolbar) toolbar.classList.add('HIDDEN');
+    list.insertAdjacentHTML('beforeend', CR_TETE_DOSSIER(ouvertB, 'BIB_OUVRIR_DOSSIER(null)'));
+    if (!ouvertB.n) list.insertAdjacentHTML('beforeend', '<div class="BIB-EMPTY"><p>Aucun compte-rendu dans ce dossier.</p></div>');
     items.forEach(function(item, i) {
+        if (BIB_ETAT(item) !== ouvertB.id) return;
         var entry = item.entry;
         var wrap = document.createElement('div');
         wrap.className = 'BIB-CARD-WRAP';
@@ -8879,6 +8947,7 @@ function RENDER_BIBLIOTHEQUE() {
 
 function OUVRIR_BIBLIOTHEQUE() {
     BIB_UI.selectedIdx = null;
+    BIB_UI.dossier = null;
     BIB_UI.selectedPreview = false;
     BIB_AFFICHER_LISTE();
     RENDER_BIBLIOTHEQUE();
@@ -8886,8 +8955,10 @@ function OUVRIR_BIBLIOTHEQUE() {
     SHOW_PAGE('P-BIB');
 }
 
+function FORFAIT_OUVRIR_MOIS(key) { FORFAIT_STAT_PERIOD = key || null; FORFAIT_UI.selectedKey = null; FORFAIT_AFFICHER_LISTE(); RENDER_FORFAIT_STAT(); window.scrollTo(0, 0); }
 function OUVRIR_STAT_FORFAIT() {
     FORFAIT_UI.selectedKey = null;
+    FORFAIT_STAT_PERIOD = null;
     FORFAIT_AFFICHER_LISTE();
     RENDER_FORFAIT_STAT();
     MARQUER_FORFAIT_VU();
@@ -11000,23 +11071,34 @@ function RENDER_FORFAIT_STAT() {
             periods.push({ year: y, month: m, key: y + '-' + m, data: stats.months[m] });
         });
     });
-    if (!FORFAIT_STAT_PERIOD || !periods.some(function(p) { return p.key === FORFAIT_STAT_PERIOD; })) {
-        FORFAIT_STAT_PERIOD = periods.length ? periods[0].key : null;
-    }
-
-    yearTabs.innerHTML = '';
-    periods.forEach(function(p) {
-        var btn = document.createElement('button');
-        btn.type = 'button';
-        btn.className = 'FORFAIT-YEAR-TAB' + (p.key === FORFAIT_STAT_PERIOD ? ' active' : '');
-        btn.textContent = GET_MONTH_LABEL(p.month, p.year);
-        btn.onclick = function() { FORFAIT_STAT_PERIOD = p.key; RENDER_FORFAIT_STAT(); };
-        yearTabs.appendChild(btn);
-    });
-
+    // Dossiers : un dossier par mois (nombre de missions, montant), regroupés par année ; FORFAIT_STAT_PERIOD = mois ouvert.
+    if (FORFAIT_STAT_PERIOD && !periods.some(function(p) { return p.key === FORFAIT_STAT_PERIOD; })) FORFAIT_STAT_PERIOD = null;
+    var dossierMois = function(p) {
+        var n = p.data.items.length, encours = p.data.items.filter(function(it) { return it.enCours; }).length;
+        var lib = GET_MONTH_LABEL(p.month, p.year);
+        return { id: p.key, titre: lib.charAt(0).toUpperCase() + lib.slice(1), sous: n + ' mission' + (n > 1 ? 's' : '') + (encours ? ' · dont ' + encours + ' en cours' : ''),
+            nb: n, gris: !encours, nouveau: !!encours, det: '<span>' + FORMAT_EURO(p.data.total) + ' €</span>' };
+    };
     var current = periods.filter(function(p) { return p.key === FORFAIT_STAT_PERIOD; })[0];
+    yearTabs.innerHTML = '';
+    yearTabs.classList.add('HIDDEN');
     monthList.innerHTML = '';
-    if (clearBtn) clearBtn.classList.toggle('HIDDEN', !GET_FORFAIT_PERIODE().length || !!FORFAIT_UI.selectedKey);
+    if (!current) {
+        yearTotal.classList.add('HIDDEN');
+        if (clearBtn) clearBtn.classList.toggle('HIDDEN', !GET_FORFAIT_PERIODE().length);
+        var html = '';
+        years.forEach(function(y) {
+            var dsY = periods.filter(function(p) { return p.year === y; });
+            if (!dsY.length) return;
+            var totY = dsY.reduce(function(t, p) { return t + (p.data.total || 0); }, 0);
+            html += '<div class="CR-DOSSIERS-AN"><span>' + y + '</span><span>' + FORMAT_EURO(totY) + ' €</span></div>' + CR_GRILLE_DOSSIERS(dsY.map(dossierMois), 'FORFAIT_OUVRIR_MOIS');
+        });
+        monthList.innerHTML = html;
+        if (detailPanel) detailPanel.innerHTML = '';
+        return;
+    }
+    monthList.innerHTML = CR_TETE_DOSSIER(dossierMois(current), 'FORFAIT_OUVRIR_MOIS(null)');
+    if (clearBtn) clearBtn.classList.add('HIDDEN');
     if (!current) {
         yearTotal.classList.add('HIDDEN');
         if (detailPanel) detailPanel.innerHTML = '';
@@ -11695,7 +11777,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 193;
+var APP_CODE_VERSION = 194;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;

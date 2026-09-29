@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 143;
+var APP_CODE_VERSION = 144;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -459,7 +459,7 @@ var MER_BIB_SELECTION = null;
 function BIB_SELECTION(active) { MER_BIB_SELECTION = active ? {} : null; SHOW_PAGE('BIBLIOTHEQUE'); }
 function BIB_COCHER(id, oui) { if (!MER_BIB_SELECTION) return; if (oui) MER_BIB_SELECTION[id] = true; else delete MER_BIB_SELECTION[id]; BIB_MAJ_BARRE(); }
 function BIB_TOUT_COCHER() {
-    var l = GET_BIBLIOTHEQUE(), tout = l.every(function(e) { return MER_BIB_SELECTION[e.id]; });
+    var l = GET_BIBLIOTHEQUE().filter(function(e) { return !MER_BIB_VISIBLES || MER_BIB_VISIBLES.indexOf(e.id) >= 0; }), tout = l.every(function(e) { return MER_BIB_SELECTION[e.id]; });
     MER_BIB_SELECTION = {}; if (!tout) l.forEach(function(e) { MER_BIB_SELECTION[e.id] = true; });
     var y = window.scrollY; SHOW_PAGE('BIBLIOTHEQUE'); window.scrollTo(0, y);
 }
@@ -475,8 +475,41 @@ function BIB_SUPPRIMER_SELECTION() {
         SHOW_PAGE('BIBLIOTHEQUE');
     }, '🗑️', 'mascotte-poubelle.webp', true);
 }
+// Bibliothèque rangée en dossiers selon l'avancement (suivi) de chaque demande : un envoi de plusieurs demandes
+// apparaît dans le dossier de chacune. Sans suivi connu (ancienne demande, hors ligne) : « En cours de validation ».
+function MER_BIB_ETATS(e) {
+    var s = window.JUMELAGE_SUIVI ? JUMELAGE_SUIVI() : {}, etats = {};
+    (e.demandes || []).forEach(function(d) {
+        var x = s[d.id], et = x && x.etape;
+        etats[et === 'refus' || et === 'abandon' ? 'refus' : et === 'traite' ? 'traitees' : et === 'chorus' ? 'chorus' : 'validation'] = true;
+    });
+    return etats;
+}
+var MER_BIB_VISIBLES = null;   // envois du dossier ouvert (« Tout cocher » s'y limite)
 function TPL_BIBLIOTHEQUE() {
-    var l = GET_BIBLIOTHEQUE(), sel = MER_BIB_SELECTION;
+    var tout = GET_BIBLIOTHEQUE(), sel = MER_BIB_SELECTION;
+    var ds = [
+        { id: 'validation', titre: 'En cours de validation', sous: 'Chez le VALIDEUR 1 ou le VALIDEUR 2' },
+        { id: 'chorus', titre: 'Chez l\'assistant Chorus DT', sous: 'Validées, en attente de prise en charge' },
+        { id: 'traitees', titre: 'Prises en charge', sous: 'Ordre de mission créé ou en cours de création' },
+        { id: 'refus', titre: 'Refusées', sous: 'Renvoyées avec un motif : à corriger' }
+    ];
+    ds.forEach(function(d) {
+        d.liste = tout.filter(function(e) { return MER_BIB_ETATS(e)[d.id]; });
+        d.nb = d.liste.length; d.gris = d.id !== 'refus'; d.nouveau = d.id === 'refus' && d.nb > 0;
+        d.det = d.nb ? (d.id === 'refus' ? '<span class="MER-DOSSIER-ATT">' : '<span>') + d.nb + ' demande' + (d.nb > 1 ? 's' : '') + '</span>' : 'Aucune demande';
+    });
+    var ouvert = ds.filter(function(d) { return d.id === MER_DOSSIER.BIBLIOTHEQUE; })[0];
+    if (!ouvert) {
+        MER_DOSSIER.BIBLIOTHEQUE = null; MER_BIB_VISIBLES = null;
+        if (!DEMO_ACTIF && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
+        return '<div class="CARD"><h2>Bibliothèque</h2>' +
+            '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route envoyées, rangées selon leur <b>suivi</b> (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT) ; une notification vous prévient à chaque étape. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route »).</p>' +
+            (tout.length ? TPL_GRILLE_DOSSIERS('BIBLIOTHEQUE', ds) : '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_BIB_SELECTION = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+    }
+    var l = ouvert.liste;
+    MER_BIB_VISIBLES = l.map(function(e) { return e.id; });
     if (sel) Object.keys(sel).forEach(function(id) { if (!BIB_TROUVER(id)) delete sel[id]; });
     if (!DEMO_ACTIF && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
     var items = l.map(function(e) {
@@ -502,10 +535,9 @@ function TPL_BIBLIOTHEQUE() {
             '<button type="button" class="BTN BTN-SMALL MER-BIB-SUPPR" id="MER-BIB-SUPPR" onclick="BIB_SUPPRIMER_SELECTION()"' + (n ? '' : ' disabled') + '>🗑 Supprimer' + (n ? ' (' + n + ')' : '') + '</button>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_SELECTION(false)">Annuler</button></div>'
         : '<div class="MER-BIB-BARRE"><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_SELECTION(true)">☑ Sélectionner</button></div>';
-    return '<div class="CARD"><h2>Bibliothèque</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route déjà envoyées, avec leur <b>suivi</b> (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT) : une notification vous prévient à chaque étape. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route ») sur cet appareil ; ailleurs, le missionnaire saisit sa mission directement dans Compte-rendu.</p>' +
-        barre + (items || '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_BIB_SELECTION = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+    return '<div class="CARD"><h2>Bibliothèque</h2>' + TPL_TETE_DOSSIER('BIBLIOTHEQUE', ouvert) +
+        barre + (items || '<div class="MER-EMPTY">Aucune demande dans ce dossier.</div>') +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_DOSSIER(\'BIBLIOTHEQUE\', null)">‹ Dossiers</button></div>';
 }
 function BIB_TROUVER(id) { return GET_BIBLIOTHEQUE().filter(function(e) { return e.id === id; })[0]; }
 function BIB_PDF(id) {
@@ -1959,7 +1991,7 @@ var DEMO_ETAPES = [
       zones: ['.MER-PANIER-ITEM', '#MER-MAIL-DEST', '.CARD > .BTN-PRIMARY'] },
     { page: 'PANIER', envoi: true, titre: 'Avant d\'envoyer', texte: 'Aperçu du PDF, puis « Envoyer » : la demande et ses pièces jointes arrivent, chiffrées, directement dans le TRIGONE du 1er valideur.',
       zones: ['#MER-BTN-DIRECT'] },
-    { page: 'BIBLIOTHEQUE', titre: 'Bibliothèque', texte: 'Chaque demande envoyée y reste : PDF, ou « Refaire une demande » à partir d\'elle. Au retour, TRIGONE Compte-rendu la propose pour préparer le compte-rendu de la mission.',
+    { page: 'BIBLIOTHEQUE', titre: 'Bibliothèque', texte: 'Chaque demande envoyée y reste, rangée par dossier selon son avancement (en validation, chez l\'assistant Chorus DT, prise en charge, refusée) : PDF, ou « Refaire une demande » à partir d\'elle. Au retour, TRIGONE Compte-rendu la propose pour préparer le compte-rendu de la mission.',
       zones: ['.MER-VAL-ACTIONS button[onclick^="BIB_PDF"]'] },
     { page: 'ACCUEIL', titre: 'Et ensuite ?', texte: 'Le 1er valideur reçoit la demande dans sa boîte TRIGONE et la signe, puis le 2e valideur, et l\'assistant Chorus DT génère le PDF final.',
       zones: ['.BTN-ACCUEIL-PETIT', '.PC-NAV[onclick*="VALIDATION"]'] },
@@ -3471,7 +3503,7 @@ function RECU_SUPPRIMER_SELECTION(cle) {
 // ===================== DOSSIERS (boîte de réception, espace Assistant Chorus DT) =====================
 // Comme une messagerie : des dossiers jaunes, chacun avec son nom et le nombre d'envois à traiter ; un toucher ouvre
 // le dossier (envois à traiter, puis ses envois traités). MER_DOSSIER : dossier ouvert de chaque page (null = liste).
-var MER_DOSSIER = { RECEPTION: null, CHORUS: null };
+var MER_DOSSIER = { RECEPTION: null, CHORUS: null, BIBLIOTHEQUE: null };
 var MER_ICONE_DOSSIER = '<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M3 7a4 4 0 0 1 4-4h11l5 5h18a4 4 0 0 1 4 4v3H3Z" fill="#E0A800"/><path d="M3 13a3 3 0 0 1 3-3h36a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3Z" fill="#F6C343"/><path d="M3 15h42" stroke="#FBD970" stroke-width="1.5"/></svg>';
 function MER_DOSSIERS(page, l) {
     var d = page === 'CHORUS' ? [
@@ -3499,23 +3531,32 @@ function MER_DOSSIER_DE(page, x) {
     var d = MER_DOSSIERS(page, [x]).filter(function(e) { return e.liste.length; })[0];
     return d ? d.id : null;
 }
-function OUVRIR_DOSSIER(page, id) { MER_DOSSIER[page] = id; MER_RECU_SELECTION = null; SHOW_PAGE(page); window.scrollTo(0, 0); }
+function OUVRIR_DOSSIER(page, id) { MER_DOSSIER[page] = id; MER_RECU_SELECTION = null; MER_BIB_SELECTION = null; SHOW_PAGE(page); window.scrollTo(0, 0); }
+// Grille de dossiers : d = { id, titre, sous, nb (compteur), gris (compteur gris au lieu de rouge), det (HTML), nouveau }.
+function TPL_GRILLE_DOSSIERS(page, ds) {
+    return '<div class="MER-DOSSIERS">' + ds.map(function(d) {
+        return '<button type="button" class="MER-DOSSIER' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" onclick="OUVRIR_DOSSIER(\'' + page + '\', \'' + d.id + '\')">' +
+            '<span class="MER-DOSSIER-ICONE">' + MER_ICONE_DOSSIER + (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</span>' +
+            '<span class="MER-DOSSIER-TXT"><b>' + ESC(d.titre) + '</b><small>' + ESC(d.sous) + '</small><small class="MER-DOSSIER-DET">' + d.det + '</small></span>' +
+            '<span class="MER-DOSSIER-CHEV" aria-hidden="true">›</span></button>';
+    }).join('') + '</div>';
+}
+function TPL_TETE_DOSSIER(page, d) {
+    return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="OUVRIR_DOSSIER(\'' + page + '\', null)">‹ Dossiers</button>' +
+        '<span class="MER-DOSSIER-ICONE petit">' + MER_ICONE_DOSSIER + '</span><b>' + ESC(d.titre) + '</b>' + (d.nb ? '<span class="MER-DOSSIER-NB en-ligne' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</div>';
+}
 function TPL_DOSSIERS(page, l) {
     var ds = MER_DOSSIERS(page, l);
     var ouvert = ds.filter(function(d) { return d.id === MER_DOSSIER[page]; })[0];
     if (!ouvert) {
         MER_DOSSIER[page] = null;
-        return '<div class="MER-DOSSIERS">' + ds.map(function(d) {
-            var det = (d.aTraiter.length ? '<span class="MER-DOSSIER-ATT">' + d.aTraiter.length + ' à traiter</span>' : 'Rien à traiter') +
+        ds.forEach(function(d) {
+            d.det = (d.aTraiter.length ? '<span class="MER-DOSSIER-ATT">' + d.aTraiter.length + ' à traiter</span>' : 'Rien à traiter') +
                 (d.traites.length ? ' · ' + d.traites.length + ' traité' + (d.traites.length > 1 ? 's' : '') : '');
-            return '<button type="button" class="MER-DOSSIER' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" onclick="OUVRIR_DOSSIER(\'' + page + '\', \'' + d.id + '\')">' +
-                '<span class="MER-DOSSIER-ICONE">' + MER_ICONE_DOSSIER + (d.nb ? '<span class="MER-DOSSIER-NB">' + d.nb + '</span>' : '') + '</span>' +
-                '<span class="MER-DOSSIER-TXT"><b>' + ESC(d.titre) + '</b><small>' + ESC(d.sous) + '</small><small class="MER-DOSSIER-DET">' + det + '</small></span>' +
-                '<span class="MER-DOSSIER-CHEV" aria-hidden="true">›</span></button>';
-        }).join('') + '</div>';
+        });
+        return TPL_GRILLE_DOSSIERS(page, ds);
     }
-    return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="OUVRIR_DOSSIER(\'' + page + '\', null)">‹ Dossiers</button>' +
-        '<span class="MER-DOSSIER-ICONE petit">' + MER_ICONE_DOSSIER + '</span><b>' + ESC(ouvert.titre) + '</b>' + (ouvert.nb ? '<span class="MER-DOSSIER-NB en-ligne">' + ouvert.nb + '</span>' : '') + '</div>' +
+    return TPL_TETE_DOSSIER(page, ouvert) +
         (ouvert.aide ? '<p class="MER-HINT" style="margin:0 0 10px;">' + ouvert.aide + '</p>' : '') +
         (ouvert.aTraiter.length ? ouvert.aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Rien à traiter dans ce dossier.</div>') +
         TPL_RECU_TRAITES(page + '-' + ouvert.id, 'Traités', ouvert.traites);

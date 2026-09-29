@@ -10,6 +10,7 @@ const TESTS = {
     'envoi-collective': ['Mission collective envoyée aux participants dans TRIGONE', require('./test-envoi-collective')],
     'montre': ['Horodatage depuis la montre (notification avec bouton)', require('./test-montre')],
     'etranger': ['Mission à l\'étranger (barème, trajet en France, taux BCE)', require('./test-etranger')],
+    'dossiers': ['Bibliothèque et Remboursement en dossiers', require('./test-dossiers')],
     'affichage-pc': ['Affichage PC sur tablette et pliable', require('./test-affichage-pc')],
     'demenagement': ['Déménagement vers l\'adresse Cloudflare', require('./test-demenagement')],
     'boite': ['Boîte aux lettres TRIGONE (envois directs chiffrés)', require('./test-boite')]
