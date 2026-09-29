@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 94,
+  "build": 95,
   "notifier": true,
-  "message": "Montre connectée : Compte-rendu › Réglages › « Montre connectée » explique l'horodatage depuis le poignet, avec un essai. Ouvrez TRIGONE pour la mise à jour."
+  "message": "Missions à l'étranger : taux de change de la BCE mis à jour automatiquement, et repas pris pendant le trajet comptés au barème France. Ouvrez TRIGONE pour la mise à jour."
 }

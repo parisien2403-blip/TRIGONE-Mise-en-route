@@ -439,6 +439,37 @@ async function api(requete, env, url, ctx) {
     const methode = requete.method;
 
     if (chemin === 'etat') return json({ ok: true, version: 1 });
+    // Taux de change pour les missions à l'étranger (Compte-rendu) : euros pour 1 unité de chaque devise du barème,
+    // d'après les taux de référence quotidiens de la Banque centrale européenne (gardés 6 h) ; devises à parité fixe
+    // (franc CFA, escudo, franc de Djibouti, dinar jordanien) calculées. Public : aucune donnée personnelle.
+    if (chemin === 'taux' && methode === 'GET') {
+        const garde = await kv.get('taux:bce', 'json');
+        if (garde && Date.now() - garde.le < 6 * 3600 * 1000) return json({ ok: true, date: garde.date, taux: garde.taux, source: 'BCE' });
+        try {
+            const r = await fetch('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml', { cf: { cacheTtl: 3600 } });
+            if (!r.ok) throw new Error('BCE ' + r.status);
+            const xml = await r.text();
+            const date = (/time=['"](\d{4}-\d{2}-\d{2})['"]/.exec(xml) || [])[1] || '';
+            const bce = {};
+            for (const m of xml.matchAll(/currency=['"]([A-Z]{3})['"]\s+rate=['"]([\d.]+)['"]/g)) bce[m[1]] = parseFloat(m[2]);
+            if (!bce.USD || !date) throw new Error('BCE illisible');
+            const eur = code => bce[code] ? Math.round(1e6 / bce[code]) / 1e6 : null;
+            const noms = { 'DOLLAR US': 'USD', 'DOLLAR AMERICAIN': 'USD', 'DOLLAR DES BERMUDES': 'USD', 'LIVRE STERLING': 'GBP', 'FRANC SUISSE': 'CHF',
+                'DOLLAR CANADIEN': 'CAD', 'DOLLAR AUSTRALIEN': 'AUD', 'DOLLAR NEO-ZELANDAIS': 'NZD', 'YEN': 'JPY', 'YUAN CHINOIS': 'CNY',
+                'DOLLAR DE HONG KONG': 'HKD', 'DOLLAR SINGAPOURIEN': 'SGD', 'DOLLAR DE BRUNEI': 'SGD', 'COURONNE DANOISE': 'DKK',
+                'COURONNE NORVEGIENNE': 'NOK', 'COURONNE SUEDOISE': 'SEK', 'COURONNE ISLANDAISE': 'ISK', 'PESO MEXICAIN': 'MXN',
+                'PESO PHILIPPIN': 'PHP', 'RINGGIT': 'MYR', 'BAHT': 'THB' };
+            const taux = { 'EURO': 1, 'FRANC CFA': Math.round(1e8 / 655.957) / 1e8, 'ESCUDO': Math.round(1e8 / 110.265) / 1e8 };
+            Object.keys(noms).forEach(n => { const v = eur(noms[n]); if (v) taux[n] = v; });
+            taux['FRANC DJIBOUTI'] = Math.round(1e8 * taux['DOLLAR US'] / 177.721) / 1e8;
+            taux['DINAR JORDANIEN'] = Math.round(1e6 * taux['DOLLAR US'] / 0.709) / 1e6;
+            await kv.put('taux:bce', JSON.stringify({ le: Date.now(), date, taux }), { expirationTtl: 7 * 86400 });
+            return json({ ok: true, date, taux, source: 'BCE' });
+        } catch (e) {
+            if (garde) return json({ ok: true, date: garde.date, taux: garde.taux, source: 'BCE' });
+            return erreur(502, 'Taux de change indisponibles pour le moment.');
+        }
+    }
     // Clé publique VAPID : l'appareil s'abonne aux notifications avec elle.
     if (chemin === 'push/cle' && methode === 'GET') return json({ ok: true, cle: (await clesVapid(env)).pub });
 
