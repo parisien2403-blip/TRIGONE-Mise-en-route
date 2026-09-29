@@ -612,7 +612,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 91, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 92, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2334,6 +2334,7 @@
         m = document.createElement('div');
         m.className = 'JUM-ROUE-MENU';
         m.innerHTML = '<button type="button" data-action="presentation"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><span><b>Découvrir TRIGONE</b><small>Revoir la présentation</small></span></button>' +
+            '<button type="button" data-action="partager">' + window.JUMELAGE_ICONE('partage') + '<span><b>Partager TRIGONE</b><small>QR code et lien de l\'application</small></span></button>' +
             '<button type="button" data-action="signaler">' + window.JUMELAGE_ICONE('bouee') + '<span><b>Signaler un problème</b><small>Écrire à l\'équipe TRIGONE</small></span></button>' +
             '<div class="JUM-ROUE-SEP"></div>' +
             '<button type="button" data-action="sauvegarder">' + window.JUMELAGE_ICONE('disquette') + '<span><b>Sauvegarder mes données</b><small>Un fichier pour tout TRIGONE</small></span></button>' +
@@ -2349,6 +2350,7 @@
             if (a === 'reglages') window.JUMELAGE_REGLAGES();
             else if (a === 'reinitialiser') window.JUMELAGE_REINITIALISER();
             else if (a === 'signaler') window.JUMELAGE_SIGNALER('choix');
+            else if (a === 'partager') window.JUMELAGE_PARTAGER_APPLI();
             else if (a === 'sauvegarder') window.JUMELAGE_SAUVEGARDER();
             else if (a === 'compte') window.JUMELAGE_COMPTE();
             else if (a === 'restaurer') window.JUMELAGE_RESTAURER();
@@ -2390,6 +2392,7 @@
         photo: '<path d="M4 7.5h3l1.8-2.5h6.4L17 7.5h3a1 1 0 0 1 1 1V19a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V8.5a1 1 0 0 1 1-1Z"/><circle cx="12" cy="13.5" r="3.6"/>',
         cloche: '<path d="M6 16V11a6 6 0 0 1 12 0v5l1.5 2h-15L6 16Z"/><path d="M10 20.5a2 2 0 0 0 4 0"/>',
         horsLigne: '<path d="M2 8.5a15 15 0 0 1 5-2.6M22 8.5a15 15 0 0 0-10.3-3.6M5 12a10 10 0 0 1 3.5-2M19 12a10 10 0 0 0-3-1.8M8.5 15.5a5 5 0 0 1 5.5-.9M12 19.5h.01M3 3l18 18"/>',
+        partage: '<circle cx="18" cy="5" r="2.6"/><circle cx="6" cy="12" r="2.6"/><circle cx="18" cy="19" r="2.6"/><path d="m8.3 13.3 7.4 4.4M15.7 6.3l-7.4 4.4"/>',
         bouee: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4"/><path d="m5.6 5.6 3.6 3.6M14.8 14.8l3.6 3.6M18.4 5.6l-3.6 3.6M9.2 14.8l-3.6 3.6"/>',
         dossier: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2.5h8a2 2 0 0 1 2 2V18a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/>',
         medaille: '<circle cx="12" cy="9" r="5.5"/><path d="M8.7 13.4 7 21.5l5-2.8 5 2.8-1.7-8.1"/>',
@@ -2551,6 +2554,76 @@
         setTimeout(function() { if (demo) demoPlacer(); }, 1100);
     };
     window.JUMELAGE_DEMO_ESPACE = function() { return demo ? parseInt(getComputedStyle(document.documentElement).getPropertyValue('--demo-bandeau-h'), 10) || 0 : 0; };
+
+    // ---------- Partager TRIGONE (roue crantée de l'écran de choix) : QR code et lien de l'application ----------
+    // Pour installer TRIGONE sur un autre téléphone : il scanne le QR code (appareil photo), ou reçoit le lien.
+    var fenPartage = null;
+    window.JUMELAGE_FERMER_PARTAGE = function() { if (fenPartage) { fenPartage.remove(); fenPartage = null; } };
+    window.JUMELAGE_PARTAGER_APPLI = function() {
+        if (fenPartage || !document.body) return;
+        var lien = new URL(APPLIS.mer.url, location.href).href.split(/[?#]/)[0];
+        if (!document.getElementById('JUM-PARTAGE-CSS')) {
+            var st = document.createElement('style'); st.id = 'JUM-PARTAGE-CSS';
+            st.textContent = '.JUM-PARTAGE{position:fixed;inset:0;z-index:100050;display:flex;align-items:center;justify-content:center;padding:16px;background:rgba(15,23,42,.62);overflow-y:auto}' +
+                '.JUM-PART-CARTE{position:relative;width:100%;max-width:380px;margin:auto;background:#fff;color:#1a1a1a;border-radius:18px;padding:22px 20px 18px;box-shadow:0 20px 50px rgba(0,0,0,.3);text-align:center;font-family:inherit}' +
+                '.JUM-PART-CARTE h3{margin:0 0 6px;font-size:1.05em;letter-spacing:.04em;text-transform:uppercase}' +
+                '.JUM-PART-CARTE p{margin:0 0 12px;font-size:.84em;line-height:1.45;color:#475569}' +
+                '.JUM-PART-QR{display:inline-flex;padding:12px;background:#fff;border:1px solid #e2e8f0;border-radius:14px;min-width:200px;min-height:200px;align-items:center;justify-content:center}' +
+                '.JUM-PART-QR img,.JUM-PART-QR canvas{display:block;width:200px;height:200px}' +
+                '.JUM-PART-LIEN{display:block;margin:12px 0 4px;padding:10px 12px;border-radius:10px;background:#f1f5f9;color:#1d4ed8;font-size:.8em;word-break:break-all;text-decoration:underline;user-select:all}' +
+                '.JUM-PART-BTNS{display:flex;flex-direction:column;gap:8px;margin-top:12px}' +
+                '.JUM-PART-BTNS button{padding:12px;border-radius:12px;border:1px solid #cbd5e1;background:#fff;color:#1a1a1a;font:inherit;font-weight:800;font-size:.8em;letter-spacing:.05em;text-transform:uppercase;cursor:pointer}' +
+                '.JUM-PART-BTNS button.principal{background:#1a1a1a;color:#fff;border-color:#1a1a1a}' +
+                '.JUM-PART-ETAT{min-height:1.2em;font-size:.78em;color:#15803d;font-weight:700;margin-top:6px}' +
+                '.JUM-PART-FERMER{position:absolute;top:10px;right:10px;width:30px;height:30px;border:none;border-radius:8px;background:rgba(0,0,0,.07);font:inherit;font-weight:700;cursor:pointer;color:#475569}' +
+                'body.dark-mode .JUM-PART-CARTE{background:#1f1f1f;color:#f5f5f5}body.dark-mode .JUM-PART-CARTE p{color:#a3a3a3}' +
+                'body.dark-mode .JUM-PART-LIEN{background:#2a2a2a;color:#93c5fd}body.dark-mode .JUM-PART-BTNS button{background:#2a2a2a;color:#f5f5f5;border-color:#404040}' +
+                'body.dark-mode .JUM-PART-BTNS button.principal{background:#f5f5f5;color:#1a1a1a}body.dark-mode .JUM-PART-FERMER{background:rgba(255,255,255,.1);color:#a3a3a3}';
+            document.head.appendChild(st);
+        }
+        fenPartage = document.createElement('div');
+        fenPartage.className = 'JUM-PARTAGE';
+        fenPartage.innerHTML = '<div class="JUM-PART-CARTE" role="dialog" aria-label="Partager TRIGONE">' +
+            '<button type="button" class="JUM-PART-FERMER" aria-label="Fermer">✕</button>' +
+            '<h3>Partager TRIGONE</h3>' +
+            '<p>Faites scanner ce QR code avec l\'appareil photo du téléphone : TRIGONE s\'ouvre, puis « Installer » (ou « Ajouter à l\'écran d\'accueil »).</p>' +
+            '<div class="JUM-PART-QR" aria-label="QR code de l\'application TRIGONE"></div>' +
+            '<p style="margin:12px 0 0;">Pas de lecteur de QR code ? Envoyez-lui ce lien :</p>' +
+            '<a class="JUM-PART-LIEN" target="_blank" rel="noopener"></a>' +
+            '<div class="JUM-PART-ETAT"></div>' +
+            '<div class="JUM-PART-BTNS">' + (navigator.share ? '<button type="button" class="principal" data-a="partager">Partager le lien…</button>' : '') +
+            '<button type="button"' + (navigator.share ? '' : ' class="principal"') + ' data-a="copier">Copier le lien</button>' +
+            '<button type="button" data-a="mail">Envoyer par mail</button></div></div>';
+        var a = fenPartage.querySelector('.JUM-PART-LIEN'); a.href = lien; a.textContent = lien;
+        var etat = fenPartage.querySelector('.JUM-PART-ETAT');
+        fenPartage.addEventListener('click', function(ev) {
+            if (ev.target === fenPartage || ev.target.closest('.JUM-PART-FERMER')) { window.JUMELAGE_FERMER_PARTAGE(); return; }
+            var b = ev.target.closest('button[data-a]'); if (!b) return;
+            var quoi = b.getAttribute('data-a'), texte = 'TRIGONE — ordre de mission et compte-rendu de mission. Ouvrez ce lien, puis « Installer » : ';
+            if (quoi === 'partager') navigator.share({ title: 'TRIGONE', text: texte, url: lien }).catch(function() {});
+            else if (quoi === 'mail') window.location.href = 'mailto:?subject=' + encodeURIComponent('Application TRIGONE') + '&body=' + encodeURIComponent(texte + '\n' + lien);
+            else {
+                var ok = function() { etat.textContent = 'Lien copié.'; };
+                if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(lien).then(ok, function() { etat.textContent = 'Copie impossible : sélectionnez le lien ci-dessus.'; });
+                else etat.textContent = 'Sélectionnez le lien ci-dessus pour le copier.';
+            }
+        });
+        document.body.appendChild(fenPartage);
+        // QR code : bibliothèque locale (mise en cache pour le hors ligne) ; sans elle, le lien suffit.
+        var dessiner = function() {
+            var box = fenPartage && fenPartage.querySelector('.JUM-PART-QR'); if (!box) return;
+            try { new window.QRCode(box, { text: lien, width: 400, height: 400, colorDark: '#000000', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M }); box.removeAttribute('title'); }
+            catch (e) { box.textContent = 'QR code indisponible : utilisez le lien.'; }
+        };
+        if (window.QRCode) dessiner();
+        else {
+            var sc = document.createElement('script');
+            sc.src = (DANS_CR ? '../' : '') + 'vendor/qrcode.min.js';
+            sc.onload = dessiner;
+            sc.onerror = function() { var box = fenPartage && fenPartage.querySelector('.JUM-PART-QR'); if (box) box.textContent = 'QR code indisponible hors ligne : utilisez le lien.'; };
+            document.head.appendChild(sc);
+        }
+    };
 
     // ---------- Signaler un problème (écran de choix et les deux applis) ----------
     var MAIL_SUPPORT = 'trigone.app@outlook.fr';
@@ -2758,7 +2831,7 @@
             '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
             // Assistant Chorus DT : son logo au centre, sur la diagonale, entre Mise en route et Compte-rendu.
             (roleChorus() ? '<button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button>' : '') +
-            '<button type="button" class="JUM-ROUE" aria-label="Présentation, aide et sauvegarde de TRIGONE" title="Découvrir TRIGONE · Signaler un problème · Sauvegarde">' + ROUE_SVG + '</button>' +
+            '<button type="button" class="JUM-ROUE" aria-label="Présentation, aide et sauvegarde de TRIGONE" title="Découvrir TRIGONE · Partager TRIGONE · Signaler un problème · Sauvegarde">' + ROUE_SVG + '</button>' +
             // Numéro de version, en haut à droite (le même dans les deux applis).
             (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '') +
             // Mise à jour, en bas à gauche (pendant de la roue crantée).

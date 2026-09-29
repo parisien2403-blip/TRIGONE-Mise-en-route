@@ -20,6 +20,12 @@ module.exports = async function(srv) {
         { unite: '4°RIISC', cie: '2CIE', grade: 'CPL', nom: 'LEROY', prenom: 'Emma', matricule: '067 98 76 543' },
         { unite: '4°RIISC', cie: '1CIE', grade: 'SAP', nom: 'BERNARD', prenom: 'Hugo', matricule: '067 55 44 333' }
     ] };
+    // Roue crantée de l'écran de choix › « Partager TRIGONE » : QR code et lien de l'application.
+    await p.goto(srv.url); await attendre(2500);
+    await p.evaluate(() => JUMELAGE_PARTAGER_APPLI()); await attendre(1500);
+    const partage = await p.evaluate(() => { const f = document.querySelector('.JUM-PARTAGE'); return f ? { lien: f.querySelector('.JUM-PART-LIEN').textContent, qr: !!f.querySelector('.JUM-PART-QR img, .JUM-PART-QR canvas') } : null; });
+    verifier(partage && partage.qr && partage.lien === srv.url, 'Partager TRIGONE : QR code et lien de l\'application (' + (partage && partage.lien) + ')');
+    await p.evaluate(() => JUMELAGE_FERMER_PARTAGE());
     await p.goto(srv.url + 'cr/'); await attendre(2500);
     await p.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); });
     await p.evaluate(dd => APPLIQUER_MISE_EN_ROUTE(dd), collective); await attendre(1200);
@@ -29,7 +35,7 @@ module.exports = async function(srv) {
         'les 2 autres missionnaires sont repris (grade, nom, prénom, NID, compagnie)');
     const zone = await p.evaluate(() => { const z = document.getElementById('MER-EQUIPE'); return z.classList.contains('HIDDEN') ? '' : z.textContent; });
     verifier(/Participants repris de la mise en route \(2\)/.test(zone) && zone.includes('CPL LEROY Emma') && zone.includes('SAP BERNARD Hugo'), 'identification : la liste des participants est affichée');
-    verifier(await p.evaluate(() => !document.getElementById('CHEF-MAIL-ZONE').classList.contains('HIDDEN')), 'mail du chef de mission demandé (QR code participants)');
+    verifier(await p.evaluate(() => !document.getElementById('CHEF-MAIL-ZONE').classList.contains('HIDDEN')), 'mail du chef de mission demandé (les participants le mettent en copie)');
     const recap = await p.evaluate(() => BUILD_RECAP_CORE(false).R);
     verifier(/MISSION COLLECTIVE - CHEF DE MISSION/.test(recap) && /PARTICIPANTS \(2\)/.test(recap) && recap.includes('CPL LEROY Emma'), 'récapitulatif du compte-rendu : les participants y figurent');
     const pdf = await p.evaluate(async () => { const r = GENERER_PDF(0, true, 'blob'); if (!r || !r.blob) return ''; const t = new TextDecoder('latin1').decode(new Uint8Array(await r.blob.arrayBuffer())); return t; });
@@ -42,6 +48,7 @@ module.exports = async function(srv) {
     await p.evaluate(dd => APPLIQUER_MISE_EN_ROUTE(dd), Object.assign({}, collective, { personnes: collective.personnes.slice(0, 1) })); await attendre(1200);
     verifier(await p.evaluate(() => M.COLLECTIVE === false && !document.getElementById('IS-COLLECTIVE').checked && !M.PARTICIPANTS.length && document.getElementById('MER-EQUIPE').classList.contains('HIDDEN')),
         'demande individuelle : mission non collective, pas de participants');
+    verifier(await p.evaluate(() => typeof GEN_QR === 'undefined' && typeof PARTAGER_QR_WHATSAPP === 'undefined' && !/WhatsApp|GÉNÉRER QR/i.test(document.body.innerHTML)), 'compte-rendu : plus de QR code de groupe ni de WhatsApp');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();
 };

@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=91"></script>
+<script src="../jumelage.js?v=92"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -4962,7 +4962,6 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 </style>
 <script src="vendor/jspdf.umd.min.js"></script>
 <script src="vendor/jspdf.plugin.autotable.min.js"></script>
-<script src="vendor/qrcode.min.js"></script>
 <style>
 /* ===== Jumelage : barre du bas comme dans Mise en route — libellés entiers, sur deux lignes au besoin,
    abrégés sur les écrans étroits (« Biblio », « Rembours. ») au lieu d'être coupés par « … » ===== */
@@ -5202,21 +5201,8 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <p class="QR-CARD-SUB">Chacun reçoit une notification et son compte-rendu déjà rempli : il complète son identité, joint ses justificatifs, puis l'envoie à l'assistant Chorus DT.</p>
 <div id="PAX-ENVOI-LISTE"></div>
 <button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_LIGNE_PAX()">+ Ajouter un participant</button>
-<p class="QR-HINT">Adresse <b>professionnelle</b> de son compte TRIGONE. Sans compte TRIGONE : QR code ou WhatsApp.</p>
+<p class="QR-HINT">Adresse <b>professionnelle</b> de son compte TRIGONE. Pas encore de compte : il se connecte à TRIGONE avec cette adresse, puis vous renvoyez.</p>
 <button type="button" id="BTN-PAX-ENVOYER" class="BTN BTN-START" onclick="ENVOYER_PAX_TRIGONE()">📨 Envoyer</button>
-</div>
-</div>
-<div id="QR-OVERLAY" class="QR-OVERLAY HIDDEN" aria-hidden="true">
-<div id="QR-BOX" class="QR-OVERLAY-CARD QR-CARD">
-<button type="button" class="QR-OVERLAY-CLOSE" onclick="FERMER_QR_OVERLAY()" title="Fermer le QR code">✕</button>
-<p class="QR-CARD-TITLE">Invitation participants</p>
-<p class="QR-CARD-SUB">Mission collective — scan direct ou partage WhatsApp</p>
-<div id="QR-CONTAINER" class="QR-CONTAINER"></div>
-<p class="QR-HINT">Les participants <b>scannent ce code</b> sur votre écran, ou reçoivent le lien via <b>WhatsApp</b>.</p>
-<div id="QR-SHARE-BTNS" class="QR-SHARE-BTNS">
-<button type="button" class="BTN BTN-START" onclick="FERMER_QR_OVERLAY(); OUVRIR_ENVOI_PAX()">📨 Envoyer dans TRIGONE</button>
-<button type="button" class="BTN BTN-WA" onclick="PARTAGER_QR_WHATSAPP()">💬 Partager sur WhatsApp</button>
-</div>
 </div>
 </div>
 
@@ -5388,7 +5374,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <div id="BIB-RECAP" class="BIB-RECAP-BOX RECAP-BOX"></div>
 <button type="button" id="BIB-BTN-REDOWNLOAD" class="BTN BTN-QR" style="margin-top:12px;" onclick="RETELECHARGER_PDF_BIBLIOTHEQUE(BIB_UI.selectedIdx)">⬇️ Retélécharger le PDF de ce compte-rendu</button>
-<button type="button" id="BIB-BTN-RESHARE-QR" class="BTN BTN-QR HIDDEN" style="margin-top:8px;" onclick="try { REPARTAGER_QR_BIBLIOTHEQUE(BIB_UI.selectedIdx); } catch(e) { AFFICHER_WELCOME_TOAST('⛔ Erreur : ' + e.message); }">📲 Repartager le QR / lien participants</button>
+<button type="button" id="BIB-BTN-RESHARE-QR" class="BTN BTN-QR HIDDEN" style="margin-top:8px;" onclick="RENVOYER_PAX_BIBLIOTHEQUE(BIB_UI.selectedIdx)">📨 Renvoyer aux participants</button>
 </div>
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
@@ -5559,7 +5545,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <span class="NOTICE-CARD-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg></span>
 <span class="NOTICE-CARD-BODY">
 <span class="NOTICE-CARD-TITLE">OM Collectif</span>
-<span class="NOTICE-CARD-SUB">Chef de mission ou participant · QR code</span>
+<span class="NOTICE-CARD-SUB">Chef de mission ou participant · envoi dans TRIGONE</span>
 </span>
 <span class="NOTICE-CARD-CHEV" aria-hidden="true">›</span>
 </button>
@@ -5708,7 +5694,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <div id="CHEF-MAIL-ZONE" class="HIDDEN">
 <label for="CHEF-MAIL">Mail chef de mission</label>
 <input type="email" id="CHEF-MAIL" placeholder="EX: prenom.nom@email.fr" onblur="SAVE_CHEF_MAIL_FIELD()" autocomplete="email">
-<p class="CIE-HINT">Pour le QR code participants — mémorisée sur cet appareil.</p>
+<p class="CIE-HINT">Les participants vous mettent en copie — mémorisée sur cet appareil.</p>
 </div>
 <label class="P1-SECTION-LBL cie-label-simple">Compagnie</label>
 <input type="text" id="CIE-INPUT" placeholder="EX : 1ère Cie" onblur="SET_CIE(this.value)">
@@ -6085,7 +6071,6 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </details>
 <div id="COLL-ZONE" class="HIDDEN">
 <button type="button" id="BTN-ENVOI-PAX" class="BTN BTN-START" onclick="OUVRIR_ENVOI_PAX()">📨 ENVOYER AUX PARTICIPANTS DANS TRIGONE</button>
-<button type="button" id="BTN-GEN-QR" class="BTN BTN-QR" onclick="GEN_QR()">📲 GÉNÉRER QR CODE DE GROUPE</button>
 </div>
 <div class="finalize-panel">
 <p class="panel-label">Finalisation du compte-rendu</p>
@@ -7019,7 +7004,7 @@ var NOTICE_MENU_EXTRA = '<details class="notice-fold"><summary><span class="FOLD
 
 var NOTICE_TEXTS = {
     INDIVIDUEL: '<p class="notice-lead">Parcours d\'une mission individuelle, de l\'accueil à l\'envoi du compte-rendu.</p><ol class="notice-steps"><li><b>Départ mission</b> : grade, nom, prénom, NID, compagnie, libellé de la mission, lieu de départ et retour, transports aller puis retour (onglets Aller / Retour)</li><li><b>Sur site</b> : horodater l\'arrivée, puis appuyer sur <b>Je quitte le site</b> — un choix s\'ouvre alors : <b>vers une autre destination</b> ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît — c\'est cet appui qui arrête le chrono</li><li><b>Frais</b> : repas, nuitées, horaires de billet et kilométrage (véhicule personnel), à compléter chez vous sans limite de temps</li><li><b>Récapitulatif</b> : vérification, pièces jointes à cocher (certaines, comme la facture d\'hôtel, sont obligatoires — voir la fiche dédiée ci-dessous), observations, signature, PDF et envoi dans TRIGONE</li><li>Après envoi : le CR est dans la <b>Bibliothèque</b> (montant <b>forfaitaire</b>, PDF retéléchargeable à tout moment)</li><li>Le suivi des dépenses se fait dans <b>Remboursement</b> (montants <b>frais réels</b>, indemnité kilométrique, et déduction automatique si une <b>avance de 75 %</b> a été perçue à la création de l\'OM)</li></ol><details class="notice-fold" style="margin-top:14px"><summary>Enchaîner vers une autre destination</summary><p style="padding:0 14px 12px;margin:0;font-size:0.82em;color:var(--sm2-muted);line-height:1.5">En choisissant <b>vers une autre destination</b> après <b>Je quitte le site</b>, un écran simplifié « Destination 2 » (puis 3, etc.) s\'ouvre : identité et compagnie déjà connues restent masquées, seuls le lieu de retour et les transports de cette étape sont à saisir.</p></details>',
-    COLLECTIF: '<p class="notice-lead">Mission collective : le chef saisit le groupe ; chaque participant finalise son propre envoi.</p><p class="notice-role">Chef de mission</p><ol class="notice-steps"><li>Cochez <b>Mission collective</b> et indiquez votre mail</li><li>Grade, identité, libellé de la mission, transports, horodatages (arrivée site, départ site, fin de mission) et frais du groupe</li><li>QR code : affichage à l\'écran ou partage WhatsApp pour les participants</li><li>Récap, signature, PDF et envoi dans TRIGONE</li><li>CR archivé en <b>Bibliothèque</b> · suivi en <b>Remboursement</b></li></ol><p class="notice-role">Participant</p><ol class="notice-steps"><li>Scanner le QR du chef ou ouvrir le lien reçu</li><li>Le libellé de la mission et les horodatages du chef sont déjà repris — <b>votre</b> grade, nom, prénom, NID et compagnie restent à saisir, ils vous sont propres</li><li>Récap, signature, PDF et envoi dans TRIGONE</li></ol>',
+    COLLECTIF: '<p class="notice-lead">Mission collective : le chef saisit le groupe ; chaque participant finalise son propre envoi.</p><p class="notice-role">Chef de mission</p><ol class="notice-steps"><li>Cochez <b>Mission collective</b> et indiquez votre mail</li><li>Grade, identité, libellé de la mission, transports, horodatages (arrivée site, départ site, fin de mission) et frais du groupe</li><li>« Envoyer aux participants dans TRIGONE » : chacun reçoit une notification et son compte-rendu prérempli</li><li>Récap, signature, PDF et envoi dans TRIGONE</li><li>CR archivé en <b>Bibliothèque</b> · suivi en <b>Remboursement</b></li></ol><p class="notice-role">Participant</p><ol class="notice-steps"><li>Notification « Mission collective » : Mise en route › Boîte de réception › « Ouvrir mon compte-rendu »</li><li>La mission, les horodatages du chef et votre identité sont déjà repris : vérifiez-les et joignez vos justificatifs</li><li>Récap, signature, PDF et envoi dans TRIGONE</li></ol>',
     P1: '<ol class="notice-steps"><li>Nom et prénom</li><li>Compagnie (1<sup>re</sup> ou 4<sup>e</sup> Cie)</li><li>Collective : cochez et indiquez le mail du chef de mission</li><li>Lieu de départ et de retour (résidence administrative ou familiale)</li><li><b>Transport aller</b> puis <b>transport retour</b> — onglets Aller / Retour (un bloc à la fois)</li><li>VRM / VRC : destination · VF / avion / bateau : gare, port ou aéroport (les horaires se saisissent plus tard, dans Frais)</li><li>VRC — véhicule personnel : cochez <b>IK</b> si le chef de corps autorise l\'indemnité kilométrique, puis choisissez la puissance fiscale (le kilométrage se saisit dans Frais)</li><li>Une fois les 4 onglets complets, <b>Départ en mission</b> (dernier onglet, Top départ) — horodatage du départ</li></ol>',
     P2: '<ol class="notice-steps"><li><b>Arrivée sur site</b> — horodatage au bouton vert</li><li><b>Je quitte le site</b> — un choix s\'ouvre : <b>vers une autre destination</b> (enchaînement) ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît alors — c\'est lui qui arrête le chrono</li><li>Les <b>frais</b> se saisissent ensuite sans pression du temps</li></ol>',
     'P2-FIN': '<ol class="notice-steps"><li><b>Horodatage terminé</b> — fixé à l\'étape précédente (bouton Valider et voir le récap)</li><li>Complétez vos frais chez vous, sans limite de temps</li><li><b>3 onglets</b> : Repas &amp; hébergement → Trajets → Récap &amp; valider</li><li><b>Repas</b> : gratuit par défaut — les jours se créent automatiquement</li><li><b>Trajets</b> : VF / avion / bateau — Aller / Retour avec date-heure de billet · VRC + IK — kilométrage parcouru</li><li><b>Récap</b> : vérifiez puis <b>Valider et voir le récapitulatif</b></li><li>Plusieurs jours : onglets J1, J2… — un jour à la fois</li><li><b>Expérience de saisie</b> : envoi bloqué — supprimez le jour en trop (×)</li></ol>',
@@ -7334,7 +7319,7 @@ function QUITTER_MISSION_PAX() {
         return;
     }
     if (!M.MAIL_SENT) {
-        if (!confirm('Quitter la mission du chef ?\n\nVotre brouillon sera effacé. Vous pourrez rescanner le QR code si besoin.')) return;
+        if (!confirm('Quitter la mission du chef ?\n\nVotre brouillon sera effacé. Vous pourrez le rouvrir depuis Mise en route › Boîte de réception.')) return;
     }
     CLOTURER_MISSION_ACTIVE();
     RELOAD_ACCUEIL_PROPRE();
@@ -7536,7 +7521,7 @@ function REFUSER_ABANDON_MISSION() {
 
 function ABANDONNER_MISSION_VERS_ACCUEIL() {
     if (M.IS_PAX) {
-        if (!confirm('Quitter la mission du chef ?\n\nVotre brouillon sera effacé. Vous pourrez rescanner le QR code si besoin.')) return;
+        if (!confirm('Quitter la mission du chef ?\n\nVotre brouillon sera effacé. Vous pourrez le rouvrir depuis Mise en route › Boîte de réception.')) return;
         CLOTURER_MISSION_ACTIVE();
         RELOAD_ACCUEIL_PROPRE();
         return;
@@ -8666,53 +8651,6 @@ function RETELECHARGER_PDF_BIBLIOTHEQUE(idx) {
     }
 }
 
-function REPARTAGER_QR_BIBLIOTHEQUE(idx) {
-  try {
-    AFFICHER_WELCOME_TOAST('⏳ Préparation du QR…');
-    var items = GET_BIBLIOTHEQUE_DISPLAY_LIST();
-    var item = items[idx];
-    if (!item || item.preview) {
-        AFFICHER_WELCOME_TOAST('⛔ Impossible de retrouver ce compte-rendu. Fermez puis rouvrez la Bibliothèque.');
-        return;
-    }
-    var entry = item.entry;
-    if (!entry.snapshot) {
-        AFFICHER_WELCOME_TOAST('⛔ Ce CR a été archivé avant la mise à jour permettant de le repartager.');
-        return;
-    }
-    var etaitCollective = entry.role === 'CHEF' || entry.snapshot.COLLECTIVE === true;
-    if (!etaitCollective) {
-        AFFICHER_WELCOME_TOAST('ℹ️ Cette mission n\'était pas collective — pas de QR à repartager.');
-        return;
-    }
-    ENSURE_QRCODE_LIB(function(ok) {
-      try {
-        if (!ok) {
-            AFFICHER_WELCOME_TOAST('⛔ Le composant QR n\'a pas pu se charger. Rouvrez TRIGONE avec internet.');
-            return;
-        }
-        var backup = M;
-        try {
-            M = JSON.parse(JSON.stringify(entry.snapshot));
-            var url = BUILD_QR_URL();
-            M.QR_URL = url;
-            backup.QR_URL = url; // pour que "Partager sur WhatsApp", cliqué après restauration, utilise la bonne URL
-            var rendered = RENDER_QR_CODE(url, true);
-            M = backup;
-            SAVE_STATE(); // ré-écrit la vraie mission en cours, au cas où RENDER_QR_CODE aurait sauvegardé l'instantané par erreur
-            if (!rendered) AFFICHER_WELCOME_TOAST('⛔ Impossible d\'afficher le QR. Réessayez après avoir rouvert TRIGONE.');
-        } catch (e) {
-            M = backup;
-            AFFICHER_WELCOME_TOAST('⛔ Erreur QR : ' + e.message);
-        }
-      } catch (e2) {
-        AFFICHER_WELCOME_TOAST('⛔ Erreur inattendue (chargement QR) : ' + e2.message);
-      }
-    });
-  } catch (e3) {
-    AFFICHER_WELCOME_TOAST('⛔ Erreur inattendue : ' + e3.message);
-  }
-}
 
 function OUVRIR_BIB_RECAP(idx) {
     var items = GET_BIBLIOTHEQUE_DISPLAY_LIST();
@@ -8739,7 +8677,7 @@ function OUVRIR_BIB_RECAP(idx) {
     var redlBtn = document.getElementById('BIB-BTN-REDOWNLOAD');
     if (redlBtn) redlBtn.classList.toggle('HIDDEN', !!item.preview);
     var reshareBtn = document.getElementById('BIB-BTN-RESHARE-QR');
-    if (reshareBtn) reshareBtn.classList.toggle('HIDDEN', !entry.snapshot || !!item.preview);
+    if (reshareBtn) reshareBtn.classList.toggle('HIDDEN', !entry.snapshot || !!item.preview || !(entry.role === 'CHEF' || entry.snapshot.COLLECTIVE === true));
     BIB_AFFICHER_DETAIL();
 }
 
@@ -11587,7 +11525,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 188;
+var APP_CODE_VERSION = 189;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12597,7 +12535,7 @@ function UPDATE_NETWORK_UI() {
         banner.className = 'NETWORK-BANNER offline';
         var pendingMsg = q.length
             ? '📴 Hors ligne — ' + q.length + ' envoi(s) en attente · saisie et PDF OK'
-            : '📴 Hors ligne — saisie mission et PDF OK · mail et WhatsApp à la reconnexion';
+            : '📴 Hors ligne — saisie mission et PDF OK · envois à la reconnexion';
         text.textContent = pendingMsg;
         btn.classList.add('HIDDEN');
         document.body.classList.add('has-network-banner');
@@ -12662,10 +12600,8 @@ function PROCESS_SYNC_QUEUE() {
         window.location.href = 'mailto:' + MAIL_ASSIST + '?subject=' + encodeURIComponent(item.sujet) + '&body=' + encodeURIComponent(item.body);
         REMOVE_FROM_SYNC_QUEUE(item.id);
     } else if (item.type === 'QR') {
-        ENSURE_QRCODE_LIB(function(ok) {
-            if (ok && RENDER_QR_CODE(item.url)) REMOVE_FROM_SYNC_QUEUE(item.id);
-            else alert('Impossible de générer le QR code pour le moment.');
-        });
+        // Ancien QR code de groupe en attente : l'envoi aux participants passe désormais par TRIGONE.
+        REMOVE_FROM_SYNC_QUEUE(item.id);
     }
     UPDATE_NETWORK_UI();
 }
@@ -12682,44 +12618,21 @@ function COMPACT_QR_PAYLOAD(obj) {
 }
 
 // pax (envoi dans TRIGONE à un participant de la mise en route) : son identité, préremplie chez lui.
-function QR_DONNEES(pax) {
-    var o = GET_QR_MISSION_PAYLOAD();
+function QR_DONNEES(pax, src) {
+    var sauve = M, o;
+    if (src) M = src;
+    try { o = GET_QR_MISSION_PAYLOAD(); } finally { M = sauve; }
     if (pax) o.PAX = { grade: pax.grade || '', nom: pax.nom || '', prenom: pax.prenom || '', nid: pax.nid || '', cie: pax.cie || '' };
     return btoa(unescape(encodeURIComponent(JSON.stringify(COMPACT_QR_PAYLOAD(o)))));
 }
-function BUILD_QR_URL() {
-    // Encodé : dans une adresse, un « + » du base64 serait lu comme une espace.
-    return window.location.href.split('?')[0] + '?data=' + encodeURIComponent(QR_DONNEES());
-}
 
-function GET_QR_MESSAGE_PARTAGE() {
-    var url = M.QR_URL || BUILD_QR_URL();
-    var chef = M.USER || 'Chef de mission';
-    return '📲 MISSION COLLECTIVE — ' + UNIT_NAME + '\n\nBonjour,\n\n' + chef + ' vous invite à remplir votre compte-rendu participant.\n\n▶ Ouvrez ce lien :\n' + url;
-}
 
-function PARTAGER_QR_WHATSAPP() {
-    if (!M.QR_URL && !M.COLLECTIVE) return;
-    if (!navigator.onLine) {
-        alert('WhatsApp nécessite une connexion. Le QR code reste affiché à l\'écran pour un scan direct hors ligne.');
-        return;
-    }
-    var url = M.QR_URL || BUILD_QR_URL();
-    if (!M.QR_URL) { M.QR_URL = url; SAVE_STATE(); }
-    var texte = GET_QR_MESSAGE_PARTAGE();
-    window.location.href = 'https://wa.me/?text=' + encodeURIComponent(texte);
-}
 
-function UPDATE_QR_BUTTON_UI() {
-    var btn = document.getElementById('BTN-GEN-QR');
-    if (!btn) return;
-    btn.textContent = M.QR_URL ? '📲 VOIR LE QR CODE' : '📲 GÉNÉRER QR CODE DE GROUPE';
-}
 
 // ===================== MISSION COLLECTIVE : ENVOI DANS TRIGONE =====================
-// Le chef de mission envoie le compte-rendu prérempli (mêmes données que le QR code) dans la boîte TRIGONE de chaque
+// Le chef de mission envoie le compte-rendu prérempli (données de la mission) dans la boîte TRIGONE de chaque
 // participant : notification, puis « Ouvrir mon compte-rendu » (Mise en route › Boîte de réception).
-var CLE_MAILS_PAX = 'trigone_mails_participants';
+var CLE_MAILS_PAX = 'trigone_mails_participants', ENVOI_PAX_SRC = null;
 function MAILS_PAX() { try { return JSON.parse(localStorage.getItem(CLE_MAILS_PAX) || '{}') || {}; } catch (e) { return {}; } }
 function CLE_PAX(p) { return [(p.nom || '').toUpperCase(), (p.prenom || '').toUpperCase()].join(' ').trim(); }
 function LIGNE_ENVOI_PAX(i, titre, mail, envoye) {
@@ -12727,19 +12640,27 @@ function LIGNE_ENVOI_PAX(i, titre, mail, envoye) {
         '<input type="email" class="PAX-MAIL" placeholder="prenom.nom@interieur.gouv.fr" autocomplete="off" value="' + ESC_HTML(mail || '') + '">' +
         '<span class="PAX-ETAT' + (envoye ? ' ok' : '') + '">' + (envoye ? '✔ Envoyé le ' + ESC_HTML(envoye) : '') + '</span></div>';
 }
-function OUVRIR_ENVOI_PAX() {
-    if (!IS_VALID_EMAIL(M.CHEF_MAIL)) { MSG_INFO('Mail du chef de mission', 'Renseignez votre adresse mail (chef de mission) sur la page de départ : les participants vous mettent en copie.', '📧'); return; }
+// Mission archivée (Bibliothèque) : renvoi aux participants à partir de son instantané.
+function RENVOYER_PAX_BIBLIOTHEQUE(idx) {
+    var item = GET_BIBLIOTHEQUE_DISPLAY_LIST()[idx];
+    if (!item || item.preview || !item.entry.snapshot) { MSG_INFO('Compte-rendu introuvable', 'Fermez puis rouvrez la Bibliothèque.', '⛔'); return; }
+    OUVRIR_ENVOI_PAX(JSON.parse(JSON.stringify(item.entry.snapshot)));
+}
+function OUVRIR_ENVOI_PAX(src) {
+    ENVOI_PAX_SRC = src && src.JOURS ? src : null;
+    var S = ENVOI_PAX_SRC || M;
+    if (!IS_VALID_EMAIL(S.CHEF_MAIL)) { MSG_INFO('Mail du chef de mission', 'Renseignez votre adresse mail (chef de mission) sur la page de départ : les participants vous mettent en copie.', '📧'); return; }
     if (!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF())) {
-        MSG_INFO('Connectez-vous à TRIGONE', 'L\'envoi aux participants passe par votre compte TRIGONE : touchez « Se connecter » en haut à droite. Sinon, utilisez le QR code ou WhatsApp.', '🔐');
+        MSG_INFO('Connectez-vous à TRIGONE', 'L\'envoi aux participants passe par votre compte TRIGONE : touchez « Se connecter » en haut à droite.', '🔐');
         return;
     }
-    var memo = MAILS_PAX(), envois = M.PAX_ENVOIS || {};
-    var html = (M.PARTICIPANTS || []).map(function(p, i) {
+    var memo = MAILS_PAX(), envois = S.PAX_ENVOIS || {};
+    var html = (S.PARTICIPANTS || []).map(function(p, i) {
         var mail = p.mail || memo[CLE_PAX(p)] || '';
         return LIGNE_ENVOI_PAX(i, [p.grade, p.nom, p.prenom].filter(Boolean).join(' '), mail, mail && envois[mail.toLowerCase()]);
     }).join('');
     document.getElementById('PAX-ENVOI-LISTE').innerHTML = html;
-    if (!(M.PARTICIPANTS || []).length) AJOUTER_LIGNE_PAX();
+    if (!(S.PARTICIPANTS || []).length) AJOUTER_LIGNE_PAX();
     var o = document.getElementById('PAX-ENVOI-OVERLAY');
     o.classList.remove('HIDDEN'); o.setAttribute('aria-hidden', 'false');
 }
@@ -12753,6 +12674,7 @@ function FERMER_ENVOI_PAX() {
     o.classList.add('HIDDEN'); o.setAttribute('aria-hidden', 'true');
 }
 function ENVOYER_PAX_TRIGONE() {
+    var S = ENVOI_PAX_SRC || M;
     var lignes = Array.prototype.slice.call(document.querySelectorAll('#PAX-ENVOI-LISTE .PAX-LIGNE'));
     var a = lignes.map(function(el) { return { el: el, mail: (el.querySelector('.PAX-MAIL').value || '').trim().toLowerCase() }; })
         .filter(function(x) { return x.mail; });
@@ -12762,26 +12684,26 @@ function ENVOYER_PAX_TRIGONE() {
     if (mauvais.length) return;
     // Adresses mémorisées sur cet appareil (prochaines missions avec les mêmes personnes).
     var memo = MAILS_PAX();
-    a.forEach(function(x) { var i = x.el.getAttribute('data-i'), p = (M.PARTICIPANTS || [])[+i]; if (p) { p.mail = x.mail; memo[CLE_PAX(p)] = x.mail; } });
+    a.forEach(function(x) { var i = x.el.getAttribute('data-i'), p = (S.PARTICIPANTS || [])[+i]; if (p) { p.mail = x.mail; memo[CLE_PAX(p)] = x.mail; } });
     try { localStorage.setItem(CLE_MAILS_PAX, JSON.stringify(memo)); } catch (e) {}
-    var d0 = (M.DT_A_DEP || M.DEBUT || '').split(' ')[0], d1 = (M.DT_R_ARR || M.FIN_RETOUR_HORODATE || '').split(' ')[0];
+    var d0 = (S.DT_A_DEP || S.DEBUT || '').split(' ')[0], d1 = (S.DT_R_ARR || S.FIN_RETOUR_HORODATE || '').split(' ')[0];
     var contenu = function(p) {
-        return JSON.stringify({ app: 'TRIGONE-COLLECTIVE', chef: [M.GRADE, M.USER].filter(Boolean).join(' '), libelle: M.LIBELLE_MISSION || '',
-            dates: [d0, d1].filter(Boolean).join(' → '), donnees: QR_DONNEES(p) });
+        return JSON.stringify({ app: 'TRIGONE-COLLECTIVE', chef: [S.GRADE, S.USER].filter(Boolean).join(' '), libelle: S.LIBELLE_MISSION || '',
+            dates: [d0, d1].filter(Boolean).join(' → '), donnees: QR_DONNEES(p, ENVOI_PAX_SRC) });
     };
     var btn = document.getElementById('BTN-PAX-ENVOYER'); btn.disabled = true; btn.textContent = 'Envoi en cours…';
     var ok = 0;
-    M.PAX_ENVOIS = M.PAX_ENVOIS || {};
+    S.PAX_ENVOIS = S.PAX_ENVOIS || {};
     a.reduce(function(suite, x) {
         return suite.then(function() {
             var s = x.el.querySelector('.PAX-ETAT'); s.className = 'PAX-ETAT'; s.textContent = 'Envoi…';
-            var p = (M.PARTICIPANTS || [])[+x.el.getAttribute('data-i')];
+            var p = (S.PARTICIPANTS || [])[+x.el.getAttribute('data-i')];
             return JUMELAGE_ENVOYER_DIRECT(x.mail, 'COLLECTIVE', 'Mission collective.json', contenu(p)).then(function() {
-                ok++; M.PAX_ENVOIS[x.mail] = new Date().toLocaleDateString('fr-FR');
+                ok++; S.PAX_ENVOIS[x.mail] = new Date().toLocaleDateString('fr-FR');
                 s.className = 'PAX-ETAT ok'; s.textContent = '✔ Envoyé : il reçoit une notification.';
             }).catch(function(e) {
                 s.className = 'PAX-ETAT ko';
-                s.textContent = e && e.pasDeCompte ? 'Pas encore de compte TRIGONE : envoyez-lui le QR code ou le lien WhatsApp.' : '✘ ' + ((e && e.message) || 'Envoi impossible.');
+                s.textContent = e && e.pasDeCompte ? 'Pas encore de compte TRIGONE : qu\'il se connecte à TRIGONE avec cette adresse, puis renvoyez.' : '✘ ' + ((e && e.message) || 'Envoi impossible.');
             });
         });
     }, Promise.resolve()).then(function() {
@@ -12794,56 +12716,8 @@ function ENVOYER_PAX_TRIGONE() {
     });
 }
 
-function OUVRIR_QR_OVERLAY() {
-    var overlay = document.getElementById('QR-OVERLAY');
-    if (!overlay) return;
-    overlay.classList.remove('HIDDEN');
-    overlay.setAttribute('aria-hidden', 'false');
-    UPDATE_QR_BUTTON_UI();
-}
 
-function FERMER_QR_OVERLAY() {
-    var overlay = document.getElementById('QR-OVERLAY');
-    if (!overlay) return;
-    overlay.classList.add('HIDDEN');
-    overlay.setAttribute('aria-hidden', 'true');
-}
 
-function RENDER_QR_CODE(url, openOverlay) {
-    var box = document.getElementById('QR-BOX');
-    var container = document.getElementById('QR-CONTAINER');
-    if (!container || !box) return false;
-    container.innerHTML = '';
-    if (typeof QRCode === 'undefined') return false;
-    var displaySize = Math.min(340, Math.max(260, Math.floor(window.innerWidth * 0.82)));
-    var renderSize = displaySize * 3;
-    var frame = document.createElement('div');
-    frame.className = 'QR-FRAME';
-    frame.setAttribute('role', 'img');
-    frame.setAttribute('aria-label', 'QR code invitation mission collective');
-    container.appendChild(frame);
-    new QRCode(frame, {
-        text: url,
-        width: renderSize,
-        height: renderSize,
-        colorDark: '#3d5363',
-        colorLight: '#ffffff',
-        correctLevel: QRCode.CorrectLevel.L
-    });
-    var canvasEl = frame.querySelector('canvas');
-    var imgEl = frame.querySelector('img');
-    [canvasEl, imgEl].forEach(function(el) {
-        if (!el) return;
-        el.style.width = displaySize + 'px';
-        el.style.height = displaySize + 'px';
-    });
-    M.QR_URL = url;
-    SAVE_STATE();
-    if (openOverlay !== false) OUVRIR_QR_OVERLAY();
-    else FERMER_QR_OVERLAY();
-    UPDATE_QR_BUTTON_UI();
-    return true;
-}
 
 function HIDE_ALL_PAGES() {
     ['P0','P-MENU','P-CHAIN','P1','P2','P2-FIN','P3','P3-SIG','P-BIB','P-STAT','P-STATS','P-SIMU','P-NOTICE','P-PAX'].forEach(function(id) { document.getElementById(id).classList.add('HIDDEN'); });
@@ -12917,8 +12791,6 @@ function BUILD_RECAP() {
     UPDATE_EXP_SAISIE_UI();
     if(M.COLLECTIVE) document.getElementById('COLL-ZONE').classList.remove('HIDDEN');
     else document.getElementById('COLL-ZONE').classList.add('HIDDEN');
-    if (M.COLLECTIVE && M.QR_URL) RENDER_QR_CODE(M.QR_URL, false);
-    else UPDATE_QR_BUTTON_UI();
     if([...new Set(BESOIN)].length > 0) { document.getElementById('PJ-ZONE').classList.remove('HIDDEN'); document.getElementById('PJ-LIST').innerText = [...new Set(BESOIN)].join(" / "); }
     else { document.getElementById('PJ-ZONE').classList.add('HIDDEN'); }
     UPDATE_PJ_RAPPELS(BESOIN);
@@ -13544,7 +13416,7 @@ function FINALISER_DEMARRAGE() {
             var paxEnCours = M.IS_PAX && paxUser && paxUser.toUpperCase() !== 'MILITAIRE';
             var paxTermine = M.IS_PAX && M.MAIL_SENT;
             // Le chef de mission qui rouvre par erreur son propre lien d'invitation (ex. en le retestant
-            // depuis WhatsApp) ne doit pas voir SA mission convertie en fiche participant : on ignore alors
+            // depuis sa boîte) ne doit pas voir SA mission convertie en fiche participant : on ignore alors
             // le lien plutôt que d'écraser silencieusement son nom et ses données déjà saisies.
             var missionPersoEnCours = !M.IS_PAX && HAS_ACTIVE_MISSION_DATA(M);
             if (!paxEnCours && !paxTermine && !missionPersoEnCours) {
@@ -13552,9 +13424,9 @@ function FINALISER_DEMARRAGE() {
                 APPLY_QR_DATA(data);
             } else {
                 STRIP_QR_FROM_URL();
-                // Lien de mission collective (QR code, WhatsApp ou boîte TRIGONE) écarté : on dit pourquoi.
+                // Lien de mission collective (boîte TRIGONE) écarté : on dit pourquoi.
                 if (!paxTermine) setTimeout(function() {
-                    MSG_INFO('Mission déjà en cours', 'Une mission est déjà en cours sur cet appareil : terminez-la (ou fermez-la), puis rouvrez le compte-rendu de la mission collective (Mise en route › Boîte de réception, ou le lien reçu).', '⛔');
+                    MSG_INFO('Mission déjà en cours', 'Une mission est déjà en cours sur cet appareil : terminez-la (ou fermez-la), puis rouvrez le compte-rendu de la mission collective (Mise en route › Boîte de réception).', '⛔');
                 }, 900);
             }
         } catch(e) { console.error("Erreur synchro", e); }
@@ -15856,8 +15728,6 @@ function FIN_BUILD_RECAP() {
     document.getElementById('LIMITE').innerText = LIM.toLocaleDateString('FR-FR');
     if(M.COLLECTIVE) document.getElementById('COLL-ZONE').classList.remove('HIDDEN');
     else document.getElementById('COLL-ZONE').classList.add('HIDDEN');
-    if (M.COLLECTIVE && M.QR_URL) RENDER_QR_CODE(M.QR_URL, false);
-    else UPDATE_QR_BUTTON_UI();
     if([...new Set(BESOIN)].length > 0) { document.getElementById('PJ-ZONE').classList.remove('HIDDEN'); document.getElementById('PJ-LIST').innerText = [...new Set(BESOIN)].join(" / "); }
     else { document.getElementById('PJ-ZONE').classList.add('HIDDEN'); }
     UPDATE_PJ_RAPPELS(BESOIN);
@@ -15870,26 +15740,6 @@ function FIN_BUILD_RECAP() {
     window.scrollTo(0,0);
 }
 
-function GEN_QR() {
-    if (!IS_VALID_EMAIL(M.CHEF_MAIL)) {
-        alert('Renseignez votre adresse mail (chef de mission) sur la page de départ avant de générer le QR code.');
-        return;
-    }
-    if (M.QR_URL && document.getElementById('QR-CONTAINER') && document.getElementById('QR-CONTAINER').childNodes.length) {
-        OUVRIR_QR_OVERLAY();
-        return;
-    }
-    SAVE_STATE();
-    var url = BUILD_QR_URL();
-    ENSURE_QRCODE_LIB(function(ok) {
-        if (!ok || !RENDER_QR_CODE(url, true)) {
-            M.QR_URL = url;
-            SAVE_STATE();
-            ADD_TO_SYNC_QUEUE({ type: 'QR', url: url });
-            alert('⛔ Le composant QR code n\'a pas pu se charger. Fermez et rouvrez TRIGONE avec une connexion internet, puis réessayez — le QR sera généré automatiquement à la reconnexion.');
-        }
-    });
-}
 
 function APPOSER_SIGNATURE() { var sigText = "Signé numériquement par : " + M.USER + "\nle " + new Date().toLocaleString('FR-FR'); document.getElementById('SIG-TEXT').innerText = sigText; document.getElementById('SIG-TEXT').style.display = 'block'; document.getElementById('BTN-SIG').style.display = 'none'; document.getElementById('CERTIF-CHECK').disabled = false; M.SIGNED = true; SAVE_STATE(); }
 
@@ -16057,12 +15907,6 @@ function BLUR_P1_DEST(inputId) {
 }
 // ────────────────────────────────────────────────────────────────
 
-function ENSURE_QRCODE_LIB(callback) {
-    if (typeof QRCode !== 'undefined') { callback(true); return; }
-    RELOAD_VENDOR_SCRIPT('vendor/qrcode.min.js', function(ok) {
-        callback(ok && typeof QRCode !== 'undefined');
-    });
-}
 
 function RELOAD_VENDOR_SCRIPT(src, callback) {
     var existing = document.querySelector('script[src^="' + src + '"]');
