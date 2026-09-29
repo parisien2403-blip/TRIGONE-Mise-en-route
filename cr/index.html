@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=94"></script>
+<script src="../jumelage.js?v=95"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -2278,6 +2278,7 @@ body.dark-mode .pj-check-item.pj-is-strict { background: rgba(248, 113, 113, 0.1
   -webkit-overflow-scrolling: touch;
 }
 .QR-OVERLAY.HIDDEN { display: none !important; }
+.FST-NOTE { grid-column: 1 / -1; font-size: 0.72em; color: #64748b; padding: 4px 8px 8px; }
 .MONTRE-ILLUS { display: flex; gap: 10px; margin: 4px 0 10px; }
 .MONTRE-ILLUS figure { flex: 1; margin: 0; text-align: center; }
 .MONTRE-SVG { width: 100%; max-width: 140px; height: auto; display: block; margin: 0 auto 6px; }
@@ -6293,7 +6294,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <details class="notice-fold">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M2 12h20M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10Z"/></svg></span>Missions à l'étranger</summary>
 <div class="ADMIN-SECTION">
-<p style="font-size:0.76em; color:#64748b; margin:0 0 10px;">Les montants officiels par pays (arrêté du 3 juillet 2006) sont en devise locale. TRIGONE les convertit en euros à l'aide de taux de change enregistrés sur l'appareil, mis à jour automatiquement (message de mise à jour).</p>
+<p style="font-size:0.76em; color:#64748b; margin:0 0 10px;">Les montants officiels par pays (arrêté du 3 juillet 2006) sont en devise locale. TRIGONE les convertit en euros avec les taux de référence de la <b>Banque centrale européenne</b>, mis à jour automatiquement (au plus toutes les 12 h, avec du réseau). Les devises à parité fixe (franc CFA, escudo…) sont calculées.</p>
 <p id="TAUX-CHANGE-INFO" style="font-size:0.78em; font-weight:600; margin:0 0 10px;"></p>
 <button type="button" class="BTN-ADMIN-CLOSE" onclick="REINIT_TAUX_CHANGE()">↺ Revenir aux taux d'origine de l'application</button>
 </div>
@@ -6914,7 +6915,7 @@ var COUNTRY_MISSION_RATES = [{p:'AFGHANISTAN',d:'DOLLAR US',m:279},{p:'AFRIQUE D
 // Taux de change par defaut (EUR pour 1 unite de devise). Mettre a jour via Parametres.
 var EXCHANGE_RATES_KEY = 'trigone_exchange_rates';
 var EXCHANGE_RATES_DATE_KEY = 'trigone_exchange_rates_date';
-var DEFAULT_EXCHANGE_RATES = {"EURO":1,"DOLLAR US":0.92,"LIVRE STERLING":1.18,"FRANC SUISSE":1.069,"DOLLAR CANADIEN":0.65,"DOLLAR AUSTRALIEN":0.6,"DOLLAR NEO-ZELANDAIS":0.56,"YEN":0.006,"YUAN CHINOIS":0.128,"DOLLAR DE HONG KONG":0.118,"DOLLAR DE TAIWAN":0.029,"DOLLAR SINGAPOURIEN":0.68,"DOLLAR DE BRUNEI":0.68,"DOLLAR DE FIDJI":0.41,"DOLLAR DES BERMUDES":0.92,"COURONNE DANOISE":0.134,"COURONNE NORVEGIENNE":0.084,"COURONNE SUEDOISE":0.087,"COURONNE ISLANDAISE":0.0067,"DINAR ALGERIEN":0.0068,"DINAR JORDANIEN":1.3,"DALASI":0.013,"ESCUDO":0.0091,"FRANC CFA":0.00152,"FRANC DJIBOUTI":0.0052,"PESO MEXICAIN":0.048,"PESO PHILIPPIN":0.0157,"RINGGIT":0.2,"ROUPIE ILE MAURICE":0.02,"VATU":0.0075,"BAHT":0.026};
+var DEFAULT_EXCHANGE_RATES = {"EURO":1,"DOLLAR US":0.92,"DOLLAR AMERICAIN":0.92,"LIVRE STERLING":1.18,"FRANC SUISSE":1.069,"DOLLAR CANADIEN":0.65,"DOLLAR AUSTRALIEN":0.6,"DOLLAR NEO-ZELANDAIS":0.56,"YEN":0.006,"YUAN CHINOIS":0.128,"DOLLAR DE HONG KONG":0.118,"DOLLAR DE TAIWAN":0.029,"DOLLAR SINGAPOURIEN":0.68,"DOLLAR DE BRUNEI":0.68,"DOLLAR DE FIDJI":0.41,"DOLLAR DES BERMUDES":0.92,"COURONNE DANOISE":0.134,"COURONNE NORVEGIENNE":0.084,"COURONNE SUEDOISE":0.087,"COURONNE ISLANDAISE":0.0067,"DINAR ALGERIEN":0.0068,"DINAR JORDANIEN":1.3,"DALASI":0.013,"ESCUDO":0.0091,"FRANC CFA":0.00152,"FRANC DJIBOUTI":0.0052,"PESO MEXICAIN":0.048,"PESO PHILIPPIN":0.0157,"RINGGIT":0.2,"ROUPIE ILE MAURICE":0.02,"VATU":0.0075,"BAHT":0.026};
 var EXCHANGE_RATES = Object.assign({}, DEFAULT_EXCHANGE_RATES);
 var EXCHANGE_RATES_DATE = '06/08/2026 (taux de reference initiaux — a mettre a jour)';
 (function LOAD_EXCHANGE_RATES_ON_BOOT() {
@@ -6943,6 +6944,31 @@ function GET_PAYS_MONTANT_EUR(pays) {
     return rate.m * taux;
 }
 
+// Taux de change à jour : taux de référence de la Banque centrale européenne, relevés par le serveur TRIGONE
+// (/api/taux), au plus toutes les 12 h, à l'ouverture de Compte-rendu avec du réseau. Sans réseau : derniers taux gardés.
+var CLE_TAUX_BCE_LE = 'trigone_taux_bce_le';
+function MAJ_TAUX_BCE(force) {
+    if (!navigator.onLine || !window.fetch) return Promise.resolve(false);
+    var le = 0;
+    try { le = +(localStorage.getItem(CLE_TAUX_BCE_LE) || 0); } catch (e) {}
+    if (!force && Date.now() - le < 12 * 3600 * 1000) return Promise.resolve(false);
+    return fetch(new URL('../api/taux', location.href).href, { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
+        if (!d || !d.taux) return false;
+        var n = 0;
+        Object.keys(d.taux).forEach(function(k) { var v = parseFloat(d.taux[k]); if (v > 0) { EXCHANGE_RATES[k] = v; n++; } });
+        if (!n) return false;
+        var j = String(d.date || '').split('-');
+        EXCHANGE_RATES_DATE = 'Banque centrale européenne' + (j.length === 3 ? ', taux du ' + j[2] + '/' + j[1] + '/' + j[0] : '') + ' (mis à jour automatiquement)';
+        try {
+            localStorage.setItem(EXCHANGE_RATES_KEY, JSON.stringify(EXCHANGE_RATES));
+            localStorage.setItem(EXCHANGE_RATES_DATE_KEY, EXCHANGE_RATES_DATE);
+            localStorage.setItem(CLE_TAUX_BCE_LE, String(Date.now()));
+        } catch (e) {}
+        try { UPDATE_TAUX_CHANGE_INFO(); UPDATE_PAYS_MISSION_HINT(); if (M.PAGE === 'P2-FIN') RENDER(); } catch (e) {}
+        return true;
+    }).catch(function() { return false; });
+}
+
 function GET_REPAS_RATE_EUR(state) {
     var S = state || M;
     if (!S.MISSION_ETRANGER || !S.PAYS_MISSION) return 20;
@@ -6957,6 +6983,49 @@ function GET_HEBERG_RATE_EUR(state) {
     var montantJour = GET_PAYS_MONTANT_EUR(S.PAYS_MISSION);
     if (montantJour == null) return null;
     return Math.round(montantJour * 0.65 * 100) / 100;
+}
+
+// ----- Mission à l'étranger : repas pris pendant le trajet (barème France) -----
+// Le barème du pays ne vaut qu'une fois arrivé : un repas dont le créneau (midi 11 h–14 h, soir 18 h–21 h) tombe
+// avant l'arrivée sur site ou après le départ du site est pris pendant le trajet, au taux France (20 €). Les repas
+// payants sont d'abord imputés sur ces créneaux de trajet (repas presque toujours payés en route).
+function REPAS_CRENEAUX_TRAJET(S) {
+    S = S || M;
+    var n = { MIDI: 0, SOIR: 0 }, vus = {};
+    if (!S.MISSION_ETRANGER) return n;
+    var fen = { MIDI: [11 * 60, 14 * 60], SOIR: [18 * 60, 21 * 60] };
+    var min = function(d) { return d.getHours() * 60 + d.getMinutes(); };
+    GET_MISSION_LEGS_FROM_STATE(S).forEach(function(leg) {
+        var arr = PARSE_FR_DATETIME(leg.ARR_SITE), dep = PARSE_FR_DATETIME(leg.DEP_SITE);
+        var cleArr = arr ? GET_DAY_DATE_KEY(arr) : '', cleDep = dep ? GET_DAY_DATE_KEY(dep) : '';
+        (leg.JOURS || []).forEach(function(J) {
+            if (!J || J.EXPERIENCE || !J.DATE) return;
+            ['MIDI', 'SOIR'].forEach(function(slot) {
+                var k = J.DATE + slot;
+                if (vus[k]) return;
+                var avant = arr && J.DATE === cleArr && min(arr) >= fen[slot][1];
+                var apres = dep && (J.DATE > cleDep || (J.DATE === cleDep && min(dep) <= fen[slot][0]));
+                if (avant || apres) { vus[k] = true; n[slot]++; }
+            });
+        });
+    });
+    return n;
+}
+// Montants des repas payants : { taux (pays, ou 20 en France), midi / soir : { n, fr (dont au taux France) }, total }.
+function REPAS_DETAIL(S) {
+    S = S || M;
+    var pm = S.PAYANT_MIDI || 0, ps = S.PAYANT_SOIR || 0;
+    var taux = S.MISSION_ETRANGER ? (GET_REPAS_RATE_EUR(S) || 20) : 20;
+    var tr = REPAS_CRENEAUX_TRAJET(S);
+    var fm = S.MISSION_ETRANGER ? Math.min(pm, tr.MIDI) : 0, fs = S.MISSION_ETRANGER ? Math.min(ps, tr.SOIR) : 0;
+    var total = (pm - fm) * taux + (ps - fs) * taux + (fm + fs) * 20;
+    return { taux: taux, midi: { n: pm, fr: fm }, soir: { n: ps, fr: fs }, total: Math.round(total * 100) / 100 };
+}
+// Texte d'une ligne de repas : « 3 × 38,50 € = 115,50 € » ou, avec des repas de trajet, « 2 × 38,50 € + 1 × 20,00 € (trajet France) = 97,00 € ».
+function REPAS_LIGNE(d, slot) {
+    var x = d[slot], ne = x.n - x.fr, m = ne * d.taux + x.fr * 20;
+    var t = x.fr ? (ne ? ne + ' × ' + FORMAT_EURO(d.taux) + ' € + ' : '') + x.fr + ' × 20,00 € (trajet France)' : x.n + ' × ' + FORMAT_EURO(d.taux) + ' €';
+    return { texte: t + ' = ' + FORMAT_EURO(m) + ' €', montant: m };
 }
 
 // ----- Fonctions d'affichage centralisees (France + Etranger) -----
@@ -7778,12 +7847,12 @@ function BUILD_RECAP_PREVIEW_HTML(core) {
     var forfaitEligible = CALC_FORFAIT_ELIGIBLE_TOTAL();
     var _pvPMidi = M.PAYANT_MIDI || 0;
     var _pvPSoir = M.PAYANT_SOIR || 0;
-    var _pvTauxRepas = GET_REPAS_RATE_DISPLAY(M);
+    var _pvRepas = REPAS_DETAIL(M);
     var _pvHeberg = CALC_HEBERG_AUTO_FROM_STATE(M);
     html += '<section class="cr-preview-section"><h4 class="cr-preview-section-title">Forfait</h4>';
     html += '<table class="cr-preview-table" style="margin-bottom:8px"><tbody>';
-    html += '<tr><td style="color:var(--tg-muted);font-size:0.82em">Repas midi</td><td style="text-align:right">' + _pvPMidi + ' × ' + FORMAT_EURO(_pvTauxRepas) + ' € = ' + FORMAT_EURO(_pvPMidi * _pvTauxRepas) + ' €</td></tr>';
-    html += '<tr><td style="color:var(--tg-muted);font-size:0.82em">Repas soir</td><td style="text-align:right">' + _pvPSoir + ' × ' + FORMAT_EURO(_pvTauxRepas) + ' € = ' + FORMAT_EURO(_pvPSoir * _pvTauxRepas) + ' €</td></tr>';
+    html += '<tr><td style="color:var(--tg-muted);font-size:0.82em">Repas midi</td><td style="text-align:right">' + REPAS_LIGNE(_pvRepas, 'midi').texte + '</td></tr>';
+    html += '<tr><td style="color:var(--tg-muted);font-size:0.82em">Repas soir</td><td style="text-align:right">' + REPAS_LIGNE(_pvRepas, 'soir').texte + '</td></tr>';
     html += '<tr><td style="color:var(--tg-muted);font-size:0.82em">Hébergement</td><td style="text-align:right">' + FORMAT_EURO(_pvHeberg) + ' €</td></tr>';
     html += '</tbody></table>';
     html += '<div class="cr-preview-total"><span>Total forfait estimé<small>Hors jours expérience de saisie</small></span><span>' + FORMAT_EURO(forfaitEligible) + ' €</span></div>';
@@ -9643,11 +9712,9 @@ function RENDER_PAX_SUMMARY() {
     if (M.LEGS) M.LEGS.forEach(function(leg, i) { pushLegSummary(leg, i + 1); });
     pushLegSummary(GET_CURRENT_LEG_SNAPSHOT(), GET_MISSION_COUNT());
     lines.push('');
-    var _tauxRepasPax = GET_REPAS_RATE_DISPLAY(M);
-    var _pMidiPax = M.PAYANT_MIDI || 0;
-    var _pSoirPax = M.PAYANT_SOIR || 0;
-    lines.push('Repas midi payants : ' + _pMidiPax + ' × ' + FORMAT_EURO(_tauxRepasPax) + ' € = ' + FORMAT_EURO(_pMidiPax * _tauxRepasPax) + ' €');
-    lines.push('Repas soir payants : ' + _pSoirPax + ' × ' + FORMAT_EURO(_tauxRepasPax) + ' € = ' + FORMAT_EURO(_pSoirPax * _tauxRepasPax) + ' €');
+    var _repasPax = REPAS_DETAIL(M);
+    lines.push('Repas midi payants : ' + REPAS_LIGNE(_repasPax, 'midi').texte);
+    lines.push('Repas soir payants : ' + REPAS_LIGNE(_repasPax, 'soir').texte);
     lines.push('Forfait estimé (toutes missions) : ' + FORMAT_EURO(total) + ' €');
     el.innerText = lines.join('\n');
 }
@@ -10427,22 +10494,17 @@ function GET_ALL_JOURS_FROM_STATE(S) {
 }
 
 function CALC_REPAS_DECLARE_FROM_STATE(S) {
-    S = S || M;
-    var tauxRepas = S.MISSION_ETRANGER ? (GET_REPAS_RATE_EUR(S) || 20) : 20;
-    return ((S.PAYANT_MIDI || 0) * tauxRepas) + ((S.PAYANT_SOIR || 0) * tauxRepas);
+    return REPAS_DETAIL(S || M).total;
 }
 
 function CALC_FORFAIT_FROM_STATE(S) {
     S = S || M;
-    var tauxRepas = S.MISSION_ETRANGER ? (GET_REPAS_RATE_EUR(S) || 20) : 20;
-    var repas = ((S.PAYANT_MIDI || 0) * tauxRepas) + ((S.PAYANT_SOIR || 0) * tauxRepas);
+    var repas = REPAS_DETAIL(S).total;
     return Math.round((repas + CALC_HEBERG_AUTO_FROM_STATE(S)) * 100) / 100;
 }
 
 function CALC_REPAS_AUTO_FROM_STATE(S) {
-    S = S || M;
-    var tauxRepas = S.MISSION_ETRANGER ? (GET_REPAS_RATE_EUR(S) || 20) : 20;
-    return ((S.PAYANT_MIDI || 0) * tauxRepas) + ((S.PAYANT_SOIR || 0) * tauxRepas);
+    return REPAS_DETAIL(S || M).total;
 }
 
 function CALC_HEBERG_AUTO_FROM_STATE(S) {
@@ -11335,8 +11397,8 @@ function BUILD_RECAP_CORE(includeFinLine) {
     var pMidiR = M.PAYANT_MIDI || 0;
     var pSoirR = M.PAYANT_SOIR || 0;
     var hebergTotal = CALC_HEBERG_AUTO_FROM_STATE(M);
-    var _tauxRepasMail = GET_REPAS_RATE_DISPLAY(M);
-    var repasTotal = (pMidiR + pSoirR) * _tauxRepasMail;
+    var _repasMail = REPAS_DETAIL(M);
+    var repasTotal = _repasMail.total;
     if (hasChain) {
         M.LEGS.forEach(function(leg, i) {
             COLLECT_LEG_BESOIN(leg, BESOIN);
@@ -11369,8 +11431,8 @@ function BUILD_RECAP_CORE(includeFinLine) {
             R += JOUR_RECAP_LINE(J, I, P_J, P_elig, 0, issueKeys);
         });
         TOTAL += repasTotal;
-        R += '\nREPAS MIDI PAYANTS : ' + pMidiR + ' × ' + FORMAT_EURO(_tauxRepasMail) + ' € = ' + FORMAT_EURO(pMidiR * _tauxRepasMail) + ' €\n';
-        R += 'REPAS SOIR PAYANTS : ' + pSoirR + ' × ' + FORMAT_EURO(_tauxRepasMail) + ' € = ' + FORMAT_EURO(pSoirR * _tauxRepasMail) + ' €\n';
+        R += '\nREPAS MIDI PAYANTS : ' + REPAS_LIGNE(_repasMail, 'midi').texte + '\n';
+        R += 'REPAS SOIR PAYANTS : ' + REPAS_LIGNE(_repasMail, 'soir').texte + '\n';
         R += 'TOTAL FORFAIT ESTIMÉ : ' + FORMAT_EURO(TOTAL) + ' €\n';
         R += 'DÉPART SITE : ' + (leg.DEP_SITE || 'N/A') + '\n';
         R += 'TRANS. RETOUR : ' + (leg.T_R || 'N/A') + (leg.G_R ? ' [' + leg.G_R + ']' : '') + '\n';
@@ -11633,7 +11695,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 191;
+var APP_CODE_VERSION = 192;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -11884,7 +11946,10 @@ function UPDATE_TAUX_CHANGE_INFO() {
     var nbDevises = Object.keys(EXCHANGE_RATES).length;
     var estPersonnalise = false;
     try { estPersonnalise = !!localStorage.getItem(EXCHANGE_RATES_KEY); } catch (e) {}
-    if (estPersonnalise) {
+    if (/Banque centrale/.test(EXCHANGE_RATES_DATE)) {
+        el.textContent = '✓ Taux à jour — ' + EXCHANGE_RATES_DATE + ' (' + nbDevises + ' devises).';
+        el.style.color = '#16a34a';
+    } else if (estPersonnalise) {
         el.textContent = '✓ Taux personnalisés — ' + EXCHANGE_RATES_DATE + ' (' + nbDevises + ' devises).';
         el.style.color = '#16a34a';
     } else {
@@ -11955,8 +12020,10 @@ function REINIT_TAUX_CHANGE() {
         try {
             localStorage.removeItem(EXCHANGE_RATES_KEY);
             localStorage.removeItem(EXCHANGE_RATES_DATE_KEY);
+            localStorage.removeItem(CLE_TAUX_BCE_LE);
         } catch (e) {}
         UPDATE_TAUX_CHANGE_INFO();
+        MAJ_TAUX_BCE(true);
         UPDATE_PAYS_MISSION_HINT();
         MSG_INFO('C\'est fait', 'Taux de change réinitialisés.', '✓');
     }, '↺');
@@ -13488,6 +13555,7 @@ function FINALISER_DEMARRAGE() {
     APPLY_ABT_SETTINGS();
     RENDER_CIE_OPTIONS();
     RENDER_PAYS_MISSION_LIST();
+    setTimeout(function() { MAJ_TAUX_BCE(); }, 1500);
     RENDER_DEST_HISTORY_LIST();
     INIT_OFFLINE_MODE();
     INIT_PWA_INSTALL();
@@ -15286,11 +15354,11 @@ function RENDER_FRAIS_RECAP_PANEL() {
     // --- Repas ---
     var pMidi = M.PAYANT_MIDI || 0;
     var pSoir = M.PAYANT_SOIR || 0;
-    var _frcTauxRepas = GET_REPAS_RATE_DISPLAY(M);
+    var _frcRepas = REPAS_DETAIL(M);
     if (pMidi > 0 || pSoir > 0) {
         html += '<div class="FRC-SECTION"><div class="FRC-HDR">Repas</div>';
-        if (pMidi > 0) html += '<div class="FRC-ROW"><span class="FRC-LBL">Midi payant</span><span class="FRC-VAL">' + pMidi + ' × ' + FORMAT_EURO(_frcTauxRepas) + ' € = <strong>' + FORMAT_EURO(pMidi * _frcTauxRepas) + ' €</strong></span></div>';
-        if (pSoir > 0) html += '<div class="FRC-ROW"><span class="FRC-LBL">Soir payant</span><span class="FRC-VAL">' + pSoir + ' × ' + FORMAT_EURO(_frcTauxRepas) + ' € = <strong>' + FORMAT_EURO(pSoir * _frcTauxRepas) + ' €</strong></span></div>';
+        if (pMidi > 0) html += '<div class="FRC-ROW"><span class="FRC-LBL">Midi payant</span><span class="FRC-VAL">' + ESC_HTML(REPAS_LIGNE(_frcRepas, 'midi').texte) + '</span></div>';
+        if (pSoir > 0) html += '<div class="FRC-ROW"><span class="FRC-LBL">Soir payant</span><span class="FRC-VAL">' + ESC_HTML(REPAS_LIGNE(_frcRepas, 'soir').texte) + '</span></div>';
         html += '</div>';
     }
 
@@ -15568,7 +15636,7 @@ function RENDER() {
     // --- summary table ---
     var html = '<div class="FRAIS-SUMMARY-TABLE">';
     html += '<div class="FST-HEADER"><span>Catégorie</span><span>Max</span><span>Payant</span><span>Montant</span></div>';
-    var _tauxRepasFst = GET_REPAS_RATE_DISPLAY(M);
+    var _repasFst = REPAS_DETAIL(M);
 
     // Repas midi
     html += '<div class="FST-ROW"><span class="FST-CAT">Repas midi</span>';
@@ -15576,7 +15644,7 @@ function RENDER() {
     html += '<span class="FST-ADJ"><button type="button" class="FST-BTN"' + dis + ' onclick="ADJ_PAYANT_REPAS(\'MIDI\',-1)">−</button>';
     html += '<span class="FST-COUNT">' + pMidi + '</span>';
     html += '<button type="button" class="FST-BTN"' + dis + ' onclick="ADJ_PAYANT_REPAS(\'MIDI\',1)">+</button></span>';
-    html += '<span class="FST-MNT">' + FORMAT_EURO(pMidi * _tauxRepasFst) + ' €</span></div>';
+    html += '<span class="FST-MNT">' + FORMAT_EURO(REPAS_LIGNE(_repasFst, 'midi').montant) + ' €</span></div>';
 
     // Repas soir
     html += '<div class="FST-ROW"><span class="FST-CAT">Repas soir</span>';
@@ -15584,7 +15652,8 @@ function RENDER() {
     html += '<span class="FST-ADJ"><button type="button" class="FST-BTN"' + dis + ' onclick="ADJ_PAYANT_REPAS(\'SOIR\',-1)">−</button>';
     html += '<span class="FST-COUNT">' + pSoir + '</span>';
     html += '<button type="button" class="FST-BTN"' + dis + ' onclick="ADJ_PAYANT_REPAS(\'SOIR\',1)">+</button></span>';
-    html += '<span class="FST-MNT">' + FORMAT_EURO(pSoir * _tauxRepasFst) + ' €</span></div>';
+    html += '<span class="FST-MNT">' + FORMAT_EURO(REPAS_LIGNE(_repasFst, 'soir').montant) + ' €</span></div>';
+    if (_repasFst.midi.fr || _repasFst.soir.fr) html += '<div class="FST-NOTE">Dont ' + (_repasFst.midi.fr + _repasFst.soir.fr) + ' repas pendant le trajet (avant l\'arrivée sur site ou après le départ du site) : barème France, 20 €.</div>';
 
     // Nuitée (only if nights exist)
     if (totalNuits > 0) {
@@ -15594,7 +15663,7 @@ function RENDER() {
         html += '<span class="FST-MNT">' + FORMAT_EURO(nuitMontant) + ' €</span></div>';
     }
 
-    var totalMontant = FORMAT_EURO((pMidi + pSoir) * _tauxRepasFst + nuitMontant);
+    var totalMontant = FORMAT_EURO(_repasFst.total + nuitMontant);
     html += '<div class="FST-TOTAL"><span>Total forfait estimé</span><span>' + totalMontant + ' €</span></div>';
     html += '</div>';
 
@@ -16392,11 +16461,11 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
     var forfaitEligible = CALC_FORFAIT_ELIGIBLE_TOTAL();
     var _pdfPMidi = M.PAYANT_MIDI || 0;
     var _pdfPSoir = M.PAYANT_SOIR || 0;
-    var _pdfTauxRepas = GET_REPAS_RATE_DISPLAY(M);
+    var _pdfRepas = REPAS_DETAIL(M);
     var _pdfHeberg = CALC_HEBERG_AUTO_FROM_STATE(M);
     var forfaitRows = [
-        ['Repas midi payants', _pdfPMidi + ' × ' + FORMAT_EURO(_pdfTauxRepas) + ' € = ' + FORMAT_EURO(_pdfPMidi * _pdfTauxRepas) + ' €'],
-        ['Repas soir payants', _pdfPSoir + ' × ' + FORMAT_EURO(_pdfTauxRepas) + ' € = ' + FORMAT_EURO(_pdfPSoir * _pdfTauxRepas) + ' €'],
+        ['Repas midi payants', REPAS_LIGNE(_pdfRepas, 'midi').texte],
+        ['Repas soir payants', REPAS_LIGNE(_pdfRepas, 'soir').texte],
         ['Hébergement payant', FORMAT_EURO(_pdfHeberg) + ' €']
     ];
     if (M.MISSION_ETRANGER) {

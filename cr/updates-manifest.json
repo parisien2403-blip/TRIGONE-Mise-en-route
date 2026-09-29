@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 191,
-  "appCodeMessage": "Réglages du compte-rendu › « Montre connectée » : comment horodater sa mission depuis la montre (illustrations), les réglages à faire une fois, et un bouton « Envoyer un essai sur ma montre ».",
+  "appCodeVersion": 192,
+  "appCodeMessage": "Missions à l'étranger : taux de change de la Banque centrale européenne mis à jour automatiquement ; les repas pris pendant le trajet (avant l'arrivée sur site, après le départ du site) comptent au barème France (20 €), le reste au barème du pays ; Rwanda corrigé (taux manquant).",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
