@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 146;
+var APP_CODE_VERSION = 147;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -213,8 +213,7 @@ function TPL_MENU_PC() {
         (MER_COMPTE_ACTIF() ? item('RECEPTION', MER_ICONES.RECEPTION, 'Boîte de réception', MER_NB_BOITE() || '') : '') +
         item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
         item('PANIER', MER_ICONES.PANIER, 'Documents', n || '') +
-        '<div class="PC-SEP"></div>' +
-        item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur', MER_NB_A_SIGNER() || '') +
+        (MER_EST_VALIDEUR() ? '<div class="PC-SEP"></div>' + item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur', MER_NB_A_SIGNER() || '') : '') +
         '<div class="PC-BAS">' +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
@@ -394,8 +393,8 @@ function TPL_ACCUEIL() {
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
           (MER_COMPTE_ACTIF() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-BOITE" onclick="SHOW_PAGE(\'RECEPTION\')">📥 Boîte de réception' +
             (MER_NB_BOITE() ? '<span class="MER-PASTILLE-SIGNER MER-PASTILLE-BOITE">' + MER_NB_BOITE() + '</span>' : '') + '</button>' : '') +
-          '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur' +
-            (MER_NB_A_SIGNER() ? '<span class="MER-PASTILLE-SIGNER">' + MER_NB_A_SIGNER() + ' à signer</span>' : '') + '</button>' +
+          (MER_EST_VALIDEUR() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur' +
+            (MER_NB_A_SIGNER() ? '<span class="MER-PASTILLE-SIGNER">' + MER_NB_A_SIGNER() + ' à signer</span>' : '') + '</button>' : '') +
           '<button type="button" class="P0-LIEN" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
         '</div>' +
         '<div class="MER-P0-ESPACE"></div>' +
@@ -1859,9 +1858,8 @@ var MER_NOTICES = {
             'À l\'envoi, la demande quitte Documents pour la <b>Bibliothèque</b>. En cas de refus, elle revient dans votre <b>Boîte de réception</b> avec le motif : « Corriger dans Documents » l\'y range ; corrigez-la avec « Modifier » et renvoyez-la. Tant qu\'elle n\'est pas corrigée, un <b>rappel</b> vous est envoyé après 48 h, puis toutes les 48 h (14 jours au plus) ; « Retirer » la demande de Documents arrête les rappels.',
             'Au retour de mission, <b>TRIGONE Compte-rendu</b> reprend la mission envoyée depuis cet appareil (« À partir d\'une mise en route ») ; sinon, le missionnaire la saisit directement dans Compte-rendu.'] },
     VALIDEUR: { titre: 'Valider une demande', sous: 'Rôle valideur · boîte de réception · signature', icone: MER_ICONES_NOTICE_CADENAS(),
-        etapes: ['<b>Mes rôles</b> (menu du compte, en haut à droite) : cochez <b>VALIDEUR 1</b> et/ou <b>VALIDEUR 2</b>, saisissez votre fonction et le <b>code</b> de chaque rôle, remis par l\'administrateur. Les rôles sont déclarés à votre compte TRIGONE : votre boîte ne reçoit que les demandes de vos niveaux. Il peut y avoir plusieurs VALIDEUR 1 et plusieurs VALIDEUR 2 ; une même personne peut avoir tous les rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) et rester missionnaire.',
+        etapes: ['<b>Paramètres › Mes rôles</b> (menu du compte) : cochez <b>VALIDEUR 1</b> et/ou <b>VALIDEUR 2</b>, saisissez votre fonction et le <b>code</b> de chaque rôle, remis par l\'administrateur. Les rôles sont déclarés à votre compte TRIGONE : votre boîte ne reçoit que les demandes de vos niveaux. Il peut y avoir plusieurs VALIDEUR 1 et plusieurs VALIDEUR 2 ; une même personne peut avoir tous les rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) et rester missionnaire.',
             '<b>Les deux rôles valideur ?</b> Dans l\'Espace valideur, la bascule <b>VALIDEUR 1 / VALIDEUR 2</b> choisit le niveau ; une demande ouverte depuis la Boîte de réception passe d\'elle-même au bon niveau. Une personne qui a les deux rôles peut valider les deux niveaux d\'une même demande.',
-            'Ou, dans l\'<b>Espace valideur</b> : saisissez votre grade, nom, prénom, fonction et le <b>code d\'accès valideur</b> remis par l\'administrateur (un code pour le 1er valideur, un pour le 2e) ; l\'œil 👁 affiche ce que vous tapez. Il n\'est demandé qu\'<b>une seule fois</b> : l\'appareil reste connecté jusqu\'à « Déconnexion ».',
             'Les demandes à signer arrivent dans votre <b>Boîte de réception</b> (pastille rouge) : « Ouvrir et signer » les affiche dans l\'Espace valideur, avec leur <b>aperçu</b> et leurs pièces jointes (📎 NDS / DAF) à ouvrir d\'un clic. Une pièce modifiée en cours de route est signalée en rouge.',
             '<b>Valider</b> (une par une ou « Tout cocher » puis « Valider la sélection ») : la validation est signée électroniquement. <b>Refuser</b> demande un motif : le VALIDEUR 1 refuse au demandeur ; le VALIDEUR 2 choisit de <b>renvoyer au VALIDEUR 1</b> ou directement au demandeur. Une demande renvoyée par le VALIDEUR 2 arrive chez le VALIDEUR 1 (« Renvoyée par le VALIDEUR 2 », avec le motif) : il la <b>✎ Corrige</b> à son niveau puis la revalide, la revalide telle quelle, ou la <b>refuse au demandeur</b>. <b>Effacer</b> (après confirmation) retire une demande ouverte par erreur, sans la valider ni la refuser : rien n\'est signé ni envoyé ; elle reste dans votre Boîte de réception.',
             '<b>Transmettre</b> : pour chaque envoi, <b>« 📨 Envoyer »</b>. Le 1er valideur envoie au 2e valideur, le 2e valideur à l\'assistant Chorus DT ; un refus repart vers le demandeur, avec son motif. Chaque envoi arrive, chiffré, dans le TRIGONE du destinataire ; un destinataire qui n\'a pas encore de compte (ou pas le bon rôle) est signalé et l\'envoi attend.',
@@ -2538,22 +2536,6 @@ function VERIFIER_VALIDATIONS(d) {
     }));
 }
 
-// Essaie le code sur chaque accès actif : celui qu'il déchiffre donne la clé de signature et le rôle.
-function DEVERROUILLER_ACCES(code) {
-    var acces = ((MER_LISTE_VALIDEURS && MER_LISTE_VALIDEURS.valideurs) || []).filter(function(a) { return a.prive && !a.retire; });
-    return acces.reduce(function(prec, a) {
-        return prec.catch(function() {
-            return CLE_DU_CODE(code, new Uint8Array(DEB64(a.sel))).then(function(k) {
-                return crypto.subtle.decrypt({ name: 'AES-GCM', iv: new Uint8Array(DEB64(a.iv)) }, k, DEB64(a.prive));
-            }).then(function(pkcs8) {
-                return crypto.subtle.importKey('pkcs8', pkcs8, ALGO_CLE, false, ['sign']);
-            }).then(function(k) {
-                MER_CLE_SESSION = k; MER_ACCES_SESSION = a; MER_ROLES_MEMO[a.role] = true;
-                return Promise.all([ACCES_MEMO('ecrire', { cle: k, pub: a.cle }), ACCES_MEMO('ecrire', { cle: k, pub: a.cle }, 'valideur' + a.role)]).catch(function() {});
-            });
-        });
-    }, Promise.reject(new Error('code')));
-}
 // Reconnexion automatique : reprend la clé mémorisée tant que son accès figure toujours, actif, dans valideurs.json
 // (un code remplacé ou retiré par l'administrateur déconnecte l'appareil).
 // Rôles valideur dont la clé est mémorisée sur l'appareil : { 1: true, 2: true } si la personne a les deux.
@@ -2659,58 +2641,22 @@ function RENDER_VALIDATION_INPLACE() {
     });
 }
 
-// ---- Connexion par code d'accès ----
-function TPL_CONNEXION(v) {
-    function champ(k, label, ph) {
-        return '<div class="MER-FIELD"><label>' + label + '</label><input type="text" id="MER-VAL-' + k + '" value="' + ESC(v[k] || '') + '" placeholder="' + ph + '"></div>';
-    }
-    return '<p class="MER-HINT" style="margin:0 0 14px;">Réservé aux valideurs. Votre identité apparaîtra dans la case de validation du PDF ; ' +
-        'le code d\'accès vous est remis par l\'administrateur de TRIGONE. Il n\'est demandé qu\'une fois : l\'appareil reste connecté jusqu\'à « Déconnexion ».</p>' +
-        '<div class="MER-ROW2">' + champ('grade', 'Grade', 'EX : CAPITAINE') + champ('fonction', 'Fonction', 'EX : CHEF DE SERVICE') + '</div>' +
-        '<div class="MER-ROW2">' + champ('nom', 'Nom', 'EX : DUPONT') + champ('prenom', 'Prénom', 'EX : Jean') + '</div>' +
-        '<div class="MER-FIELD"><label>Code d\'accès valideur</label><div class="MER-MDP"><input type="password" id="MER-CODE-ACCES" autocomplete="current-password" ' +
-            'autocapitalize="off" autocorrect="off" spellcheck="false" onkeydown="if(event.key===\'Enter\') SE_CONNECTER(this)">' +
-            '<button type="button" class="MER-MDP-OEIL" onclick="BASCULER_CODE_VISIBLE(this)" aria-label="Afficher le code" title="Afficher le code">' + MER_OEIL_SVG(false) + '</button></div></div>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="SE_CONNECTER(this)">Se connecter</button>';
-}
 // Œil du champ code : affiche ou masque ce qui est tapé.
-function MER_OEIL_SVG(barre) {
-    return '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>' +
-        (barre ? '<line x1="3" y1="3" x2="21" y2="21"/>' : '') + '</svg>';
-}
-function BASCULER_CODE_VISIBLE(btn) {
-    var champ = btn.parentNode.querySelector('input'), visible = champ.type === 'password';
-    champ.type = visible ? 'text' : 'password';
-    btn.innerHTML = MER_OEIL_SVG(visible);
-    btn.setAttribute('aria-label', visible ? 'Masquer le code' : 'Afficher le code'); btn.title = btn.getAttribute('aria-label');
-    champ.focus();
-}
-function SE_CONNECTER(btn) {
-    var v = GET_VALIDEUR();
-    ['grade', 'nom', 'prenom', 'fonction'].forEach(function(k) { v[k] = (document.getElementById('MER-VAL-' + k).value || '').trim(); });
-    if (!v.grade || !v.nom || !v.prenom || !v.fonction) { MSG_ERREUR('Identité incomplète', 'Merci de renseigner votre grade, nom, prénom et fonction.'); return; }
-    v.grade = v.grade.toUpperCase(); v.nom = v.nom.toUpperCase();
-    SAVE_VALIDEUR(v);
-    var champ = document.getElementById('MER-CODE-ACCES');
-    var code = champ.value.trim();
-    if (!code) { MSG_ERREUR('Code manquant', 'Merci de saisir votre code d\'accès valideur.'); return; }
-    var bouton = document.querySelector('#PAGE-STAGE .BTN-PRIMARY');
-    if (bouton) { bouton.disabled = true; bouton.textContent = 'Vérification…'; }
-    CHARGER_LISTE_VALIDEURS().then(function() { return DEVERROUILLER_ACCES(code); }).then(function() {
-        // La fonction saisie ici devient celle du niveau déverrouillé (VALIDEUR 1 ou 2).
-        if (MER_ACCES_SESSION && MER_ACCES_SESSION.role) { var w = GET_VALIDEUR(); w['fonction' + MER_ACCES_SESSION.role] = v.fonction; SAVE_VALIDEUR(w); }
-        RENDER_VALIDATION_INPLACE();
-        MER_DECLARER_ROLE_VALIDEUR();
-        if (MER_BOITE_A_OUVRIR) { var idBoite = MER_BOITE_A_OUVRIR; MER_BOITE_A_OUVRIR = null; setTimeout(function() { OUVRIR_RECU(idBoite); }, 400); }
-    }).catch(function() {
-        AFFICHER_MSG_CENTRE({ titre: 'Code incorrect', texte: 'Ce code d\'accès n\'est pas reconnu. Vérifiez-le, en respectant les majuscules et les symboles.', icone: '⛔', mascotte: 'mascotte-code.webp' });
-        champ.value = '';
-        if (bouton) { bouton.disabled = false; bouton.textContent = 'Se connecter'; }
-    });
+// Rôles valideur cochés sur l'appareil (Paramètres › Mes rôles) : { valideur1: true, valideur2: true }.
+function MER_ROLES_LOCAUX() { try { return JSON.parse(localStorage.getItem('trigone_roles_locaux') || '{}') || {}; } catch (e) { return {}; } }
+// L'Espace valideur n'existe que pour les valideurs (rôle coché, clé mémorisée, ou demandes déjà reçues).
+function MER_EST_VALIDEUR() { var r = MER_ROLES_LOCAUX(); return !!(r.valideur1 || r.valideur2 || MER_CLE_SESSION || GET_A_VALIDER().length); }
+// Rôle valideur sans sa clé de signature sur cet appareil (déconnexion, appareil restauré) : le rôle est retiré puis
+// « Mes rôles » s'ouvre pour le recocher avec son code, qui redonne la clé.
+function MER_ACTIVER_ROLE_VALIDEUR() {
+    var r = MER_ROLES_LOCAUX();
+    [1, 2].forEach(function(n) { if (r['valideur' + n] && !MER_ROLES_MEMO[n] && window.JUMELAGE_DECLARER_ROLE) JUMELAGE_DECLARER_ROLE('valideur' + n, false); });
+    if (window.JUMELAGE_REGLAGES) JUMELAGE_REGLAGES({ vue: 'roles' });
 }
 function SE_DECONNECTER() {
-    MSG_CONFIRM('Se déconnecter ?', 'Votre code d\'accès valideur vous sera redemandé à la prochaine connexion sur cet appareil.', 'Se déconnecter', function() {
+    MSG_CONFIRM('Retirer l\'accès valideur ?', 'Vos rôles de valideur sont retirés de cet appareil. Pour les retrouver : Paramètres › Mes rôles, avec le code de chaque rôle.', 'Retirer', function() {
         MER_CLE_SESSION = null; MER_ACCES_SESSION = null; MER_ROLES_MEMO = {};
+        if (window.JUMELAGE_DECLARER_ROLE) { JUMELAGE_DECLARER_ROLE('valideur1', false); JUMELAGE_DECLARER_ROLE('valideur2', false); }
         Promise.all(['valideur', 'valideur1', 'valideur2'].map(function(k) { return ACCES_MEMO('effacer', null, k); })).catch(function() {}).then(RENDER_VALIDATION_INPLACE);
     });
 }
@@ -2814,7 +2760,13 @@ function TPL_VALIDATION() {
     var corps, sous;
     // L'espace Assistant Chorus DT ne s'ouvre que par son logo, au centre de l'écran de choix.
     var connecte = h && !h.retire;
-    if (!connecte) { sous = 'VALIDEUR 1 et VALIDEUR 2 : connexion'; corps = '<div class="MER-SECTION-TITLE">Connexion valideur</div>' + TPL_CONNEXION(v); }
+    if (!connecte) {
+        var aRole = MER_ROLES_LOCAUX().valideur1 || MER_ROLES_LOCAUX().valideur2;
+        sous = 'VALIDEUR 1 et VALIDEUR 2';
+        corps = '<div class="MER-EMPTY" style="padding:18px 10px;">' + (aRole ? 'Votre rôle de valideur doit être réactivé sur cet appareil, avec son code.' : 'Vous n\'avez pas de rôle de valideur sur cet appareil.') +
+            '<br>Les rôles se règlent dans <b>Paramètres › Mes rôles</b>, avec le code remis par l\'administrateur de TRIGONE.</div>' +
+            '<button type="button" class="BTN BTN-PRIMARY" onclick="MER_ACTIVER_ROLE_VALIDEUR()">' + (aRole ? 'Réactiver mon rôle de valideur' : 'Ajouter mon rôle de valideur') + '</button>';
+    }
     else { sous = 'Validation des demandes reçues'; corps = TPL_ESPACE_VALIDATION(v, h); }
     return '<div class="CARD' + (connecte && EST_PC() ? ' PC-LARGE' : '') + '">' +
         '<h2>Espace valideur</h2>' +
@@ -3430,6 +3382,7 @@ window.JUMELAGE_ROLES_CHANGES = function() {
     CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() {
         MER_DECLARER_ROLE_VALIDEUR();
         if (PAGE_ACTUELLE === 'VALIDATION') RENDER_VALIDATION_INPLACE(); else RENDRE_MENU_PC();
+        if (MER_BOITE_A_OUVRIR && HABILITATION_COURANTE()) { var idBoite = MER_BOITE_A_OUVRIR; MER_BOITE_A_OUVRIR = null; setTimeout(function() { OUVRIR_RECU(idBoite); }, 300); }
     });
 };
 // Valideur connecté : son rôle (1er ou 2e) est déclaré au compte TRIGONE, pour que sa boîte reçoive ce qui lui revient.
@@ -3712,8 +3665,9 @@ function OUVRIR_RECU(id) {
             if (!h || h.retire) {
                 MER_BOITE_A_OUVRIR = id;
                 SHOW_PAGE('VALIDATION');
-                AFFICHER_MSG_CENTRE({ titre: 'Connexion valideur', icone: '🔒', mascotte: 'mascotte-code.webp',
-                    texte: 'Connectez-vous avec votre code valideur : la demande s\'ouvrira aussitôt, prête à signer.', boutons: [{ label: 'Compris' }] });
+                AFFICHER_MSG_CENTRE({ titre: 'Rôle valideur à activer', icone: '🔒', mascotte: 'mascotte-code.webp',
+                    texte: 'Activez votre rôle de valideur avec son code (Paramètres › Mes rôles) : la demande s\'ouvrira aussitôt, prête à signer.',
+                    boutons: [{ label: 'Plus tard', style: 'BTN BTN-SECONDARY' }, { label: 'Activer mon rôle', action: MER_ACTIVER_ROLE_VALIDEUR }] });
                 return;
             }
             JUMELAGE_BOITE_MARQUER(id, 'ouvert');

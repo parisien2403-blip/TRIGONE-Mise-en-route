@@ -33,11 +33,16 @@ module.exports = async function(srv, options) {
         }
         return p;
     }
+    // Valideur : rôle coché dans Paramètres › Mes rôles, avec sa fonction et son code (plus de connexion dans l'Espace valideur).
     async function connecter(p, code, nom) {
-        await p.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(800);
-        await p.fill('#MER-VAL-grade', 'CNE'); await p.fill('#MER-VAL-fonction', 'Chef de service');
-        await p.fill('#MER-VAL-nom', nom || 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
-        await p.fill('#MER-CODE-ACCES', code); await p.click('button:has-text("Se connecter")'); await attendre(2500);
+        const niveau = code === code2 ? 2 : 1, id = 'VAL' + niveau;
+        await p.evaluate(() => { document.querySelectorAll('.JUM-CHOIX').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); JUMELAGE_REGLAGES({ vue: 'roles' }); }); await attendre(600);
+        if (!(await p.isChecked('#JUM-R-' + id))) await p.check('#JUM-R-' + id);
+        await attendre(200);
+        await p.fill('#JUM-R-FONCTION' + niveau, 'Chef de service');
+        if (await p.isVisible('#JUM-R-CODE' + id)) await p.fill('#JUM-R-CODE' + id, code);
+        await p.click('.JUM-R-PRINCIPAL'); await attendre(3500);
+        await p.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(1500);
         return p.evaluate(() => !!HABILITATION_COURANTE());
     }
 
