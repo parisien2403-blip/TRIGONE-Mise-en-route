@@ -54,9 +54,15 @@ module.exports = async function() {
                 'bouton de compte : connecté, « ADJ TEST » affiché');
             await p.click('.JUM-CPT-APPLI'); await attendre(400);
             const menu = await p.evaluate(() => (document.querySelector('.JUM-CPT-MENU') || {}).textContent || '');
-            verifier(['Mon profil', 'Mes rôles', 'Notifications', 'Ajouter un appareil', 'Notice', 'Références', 'Signaler un problème', 'Sauvegarder mes données', 'Se déconnecter'].every(t => menu.includes(t)) && menu.includes(MAILS_M),
-                'menu du compte : profil, rôles, notifications, appareils, notice, références, signalement, sauvegarde, déconnexion');
-            await p.evaluate(() => JUMELAGE_FERMER_MENU_COMPTE());
+            verifier(['Mon profil', 'Paramètres', 'Aide', 'Se déconnecter'].every(t => menu.includes(t)) && !menu.includes('Sauvegarder') && menu.includes(MAILS_M) && (await p.$$('.JUM-CPT-MENU button')).length === 4,
+                'menu du compte court : Mon profil, Paramètres, Aide, Se déconnecter');
+            // Paramètres : toutes les rubriques, une page rangée.
+            await p.click('.JUM-CPT-MENU [data-action="parametres"]'); await attendre(400);
+            let tout = '';
+            for (const r of await p.$$eval('.JUM-PARAM-NAV [data-rub]', l => l.map(x => x.getAttribute('data-rub')))) { await p.click('.JUM-PARAM-NAV [data-rub="' + r + '"]'); await attendre(100); tout += await p.textContent('.JUM-PARAM-CONTENU'); }
+            verifier(['Mes rôles', 'Notifications', 'Ajouter un appareil', 'Notice', 'Références', 'Signaler un problème', 'Sauvegarder mes données', 'Réinitialiser TRIGONE', 'Partager TRIGONE'].every(t => tout.includes(t)),
+                'Paramètres : compte, notifications, appareils, notice, références, signalement, sauvegarde, réinitialisation, partage');
+            await p.evaluate(() => JUMELAGE_FERMER_PARAMETRES());
         }
         return p;
     }

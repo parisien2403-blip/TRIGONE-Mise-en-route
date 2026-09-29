@@ -308,6 +308,35 @@
         '.JUM-CPT-MENU button b { display: block; font-size: 0.82rem; } .JUM-CPT-MENU button small { display: block; font-size: 0.68rem; color: #64748b; margin-top: 2px; }' +
         '.JUM-CPT-MENU .JUM-CPT-DANGER svg { stroke: #b91c1c; } .JUM-CPT-MENU .JUM-CPT-DANGER b { color: #b91c1c; } .JUM-CPT-MENU .JUM-CPT-DANGER:hover { background: #fef2f2; }' +
         '.JUM-CPT-SEP { height: 1px; background: #e2e8f0; margin: 4px 10px; }' +
+        /* Page Paramètres : rubriques à gauche (PC) ou en onglets (téléphone), lignes d'action à droite. */
+        '.JUM-PARAM { position: fixed; inset: 0; z-index: 99989; display: flex; align-items: center; justify-content: center; padding: 20px; background: rgba(15,23,42,0.55); font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; }' +
+        '.JUM-PARAM-CARTE { width: min(860px, 100%); height: min(640px, calc(100vh - 40px)); display: flex; flex-direction: column; background: #fff; color: #1a1a1a; border-radius: 20px; box-shadow: 0 24px 60px rgba(0,0,0,0.35); overflow: hidden; }' +
+        '.JUM-PARAM-TETE { display: flex; align-items: center; gap: 12px; padding: 18px 22px; border-bottom: 1px solid #e2e8f0; }' +
+        '.JUM-PARAM-TETE h2 { margin: 0; flex: 1; font-size: 1.15rem; letter-spacing: 0.02em; }' +
+        '.JUM-PARAM-TETE .JUM-AV { width: 36px; height: 36px; font-size: 0.8rem; }' +
+        '.JUM-PARAM-FERMER { width: 34px; height: 34px; border: 0; border-radius: 10px; background: #f1f5f9; color: #475569; font: 700 1rem inherit; cursor: pointer; }' +
+        '.JUM-PARAM-CORPS { flex: 1; display: flex; min-height: 0; }' +
+        '.JUM-PARAM-NAV { width: 210px; flex-shrink: 0; padding: 12px; border-right: 1px solid #e2e8f0; background: #f8fafc; overflow-y: auto; }' +
+        '.JUM-PARAM-NAV button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 11px 12px; border-radius: 12px; cursor: pointer; color: #334155; font: 700 0.8rem Montserrat, system-ui, sans-serif; text-align: left; }' +
+        '.JUM-PARAM-NAV button svg, .JUM-PARAM-LIGNE svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-PARAM-NAV button:hover { background: #eef2f6; } .JUM-PARAM-NAV button.actif { background: #1a1a1a; color: #fff; } .JUM-PARAM-NAV button.actif svg { stroke: #fff; }' +
+        '.JUM-PARAM-CONTENU { flex: 1; padding: 20px 24px; overflow-y: auto; }' +
+        '.JUM-PARAM-CONTENU h3 { margin: 0 0 4px; font-size: 1rem; } .JUM-PARAM-CONTENU > p { margin: 0 0 14px; font-size: 0.76rem; color: #64748b; line-height: 1.45; }' +
+        '.JUM-PARAM-LIGNE { display: flex; align-items: center; gap: 14px; width: 100%; border: 1px solid #e2e8f0; background: #fff; padding: 13px 14px; margin-bottom: 8px; border-radius: 14px; cursor: pointer; text-align: left; color: #1a1a1a; font-family: inherit; }' +
+        '.JUM-PARAM-LIGNE:hover { background: #f8fafc; border-color: #cbd5e1; }' +
+        '.JUM-PARAM-LIGNE span { flex: 1; } .JUM-PARAM-LIGNE b { display: block; font-size: 0.84rem; } .JUM-PARAM-LIGNE small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 2px; }' +
+        '.JUM-PARAM-LIGNE i { font-style: normal; font-size: 1.3rem; color: #94a3b8; }' +
+        '.JUM-PARAM-LIGNE.danger b { color: #b91c1c; } .JUM-PARAM-LIGNE.danger svg { stroke: #b91c1c; } .JUM-PARAM-LIGNE.danger:hover { background: #fef2f2; border-color: #fecaca; }' +
+        '.JUM-PARAM-VIDE { font-size: 0.8rem; color: #64748b; padding: 12px 0; }' +
+        '@media (max-width: 700px) { .JUM-PARAM { padding: 0; } .JUM-PARAM-CARTE { height: 100%; width: 100%; border-radius: 0; } .JUM-PARAM-CORPS { flex-direction: column; }' +
+            ' .JUM-PARAM-NAV { width: auto; display: flex; gap: 6px; padding: 10px 12px; border-right: 0; border-bottom: 1px solid #e2e8f0; flex-wrap: wrap; overflow: visible; }' +
+            ' .JUM-PARAM-NAV button { width: auto; flex-shrink: 0; padding: 9px 12px; border-radius: 999px; background: #eef2f6; } .JUM-PARAM-NAV button svg { display: none; } .JUM-PARAM-CONTENU { padding: 16px; } }' +
+        'html body.dark-mode .JUM-PARAM-CARTE { background: #1f1f1f; color: #ececec; } html body.dark-mode .JUM-PARAM-TETE, html body.dark-mode .JUM-PARAM-NAV { border-color: #333; }' +
+        'html body.dark-mode .JUM-PARAM-NAV { background: #181818; } html body.dark-mode .JUM-PARAM-NAV button { color: #d4d4d4; } html body.dark-mode .JUM-PARAM-NAV button:hover { background: #2a2a2a; }' +
+        'html body.dark-mode .JUM-PARAM-NAV button.actif { background: #f5f5f5; color: #1a1a1a; } html body.dark-mode .JUM-PARAM-NAV button.actif svg { stroke: #1a1a1a; }' +
+        'html body.dark-mode .JUM-PARAM-LIGNE { background: #242424; border-color: #333; color: #ececec; } html body.dark-mode .JUM-PARAM-LIGNE:hover { background: #2c2c2c; }' +
+        'html body.dark-mode .JUM-PARAM-FERMER { background: #2a2a2a; color: #d4d4d4; } html body.dark-mode .JUM-PARAM-LIGNE small, html body.dark-mode .JUM-PARAM-CONTENU > p { color: #a3a3a3; }' +
+        '@media (max-width: 700px) { html body.dark-mode .JUM-PARAM-NAV button { background: #2a2a2a; } html body.dark-mode .JUM-PARAM-NAV button.actif { background: #f5f5f5; } }' +
         'html body.dark-mode .JUM-CPT-MENU, .JUM-CHOIX ~ .JUM-CPT-MENU.sombre { background: #1f1f1f; color: #ececec; }' +
         'html body.dark-mode .JUM-CPT-MENU button { color: #ececec; } html body.dark-mode .JUM-CPT-MENU button:hover { background: #2a2a2a; }' +
         'html body.dark-mode .JUM-CPT-MENU button small, html body.dark-mode .JUM-CPT-TETE small { color: #a3a3a3; } html body.dark-mode .JUM-CPT-SEP { background: #333; }' +
@@ -612,7 +641,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 98, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 99, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2189,38 +2218,28 @@
         var roles = rolesLocaux(), aRole = Object.keys(roles).length > 0, e = notifEtat();
         // Entrées propres à l'appli ouverte (notice, réglages, références…) : pas sur l'écran de choix.
         var appli = !ecran && window.JUMELAGE_MENU_APPLI ? (window.JUMELAGE_MENU_APPLI() || []) : [];
-        var actionsAppli = {};
-        var htmlAppli = appli.map(function(x, i) { actionsAppli['appli' + i] = x.action;
-            return '<button type="button" data-action="appli' + i + '">' + ic(x.icone) + '<span><b>' + esc(x.titre) + '</b><small>' + esc(x.sous || '') + '</small></span></button>'; }).join('');
-        var htmlOutils = (htmlAppli ? '<div class="JUM-CPT-SEP"></div><div class="JUM-CPT-RUB">' + (DANS_CR ? 'Compte-rendu de mission' : 'Mise en route') + '</div>' + htmlAppli : '') +
-            '<div class="JUM-CPT-SEP"></div>' +
-            '<button type="button" data-action="sauver">' + ic('disquette') + '<span><b>Sauvegarder mes données</b><small>Un fichier pour tout TRIGONE</small></span></button>' +
-            '<button type="button" data-action="restaurer">' + ic('importer') + '<span><b>Restaurer une sauvegarde</b><small>Sur cet appareil ou un nouveau</small></span></button>';
         var m = document.createElement('div');
         m.className = 'JUM-CPT-MENU'; m.setAttribute('role', 'menu');
+        // Menu court : le reste (rôles, notifications, appareils, réglages de l'appli, données, aide) est dans Paramètres.
+        var lignesCourtes = '<button type="button" data-action="profil">' + ic('personne') + '<span><b>Mon profil</b><small>Identité, destinataires, code d\'accès</small></span></button>' +
+            '<button type="button" data-action="parametres">' + ROUE_SVG + '<span><b>Paramètres</b><small>Compte, notifications, ' + (appli.length ? (DANS_CR ? 'compte-rendu' : 'mise en route') + ', ' : '') + 'données</small></span></button>' +
+            '<button type="button" data-action="aide">' + ic('bouee') + '<span><b>Aide</b><small>Notice, références, signaler un problème</small></span></button>';
         if (!c) m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">?</span><div><b>Pas connecté</b><small>Connectez-vous pour envoyer et recevoir vos demandes et comptes-rendus.</small></div></div>' +
             '<button type="button" data-action="connexion">' + ic('personne') + '<span><b>Se connecter</b><small>Première connexion, ou autre appareil</small></span></button>' +
-            '<button type="button" data-action="profil">' + ic('personne') + '<span><b>Mon profil</b><small>Identité, destinataires, code d\'accès</small></span></button>' + htmlOutils;
+            '<div class="JUM-CPT-SEP"></div>' + lignesCourtes;
         else m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">' + esc(initiales()) + '</span><div><b>' + esc([lireReglages().grade, lireReglages().nom, lireReglages().prenom].filter(Boolean).join(' ') || nomCompte()) + '</b><small>' + esc(c.mail) + '</small></div></div>' +
             '<div class="JUM-CPT-ROLES"><span>MISSIONNAIRE</span>' + Object.keys(LIBELLES_ROLES).filter(function(k) { return roles[k]; }).map(function(k) { return '<span class="' + (k === 'chorus' ? 'or' : '') + '">' + LIBELLES_ROLES[k] + '</span>'; }).join('') + '</div>' +
+            '<div class="JUM-CPT-SEP"></div>' + lignesCourtes +
             '<div class="JUM-CPT-SEP"></div>' +
-            '<button type="button" data-action="profil">' + ic('personne') + '<span><b>Mon profil</b><small>Identité, destinataires, code d\'accès</small></span></button>' +
-            '<button type="button" data-action="roles">' + ic('groupe') + '<span><b>Mes rôles</b><small>' + (aRole ? 'Valideur, assistant Chorus DT : gérer' : 'Ajouter un rôle avec son code') + '</small></span></button>' +
-            (aRole ? '<button type="button" data-action="absence">' + ic('sablier') + '<span><b>Absence</b><small>Désigner un remplaçant</small></span></button>' : '') +
-            '<button type="button" data-action="notif">' + ic('cloche') + '<span><b>Notifications</b><small>' + (e === 'active' ? (notifMuet() ? 'Coupées sur cet appareil' : 'Actives sur cet appareil') + ' · tester' : 'Les activer sur cet appareil') + '</small></span></button>' +
-            (e === 'active' ? '<button type="button" data-action="muet">' + ic('cloche') + '<span><b>' + (notifMuet() ? 'Rétablir les notifications ici' : 'Couper les notifications ici') + '</b><small>Vos autres appareils ne changent pas</small></span></button>' : '') +
-            '<button type="button" data-action="appareil">' + ic('telephone') + '<span><b>Ajouter un appareil</b><small>PC ou téléphone, sans rien ressaisir</small></span></button>' +
-            htmlOutils +
-            '<div class="JUM-CPT-SEP"></div>' +
-            '<button type="button" data-action="deco">' + ic('exporter') + '<span><b>Se déconnecter</b><small>Vos données restent sur l\'appareil</small></span></button>' +
-            '<button type="button" data-action="effacer" class="JUM-CPT-DANGER">' + CORBEILLE_SVG + '<span><b>Se déconnecter et effacer</b><small>Retirer le compte et les données de cet appareil</small></span></button>';
+            '<button type="button" data-action="deco">' + ic('exporter') + '<span><b>Se déconnecter</b><small>Vos données restent sur l\'appareil</small></span></button>';
         ['pointerdown', 'pointerup', 'click'].forEach(function(t) { m.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
         m.addEventListener('click', function(ev) {
             var b = ev.target.closest('button'); if (!b) return;
             m.remove();
             var a = b.getAttribute('data-action');
-            if (actionsAppli[a]) actionsAppli[a]();
-            else if (a === 'connexion') window.JUMELAGE_CONNEXION();
+            if (a === 'connexion') window.JUMELAGE_CONNEXION();
+            else if (a === 'parametres') window.JUMELAGE_PARAMETRES();
+            else if (a === 'aide') window.JUMELAGE_PARAMETRES('aide');
             else if (a === 'sauver') window.JUMELAGE_SAUVEGARDER();
             else if (a === 'restaurer') window.JUMELAGE_RESTAURER();
             else if (a === 'profil') window.JUMELAGE_REGLAGES({ vue: 'profil' });
@@ -2246,6 +2265,79 @@
             }, true);
         }, 0);
     }
+
+    // ---------- Paramètres : une page rangée en rubriques (menu du compte, roue crantée de l'écran de choix) ----------
+    // Chaque ligne lance l'action existante (fenêtres de profil, de rôles, de notifications, sauvegarde…).
+    var AIDE_APPLI = /^(Notice|Références|Signaler)/;
+    function rubriquesParametres() {
+        var c = monCompte(), ic = function(n) { return window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE(n) : ''; };
+        var roles = rolesLocaux(), aRole = Object.keys(roles).length > 0, e = notifEtat();
+        var appli = !ecran && window.JUMELAGE_MENU_APPLI ? (window.JUMELAGE_MENU_APPLI() || []) : [];
+        var L = function(id, icone, titre, sous, action, danger) { return { id: id, icone: icone, titre: titre, sous: sous, action: action, danger: danger }; };
+        var r = [
+            { id: 'compte', titre: 'Compte', icone: ic('personne'), aide: c ? 'Connecté avec ' + c.mail + '.' : 'Vous n\'êtes pas connecté : connectez-vous pour envoyer et recevoir vos demandes et comptes-rendus.', lignes: [
+                !c && L('connexion', ic('personne'), 'Se connecter', 'Première connexion, ou autre appareil', function() { window.JUMELAGE_CONNEXION(); }),
+                L('profil', ic('personne'), 'Mon profil', 'Identité, destinataires, demande de réservation, code d\'accès', function() { window.JUMELAGE_REGLAGES({ vue: 'profil' }); }),
+                L('roles', ic('groupe'), 'Mes rôles', aRole ? 'Valideur, assistant Chorus DT : gérer' : 'Valideur, assistant Chorus DT : ajouter un rôle avec son code', function() { window.JUMELAGE_REGLAGES({ vue: 'roles' }); }),
+                aRole && L('absence', ic('sablier'), 'Absence', 'Désigner un remplaçant pendant votre absence', function() { window.JUMELAGE_REGLAGES({ vue: 'roles', section: 'absence' }); }),
+                c && L('appareil', ic('telephone'), 'Ajouter un appareil', 'PC ou téléphone, sans rien ressaisir', function() { window.JUMELAGE_COMPTE({ liaison: true }); })
+            ] },
+            { id: 'notif', titre: 'Notifications', icone: ic('cloche'), aide: 'Réception d\'une demande, suivi de vos envois, nouvelles versions, et boutons d\'horodatage sur la montre.', lignes: c ? [
+                L('notif', ic('cloche'), 'Notifications', e === 'active' ? (notifMuet() ? 'Coupées sur cet appareil' : 'Actives sur cet appareil') + ' · tester' : 'Les activer sur cet appareil', function() { window.JUMELAGE_COMPTE(); }),
+                e === 'active' && L('muet', ic('cloche'), notifMuet() ? 'Rétablir les notifications ici' : 'Couper les notifications ici', 'Vos autres appareils ne changent pas', function() { window.JUMELAGE_NOTIF_MUET(); })
+            ] : [], vide: 'Connectez-vous d\'abord (rubrique Compte) pour recevoir les notifications.' }
+        ];
+        var propres = appli.filter(function(x) { return !AIDE_APPLI.test(x.titre); });
+        if (propres.length) r.push({ id: 'appli', titre: DANS_CR ? 'Compte-rendu' : 'Mise en route', icone: ic('document'), aide: 'Réglages propres à ' + (DANS_CR ? 'l\'appli Compte-rendu de mission' : 'l\'appli Mise en route') + '.',
+            lignes: propres.map(function(x, i) { return L('appli' + i, ic(x.icone), x.titre, x.sous, x.action); }) });
+        r.push({ id: 'donnees', titre: 'Données', icone: ic('disquette'), aide: 'Tout TRIGONE est rangé sur cet appareil : sauvegardez-le régulièrement.', lignes: [
+            L('sauvegarder', ic('disquette'), 'Sauvegarder mes données', 'Un fichier pour tout TRIGONE', function() { window.JUMELAGE_SAUVEGARDER(); }),
+            L('restaurer', ic('importer'), 'Restaurer une sauvegarde', 'Sur cet appareil ou un nouveau', function() { window.JUMELAGE_RESTAURER(); }),
+            c && L('effacer', CORBEILLE_SVG, 'Se déconnecter et effacer', 'Retirer le compte et les données de cet appareil', deconnecterEtEffacer, true),
+            L('reinitialiser', CORBEILLE_SVG, 'Réinitialiser TRIGONE', 'Tout effacer sur cet appareil', function() { window.JUMELAGE_REINITIALISER(); }, true)
+        ] });
+        r.push({ id: 'aide', titre: 'Aide', icone: ic('bouee'), aide: 'Pour prendre en main TRIGONE, ou nous signaler un souci.', lignes: appli.filter(function(x) { return AIDE_APPLI.test(x.titre) && !/^Signaler/.test(x.titre); })
+            .map(function(x, i) { return L('aide' + i, ic(x.icone), x.titre, x.sous, x.action); }).concat([
+            L('presentation', '<img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="" style="width:20px;height:20px;">', 'Découvrir TRIGONE', 'Revoir la présentation', function() { window.JUMELAGE_PRESENTATION(); }),
+            L('partager', ic('partage'), 'Partager TRIGONE', 'QR code et lien de l\'application', function() { window.JUMELAGE_PARTAGER_APPLI(); }),
+            L('signaler', ic('bouee'), 'Signaler un problème', 'Écrire à l\'équipe TRIGONE', function() { window.JUMELAGE_SIGNALER(ecran ? 'choix' : undefined); })
+        ]) });
+        r.forEach(function(x) { x.lignes = x.lignes.filter(Boolean); });
+        return r;
+    }
+    var fenParam = null;
+    window.JUMELAGE_FERMER_PARAMETRES = function() { if (fenParam) { fenParam.remove(); fenParam = null; } };
+    window.JUMELAGE_PARAMETRES = function(section) {
+        window.JUMELAGE_FERMER_PARAMETRES();
+        fermerMenuCompte(); var mr = document.querySelector('.JUM-ROUE-MENU'); if (mr) mr.remove();
+        var rubs = rubriquesParametres(), c = monCompte();
+        var actuelle = rubs.filter(function(x) { return x.id === section; })[0] || rubs[0];
+        fenParam = document.createElement('div');
+        fenParam.className = 'JUM-PARAM';
+        var dessiner = function() {
+            fenParam.innerHTML = '<div class="JUM-PARAM-CARTE" role="dialog" aria-label="Paramètres">' +
+                '<div class="JUM-PARAM-TETE">' + (c ? '<span class="JUM-AV">' + esc(initiales()) + '</span>' : '') + '<h2>Paramètres</h2><button type="button" class="JUM-PARAM-FERMER" aria-label="Fermer">✕</button></div>' +
+                '<div class="JUM-PARAM-CORPS"><nav class="JUM-PARAM-NAV">' + rubs.map(function(x) {
+                    return '<button type="button" data-rub="' + x.id + '" class="' + (x === actuelle ? 'actif' : '') + '">' + x.icone + x.titre + '</button>'; }).join('') + '</nav>' +
+                '<div class="JUM-PARAM-CONTENU"><h3>' + esc(actuelle.titre) + '</h3><p>' + esc(actuelle.aide || '') + '</p>' +
+                (actuelle.lignes.length ? actuelle.lignes.map(function(l) {
+                    return '<button type="button" class="JUM-PARAM-LIGNE' + (l.danger ? ' danger' : '') + '" data-action="' + l.id + '">' + l.icone + '<span><b>' + esc(l.titre) + '</b><small>' + esc(l.sous || '') + '</small></span><i aria-hidden="true">›</i></button>'; }).join('')
+                    : '<div class="JUM-PARAM-VIDE">' + esc(actuelle.vide || '') + '</div>') + '</div></div></div>';
+        };
+        dessiner();
+        fenParam.addEventListener('click', function(ev) {
+            if (ev.target === fenParam || ev.target.closest('.JUM-PARAM-FERMER')) { window.JUMELAGE_FERMER_PARAMETRES(); return; }
+            var r = ev.target.closest('[data-rub]');
+            if (r) { actuelle = rubs.filter(function(x) { return x.id === r.getAttribute('data-rub'); })[0] || actuelle; dessiner(); return; }
+            var b = ev.target.closest('[data-action]'); if (!b) return;
+            var l = actuelle.lignes.filter(function(x) { return x.id === b.getAttribute('data-action'); })[0];
+            if (!l) return;
+            window.JUMELAGE_FERMER_PARAMETRES();
+            l.action();
+        });
+        ['pointerdown', 'pointerup'].forEach(function(t) { fenParam.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
+        document.body.appendChild(fenParam);
+    };
 
     // ---------- Déménagement : l'adresse officielle de TRIGONE est celle de Cloudflare ----------
     // L'ancienne adresse (GitHub Pages) ne sert plus qu'à publier. Le navigateur range les données par adresse :
@@ -2328,6 +2420,9 @@
     // Menu de la roue crantée : réglages ou présentation.
     window.JUMELAGE_MENU_ROUE = function(e) {
         if (e) e.stopPropagation();
+        // La roue crantée ouvre la page Paramètres (mêmes rubriques que le menu du compte).
+        window.JUMELAGE_PARAMETRES();
+        return;
         var m = document.querySelector('.JUM-ROUE-MENU');
         if (m) { m.remove(); return; }
         if (!ecran) return;
@@ -2831,7 +2926,7 @@
             '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
             // Assistant Chorus DT : son logo au centre, sur la diagonale, entre Mise en route et Compte-rendu.
             (roleChorus() ? '<button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button>' : '') +
-            '<button type="button" class="JUM-ROUE" aria-label="Présentation, aide et sauvegarde de TRIGONE" title="Découvrir TRIGONE · Partager TRIGONE · Signaler un problème · Sauvegarde">' + ROUE_SVG + '</button>' +
+            '<button type="button" class="JUM-ROUE" aria-label="Présentation, aide et sauvegarde de TRIGONE" title="Paramètres">' + ROUE_SVG + '</button>' +
             // Numéro de version, en haut à droite (le même dans les deux applis).
             (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '') +
             // Mise à jour, en bas à gauche (pendant de la roue crantée).
