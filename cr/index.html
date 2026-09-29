@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=89"></script>
+<script src="../jumelage.js?v=90"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -1962,6 +1962,10 @@ body.dark-mode .MISSION-MENU-BTN { background: #242424; border-color: #404040; c
   margin-bottom: 16px;
 }
 .collective-zone label { color: #b45309 !important; margin: 0; font-size: 0.88em; text-transform: none; letter-spacing: 0; }
+.MER-EQUIPE { margin: 6px 0 12px; padding: 10px 12px; border: 1px solid rgba(180,83,9,.35); border-radius: 10px; background: rgba(180,83,9,.06); font-size: 0.82em; }
+.MER-EQUIPE b { color: #b45309; }
+.MER-EQUIPE ul { margin: 6px 0 0; padding-left: 18px; }
+.MER-EQUIPE li { margin: 2px 0; }
 .debut-fixe-banner {
   font-size: 0.78em;
   color: var(--sm2-accent-deep);
@@ -5663,6 +5667,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <input type="checkbox" id="IS-COLLECTIVE" autocomplete="off" onchange="TOGGLE_CHEF_MAIL()">
 <label for="IS-COLLECTIVE">👥 Mission collective (chef)</label>
 </div>
+<div id="MER-EQUIPE" class="MER-EQUIPE HIDDEN"></div>
 <div class="P1-FIELD">
 <label for="GRADE-USER">Grade</label>
 <input type="text" id="GRADE-USER" placeholder="EX : Adjudant" onblur="SAVE_USER_NAME_FIELDS()">
@@ -6346,7 +6351,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 
 <script>
-var M = { JOURS:[], JOURS_REMOVED:[], LEGS:[], ACTIVE_DAY_IDX:0, ACTIVE_TRANS_TAB:'A', ACTIVE_FRAIS_TRAJET_TAB:'A', ACTIVE_FRAIS_MAIN_TAB:'REPAS', USER:"", CIE:"", CHEF_MAIL:"", QR_URL:"", DEADLINE:"", MAIL_SENT:false, PDF_DOWNLOADED:false, REMINDER_DISMISSED:false, CR_MODE:"NUM", OBS:"", OM_NUMERO:"", OM_EN_POSSESSION:true, ARR_SITE:"", DEP_SITE:"", LIEU_DEP:"", LIEU_RET:"", EXPERIENCE_SAISIE:false, T_A:"NEANT", T_A_ANX:"NEANT", G_A:"", G_A_DEP:"", G_A_ARR:"", H_A:"", H_A_DEP:"", H_A_ARR:"", DT_A_DEP:"", DT_A_ARR:"", G_A_ANX:"", G_A_ANX_DEP:"", G_A_ANX_ARR:"", H_A_ANX:"", H_A_ANX_DEP:"", H_A_ANX_ARR:"", DT_A_ANX_DEP:"", DT_A_ANX_ARR:"", T_R:"NEANT", T_R_ANX:"NEANT", G_R:"", G_R_DEP:"", G_R_ARR:"", H_R:"", H_R_DEP:"", H_R_ARR:"", DT_R_DEP:"", DT_R_ARR:"", G_R_ANX:"", G_R_ANX_DEP:"", G_R_ANX_ARR:"", H_R_ANX:"", H_R_ANX_DEP:"", H_R_ANX_ARR:"", DT_R_ANX_DEP:"", DT_R_ANX_ARR:"", SIGNED:false, COLLECTIVE:false, IS_PAX:false, PAGE:"P0", DARK:false, RECAP_LOCKED:false, RECAP_LOCKED_DISMISSED:false, FIN_RETOUR_HORODATE:"", FIN_HORODATAGE:"", RECAP_PLAIN:"", ABT_A:false, ABT_A_ANX:false, ABT_R:false, ABT_R_ANX:false, IK_A:false, IK_A_ANX:false, IK_R:false, IK_R_ANX:false, IK_CV_A:"5", IK_CV_A_ANX:"5", IK_CV_R:"5", IK_CV_R_ANX:"5", IK_KM_A:0, IK_KM_A_ANX:0, IK_KM_R:0, IK_KM_R_ANX:0, IK_MONTANT_A:0, IK_MONTANT_A_ANX:0, IK_MONTANT_R:0, IK_MONTANT_R_ANX:0 };
+var M = { JOURS:[], JOURS_REMOVED:[], LEGS:[], ACTIVE_DAY_IDX:0, ACTIVE_TRANS_TAB:'A', ACTIVE_FRAIS_TRAJET_TAB:'A', ACTIVE_FRAIS_MAIN_TAB:'REPAS', USER:"", CIE:"", CHEF_MAIL:"", QR_URL:"", DEADLINE:"", MAIL_SENT:false, PDF_DOWNLOADED:false, REMINDER_DISMISSED:false, CR_MODE:"NUM", OBS:"", OM_NUMERO:"", OM_EN_POSSESSION:true, ARR_SITE:"", DEP_SITE:"", LIEU_DEP:"", LIEU_RET:"", EXPERIENCE_SAISIE:false, T_A:"NEANT", T_A_ANX:"NEANT", G_A:"", G_A_DEP:"", G_A_ARR:"", H_A:"", H_A_DEP:"", H_A_ARR:"", DT_A_DEP:"", DT_A_ARR:"", G_A_ANX:"", G_A_ANX_DEP:"", G_A_ANX_ARR:"", H_A_ANX:"", H_A_ANX_DEP:"", H_A_ANX_ARR:"", DT_A_ANX_DEP:"", DT_A_ANX_ARR:"", T_R:"NEANT", T_R_ANX:"NEANT", G_R:"", G_R_DEP:"", G_R_ARR:"", H_R:"", H_R_DEP:"", H_R_ARR:"", DT_R_DEP:"", DT_R_ARR:"", G_R_ANX:"", G_R_ANX_DEP:"", G_R_ANX_ARR:"", H_R_ANX:"", H_R_ANX_DEP:"", H_R_ANX_ARR:"", DT_R_ANX_DEP:"", DT_R_ANX_ARR:"", SIGNED:false, COLLECTIVE:false, PARTICIPANTS:[], IS_PAX:false, PAGE:"P0", DARK:false, RECAP_LOCKED:false, RECAP_LOCKED_DISMISSED:false, FIN_RETOUR_HORODATE:"", FIN_HORODATAGE:"", RECAP_PLAIN:"", ABT_A:false, ABT_A_ANX:false, ABT_R:false, ABT_R_ANX:false, IK_A:false, IK_A_ANX:false, IK_R:false, IK_R_ANX:false, IK_CV_A:"5", IK_CV_A_ANX:"5", IK_CV_R:"5", IK_CV_R_ANX:"5", IK_KM_A:0, IK_KM_A_ANX:0, IK_KM_R:0, IK_KM_R_ANX:0, IK_MONTANT_A:0, IK_MONTANT_A_ANX:0, IK_MONTANT_R:0, IK_MONTANT_R_ANX:0 };
 
 var TRANSPORT_SUFFIXES = ['A', 'A-ANX', 'R', 'R-ANX'];
 
@@ -9450,7 +9455,21 @@ function TOGGLE_CHEF_MAIL() {
     } else {
         M.CHEF_MAIL = '';
     }
+    RENDRE_EQUIPE_MER();
     SAVE_STATE();
+}
+
+// Équipe d'une mise en route collective : toutes les personnes de la demande, reprises dans le CR du chef.
+function LIGNE_PARTICIPANT(p) {
+    return [p.grade, p.nom, p.prenom].filter(Boolean).join(' ') + (p.nid ? ' — NID ' + p.nid : '') + (p.cie ? ' — ' + p.cie : '');
+}
+function RENDRE_EQUIPE_MER() {
+    var z = document.getElementById('MER-EQUIPE');
+    if (!z) return;
+    var l = M.COLLECTIVE && !M.IS_PAX ? (M.PARTICIPANTS || []) : [];
+    z.classList.toggle('HIDDEN', !l.length);
+    z.innerHTML = l.length ? '<b>Participants repris de la mise en route (' + l.length + ')</b><ul>' +
+        l.map(function(p) { return '<li>' + ESC_HTML(LIGNE_PARTICIPANT(p)) + '</li>'; }).join('') + '</ul>' : '';
 }
 
 function BUILD_MAILTO_URL(sujet, body, cc) {
@@ -11231,6 +11250,10 @@ function BUILD_RECAP_CORE(includeFinLine) {
     if (M.GRADE) R += 'GRADE : ' + M.GRADE + '\n';
     R += 'MISSIONNAIRE : ' + M.USER + '\n' + CIE_LABEL.toUpperCase() + ' : ' + (GET_CIE_LABEL(M.CIE) || 'N/A') + '\n';
     if (M.NID) R += 'NID : ' + M.NID + '\n';
+    if (M.COLLECTIVE && M.PARTICIPANTS && M.PARTICIPANTS.length) {
+        R += 'PARTICIPANTS (' + M.PARTICIPANTS.length + ') :\n';
+        M.PARTICIPANTS.forEach(function(p) { R += '  - ' + LIGNE_PARTICIPANT(p) + '\n'; });
+    }
     R += OM_RECAP_LINE();
     var hasChain = M.LEGS && M.LEGS.length > 0;
     if (hasChain) R += 'MISSIONS ENCHAÎNÉES : ' + GET_MISSION_COUNT() + '\n';
@@ -11536,7 +11559,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 186;
+var APP_CODE_VERSION = 187;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13905,9 +13928,19 @@ function APPLIQUER_MISE_EN_ROUTE(d) {
     // La personne concernée : celle dont le nom est l'identité enregistrée, sinon la première de la demande.
     var id = IDENTITE_MISE_EN_ROUTE(), moi = (id.nom || '').trim().toUpperCase();
     var pers = (d.personnes || []).filter(function(p) { return moi && (p.nom || '').trim().toUpperCase() === moi; })[0] || (d.personnes || [])[0] || {};
-    M.COLLECTIVE = false;
+    // Demande collective (plusieurs personnes) : mission collective cochée d'office, vous êtes le chef
+    // de mission et toutes les autres personnes de la demande sont reprises comme participants.
+    var equipe = (d.personnes || []).filter(function(p) { return p !== pers && ((p.nom || '').trim() || (p.prenom || '').trim()); });
+    M.PARTICIPANTS = equipe.map(function(p) {
+        return { grade: (p.grade || '').trim(), nom: (p.nom || '').trim().toUpperCase(), prenom: (p.prenom || '').trim(), nid: NID_DEPUIS_CHIFFRES(p.matricule), cie: (p.cie || '').trim() };
+    });
+    M.COLLECTIVE = equipe.length > 0;
+    if (M.COLLECTIVE && !M.CHEF_MAIL) M.CHEF_MAIL = GET_SAVED_CHEF_MAIL() || (window.JUMELAGE_COMPTE_MAIL ? JUMELAGE_COMPTE_MAIL() : '') || '';
+    if (!M.COLLECTIVE) M.CHEF_MAIL = '';
     var cb = document.getElementById('IS-COLLECTIVE');
-    if (cb) { cb.checked = false; TOGGLE_CHEF_MAIL(); }
+    var cm = document.getElementById('CHEF-MAIL');
+    if (cm) cm.value = M.CHEF_MAIL;
+    if (cb) { cb.checked = M.COLLECTIVE; TOGGLE_CHEF_MAIL(); }
     RESET_OM_FIELDS();
     RESET_ABT_FIELDS(true);
     CLEAR_TRANSPORT_FIELDS_M();
@@ -13962,7 +13995,9 @@ function APPLIQUER_MISE_EN_ROUTE(d) {
     UPDATE_BOUTON_LANCER_P1();
     AFFICHER_MSG_CENTRE({
         titre: 'Mission pré-remplie',
-        texte: 'Tout est repris de votre mise en route. Vérifiez, puis « Départ en mission » le jour J.',
+        texte: M.COLLECTIVE
+            ? 'Mission collective : vous êtes chef de mission et les ' + M.PARTICIPANTS.length + ' autre' + (M.PARTICIPANTS.length > 1 ? 's personnes sont reprises' : ' personne est reprise') + ' comme participants. Vérifiez, puis « Départ en mission » le jour J.'
+            : 'Tout est repris de votre mise en route. Vérifiez, puis « Départ en mission » le jour J.',
         icone: '✅',
         mascotteImage: 'mascotte-ok.webp',
         boutons: [{ label: 'C\'est noté', style: 'BTN BTN-START' }]
@@ -13983,6 +14018,7 @@ function ENTRER() {
         return;
     }
     M.COLLECTIVE = false;
+    M.PARTICIPANTS = [];
     M.MER_HORAIRES = null;
     var cb = document.getElementById('IS-COLLECTIVE');
     if (cb) {
@@ -16243,6 +16279,7 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
     idBody.push(['Missionnaire', M.USER || 'N/A']);
     if (M.NID) idBody.push(['NID', M.NID]);
     idBody.push(['Rôle', roleLabel]);
+    if (M.COLLECTIVE && M.PARTICIPANTS && M.PARTICIPANTS.length) idBody.push(['Participants (' + M.PARTICIPANTS.length + ')', M.PARTICIPANTS.map(LIGNE_PARTICIPANT).join('\n')]);
     idBody.push([CIE_LABEL, GET_CIE_LABEL(M.CIE) || 'N/A']);
     if (M.LEGS && M.LEGS.length) idBody.push(['Missions enchaînées', String(GET_MISSION_COUNT())]);
     doc.autoTable({

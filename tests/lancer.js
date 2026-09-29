@@ -6,6 +6,7 @@ const TESTS = {
     'sauvegarde': ['Sauvegarde et restauration', require('./test-sauvegarde')],
     'hors-ligne': ['Sans réseau', require('./test-hors-ligne')],
     'reservation': ['Option Demande de réservation (hébergement / transport)', require('./test-reservation')],
+    'collective': ['Mise en route collective → compte-rendu (participants repris)', require('./test-collective')],
     'affichage-pc': ['Affichage PC sur tablette et pliable', require('./test-affichage-pc')],
     'demenagement': ['Déménagement vers l\'adresse Cloudflare', require('./test-demenagement')],
     'boite': ['Boîte aux lettres TRIGONE (envois directs chiffrés)', require('./test-boite')]
