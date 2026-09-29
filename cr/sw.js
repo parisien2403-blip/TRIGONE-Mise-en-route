@@ -1,6 +1,6 @@
 // Copie jumelée dans TRIGONE Mise en route (dossier cr/) : caches préfixés « trigone-cr- » ; ceux de
 // Mise en route (« trigone-mise-en-route- ») ne sont jamais effacés d'ici.
-const CACHE_NAME = 'trigone-cr-v481';
+const CACHE_NAME = 'trigone-cr-v482';
 const ASSETS = [
   './',
   './manifest.json',
@@ -206,8 +206,45 @@ self.addEventListener('fetch', function(event) {
   );
 });
 
+// Horodatage depuis la montre (ou le volet de notifications) : pendant une mission, Compte-rendu affiche une notification
+// « Mission en cours » avec le bouton de l'étape suivante. Un appui enregistre l'heure exacte (cache « trigone-montre »,
+// relu par l'appli à sa prochaine ouverture ou aussitôt si elle est ouverte) et passe la notification à l'étape suivante,
+// sans ouvrir le téléphone.
+var MONTRE_ETAPES = {
+  arrivee: { fait: 'Arrivée sur site', suite: 'depart_site' },
+  depart_site: { fait: 'Départ du site', suite: 'retour' },
+  retour: { fait: 'Arrivée finale', suite: null }
+};
+var MONTRE_BOUTONS = { arrivee: 'Arrivée sur site', depart_site: 'Départ du site', retour: 'Arrivée finale' };
+function heureCourte(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ':' + ('0' + d.getMinutes()).slice(-2); }
+function horodaterDepuisMontre(etape, notif) {
+  var t = Date.now(), e = MONTRE_ETAPES[etape], d = notif.data || {};
+  var faits = (d.faits || []).concat([e.fait + ' ' + heureCourte(t) + ' ✓']);
+  return caches.open('trigone-montre').then(function(c) {
+    return c.put('./__montre__/' + t + '-' + etape, new Response(JSON.stringify({ etape: etape, t: t, mission: d.mission || '' })));
+  }).then(function() {
+    var suite = e.suite;
+    return self.registration.showNotification(suite ? 'Mission en cours' : 'Mission terminée', {
+      body: faits.join(' · ') + (suite ? '\nProchaine étape : ' + MONTRE_BOUTONS[suite] : '\nOuvrez TRIGONE pour vos frais et votre compte-rendu.'),
+      tag: 'trigone-montre', renotify: true, requireInteraction: !!suite,
+      icon: './icon-192.png', badge: '../favicon-32.png',
+      actions: suite ? [{ action: suite, title: MONTRE_BOUTONS[suite] }] : [],
+      data: { montre: true, faits: faits, mission: d.mission || '' }
+    });
+  }).then(function() {
+    return clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(l) {
+      l.forEach(function(f) { f.postMessage({ type: 'trigone-montre' }); });
+    });
+  });
+}
 self.addEventListener('notificationclick', function(event) {
-  event.notification.close();
+  var n = event.notification;
+  if (n.data && n.data.montre && MONTRE_ETAPES[event.action]) {
+    n.close();
+    event.waitUntil(horodaterDepuisMontre(event.action, n));
+    return;
+  }
+  n.close();
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(list) {
       if (list.length) return list[0].focus();
