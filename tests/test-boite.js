@@ -66,10 +66,17 @@ module.exports = async function() {
         }
         return p;
     }
+    // Valideur : rôle coché dans Paramètres › Mes rôles, avec sa fonction et son code (plus de connexion dans l'Espace valideur).
     async function connecter(p, code, nom) {
-        await p.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(800);
-        await p.fill('#MER-VAL-grade', 'CNE'); await p.fill('#MER-VAL-fonction', 'Chef'); await p.fill('#MER-VAL-nom', nom || 'Dupont'); await p.fill('#MER-VAL-prenom', 'Jean');
-        await p.fill('#MER-CODE-ACCES', code); await p.click('button:has-text("Se connecter")'); await attendre(2500);
+        const niveau = code === code2 ? 2 : 1, id = 'VAL' + niveau;
+        await p.evaluate(() => { document.querySelectorAll('.JUM-CHOIX').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); JUMELAGE_REGLAGES({ vue: 'roles' }); }); await attendre(600);
+        if (!(await p.isChecked('#JUM-R-' + id))) await p.check('#JUM-R-' + id);
+        await attendre(200);
+        await p.fill('#JUM-R-FONCTION' + niveau, 'Chef de service');
+        if (await p.isVisible('#JUM-R-CODE' + id)) await p.fill('#JUM-R-CODE' + id, code);
+        await p.click('.JUM-R-PRINCIPAL'); await attendre(3500);
+        await p.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(1500);
+        return p.evaluate(() => !!HABILITATION_COURANTE());
     }
     async function relever(p) { await p.evaluate(() => JUMELAGE_RELEVER()); await attendre(2500); }
     // Suivi (tenu par le serveur) des demandes et comptes-rendus du compte de cette page : { ref: { genre, etape, etapes } }.
@@ -181,11 +188,14 @@ module.exports = async function() {
     verifier((await v1.textContent('.BTN-ACCUEIL-BOITE')).includes('2'), '1er valideur : pastille « 2 » (deux demandes) sur le bouton Boîte de réception de l\'accueil');
     await v1.evaluate(() => { MER_CLE_SESSION = null; MER_ACCES_SESSION = null; return Promise.all(['valideur', 'valideur1', 'valideur2'].map(k => ACCES_MEMO('effacer', null, k))); });
     await ouvrirBoite(v1);
-    verifier((await v1.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Connexion valideur', '1er valideur non connecté : « Ouvrir » demande le code valideur');
-    await v1.evaluate(() => FERMER_MSG()); await attendre(300);
-    await v1.fill('#MER-VAL-grade', 'CNE'); await v1.fill('#MER-VAL-fonction', 'Chef'); await v1.fill('#MER-VAL-nom', 'Dupont'); await v1.fill('#MER-VAL-prenom', 'Jean');
-    await v1.fill('#MER-CODE-ACCES', code1); await v1.click('button:has-text("Se connecter")'); await attendre(3500);
-    verifier(await v1.evaluate(() => GET_A_VALIDER().length) === 2, '1er valideur : après connexion, les 2 demandes s\'ouvrent dans l\'Espace valideur');
+    verifier((await v1.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Rôle valideur à activer', '1er valideur sans sa clé : « Ouvrir » propose d\'activer le rôle (Mes rôles)');
+    await v1.click('#MSG-OVERLAY button:has-text("Activer mon rôle")'); await attendre(900);
+    verifier(await v1.evaluate(() => !!document.querySelector('.JUM-REGLAGES') && !document.getElementById('JUM-R-VAL1').checked), 'Mes rôles s\'ouvre, rôle VALIDEUR 1 à recocher avec son code');
+    await v1.check('#JUM-R-VAL1'); await v1.fill('#JUM-R-FONCTION1', 'Chef'); await v1.fill('#JUM-R-CODEVAL1', code1);
+    // Il avait aussi le rôle VALIDEUR 2 : il le recoche avec son code.
+    if (!(await v1.isChecked('#JUM-R-VAL2'))) { await v1.check('#JUM-R-VAL2'); await v1.fill('#JUM-R-FONCTION2', 'Chef de corps'); await v1.fill('#JUM-R-CODEVAL2', code2); }
+    await v1.click('.JUM-R-PRINCIPAL'); await attendre(4500);
+    verifier(await v1.evaluate(() => GET_A_VALIDER().length) === 2, '1er valideur : rôle réactivé, les 2 demandes s\'ouvrent aussitôt dans l\'Espace valideur');
     await v1.evaluate(() => {
         const l = GET_A_VALIDER(); const b = l.find(e => e.d.personnes[0].nom === 'Bouquet'), mt = l.find(e => e.d.personnes[0].nom === 'Martin');
         VALIDER_DEMANDES([b.id]); window.__refus = mt.id;

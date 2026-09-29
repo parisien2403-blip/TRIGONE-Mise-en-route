@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 196,
-  "appCodeMessage": "Menu du compte épuré : Mon profil, Paramètres, Aide, Se déconnecter. Tout le reste est rangé dans la page Paramètres (Compte, Notifications, Compte-rendu, Données, Aide).",
+  "appCodeVersion": 197,
+  "appCodeMessage": "Mise en route : l'Espace valideur n'apparaît plus que pour les valideurs ; les rôles se règlent dans Paramètres › Mes rôles.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

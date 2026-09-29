@@ -9,6 +9,8 @@ module.exports = async function(srv) {
     await p.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1')); await p.reload(); await attendre(2500);
     const vides = await p.evaluate(() => { SHOW_PAGE('BIBLIOTHEQUE'); const a = document.querySelectorAll('.MER-DOSSIER').length; SHOW_PAGE('PANIER'); return [a, document.querySelectorAll('.MER-DOSSIER').length]; });
     verifier(vides[0] === 4 && vides[1] === 2, 'Mise en route vide : 4 dossiers en Bibliothèque, 2 en Documents ' + JSON.stringify(vides));
+    verifier(await p.evaluate(() => { SHOW_PAGE('ACCUEIL'); return !document.querySelector('[onclick*="SHOW_PAGE(\'VALIDATION\')"]') && typeof SE_CONNECTER === 'undefined' && typeof TPL_CONNEXION === 'undefined'; }),
+        'missionnaire sans rôle : pas d\'Espace valideur, plus de formulaire de connexion valideur');
     await p.goto(srv.url + 'cr/'); await attendre(3000);
     const videsCr = await p.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); OUVRIR_BIBLIOTHEQUE(); const a = document.querySelectorAll('#BIB-LIST .MER-DOSSIER').length; OUVRIR_STAT_FORFAIT(); return [a, document.querySelectorAll('#FORFAIT-MONTH-LIST .MER-DOSSIER').length]; });
     verifier(videsCr[0] === 3 && videsCr[1] === 1, 'Compte-rendu vide : 3 dossiers en Bibliothèque, le mois en cours en Remboursement ' + JSON.stringify(videsCr));
