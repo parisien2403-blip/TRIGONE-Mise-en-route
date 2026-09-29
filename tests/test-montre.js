@@ -42,6 +42,11 @@ module.exports = async function(srv) {
     verifier(await p.evaluate(() => M.FIN_RETOUR_HORODATE === '07/10/2026 19:41:00'), 'arrivée finale 19:41 depuis la montre → frais de mission');
     await p.evaluate(() => { localStorage.removeItem('trigone_montre_sig'); SAVE_STATE(); }); await attendre(1200);
     verifier((await notif()).length === 0, 'mission terminée : plus de notification « Mission en cours »');
+    // Réglages › Montre connectée : explications, deux cadrans illustrés, essai.
+    await p.evaluate(() => OUVRIR_PARAMETRES()); await attendre(400);
+    verifier(await p.evaluate(() => { const f = document.getElementById('PARAM-FOLD-MONTRE'); return !!f && f.querySelectorAll('svg.MONTRE-SVG').length === 2 && /Galaxy Wearable/.test(f.textContent); }), 'réglages : rubrique « Montre connectée » (explications, 2 cadrans)');
+    await p.evaluate(() => ESSAI_NOTIF_MONTRE()); await attendre(1200);
+    verifier(await p.evaluate(() => navigator.serviceWorker.ready.then(r => r.getNotifications({ tag: 'trigone-montre-essai' })).then(l => l.length === 1 && l[0].actions[0].title === 'Arrivée sur site')), 'essai : notification avec bouton envoyée');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();
 };
