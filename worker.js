@@ -27,7 +27,8 @@ const ROLES = ['valideur1', 'valideur2', 'chorus'];
 // Type d'envoi → rôle exigé du destinataire (REFUS : retour au demandeur, tout compte ; CR : compte-rendu de fin de
 // mission du missionnaire, pour l'assistant Chorus DT).
 // RENVOI : demande renvoyée par le VALIDEUR 2 au VALIDEUR 1 (à corriger, revalider ou refuser au demandeur).
-const ROLE_REQUIS = { DEMANDE: 'valideur1', VALIDATION_1: 'valideur2', CHORUS: 'chorus', REFUS: '', CR: 'chorus', RENVOI: 'valideur1' };
+// COLLECTIVE : compte-rendu de mission collective envoyé par le chef de mission à un participant (tout compte).
+const ROLE_REQUIS = { DEMANDE: 'valideur1', VALIDATION_1: 'valideur2', CHORUS: 'chorus', REFUS: '', CR: 'chorus', RENVOI: 'valideur1', COLLECTIVE: '' };
 const MESSAGE_ROLE = {
     valideur1: 'n\'est pas enregistré comme VALIDEUR 1 dans TRIGONE : vérifiez l\'adresse du 1er valideur. (Un VALIDEUR 1 est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code ; s\'il l\'a déjà coché, il lui suffit d\'ouvrir TRIGONE sur son appareil, puis de réessayer.)',
     valideur2: 'n\'est pas enregistré comme VALIDEUR 2 dans TRIGONE : vérifiez l\'adresse du 2e valideur. (Un VALIDEUR 2 est enregistré dès qu\'il coche son rôle dans Réglages › Mes rôles, avec son code ; s\'il l\'a déjà coché, il lui suffit d\'ouvrir TRIGONE sur son appareil, puis de réessayer.)',
@@ -153,7 +154,8 @@ function textePush(type, n) {
         RENVOI: [p ? n + ' demandes renvoyées' : 'Demande renvoyée', 'Le VALIDEUR 2 vous renvoie ' + (p ? x + 'demandes' : 'une demande') + ' : à corriger, revalider ou refuser.', 'boite'],
         REFUS: [p ? n + ' demandes refusées' : 'Demande refusée', (p ? x + 'de vos demandes vous sont renvoyées' : 'Une de vos demandes vous est renvoyée') + ' avec un motif : corrigez puis renvoyez.', 'boite'],
         CHORUS: [p ? n + ' demandes validées' : 'Demande validée', (p ? x + 'demandes validées' : 'Demande validée') + ' par les deux valideurs, à contrôler (ASSIST CHORUS DT).', 'chorus'],
-        CR: ['Compte-rendu de mission', 'Un compte-rendu de fin de mission vous est parvenu.', 'chorus']
+        CR: ['Compte-rendu de mission', 'Un compte-rendu de fin de mission vous est parvenu.', 'chorus'],
+        COLLECTIVE: ['Mission collective', 'Votre compte-rendu de mission collective est prêt : joignez vos justificatifs, puis envoyez-le à l\'assistant Chorus DT.', 'boite']
     }[type];
     return t || ['TRIGONE', 'Nouvel envoi dans votre boîte TRIGONE.', 'boite'];
 }

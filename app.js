@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 137;
+var APP_CODE_VERSION = 138;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3374,7 +3374,7 @@ var MER_BOITE_A_OUVRIR = null;
 var MER_NATURES_BOITE = {
     niveau1: ['À signer — 1er niveau', 'Ouvrir et signer'], niveau2: ['À signer — 2e niveau', 'Ouvrir et signer'],
     chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée — à corriger', 'Corriger dans Documents'],
-    cr: ['Compte-rendu de mission', 'Ouvrir'], renvoi: ['Renvoyée par le VALIDEUR 2', 'Ouvrir et corriger'], inconnu: ['Fichier reçu', 'Ouvrir']
+    cr: ['Compte-rendu de mission', 'Ouvrir'], collective: ['Mission collective — votre compte-rendu', 'Ouvrir mon compte-rendu'], renvoi: ['Renvoyée par le VALIDEUR 2', 'Ouvrir et corriger'], inconnu: ['Fichier reçu', 'Ouvrir']
 };
 function MER_EST_CHORUS(x) { return x.nature === 'chorus' || x.nature === 'cr'; }
 // Rôles changés dans les Réglages : la session valideur est reprise de la clé mémorisée (nouveau rôle, ou aucun).
@@ -3406,10 +3406,11 @@ function TPL_ENVOI_RECU(x) {
         (x.n > 1 ? ' <span class="MER-RECU-NOUVEAU" style="background:#1a1a1a;">' + x.n + ' demandes</span>' : '') +
         '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(x.noms || x.nom || 'Demande') + '</div>' +
         '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
+        (x.nature === 'collective' ? '<div class="MER-HINT" style="margin-top:4px;">Mission déjà renseignée par votre chef de mission : complétez votre identité, joignez vos justificatifs, puis envoyez à l\'assistant Chorus DT.</div>' : '') +
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
         // Demande traitée par ce valideur : la suite de son circuit (VALIDEUR 2, assistant Chorus DT).
-        (traite && x.nature !== 'cr' && x.nature !== 'refus' ? (x.ids || []).map(function(id, i) { return TPL_SUIVI_DEMANDE(id, x.ids.length > 1 ? 'Demande ' + (i + 1) : ''); }).join('') : '') +
+        (traite && x.nature !== 'cr' && x.nature !== 'refus' && x.nature !== 'collective' ? (x.ids || []).map(function(id, i) { return TPL_SUIVI_DEMANDE(id, x.ids.length > 1 ? 'Demande ' + (i + 1) : ''); }).join('') : '') +
         (cocher ? '' : '<div class="MER-VAL-ACTIONS">' +
             // Demande validée pour l'ASSIST CHORUS DT : aperçu et PDF directement depuis la ligne (contrôle fait avant).
             (x.nature === 'chorus'
@@ -3420,6 +3421,9 @@ function TPL_ENVOI_RECU(x) {
             : x.nature === 'cr'
                 ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="APERCU_CR_RECU(\'' + x.id + '\')">👁 Aperçu</button>' +
                   '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_CR_RECU(\'' + x.id + '\')">📎 Compte-rendu et justificatifs</button>'
+            // Mission collective : le compte-rendu prérempli par le chef de mission s'ouvre dans Compte-rendu.
+            : x.nature === 'collective'
+                ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_COLLECTIVE_RECU(\'' + x.id + '\')">📝 ' + nat[1] + '</button>'
             : traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ROUVRIR_RECU(\'' + x.id + '\')">↺ Rouvrir</button>'
                 : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="SUPPRIMER_RECU(\'' + x.id + '\')">Supprimer</button>' +
@@ -3669,6 +3673,13 @@ function ROUVRIR_RECU(id) {
     JUMELAGE_BOITE_ROUVRIR(id);
     OUVRIR_RECU(id);
 }
+// Mission collective reçue : ouverture du compte-rendu participant (Compte-rendu, ?data= comme le QR code du chef).
+function OUVRIR_COLLECTIVE_RECU(id) {
+    var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(e) { return e.id === id; })[0];
+    if (!x || !/^[A-Za-z0-9+/=]+$/.test(x.donnees || '')) { MSG_ERREUR('Envoi illisible', 'Demandez à votre chef de mission de vous le renvoyer.'); return; }
+    JUMELAGE_BOITE_MARQUER(id, 'traite');
+    location.href = 'cr/?data=' + encodeURIComponent(x.donnees);
+}
 function SUPPRIMER_RECU(id) {
     MSG_CONFIRM('Supprimer de la boîte ?', 'Cet envoi sera retiré de votre boîte de réception sur cet appareil. S\'il n\'a pas été traité, demandez à l\'expéditeur de le renvoyer.',
         'Supprimer', function() { JUMELAGE_BOITE_SUPPRIMER(id).then(function() { if (PAGE_ACTUELLE === 'RECEPTION') SHOW_PAGE('RECEPTION'); }); }, '⚠️', 'mascotte-poubelle.webp', true);
@@ -3678,6 +3689,10 @@ window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
     // n : nombre de demandes (un envoi peut en contenir plusieurs).
     var x = nouveaux[0], n = nouveaux.reduce(function(t, e) { return t + (e.n > 1 ? e.n : 1); }, 0);
     var chorus = MER_ROLE_CHORUS() && nouveaux.every(MER_EST_CHORUS);
+    if (nouveaux.length === 1 && x.nature === 'collective') {
+        MER_BANDEAU_RECU('Mission collective', [x.objet, x.dates].filter(Boolean).join(' · ') + ' — de ' + (x.noms || x.de || '?') + '. Touchez pour ouvrir votre compte-rendu prérempli.', function() { OUVRIR_COLLECTIVE_RECU(x.id); });
+        return;
+    }
     MER_BANDEAU_RECU(x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' demandes reçues' : 'Demande reçue', (nouveaux.length > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
         (chorus ? 'l\'espace Assistant Chorus DT.' : 'la boîte de réception.'), function() { SHOW_PAGE(chorus ? 'CHORUS' : 'RECEPTION'); });
 };

@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=90"></script>
+<script src="../jumelage.js?v=91"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -2278,6 +2278,13 @@ body.dark-mode .pj-check-item.pj-is-strict { background: rgba(248, 113, 113, 0.1
   -webkit-overflow-scrolling: touch;
 }
 .QR-OVERLAY.HIDDEN { display: none !important; }
+.PAX-ENVOI #PAX-ENVOI-LISTE { margin: 12px 0 8px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
+.PAX-LIGNE b { display: block; font-size: 0.8em; margin-bottom: 4px; }
+.PAX-LIGNE input { width: 100%; box-sizing: border-box; }
+.PAX-ETAT { display: block; font-size: 0.74em; margin-top: 3px; }
+.PAX-ETAT.ok { color: #15803d; font-weight: 700; }
+.PAX-ETAT.ko { color: #b91c1c; font-weight: 700; }
+.PAX-ENVOI .BTN { width: 100%; margin-top: 8px; }
 .QR-OVERLAY-CARD {
   position: relative;
   width: 100%;
@@ -5188,6 +5195,17 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
   <button type="button" class="pourquoi-cta" onclick="FERMER_POURQUOI_TRIGONE()">Continuer →</button>
 </div>
 
+<div id="PAX-ENVOI-OVERLAY" class="QR-OVERLAY HIDDEN" aria-hidden="true">
+<div class="QR-OVERLAY-CARD QR-CARD PAX-ENVOI">
+<button type="button" class="QR-OVERLAY-CLOSE" onclick="FERMER_ENVOI_PAX()" title="Fermer">✕</button>
+<p class="QR-CARD-TITLE">Envoyer aux participants</p>
+<p class="QR-CARD-SUB">Chacun reçoit une notification et son compte-rendu déjà rempli : il complète son identité, joint ses justificatifs, puis l'envoie à l'assistant Chorus DT.</p>
+<div id="PAX-ENVOI-LISTE"></div>
+<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_LIGNE_PAX()">+ Ajouter un participant</button>
+<p class="QR-HINT">Adresse <b>professionnelle</b> de son compte TRIGONE. Sans compte TRIGONE : QR code ou WhatsApp.</p>
+<button type="button" id="BTN-PAX-ENVOYER" class="BTN BTN-START" onclick="ENVOYER_PAX_TRIGONE()">📨 Envoyer</button>
+</div>
+</div>
 <div id="QR-OVERLAY" class="QR-OVERLAY HIDDEN" aria-hidden="true">
 <div id="QR-BOX" class="QR-OVERLAY-CARD QR-CARD">
 <button type="button" class="QR-OVERLAY-CLOSE" onclick="FERMER_QR_OVERLAY()" title="Fermer le QR code">✕</button>
@@ -5196,6 +5214,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <div id="QR-CONTAINER" class="QR-CONTAINER"></div>
 <p class="QR-HINT">Les participants <b>scannent ce code</b> sur votre écran, ou reçoivent le lien via <b>WhatsApp</b>.</p>
 <div id="QR-SHARE-BTNS" class="QR-SHARE-BTNS">
+<button type="button" class="BTN BTN-START" onclick="FERMER_QR_OVERLAY(); OUVRIR_ENVOI_PAX()">📨 Envoyer dans TRIGONE</button>
 <button type="button" class="BTN BTN-WA" onclick="PARTAGER_QR_WHATSAPP()">💬 Partager sur WhatsApp</button>
 </div>
 </div>
@@ -6065,6 +6084,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <textarea id="CR-OBS" class="CR-OBS-TA" placeholder="Laissez vide si rien à signaler." oninput="SAVE_OBS()"></textarea>
 </details>
 <div id="COLL-ZONE" class="HIDDEN">
+<button type="button" id="BTN-ENVOI-PAX" class="BTN BTN-START" onclick="OUVRIR_ENVOI_PAX()">📨 ENVOYER AUX PARTICIPANTS DANS TRIGONE</button>
 <button type="button" id="BTN-GEN-QR" class="BTN BTN-QR" onclick="GEN_QR()">📲 GÉNÉRER QR CODE DE GROUPE</button>
 </div>
 <div class="finalize-panel">
@@ -9364,6 +9384,14 @@ function APPLY_QR_DATA(data) {
     var nidPaxEl = document.getElementById('NID-USER-PAX');
     if (gradePaxEl) gradePaxEl.value = GET_SAVED_GRADE();
     if (nidPaxEl) { nidPaxEl.value = GET_SAVED_NID(); FORMAT_NID_INPUT(nidPaxEl); }
+    // Envoi du chef dans TRIGONE : l'identité du participant, reprise de la mise en route, est préremplie.
+    var px = data.PAX && typeof data.PAX === 'object' ? data.PAX : null;
+    if (px) {
+        var mettre = function(id, v) { var el = document.getElementById(id); if (el && v) el.value = String(v).slice(0, 80); };
+        mettre('GRADE-USER-PAX', px.grade); mettre('NOM-USER-PAX', px.nom); mettre('PRENOM-USER-PAX', px.prenom);
+        if (px.nid && nidPaxEl) { nidPaxEl.value = String(px.nid).slice(0, 20); FORMAT_NID_INPUT(nidPaxEl); }
+        if (px.cie) { M.CIE = String(px.cie).slice(0, 40); mettre('CIE-INPUT-PAX', M.CIE); }
+    }
     UPDATE_PAX_STEPS(2);
     SAVE_STATE();
     STRIP_QR_FROM_URL();
@@ -11559,7 +11587,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 187;
+var APP_CODE_VERSION = 188;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12653,9 +12681,15 @@ function COMPACT_QR_PAYLOAD(obj) {
     return out;
 }
 
+// pax (envoi dans TRIGONE à un participant de la mise en route) : son identité, préremplie chez lui.
+function QR_DONNEES(pax) {
+    var o = GET_QR_MISSION_PAYLOAD();
+    if (pax) o.PAX = { grade: pax.grade || '', nom: pax.nom || '', prenom: pax.prenom || '', nid: pax.nid || '', cie: pax.cie || '' };
+    return btoa(unescape(encodeURIComponent(JSON.stringify(COMPACT_QR_PAYLOAD(o)))));
+}
 function BUILD_QR_URL() {
-    var dataStr = btoa(unescape(encodeURIComponent(JSON.stringify(COMPACT_QR_PAYLOAD(GET_QR_MISSION_PAYLOAD())))));
-    return window.location.href.split('?')[0] + '?data=' + dataStr;
+    // Encodé : dans une adresse, un « + » du base64 serait lu comme une espace.
+    return window.location.href.split('?')[0] + '?data=' + encodeURIComponent(QR_DONNEES());
 }
 
 function GET_QR_MESSAGE_PARTAGE() {
@@ -12680,6 +12714,84 @@ function UPDATE_QR_BUTTON_UI() {
     var btn = document.getElementById('BTN-GEN-QR');
     if (!btn) return;
     btn.textContent = M.QR_URL ? '📲 VOIR LE QR CODE' : '📲 GÉNÉRER QR CODE DE GROUPE';
+}
+
+// ===================== MISSION COLLECTIVE : ENVOI DANS TRIGONE =====================
+// Le chef de mission envoie le compte-rendu prérempli (mêmes données que le QR code) dans la boîte TRIGONE de chaque
+// participant : notification, puis « Ouvrir mon compte-rendu » (Mise en route › Boîte de réception).
+var CLE_MAILS_PAX = 'trigone_mails_participants';
+function MAILS_PAX() { try { return JSON.parse(localStorage.getItem(CLE_MAILS_PAX) || '{}') || {}; } catch (e) { return {}; } }
+function CLE_PAX(p) { return [(p.nom || '').toUpperCase(), (p.prenom || '').toUpperCase()].join(' ').trim(); }
+function LIGNE_ENVOI_PAX(i, titre, mail, envoye) {
+    return '<div class="PAX-LIGNE" data-i="' + i + '"><b>' + ESC_HTML(titre) + '</b>' +
+        '<input type="email" class="PAX-MAIL" placeholder="prenom.nom@interieur.gouv.fr" autocomplete="off" value="' + ESC_HTML(mail || '') + '">' +
+        '<span class="PAX-ETAT' + (envoye ? ' ok' : '') + '">' + (envoye ? '✔ Envoyé le ' + ESC_HTML(envoye) : '') + '</span></div>';
+}
+function OUVRIR_ENVOI_PAX() {
+    if (!IS_VALID_EMAIL(M.CHEF_MAIL)) { MSG_INFO('Mail du chef de mission', 'Renseignez votre adresse mail (chef de mission) sur la page de départ : les participants vous mettent en copie.', '📧'); return; }
+    if (!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF())) {
+        MSG_INFO('Connectez-vous à TRIGONE', 'L\'envoi aux participants passe par votre compte TRIGONE : touchez « Se connecter » en haut à droite. Sinon, utilisez le QR code ou WhatsApp.', '🔐');
+        return;
+    }
+    var memo = MAILS_PAX(), envois = M.PAX_ENVOIS || {};
+    var html = (M.PARTICIPANTS || []).map(function(p, i) {
+        var mail = p.mail || memo[CLE_PAX(p)] || '';
+        return LIGNE_ENVOI_PAX(i, [p.grade, p.nom, p.prenom].filter(Boolean).join(' '), mail, mail && envois[mail.toLowerCase()]);
+    }).join('');
+    document.getElementById('PAX-ENVOI-LISTE').innerHTML = html;
+    if (!(M.PARTICIPANTS || []).length) AJOUTER_LIGNE_PAX();
+    var o = document.getElementById('PAX-ENVOI-OVERLAY');
+    o.classList.remove('HIDDEN'); o.setAttribute('aria-hidden', 'false');
+}
+function AJOUTER_LIGNE_PAX() {
+    var l = document.getElementById('PAX-ENVOI-LISTE');
+    l.insertAdjacentHTML('beforeend', LIGNE_ENVOI_PAX('+', 'Autre participant', '', ''));
+    var ins = l.querySelectorAll('.PAX-MAIL'); ins[ins.length - 1].focus();
+}
+function FERMER_ENVOI_PAX() {
+    var o = document.getElementById('PAX-ENVOI-OVERLAY');
+    o.classList.add('HIDDEN'); o.setAttribute('aria-hidden', 'true');
+}
+function ENVOYER_PAX_TRIGONE() {
+    var lignes = Array.prototype.slice.call(document.querySelectorAll('#PAX-ENVOI-LISTE .PAX-LIGNE'));
+    var a = lignes.map(function(el) { return { el: el, mail: (el.querySelector('.PAX-MAIL').value || '').trim().toLowerCase() }; })
+        .filter(function(x) { return x.mail; });
+    var mauvais = a.filter(function(x) { return !IS_VALID_EMAIL(x.mail); });
+    mauvais.forEach(function(x) { var s = x.el.querySelector('.PAX-ETAT'); s.className = 'PAX-ETAT ko'; s.textContent = 'Adresse mail invalide.'; });
+    if (!a.length) { MSG_INFO('Aucune adresse', 'Saisissez l\'adresse mail d\'au moins un participant.', '📧'); return; }
+    if (mauvais.length) return;
+    // Adresses mémorisées sur cet appareil (prochaines missions avec les mêmes personnes).
+    var memo = MAILS_PAX();
+    a.forEach(function(x) { var i = x.el.getAttribute('data-i'), p = (M.PARTICIPANTS || [])[+i]; if (p) { p.mail = x.mail; memo[CLE_PAX(p)] = x.mail; } });
+    try { localStorage.setItem(CLE_MAILS_PAX, JSON.stringify(memo)); } catch (e) {}
+    var d0 = (M.DT_A_DEP || M.DEBUT || '').split(' ')[0], d1 = (M.DT_R_ARR || M.FIN_RETOUR_HORODATE || '').split(' ')[0];
+    var contenu = function(p) {
+        return JSON.stringify({ app: 'TRIGONE-COLLECTIVE', chef: [M.GRADE, M.USER].filter(Boolean).join(' '), libelle: M.LIBELLE_MISSION || '',
+            dates: [d0, d1].filter(Boolean).join(' → '), donnees: QR_DONNEES(p) });
+    };
+    var btn = document.getElementById('BTN-PAX-ENVOYER'); btn.disabled = true; btn.textContent = 'Envoi en cours…';
+    var ok = 0;
+    M.PAX_ENVOIS = M.PAX_ENVOIS || {};
+    a.reduce(function(suite, x) {
+        return suite.then(function() {
+            var s = x.el.querySelector('.PAX-ETAT'); s.className = 'PAX-ETAT'; s.textContent = 'Envoi…';
+            var p = (M.PARTICIPANTS || [])[+x.el.getAttribute('data-i')];
+            return JUMELAGE_ENVOYER_DIRECT(x.mail, 'COLLECTIVE', 'Mission collective.json', contenu(p)).then(function() {
+                ok++; M.PAX_ENVOIS[x.mail] = new Date().toLocaleDateString('fr-FR');
+                s.className = 'PAX-ETAT ok'; s.textContent = '✔ Envoyé : il reçoit une notification.';
+            }).catch(function(e) {
+                s.className = 'PAX-ETAT ko';
+                s.textContent = e && e.pasDeCompte ? 'Pas encore de compte TRIGONE : envoyez-lui le QR code ou le lien WhatsApp.' : '✘ ' + ((e && e.message) || 'Envoi impossible.');
+            });
+        });
+    }, Promise.resolve()).then(function() {
+        SAVE_STATE();
+        btn.disabled = false; btn.textContent = '📨 Envoyer';
+        if (ok === a.length) setTimeout(function() {
+            FERMER_ENVOI_PAX();
+            MSG_INFO('Envoyé aux participants', ok > 1 ? ok + ' participants ont reçu leur compte-rendu prérempli dans TRIGONE.' : 'Le participant a reçu son compte-rendu prérempli dans TRIGONE.', '✅');
+        }, 900);
+    });
 }
 
 function OUVRIR_QR_OVERLAY() {
@@ -13440,6 +13552,10 @@ function FINALISER_DEMARRAGE() {
                 APPLY_QR_DATA(data);
             } else {
                 STRIP_QR_FROM_URL();
+                // Lien de mission collective (QR code, WhatsApp ou boîte TRIGONE) écarté : on dit pourquoi.
+                if (!paxTermine) setTimeout(function() {
+                    MSG_INFO('Mission déjà en cours', 'Une mission est déjà en cours sur cet appareil : terminez-la (ou fermez-la), puis rouvrez le compte-rendu de la mission collective (Mise en route › Boîte de réception, ou le lien reçu).', '⛔');
+                }, 900);
             }
         } catch(e) { console.error("Erreur synchro", e); }
     }
