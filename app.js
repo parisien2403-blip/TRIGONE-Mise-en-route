@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 142;
+var APP_CODE_VERSION = 143;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3468,20 +3468,70 @@ function RECU_SUPPRIMER_SELECTION(cle) {
         });
     }, '🗑️', 'mascotte-poubelle.webp', true);
 }
+// ===================== DOSSIERS (boîte de réception, espace Assistant Chorus DT) =====================
+// Comme une messagerie : des dossiers jaunes, chacun avec son nom et le nombre d'envois à traiter ; un toucher ouvre
+// le dossier (envois à traiter, puis ses envois traités). MER_DOSSIER : dossier ouvert de chaque page (null = liste).
+var MER_DOSSIER = { RECEPTION: null, CHORUS: null };
+var MER_ICONE_DOSSIER = '<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M3 7a4 4 0 0 1 4-4h11l5 5h18a4 4 0 0 1 4 4v3H3Z" fill="#E0A800"/><path d="M3 13a3 3 0 0 1 3-3h36a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3Z" fill="#F6C343"/><path d="M3 15h42" stroke="#FBD970" stroke-width="1.5"/></svg>';
+function MER_DOSSIERS(page, l) {
+    var d = page === 'CHORUS' ? [
+        { id: 'demandes', titre: 'Demandes de mise en route', sous: 'Validées par les deux valideurs', aide: 'Validées par les deux valideurs. « Aperçu » ou « Télécharger le PDF » : TRIGONE vérifie d\'abord les signatures et les pièces jointes.', natures: ['chorus'] },
+        { id: 'cr', titre: 'Comptes-rendus de mission', sous: 'Envoyés au retour de mission', aide: 'Envoyés par les missionnaires au retour de mission : compte-rendu PDF et justificatifs.', natures: ['cr'] }
+    ] : [
+        { id: 'signer', titre: 'À signer', sous: 'Demandes de mise en route à valider', aide: 'Demandes reçues des missionnaires (1er valideur) ou du 1er valideur (2e valideur), et demandes renvoyées : « Ouvrir et signer ».', natures: ['niveau1', 'niveau2', 'renvoi'] },
+        { id: 'refus', titre: 'Refusées — à corriger', sous: 'Vos demandes renvoyées avec un motif', aide: 'Vos demandes refusées par un valideur ou l\'assistant Chorus DT : corrigez-les dans Documents, puis renvoyez.', natures: ['refus'] },
+        { id: 'collective', titre: 'Missions collectives', sous: 'Comptes-rendus préremplis par le chef de mission', aide: 'Envoyés par votre chef de mission : « Ouvrir mon compte-rendu », joignez vos justificatifs, puis envoyez.', natures: ['collective'] }
+    ];
+    var connues = [].concat.apply([], d.map(function(x) { return x.natures; }));
+    var autres = l.filter(function(x) { return connues.indexOf(x.nature) < 0; });
+    if (autres.length) d.push({ id: 'autres', titre: 'Autres envois', sous: 'Envois reçus', aide: '', natures: null });
+    d.forEach(function(x) {
+        x.liste = x.natures ? l.filter(function(e) { return x.natures.indexOf(e.nature) >= 0; }) : autres;
+        x.aTraiter = x.liste.filter(function(e) { return e.statut !== 'traite'; });
+        x.traites = x.liste.filter(function(e) { return e.statut === 'traite'; });
+        x.nb = x.aTraiter.reduce(function(t, e) { return t + (e.n > 1 ? e.n : 1); }, 0);
+        x.nouveau = x.aTraiter.some(function(e) { return e.statut === 'nouveau'; });
+    });
+    return d;
+}
+// Dossier où range un envoi (bandeau de réception : ouverture directe du bon dossier).
+function MER_DOSSIER_DE(page, x) {
+    var d = MER_DOSSIERS(page, [x]).filter(function(e) { return e.liste.length; })[0];
+    return d ? d.id : null;
+}
+function OUVRIR_DOSSIER(page, id) { MER_DOSSIER[page] = id; MER_RECU_SELECTION = null; SHOW_PAGE(page); window.scrollTo(0, 0); }
+function TPL_DOSSIERS(page, l) {
+    var ds = MER_DOSSIERS(page, l);
+    var ouvert = ds.filter(function(d) { return d.id === MER_DOSSIER[page]; })[0];
+    if (!ouvert) {
+        MER_DOSSIER[page] = null;
+        return '<div class="MER-DOSSIERS">' + ds.map(function(d) {
+            var det = (d.aTraiter.length ? '<span class="MER-DOSSIER-ATT">' + d.aTraiter.length + ' à traiter</span>' : 'Rien à traiter') +
+                (d.traites.length ? ' · ' + d.traites.length + ' traité' + (d.traites.length > 1 ? 's' : '') : '');
+            return '<button type="button" class="MER-DOSSIER' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" onclick="OUVRIR_DOSSIER(\'' + page + '\', \'' + d.id + '\')">' +
+                '<span class="MER-DOSSIER-ICONE">' + MER_ICONE_DOSSIER + (d.nb ? '<span class="MER-DOSSIER-NB">' + d.nb + '</span>' : '') + '</span>' +
+                '<span class="MER-DOSSIER-TXT"><b>' + ESC(d.titre) + '</b><small>' + ESC(d.sous) + '</small><small class="MER-DOSSIER-DET">' + det + '</small></span>' +
+                '<span class="MER-DOSSIER-CHEV" aria-hidden="true">›</span></button>';
+        }).join('') + '</div>';
+    }
+    return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="OUVRIR_DOSSIER(\'' + page + '\', null)">‹ Dossiers</button>' +
+        '<span class="MER-DOSSIER-ICONE petit">' + MER_ICONE_DOSSIER + '</span><b>' + ESC(ouvert.titre) + '</b>' + (ouvert.nb ? '<span class="MER-DOSSIER-NB en-ligne">' + ouvert.nb + '</span>' : '') + '</div>' +
+        (ouvert.aide ? '<p class="MER-HINT" style="margin:0 0 10px;">' + ouvert.aide + '</p>' : '') +
+        (ouvert.aTraiter.length ? ouvert.aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Rien à traiter dans ce dossier.</div>') +
+        TPL_RECU_TRAITES(page + '-' + ouvert.id, 'Traités', ouvert.traites);
+}
+
 function TPL_RECEPTION() {
     var compte = MER_COMPTE_ACTIF();
     if (compte && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
     var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return !MER_ROLE_CHORUS() || !MER_EST_CHORUS(x); });
-    var aTraiter = l.filter(function(x) { return x.statut !== 'traite'; }), traites = l.filter(function(x) { return x.statut === 'traite'; });
     return '<div class="CARD"><h2>Boîte de réception</h2>' +
         (compte
-            ? '<p class="MER-HINT" style="margin:4px 0 12px;">Demandes reçues directement dans TRIGONE, à l\'adresse <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b> : à signer (valideurs) ou refusées (vos demandes). Elles arrivent toutes seules ; « Ouvrir » les mène au bon endroit.</p>' +
+            ? '<p class="MER-HINT" style="margin:4px 0 12px;">Envois reçus directement dans TRIGONE, à l\'adresse <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>, rangés par dossier. Le chiffre rouge : ce qui reste à traiter.</p>' +
               '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>'
             : '<p class="MER-HINT" style="margin:4px 0 12px;">Activez votre compte TRIGONE pour envoyer vos demandes et recevoir ici celles qui vous reviennent.</p>' +
               '<button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button>') +
-        (compte ? '<div class="MER-SECTION-TITLE">À traiter' + (aTraiter.length ? ' (' + aTraiter.length + ')' : '') + '</div>' +
-            (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Aucune demande en attente.</div>') +
-            TPL_RECU_TRAITES('reception', 'Traitées', traites) : '') +
+        (compte ? TPL_DOSSIERS('RECEPTION', l) : '') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
 // ===================== ESPACE ASSISTANT CHORUS DT =====================
@@ -3492,26 +3542,15 @@ window.MER_OUVRIR_CHORUS = function() { SHOW_PAGE('CHORUS'); };
 function TPL_CHORUS() {
     var compte = MER_COMPTE_ACTIF();
     var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []);
-    function bloc(liste, vide, cle) {
-        var aTraiter = liste.filter(function(x) { return x.statut !== 'traite'; }), traites = liste.filter(function(x) { return x.statut === 'traite'; });
-        return (aTraiter.length ? aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">' + vide + '</div>') +
-            TPL_RECU_TRAITES(cle, 'Traités', traites);
-    }
-    var demandes = l.filter(function(x) { return x.nature === 'chorus'; }), crs = l.filter(function(x) { return x.nature === 'cr'; });
-    var nb = function(liste) { var n = liste.filter(function(x) { return x.statut !== 'traite'; }).length; return n ? ' (' + n + ')' : ''; };
+    l = l.filter(MER_EST_CHORUS);
     // Résultat d'un « Contrôle détaillé » : en tête de page, bien visible (fermé par « Fermer le contrôle »).
     return (MER_RESULTATS_VERIF ? TPL_VERIFIER() : '') +
         '<div class="CARD MER-CHORUS-TETE"><img class="MER-CHORUS-LOGO JUM-LOGO-CHOIX" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT" title="Revenir à l\'écran de choix" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">' +
         (compte ? '<p class="MER-HINT" style="margin:0 0 10px;">Envois reçus à <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>, chiffrés, directement dans TRIGONE.</p>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:12px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>' +
-            '<div class="MER-SECTION-TITLE">Demandes de mise en route validées' + nb(demandes) + '</div>' +
-            '<p class="MER-HINT" style="margin:0 0 10px;">Validées par les deux valideurs. « Aperçu » ou « Télécharger le PDF » : TRIGONE vérifie d\'abord les signatures et les pièces jointes.</p>' +
-            bloc(demandes, 'Aucune demande en attente.', 'chorus') +
-            '<div class="MER-SECTION-TITLE">Comptes-rendus de mission' + nb(crs) + '</div>' +
-            '<p class="MER-HINT" style="margin:0 0 10px;">Envoyés par les missionnaires au retour de mission : compte-rendu PDF et justificatifs.</p>' +
-            bloc(crs, 'Aucun compte-rendu en attente.', 'cr')
+            TPL_DOSSIERS('CHORUS', l)
           : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes validées et les comptes-rendus de mission.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button>') +
-        '</div>' + (MER_RESULTATS_VERIF ? '' : TPL_VERIFIER()) +
+        '</div>' + (MER_RESULTATS_VERIF || MER_DOSSIER.CHORUS ? '' : TPL_VERIFIER()) +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">← Écran de choix</button>';
 }
 // Compte-rendu de mission reçu : ses fichiers (PDF du compte-rendu, justificatifs) à télécharger.
@@ -3694,7 +3733,7 @@ window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
         return;
     }
     MER_BANDEAU_RECU(x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' demandes reçues' : 'Demande reçue', (nouveaux.length > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
-        (chorus ? 'l\'espace Assistant Chorus DT.' : 'la boîte de réception.'), function() { SHOW_PAGE(chorus ? 'CHORUS' : 'RECEPTION'); });
+        (chorus ? 'l\'espace Assistant Chorus DT.' : 'la boîte de réception.'), function() { var pg = chorus ? 'CHORUS' : 'RECEPTION'; OUVRIR_DOSSIER(pg, MER_DOSSIER_DE(pg, x)); });
 };
 // Mise en route choisie sur l'écran de choix alors que l'espace Assistant Chorus DT était affiché dessous : accueil.
 window.JUMELAGE_APRES_CHOIX = function() {

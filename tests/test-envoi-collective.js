@@ -44,6 +44,9 @@ module.exports = async function() {
     // Participant : relève, boîte de réception, ouverture du compte-rendu prérempli.
     await pax.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
     await pax.evaluate(() => SHOW_PAGE('RECEPTION')); await attendre(500);
+    verifier(await pax.evaluate(() => { const d = document.querySelector('.MER-DOSSIER[data-dossier="collective"]'); return !!d && d.classList.contains('nouveau') && d.querySelector('.MER-DOSSIER-NB').textContent === '1'; }),
+        'participant : dossier jaune « Missions collectives » avec « 1 » en rouge');
+    await pax.click('.MER-DOSSIER[data-dossier="collective"]'); await attendre(400);
     const carte = await pax.evaluate(() => (document.querySelector('.MER-RECU') || {}).textContent || '');
     verifier(/Mission collective/.test(carte) && /FORMATION SSIAP/.test(carte) && /ADJ TEST Chef/.test(carte), 'participant : « Mission collective — votre compte-rendu » dans la boîte de réception');
     await pax.click('.MER-RECU .BTN-PRIMARY'); await attendre(4000);
