@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 144;
+var APP_CODE_VERSION = 145;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -505,7 +505,7 @@ function TPL_BIBLIOTHEQUE() {
         if (!DEMO_ACTIF && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
         return '<div class="CARD"><h2>Bibliothèque</h2>' +
             '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route envoyées, rangées selon leur <b>suivi</b> (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT) ; une notification vous prévient à chaque étape. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route »).</p>' +
-            (tout.length ? TPL_GRILLE_DOSSIERS('BIBLIOTHEQUE', ds) : '<div class="MER-EMPTY">Aucune demande envoyée pour l\'instant.</div>') +
+            TPL_GRILLE_DOSSIERS('BIBLIOTHEQUE', ds) +
             '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_BIB_SELECTION = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
     }
     var l = ouvert.liste;
@@ -1269,7 +1269,7 @@ function AJOUTER_AU_PANIER() {
     panier.push(D);
     SAVE_PANIER(panier);
     CLEAR_BROUILLON();
-    SHOW_PAGE('PANIER');
+    MER_DOSSIER.PANIER = null; SHOW_PAGE('PANIER');
     MSG_INFO('Ajoutée à vos Documents', 'La demande de ' + noms + ' est rangée dans Documents, où elle attend son envoi au 1er valideur. Vous pouvez y ajouter d\'autres demandes pour les envoyer ensemble, en un seul mail.', '✅', 'mascotte-ok.webp');
 }
 
@@ -1346,19 +1346,31 @@ function MER_AFFICHER_ABSENCE(id, mail) {
         el.innerHTML = rp ? '<div class="MER-ABSENCE">🟠 <b>' + ESC(mail) + '</b> est absent jusqu\'au <b>' + new Date(rp.jusqu).toLocaleDateString('fr-FR') + '</b> : votre envoi partira chez son remplaçant, <b>' + ESC(rp.mail) + '</b>.</div>' : '';
     });
 }
+// Documents en dossiers : « Prêtes à envoyer » et « Refusées — à corriger » (toujours affichés, même vides) ;
+// l'envoi (1er valideur) reste sous les dossiers et part avec toutes les demandes.
 function TPL_PANIER() {
     var panier = GET_PANIER();
     var reg = GET_REGLAGES();
+    var ds = [
+        { id: 'prets', titre: 'Prêtes à envoyer', sous: 'Demandes complètes, en attente d\'envoi', filtre: function(d) { return !d.refus; } },
+        { id: 'refus', titre: 'Refusées — à corriger', sous: 'Revenues avec le motif du refus', filtre: function(d) { return !!d.refus; } }
+    ];
+    ds.forEach(function(x) {
+        x.liste = panier.filter(x.filtre); x.nb = x.liste.length; x.gris = x.id !== 'refus'; x.nouveau = x.id === 'refus' && x.nb > 0;
+        x.det = x.nb ? (x.id === 'refus' ? '<span class="MER-DOSSIER-ATT">' : '<span>') + x.nb + ' demande' + (x.nb > 1 ? 's' : '') + '</span>' : 'Aucune demande';
+    });
+    var ouvert = ds.filter(function(x) { return x.id === MER_DOSSIER.PANIER; })[0];
+    if (!ouvert) MER_DOSSIER.PANIER = null;
     if (!panier.length) {
         return '<div class="CARD">' +
             '<h2>Mes documents</h2>' +
-            '<div class="MER-EMPTY">Aucune demande en attente.<br>Créez une nouvelle demande pour commencer.</div>' +
+            (ouvert ? TPL_TETE_DOSSIER('PANIER', ouvert) + '<div class="MER-EMPTY">Aucune demande dans ce dossier.</div>' : TPL_GRILLE_DOSSIERS('PANIER', ds)) +
             '<button type="button" class="BTN BTN-PRIMARY" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Nouvelle demande</button>' +
             '<p class="MER-HINT" style="margin:10px 0 14px;">Une demande refusée par un valideur revient dans votre Boîte de réception TRIGONE : « Corriger dans Documents » la range ici, avec le motif du refus.</p>' +
-            '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="' + (ouvert ? 'OUVRIR_DOSSIER(\'PANIER\', null)">‹ Dossiers' : 'SHOW_PAGE(\'ACCUEIL\')">← Accueil') + '</button>' +
         '</div>';
     }
-    var items = panier.map(function(d) {
+    var items = (ouvert ? ouvert.liste : []).map(function(d) {
         var r = RESUME_DEMANDE(d);
         var refus = d.refus ? '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée par ' + PAR_QUI(d.refus) + ' (' +
             ESC(d.refus.grade + ' ' + d.refus.nom) + ') : ' + ESC(d.refus.motif) + '<br>Modifiez-la puis renvoyez-la.</div>' : '';
@@ -1370,10 +1382,13 @@ function TPL_PANIER() {
             '<button type="button" class="BTN-DANGER-TEXT" onclick="RETIRER_DU_PANIER(\'' + d.id + '\')">Retirer</button></div></div>';
     }).join('');
     setTimeout(function() { MER_AFFICHER_ABSENCE('MER-ABS-DEST', reg.mailSignataire); }, 0);
+    if (ouvert) return '<div class="CARD"><h2>Mes documents</h2>' + TPL_TETE_DOSSIER('PANIER', ouvert) +
+        (items || '<div class="MER-EMPTY">Aucune demande dans ce dossier.</div>') +
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_DOSSIER(\'PANIER\', null)">‹ Dossiers</button></div>';
     return '<div class="CARD">' +
         '<h2>Mes documents</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 18px;">' + panier.length + ' demande(s) prête(s) à être envoyée(s) ensemble, en un seul envoi TRIGONE.</p>' +
-        items +
+        '<p class="MER-HINT" style="margin:4px 0 14px;">' + panier.length + ' demande(s) à envoyer ensemble, en un seul envoi TRIGONE.</p>' +
+        TPL_GRILLE_DOSSIERS('PANIER', ds) +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
         '<div class="MER-SECTION-TITLE">Envoi</div>' +
         '<div class="MER-FIELD"><label>Mail du 1er valideur (chef de service)</label>' +
@@ -3195,7 +3210,7 @@ function IMPORTER_REFUS(input) {
         });
         if (!n) { MSG_INFO('Aucun refus', 'Aucune demande refusée dans ce fichier.'); return; }
         SAVE_PANIER(panier);
-        SHOW_PAGE('PANIER');
+        MER_DOSSIER.PANIER = 'refus'; SHOW_PAGE('PANIER');
         MSG_INFO(n > 1 ? n + ' demandes refusées rangées dans Documents' : 'Demande refusée rangée dans Documents',
             'Le motif du refus s\'affiche sous ' + (n > 1 ? 'chaque demande' : 'la demande') + '. Touchez « Modifier » pour la corriger : elle ressort des Documents le temps de la correction, puis « Ajouter aux documents » l\'y remet, prête à être renvoyée.', '📥');
     }); });
@@ -3503,7 +3518,7 @@ function RECU_SUPPRIMER_SELECTION(cle) {
 // ===================== DOSSIERS (boîte de réception, espace Assistant Chorus DT) =====================
 // Comme une messagerie : des dossiers jaunes, chacun avec son nom et le nombre d'envois à traiter ; un toucher ouvre
 // le dossier (envois à traiter, puis ses envois traités). MER_DOSSIER : dossier ouvert de chaque page (null = liste).
-var MER_DOSSIER = { RECEPTION: null, CHORUS: null, BIBLIOTHEQUE: null };
+var MER_DOSSIER = { RECEPTION: null, CHORUS: null, BIBLIOTHEQUE: null, PANIER: null };
 var MER_ICONE_DOSSIER = '<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M3 7a4 4 0 0 1 4-4h11l5 5h18a4 4 0 0 1 4 4v3H3Z" fill="#E0A800"/><path d="M3 13a3 3 0 0 1 3-3h36a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3Z" fill="#F6C343"/><path d="M3 15h42" stroke="#FBD970" stroke-width="1.5"/></svg>';
 function MER_DOSSIERS(page, l) {
     var d = page === 'CHORUS' ? [

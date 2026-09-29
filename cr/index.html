@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=97"></script>
+<script src="../jumelage.js?v=98"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -8873,12 +8873,6 @@ function RENDER_BIBLIOTHEQUE() {
     if (!list) return;
     if (BIB_UI.selectedIdx == null) BIB_AFFICHER_LISTE();
     list.innerHTML = '';
-    if (!items.length) {
-        list.classList.add('HIDDEN');
-        if (empty) empty.classList.remove('HIDDEN');
-        if (toolbar) toolbar.classList.add('HIDDEN');
-        return;
-    }
     list.classList.remove('HIDDEN');
     if (empty) empty.classList.add('HIDDEN');
     var ds = [
@@ -11041,22 +11035,6 @@ function RENDER_FORFAIT_STAT() {
     if (!yearTabs || !monthList || !yearTotal) return;
 
     var allEntries = GET_FORFAIT_MISSION_ENTRIES();
-    if (!allEntries.length) {
-        if (hint) hint.classList.add('HIDDEN');
-        yearTabs.innerHTML = '';
-        yearTabs.classList.add('HIDDEN');
-        monthList.innerHTML = '';
-        monthList.classList.add('HIDDEN');
-        yearTotal.classList.add('HIDDEN');
-        if (emptyEl) emptyEl.classList.remove('HIDDEN');
-        if (clearBtn) clearBtn.classList.add('HIDDEN');
-        if (detailPanel) detailPanel.innerHTML = '';
-        if (FORFAIT_UI.selectedKey) {
-            FORFAIT_UI.selectedKey = null;
-            FORFAIT_AFFICHER_LISTE();
-        }
-        return;
-    }
 
     if (hint) hint.classList.add('HIDDEN');
     yearTabs.classList.remove('HIDDEN');
@@ -11072,12 +11050,19 @@ function RENDER_FORFAIT_STAT() {
         });
     });
     // Dossiers : un dossier par mois (nombre de missions, montant), regroupés par année ; FORFAIT_STAT_PERIOD = mois ouvert.
+    // Le mois en cours a toujours son dossier, même vide.
+    var auj = new Date(), keyAuj = auj.getFullYear() + '-' + (auj.getMonth() + 1);
+    if (!periods.some(function(p) { return p.key === keyAuj; })) {
+        periods.unshift({ year: auj.getFullYear(), month: auj.getMonth() + 1, key: keyAuj, data: { items: [], total: 0 } });
+        if (years.indexOf(auj.getFullYear()) < 0) years = [auj.getFullYear()].concat(years);
+        periods.sort(function(a, b) { return b.year - a.year || b.month - a.month; });
+    }
     if (FORFAIT_STAT_PERIOD && !periods.some(function(p) { return p.key === FORFAIT_STAT_PERIOD; })) FORFAIT_STAT_PERIOD = null;
     var dossierMois = function(p) {
         var n = p.data.items.length, encours = p.data.items.filter(function(it) { return it.enCours; }).length;
         var lib = GET_MONTH_LABEL(p.month, p.year);
-        return { id: p.key, titre: lib.charAt(0).toUpperCase() + lib.slice(1), sous: n + ' mission' + (n > 1 ? 's' : '') + (encours ? ' · dont ' + encours + ' en cours' : ''),
-            nb: n, gris: !encours, nouveau: !!encours, det: '<span>' + FORMAT_EURO(p.data.total) + ' €</span>' };
+        return { id: p.key, titre: lib.charAt(0).toUpperCase() + lib.slice(1), sous: n ? n + ' mission' + (n > 1 ? 's' : '') + (encours ? ' · dont ' + encours + ' en cours' : '') : 'Aucune mission pour l\'instant',
+            nb: n, gris: !encours, nouveau: !!encours, det: n ? '<span>' + FORMAT_EURO(p.data.total) + ' €</span>' : 'Aucune mission' };
     };
     var current = periods.filter(function(p) { return p.key === FORFAIT_STAT_PERIOD; })[0];
     yearTabs.innerHTML = '';
@@ -11107,6 +11092,7 @@ function RENDER_FORFAIT_STAT() {
     yearTotal.classList.remove('HIDDEN');
     yearTotal.innerHTML = GET_MONTH_LABEL(current.month, current.year).toUpperCase() + '<strong>' + FORMAT_EURO(current.data.total) + ' €</strong>';
 
+    if (!current.data.items.length) monthList.insertAdjacentHTML('beforeend', '<div class="BIB-EMPTY"><p>Aucune mission ce mois-ci.</p><span>Les missions apparaissent ici dès leur saisie.</span></div>');
     var list = document.createElement('div');
     list.className = 'FORFAIT-MISSION-LIST';
     current.data.items.sort(function(a, b) {
@@ -11777,7 +11763,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 194;
+var APP_CODE_VERSION = 195;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
