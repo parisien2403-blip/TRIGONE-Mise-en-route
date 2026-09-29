@@ -54,8 +54,8 @@ module.exports = async function() {
                 'bouton de compte : connecté, « ADJ TEST » affiché');
             await p.click('.JUM-CPT-APPLI'); await attendre(400);
             const menu = await p.evaluate(() => (document.querySelector('.JUM-CPT-MENU') || {}).textContent || '');
-            verifier(['Mon profil', 'Paramètres', 'Aide', 'Se déconnecter'].every(t => menu.includes(t)) && !menu.includes('Sauvegarder') && menu.includes(MAILS_M) && (await p.$$('.JUM-CPT-MENU button')).length === 4,
-                'menu du compte court : Mon profil, Paramètres, Aide, Se déconnecter');
+            verifier(['Paramètres', 'Se déconnecter'].every(t => menu.includes(t)) && !menu.includes('Sauvegarder') && menu.includes(MAILS_M) && (await p.$$('.JUM-CPT-MENU button')).length === 2,
+                'menu du compte : Paramètres et Se déconnecter seulement (pas de doublon avec la page Paramètres)');
             // Paramètres : toutes les rubriques, une page rangée.
             await p.click('.JUM-CPT-MENU [data-action="parametres"]'); await attendre(400);
             let tout = '';
@@ -403,8 +403,10 @@ module.exports = async function() {
     const abs = await api(v2, 'remplacant', { mail: MAILS.V1, jusqu: Date.now() + 2 * 864e5 });
     verifier(abs.ok && abs.remplacant.mail === MAILS.V1 && abs.rolesManquants.length === 0, 'absence : remplaçant enregistré (compte et rôle vérifiés)');
     verifier((await api(v2, 'remplacant', { mail: 'inconnu@interieur.gouv.fr', jusqu: Date.now() + 864e5 })).ok === false, 'absence : un remplaçant sans compte TRIGONE est refusé');
-    await v2.evaluate(() => JUMELAGE_REGLAGES()); await attendre(1500);
+    await v2.evaluate(() => JUMELAGE_REGLAGES({ vue: 'absence' })); await attendre(1500);
     verifier((await v2.textContent('#JUM-R-ABS-ETAT')).includes('remplacé par'), 'Réglages › Absence : « Absent jusqu\'au …, remplacé par … » affiché');
+    verifier(await v2.evaluate(() => !document.getElementById('JUM-R-VAL1').offsetParent && !document.getElementById('JUM-R-NOM').offsetParent && document.querySelector('.JUM-R-TETE h2').textContent === 'Absence'),
+        'Paramètres › Absence : une page à part, sans les rôles ni le profil');
     await v2.evaluate(() => JUMELAGE_FERMER_REGLAGES());
     await m.goto(URL); await attendre(2500);
     await m.goto(URL); await attendre(2500);
