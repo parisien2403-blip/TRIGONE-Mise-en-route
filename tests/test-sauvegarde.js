@@ -15,7 +15,9 @@ module.exports = async function(srv) {
     await pa.evaluate(() => PJ_ECRIRE('pj1', { nom: 'nds.pdf', type: 'application/pdf', b64: 'JVBERi0xLjQ=' }));
     await pa.evaluate(() => JUMELAGE_POSER_CODE('4321'));
     await pa.evaluate(() => { if (!document.querySelector('.JUM-CHOIX')) JUMELAGE_CHOIX(); }); await attendre(800);
-    await pa.click('.JUM-ROUE:not(.JUM-MAJ-BTN)'); await attendre(300);
+    verifier(!(await pa.$('.JUM-CHOIX .JUM-ROUE:not(.JUM-MAJ-BTN)')), 'écran de choix : plus de roue crantée (doublon du bouton du compte)');
+    await pa.click('.JUM-CHOIX .JUM-CPT'); await attendre(300);
+    await pa.click('.JUM-CPT-MENU [data-action="parametres"]'); await attendre(300);
     await pa.click('.JUM-PARAM [data-rub="donnees"]'); await attendre(200);
     const [dl] = await Promise.all([pa.waitForEvent('download'), pa.click('.JUM-PARAM [data-action="sauvegarder"]')]);
     const f = path.join(SORTIE, 'sauvegarde.json'); await dl.saveAs(f);
