@@ -16,7 +16,8 @@ module.exports = async function(srv) {
     await pa.evaluate(() => JUMELAGE_POSER_CODE('4321'));
     await pa.evaluate(() => { if (!document.querySelector('.JUM-CHOIX')) JUMELAGE_CHOIX(); }); await attendre(800);
     await pa.click('.JUM-ROUE:not(.JUM-MAJ-BTN)'); await attendre(300);
-    const [dl] = await Promise.all([pa.waitForEvent('download'), pa.click('.JUM-ROUE-MENU [data-action="sauvegarder"]')]);
+    await pa.click('.JUM-PARAM [data-rub="donnees"]'); await attendre(200);
+    const [dl] = await Promise.all([pa.waitForEvent('download'), pa.click('.JUM-PARAM [data-action="sauvegarder"]')]);
     const f = path.join(SORTIE, 'sauvegarde.json'); await dl.saveAs(f);
     const s = JSON.parse(fs.readFileSync(f));
     verifier(/^TRIGONE - sauvegarde \d\d-\d\d-\d{4}\.json$/.test(dl.suggestedFilename()), 'fichier « TRIGONE - sauvegarde JJ-MM-AAAA.json »');
