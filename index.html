@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=95"></script>
+<script src="jumelage.js?v=96"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -498,6 +498,27 @@ body.dark-mode .MER-SUIVI-TRAIT { background: #525252; } body.dark-mode .MER-SUI
 .MER-PJ-PUCE { border: 1.5px solid rgba(90,122,148,0.3); background: rgba(90,122,148,0.07); color: var(--tg-accent); border-radius: 999px; padding: 5px 11px; font-family: inherit; font-size: 0.72em; font-weight: 700; cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .MER-PJ-PUCE.ko { border-color: #fca5a5; background: rgba(220,38,38,0.07); color: #b91c1c; }
 .MER-EMPTY { text-align: center; padding: 30px 10px; color: var(--sm2-muted); font-size: 0.86em; }
+/* Dossiers (boîte de réception, espace Assistant Chorus DT) */
+.MER-DOSSIERS { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin: 0 0 14px; }
+.MER-DOSSIER { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 14px; border: 1px solid var(--sm2-border, #e2e8f0); border-radius: 14px; background: var(--sm2-surface, #fff); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.MER-DOSSIER:hover { box-shadow: 0 4px 14px rgba(15,23,42,.08); }
+.MER-DOSSIER:active { transform: scale(.985); }
+.MER-DOSSIER-ICONE { position: relative; flex: 0 0 auto; width: 52px; height: 44px; }
+.MER-DOSSIER-ICONE svg { width: 100%; height: 100%; display: block; }
+.MER-DOSSIER-ICONE.petit { width: 26px; height: 22px; }
+.MER-DOSSIER.vide .MER-DOSSIER-ICONE svg { opacity: .75; }
+.MER-DOSSIER-NB { position: absolute; top: -6px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #dc2626; color: #fff; font-size: 12px; font-weight: 800; line-height: 22px; text-align: center; box-shadow: 0 0 0 2px var(--sm2-surface, #fff); }
+.MER-DOSSIER-NB.en-ligne { position: static; display: inline-block; margin-left: 8px; box-shadow: none; }
+.MER-DOSSIER-TXT { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.MER-DOSSIER-TXT b { font-size: 0.95em; font-weight: 700; }
+.MER-DOSSIER.nouveau .MER-DOSSIER-TXT b { font-weight: 900; }
+.MER-DOSSIER-TXT small { font-size: 0.74em; color: var(--sm2-muted, #64748b); }
+.MER-DOSSIER-DET { font-weight: 700; }
+.MER-DOSSIER-ATT { color: #dc2626; }
+.MER-DOSSIER-CHEV { font-size: 1.6em; color: var(--sm2-muted, #94a3b8); }
+.MER-DOSSIER-TETE { display: flex; align-items: center; gap: 10px; margin: 0 0 10px; padding-bottom: 10px; border-bottom: 1px solid var(--sm2-border, #e2e8f0); }
+.MER-DOSSIER-TETE b { font-size: 1em; }
+.MER-DOSSIER-RETOUR { border: 1px solid var(--sm2-border, #e2e8f0); background: transparent; color: inherit; font: inherit; font-weight: 700; font-size: 0.8em; padding: 6px 12px; border-radius: 999px; cursor: pointer; margin-right: 4px; white-space: nowrap; flex: 0 0 auto; }
 
 /* En fin de formulaire (et non plus flottante) : elle ne recouvre jamais le dernier champ. */
 .MER-BOTTOM-BAR { margin: 28px -20px -24px; padding: 14px 16px calc(14px + var(--safe-bottom)); background: var(--sm2-surface); border-top: 1px solid var(--sm2-border); display: flex; align-items: center; gap: 10px; }
@@ -888,6 +909,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=95"></script>
+<script src="app.js?v=96"></script>
 </body>
 </html>

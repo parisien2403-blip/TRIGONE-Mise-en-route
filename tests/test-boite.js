@@ -69,7 +69,12 @@ module.exports = async function() {
     // Suivi (tenu par le serveur) des demandes et comptes-rendus du compte de cette page : { ref: { genre, etape, etapes } }.
     async function suivi(p) { await attendre(1200); return p.evaluate(() => JUMELAGE_SUIVI_ACTUALISER()); }
     // Boîte de réception : bouton « Ouvrir… » du premier envoi à traiter.
-    async function ouvrirBoite(p) { await p.evaluate(() => SHOW_PAGE('RECEPTION')); await attendre(400); await p.locator('.MER-RECU .BTN-PRIMARY').first().click(); await attendre(2500); }
+    // Boîte de réception en dossiers : le dossier qui a quelque chose à traiter, puis le premier envoi.
+    async function ouvrirBoite(p) {
+        await p.evaluate(() => { MER_DOSSIER.RECEPTION = null; SHOW_PAGE('RECEPTION'); }); await attendre(400);
+        await p.locator('.MER-DOSSIER:not(.vide)').first().click(); await attendre(400);
+        await p.locator('.MER-RECU .BTN-PRIMARY').first().click(); await attendre(2500);
+    }
 
     // Adresse non professionnelle refusée
     const x = await b.newPage(); await x.goto(URL); await x.evaluate(preparer, APP_CODE); await x.reload(); await attendre(2000);
@@ -298,6 +303,10 @@ module.exports = async function() {
     verifier(await c.evaluate(() => PAGE_ACTUELLE === 'ACCUEIL' && !document.querySelector('.JUM-CHOIX')), 'écran de choix après l\'espace Chorus : « Mise en route » ouvre bien l\'accueil de Mise en route');
     await c.evaluate(() => JUMELAGE_CHOIX()); await attendre(600);
     await c.click('.JUM-CHORUS'); await attendre(1500);
+    // Espace Chorus DT en dossiers : « Demandes de mise en route » avec son compteur rouge.
+    verifier(await c.evaluate(() => { const d = document.querySelector('.MER-DOSSIER[data-dossier="demandes"]'); return !!d && d.querySelector('.MER-DOSSIER-NB').textContent === '1' && !!document.querySelector('.MER-DOSSIER[data-dossier="cr"]'); }),
+        'Chorus DT : dossiers jaunes « Demandes de mise en route » (1 à traiter) et « Comptes-rendus de mission »');
+    await c.click('.MER-DOSSIER[data-dossier="demandes"]'); await attendre(500);
     // Sur la ligne de la demande reçue : aperçu et PDF directement (contrôle fait avant).
     verifier(await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Aperçu")').count() === 1, 'Chorus DT : bouton « Aperçu » sur la ligne de la demande reçue');
     const telechargement = c.waitForEvent('download', { timeout: 20000 });
@@ -311,7 +320,8 @@ module.exports = async function() {
     const sv1 = Object.values(await suivi(v1)), sv2 = Object.values(await suivi(v2));
     verifier(sv1.some(x => x.intervenant && x.etape === 'traite') && sv2.some(x => x.intervenant && x.etape === 'traite'),
         'suivi : le VALIDEUR 1 et le VALIDEUR 2 voient la prise en charge par l\'assistant Chorus DT');
-    await v2.evaluate(() => SHOW_PAGE('RECEPTION')); await attendre(1200);
+    await v2.evaluate(() => OUVRIR_DOSSIER('RECEPTION', 'signer')); await attendre(1200);
+    await v2.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
     verifier(await v2.locator('.MER-RECU .MER-SUIVI-TXT:has-text("Prise en charge par l\'assistant Chorus DT")').count() >= 1,
         'Boîte de réception du VALIDEUR 2 : frise de suivi sur la demande traitée');
     await m.evaluate(() => SHOW_PAGE('BIBLIOTHEQUE')); await attendre(1500);
@@ -352,7 +362,7 @@ module.exports = async function() {
     // Relève faite depuis Compte-rendu (l'assistant avait cette appli ouverte), ouverture depuis l'espace Chorus DT.
     await c.goto(URL + 'cr/'); await attendre(2500); await relever(c);
     await c.goto(URL); await attendre(2500);
-    await c.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-PRES,.JUM-NOUV').forEach(x => x.remove()); document.documentElement.classList.remove('jum-choix'); SHOW_PAGE('CHORUS'); }); await attendre(600);
+    await c.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-PRES,.JUM-NOUV').forEach(x => x.remove()); document.documentElement.classList.remove('jum-choix'); OUVRIR_DOSSIER('CHORUS', 'cr'); }); await attendre(600);
     verifier((await c.textContent('#PAGE-STAGE')).includes('ADJ BOUQUET GP'), 'Chorus DT : le compte-rendu arrive dans la section « Comptes-rendus de mission »');
     verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'recu'), 'suivi : compte-rendu « récupéré par l\'assistant Chorus DT » (le missionnaire est prévenu)');
     await c.locator('.MER-RECU:has(.MER-RECU-cr) .BTN-PRIMARY').click(); await attendre(1200);
