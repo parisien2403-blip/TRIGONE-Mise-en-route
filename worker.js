@@ -706,9 +706,42 @@ async function api(requete, env, url, ctx) {
     return erreur(404, 'Inconnu.');
 }
 
+// ---------- Mise à jour publiée : notification à tous les appareils abonnés ----------
+// build.json (publié avec l'appli) : « build » (numéro de publication), « notifier » (true : cette version mérite une
+// notification) et « message » (nouveautés en une ligne). Chaque numéro n'est traité qu'une fois (reglage « maj »,
+// mis à jour de façon atomique : deux exécutions simultanées n'envoient pas deux fois). Appareils aux notifications
+// coupées : rien.
+let dernierControleMaj = 0;
+async function notifierMiseAJour(env, origine) {
+    if (!env.TRIGONE_DB || !env.ASSETS) return;
+    dernierControleMaj = Date.now();
+    const r = await env.ASSETS.fetch(new Request(new URL('/build.json', origine || 'https://trigone.invalid').href));
+    if (!r.ok) return;
+    const b = await r.json(), n = parseInt(b.build, 10);
+    if (!n) return;
+    const db = await tableReglage(env);
+    const maj = await db.prepare("INSERT INTO reglage (cle, valeur) VALUES ('maj', ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur WHERE CAST(reglage.valeur AS INTEGER) < CAST(excluded.valeur AS INTEGER)")
+        .bind(String(n)).run();
+    if (!(maj.meta && maj.meta.changes) || b.notifier !== true) return;
+    const o = origine || await origineConnue(env);
+    const l = ((await db.prepare('SELECT a.mail, a.appareil, a.endpoint, a.p256dh, a.auth FROM abonnement a WHERE NOT EXISTS (SELECT 1 FROM muet m WHERE m.mail = a.mail AND m.appareil = a.appareil)').all()).results) || [];
+    const texte = String(b.message || 'Nouvelle version : ouvrez TRIGONE pour la mettre à jour.').slice(0, 200);
+    for (let i = 0; i < l.length; i += 20) {
+        await Promise.all(l.slice(i, i + 20).map(async x => {
+            try {
+                const rep = await envoyerPush(env, { endpoint: x.endpoint, keys: { p256dh: x.p256dh, auth: x.auth } },
+                    { titre: 'TRIGONE — nouvelle version', texte, type: 'MAJ', nombre: 1, url: '/' }, o);
+                if (rep.status === 404 || rep.status === 410) await db.prepare('DELETE FROM abonnement WHERE mail = ? AND appareil = ?').bind(x.mail, x.appareil).run();
+            } catch (e) {}
+        }));
+    }
+}
+
 export default {
     async fetch(requete, env, ctx) {
         const url = new URL(requete.url);
+        // Publication récente : contrôlée au plus toutes les 5 minutes, sans retarder la réponse.
+        if (Date.now() - dernierControleMaj > 5 * 60 * 1000 && ctx && ctx.waitUntil) ctx.waitUntil(notifierMiseAJour(env, url.origin).catch(() => {}));
         if (url.pathname.startsWith('/api/')) {
             try { return await api(requete, env, url, ctx); }
             catch (e) { return erreur(500, 'Erreur du serveur.'); }
@@ -719,5 +752,6 @@ export default {
     async scheduled(evenement, env, ctx) {
         if (!env.TRIGONE_DB) return;
         ctx.waitUntil(origineConnue(env).then(o => relancer(env, o, Date.now(), false)).catch(() => {}));
+        ctx.waitUntil(notifierMiseAJour(env).catch(() => {}));
     }
 };
