@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 135;
+var APP_CODE_VERSION = 136;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1121,6 +1121,13 @@ function TPL_RESERVATION() {
         '<p class="MER-HINT">Cochez ce qui doit être réservé (l\'un, l\'autre ou les deux). Au retour, Compte-rendu le reprend : transport sur les trajets en train, avion ou bateau ; hébergement à choisir nuit par nuit.</p></div>';
 }
 
+// Réservation demandée (onglet Alim./Héb.) : rappel de joindre la demande de réservation avec la NDS ou la DAF.
+function TPL_RAPPEL_RESA() {
+    if (!(D.resaHeberg || MER_RESA_TRANSPORT(D))) return '';
+    var quoi = [D.resaHeberg ? 'hébergement' : '', MER_RESA_TRANSPORT(D) ? 'transport' : ''].filter(Boolean).join(' et ');
+    return '<p class="MER-HINT MER-RAPPEL-RESA" style="color:#b45309; font-weight:700; margin:-4px 0 12px;">📎 Vous avez demandé une réservation (' + quoi + ') : joignez aussi la <b>' +
+        ESC(MER_RESA().defaut ? 'demande de réservation' : 'demande de réservation — ' + MER_RESA().libelle) + '</b>, avec la NDS ou la DAF.</p>';
+}
 function TPL_ONGLET_CONDITIONS() {
     return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Durant le déplacement</div>' +
       TPL_RESERVATION() +
@@ -1181,6 +1188,7 @@ function TPL_ONGLET_IMPUTATION() {
       '<div id="MER-FD-INFO">' + TPL_INFO_FD() + '</div>' +
       TOGGLE_OUI_NON('Demande d\'avance', 'demandeAvance') +
       '<div class="MER-SECTION-TITLE">NDS ou DAF</div>' +
+      TPL_RAPPEL_RESA() +
       TPL_PJ_FORMULAIRE() +
       '<div class="MER-FIELD"><label>Référence (facultatif)</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'piecesJointes\', this.value)" placeholder="EX : NDS n°42/2026">' + ESC(D.piecesJointes || '') + '</textarea></div>';
 }
