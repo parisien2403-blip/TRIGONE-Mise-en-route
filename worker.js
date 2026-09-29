@@ -748,10 +748,11 @@ export default {
         }
         return env.ASSETS.fetch(requete);
     },
-    // Déclencheur planifié (wrangler.jsonc › triggers.crons, toutes les heures) : relances des détenteurs.
+    // Déclencheur planifié (wrangler.jsonc › triggers.crons, toutes les 5 minutes) : publication, relances (à l'heure).
     async scheduled(evenement, env, ctx) {
         if (!env.TRIGONE_DB) return;
-        ctx.waitUntil(origineConnue(env).then(o => relancer(env, o, Date.now(), false)).catch(() => {}));
+        // Déclencheur toutes les 5 minutes : nouvelle publication (notification sans attendre) ; relances à l'heure pile.
+        if (new Date(evenement.scheduledTime || Date.now()).getUTCMinutes() < 5) ctx.waitUntil(origineConnue(env).then(o => relancer(env, o, Date.now(), false)).catch(() => {}));
         ctx.waitUntil(notifierMiseAJour(env).catch(() => {}));
     }
 };

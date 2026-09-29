@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=93"></script>
+<script src="../jumelage.js?v=94"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -2278,6 +2278,13 @@ body.dark-mode .pj-check-item.pj-is-strict { background: rgba(248, 113, 113, 0.1
   -webkit-overflow-scrolling: touch;
 }
 .QR-OVERLAY.HIDDEN { display: none !important; }
+.MONTRE-ILLUS { display: flex; gap: 10px; margin: 4px 0 10px; }
+.MONTRE-ILLUS figure { flex: 1; margin: 0; text-align: center; }
+.MONTRE-SVG { width: 100%; max-width: 140px; height: auto; display: block; margin: 0 auto 6px; }
+.MONTRE-ILLUS figcaption { font-size: 0.7em; line-height: 1.35; color: #64748b; }
+.MONTRE-ETAPES { font-size: 0.78em; padding-left: 18px; margin: 0 0 10px; }
+.MONTRE-ETAPES li { margin: 0 0 4px; }
+body.dark-mode .MONTRE-ILLUS figcaption { color: #a3a3a3; }
 .PAX-ENVOI #PAX-ENVOI-LISTE { margin: 12px 0 8px; display: flex; flex-direction: column; gap: 10px; text-align: left; }
 .PAX-LIGNE b { display: block; font-size: 0.8em; margin-bottom: 4px; }
 .PAX-LIGNE input { width: 100%; box-sizing: border-box; }
@@ -6203,6 +6210,26 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </details>
 
 
+<details class="notice-fold" id="PARAM-FOLD-MONTRE">
+<summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 6 9.7 2.5h4.6L15 6M9 18l.7 3.5h4.6L15 18M12 9.5V12l1.6 1.2"/></svg></span>Montre connectée</summary>
+<div class="ADMIN-SECTION">
+<p style="font-size:0.8em; margin:0 0 10px;">Vous avez une <b>montre connectée</b> (Galaxy Watch, Pixel Watch, autre montre Wear OS…) ? Horodatez votre mission <b>depuis le poignet</b>, sans sortir le téléphone.</p>
+<div class="MONTRE-ILLUS">
+<figure><svg class="MONTRE-SVG" viewBox="0 0 160 200" role="img" aria-label="Montre connectée : notification TRIGONE, étape 1"><rect x="46" y="0" width="68" height="44" rx="8" fill="#3f3f46"/><rect x="46" y="156" width="68" height="44" rx="8" fill="#3f3f46"/><rect x="14" y="26" width="132" height="148" rx="40" fill="#52525b"/><rect x="146" y="70" width="6" height="20" rx="2" fill="#71717a"/><rect x="146" y="104" width="6" height="16" rx="2" fill="#f97316"/><circle cx="80" cy="100" r="60" fill="#0a0a0a" stroke="#27272a" stroke-width="3"/><circle cx="80" cy="58" r="7" fill="#1e293b"/><text x="80" y="61" text-anchor="middle" font-size="8" fill="#e2e8f0" font-family="Montserrat,Arial" font-weight="700">T</text><text x="80" y="76" text-anchor="middle" font-size="7" fill="#94a3b8" font-family="Montserrat,Arial" letter-spacing=".5">TRIGONE</text><text x="80" y="89" text-anchor="middle" font-size="9.5" fill="#fff" font-family="Montserrat,Arial" font-weight="700">Mission en cours</text><text x="80" y="104" text-anchor="middle" font-size="8" fill="#cbd5e1" font-family="Montserrat,Arial">Départ 06:30 ✓</text><text x="80" y="116" text-anchor="middle" font-size="7" fill="#94a3b8" font-family="Montserrat,Arial">Prochaine étape</text><rect x="36" y="124" width="88" height="20" rx="10" fill="#2563eb"/><text x="80" y="137.5" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Montserrat,Arial" font-weight="700">Arrivée sur site</text></svg><figcaption><b>1.</b> Après « Départ en mission », la notification « Mission en cours » arrive sur la montre avec le bouton de l'étape suivante.</figcaption></figure>
+<figure><svg class="MONTRE-SVG" viewBox="0 0 160 200" role="img" aria-label="Montre connectée : notification TRIGONE, étape 2"><rect x="46" y="0" width="68" height="44" rx="8" fill="#3f3f46"/><rect x="46" y="156" width="68" height="44" rx="8" fill="#3f3f46"/><rect x="14" y="26" width="132" height="148" rx="40" fill="#52525b"/><rect x="146" y="70" width="6" height="20" rx="2" fill="#71717a"/><rect x="146" y="104" width="6" height="16" rx="2" fill="#f97316"/><circle cx="80" cy="100" r="60" fill="#0a0a0a" stroke="#27272a" stroke-width="3"/><circle cx="80" cy="58" r="7" fill="#1e293b"/><text x="80" y="61" text-anchor="middle" font-size="8" fill="#e2e8f0" font-family="Montserrat,Arial" font-weight="700">T</text><text x="80" y="76" text-anchor="middle" font-size="7" fill="#94a3b8" font-family="Montserrat,Arial" letter-spacing=".5">TRIGONE</text><text x="80" y="89" text-anchor="middle" font-size="9.5" fill="#fff" font-family="Montserrat,Arial" font-weight="700">Mission en cours</text><text x="80" y="102" text-anchor="middle" font-size="7.5" fill="#cbd5e1" font-family="Montserrat,Arial">Départ 06:30 ✓</text><text x="80" y="114" text-anchor="middle" font-size="7.5" fill="#86efac" font-family="Montserrat,Arial" font-weight="700">Arrivée 09:42 ✓</text><rect x="36" y="124" width="88" height="20" rx="10" fill="#2563eb"/><text x="80" y="137.5" text-anchor="middle" font-size="8.5" fill="#fff" font-family="Montserrat,Arial" font-weight="700">Départ du site</text></svg><figcaption><b>2.</b> Un appui : l'heure exacte est enregistrée et l'étape suivante s'affiche aussitôt.</figcaption></figure>
+</div>
+<ol class="MONTRE-ETAPES">
+<li><b>Départ en mission</b> : sur le téléphone, comme d'habitude (identité, lieux, transports).</li>
+<li><b>Arrivée sur site</b>, puis <b>Départ du site</b>, puis <b>Arrivée finale</b> : un appui sur le bouton de la notification, sur la montre (ou dans le volet de notifications du téléphone).</li>
+<li>À la prochaine ouverture de TRIGONE, les heures sont déjà dans votre compte-rendu (« ⌚ Horodaté depuis la montre »). Il ne reste que les frais.</li>
+</ol>
+<p class="CIE-HINT" style="margin:0 0 6px;"><b>À régler une fois</b> : notifications TRIGONE activées (menu du compte › Notifications) ; dans l'appli de la montre sur le téléphone (ex. <b>Galaxy Wearable</b> › Notifications), autorisez <b>Chrome</b> et TRIGONE, et de préférence « afficher même quand le téléphone est utilisé » ; dans les réglages Android de Chrome › Notifications › Sites › TRIGONE : <b>Alerte</b> (pas « Silencieux »).</p>
+<p class="CIE-HINT" style="margin:0 0 10px;">Sans réseau aussi : l'heure est prise sur le téléphone au moment de l'appui. Un horodatage oublié se corrige toujours dans l'appli.</p>
+<p id="MONTRE-ESSAI-ETAT" class="CIE-HINT" style="margin:0 0 6px;"></p>
+<button type="button" class="BTN-ADMIN-CLOSE" style="background:#1a1a1a; color:#fff;" onclick="ESSAI_NOTIF_MONTRE()">⌚ Envoyer un essai sur ma montre</button>
+</div>
+</details>
+
 <details class="notice-fold">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2Z"/><path d="M17 21v-8H7v8M7 3v5h8"/></svg></span>Sauvegarde complète</summary>
 <div class="ADMIN-SECTION">
@@ -8893,6 +8920,24 @@ function MONTRE_NOTIF_MAJ() {
             data: { montre: true, faits: faits, mission: M.DEBUT }
         });
     }).catch(function() {});
+}
+// Réglages › Montre connectée : notification d'essai (bouton sans effet sur la mission).
+function ESSAI_NOTIF_MONTRE() {
+    var etat = document.getElementById('MONTRE-ESSAI-ETAT');
+    var dire = function(t) { if (etat) etat.textContent = t; };
+    if (!('Notification' in window) || !navigator.serviceWorker) { dire('Notifications non disponibles sur cet appareil.'); return; }
+    var envoyer = function() {
+        navigator.serviceWorker.ready.then(function(reg) {
+            return reg.showNotification('Essai TRIGONE — montre', {
+                body: 'Pendant une mission, ce bouton horodatera l\'étape suivante.', tag: 'trigone-montre-essai', renotify: true,
+                icon: 'icon-192.png', badge: '../favicon-32.png', actions: [{ action: 'essai', title: 'Arrivée sur site' }]
+            });
+        }).then(function() { dire('✔ Essai envoyé : regardez votre montre (téléphone verrouillé, de préférence).'); })
+          .catch(function() { dire('Essai impossible : rouvrez TRIGONE puis réessayez.'); });
+    };
+    if (Notification.permission === 'granted') envoyer();
+    else if (Notification.permission === 'denied') dire('Notifications bloquées : autorisez TRIGONE dans les réglages de Chrome.');
+    else Notification.requestPermission().then(function(r) { if (r === 'granted') envoyer(); else dire('Notifications non autorisées.'); });
 }
 // Heures relevées sur la montre → mission en cours (dans l'ordre des appuis ; ceux d'une autre mission sont écartés).
 function APPLIQUER_HORODATAGES_MONTRE() {
@@ -11588,7 +11633,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 190;
+var APP_CODE_VERSION = 191;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
