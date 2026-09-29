@@ -324,7 +324,7 @@ module.exports = async function() {
     await v2.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
     verifier(await v2.locator('.MER-RECU .MER-SUIVI-TXT:has-text("Prise en charge par l\'assistant Chorus DT")').count() >= 1,
         'Boîte de réception du VALIDEUR 2 : frise de suivi sur la demande traitée');
-    await m.evaluate(() => SHOW_PAGE('BIBLIOTHEQUE')); await attendre(1500);
+    await m.evaluate(() => OUVRIR_DOSSIER('BIBLIOTHEQUE', 'traitees')); await attendre(1500);
     verifier(await m.locator('.MER-SUIVI-TXT:has-text("Prise en charge par l\'assistant Chorus DT")').count() >= 1 && await m.locator('.MER-SUIVI-PT.fait').count() >= 4,
         'Bibliothèque : frise de suivi Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT');
     await c.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
