@@ -1,5 +1,5 @@
 // Mission collective : le chef de mission envoie le compte-rendu prérempli dans la boîte TRIGONE de chaque participant
-// (au lieu du QR code / WhatsApp) ; le participant le reçoit (boîte de réception) et l'ouvre dans Compte-rendu.
+// (plus de QR code ni de WhatsApp) ; le participant le reçoit (boîte de réception) et l'ouvre dans Compte-rendu.
 // Demande le serveur de test (TRIGONE_URL_BOITE), comme test-boite.js.
 const { APP_CODE, navigateur, preparer, attendre, verifier } = require('./outils');
 
@@ -39,7 +39,7 @@ module.exports = async function() {
     await chef.click('#BTN-PAX-ENVOYER'); await attendre(4000);
     const etats = await chef.$$eval('#PAX-ENVOI-LISTE .PAX-ETAT', l => l.map(e => e.className + ' | ' + e.textContent));
     verifier(/ok/.test(etats[0]) && /Envoyé/.test(etats[0]), 'chef : envoyé à LEROY (compte TRIGONE)');
-    verifier(/ko/.test(etats[1]) && /Pas encore de compte TRIGONE/.test(etats[1]), 'chef : BERNARD sans compte TRIGONE → QR code ou WhatsApp proposé');
+    verifier(/ko/.test(etats[1]) && /Pas encore de compte TRIGONE/.test(etats[1]) && !/QR|WhatsApp/.test(etats[1]), 'chef : BERNARD sans compte TRIGONE → il doit se connecter à TRIGONE, puis renvoi');
     verifier(await chef.evaluate(m => MAILS_PAX()['LEROY EMMA'] === m, MAILS.PAX), 'chef : adresse du participant mémorisée pour la prochaine fois');
     // Participant : relève, boîte de réception, ouverture du compte-rendu prérempli.
     await pax.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);

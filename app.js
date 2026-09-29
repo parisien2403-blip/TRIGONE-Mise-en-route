@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 138;
+var APP_CODE_VERSION = 139;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3673,7 +3673,7 @@ function ROUVRIR_RECU(id) {
     JUMELAGE_BOITE_ROUVRIR(id);
     OUVRIR_RECU(id);
 }
-// Mission collective reçue : ouverture du compte-rendu participant (Compte-rendu, ?data= comme le QR code du chef).
+// Mission collective reçue : ouverture du compte-rendu participant (Compte-rendu, ?data= : données de la mission du chef).
 function OUVRIR_COLLECTIVE_RECU(id) {
     var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(e) { return e.id === id; })[0];
     if (!x || !/^[A-Za-z0-9+/=]+$/.test(x.donnees || '')) { MSG_ERREUR('Envoi illisible', 'Demandez à votre chef de mission de vous le renvoyer.'); return; }
