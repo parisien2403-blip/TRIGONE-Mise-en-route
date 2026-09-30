@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=108"></script>
+<script src="../jumelage.js?v=109"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -11245,7 +11245,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 205;
+var APP_CODE_VERSION = 206;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -15693,6 +15693,38 @@ function GET_PJ_RECAP_TEXTE() {
 
 // Envoi du compte-rendu à l'assistant Chorus DT, directement dans sa boîte TRIGONE (chiffré) : le PDF du
 // compte-rendu est joint automatiquement, les justificatifs sont choisis dans la fenêtre d'envoi (jumelage.js).
+// Contrôle avant envoi : ce qui fait le plus souvent renvoyer un compte-rendu par l'assistant Chorus DT. Chaque point
+// est une question (« à vérifier »), pas un blocage : « Corriger » (page Frais) ou « Envoyer quand même ».
+function CONTROLES_AVANT_ENVOI(S) {
+    S = S || M;
+    var l = [], T = PARSE_FR_DATETIME, h = function(d) { return d ? ('0' + d.getHours()).slice(-2) + 'h' + ('0' + d.getMinutes()).slice(-2) : '?'; };
+    var j = function(d) { return d ? d.toLocaleDateString('fr-FR') : '?'; };
+    var marge = 15 * 60000;
+    // 1. Horodatages dans l'ordre : départ → arrivée sur site → départ du site → fin de mission.
+    var etapes = [['départ de mission', S.DEBUT], ['arrivée sur site', S.ARR_SITE], ['départ du site', S.DEP_SITE], ['fin de mission', S.FIN_RETOUR_HORODATE]]
+        .map(function(x) { return { nom: x[0], d: T(x[1]) }; }).filter(function(x) { return x.d && !isNaN(x.d); });
+    for (var i = 1; i < etapes.length; i++) if (etapes[i].d < etapes[i - 1].d)
+        l.push('Horodatages dans le désordre : ' + etapes[i].nom + ' (' + j(etapes[i].d) + ' ' + h(etapes[i].d) + ') avant ' + etapes[i - 1].nom + ' (' + j(etapes[i - 1].d) + ' ' + h(etapes[i - 1].d) + ').');
+    // 2. Billets (train, avion, bateau) : horaires renseignés et cohérents avec les horodatages.
+    var NOMS = { VF: 'train', AVION: 'avion', BATEAUX: 'bateau' };
+    [['A', 'aller', S.DEBUT, S.ARR_SITE], ['R', 'retour', S.DEP_SITE, S.FIN_RETOUR_HORODATE]].forEach(function(x) {
+        var pk = x[0], moyen = NOMS[S['T_' + pk]];
+        if (!moyen) return;
+        var dep = T(S['DT_' + pk + '_DEP'] || S['H_' + pk + '_DEP'] || ''), arr = T(S['DT_' + pk + '_ARR'] || S['H_' + pk + '_ARR'] || '');
+        if (!dep || !arr || isNaN(dep) || isNaN(arr)) { l.push('Horaires du billet ' + x[1] + ' (' + moyen + ') non renseignés : indiquez le départ et l\'arrivée figurant sur le billet.'); return; }
+        var debut = T(x[2] || ''), fin = T(x[3] || '');
+        if (debut && !isNaN(debut) && debut - dep > marge) l.push('Trajet ' + x[1] + ' : ' + (pk === 'A' ? 'départ de mission' : 'départ du site') + ' horodaté à ' + h(debut) + ', après le départ du ' + moyen + ' (' + h(dep) + ' le ' + j(dep) + ').');
+        if (fin && !isNaN(fin) && arr - fin > marge) l.push('Trajet ' + x[1] + ' : ' + (pk === 'A' ? 'arrivée sur site' : 'fin de mission') + ' horodatée à ' + h(fin) + ', avant l\'arrivée du ' + moyen + ' (' + h(arr) + ' le ' + j(arr) + ').');
+    });
+    // 3. Indemnités kilométriques demandées sans kilométrage.
+    [['A', 'aller'], ['R', 'retour'], ['A_ANX', 'aller (trajet annexe)'], ['R_ANX', 'retour (trajet annexe)']].forEach(function(x) {
+        if (S['IK_' + x[0]] && !(parseFloat(S['IK_KM_' + x[0]]) > 0)) l.push('Indemnités kilométriques ' + x[1] + ' : kilométrage non renseigné.');
+    });
+    // 4. Repas déclarés payants mais hors des horaires qui y ouvrent droit : ils ne seront pas remboursés.
+    try { (EVAL_REPAS_ELIGIBILITE(S).issues || []).forEach(function(x) { l.push(x.label + ' : ' + x.msg + ' Il ne sera pas remboursé.'); }); } catch (e) {}
+    return l;
+}
+var CONTROLE_ENVOI_VU = false;
 function ENVOYER_MAIL() {
     if (M.MAIL_SENT) return;
     if (HAS_EXPERIENCE_SAISIE()) {
@@ -15704,6 +15736,19 @@ function ENVOYER_MAIL() {
         return;
     }
     if (!window.JUMELAGE_ENVOYER_CR) { alert('Envoi indisponible : fermez et rouvrez TRIGONE.'); return; }
+    var aVerifier = CONTROLE_ENVOI_VU ? [] : CONTROLES_AVANT_ENVOI();
+    CONTROLE_ENVOI_VU = false;
+    if (aVerifier.length) {
+        AFFICHER_MSG_CENTRE({
+            titre: aVerifier.length > 1 ? aVerifier.length + ' points à vérifier avant l\'envoi' : '1 point à vérifier avant l\'envoi',
+            texte: 'Ce sont les motifs de renvoi les plus fréquents chez ' + ASSIST_CHORUS_LABEL + ' :\n\n' + aVerifier.map(function(x) { return '• ' + x; }).join('\n\n') +
+                '\n\nSi tout est juste (ex. mission modifiée en cours de route), envoyez quand même.',
+            icone: '🔍', mascotteImage: 'mascotte-code.webp',
+            boutons: [{ label: 'Envoyer quand même', style: 'BTN-ADMIN-CLOSE', action: function() { CONTROLE_ENVOI_VU = true; ENVOYER_MAIL(); } },
+                { label: 'Corriger', style: 'BTN BTN-START', action: function() { SHOW_PAGE('P2-FIN'); } }]
+        });
+        return;
+    }
     SAVE_OBS();
     var sujet = 'CR MISSION - ' + M.USER;
     if (M.COLLECTIVE) { sujet = 'COLLECTIF (CHEF DE MISSION) - ' + M.USER; }

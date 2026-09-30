@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 205,
-  "appCodeMessage": "Nouveau : appui long sur l'icône TRIGONE → « Ma mission » ouvre directement votre compte-rendu.",
+  "appCodeVersion": 206,
+  "appCodeMessage": "Nouveau : avant l'envoi, TRIGONE repère ce qui fait souvent renvoyer un compte-rendu (horodatages dans le désordre, billet incohérent ou sans horaires, IK sans kilométrage, repas non remboursable) : Corriger, ou Envoyer quand même.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
