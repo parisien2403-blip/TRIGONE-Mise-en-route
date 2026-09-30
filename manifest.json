@@ -27,5 +27,59 @@
       "purpose": "maskable"
     }
   ],
-  "description": "TRIGONE — mise en route et compte-rendu de mission"
+  "description": "TRIGONE — mise en route et compte-rendu de mission",
+  "shortcuts": [
+    {
+      "name": "Nouvelle demande",
+      "short_name": "Nouvelle demande",
+      "description": "Nouvelle demande de mise en route",
+      "url": "./?espace=nouvelle",
+      "icons": [
+        {
+          "src": "./raccourci-demande.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Ma mission",
+      "short_name": "Ma mission",
+      "description": "Compte-rendu : démarrer ou reprendre ma mission",
+      "url": "./cr/?espace=mission",
+      "icons": [
+        {
+          "src": "./raccourci-mission.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Boîte de réception",
+      "short_name": "Réception",
+      "description": "Demandes reçues, à signer, refus",
+      "url": "./?espace=boite",
+      "icons": [
+        {
+          "src": "./raccourci-boite.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Bibliothèque",
+      "short_name": "Bibliothèque",
+      "description": "Suivi de mes demandes envoyées",
+      "url": "./?espace=suivi",
+      "icons": [
+        {
+          "src": "./raccourci-bibliotheque.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
+  ]
 }
