@@ -655,7 +655,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 113, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 114, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1965,7 +1965,7 @@
         }).catch(function() { return f; });
     }
     // Justificatif photographié (facture, billet, NDS…) → « scan » : recadré sur la feuille (feuille claire sur un fond
-    // plus sombre), fond blanchi et texte foncé (niveaux de gris), 1 800 px au plus, puis en PDF d'une page A4 si
+    // plus sombre), fond blanchi et texte foncé (en couleur), 1 800 px au plus, puis en PDF d'une page A4 si
     // jsPDF est là (Compte-rendu). Si la feuille n'est pas trouvée avec certitude : pas de recadrage. En cas d'échec :
     // la photo d'origine. Le fichier rendu garde la photo d'origine (.origine) pour revenir en arrière.
     function otsu(hist, n) {
@@ -2033,10 +2033,15 @@
                 for (x = 0; x < w; x++) {
                     var fx = Math.min(Math.max(x / B - 0.5, 0), nx - 1), ix = Math.floor(fx), tx = fx - ix, ix2 = Math.min(ix + 1, nx - 1);
                     var bg = (lisse[iy * nx + ix] * (1 - tx) + lisse[iy * nx + ix2] * tx) * (1 - ty) + (lisse[iy2 * nx + ix] * (1 - tx) + lisse[iy2 * nx + ix2] * tx) * ty;
-                    var v = (L[(y + y0) * W + x + x0] / bg - 0.35) / 0.55;   // 90 % du fond ou plus : blanc ; 35 % ou moins : noir
-                    v = v < 0 ? 0 : v > 1 ? 1 : v;
-                    v = 255 * Math.pow(v, 1.4);
-                    d[j] = d[j + 1] = d[j + 2] = v; d[j + 3] = 255; j += 4;
+                    // En couleur : chaque composante comparée au papier — 90 % du fond ou plus : blanc ; 35 % ou moins :
+                    // saturée (encre noire, tampon bleu, surligné…).
+                    var o = ((y + y0) * W + x + x0) * 4;
+                    for (var cc = 0; cc < 3; cc++) {
+                        var v = (px[o + cc] / bg - 0.35) / 0.55;
+                        v = v < 0 ? 0 : v > 1 ? 1 : v;
+                        d[j + cc] = 255 * Math.pow(v, 1.4);
+                    }
+                    d[j + 3] = 255; j += 4;
                 }
             }
             gs.putImageData(im, 0, 0);

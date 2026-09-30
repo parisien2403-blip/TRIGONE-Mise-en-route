@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 160;
+var APP_CODE_VERSION = 161;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3702,7 +3702,11 @@ function OUVRIR_CR_RECU(id) {
         AFFICHER_MODALE('Compte-rendu de mission',
             '<p style="font-size:0.9em; line-height:1.5; margin:0 0 6px;"><b>' + ESC(cr.missionnaire || '') + '</b><br>' + ESC([cr.libelle, cr.dates].filter(Boolean).join(' · ')) + '</p>' +
             '<p class="MER-HINT">Reçu de ' + ESC(x.de || cr.de || '?') + (cr.envoyeLe ? ', le ' + ESC(new Date(cr.envoyeLe).toLocaleString('fr-FR')) : '') + '</p>' +
-            '<div class="MER-SECTION-TITLE">Fichiers</div>' +
+            ((cr.fichiers || []).length > 1 ? '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT"><div class="MER-PANIER-ITEM-TITRE">📄 PDF complet</div>' +
+                '<div class="MER-PANIER-ITEM-SUB">Compte-rendu suivi des ' + (cr.fichiers.length - 1) + ' justificatif' + (cr.fichiers.length > 2 ? 's' : '') + ', en un seul fichier</div></div>' +
+                '<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:auto; margin:0;" onclick="PDF_COMPLET_CR(false)">👁 Aperçu</button>' +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin:0;" onclick="PDF_COMPLET_CR(true)">⬇ Télécharger</button></div></div>' : '') +
+            '<div class="MER-SECTION-TITLE">Fichiers' + ((cr.fichiers || []).length > 1 ? ' séparés' : '') + '</div>' +
             (cr.fichiers || []).map(function(fi, i) {
                 return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT"><div class="MER-PANIER-ITEM-TITRE" style="word-break:break-all;">' + (i ? '📎 ' : '📄 ') + ESC(fi.nom) + '</div>' +
                     '<div class="MER-PANIER-ITEM-SUB">' + (i ? 'Justificatif' : 'Compte-rendu') + ' · ' + TAILLE_LISIBLE(Math.floor((fi.b64 || '').length * 3 / 4)) + '</div></div>' +
@@ -3713,7 +3717,7 @@ function OUVRIR_CR_RECU(id) {
             TPL_ETAT_QUESTION(id) +
             (cr.equipe ? '<div class="MER-SECTION-TITLE">Mission collective — ' + (cr.roleEquipe === 'participant' ? 'compte-rendu d\'un participant' : 'compte-rendu du chef de mission') + '</div><div id="MER-CR-EQUIPE" class="MER-HINT">Chargement du suivi des participants…</div>' : ''),
             '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Fermer</button>' +
-            '<button type="button" class="BTN BTN-GHOST" onclick="TELECHARGER_FICHIER_CR(-1)">⬇ Tout</button>' +
+            '<button type="button" class="BTN BTN-GHOST" onclick="PDF_COMPLET_CR(true)">⬇ PDF complet</button>' +
             '<button type="button" class="BTN BTN-GHOST" onclick="POSER_QUESTION(\'cr\')">❓ Question</button>' +
             '<button type="button" class="BTN BTN-PRIMARY" onclick="TRAITER_CR_RECU()">✔ Traité</button>');
         if (cr.equipe) MER_CR_EQUIPE(cr);
@@ -3775,11 +3779,69 @@ function APERCU_CR_RECU(id) {
     JUMELAGE_BOITE_FICHIER(id).then(function(f) { return f.text(); }).then(function(t) {
         var cr = JSON.parse(t), fi = (cr.fichiers || [])[0];
         if (cr.app !== 'TRIGONE-CR' || !fi) throw new Error('Compte-rendu illisible.');
-        var url = URL.createObjectURL(new Blob([new Uint8Array(DEB64(fi.b64))], { type: fi.type || 'application/pdf' }));
-        if (w) w.location = url; else window.open(url, '_blank');
-        JUMELAGE_BOITE_MARQUER(id, 'ouvert');
-        setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+        // Compte-rendu et justificatifs en un seul PDF (à défaut : le compte-rendu seul).
+        var seul = function() { return new Uint8Array(DEB64(fi.b64)); };
+        return (cr.fichiers.length > 1 ? MER_CR_PDF_UNIQUE(cr).catch(seul) : Promise.resolve(seul())).then(function(octets) {
+            var url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+            if (w) w.location = url; else window.open(url, '_blank');
+            JUMELAGE_BOITE_MARQUER(id, 'ouvert');
+            setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+        });
     }).catch(function(e) { if (w) w.close(); MSG_ERREUR('Ouverture impossible', (e.message || String(e)) + ' Si le problème continue, demandez au missionnaire de renvoyer son compte-rendu.'); });
+}
+// Un seul PDF pour l'assistant Chorus DT : le compte-rendu, suivi de chaque justificatif (pages des PDF, photos sur
+// une page A4 chacune, en couleur). Un justificatif illisible est laissé de côté (il reste téléchargeable seul).
+function MER_CR_PDF_UNIQUE(cr) {
+    var fichiers = cr.fichiers || [];
+    if (!fichiers.length) return Promise.reject(new Error('Compte-rendu vide.'));
+    return CHARGER_PDFLIB().then(function() { return PDFLib.PDFDocument.create(); }).then(function(doc) {
+        var A4 = [595.28, 841.89], marge = 28;
+        function photo(fi, octets) {
+            var type = fi.type || '';
+            if (type === 'image/png') return doc.embedPng(octets);
+            if (type === 'image/jpeg' || /\.jpe?g$/i.test(fi.nom)) return doc.embedJpg(octets);
+            // Autres formats (webp, heic…) : repassés en JPEG par le navigateur quand il sait les lire.
+            return createImageBitmap(new Blob([octets], { type: type })).then(function(img) {
+                var c = document.createElement('canvas'); c.width = img.width; c.height = img.height;
+                c.getContext('2d').drawImage(img, 0, 0);
+                return new Promise(function(ok) { c.toBlob(ok, 'image/jpeg', 0.85); });
+            }).then(function(b) { return b.arrayBuffer(); }).then(function(buf) { return doc.embedJpg(new Uint8Array(buf)); });
+        }
+        return fichiers.reduce(function(prec, fi) {
+            return prec.then(function() {
+                var octets = new Uint8Array(DEB64(fi.b64));
+                if (fi.type === 'application/pdf' || /\.pdf$/i.test(fi.nom)) {
+                    return PDFLib.PDFDocument.load(octets, { ignoreEncryption: true }).then(function(src) {
+                        return doc.copyPages(src, src.getPageIndices());
+                    }).then(function(pages) { pages.forEach(function(pg) { doc.addPage(pg); }); });
+                }
+                return photo(fi, octets).then(function(img) {
+                    var paysage = img.width > img.height, T = paysage ? [A4[1], A4[0]] : A4;
+                    var e = Math.min((T[0] - 2 * marge) / img.width, (T[1] - 2 * marge) / img.height, 1);
+                    var pg = doc.addPage(T);
+                    pg.drawImage(img, { x: (T[0] - img.width * e) / 2, y: (T[1] - img.height * e) / 2, width: img.width * e, height: img.height * e });
+                });
+            }).catch(function() {});
+        }, Promise.resolve()).then(function() {
+            if (!doc.getPageCount()) throw new Error('Aucune page lisible.');
+            return doc.save({ useObjectStreams: false });
+        });
+    });
+}
+function MER_NOM_PDF_UNIQUE(cr) {
+    var n = ((cr.fichiers || [])[0] || {}).nom || 'Compte-rendu';
+    return n.replace(/\.pdf$/i, '') + (cr.fichiers.length > 1 ? ' + justificatifs' : '') + '.pdf';
+}
+// « 📄 PDF complet » : aperçu (ou téléchargement) du compte-rendu et de ses justificatifs en un seul fichier.
+function PDF_COMPLET_CR(telecharger) {
+    if (!MER_CR_OUVERT) return;
+    var cr = MER_CR_OUVERT.cr, w = telecharger ? null : window.open('', '_blank');
+    MER_CR_PDF_UNIQUE(cr).then(function(octets) {
+        if (telecharger || !w) { TELECHARGER_OCTETS(MER_NOM_PDF_UNIQUE(cr), octets, 'application/pdf'); if (w) w.close(); return; }
+        var url = URL.createObjectURL(new Blob([octets], { type: 'application/pdf' }));
+        w.location = url;
+        setTimeout(function() { URL.revokeObjectURL(url); }, 60000);
+    }).catch(function(e) { if (w) w.close(); MSG_ERREUR('PDF complet impossible', (e.message || String(e)) + ' Les fichiers restent téléchargeables un par un.'); });
 }
 function TELECHARGER_FICHIER_CR(i) {
     if (!MER_CR_OUVERT) return;

@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 160,
-  "appCodeMessage": "Nouveau : indemnités kilométriques — la distance se calcule toute seule entre la ville de départ et la ville d'arrivée, le kilométrage et le montant se remplissent seuls (modifiables).",
+  "appCodeVersion": 161,
+  "appCodeMessage": "Nouveau : justificatifs photo numérisés en couleur ; l'assistant Chorus DT reçoit le compte-rendu et ses justificatifs en un seul PDF.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
