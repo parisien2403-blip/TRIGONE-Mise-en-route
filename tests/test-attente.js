@@ -57,6 +57,7 @@ module.exports = async function() {
     verifier(/BEGIN:VEVENT/.test(ics) && /DTSTART:20261005T065200/.test(ics) && /DTEND:20261009T194100/.test(ics) && /SUMMARY:Mission — STAGE FDF/.test(ics) && /TRIGGER:-P1D/.test(ics) && /NAINVILLE/.test(ics),
         'Agenda : fichier .ics (départ aller → arrivée retour, trajets, rappel la veille) — ' + dl.suggestedFilename());
     const lien = await exp.p.evaluate(() => { let u = ''; const o = window.open; window.open = x => { u = x; }; MER_AGENDA('e9'); MER_AGENDA_GOOGLE(); window.open = o; return u; });
+    verifier(await exp.p.evaluate(() => MER_ICS_TEXTE('Stage; Paris, 2 jours') === 'Stage\\; Paris\\, 2 jours'), 'Agenda : « ; » et « , » échappés dans le fichier .ics');
     verifier(/calendar\.google\.com/.test(lien) && /dates=20261005T065200\/20261009T194100/.test(lien), 'Agenda : lien Google Agenda prérempli');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();

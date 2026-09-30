@@ -655,7 +655,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 111, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 112, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2294,6 +2294,9 @@
             // Mission collective : lien du compte-rendu prérempli, envoyé par le chef de mission à un participant.
             if (d.app === 'TRIGONE-COLLECTIVE') return { nature: 'collective', n: 1, ids: [], noms: d.chef || '', objet: d.libelle || 'Mission collective',
                 dates: d.dates || '', lieu: '', donnees: String(d.donnees || '') };
+            // Question d'un valideur / de l'assistant Chorus DT, et réponse du missionnaire.
+            if (d.app === 'TRIGONE-QUESTION' || d.app === 'TRIGONE-REPONSE') return { nature: d.app === 'TRIGONE-QUESTION' ? 'question' : 'reponse', n: 1, ids: [],
+                noms: d.qui || '', objet: d.objet || '', dates: '', lieu: '', ref: d.ref || '', genre: d.genre || '', question: String(d.question || '').slice(0, 2000), reponse: String(d.reponse || '').slice(0, 2000) };
             if (d.app === 'TRIGONE-CR') return { nature: 'cr', n: 1, ids: [], noms: d.missionnaire || '', objet: d.libelle || 'Compte-rendu de mission',
                 dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length, equipe: d.equipe || '', roleEquipe: d.roleEquipe || '' };
             var ds = d.demandes || [], p0 = ((ds[0] || {}).personnes || [])[0] || {};
@@ -2400,7 +2403,7 @@
                             var o = JSON.parse(clair), info = resumeEnvoi(o.contenu);
                             // Contenu conforme au type annoncé (demande → non signée, 1er valideur → 1 signature,
                             // Chorus → 2 signatures, refus → refus, CR → compte-rendu) ; sinon l'envoi est écarté.
-                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus', CR: 'cr', RENVOI: 'renvoi', COLLECTIVE: 'collective' }[x.type];
+                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus', CR: 'cr', RENVOI: 'renvoi', COLLECTIVE: 'collective', QUESTION: 'question', REPONSE: 'reponse' }[x.type];
                             if (attendu && info.nature !== attendu) { ecartes++; return appelApi('boite/' + e.id, { methode: 'DELETE' }); }
                             return caches.open(CACHE_BOITE).then(function(c) {
                                 return c.put(cleFichierBoite(e.id), new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));

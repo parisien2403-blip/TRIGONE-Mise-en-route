@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=111"></script>
+<script src="jumelage.js?v=112"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -125,6 +125,9 @@ body.dark-mode .MER-LOGO-IMG { filter: brightness(0) invert(0.93); }
 .MER-CHOIX-RENVOI { display: flex; gap: 10px; align-items: flex-start; font-size: 0.86em; line-height: 1.4; margin: 8px 0; cursor: pointer; text-transform: none; letter-spacing: 0; font-weight: 500; }
 .MER-CHOIX-RENVOI input { width: 18px; height: 18px; flex-shrink: 0; margin: 1px 0 0; }
 .MER-RECU-TRAITES { margin: 14px 0 6px; }
+.MER-QUESTION { margin: 8px 0 4px; padding: 10px 12px; border-radius: 12px; background: rgba(90,122,148,0.08); border: 1px solid rgba(90,122,148,0.2); display: flex; flex-direction: column; gap: 3px; font-size: 0.84rem; line-height: 1.4; text-align: left; }
+.MER-QUESTION b { font-weight: 700; } .MER-QUESTION span { color: #15803d; font-weight: 600; } .MER-QUESTION small { color: var(--tg-muted); font-size: 0.72rem; }
+body.dark-mode .MER-QUESTION { background: rgba(169,195,214,0.08); border-color: rgba(169,195,214,0.2); } body.dark-mode .MER-QUESTION span { color: #4ade80; }
 .MER-EQUIPE-LIGNE { display: flex; flex-direction: column; gap: 2px; padding: 9px 12px; margin: 6px 0; border: 1.5px solid var(--tg-border); border-left-width: 4px; border-radius: 12px; font-size: 0.84rem; color: var(--sm2-text); }
 .MER-EQUIPE-LIGNE small { color: var(--tg-muted); font-size: 0.72rem; } .MER-EQUIPE-LIGNE span { font-weight: 700; font-size: 0.78rem; }
 .MER-EQUIPE-LIGNE.ok { border-left-color: #15803d; } .MER-EQUIPE-LIGNE.ok span { color: #15803d; }
@@ -934,6 +937,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=111"></script>
+<script src="app.js?v=112"></script>
 </body>
 </html>
