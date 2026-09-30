@@ -240,6 +240,8 @@
         '.JUM-CR-FICHIER b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .JUM-CR-FICHIER small { color: #64748b; white-space: nowrap; }' +
         '.JUM-CR-RETIRER { border: 0; background: none; color: #b91c1c; font-size: 0.9rem; cursor: pointer; padding: 2px 4px; }' +
         '.JUM-CR-AJOUT { display: block; text-align: center; margin: 10px 0 0; cursor: pointer; }' +
+        '.JUM-CR-SCAN { display: block; font-style: normal; font-weight: 500; font-size: 0.72rem; color: #15803d; } .JUM-CR-ORIGINE { background: none; border: 0; padding: 0; font: inherit; color: #5a7a94; text-decoration: underline; cursor: pointer; }' +
+        'html body.dark-mode .JUM-CR-SCAN { color: #4ade80; } html body.dark-mode .JUM-CR-ORIGINE { color: #a9c3d6; }' +
         'html body.dark-mode .JUM-CR-FICHIER { border-color: rgba(255,255,255,0.1); } html body.dark-mode .JUM-CR-FICHIER small { color: #a3a3a3; }' +
         '.JUM-BONJOUR { margin: 0 0 4px; text-align: center; font: 600 clamp(0.74rem, 3.5vw, 0.9rem)/1.3 Montserrat, system-ui, sans-serif; color: #5a7a94; letter-spacing: 0.01em; }' +
         '@media (max-height: 600px) and (orientation: portrait) { .JUM-BONJOUR { display: none; } }' +
@@ -642,7 +644,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 104, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 105, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1584,6 +1586,103 @@
             return new Promise(function(ok) { c.toBlob(function(b) { ok(b && b.size < f.size ? new File([b], f.name.replace(/\.[^.]+$/, '') + '.jpg', { type: 'image/jpeg' }) : f); }, 'image/jpeg', 0.82); });
         }).catch(function() { return f; });
     }
+    // Justificatif photographié (facture, billet, NDS…) → « scan » : recadré sur la feuille (feuille claire sur un fond
+    // plus sombre), fond blanchi et texte foncé (niveaux de gris), 1 800 px au plus, puis en PDF d'une page A4 si
+    // jsPDF est là (Compte-rendu). Si la feuille n'est pas trouvée avec certitude : pas de recadrage. En cas d'échec :
+    // la photo d'origine. Le fichier rendu garde la photo d'origine (.origine) pour revenir en arrière.
+    function otsu(hist, n) {
+        var somme = 0, i; for (i = 0; i < 256; i++) somme += i * hist[i];
+        var sB = 0, wB = 0, best = 0, seuil = 128;
+        for (i = 0; i < 256; i++) {
+            wB += hist[i]; if (!wB) continue; var wF = n - wB; if (!wF) break;
+            sB += i * hist[i]; var mB = sB / wB, mF = (somme - sB) / wF, v = wB * wF * (mB - mF) * (mB - mF);
+            if (v > best) { best = v; seuil = i; }
+        }
+        return seuil;
+    }
+    function centile(hist, n, p) { var c = 0; for (var i = 0; i < 256; i++) { c += hist[i]; if (c >= n * p) return i; } return 255; }
+    // Bords de la feuille : premières / dernières lignes (colonnes) majoritairement claires, sur 3 de suite.
+    function bords(frac, lim) {
+        var a = -1, b = -1, i;
+        for (i = 0; i + 2 < frac.length; i++) if (frac[i] > lim && frac[i + 1] > lim && frac[i + 2] > lim) { a = i; break; }
+        for (i = frac.length - 1; i - 2 >= 0; i--) if (frac[i] > lim && frac[i - 1] > lim && frac[i - 2] > lim) { b = i; break; }
+        return a < 0 || b <= a ? null : [a, b];
+    }
+    function scannerPhoto(f, opts) {
+        if (!/^image\//.test(f.type) || !window.createImageBitmap) return Promise.resolve(f);
+        return createImageBitmap(f).then(function(img) {
+            var k = Math.min(1, 1800 / Math.max(img.width, img.height)), W = Math.max(1, Math.round(img.width * k)), H = Math.max(1, Math.round(img.height * k));
+            var c = document.createElement('canvas'); c.width = W; c.height = H;
+            var g = c.getContext('2d'); g.drawImage(img, 0, 0, W, H);
+            var px = g.getImageData(0, 0, W, H).data, L = new Uint8ClampedArray(W * H), hist = new Array(256).fill(0), i, x, y;
+            for (i = 0; i < W * H; i++) { var l = (px[i * 4] * 299 + px[i * 4 + 1] * 587 + px[i * 4 + 2] * 114) / 1000 | 0; L[i] = l; hist[l]++; }
+            var T = otsu(hist, W * H), lignes = new Array(H).fill(0), cols = new Array(W).fill(0);
+            for (y = 0; y < H; y++) for (x = 0; x < W; x++) if (L[y * W + x] > T) { lignes[y]++; cols[x]++; }
+            var ly = bords(lignes.map(function(v) { return v / W; }), 0.45), lx = bords(cols.map(function(v) { return v / H; }), 0.45);
+            var x0 = 0, y0 = 0, x1 = W - 1, y1 = H - 1;
+            if (ly && lx) {
+                var aire = (lx[1] - lx[0]) * (ly[1] - ly[0]) / (W * H), clairs = 0;
+                for (y = ly[0]; y <= ly[1]; y++) for (x = lx[0]; x <= lx[1]; x++) if (L[y * W + x] > T) clairs++;
+                // Feuille nette : entre 20 % et 92 % de la photo, et claire aux trois quarts au moins.
+                if (aire > 0.2 && aire < 0.92 && clairs / ((lx[1] - lx[0] + 1) * (ly[1] - ly[0] + 1)) > 0.75) {
+                    var m = Math.round(Math.min(W, H) * 0.01); x0 = Math.max(0, lx[0] + m); x1 = Math.min(W - 1, lx[1] - m); y0 = Math.max(0, ly[0] + m); y1 = Math.min(H - 1, ly[1] - m);
+                }
+            }
+            var w = x1 - x0 + 1, h = y1 - y0 + 1;
+            // Fond de la feuille estimé par pavés (valeur claire de chaque pavé, lissée) : les ombres et l'éclairage
+            // inégal disparaissent, chaque zone est comparée au papier qui l'entoure. Puis le fond devient blanc,
+            // l'encre noire.
+            var B = Math.max(16, Math.round(Math.min(w, h) / 24)), nx = Math.ceil(w / B), ny = Math.ceil(h / B), fond = new Float32Array(nx * ny), bx, by;
+            for (by = 0; by < ny; by++) for (bx = 0; bx < nx; bx++) {
+                var hb = new Array(256).fill(0), nb = 0;
+                for (y = y0 + by * B; y < Math.min(y0 + (by + 1) * B, y1 + 1); y++) for (x = x0 + bx * B; x < Math.min(x0 + (bx + 1) * B, x1 + 1); x++) { hb[L[y * W + x]]++; nb++; }
+                fond[by * nx + bx] = Math.max(centile(hb, nb, 0.9), 40);
+            }
+            // Pavé tout encre (gros titre) : on prend le papier le plus clair des pavés voisins, puis on lisse.
+            var clair = new Float32Array(nx * ny), lisse = new Float32Array(nx * ny);
+            [[fond, clair, 2, true], [clair, lisse, 1, false]].forEach(function(p) {
+                for (var yy = 0; yy < ny; yy++) for (var xx = 0; xx < nx; xx++) {
+                    var t = 0, n = 0, mx = 0;
+                    for (var dy = -p[2]; dy <= p[2]; dy++) for (var dx = -p[2]; dx <= p[2]; dx++) { var X = xx + dx, Y = yy + dy;
+                        if (X >= 0 && Y >= 0 && X < nx && Y < ny) { var v0 = p[0][Y * nx + X]; t += v0; n++; if (v0 > mx) mx = v0; } }
+                    p[1][yy * nx + xx] = p[3] ? mx : t / n;
+                }
+            });
+            var sortie = document.createElement('canvas'); sortie.width = w; sortie.height = h;
+            var gs = sortie.getContext('2d'), im = gs.createImageData(w, h), d = im.data, j = 0;
+            for (y = 0; y < h; y++) {
+                var fy = Math.min(Math.max(y / B - 0.5, 0), ny - 1), iy = Math.floor(fy), ty = fy - iy, iy2 = Math.min(iy + 1, ny - 1);
+                for (x = 0; x < w; x++) {
+                    var fx = Math.min(Math.max(x / B - 0.5, 0), nx - 1), ix = Math.floor(fx), tx = fx - ix, ix2 = Math.min(ix + 1, nx - 1);
+                    var bg = (lisse[iy * nx + ix] * (1 - tx) + lisse[iy * nx + ix2] * tx) * (1 - ty) + (lisse[iy2 * nx + ix] * (1 - tx) + lisse[iy2 * nx + ix2] * tx) * ty;
+                    var v = (L[(y + y0) * W + x + x0] / bg - 0.35) / 0.55;   // 90 % du fond ou plus : blanc ; 35 % ou moins : noir
+                    v = v < 0 ? 0 : v > 1 ? 1 : v;
+                    v = 255 * Math.pow(v, 1.4);
+                    d[j] = d[j + 1] = d[j + 2] = v; d[j + 3] = 255; j += 4;
+                }
+            }
+            gs.putImageData(im, 0, 0);
+            var base = f.name.replace(/\.[^.]+$/, '');
+            return new Promise(function(ok) { sortie.toBlob(ok, 'image/jpeg', 0.72); }).then(function(jpeg) {
+                if (!jpeg) return f;
+                var res;
+                if (opts && opts.pdf && window.jspdf && window.jspdf.jsPDF) {
+                    return jpeg.arrayBuffer().then(function(buf) {
+                        var paysage = w > h, doc = new window.jspdf.jsPDF({ orientation: paysage ? 'l' : 'p', unit: 'mm', format: 'a4', compress: true });
+                        var PW = paysage ? 297 : 210, PH = paysage ? 210 : 297, marge = 8, r = Math.min((PW - 2 * marge) / w, (PH - 2 * marge) / h);
+                        doc.addImage(new Uint8Array(buf), 'JPEG', (PW - w * r) / 2, (PH - h * r) / 2, w * r, h * r);
+                        res = new File([doc.output('blob')], base + '.pdf', { type: 'application/pdf' });
+                        res.origine = f; res.scanne = true; res.recadre = x0 > 0 || y0 > 0 || x1 < W - 1 || y1 < H - 1;
+                        return res;
+                    });
+                }
+                res = new File([jpeg], base + '.jpg', { type: 'image/jpeg' });
+                res.origine = f; res.scanne = true; res.recadre = x0 > 0 || y0 > 0 || x1 < W - 1 || y1 < H - 1;
+                return res;
+            });
+        }).catch(function() { return f; });
+    }
+    window.JUMELAGE_SCANNER_PHOTO = scannerPhoto;
     window.JUMELAGE_FERMER_ENVOI_CR = function() { if (fenCr) { fenCr.remove(); fenCr = null; } };
     // o : { destinataire, missionnaire, libelle, dates, corps, pieces (justificatifs déclarés), pdf() → Promise<{ nom, blob }>, succes() }
     window.JUMELAGE_ENVOYER_CR = function(o) {
@@ -1622,19 +1721,24 @@
         function total() { return choisis.reduce(function(t, x) { return t + x.size; }, 0); }
         function dessiner() {
             f.querySelector('#JUM-CR-LISTE').innerHTML = choisis.map(function(x, i) {
-                return '<div class="JUM-CR-FICHIER"><span>' + (/^image\//.test(x.type) ? '🖼️' : '📎') + '</span><b>' + esc(x.name) + '</b><small>' + tailleLisible(x.size) + '</small>' +
+                return '<div class="JUM-CR-FICHIER"><span>' + (x.scanne ? '🧾' : /^image\//.test(x.type) ? '🖼️' : '📎') + '</span><b>' + esc(x.name) +
+                    (x.scanne ? '<em class="JUM-CR-SCAN">' + (x.recadre ? 'scanné et recadré' : 'scanné') + ' · <button type="button" class="JUM-CR-ORIGINE" data-i="' + i + '">photo d\'origine</button></em>' : '') +
+                    '</b><small>' + tailleLisible(x.size) + '</small>' +
                     '<button type="button" class="JUM-CR-RETIRER" data-i="' + i + '" aria-label="Retirer">✕</button></div>';
             }).join('');
             f.querySelector('#JUM-CR-TAILLE').textContent = choisis.length ? choisis.length + ' justificatif(s) — ' + tailleLisible(total()) + ' (' + tailleLisible(TAILLE_MAX_CR) + ' au plus)' : '';
         }
         f.querySelector('#JUM-CR-LISTE').addEventListener('click', function(ev) {
+            var o2 = ev.target.closest('.JUM-CR-ORIGINE');
+            // Recadrage raté : on revient à la photo d'origine (seulement réduite).
+            if (o2) { var k = +o2.getAttribute('data-i'); reduirePhoto(choisis[k].origine).then(function(x) { choisis[k] = x; dessiner(); }); return; }
             var b = ev.target.closest('.JUM-CR-RETIRER'); if (!b) return;
             choisis.splice(+b.getAttribute('data-i'), 1); dessiner();
         });
         f.querySelector('#JUM-CR-FICHIERS').addEventListener('change', function(ev) {
             var liste = Array.prototype.slice.call(ev.target.files || []); ev.target.value = '';
             err.textContent = '';
-            Promise.all(liste.map(reduirePhoto)).then(function(r) {
+            Promise.all(liste.map(function(x) { return scannerPhoto(x, { pdf: true }); })).then(function(r) {
                 r.forEach(function(x) { if (!choisis.some(function(y) { return y.name === x.name && y.size === x.size; })) choisis.push(x); });
                 dessiner();
                 if (total() > TAILLE_MAX_CR) err.textContent = '⛔ Trop volumineux : retirez un fichier (' + tailleLisible(TAILLE_MAX_CR) + ' au plus).';
@@ -1719,6 +1823,11 @@
     // « trigone-suivi » à chaque mise à jour.
     var CLE_SUIVI = 'trigone_suivi', suiviEnCours = null;
     window.JUMELAGE_SUIVI = function() { return lireJSON(CLE_SUIVI) || {}; };
+    // Rappel « départ en mission » : [{ ref, quand (ms) }] ; le serveur ne reçoit que l'heure, rien du contenu.
+    window.JUMELAGE_RAPPEL_DEPART = function(liste) {
+        if (!monCompte() || !liste || !liste.length) return Promise.resolve();
+        return appelApi('rappel', { methode: 'POST', corps: { rappels: liste } }).catch(function() {});
+    };
     // Demandes refusées que le demandeur abandonne (retirées de Documents) : plus de rappel.
     window.JUMELAGE_SUIVI_ABANDON = function(ids) {
         if (monCompte() && ids && ids.length) appelApi('suivi/abandon', { methode: 'POST', corps: { refs: ids } }).then(window.JUMELAGE_SUIVI_ACTUALISER).catch(function() {});

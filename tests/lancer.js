@@ -13,6 +13,8 @@ const TESTS = {
     'dossiers': ['Bibliothèque et Remboursement en dossiers', require('./test-dossiers')],
     'affichage-pc': ['Affichage PC sur tablette et pliable', require('./test-affichage-pc')],
     'demenagement': ['Déménagement vers l\'adresse Cloudflare', require('./test-demenagement')],
+    'scan': ['Justificatifs photo scannés (recadrés, allégés, en PDF)', require('./test-scan')],
+    'rappel': ['Rappel « départ en mission » (notification le jour du départ)', require('./test-rappel')],
     'boite': ['Boîte aux lettres TRIGONE (envois directs chiffrés)', require('./test-boite')]
 };
 (async () => {

@@ -57,7 +57,10 @@ async function baseBoite(env) {
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS suivi_acteur (ref TEXT NOT NULL, demandeur TEXT NOT NULL, mail TEXT NOT NULL, PRIMARY KEY (ref, demandeur, mail))'),
             env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS suivi_acteur_mail ON suivi_acteur (mail)'),
             // Appareils dont l'utilisateur a coupé les notifications (ex. téléphone, quand le PC suffit au bureau).
-            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS muet (mail TEXT NOT NULL, appareil TEXT NOT NULL, PRIMARY KEY (mail, appareil))')
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS muet (mail TEXT NOT NULL, appareil TEXT NOT NULL, PRIMARY KEY (mail, appareil))'),
+            // Rappels « départ en mission » : l'heure seule (le contenu de la demande reste chiffré, inconnu du serveur).
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS rappel (ref TEXT NOT NULL, mail TEXT NOT NULL, quand INTEGER NOT NULL, envoye INTEGER, PRIMARY KEY (ref, mail))'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS rappel_quand ON rappel (quand)')
         ]);
         TABLES_PRETES = true;
     }
@@ -315,6 +318,21 @@ async function relancer(env, origine, maintenant, forcer) {
     }));
     if (lignes.length) await db.batch(lignes.map(l => db.prepare('UPDATE suivi SET relance = ? WHERE ref = ? AND demandeur = ?').bind(maintenant, l.ref, l.demandeur)));
     return lignes.length + refus.length;
+}
+// Rappels « départ en mission » arrivés à échéance (déclencheur toutes les 5 minutes) : une notification au demandeur,
+// sauf si la demande a été refusée ou abandonnée entre-temps. Rappels de plus de 12 h manqués : abandonnés.
+async function envoyerRappels(env, origine, maintenant) {
+    const db = await baseBoite(env);
+    await db.prepare('DELETE FROM rappel WHERE quand < ?').bind(maintenant - 7 * JOUR * 1000).run();
+    const l = (await db.prepare('SELECT r.ref, r.mail, s.etape FROM rappel r LEFT JOIN suivi s ON s.ref = r.ref AND s.demandeur = r.mail WHERE r.envoye IS NULL AND r.quand <= ? AND r.quand > ? LIMIT 200')
+        .bind(maintenant, maintenant - 12 * 3600 * 1000).all()).results || [];
+    if (!l.length) return 0;
+    await db.batch(l.map(x => db.prepare('UPDATE rappel SET envoye = ? WHERE ref = ? AND mail = ?').bind(maintenant, x.ref, x.mail)));
+    const aEnvoyer = l.filter(x => x.etape !== 'refus' && x.etape !== 'abandon');
+    await Promise.all(aEnvoyer.map(x => notifierCompte(env, x.mail, { titre: 'Départ en mission aujourd\'hui', type: 'RAPPEL',
+        texte: 'Touchez pour démarrer votre compte-rendu : la mission est déjà remplie depuis votre mise en route.',
+        url: '/cr/?depart=' + encodeURIComponent(x.ref) }, origine).catch(() => {})));
+    return aEnvoyer.length;
 }
 async function origineConnue(env, origine) {
     const db = await tableReglage(env);
@@ -719,6 +737,22 @@ async function api(requete, env, url, ctx) {
         await avancerSuivi(env, lignes, 'traite', { auteur: moi.mail, trace: { e: 'traite', le: Date.now(), qui, par: moi.mail } }, url.origin, 'traite');
         return json({ ok: true, n: lignes.length });
     }
+    // Rappels « départ en mission » des demandes que je viens d'envoyer : { rappels: [{ ref, quand }] } (quand : ms).
+    // Une demande renvoyée après correction remplace son rappel ; quand = 0 le retire.
+    if (chemin === 'rappel' && methode === 'POST') {
+        const liste = ((await requete.json().catch(() => ({}))).rappels || []).slice(0, 50);
+        const db = await baseBoite(env), maintenant = Date.now();
+        const ok = liste.map(x => ({ ref: nettoyerRefs([x && x.ref])[0], quand: Math.round(+(x && x.quand) || 0) }))
+            .filter(x => x.ref && (x.quand === 0 || (x.quand > maintenant - 3600 * 1000 && x.quand < maintenant + 400 * JOUR * 1000)));
+        if (ok.length) await db.batch(ok.map(x => x.quand ? db.prepare('INSERT OR REPLACE INTO rappel (ref, mail, quand, envoye) VALUES (?, ?, ?, NULL)').bind(x.ref, moi.mail, x.quand)
+            : db.prepare('DELETE FROM rappel WHERE ref = ? AND mail = ?').bind(x.ref, moi.mail)));
+        return json({ ok: true, n: ok.length });
+    }
+    // Tests locaux : envoyer les rappels « départ » comme si « decalage » ms s'étaient écoulées.
+    if (chemin === 'test/rappels' && methode === 'POST' && env.MODE_TEST === '1') {
+        const corps = await requete.json().catch(() => ({}));
+        return json({ ok: true, n: await envoyerRappels(env, url.origin, Date.now() + (+corps.decalage || 0)) });
+    }
     // Tests locaux : lancer les relances maintenant, comme si « decalage » ms s'étaient écoulées.
     if (chemin === 'test/relance' && methode === 'POST' && env.MODE_TEST === '1') {
         const corps = await requete.json().catch(() => ({}));
@@ -785,5 +819,6 @@ export default {
         // Déclencheur toutes les 5 minutes : nouvelle publication (notification sans attendre) ; relances à l'heure pile.
         if (new Date(evenement.scheduledTime || Date.now()).getUTCMinutes() < 5) ctx.waitUntil(origineConnue(env).then(o => relancer(env, o, Date.now(), false)).catch(() => {}));
         ctx.waitUntil(notifierMiseAJour(env).catch(() => {}));
+        ctx.waitUntil(origineConnue(env).then(o => envoyerRappels(env, o, Date.now())).catch(() => {}));
     }
 };
