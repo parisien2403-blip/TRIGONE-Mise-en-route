@@ -655,7 +655,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 109, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 110, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1803,15 +1803,16 @@
     window.JUMELAGE_ENVOYER_DIRECT = function(destinataire, type, nom, texte, opts) {
         opts = opts || {};
         if (!monCompte()) return Promise.reject(Object.assign(new Error('Activez d\'abord votre compte TRIGONE.'), { sansCompte: true }));
-        var attente = function() { return mettreEnAttente({ dest: destinataire, type: type, nom: nom, texte: texte, libelle: opts.libelle || '', meta: opts.meta || null }); };
+        var attente = function() { return mettreEnAttente({ dest: destinataire, type: type, nom: nom, texte: texte, libelle: opts.libelle || '', meta: opts.meta || null, equipe: opts.equipe || null }); };
         if (!navigator.onLine) return opts.differable ? attente() : Promise.reject(new Error('Pas de connexion : l\'envoi direct demande du réseau.'));
-        return envoyerMaintenant(destinataire, type, nom, texte).catch(function(e) {
+        return envoyerMaintenant(destinataire, type, nom, texte, opts.equipe).catch(function(e) {
             if (opts.differable && erreurReseau(e)) return attente();
             throw e;
         });
     };
     function erreurReseau(e) { return !!e && !e.statut && !e.pasDeCompte && !e.sansCompte && (e instanceof TypeError || /fetch|network|réseau|Load failed/i.test(e.message || '')); }
-    function envoyerMaintenant(destinataire, type, nom, texte) {
+    // equipe : référence d'une mission collective (le chef suit qui a envoyé son compte-rendu).
+    function envoyerMaintenant(destinataire, type, nom, texte, equipe) {
         var dest = String(destinataire || '').trim().toLowerCase(), absent = null;
         return appelApi('cles?mail=' + encodeURIComponent(dest)).then(function(r) {
             // Destinataire absent (valideur, assistant Chorus DT) : l'envoi part chez son remplaçant (un refus, lui, va
@@ -1832,7 +1833,7 @@
             // demande et prévient le demandeur (« validée par le VALIDEUR 1 (CNE DUPONT) »). Rien d'autre n'est visible.
             var nombre = 1, refs = [];
             try { var o = JSON.parse(texte); if (o && Array.isArray(o.demandes)) { nombre = o.demandes.length || 1; refs = o.demandes.map(function(d) { return d && d.id; }).filter(Boolean); } } catch (e) {}
-            return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, nombre: nombre, refs: refs, qui: window.JUMELAGE_QUI(), enveloppes: ch.enveloppes, donnees: ch.donnees } });
+            return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, nombre: nombre, refs: refs, qui: window.JUMELAGE_QUI(), equipe: equipe || undefined, enveloppes: ch.enveloppes, donnees: ch.donnees } });
         }).then(function(r) {
             if (type === 'DEMANDE' || type === 'CR') setTimeout(window.JUMELAGE_SUIVI_ACTUALISER, 800);
             if (absent) {
@@ -1900,7 +1901,7 @@
             return l.reduce(function(prec, x) {
                 return prec.then(function() {
                     if (!navigator.onLine) return;
-                    return envoyerMaintenant(x.dest, x.type, x.nom, x.texte).then(function(r) {
+                    return envoyerMaintenant(x.dest, x.type, x.nom, x.texte, x.equipe).then(function(r) {
                         return envoisIdb('effacer', x.id).then(function() { partis++; NB_ATTENTE = Math.max(0, NB_ATTENTE - 1); appliquerSuite(x.meta, r || {}); prevenirEnvoye(x);
                             try { if (window.JUMELAGE_APRES_ENVOI_DIFFERE) window.JUMELAGE_APRES_ENVOI_DIFFERE(x); } catch (e) {} });
                     }, function(e) {
@@ -2130,7 +2131,7 @@
                     var fichiers = [{ nom: pdf.nom, type: 'application/pdf', b64: b64[0] }].concat(choisis.map(function(x, i) { return { nom: x.name, type: x.type || 'application/octet-stream', b64: b64[i + 1] }; }));
                     var contenu = JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: o.missionnaire || '', libelle: o.libelle || '', dates: o.dates || '',
                         corps: o.corps || '', de: compte.mail, envoyeLe: new Date().toISOString(), fichiers: fichiers });
-                    return window.JUMELAGE_ENVOYER_DIRECT(o.destinataire, 'CR', pdf.nom, contenu, { differable: true, meta: o.meta || null,
+                    return window.JUMELAGE_ENVOYER_DIRECT(o.destinataire, 'CR', pdf.nom, contenu, { differable: true, meta: o.meta || null, equipe: o.equipe || null,
                         libelle: 'Votre compte-rendu' + (o.libelle && o.libelle !== 'Compte-rendu de mission' ? ' « ' + o.libelle + ' »' : '') });
                 });
             }).then(function(r) {
@@ -2201,6 +2202,9 @@
     var CLE_SUIVI = 'trigone_suivi', suiviEnCours = null;
     window.JUMELAGE_SUIVI = function() { return lireJSON(CLE_SUIVI) || {}; };
     // Rappel « départ en mission » : [{ ref, quand (ms) }] ; le serveur ne reçoit que l'heure, rien du contenu.
+    // Suivi de l'équipe d'une mission collective (chef de mission) : [{ mail, recu, envoye, relance }] ; relance des retardataires.
+    window.JUMELAGE_EQUIPE = function(ref) { return appelApi('equipe?ref=' + encodeURIComponent(ref)).then(function(r) { return r.equipe || []; }); };
+    window.JUMELAGE_EQUIPE_RELANCER = function(ref, libelle) { return appelApi('equipe/relance', { methode: 'POST', corps: { ref: ref, libelle: libelle || '' } }).then(function(r) { return r.n; }); };
     window.JUMELAGE_RAPPEL_DEPART = function(liste) {
         if (!monCompte() || !liste || !liste.length) return Promise.resolve();
         return appelApi('rappel', { methode: 'POST', corps: { rappels: liste } }).catch(function() {});
