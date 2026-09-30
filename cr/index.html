@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=115"></script>
+<script src="../jumelage.js?v=116"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -4576,6 +4576,16 @@ body.dark-mode .days-stack .DAY-BOX.day-experience {
 body.dark-mode .day-intercalaire:not(.day-tab-active) { background: linear-gradient(180deg, #8a8a8a 0%, #3a3a3a 100%); }
 body.dark-mode .day-intercalaire.day-tab-experience:not(.day-tab-active) { background: linear-gradient(180deg, #f59e0b 0%, #b45309 100%); color: #1c1917; }
 body.dark-mode .SPEC-ZONE { background: rgba(122, 157, 181, 0.08); border-color: rgba(122, 157, 181, 0.2); }
+/* Mode sombre : textes restés à la couleur « encre » (#1a1a1a) sur fond sombre. */
+html body.dark-mode #P2 h2, html body.dark-mode .MER-DOSSIER-TXT b, html body.dark-mode .MER-DOSSIER-TETE b,
+html body.dark-mode .FST-CAT, html body.dark-mode .FST-VAL:not(.fst-green):not(.fst-red), html body.dark-mode .FST-COUNT, html body.dark-mode .FST-MNT,
+html body.dark-mode .FRAIS-TC-CHECK label, html body.dark-mode #FRAIS-RECAP-FORFAIT span, html body.dark-mode #BIB-DETAIL-FORFAIT span,
+html body.dark-mode .P3-OBS-FOLD summary, html body.dark-mode .cr-preview-total span { color: #ececec; }
+html body.dark-mode .STEP-NODE small { color: #8fa3b3; }
+html body.dark-mode .STEP-NODE.done small, html body.dark-mode .STEP-NODE.active small { color: #a9c3d6; }
+html body.dark-mode .notice-fold div[style*="#92400e"] { color: #f0a35e !important; }
+html body.dark-mode .notice-fold div[style*="#475569"] { color: #cbd5e1 !important; }
+html body.dark-mode .notice-fold div[style*="#a16207"] { color: #facc15 !important; }
 body.dark-mode .STEP-RAIL { background: rgba(122, 157, 181, 0.06); border-color: rgba(122, 157, 181, 0.15); }
 body.dark-mode .STEP-NODE em { background: #3a3a3a; color: #8a8a8a; }
 body.dark-mode .STEP-LINE { background: #3a3a3a; }
@@ -11294,10 +11304,6 @@ function OUVRIR_PARAMETRES() {
     try { RENDER_P0_COLOR_SWATCHES(); } catch (e) { console.error('Erreur RENDER_P0_COLOR_SWATCHES:', e); }
     try { RENDER_ALERTES_PAGE(); } catch (e) { console.error('Erreur RENDER_ALERTES_PAGE:', e); }
     try {
-        var introEl = document.getElementById('PARAMS-INTRO-TXT');
-        if (introEl) {
-            introEl.innerHTML = 'Votre espace personnel — dépliez une section pour la régler. Rien à toucher si les valeurs par défaut vous conviennent.';
-        }
         var abtEnEl = document.getElementById('PARAM-ABT-ENABLED');
         var abtLblEl = document.getElementById('PARAM-ABT-LABEL');
         if (abtEnEl) abtEnEl.checked = ABT_ENABLED;
@@ -11361,8 +11367,6 @@ function SAVE_PARAMETRES_NOW() {
         FERMER_PARAMETRES();
         setTimeout(function() {
             AFFICHER_WELCOME_TOAST('Votre espace est à jour.\nBonne mission !');
-            var introEl = document.getElementById('PARAMS-INTRO-TXT');
-            if (introEl) introEl.innerHTML = 'Votre espace personnel — dépliez une section pour la régler. Rien à toucher si les valeurs par défaut vous conviennent.';
         }, 150);
     }
 }
@@ -11432,7 +11436,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 212;
+var APP_CODE_VERSION = 213;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
