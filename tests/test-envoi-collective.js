@@ -7,7 +7,7 @@ module.exports = async function() {
     const URL = process.env.TRIGONE_URL_BOITE;
     if (!URL) { console.log('  (sauté : définissez TRIGONE_URL_BOITE)'); return; }
     const b = await navigateur(), erreurs = [], suffixe = Date.now().toString(36);
-    const MAILS = { CHEF: 'chefmission.' + suffixe + '@interieur.gouv.fr', PAX: 'participant.' + suffixe + '@interieur.gouv.fr' };
+    const MAILS = { CHEF: 'chefmission.' + suffixe + '@interieur.gouv.fr', PAX: 'participant.' + suffixe + '@interieur.gouv.fr', PAX2: 'participant2.' + suffixe + '@interieur.gouv.fr', C: 'chorus.' + suffixe + '@interieur.gouv.fr' };
     async function appareil(nom) {
         const ctx = await b.newContext({ viewport: { width: 480, height: 1000 } }), p = await ctx.newPage();
         p.on('pageerror', e => erreurs.push(nom + ' : ' + e.message)); p.on('dialog', d => d.accept());
@@ -55,6 +55,29 @@ module.exports = async function() {
         'participant : compte-rendu prérempli (mission, trajets, chef en copie)');
     verifier(await pax.evaluate(() => ['GRADE-USER-PAX', 'NOM-USER-PAX', 'PRENOM-USER-PAX', 'NID-USER-PAX', 'CIE-INPUT-PAX'].map(i => document.getElementById(i).value).join('|') === 'CPL|LEROY|Emma|06 798 765 43|' + M.CIE && M.CIE === '2CIE'),
         'participant : son identité (grade, nom, prénom, NID, compagnie) préremplie depuis la mise en route');
+    // Suivi de l'équipe : le participant envoie son compte-rendu (avec la référence de la mission) → le chef le voit ;
+    // un 2e participant ne l'a pas fait → « Relancer » lui envoie un rappel (une fois par 12 h).
+    const ref = await chef.evaluate(() => M.EQUIPE_REF);
+    verifier(/^eq/.test(ref) && await pax.evaluate(r => M.EQUIPE_REF === r, ref), 'la référence de la mission collective arrive chez le participant');
+    const codeChorus = process.env.TRIGONE_CODE_CHORUS;
+    if (codeChorus) {
+        const c = await appareil('C'), pax2 = await appareil('PAX2');
+        await c.evaluate(() => JUMELAGE_REGLAGES({ vue: 'roles' })); await attendre(500);
+        await c.check('#JUM-R-CHORUS'); await c.fill('#JUM-R-CODECHORUS', codeChorus); await c.click('.JUM-R-PRINCIPAL'); await attendre(3000);
+        await chef.evaluate(([m, r]) => JUMELAGE_ENVOYER_DIRECT(m, 'COLLECTIVE', 'Mission collective.json', JSON.stringify({ app: 'TRIGONE-COLLECTIVE', chef: 'ADJ TEST Chef', libelle: 'FORMATION SSIAP' }), { equipe: r }), [MAILS.PAX2, ref]);
+        await pax.evaluate(([m, r]) => JUMELAGE_ENVOYER_DIRECT(m, 'CR', 'CR.pdf', JSON.stringify({ app: 'TRIGONE-CR', missionnaire: 'CPL LEROY Emma', libelle: 'FORMATION SSIAP', fichiers: [] }), { equipe: M.EQUIPE_REF }), [MAILS.C, ref]);
+        await attendre(1500);
+        const eq = await chef.evaluate(r => JUMELAGE_EQUIPE(r), ref);
+        const e1 = eq.find(x => x.mail === MAILS.PAX), e2 = eq.find(x => x.mail === MAILS.PAX2);
+        verifier(eq.length === 2 && e1 && e1.envoye > 0 && e2 && !e2.envoye, 'chef : LEROY a envoyé son compte-rendu, le 2e participant pas encore');
+        await chef.evaluate(() => { document.querySelectorAll('#MSG-OVERLAY').forEach(e => e.classList.add('HIDDEN')); OUVRIR_SUIVI_EQUIPE(); }); await attendre(1500);
+        const vue = await chef.evaluate(() => document.getElementById('EQUIPE-LISTE').innerText + '|' + document.getElementById('BTN-EQUIPE-RELANCER').textContent);
+        verifier(/CPL LEROY Emma/.test(vue) && /Envoyé le/.test(vue) && /Pas encore envoyé/.test(vue) && /Relancer les retardataires \(1\)/.test(vue), 'chef : « Suivi de l\'équipe » (✅ envoyé / ⏳ pas encore, Relancer (1))');
+        const n1 = await chef.evaluate(r => JUMELAGE_EQUIPE_RELANCER(r, 'FORMATION SSIAP'), ref), n2 = await chef.evaluate(r => JUMELAGE_EQUIPE_RELANCER(r, 'FORMATION SSIAP'), ref);
+        verifier(n1 === 1 && n2 === 0, 'relance : le retardataire est relancé, pas deux fois de suite (12 h)');
+        const autre = await pax.evaluate(r => JUMELAGE_EQUIPE(r).then(l => l.length), ref);
+        verifier(autre === 0, 'le suivi de l\'équipe n\'est visible que du chef de mission');
+    }
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();
 };

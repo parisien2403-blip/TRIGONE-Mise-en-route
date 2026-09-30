@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=109"></script>
+<script src="../jumelage.js?v=110"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -2153,6 +2153,12 @@ body.dark-mode .MONTRE-ILLUS figcaption { color: #a3a3a3; }
 .PAX-ETAT.ok { color: #15803d; font-weight: 700; }
 .PAX-ETAT.ko { color: #b91c1c; font-weight: 700; }
 .PAX-ENVOI .BTN { width: 100%; margin-top: 8px; }
+.EQUIPE-LISTE { margin: 12px 0 8px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+.EQUIPE-LIGNE { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1.5px solid var(--tg-border); border-left-width: 4px; border-radius: 12px; font-size: 0.84rem; }
+.EQUIPE-LIGNE small { color: var(--tg-muted); font-size: 0.72rem; } .EQUIPE-LIGNE span { font-weight: 700; font-size: 0.78rem; }
+.EQUIPE-LIGNE.ok { border-left-color: #15803d; } .EQUIPE-LIGNE.ok span { color: #15803d; }
+.EQUIPE-LIGNE.attente { border-left-color: #b45309; } .EQUIPE-LIGNE.attente span { color: #b45309; }
+body.dark-mode .EQUIPE-LIGNE { border-color: #404040; } body.dark-mode .EQUIPE-LIGNE.ok span { color: #4ade80; } body.dark-mode .EQUIPE-LIGNE.attente span { color: #fbbf24; }
 .QR-OVERLAY-CARD {
   position: relative;
   width: 100%;
@@ -5208,6 +5214,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <div id="BIB-RECAP" class="BIB-RECAP-BOX RECAP-BOX"></div>
 <button type="button" id="BIB-BTN-REDOWNLOAD" class="BTN BTN-QR" style="margin-top:12px;" onclick="RETELECHARGER_PDF_BIBLIOTHEQUE(BIB_UI.selectedIdx)">⬇️ Retélécharger le PDF de ce compte-rendu</button>
 <button type="button" id="BIB-BTN-RESHARE-QR" class="BTN BTN-QR HIDDEN" style="margin-top:8px;" onclick="RENVOYER_PAX_BIBLIOTHEQUE(BIB_UI.selectedIdx)">📨 Renvoyer aux participants</button>
+<button type="button" id="BIB-BTN-EQUIPE" class="BTN BTN-CONTINUE HIDDEN" style="margin-top:8px;" onclick="SUIVI_EQUIPE_BIBLIOTHEQUE(BIB_UI.selectedIdx)">👥 Suivi de l'équipe</button>
 </div>
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
@@ -5904,6 +5911,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </details>
 <div id="COLL-ZONE" class="HIDDEN">
 <button type="button" id="BTN-ENVOI-PAX" class="BTN BTN-START" onclick="OUVRIR_ENVOI_PAX()">📨 ENVOYER AUX PARTICIPANTS DANS TRIGONE</button>
+<button type="button" id="BTN-SUIVI-EQUIPE" class="BTN BTN-CONTINUE HIDDEN" style="margin-top:8px;" onclick="OUVRIR_SUIVI_EQUIPE()">👥 Suivi de l'équipe : qui a envoyé son compte-rendu</button>
 </div>
 <div class="finalize-panel">
 <p class="panel-label">Finalisation du compte-rendu</p>
@@ -8510,6 +8518,8 @@ function OUVRIR_BIB_RECAP(idx) {
     if (redlBtn) redlBtn.classList.toggle('HIDDEN', !!item.preview);
     var reshareBtn = document.getElementById('BIB-BTN-RESHARE-QR');
     if (reshareBtn) reshareBtn.classList.toggle('HIDDEN', !entry.snapshot || !!item.preview || !(entry.role === 'CHEF' || entry.snapshot.COLLECTIVE === true));
+    var equipeBtn = document.getElementById('BIB-BTN-EQUIPE');
+    if (equipeBtn) equipeBtn.classList.toggle('HIDDEN', !entry.snapshot || !!item.preview || !entry.snapshot.EQUIPE_REF || entry.snapshot.IS_PAX);
     BIB_AFFICHER_DETAIL();
 }
 
@@ -9269,6 +9279,7 @@ function APPLY_QR_DATA(data) {
     if (gradePaxEl) gradePaxEl.value = GET_SAVED_GRADE();
     if (nidPaxEl) { nidPaxEl.value = GET_SAVED_NID(); FORMAT_NID_INPUT(nidPaxEl); }
     // Envoi du chef dans TRIGONE : l'identité du participant, reprise de la mise en route, est préremplie.
+    M.EQUIPE_REF = data.EQUIPE || '';
     var px = data.PAX && typeof data.PAX === 'object' ? data.PAX : null;
     if (px) {
         var mettre = function(id, v) { var el = document.getElementById(id); if (el && v) el.value = String(v).slice(0, 80); };
@@ -11245,7 +11256,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 206;
+var APP_CODE_VERSION = 207;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12206,6 +12217,8 @@ function QR_DONNEES(pax, src) {
     if (src) M = src;
     try { o = GET_QR_MISSION_PAYLOAD(); } finally { M = sauve; }
     if (pax) o.PAX = { grade: pax.grade || '', nom: pax.nom || '', prenom: pax.prenom || '', nid: pax.nid || '', cie: pax.cie || '' };
+    // Référence de la mission collective : le compte-rendu du participant la renvoie, le chef suit qui l'a envoyé.
+    if ((src || M).EQUIPE_REF) o.EQUIPE = (src || M).EQUIPE_REF;
     return btoa(unescape(encodeURIComponent(JSON.stringify(COMPACT_QR_PAYLOAD(o)))));
 }
 
@@ -12274,6 +12287,7 @@ function ENVOYER_PAX_TRIGONE() {
         return JSON.stringify({ app: 'TRIGONE-COLLECTIVE', chef: [S.GRADE, S.USER].filter(Boolean).join(' '), libelle: S.LIBELLE_MISSION || '',
             dates: [d0, d1].filter(Boolean).join(' → '), donnees: QR_DONNEES(p, ENVOI_PAX_SRC) });
     };
+    if (!S.EQUIPE_REF) S.EQUIPE_REF = 'eq' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
     var btn = document.getElementById('BTN-PAX-ENVOYER'); btn.disabled = true; btn.textContent = 'Envoi en cours…';
     var ok = 0;
     S.PAX_ENVOIS = S.PAX_ENVOIS || {};
@@ -12281,7 +12295,7 @@ function ENVOYER_PAX_TRIGONE() {
         return suite.then(function() {
             var s = x.el.querySelector('.PAX-ETAT'); s.className = 'PAX-ETAT'; s.textContent = 'Envoi…';
             var p = (S.PARTICIPANTS || [])[+x.el.getAttribute('data-i')];
-            return JUMELAGE_ENVOYER_DIRECT(x.mail, 'COLLECTIVE', 'Mission collective.json', contenu(p)).then(function() {
+            return JUMELAGE_ENVOYER_DIRECT(x.mail, 'COLLECTIVE', 'Mission collective.json', contenu(p), { equipe: S.EQUIPE_REF }).then(function() {
                 ok++; S.PAX_ENVOIS[x.mail] = new Date().toLocaleDateString('fr-FR');
                 s.className = 'PAX-ETAT ok'; s.textContent = '✔ Envoyé : il reçoit une notification.';
             }).catch(function(e) {
@@ -12291,6 +12305,7 @@ function ENVOYER_PAX_TRIGONE() {
         });
     }, Promise.resolve()).then(function() {
         SAVE_STATE();
+        MAJ_BOUTON_SUIVI_EQUIPE();
         btn.disabled = false; btn.textContent = '📨 Envoyer';
         if (ok === a.length) setTimeout(function() {
             FERMER_ENVOI_PAX();
@@ -12301,6 +12316,64 @@ function ENVOYER_PAX_TRIGONE() {
 
 
 
+
+// ===================== SUIVI DE L'ÉQUIPE (chef de mission collective) =====================
+// Qui a envoyé son compte-rendu (serveur : table equipe, rien du contenu) ; « Relancer » les retardataires (au plus
+// toutes les 12 h). Ouvert depuis la page d'envoi, la Bibliothèque, ou la notification « X a envoyé son compte-rendu ».
+function MAJ_BOUTON_SUIVI_EQUIPE() {
+    var b = document.getElementById('BTN-SUIVI-EQUIPE');
+    if (b) b.classList.toggle('HIDDEN', !(M.COLLECTIVE && !M.IS_PAX && M.EQUIPE_REF));
+}
+function SUIVI_EQUIPE_BIBLIOTHEQUE(idx) {
+    var item = GET_BIBLIOTHEQUE_DISPLAY_LIST()[idx];
+    if (item && item.entry && item.entry.snapshot) OUVRIR_SUIVI_EQUIPE(item.entry.snapshot);
+}
+function TROUVER_MISSION_EQUIPE(ref) {
+    if (M.EQUIPE_REF === ref) return M;
+    var e = GET_BIBLIOTHEQUE().filter(function(x) { return x.snapshot && x.snapshot.EQUIPE_REF === ref; })[0];
+    return e ? e.snapshot : { EQUIPE_REF: ref, PARTICIPANTS: [] };
+}
+function OUVRIR_SUIVI_EQUIPE(S) {
+    S = S || M;
+    var ref = S.EQUIPE_REF;
+    if (!ref || !window.JUMELAGE_EQUIPE) return;
+    var o = document.getElementById('EQUIPE-OVERLAY');
+    if (!o) {
+        o = document.createElement('div'); o.id = 'EQUIPE-OVERLAY'; o.className = 'QR-OVERLAY';
+        o.innerHTML = '<div class="QR-OVERLAY-CARD QR-CARD PAX-ENVOI"><button type="button" class="QR-OVERLAY-CLOSE" onclick="document.getElementById(\'EQUIPE-OVERLAY\').remove()" title="Fermer">✕</button>' +
+            '<p class="QR-CARD-TITLE">Suivi de l\'équipe</p><p class="QR-CARD-SUB" id="EQUIPE-SOUS"></p><div id="EQUIPE-LISTE" class="EQUIPE-LISTE"></div>' +
+            '<button type="button" id="BTN-EQUIPE-RELANCER" class="BTN BTN-START HIDDEN">🔔 Relancer les retardataires</button></div>';
+        document.body.appendChild(o);
+    }
+    var liste = document.getElementById('EQUIPE-LISTE'), btn = document.getElementById('BTN-EQUIPE-RELANCER');
+    document.getElementById('EQUIPE-SOUS').textContent = (S.LIBELLE_MISSION || 'Mission collective') + ' : qui a envoyé son compte-rendu à ' + ASSIST_CHORUS_LABEL + '.';
+    liste.innerHTML = '<p class="QR-HINT">Chargement…</p>';
+    var jour = function(ms) { var d = new Date(ms); return d.toLocaleDateString('fr-FR') + ' à ' + ('0' + d.getHours()).slice(-2) + 'h' + ('0' + d.getMinutes()).slice(-2); };
+    var charger = function() {
+        return JUMELAGE_EQUIPE(ref).then(function(rows) {
+            var parMail = {}; rows.forEach(function(r) { parMail[r.mail] = r; });
+            var noms = {}; (S.PARTICIPANTS || []).forEach(function(p) { if (p.mail) noms[p.mail.toLowerCase()] = [p.grade, (p.nom || '').toUpperCase(), p.prenom].filter(Boolean).join(' '); });
+            var mails = Object.keys(parMail).concat(Object.keys(noms).filter(function(m) { return !parMail[m]; }));
+            var enAttente = rows.filter(function(r) { return !r.envoye; }).length, fait = rows.length - enAttente;
+            liste.innerHTML = (mails.length ? mails.map(function(m) {
+                var r = parMail[m], etat = !r ? ['', 'Pas encore reçu : envoyez-lui son compte-rendu'] : r.envoye ? ['ok', '✅ Envoyé le ' + jour(r.envoye)]
+                    : ['attente', '⏳ Pas encore envoyé' + (r.relance ? ' · relancé le ' + jour(r.relance) : '')];
+                return '<div class="EQUIPE-LIGNE ' + etat[0] + '"><b>' + ESC_HTML(noms[m] || m) + '</b><small>' + ESC_HTML(noms[m] ? m : '') + '</small><span>' + etat[1] + '</span></div>';
+            }).join('') : '<p class="QR-HINT">Aucun participant : envoyez d\'abord le compte-rendu aux participants.</p>') +
+                (rows.length ? '<p class="QR-HINT">' + fait + ' sur ' + rows.length + ' envoyé' + (fait > 1 ? 's' : '') + '.' + (enAttente ? '' : ' Toute l\'équipe a envoyé le sien ✅') + '</p>' : '');
+            btn.classList.toggle('HIDDEN', !enAttente);
+            btn.disabled = false; btn.textContent = '🔔 Relancer les retardataires (' + enAttente + ')';
+        }).catch(function(e) { liste.innerHTML = '<p class="QR-HINT">Suivi indisponible : ' + ESC_HTML(e.message || String(e)) + '</p>'; });
+    };
+    btn.onclick = function() {
+        btn.disabled = true;
+        JUMELAGE_EQUIPE_RELANCER(ref, S.LIBELLE_MISSION || '').then(function(n) {
+            MSG_INFO(n ? 'Relance envoyée' : 'Déjà relancés', n ? n + ' participant' + (n > 1 ? 's ont' : ' a') + ' reçu une notification de rappel.' : 'Les retardataires ont déjà été relancés il y a moins de 12 h.', n ? '🔔' : 'ℹ️');
+            return charger();
+        }).catch(function(e) { btn.disabled = false; MSG_INFO('Relance impossible', e.message || String(e), '⛔'); });
+    };
+    charger();
+}
 
 function HIDE_ALL_PAGES() {
     ['P0','P-MENU','P-CHAIN','P1','P2','P2-FIN','P3','P3-SIG','P-BIB','P-STAT','P-STATS','P-SIMU','P-NOTICE','P-PAX'].forEach(function(id) { document.getElementById(id).classList.add('HIDDEN'); });
@@ -12374,6 +12447,7 @@ function BUILD_RECAP() {
     UPDATE_EXP_SAISIE_UI();
     if(M.COLLECTIVE) document.getElementById('COLL-ZONE').classList.remove('HIDDEN');
     else document.getElementById('COLL-ZONE').classList.add('HIDDEN');
+    MAJ_BOUTON_SUIVI_EQUIPE();
     if([...new Set(BESOIN)].length > 0) { document.getElementById('PJ-ZONE').classList.remove('HIDDEN'); document.getElementById('PJ-LIST').innerText = [...new Set(BESOIN)].join(" / "); }
     else { document.getElementById('PJ-ZONE').classList.add('HIDDEN'); }
     UPDATE_PJ_RAPPELS(BESOIN);
@@ -12906,7 +12980,11 @@ function FINALISER_DEMARRAGE() {
         if (NOTIF_RAPPELS_ACTIVES()) CHECK_CR_5DAY_REMINDERS(true);
     });
     var _aUnDeclenchementMontre = (window.location.search || '').indexOf('montre=') !== -1;
-    if (urlParams.get('espace') === 'mission') {
+    if (urlParams.get('espace') === 'equipe' && urlParams.get('ref')) {
+        var refEquipe = urlParams.get('ref');
+        STRIP_QR_FROM_URL();
+        setTimeout(function() { OUVRIR_SUIVI_EQUIPE(TROUVER_MISSION_EQUIPE(refEquipe)); }, 900);
+    } else if (urlParams.get('espace') === 'mission') {
         // Raccourci « Ma mission » (appui long sur l'icône) : mission en cours reprise telle quelle, sinon on la démarre.
         STRIP_QR_FROM_URL();
         if (!M.DEBUT && !M.ARR_SITE && !M.IS_PAX) setTimeout(ENTRER, 400);
@@ -13392,6 +13470,7 @@ function PRENDRE_MISE_EN_ROUTE(d, jourJ) {
     APPLIQUER_MISE_EN_ROUTE(d, jourJ);
 }
 function APPLIQUER_MISE_EN_ROUTE(d, jourJ) {
+    M.EQUIPE_REF = '';   // nouvelle mission : nouvelle équipe
     // La personne concernée : celle dont le nom est l'identité enregistrée, sinon la première de la demande.
     var id = IDENTITE_MISE_EN_ROUTE(), moi = (id.nom || '').trim().toUpperCase();
     var pers = (d.personnes || []).filter(function(p) { return moi && (p.nom || '').trim().toUpperCase() === moi; })[0] || (d.personnes || [])[0] || {};
@@ -13488,6 +13567,7 @@ function ENTRER() {
     M.COLLECTIVE = false;
     M.PARTICIPANTS = [];
     M.MER_HORAIRES = null;
+    M.EQUIPE_REF = '';
     var cb = document.getElementById('IS-COLLECTIVE');
     if (cb) {
         cb.checked = false;
@@ -14959,6 +15039,7 @@ function FIN_BUILD_RECAP() {
     document.getElementById('LIMITE').innerText = LIM.toLocaleDateString('FR-FR');
     if(M.COLLECTIVE) document.getElementById('COLL-ZONE').classList.remove('HIDDEN');
     else document.getElementById('COLL-ZONE').classList.add('HIDDEN');
+    MAJ_BOUTON_SUIVI_EQUIPE();
     if([...new Set(BESOIN)].length > 0) { document.getElementById('PJ-ZONE').classList.remove('HIDDEN'); document.getElementById('PJ-LIST').innerText = [...new Set(BESOIN)].join(" / "); }
     else { document.getElementById('PJ-ZONE').classList.add('HIDDEN'); }
     UPDATE_PJ_RAPPELS(BESOIN);
@@ -15768,6 +15849,7 @@ function ENVOYER_MAIL() {
         corps: corps,
         pieces: pieces,
         pdf: function() { return GENERER_PDF(0, true, 'blob'); },
+        equipe: M.IS_PAX && M.EQUIPE_REF ? M.EQUIPE_REF : null,
         // Sans réseau : le compte-rendu part tout seul au retour du réseau ; la mission archivée reçoit alors l'identifiant de l'envoi.
         meta: { maj: [{ cle: BIBLIOTHEQUE_KEY, cherche: { debut: M.DEBUT, user: M.USER || '' }, pose: { envoiId: '$id', envoyeLe: '$maintenant' }, retire: ['attente'] }] },
         succes: function(r) {

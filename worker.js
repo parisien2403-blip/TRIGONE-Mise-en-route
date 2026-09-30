@@ -68,7 +68,10 @@ async function baseBoite(env) {
             // Erreurs techniques remontées par les applis, anonymes (ni nom, ni mail, ni donnée de mission) et
             // regroupées par signature ; appareils comptés par un identifiant au hasard. Effacées après 30 jours.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS erreur (sig TEXT PRIMARY KEY, app TEXT, ecran TEXT, msg TEXT, src TEXT, pile TEXT, v INTEGER, ua TEXT, n INTEGER, premier INTEGER, dernier INTEGER)'),
-            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS erreur_appareil (sig TEXT NOT NULL, appareil TEXT NOT NULL, PRIMARY KEY (sig, appareil))')
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS erreur_appareil (sig TEXT NOT NULL, appareil TEXT NOT NULL, PRIMARY KEY (sig, appareil))'),
+            // Missions collectives : quels participants ont envoyé leur compte-rendu (référence de la mission, adresses,
+            // date d'envoi ; rien du contenu). Visible du seul chef de mission ; effacé après 90 jours.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS equipe (ref TEXT NOT NULL, mail TEXT NOT NULL, chef TEXT NOT NULL, recu INTEGER, envoye INTEGER, relance INTEGER, PRIMARY KEY (ref, mail))')
         ]);
         TABLES_PRETES = true;
     }
@@ -341,6 +344,24 @@ async function envoyerRappels(env, origine, maintenant) {
         texte: 'Touchez pour démarrer votre compte-rendu : la mission est déjà remplie depuis votre mise en route.',
         url: '/cr/?depart=' + encodeURIComponent(x.ref) }, origine).catch(() => {})));
     return aEnvoyer.length;
+}
+// Missions collectives : le chef envoie le compte-rendu prérempli (COLLECTIVE) → le participant entre dans l'équipe ;
+// le participant envoie son compte-rendu (CR) avec la même référence → noté envoyé, et le chef est prévenu.
+async function suiviEquipe(env, moi, type, dest, ref, qui, origine) {
+    if (!ref) return;
+    const db = await baseBoite(env), le = Date.now();
+    if (type === 'COLLECTIVE') {
+        await db.prepare('INSERT INTO equipe (ref, mail, chef, recu, envoye, relance) VALUES (?, ?, ?, ?, NULL, NULL) ON CONFLICT (ref, mail) DO UPDATE SET recu = excluded.recu WHERE equipe.chef = excluded.chef')
+            .bind(ref, dest, moi.mail, le).run();
+        return;
+    }
+    if (type !== 'CR') return;
+    const l = await db.prepare('SELECT chef FROM equipe WHERE ref = ? AND mail = ?').bind(ref, moi.mail).first();
+    if (!l) return;
+    await db.prepare('UPDATE equipe SET envoye = ? WHERE ref = ? AND mail = ?').bind(le, ref, moi.mail).run();
+    const reste = (await db.prepare('SELECT COUNT(*) AS n FROM equipe WHERE ref = ? AND envoye IS NULL').bind(ref).first() || {}).n || 0;
+    await notifierCompte(env, l.chef, { titre: 'Mission collective', type: 'SUIVI', url: '/cr/?espace=equipe&ref=' + encodeURIComponent(ref),
+        texte: (qui || moi.mail) + ' a envoyé son compte-rendu. ' + (reste ? reste + ' participant' + (reste > 1 ? 's' : '') + ' ne l\'' + (reste > 1 ? 'ont' : 'a') + ' pas encore fait.' : 'Toute l\'équipe a envoyé le sien ✅') }, origine);
 }
 // Erreurs : purge (30 jours, 1 000 signatures au plus).
 async function purgerErreurs(env, maintenant) {
@@ -629,6 +650,26 @@ async function api(requete, env, url, ctx) {
         await kv.delete('sauvegarde:' + moi.mail);
         return json({ ok: true });
     }
+    // Suivi de l'équipe (chef de mission collective) : qui a envoyé son compte-rendu ; relance des retardataires.
+    if (chemin === 'equipe' && methode === 'GET') {
+        const ref = nettoyerRefs([url.searchParams.get('ref')])[0];
+        if (!ref) return erreur(400, 'Référence manquante.');
+        const db = await baseBoite(env);
+        await db.prepare('DELETE FROM equipe WHERE recu < ?').bind(Date.now() - 90 * JOUR * 1000).run();
+        const r = (await db.prepare('SELECT mail, recu, envoye, relance FROM equipe WHERE ref = ? AND chef = ?').bind(ref, moi.mail).all()).results || [];
+        return json({ ok: true, equipe: r });
+    }
+    if (chemin === 'equipe/relance' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({}));
+        const ref = nettoyerRefs([c.ref])[0], libelle = String(c.libelle || '').slice(0, 80), maintenant = Date.now();
+        if (!ref) return erreur(400, 'Référence manquante.');
+        const db = await baseBoite(env);
+        const r = (await db.prepare('SELECT mail FROM equipe WHERE ref = ? AND chef = ? AND envoye IS NULL AND (relance IS NULL OR relance < ?)').bind(ref, moi.mail, maintenant - 12 * 3600 * 1000).all()).results || [];
+        await Promise.all(r.map(x => notifierCompte(env, x.mail, { titre: 'Rappel de votre chef de mission', type: 'RELANCE', url: '/?espace=boite',
+            texte: 'Votre compte-rendu' + (libelle ? ' « ' + libelle + ' »' : ' de mission collective') + ' n\'est pas encore envoyé : ouvrez-le (Boîte de réception), joignez vos justificatifs et envoyez-le.' }, url.origin).catch(() => {})));
+        if (r.length) await db.batch(r.map(x => db.prepare('UPDATE equipe SET relance = ? WHERE ref = ? AND mail = ?').bind(maintenant, ref, x.mail)));
+        return json({ ok: true, n: r.length });
+    }
     // Page « Erreurs de l'appli » : réservée à l'administrateur (ADMIN_MAILS).
     if (chemin === 'admin' && methode === 'GET') return json({ ok: true, admin: estAdmin(env, moi.mail) });
     if (chemin === 'erreurs' && methode === 'GET') {
@@ -746,6 +787,7 @@ async function api(requete, env, url, ctx) {
         const prevenir = Promise.all([
             notifier(env, dest, compte, enveloppes.map(e => e.appareil), type, moi.mail, url.origin, nombre).catch(() => {}),
             suiviEnvoi(env, moi, type, dest, id, nettoyerRefs(corps.refs), String(corps.qui || '').slice(0, 80), url.origin).catch(() => {}),
+            suiviEquipe(env, moi, type, dest, nettoyerRefs([corps.equipe])[0], String(corps.qui || '').slice(0, 80), url.origin).catch(() => {}),
             origineConnue(env, url.origin).catch(() => {})
         ]);
         if (ctx && ctx.waitUntil) ctx.waitUntil(prevenir); else await prevenir;
