@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=102"></script>
+<script src="jumelage.js?v=103"></script>
 <meta name="theme-color" content="#E8F0F6">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -594,6 +594,25 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
   .MER-P0-ESPACE { display: none; }
   .P0-TAB-BAR { margin-top: 16px; }
 }
+/* Écran peu haut (téléphone pliant ouvert, petit téléphone) : boutons et onglets compacts pour laisser au logo
+   une vraie taille, la même que dans Compte-rendu (--logo-accueil, commune aux deux applis). */
+@media (orientation: portrait) and (max-height: 760px) {
+  #MER-P0 { --logo-accueil: clamp(130px, calc(var(--vh-reel, 100vh) * 0.27), 220px); }
+  .MER-P0-SHELL { gap: 6px; padding-top: 14px; }
+  .MER-P0-INNER { flex: 1 0 auto; padding-top: 34px; padding-bottom: 6px; }
+  .MER-LOGO-WRAP { max-height: none; }
+  .MER-LOGO-IMG { width: auto; height: var(--logo-accueil); max-height: none; }
+  .MER-P0-HERO { gap: 6px; }
+  .MER-P0-HERO .JUM-BONJOUR { margin: 0 0 2px; }
+  .BTN-ACCUEIL { padding: 15px 16px; margin-bottom: 2px; }
+  .BTN-ACCUEIL-PETIT { padding: 10px 16px; margin-bottom: 2px; }
+  .P0-LIEN { padding: 6px 20px; }
+  .MER-P0-ESPACE { display: none; }
+  #MER-P0 .app-credit { margin: 0 0 2px; }
+  .P0-DOCK-INNER { padding-top: 8px; }
+  .P0-TAB { flex-direction: row; min-height: 44px; padding: 6px 8px; gap: 8px; }
+  .P0-TAB-ICON { width: 26px; height: 26px; }
+}
 @media (max-width: 400px) {
   /* 5 onglets : deux rangées (3 + 2) pour garder les libellés entiers */
   .MER-TABS { flex-wrap: wrap; }
@@ -910,6 +929,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=102"></script>
+<script src="app.js?v=103"></script>
 </body>
 </html>
