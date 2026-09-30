@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 157;
+var APP_CODE_VERSION = 158;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3517,6 +3517,7 @@ function TPL_ENVOI_RECU(x) {
         '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
         (x.nature === 'collective' ? '<div class="MER-HINT" style="margin-top:4px;">Mission déjà renseignée par votre chef de mission : complétez votre identité, joignez vos justificatifs, puis envoyez à l\'assistant Chorus DT.</div>' : '') +
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
+        (x.nature === 'cr' && x.equipe ? '<div class="MER-HINT" style="margin-top:4px;">👥 Mission collective (' + (x.roleEquipe === 'participant' ? 'participant' : 'chef de mission') + ') : suivi de l\'équipe dans le détail</div>' : '') +
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
         // Demande traitée par ce valideur : la suite de son circuit (VALIDEUR 2, assistant Chorus DT).
         (traite && x.nature !== 'cr' && x.nature !== 'refus' && x.nature !== 'collective' ? (x.ids || []).map(function(id, i) { return TPL_SUIVI_DEMANDE(id, x.ids.length > 1 ? 'Demande ' + (i + 1) : ''); }).join('') : '') +
@@ -3695,11 +3696,37 @@ function OUVRIR_CR_RECU(id) {
                     '<div style="display:flex; gap:6px; flex-wrap:wrap; justify-content:flex-end;"><button type="button" class="BTN BTN-PRIMARY BTN-SMALL" style="width:auto; margin:0;" onclick="APERCU_FICHIER_CR(' + i + ')">👁 Aperçu</button>' +
                     '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin:0;" onclick="TELECHARGER_FICHIER_CR(' + i + ')">⬇ Télécharger</button></div></div>';
             }).join('') +
-            (cr.corps ? '<details class="MER-RECU-TRAITES" style="margin-top:10px;"><summary>Message du missionnaire</summary><pre style="white-space:pre-wrap; font:inherit; font-size:0.8em;">' + ESC(cr.corps) + '</pre></details>' : ''),
+            (cr.corps ? '<details class="MER-RECU-TRAITES" style="margin-top:10px;"><summary>Message du missionnaire</summary><pre style="white-space:pre-wrap; font:inherit; font-size:0.8em;">' + ESC(cr.corps) + '</pre></details>' : '') +
+            (cr.equipe ? '<div class="MER-SECTION-TITLE">Mission collective — ' + (cr.roleEquipe === 'participant' ? 'compte-rendu d\'un participant' : 'compte-rendu du chef de mission') + '</div><div id="MER-CR-EQUIPE" class="MER-HINT">Chargement du suivi des participants…</div>' : ''),
             '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Fermer</button>' +
             '<button type="button" class="BTN BTN-GHOST" onclick="TELECHARGER_FICHIER_CR(-1)">⬇ Tout</button>' +
             '<button type="button" class="BTN BTN-PRIMARY" onclick="TRAITER_CR_RECU()">✔ Traité</button>');
+        if (cr.equipe) MER_CR_EQUIPE(cr);
     }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
+}
+// Compte-rendu d'une mission collective (assistant Chorus DT) : chronologie de l'équipe — pour chaque participant,
+// compte-rendu reçu (date, déjà dans la boîte) ou encore attendu (transmis par le chef le…, relancé le…).
+function MER_CR_EQUIPE(cr) {
+    var zone = function() { return document.getElementById('MER-CR-EQUIPE'); };
+    var jour = function(ms) { var d = new Date(ms); return d.toLocaleDateString('fr-FR') + ' ' + ('0' + d.getHours()).slice(-2) + 'h' + ('0' + d.getMinutes()).slice(-2); };
+    JUMELAGE_EQUIPE(cr.equipe).then(function(rows) {
+        var z = zone(); if (!z) return;
+        var noms = {}; (cr.participants || []).forEach(function(p) { if (p.mail) noms[p.mail] = p.nom; });
+        // Noms connus par les comptes-rendus déjà reçus de la même équipe.
+        var boite = (JUMELAGE_BOITE_LISTE() || []).filter(function(x) { return x.nature === 'cr' && x.equipe === cr.equipe; });
+        boite.forEach(function(x) { if (x.de && !noms[x.de]) noms[x.de] = x.noms; });
+        if (!rows.length) { z.textContent = 'Suivi des participants indisponible pour cette mission.'; return; }
+        var recus = rows.filter(function(r) { return r.envoye; }).length;
+        z.innerHTML = '<p style="margin:0 0 8px;"><b>' + recus + ' sur ' + rows.length + '</b> compte' + (recus > 1 ? 's' : '') + '-rendu' + (recus > 1 ? 's' : '') + ' de participant reçu' + (recus > 1 ? 's' : '') +
+            (recus === rows.length ? ' : toute l\'équipe est là, la mission peut être traitée d\'un coup ✅' : ' : ' + (rows.length - recus) + ' encore attendu' + (rows.length - recus > 1 ? 's' : '') + '.') + '</p>' +
+            rows.sort(function(a, b) { return (b.envoye ? 1 : 0) - (a.envoye ? 1 : 0); }).map(function(r) {
+                var dansBoite = boite.some(function(x) { return x.de === r.mail; });
+                return '<div class="MER-EQUIPE-LIGNE ' + (r.envoye ? 'ok' : 'attente') + '"><b>' + ESC(noms[r.mail] || r.mail) + '</b>' +
+                    '<small>' + ESC(noms[r.mail] ? r.mail : '') + '</small>' +
+                    '<span>' + (r.envoye ? '✅ Compte-rendu reçu le ' + jour(r.envoye) + (dansBoite ? ' · dans votre boîte' : '')
+                        : '⏳ En attente — transmis par le chef le ' + jour(r.recu) + (r.relance ? ' · relancé le ' + jour(r.relance) : '')) + '</span></div>';
+            }).join('');
+    }).catch(function() { var z = zone(); if (z) z.textContent = 'Suivi des participants indisponible (pas de réseau ?).'; });
 }
 // Nom de fichier avec son extension (sinon le téléphone ne sait pas avec quoi l'ouvrir).
 function MER_NOM_AVEC_EXT(nom, type) {

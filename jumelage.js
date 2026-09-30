@@ -655,7 +655,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 110, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 111, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2066,6 +2066,7 @@
     window.JUMELAGE_ENVOYER_CR = function(o) {
         if (fenCr || !document.body) return;
         var compte = monCompte(), choisis = [];
+        o.roleEquipe = o.roleEquipe || ''; o.participants = o.participants || null;
         fenCr = document.createElement('div');
         fenCr.className = 'JUM-REGLAGES';
         fenCr.setAttribute('role', 'dialog');
@@ -2130,7 +2131,9 @@
                 return Promise.all([blobB64(pdf.blob)].concat(choisis.map(blobB64))).then(function(b64) {
                     var fichiers = [{ nom: pdf.nom, type: 'application/pdf', b64: b64[0] }].concat(choisis.map(function(x, i) { return { nom: x.name, type: x.type || 'application/octet-stream', b64: b64[i + 1] }; }));
                     var contenu = JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: o.missionnaire || '', libelle: o.libelle || '', dates: o.dates || '',
-                        corps: o.corps || '', de: compte.mail, envoyeLe: new Date().toISOString(), fichiers: fichiers });
+                        corps: o.corps || '', de: compte.mail, envoyeLe: new Date().toISOString(), fichiers: fichiers,
+                        // Mission collective : référence de l'équipe, rôle (chef / participant) et participants (nom, adresse).
+                        equipe: o.equipe || undefined, roleEquipe: o.roleEquipe || undefined, participants: o.participants || undefined });
                     return window.JUMELAGE_ENVOYER_DIRECT(o.destinataire, 'CR', pdf.nom, contenu, { differable: true, meta: o.meta || null, equipe: o.equipe || null,
                         libelle: 'Votre compte-rendu' + (o.libelle && o.libelle !== 'Compte-rendu de mission' ? ' « ' + o.libelle + ' »' : '') });
                 });
@@ -2292,7 +2295,7 @@
             if (d.app === 'TRIGONE-COLLECTIVE') return { nature: 'collective', n: 1, ids: [], noms: d.chef || '', objet: d.libelle || 'Mission collective',
                 dates: d.dates || '', lieu: '', donnees: String(d.donnees || '') };
             if (d.app === 'TRIGONE-CR') return { nature: 'cr', n: 1, ids: [], noms: d.missionnaire || '', objet: d.libelle || 'Compte-rendu de mission',
-                dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length };
+                dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length, equipe: d.equipe || '', roleEquipe: d.roleEquipe || '' };
             var ds = d.demandes || [], p0 = ((ds[0] || {}).personnes || [])[0] || {};
             var nature = ds.some(function(x) { return x.refus; }) ? 'refus'
                 : ds.length && ds.every(function(x) { return x.renvoi && !(x.validations || []).length; }) ? 'renvoi'

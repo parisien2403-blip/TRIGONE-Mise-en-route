@@ -65,7 +65,7 @@ module.exports = async function() {
         await c.evaluate(() => JUMELAGE_REGLAGES({ vue: 'roles' })); await attendre(500);
         await c.check('#JUM-R-CHORUS'); await c.fill('#JUM-R-CODECHORUS', codeChorus); await c.click('.JUM-R-PRINCIPAL'); await attendre(3000);
         await chef.evaluate(([m, r]) => JUMELAGE_ENVOYER_DIRECT(m, 'COLLECTIVE', 'Mission collective.json', JSON.stringify({ app: 'TRIGONE-COLLECTIVE', chef: 'ADJ TEST Chef', libelle: 'FORMATION SSIAP' }), { equipe: r }), [MAILS.PAX2, ref]);
-        await pax.evaluate(([m, r]) => JUMELAGE_ENVOYER_DIRECT(m, 'CR', 'CR.pdf', JSON.stringify({ app: 'TRIGONE-CR', missionnaire: 'CPL LEROY Emma', libelle: 'FORMATION SSIAP', fichiers: [] }), { equipe: M.EQUIPE_REF }), [MAILS.C, ref]);
+        await pax.evaluate(([m, r]) => JUMELAGE_ENVOYER_DIRECT(m, 'CR', 'CR.pdf', JSON.stringify({ app: 'TRIGONE-CR', missionnaire: 'CPL LEROY Emma', libelle: 'FORMATION SSIAP', fichiers: [], equipe: M.EQUIPE_REF, roleEquipe: 'participant' }), { equipe: M.EQUIPE_REF }), [MAILS.C, ref]);
         await attendre(1500);
         const eq = await chef.evaluate(r => JUMELAGE_EQUIPE(r), ref);
         const e1 = eq.find(x => x.mail === MAILS.PAX), e2 = eq.find(x => x.mail === MAILS.PAX2);
@@ -76,7 +76,20 @@ module.exports = async function() {
         const n1 = await chef.evaluate(r => JUMELAGE_EQUIPE_RELANCER(r, 'FORMATION SSIAP'), ref), n2 = await chef.evaluate(r => JUMELAGE_EQUIPE_RELANCER(r, 'FORMATION SSIAP'), ref);
         verifier(n1 === 1 && n2 === 0, 'relance : le retardataire est relancé, pas deux fois de suite (12 h)');
         const autre = await pax.evaluate(r => JUMELAGE_EQUIPE(r).then(l => l.length), ref);
-        verifier(autre === 0, 'le suivi de l\'équipe n\'est visible que du chef de mission');
+        verifier(autre === 0, 'le suivi de l\'équipe n\'est visible que du chef de mission (et de l\'assistant Chorus DT qui reçoit un compte-rendu de la mission)');
+        // Le chef envoie son compte-rendu à l'assistant Chorus DT : celui-ci voit la chronologie de l'équipe.
+        await chef.evaluate(([m, r]) => JUMELAGE_ENVOYER_DIRECT(m, 'CR', 'CR.pdf', JSON.stringify({ app: 'TRIGONE-CR', missionnaire: 'ADJ TEST Chef', libelle: 'FORMATION SSIAP',
+            fichiers: [{ nom: 'CR.pdf', type: 'application/pdf', b64: btoa('%PDF-1.4 test') }], equipe: r, roleEquipe: 'chef',
+            participants: M.PARTICIPANTS.map(p => ({ nom: [p.grade, p.nom, p.prenom].join(' '), mail: (p.mail || '').toLowerCase() })) }), { equipe: r }), [MAILS.C, ref]);
+        await attendre(1200);
+        await c.evaluate(() => JUMELAGE_RELEVER()); await attendre(3500);
+        const idChef = await c.evaluate(() => (JUMELAGE_BOITE_LISTE().find(x => x.nature === 'cr' && x.roleEquipe === 'chef') || {}).id);
+        verifier(!!idChef, 'assistant Chorus DT : compte-rendu du chef reçu, marqué « mission collective »');
+        await c.evaluate(id => OUVRIR_CR_RECU(id), idChef); await attendre(3000);
+        const chrono = await c.evaluate(() => (document.getElementById('MER-CR-EQUIPE') || {}).innerText || '');
+        if (process.env.CAPTURES) await c.screenshot({ path: process.env.CAPTURES + '/chorus-equipe.png', fullPage: false });
+        verifier(/1 sur 2/.test(chrono) && /CPL LEROY Emma/.test(chrono) && /reçu le/.test(chrono) && /dans votre boîte/.test(chrono) && /En attente — transmis par le chef/.test(chrono) && /relancé le/.test(chrono),
+            'assistant Chorus DT : chronologie de l\'équipe (1 sur 2 reçus, LEROY reçu et dans sa boîte, l\'autre en attente, relancé)');
     }
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();
