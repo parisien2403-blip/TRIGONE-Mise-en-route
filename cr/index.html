@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=104"></script>
+<script src="../jumelage.js?v=105"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -11240,7 +11240,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 201;
+var APP_CODE_VERSION = 202;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12901,7 +12901,11 @@ function FINALISER_DEMARRAGE() {
         if (NOTIF_RAPPELS_ACTIVES()) CHECK_CR_5DAY_REMINDERS(true);
     });
     var _aUnDeclenchementMontre = (window.location.search || '').indexOf('montre=') !== -1;
-    if (_aUnDeclenchementMontre) {
+    if (urlParams.has('depart')) {
+        var refDepart = urlParams.get('depart');
+        STRIP_QR_FROM_URL();
+        setTimeout(function() { OUVRIR_DEPART_MISSION(refDepart); }, 900);
+    } else if (_aUnDeclenchementMontre) {
         TRAITER_DECLENCHEMENT_MONTRE();
     } else if (M.DEBUT && !M.IS_PAX) {
         APPLIQUER_HORODATAGES_MONTRE().then(MONTRE_NOTIF_MAJ);
@@ -13322,6 +13326,13 @@ function MER_LIEU(nom, cp, pays) {
     return nom.toUpperCase() + (!pays && cp ? ' (' + cp + ')' : '');
 }
 function MER_DATE_COURTE(v) { try { return v ? new Date(v).toLocaleDateString('fr-FR') : ''; } catch (e) { return ''; } }
+// Notification « Départ en mission aujourd'hui » touchée : la mise en route correspondante préremplit le
+// compte-rendu (sinon la liste des mises en route) ; rien si une mission est déjà commencée.
+function OUVRIR_DEPART_MISSION(ref) {
+    if (M.IS_PAX || M.DEBUT || M.ARR_SITE) { SHOW_PAGE(M.IS_PAX ? M.PAGE || 'P0' : 'P-MENU'); return; }
+    var x = LIRE_MISES_EN_ROUTE().filter(function(e) { return e.d && e.d.id === ref; })[0];
+    if (x) PRENDRE_MISE_EN_ROUTE(x.d, true); else OUVRIR_LISTE_MISES_EN_ROUTE();
+}
 function OUVRIR_LISTE_MISES_EN_ROUTE() {
     MER_LISTE_DEMANDES = LIRE_MISES_EN_ROUTE();
     var zone = document.getElementById('MER-LISTE-ITEMS');
@@ -13362,16 +13373,16 @@ function CHOISIR_MISE_EN_ROUTE(i) {
     // Les messages s'enchaînent après la fermeture animée de la liste.
     setTimeout(function() { PRENDRE_MISE_EN_ROUTE(x.d); }, 320);
 }
-function PRENDRE_MISE_EN_ROUTE(d) {
+function PRENDRE_MISE_EN_ROUTE(d, jourJ) {
     if (M.IS_PAX) { MSG_INFO('Mission de groupe en cours', 'Vous participez à une mission de groupe : terminez-la avant d\'en commencer une autre.', '⛔'); return; }
     if (M.DEBUT || M.ARR_SITE) { MSG_INFO('Mission déjà commencée', 'Une mission est déjà en cours : terminez-la avant d\'en commencer une autre.', '⛔'); return; }
     if (HAS_ACTIVE_MISSION_DATA(M)) {
-        MSG_CONFIRM('Remplacer la mission préparée ?', 'Une mission est déjà préparée (pas encore commencée). Elle sera remplacée par cette mise en route.', 'Remplacer', function() { APPLIQUER_MISE_EN_ROUTE(d); }, '⚠️', 'mascotte-poubelle.webp', true);
+        MSG_CONFIRM('Remplacer la mission préparée ?', 'Une mission est déjà préparée (pas encore commencée). Elle sera remplacée par cette mise en route.', 'Remplacer', function() { APPLIQUER_MISE_EN_ROUTE(d, jourJ); }, '⚠️', 'mascotte-poubelle.webp', true);
         return;
     }
-    APPLIQUER_MISE_EN_ROUTE(d);
+    APPLIQUER_MISE_EN_ROUTE(d, jourJ);
 }
-function APPLIQUER_MISE_EN_ROUTE(d) {
+function APPLIQUER_MISE_EN_ROUTE(d, jourJ) {
     // La personne concernée : celle dont le nom est l'identité enregistrée, sinon la première de la demande.
     var id = IDENTITE_MISE_EN_ROUTE(), moi = (id.nom || '').trim().toUpperCase();
     var pers = (d.personnes || []).filter(function(p) { return moi && (p.nom || '').trim().toUpperCase() === moi; })[0] || (d.personnes || [])[0] || {};
@@ -13440,11 +13451,12 @@ function APPLIQUER_MISE_EN_ROUTE(d) {
     WRITE_ABT_TO_DOM();
     SAVE_STATE();
     UPDATE_BOUTON_LANCER_P1();
+    var suite = jourJ ? ' Vérifiez, puis touchez « Départ en mission » au moment de partir.' : ' Vérifiez, puis « Départ en mission » le jour J.';
     AFFICHER_MSG_CENTRE({
-        titre: 'Mission pré-remplie',
+        titre: jourJ ? 'Départ aujourd\'hui : mission pré-remplie' : 'Mission pré-remplie',
         texte: M.COLLECTIVE
-            ? 'Mission collective : vous êtes chef de mission et les ' + M.PARTICIPANTS.length + ' autre' + (M.PARTICIPANTS.length > 1 ? 's personnes sont reprises' : ' personne est reprise') + ' comme participants. Vérifiez, puis « Départ en mission » le jour J.'
-            : 'Tout est repris de votre mise en route. Vérifiez, puis « Départ en mission » le jour J.',
+            ? 'Mission collective : vous êtes chef de mission et les ' + M.PARTICIPANTS.length + ' autre' + (M.PARTICIPANTS.length > 1 ? 's personnes sont reprises' : ' personne est reprise') + ' comme participants.' + suite
+            : 'Tout est repris de votre mise en route.' + suite,
         icone: '✅',
         mascotteImage: 'mascotte-ok.webp',
         boutons: [{ label: 'C\'est noté', style: 'BTN BTN-START' }]

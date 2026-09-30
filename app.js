@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 151;
+var APP_CODE_VERSION = 152;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2222,6 +2222,23 @@ function PANIER_A_ENVOYER() {
     panier.forEach(function(d) { d.mailDemandeur = moi; d.validations = []; delete d.refus; delete d.renvoi; delete d.mailValideur1; });
     return panier;
 }
+// Rappel « départ en mission » : notification le jour du départ, à 7 h (ou 1 h avant un départ plus matinal), qui
+// ouvre le compte-rendu prérempli depuis la demande. Rien si le départ est déjà passé (ou dans moins de 15 min).
+function MER_HEURE_RAPPEL(d) {
+    var v = d && d.trajets && d.trajets.aller && d.trajets.aller.dateDep;
+    var dep = v ? new Date(v) : null;
+    if (!dep || isNaN(dep)) return 0;
+    var sept = new Date(dep); sept.setHours(7, 0, 0, 0);
+    var quand = Math.min(sept.getTime(), dep.getTime() - 3600 * 1000), maintenant = Date.now();
+    if (dep.getTime() - maintenant < 15 * 60 * 1000) return 0;
+    return Math.max(quand, maintenant);
+}
+function MER_PROGRAMMER_RAPPELS(demandes) {
+    if (!window.JUMELAGE_RAPPEL_DEPART) return;
+    var l = (demandes || []).filter(function(d) { return d.id; }).map(function(d) { return { ref: d.id, quand: MER_HEURE_RAPPEL(d) }; })
+        .filter(function(x) { return x.quand; });
+    if (l.length) JUMELAGE_RAPPEL_DEPART(l);
+}
 // Envoi direct (compte TRIGONE) : le .json complet, chiffré, déposé dans la boîte du 1er valideur.
 function ENVOYER_PANIER_DIRECT() {
     var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER(), b = document.getElementById('MER-BTN-DIRECT');
@@ -2230,6 +2247,7 @@ function ENVOYER_PANIER_DIRECT() {
         return JUMELAGE_ENVOYER_DIRECT(reg.mailSignataire, 'DEMANDE', NOM_FICHIER_BASE(panier) + '.json', json);
     }).then(function() {
         ARCHIVER_ENVOI(panier, reg.mailSignataire);
+        MER_PROGRAMMER_RAPPELS(panier);
         FERMER_MODALE();
         SAVE_PANIER([]);
         setTimeout(function() {
@@ -2304,7 +2322,8 @@ function AJOUTER_PJ(input) {
         return prec.then(function() {
             if (f.size > PJ_TAILLE_MAX) { MSG_ERREUR('Fichier trop lourd', '« ' + f.name + ' » dépasse 10 Mo. Réduisez-le (scan en qualité standard) puis réessayez.'); return; }
             if (!/^(application\/pdf|image\/(jpeg|png))$/.test(f.type)) { MSG_ERREUR('Format non accepté', '« ' + f.name + ' » : seuls les PDF et les photos JPEG ou PNG sont acceptés.'); return; }
-            return f.arrayBuffer().then(function(buf) {
+            // Photo d'un document : « scannée » (recadrée, fond blanc, texte foncé, plus légère) avant d'être jointe.
+            return (window.JUMELAGE_SCANNER_PHOTO && /^image\//.test(f.type) ? JUMELAGE_SCANNER_PHOTO(f) : Promise.resolve(f)).then(function(s) { f = s; return f.arrayBuffer(); }).then(function(buf) {
                 return SHA256_HEX(buf).then(function(sha) {
                     var id = 'pj-' + sha.slice(0, 24);
                     return PJ_ECRIRE(id, { nom: f.name, type: f.type, b64: B64(buf) }).then(function() {
