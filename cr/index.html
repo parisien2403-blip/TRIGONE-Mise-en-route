@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=112"></script>
+<script src="../jumelage.js?v=113"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -1308,6 +1308,7 @@ body.dark-mode #P1.p1-chain-mode.chain-color-3 { background: rgba(244, 114, 182,
 body.dark-mode #P1.p1-chain-mode.chain-color-4 { background: rgba(96, 165, 250, 0.08); }
 #P1 input[type="text"],
 #P1 input[type="email"],
+#P1 .SPEC-ZONE input[type="number"],
 #P1 select {
   padding: 10px 12px;
   margin-bottom: 0;
@@ -1592,7 +1593,7 @@ input[type="text"][data-no-uppercase="1"], textarea[data-no-uppercase="1"] {
 input[type="email"] {
   text-transform: none;
 }
-input[type="text"], input[type="email"], select {
+input[type="text"], input[type="email"], select, .SPEC-ZONE input[type="number"] {
   width: 100%;
   padding: 14px 16px;
   margin-bottom: 8px;
@@ -4277,6 +4278,7 @@ body.dark-mode .P0-MISSION-EN-COURS { background: linear-gradient(135deg, rgba(2
 .forfait-line-abt { opacity: 0.92; }
 .FORFAIT-DETAIL-LINE-IK label { display: flex; flex-direction: column; gap: 2px; }
 .FORFAIT-IK-ROUTE { font-weight: 500; color: var(--sm2-muted); font-size: 0.82em; }
+.IK-TRAJET { margin-top: 8px; }
 .FORFAIT-DETAIL-LINE-IK .FORFAIT-IK-INPUT-WRAP { display: flex; align-items: center; gap: 8px; }
 .FORFAIT-DETAIL-LINE-IK input {
   width: 68px; padding: 8px 10px; border: 1.5px solid var(--sm2-border);
@@ -4528,7 +4530,7 @@ body.dark-mode .P0-TAB:active {
 }
 body.dark-mode .P0-TAB:active .P0-TAB-LBL { color: #e5e5e5; }
 body.dark-mode .P0-TAB.has-badge::after { border-color: #1f1f1f; background: linear-gradient(135deg, #a9c3d6, #0891b2); }
-body.dark-mode input[type="text"], body.dark-mode input[type="email"], body.dark-mode select {
+body.dark-mode input[type="text"], body.dark-mode input[type="email"], body.dark-mode select, body.dark-mode .SPEC-ZONE input[type="number"] {
   background: var(--sm2-surface-solid); border-color: #3a3a3a; color: #e5e5e5;
 }
 body.dark-mode .check-container { background: var(--sm2-surface-solid); border-color: #3a3a3a; }
@@ -5590,7 +5592,16 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <option value="67">6 à 7 CV</option>
 <option value="8">8 CV et plus</option>
 </select>
-<p class="CIE-HINT" style="margin-top:6px;">Le kilométrage se saisit à la fin, dans Frais &gt; Trajets.</p>
+<div class="IK-TRAJET">
+<label for="IK-DE-A">Ville de départ du trajet en voiture</label>
+<input type="text" id="IK-DE-A" list="DEST-HISTORY-LIST" autocomplete="off" placeholder="EX : RENNES (35000)" onblur="IK_VILLE_SAISIE('A')">
+<label for="IK-VERS-A">Ville d'arrivée</label>
+<input type="text" id="IK-VERS-A" list="DEST-HISTORY-LIST" autocomplete="off" placeholder="EX : PARIS (75001)" onblur="IK_VILLE_SAISIE('A')">
+</div>
+<label for="IK-KM-A">Kilométrage (calculé automatiquement, modifiable)</label>
+<input type="number" id="IK-KM-A" min="0" step="1" placeholder="EX : 45" oninput="RECALC_IK('A')">
+<p id="IK-AUTO-A" class="CIE-HINT IK-AUTO" style="margin-top:6px;"></p>
+<p id="IK-RESULT-A" class="CIE-HINT" style="margin-top:6px;"></p>
 </div>
 <div id="SPEC-A" class="SPEC-ZONE HIDDEN">
 <div id="SIMPLE-A">
@@ -5627,8 +5638,15 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <option value="67">6 à 7 CV</option>
 <option value="8">8 CV et plus</option>
 </select>
-<label for="IK-KM-A-ANX">Kilométrage parcouru</label>
+<div class="IK-TRAJET">
+<label for="IK-DE-A-ANX">Ville de départ du trajet en voiture</label>
+<input type="text" id="IK-DE-A-ANX" list="DEST-HISTORY-LIST" autocomplete="off" placeholder="EX : RENNES (35000)" onblur="IK_VILLE_SAISIE('A-ANX')">
+<label for="IK-VERS-A-ANX">Ville d'arrivée</label>
+<input type="text" id="IK-VERS-A-ANX" list="DEST-HISTORY-LIST" autocomplete="off" placeholder="EX : PARIS (75001)" onblur="IK_VILLE_SAISIE('A-ANX')">
+</div>
+<label for="IK-KM-A-ANX">Kilométrage (calculé automatiquement, modifiable)</label>
 <input type="number" id="IK-KM-A-ANX" min="0" step="1" placeholder="EX : 45" oninput="RECALC_IK('A-ANX')">
+<p id="IK-AUTO-A-ANX" class="CIE-HINT IK-AUTO" style="margin-top:6px;"></p>
 <p id="IK-RESULT-A-ANX" class="CIE-HINT" style="margin-top:6px;"></p>
 </div>
 <div id="SPEC-A-ANX" class="SPEC-ZONE HIDDEN">
@@ -5670,7 +5688,16 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <option value="67">6 à 7 CV</option>
 <option value="8">8 CV et plus</option>
 </select>
-<p class="CIE-HINT" style="margin-top:6px;">Le kilométrage se saisit à la fin, dans Frais &gt; Trajets.</p>
+<div class="IK-TRAJET">
+<label for="IK-DE-R">Ville de départ du trajet en voiture</label>
+<input type="text" id="IK-DE-R" list="DEST-HISTORY-LIST" autocomplete="off" placeholder="EX : RENNES (35000)" onblur="IK_VILLE_SAISIE('R')">
+<label for="IK-VERS-R">Ville d'arrivée</label>
+<input type="text" id="IK-VERS-R" list="DEST-HISTORY-LIST" autocomplete="off" placeholder="EX : PARIS (75001)" onblur="IK_VILLE_SAISIE('R')">
+</div>
+<label for="IK-KM-R">Kilométrage (calculé automatiquement, modifiable)</label>
+<input type="number" id="IK-KM-R" min="0" step="1" placeholder="EX : 45" oninput="RECALC_IK('R')">
+<p id="IK-AUTO-R" class="CIE-HINT IK-AUTO" style="margin-top:6px;"></p>
+<p id="IK-RESULT-R" class="CIE-HINT" style="margin-top:6px;"></p>
 </div>
 <div id="SPEC-R" class="SPEC-ZONE HIDDEN">
 <div id="SIMPLE-R">
@@ -5707,8 +5734,15 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <option value="67">6 à 7 CV</option>
 <option value="8">8 CV et plus</option>
 </select>
-<label for="IK-KM-R-ANX">Kilométrage parcouru</label>
+<div class="IK-TRAJET">
+<label for="IK-DE-R-ANX">Ville de départ du trajet en voiture</label>
+<input type="text" id="IK-DE-R-ANX" list="DEST-HISTORY-LIST" autocomplete="off" placeholder="EX : RENNES (35000)" onblur="IK_VILLE_SAISIE('R-ANX')">
+<label for="IK-VERS-R-ANX">Ville d'arrivée</label>
+<input type="text" id="IK-VERS-R-ANX" list="DEST-HISTORY-LIST" autocomplete="off" placeholder="EX : PARIS (75001)" onblur="IK_VILLE_SAISIE('R-ANX')">
+</div>
+<label for="IK-KM-R-ANX">Kilométrage (calculé automatiquement, modifiable)</label>
 <input type="number" id="IK-KM-R-ANX" min="0" step="1" placeholder="EX : 45" oninput="RECALC_IK('R-ANX')">
+<p id="IK-AUTO-R-ANX" class="CIE-HINT IK-AUTO" style="margin-top:6px;"></p>
 <p id="IK-RESULT-R-ANX" class="CIE-HINT" style="margin-top:6px;"></p>
 </div>
 <div id="SPEC-R-ANX" class="SPEC-ZONE HIDDEN">
@@ -6400,6 +6434,133 @@ function WRITE_IK_TO_DOM() {
         UPDATE_IK_ROW_VISIBILITY(suf);
         RECALC_IK_DISPLAY_ONLY(suf);
     });
+    IK_ACTUALISER_TRAJETS();
+}
+
+// ── Distance automatique des indemnités kilométriques ───────────
+// Ville de départ et d'arrivée du trajet en voiture : proposées d'après le lieu de départ / retour (ville de la
+// résidence administrative ou familiale, retenue sur l'appareil) et la destination ; la distance routière est
+// demandée au serveur TRIGONE (/api/distance), le kilométrage et le montant se remplissent seuls, modifiables.
+var CLE_IK_RESIDENCES = 'trigone_ik_residences';
+function IK_RESIDENCES() {
+    try { return JSON.parse(localStorage.getItem(CLE_IK_RESIDENCES) || '{}') || {}; } catch (e) { return {}; }
+}
+function IK_RETENIR_RESIDENCE(res, ville) {
+    if ((res !== 'GARNISON' && res !== 'DOMICILE') || !ville) return;
+    var r = IK_RESIDENCES();
+    r[res] = ville;
+    try { localStorage.setItem(CLE_IK_RESIDENCES, JSON.stringify(r)); } catch (e) {}
+}
+function IK_VAL(id, defaut) {
+    var el = document.getElementById(id);
+    return ((el ? el.value : '') || defaut || '').trim().toUpperCase();
+}
+// Résidence (administrative / familiale) à l'un des bouts du trajet : sa ville est retenue pour les missions suivantes.
+function IK_RESIDENCE_DU_TRAJET(pk, bout) {
+    var aller = pk.charAt(0) === 'A';
+    if (aller && bout === 'DE') return IK_VAL('LIEU-DEP', M.LIEU_DEP);
+    if (!aller && bout === 'VERS') return IK_VAL('LIEU-RET', M.LIEU_RET);
+    return '';
+}
+function IK_VILLES_PROPOSEES(pk) {
+    var res = IK_RESIDENCES(), aller = pk.charAt(0) === 'A', anx = pk.indexOf('ANX') > 0;
+    var dest = IK_VAL('DEST-A', M.G_A_ARR || M.G_A);
+    var de, vers;
+    if (aller) {
+        var ld = IK_VAL('LIEU-DEP', M.LIEU_DEP), prec = (M.LEGS || [])[(M.LEGS || []).length - 1];
+        de = ld === 'ENCHAINEMENT' ? (prec ? (prec.G_A_ARR || prec.G_A || '') : '') : (res[ld] || '');
+        vers = anx ? IK_VAL('DEST-A-ANX', M.G_A_ANX) : dest;
+    } else {
+        de = anx ? IK_VAL('DEST-R-ANX', M.G_R_ANX) : dest;
+        vers = res[IK_VAL('LIEU-RET', M.LIEU_RET)] || '';
+    }
+    return { de: M['IK_DE_' + pk] || de, vers: M['IK_VERS_' + pk] || vers };
+}
+function IK_INFO_AUTO(pk) {
+    var t = M['IK_KM_TRAJET_' + pk];
+    if (!t || !(M['IK_KM_AUTO_' + pk] >= 0)) return '';
+    return '📍 ' + t.replace('>', ' → ') + ' : ' + M['IK_KM_AUTO_' + pk] + ' km par la route (calcul automatique, modifiable).';
+}
+// Remplit les villes proposées et lance le calcul pour chaque IK cochée dont le trajet a changé.
+function IK_ACTUALISER_TRAJETS() {
+    TRANSPORT_SUFFIXES.forEach(function(suf) {
+        var pk = TRANSPORT_PK(suf), v = IK_VILLES_PROPOSEES(pk);
+        var de = document.getElementById('IK-DE-' + suf), vers = document.getElementById('IK-VERS-' + suf);
+        if (de && document.activeElement !== de) de.value = v.de;
+        if (vers && document.activeElement !== vers) vers.value = v.vers;
+        var info = document.getElementById('IK-AUTO-' + suf);
+        if (info && !IK_CALCUL_EN_COURS[suf]) info.textContent = M['IK_' + pk] ? IK_INFO_AUTO(pk) : '';
+        if (M['IK_' + pk]) CALCULER_DISTANCE_IK(suf, true);
+    });
+}
+function IK_VILLE_SAISIE(suf) {
+    if (M.IS_PAX || M.RECAP_LOCKED) return;
+    var pk = TRANSPORT_PK(suf);
+    ENRICH_VILLE_FIELD('IK-DE-' + suf, function() {
+        ENRICH_VILLE_FIELD('IK-VERS-' + suf, function() {
+            var v = IK_VILLES_PROPOSEES(pk), de = IK_VAL('IK-DE-' + suf), vers = IK_VAL('IK-VERS-' + suf);
+            if (de === v.de && vers === v.vers) return;
+            M['IK_DE_' + pk] = de;
+            M['IK_VERS_' + pk] = vers;
+            IK_RETENIR_RESIDENCE(IK_RESIDENCE_DU_TRAJET(pk, 'DE'), de);
+            IK_RETENIR_RESIDENCE(IK_RESIDENCE_DU_TRAJET(pk, 'VERS'), vers);
+            SAVE_DEST_HISTORY(de); SAVE_DEST_HISTORY(vers);
+            SAVE_STATE();
+            CALCULER_DISTANCE_IK(suf, false);
+        });
+    });
+}
+var IK_CALCUL_EN_COURS = {}, IK_CALCUL_TENTE = {};
+function CALCULER_DISTANCE_IK(suf, auto) {
+    if (M.IS_PAX || M.RECAP_LOCKED || !window.fetch) return Promise.resolve(false);
+    var pk = TRANSPORT_PK(suf);
+    if (!M['IK_' + pk]) return Promise.resolve(false);
+    var v = IK_VILLES_PROPOSEES(pk), info = document.getElementById('IK-AUTO-' + suf);
+    function dire(t) { if (info) info.textContent = t; }
+    if (!v.de || !v.vers) {
+        dire('Indiquez la ville de départ et la ville d\'arrivée : la distance se calcule alors toute seule.');
+        return Promise.resolve(false);
+    }
+    var trajet = v.de + '>' + v.vers;
+    // Automatique : une seule fois par trajet (déjà calculé, en cours ou déjà tenté dans cette session).
+    if (auto && (IK_CALCUL_TENTE[suf] === trajet || (M['IK_KM_TRAJET_' + pk] === trajet && M['IK_KM_' + pk] > 0))) return Promise.resolve(false);
+    IK_CALCUL_TENTE[suf] = trajet;
+    if (!navigator.onLine) {
+        IK_CALCUL_TENTE[suf] = '';
+        dire('Hors connexion : la distance se calculera au retour du réseau. Vous pouvez aussi saisir le kilométrage.');
+        return Promise.resolve(false);
+    }
+    IK_CALCUL_EN_COURS[suf] = true;
+    dire('Calcul de la distance ' + v.de + ' → ' + v.vers + '…');
+    return fetch(new URL('../api/distance?de=' + encodeURIComponent(v.de) + '&a=' + encodeURIComponent(v.vers), location.href).href)
+        .then(function(r) { return r.json().catch(function() { return null; }).then(function(d) { return { ok: r.ok, d: d }; }); })
+        .then(function(x) {
+            IK_CALCUL_EN_COURS[suf] = false;
+            var d = x.d, w = IK_VILLES_PROPOSEES(pk);
+            if (w.de + '>' + w.vers !== trajet) return false;   // trajet modifié entre-temps
+            if (!x.ok || !d || !(d.km >= 0)) {
+                dire(((d && d.erreur) || 'Distance indisponible pour le moment.') + ' Saisissez le kilométrage.');
+                return false;
+            }
+            var actuel = M['IK_KM_' + pk] || 0, ancienAuto = M['IK_KM_AUTO_' + pk];
+            M['IK_KM_AUTO_' + pk] = d.km;
+            M['IK_KM_TRAJET_' + pk] = trajet;
+            // Kilométrage saisi à la main gardé tant que le trajet ne change pas.
+            if (!auto || !actuel || actuel === ancienAuto) {
+                var kmEl = document.getElementById('IK-KM-' + suf);
+                if (kmEl) kmEl.value = d.km;
+                M['IK_KM_' + pk] = d.km;
+            }
+            dire(IK_INFO_AUTO(pk));
+            RECALC_IK(suf);
+            return true;
+        })
+        .catch(function() {
+            IK_CALCUL_EN_COURS[suf] = false;
+            IK_CALCUL_TENTE[suf] = '';
+            dire('Distance indisponible pour le moment. Saisissez le kilométrage.');
+            return false;
+        });
 }
 
 function RECALC_IK_DISPLAY_ONLY(suf) {
@@ -6505,6 +6666,7 @@ function TOGGLE_IK(suf) {
     var zone = document.getElementById('IK-ZONE-' + suf);
     if (zone) zone.classList.toggle('HIDDEN', !checked);
     RECALC_IK(suf);
+    if (checked) IK_ACTUALISER_TRAJETS();
 }
 
 function RECALC_IK(suf) {
@@ -6861,7 +7023,7 @@ var NOTICE_MENU_EXTRA = '<details class="notice-fold"><summary><span class="FOLD
 var NOTICE_TEXTS = {
     INDIVIDUEL: '<p class="notice-lead">Parcours d\'une mission individuelle, de l\'accueil à l\'envoi du compte-rendu.</p><ol class="notice-steps"><li><b>Départ mission</b> : grade, nom, prénom, NID, compagnie, libellé de la mission, lieu de départ et retour, transports aller puis retour (onglets Aller / Retour)</li><li><b>Sur site</b> : horodater l\'arrivée, puis appuyer sur <b>Je quitte le site</b> — un choix s\'ouvre alors : <b>vers une autre destination</b> ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît — c\'est cet appui qui arrête le chrono</li><li><b>Frais</b> : repas, nuitées, horaires de billet et kilométrage (véhicule personnel), à compléter chez vous sans limite de temps</li><li><b>Récapitulatif</b> : vérification, pièces jointes à cocher (certaines, comme la facture d\'hôtel, sont obligatoires — voir la fiche dédiée ci-dessous), observations, signature, PDF et envoi dans TRIGONE</li><li>Après envoi : le CR est dans la <b>Bibliothèque</b> (montant <b>forfaitaire</b>, PDF retéléchargeable à tout moment)</li><li>Le suivi des dépenses se fait dans <b>Remboursement</b> (montants <b>frais réels</b>, indemnité kilométrique, et déduction automatique si une <b>avance de 75 %</b> a été perçue à la création de l\'OM)</li></ol><details class="notice-fold" style="margin-top:14px"><summary>Enchaîner vers une autre destination</summary><p style="padding:0 14px 12px;margin:0;font-size:0.82em;color:var(--sm2-muted);line-height:1.5">En choisissant <b>vers une autre destination</b> après <b>Je quitte le site</b>, un écran simplifié « Destination 2 » (puis 3, etc.) s\'ouvre : identité et compagnie déjà connues restent masquées, seuls le lieu de retour et les transports de cette étape sont à saisir.</p></details>',
     COLLECTIF: '<p class="notice-lead">Mission collective : le chef saisit le groupe ; chaque participant finalise son propre envoi.</p><p class="notice-role">Chef de mission</p><ol class="notice-steps"><li>Cochez <b>Mission collective</b> et indiquez votre mail</li><li>Grade, identité, libellé de la mission, transports, horodatages (arrivée site, départ site, fin de mission) et frais du groupe</li><li>« Envoyer aux participants dans TRIGONE » : chacun reçoit une notification et son compte-rendu prérempli</li><li>Récap, signature, PDF et envoi dans TRIGONE</li><li>CR archivé en <b>Bibliothèque</b> · suivi en <b>Remboursement</b></li></ol><p class="notice-role">Participant</p><ol class="notice-steps"><li>Notification « Mission collective » : Mise en route › Boîte de réception › « Ouvrir mon compte-rendu »</li><li>La mission, les horodatages du chef et votre identité sont déjà repris : vérifiez-les et joignez vos justificatifs</li><li>Récap, signature, PDF et envoi dans TRIGONE</li></ol>',
-    P1: '<ol class="notice-steps"><li>Nom et prénom</li><li>Compagnie (1<sup>re</sup> ou 4<sup>e</sup> Cie)</li><li>Collective : cochez et indiquez le mail du chef de mission</li><li>Lieu de départ et de retour (résidence administrative ou familiale)</li><li><b>Transport aller</b> puis <b>transport retour</b> — onglets Aller / Retour (un bloc à la fois)</li><li>VRM / VRC : destination · VF / avion / bateau : gare, port ou aéroport (les horaires se saisissent plus tard, dans Frais)</li><li>VRC — véhicule personnel : cochez <b>IK</b> si le chef de corps autorise l\'indemnité kilométrique, puis choisissez la puissance fiscale (le kilométrage se saisit dans Frais)</li><li>Une fois les 4 onglets complets, <b>Départ en mission</b> (dernier onglet, Top départ) — horodatage du départ</li></ol>',
+    P1: '<ol class="notice-steps"><li>Nom et prénom</li><li>Compagnie (1<sup>re</sup> ou 4<sup>e</sup> Cie)</li><li>Collective : cochez et indiquez le mail du chef de mission</li><li>Lieu de départ et de retour (résidence administrative ou familiale)</li><li><b>Transport aller</b> puis <b>transport retour</b> — onglets Aller / Retour (un bloc à la fois)</li><li>VRM / VRC : destination · VF / avion / bateau : gare, port ou aéroport (les horaires se saisissent plus tard, dans Frais)</li><li>VRC — véhicule personnel : cochez <b>IK</b> si le chef de corps autorise l\'indemnité kilométrique, puis choisissez la puissance fiscale : la distance se calcule toute seule entre la ville de départ et la ville d\'arrivée (modifiable)</li><li>Une fois les 4 onglets complets, <b>Départ en mission</b> (dernier onglet, Top départ) — horodatage du départ</li></ol>',
     P2: '<ol class="notice-steps"><li><b>Arrivée sur site</b> — horodatage au bouton vert</li><li><b>Je quitte le site</b> — un choix s\'ouvre : <b>vers une autre destination</b> (enchaînement) ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît alors — c\'est lui qui arrête le chrono</li><li>Les <b>frais</b> se saisissent ensuite sans pression du temps</li></ol>',
     'P2-FIN': '<ol class="notice-steps"><li><b>Horodatage terminé</b> — fixé à l\'étape précédente (bouton Valider et voir le récap)</li><li>Complétez vos frais chez vous, sans limite de temps</li><li><b>3 onglets</b> : Repas &amp; hébergement → Trajets → Récap &amp; valider</li><li><b>Repas</b> : gratuit par défaut — les jours se créent automatiquement</li><li><b>Trajets</b> : VF / avion / bateau — Aller / Retour avec date-heure de billet · VRC + IK — kilométrage parcouru</li><li><b>Récap</b> : vérifiez puis <b>Valider et voir le récapitulatif</b></li><li>Plusieurs jours : onglets J1, J2… — un jour à la fois</li><li><b>Expérience de saisie</b> : envoi bloqué — supprimez le jour en trop (×)</li></ol>',
     P3: '<ol class="notice-steps"><li>Vérifier le récapitulatif (transports, horaires, forfait)</li><li><b>Observations éventuelles</b> si besoin — le cadre passe en rouge dès qu\'il contient du texte, pour ne pas le manquer</li><li>Pièces jointes à cocher une à une (billets, factures…) au fur et à mesure que vous rassemblez les justificatifs (photos ou PDF), à joindre dans la fenêtre d\'envoi</li><li>Signature numérique, téléchargement PDF et envoi dans TRIGONE</li><li>Après envoi : mission archivée dans la <b>Bibliothèque</b></li></ol><p class="notice-lead" style="margin-top:12px;margin-bottom:0;">Délai réglementaire : 30 jours après la fin de mission.</p>',
@@ -9094,7 +9256,7 @@ function SUPPRIMER_FORFAIT_MISSION(key) {
     }, undefined, 'mascotte-poubelle.webp', true);
 }
 
-var PAX_LOCK_FIELDS = ['IS-COLLECTIVE','LIEU-DEP','TRANS-A','TRANS-A-ANX','DEST-A','DEST-A-ANX','DEST-A-DEP','DEST-A-ARR','DT-A-DEP','DT-A-ARR','DEST-A-ANX-DEP','DEST-A-ANX-ARR','DT-A-ANX-DEP','DT-A-ANX-ARR','TRANS-R','TRANS-R-ANX','DEST-R','DEST-R-ANX','DEST-R-DEP','DEST-R-ARR','DT-R-DEP','DT-R-ARR','DEST-R-ANX-DEP','DEST-R-ANX-ARR','DT-R-ANX-DEP','DT-R-ANX-ARR','LIEU-RET','ABT-A','ABT-A-ANX','ABT-R','ABT-R-ANX','IK-A','IK-A-ANX','IK-R','IK-R-ANX','IK-CV-A','IK-CV-A-ANX','IK-CV-R','IK-CV-R-ANX','IK-KM-A-ANX','IK-KM-R-ANX'];
+var PAX_LOCK_FIELDS = ['IS-COLLECTIVE','LIEU-DEP','TRANS-A','TRANS-A-ANX','DEST-A','DEST-A-ANX','DEST-A-DEP','DEST-A-ARR','DT-A-DEP','DT-A-ARR','DEST-A-ANX-DEP','DEST-A-ANX-ARR','DT-A-ANX-DEP','DT-A-ANX-ARR','TRANS-R','TRANS-R-ANX','DEST-R','DEST-R-ANX','DEST-R-DEP','DEST-R-ARR','DT-R-DEP','DT-R-ARR','DEST-R-ANX-DEP','DEST-R-ANX-ARR','DT-R-ANX-DEP','DT-R-ANX-ARR','LIEU-RET','ABT-A','ABT-A-ANX','ABT-R','ABT-R-ANX','IK-A','IK-A-ANX','IK-R','IK-R-ANX','IK-CV-A','IK-CV-A-ANX','IK-CV-R','IK-CV-R-ANX','IK-KM-A','IK-KM-R','IK-KM-A-ANX','IK-KM-R-ANX','IK-DE-A','IK-DE-A-ANX','IK-DE-R','IK-DE-R-ANX','IK-VERS-A','IK-VERS-A-ANX','IK-VERS-R','IK-VERS-R-ANX'];
 var PAX_LOCK_BTNS = ['BTN-TIMESTAMP-ARR','BTN-TIMESTAMP-DEP','BTN-PRESS-CHAIN'];
 
 function APPLY_PAX_LOCK() {
@@ -10158,6 +10320,7 @@ function GET_MISSION_LEGS_FROM_STATE(S) {
         IK_CV_A: S.IK_CV_A, IK_CV_A_ANX: S.IK_CV_A_ANX, IK_CV_R: S.IK_CV_R, IK_CV_R_ANX: S.IK_CV_R_ANX,
         IK_KM_A: S.IK_KM_A, IK_KM_A_ANX: S.IK_KM_A_ANX, IK_KM_R: S.IK_KM_R, IK_KM_R_ANX: S.IK_KM_R_ANX,
         IK_MONTANT_A: S.IK_MONTANT_A, IK_MONTANT_A_ANX: S.IK_MONTANT_A_ANX, IK_MONTANT_R: S.IK_MONTANT_R, IK_MONTANT_R_ANX: S.IK_MONTANT_R_ANX,
+        IK_DE_A: S.IK_DE_A, IK_VERS_A: S.IK_VERS_A, IK_DE_R: S.IK_DE_R, IK_VERS_R: S.IK_VERS_R, IK_KM_TRAJET_A: S.IK_KM_TRAJET_A, IK_KM_TRAJET_R: S.IK_KM_TRAJET_R, IK_KM_AUTO_A: S.IK_KM_AUTO_A, IK_KM_AUTO_R: S.IK_KM_AUTO_R,
         LIEU_RET: S.LIEU_RET,
         ARR_SITE: S.ARR_SITE, DEP_SITE: S.DEP_SITE,
         JOURS: S.JOURS ? S.JOURS.slice() : []
@@ -10236,7 +10399,12 @@ function BUILD_IK_SLOTS_FROM_STATE(S) {
                 from = IK_PLACE_LABEL(dest) || '?';
                 to = IK_PLACE_LABEL(leg.LIEU_RET) || '?';
             }
-            slots.push({ id: li + '-' + dir, cv: cv, label: prefix + dirLabel + ' · IK (' + cvLabel + ')', route: from + ' → ' + to, km: null, montant: null });
+            if (leg['IK_DE_' + dir] && leg['IK_VERS_' + dir]) { from = leg['IK_DE_' + dir]; to = leg['IK_VERS_' + dir]; }
+            else if (leg['IK_KM_TRAJET_' + dir]) { from = leg['IK_KM_TRAJET_' + dir].split('>')[0]; to = leg['IK_KM_TRAJET_' + dir].split('>')[1]; }
+            // Kilométrage de la mission (calculé automatiquement au départ, ou saisi) : le montant en découle.
+            var km = parseFloat(leg['IK_KM_' + dir]) > 0 ? parseFloat(leg['IK_KM_' + dir]) : null;
+            slots.push({ id: li + '-' + dir, cv: cv, label: prefix + dirLabel + ' · IK (' + cvLabel + ')', route: from + ' → ' + to, km: km,
+                montant: km != null ? Math.round(km * IK_RATE_FOR_CV(cv) * 100) / 100 : null, kmAuto: leg['IK_KM_AUTO_' + dir] != null ? leg['IK_KM_AUTO_' + dir] : null });
         });
     });
     return slots;
@@ -10248,6 +10416,7 @@ function MERGE_IK_SLOTS(newSlots, oldSlots) {
     oldSlots.forEach(function(s) { if (s.km != null && s.km !== '') map[s.id] = s.km; });
     newSlots.forEach(function(s) {
         if (map[s.id] != null) s.km = map[s.id];
+        s.montant = s.km != null && s.km !== '' ? Math.round((parseFloat(s.km) || 0) * IK_RATE_FOR_CV(s.cv) * 100) / 100 : null;
     });
     return newSlots;
 }
@@ -10494,7 +10663,8 @@ function RENDER_FORFAIT_MISSION_DETAIL() {
             var rate = IK_RATE_FOR_CV(s.cv);
             var km = s.km != null ? s.km : '';
             var montant = km !== '' ? Math.round(km * rate * 100) / 100 : 0;
-            html += '<div class="FORFAIT-DETAIL-LINE FORFAIT-DETAIL-LINE-IK"><label>🚗 ' + s.label + (s.route ? '<small class="FORFAIT-IK-ROUTE">' + ESC_HTML(s.route) + '</small>' : '') + '</label>';
+            var auto = s.kmAuto != null && km !== '' && +km === +s.kmAuto;
+            html += '<div class="FORFAIT-DETAIL-LINE FORFAIT-DETAIL-LINE-IK"><label>🚗 ' + s.label + (s.route ? '<small class="FORFAIT-IK-ROUTE">' + ESC_HTML(s.route) + '</small>' : '') + (auto ? '<small class="FORFAIT-IK-ROUTE FORFAIT-IK-AUTO">📍 distance calculée automatiquement (modifiable)</small>' : '') + '</label>';
             html += '<div class="FORFAIT-IK-INPUT-WRAP"><input type="number" min="0" step="1" inputmode="decimal" data-ik-idx="' + i + '" value="' + km + '" placeholder="km">';
             html += '<span class="FORFAIT-IK-RESULT" id="FORFAIT-IK-RESULT-' + i + '">' + (km !== '' ? FORMAT_EURO(montant) + ' €' : '') + '</span></div></div>';
         });
@@ -10626,6 +10796,18 @@ function SAVE_FORFAIT_MISSION_DETAIL(andClose) {
     var avanceChk = document.getElementById('FORFAIT-AVANCE-CHK');
     if (avanceChk) entry.avanceRequise = avanceChk.checked;
     if (wrap.enCours && !M.MAIL_SENT) {
+        // Kilométrage corrigé ici : repris dans la mission en cours (compte-rendu, contrôles avant envoi).
+        if (!M.IS_PAX && !M.RECAP_LOCKED) {
+            var legsIk = GET_MISSION_LEGS_FROM_STATE(M);
+            (entry.ikSlots || []).forEach(function(sl) {
+                var parts = String(sl.id).split('-'), li = +parts[0], dir = parts[1];
+                var cible = li === legsIk.length - 1 ? M : (M.LEGS || [])[li];
+                if (!cible || sl.km == null) return;
+                cible['IK_KM_' + dir] = sl.km;
+                cible['IK_MONTANT_' + dir] = sl.montant || 0;
+            });
+            SAVE_STATE();
+        }
         SAVE_FORFAIT_DRAFT(FORFAIT_UI.selectedKey, entry);
     } else {
         SAVE_FORFAIT_ENTRY(entry);
@@ -10780,6 +10962,7 @@ function GET_CURRENT_LEG_SNAPSHOT() {
         IK_CV_A: M.IK_CV_A, IK_CV_A_ANX: M.IK_CV_A_ANX, IK_CV_R: M.IK_CV_R, IK_CV_R_ANX: M.IK_CV_R_ANX,
         IK_KM_A: M.IK_KM_A, IK_KM_A_ANX: M.IK_KM_A_ANX, IK_KM_R: M.IK_KM_R, IK_KM_R_ANX: M.IK_KM_R_ANX,
         IK_MONTANT_A: M.IK_MONTANT_A, IK_MONTANT_A_ANX: M.IK_MONTANT_A_ANX, IK_MONTANT_R: M.IK_MONTANT_R, IK_MONTANT_R_ANX: M.IK_MONTANT_R_ANX,
+        IK_DE_A: M.IK_DE_A, IK_VERS_A: M.IK_VERS_A, IK_DE_R: M.IK_DE_R, IK_VERS_R: M.IK_VERS_R, IK_KM_TRAJET_A: M.IK_KM_TRAJET_A, IK_KM_TRAJET_R: M.IK_KM_TRAJET_R, IK_KM_AUTO_A: M.IK_KM_AUTO_A, IK_KM_AUTO_R: M.IK_KM_AUTO_R,
         LIEU_RET: M.LIEU_RET,
         ARR_SITE: M.ARR_SITE, DEP_SITE: M.DEP_SITE,
         FIN_RETOUR_HORODATE: M.FIN_RETOUR_HORODATE,
@@ -10813,6 +10996,9 @@ function CLEAR_TRANSPORT_FIELDS_M() {
     M.IK_MONTANT_A_ANX = 0;
     M.IK_MONTANT_R = 0;
     M.IK_MONTANT_R_ANX = 0;
+    ['A', 'A_ANX', 'R', 'R_ANX'].forEach(function(pk) {
+        M['IK_DE_' + pk] = ''; M['IK_VERS_' + pk] = ''; M['IK_KM_AUTO_' + pk] = null; M['IK_KM_TRAJET_' + pk] = '';
+    });
 }
 
 function RESET_FOR_NEW_MISSION_CHAIN(depTime) {
@@ -11256,7 +11442,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 209;
+var APP_CODE_VERSION = 210;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13509,8 +13695,15 @@ function APPLIQUER_MISE_EN_ROUTE(d, jourJ) {
         var type = tr && MER_MOYEN_VERS_CR[tr.moyen];
         if (!type) return;
         M['T_' + pk] = type;
-        if (retour && TRANSPORT_RETOUR_USES_LIEU_ARRIVEE(type)) return;
         var dep = MER_LIEU(tr.lieuDep, tr.cpDep, tr.paysDep), arr = MER_LIEU(tr.lieuArr, tr.cpArr, tr.paysArr);
+        // Véhicule personnel : villes du trajet reprises pour le calcul automatique des indemnités kilométriques,
+        // et ville de la résidence (administrative / familiale) retenue pour les missions suivantes.
+        if (type === 'VRC' && !tr.paysDep && !tr.paysArr) {
+            M['IK_DE_' + pk] = dep; M['IK_VERS_' + pk] = arr;
+            if (!retour && pk === 'A') IK_RETENIR_RESIDENCE(MER_RESIDENCE_VERS_CR[tr.residenceDep], dep);
+            if (retour) IK_RETENIR_RESIDENCE(MER_RESIDENCE_VERS_CR[tr.residenceArr], arr);
+        }
+        if (retour && TRANSPORT_RETOUR_USES_LIEU_ARRIVEE(type)) return;
         if (IS_ROUTE_TRANSPORT(type)) {
             M['G_' + pk + '_DEP'] = dep; M['G_' + pk + '_ARR'] = arr; M['G_' + pk] = arr || dep;
             M.MER_HORAIRES[pk + '_DEP'] = LOCAL_INPUT_TO_FR_DATETIME(tr.dateDep);
@@ -14632,7 +14825,7 @@ function RENDER_FRAIS_TRAJETS() {
                 var legLabelIk = isChained ? ('Mission ' + (li + 1) + ' — ') : '';
                 html += '<div class="FRAIS-TRAJ-CARD">';
                 html += '<div class="FRAIS-TRAJ-LEG-LABEL">' + legLabelIk + dirLabelIk + ' <em>🚗 VRC — Indemnité kilométrique</em></div>';
-                html += '<p class="CIE-HINT" style="margin:0;">Véhicule : ' + cvLabel + '. Le kilométrage se saisit dans <b>Remboursement</b>, une fois la distance connue.</p>';
+                html += '<p class="CIE-HINT" style="margin:0;">Véhicule : ' + cvLabel + '. Distance calculée automatiquement au départ de mission ; le montant figure dans <b>Remboursement</b>.</p>';
                 html += '</div>';
                 return;
             }
@@ -15207,8 +15400,13 @@ function BLUR_P1_DEST(inputId) {
         var el = document.getElementById(inputId);
         if (el) SAVE_DEST_HISTORY(el.value);
         UPDATE_BOUTON_LANCER_P1();
+        IK_ACTUALISER_TRAJETS();
     });
 }
+document.addEventListener('change', function(e) {
+    var id = e.target && e.target.id;
+    if (id === 'LIEU-DEP' || id === 'LIEU-RET') { try { IK_ACTUALISER_TRAJETS(); } catch (x) {} }
+});
 // ────────────────────────────────────────────────────────────────
 
 
