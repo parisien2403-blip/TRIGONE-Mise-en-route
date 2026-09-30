@@ -194,7 +194,8 @@ module.exports = async function() {
     await v1.check('#JUM-R-VAL1'); await v1.fill('#JUM-R-FONCTION1', 'Chef'); await v1.fill('#JUM-R-CODEVAL1', code1);
     // Il avait aussi le rôle VALIDEUR 2 : il le recoche avec son code.
     if (!(await v1.isChecked('#JUM-R-VAL2'))) { await v1.check('#JUM-R-VAL2'); await v1.fill('#JUM-R-FONCTION2', 'Chef de corps'); await v1.fill('#JUM-R-CODEVAL2', code2); }
-    await v1.click('.JUM-R-PRINCIPAL'); await attendre(4500);
+    await v1.click('.JUM-R-PRINCIPAL'); await attendre(1500);
+    await v1.waitForFunction(() => GET_A_VALIDER().length === 2, null, { timeout: 15000 }).catch(() => {});
     verifier(await v1.evaluate(() => GET_A_VALIDER().length) === 2, '1er valideur : rôle réactivé, les 2 demandes s\'ouvrent aussitôt dans l\'Espace valideur');
     await v1.evaluate(() => {
         const l = GET_A_VALIDER(); const b = l.find(e => e.d.personnes[0].nom === 'Bouquet'), mt = l.find(e => e.d.personnes[0].nom === 'Martin');
