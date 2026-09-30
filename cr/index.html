@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=101"></script>
+<script src="../jumelage.js?v=102"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -5196,11 +5196,6 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
       </div>
 
       <div class="config-champ">
-        <label for="CONFIG-MAIL-BODY">Texte du corps du mail</label>
-        <textarea id="CONFIG-MAIL-BODY" data-no-uppercase="1" rows="5"></textarea>
-      </div>
-
-      <div class="config-champ">
         <label>Code d'accès à 4 chiffres</label>
         <p class="config-hint">Demandé à chaque ouverture de TRIGONE, pour protéger vos données.</p>
         <div class="config-pin-row">
@@ -6286,16 +6281,10 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 </details>
 
-<details class="notice-fold" id="PARAM-FOLD-ENVOI">
-<summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><path d="M22 2 11 13M22 2 15 22l-4-9-9-4Z"/></svg></span>Envoi du compte-rendu</summary>
-<div class="ADMIN-SECTION">
+<div class="HIDDEN">
 <label for="PARAM-MAIL-ASSIST" class="HIDDEN" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Adresse mail du destinataire (assistant Chorus DT / gestionnaire)</label>
 <input type="email" id="PARAM-MAIL-ASSIST" class="HIDDEN" placeholder="EX : prenom.nom@interieur.gouv.fr" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em; margin-bottom:14px;">
-<label for="PARAM-MAIL-BODY" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Texte du corps du mail</label>
-<textarea id="PARAM-MAIL-BODY" data-no-uppercase="1" rows="5" placeholder="EX : Bonjour,&#10;&#10;Veuillez trouver ci-joint le compte-rendu de ma mission.&#10;&#10;Cordialement,&#10;Prénom NOM" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em; font-family:inherit; resize:vertical;"></textarea>
-<p class="CIE-HINT" style="margin:6px 0 0;">Le PDF et les pièces jointes restent à ajouter manuellement dans le mail — ce texte est juste le message qui s'affiche déjà écrit.</p>
 </div>
-</details>
 
 <details class="notice-fold">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>Calculs &amp; barèmes</summary>
@@ -7086,8 +7075,7 @@ function GET_HEBERG_ZONE_LABEL_DISPLAY(J, state) {
 
 var CIE_LABEL = 'Compagnie';
 var CIE_OPTIONS = ['1ère Cie', '4ème Cie'];
-var MAIL_BODY_TEXT = '';
-var DEFAULT_APP_SETTINGS = { mailAssist: MAIL_ASSIST, assistLabel: ASSIST_CHORUS_LABEL, unitName: UNIT_NAME, abtEnabled: ABT_ENABLED, abtLabel: ABT_LABEL, cieLabel: CIE_LABEL, cieOptions: CIE_OPTIONS.slice(), mailBodyText: MAIL_BODY_TEXT };
+var DEFAULT_APP_SETTINGS = { mailAssist: MAIL_ASSIST, assistLabel: ASSIST_CHORUS_LABEL, unitName: UNIT_NAME, abtEnabled: ABT_ENABLED, abtLabel: ABT_LABEL, cieLabel: CIE_LABEL, cieOptions: CIE_OPTIONS.slice() };
 var APP_SETTINGS_KEY = 'trigone_app_settings';
 (function LOAD_APP_SETTINGS_ON_BOOT() {
     try {
@@ -7100,7 +7088,6 @@ var APP_SETTINGS_KEY = 'trigone_app_settings';
             if (saved.abtLabel && saved.abtLabel !== 'ABT') ABT_LABEL = saved.abtLabel;
             if (saved.cieLabel) CIE_LABEL = saved.cieLabel;
             if (Array.isArray(saved.cieOptions) && saved.cieOptions.length) CIE_OPTIONS = saved.cieOptions;
-            if (typeof saved.mailBodyText === 'string' && saved.mailBodyText.trim()) MAIL_BODY_TEXT = saved.mailBodyText;
         }
     } catch (e) {}
 })();
@@ -9680,12 +9667,6 @@ function RENDRE_EQUIPE_MER() {
         l.map(function(p) { return '<li>' + ESC_HTML(LIGNE_PARTICIPANT(p)) + '</li>'; }).join('') + '</ul>' : '';
 }
 
-function BUILD_MAILTO_URL(sujet, body, cc) {
-    var url = 'mailto:' + MAIL_ASSIST + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(body);
-    if (cc && IS_VALID_EMAIL(cc)) url += '&cc=' + encodeURIComponent(cc.trim());
-    return url;
-}
-
 // ===================== SIGNALER UN PROBLÈME =====================
 // Adresse dédiée à TRIGONE (pas la boîte de l'assistant Chorus DT / MAIL_ASSIST, qui reçoit les CR).
 var TRIGONE_SUPPORT_MAIL = 'trigone.app@outlook.fr';
@@ -9715,10 +9696,6 @@ function SIGNALER_PROBLEME() {
         + 'Écran concerné : ' + GET_LABEL_ECRAN_ACTUEL() + '\n'
         + 'Connecté à internet : ' + (navigator.onLine ? 'oui' : 'non');
     window.location.href = 'mailto:' + TRIGONE_SUPPORT_MAIL + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
-}
-
-function GET_MAIL_BODY() {
-    return MAIL_BODY_TEXT && MAIL_BODY_TEXT.trim() ? MAIL_BODY_TEXT : 'Bonjour,\n\nVeuillez trouver ci-joint le compte-rendu de ma mission.\n\nCordialement.';
 }
 
 function UPDATE_MAIL_BUTTON() {
@@ -11539,27 +11516,22 @@ function OUVRIR_PARAMETRES() {
         var premierLancement = !PREMIER_LANCEMENT_FAIT();
         if (introEl) {
             introEl.innerHTML = premierLancement
-                ? '👋 Bienvenue sur TRIGONE ! Avant de commencer, dépliez les deux sections ci-dessous surlignées pour renseigner votre unité et l\'adresse mail de votre assistant Chorus DT.'
+                ? '👋 Bienvenue sur TRIGONE ! Avant de commencer, dépliez la section ci-dessous surlignée pour renseigner votre unité.'
                 : 'Votre espace personnel — dépliez une section pour la régler. Rien à toucher si les valeurs par défaut vous conviennent.';
         }
         var foldUnite = document.getElementById('PARAM-FOLD-UNITE');
-        var foldEnvoi = document.getElementById('PARAM-FOLD-ENVOI');
         if (premierLancement) {
             if (foldUnite) { foldUnite.open = true; foldUnite.classList.add('notice-fold-premier'); }
-            if (foldEnvoi) { foldEnvoi.open = true; foldEnvoi.classList.add('notice-fold-premier'); }
         } else {
             if (foldUnite) { foldUnite.open = false; foldUnite.classList.remove('notice-fold-premier'); }
-            if (foldEnvoi) { foldEnvoi.open = false; foldEnvoi.classList.remove('notice-fold-premier'); }
         }
         var mailEl = document.getElementById('PARAM-MAIL-ASSIST');
         var abtEnEl = document.getElementById('PARAM-ABT-ENABLED');
         var abtLblEl = document.getElementById('PARAM-ABT-LABEL');
-        var mailBodyEl = document.getElementById('PARAM-MAIL-BODY');
         var unitEl = document.getElementById('PARAM-UNIT-NAME');
         if (mailEl) mailEl.value = MAIL_ASSIST;
         if (abtEnEl) abtEnEl.checked = ABT_ENABLED;
         if (abtLblEl) abtLblEl.value = ABT_LABEL;
-        if (mailBodyEl) mailBodyEl.value = MAIL_BODY_TEXT;
         if (unitEl) unitEl.value = UNIT_NAME;
     } catch (e) { console.error('Erreur remplissage Mon Espace:', e); }
     try { TOGGLE_PARAM_ABT_FIELD(); } catch (e) { console.error('Erreur TOGGLE_PARAM_ABT_FIELD:', e); }
@@ -11600,12 +11572,10 @@ function SAVE_PARAMETRES_NOW() {
     var mailEl = document.getElementById('PARAM-MAIL-ASSIST');
     var abtEnEl = document.getElementById('PARAM-ABT-ENABLED');
     var abtLblEl = document.getElementById('PARAM-ABT-LABEL');
-    var mailBodyEl = document.getElementById('PARAM-MAIL-BODY');
     var unitEl = document.getElementById('PARAM-UNIT-NAME');
     var mail = mailEl && mailEl.value.trim() ? mailEl.value.trim() : DEFAULT_APP_SETTINGS.mailAssist;
     var abtEnabled = abtEnEl ? !!abtEnEl.checked : DEFAULT_APP_SETTINGS.abtEnabled;
     var abtLabel = abtLblEl && abtLblEl.value.trim() ? abtLblEl.value.trim() : DEFAULT_APP_SETTINGS.abtLabel;
-    var mailBodyText = mailBodyEl && mailBodyEl.value.trim() ? mailBodyEl.value : DEFAULT_APP_SETTINGS.mailBodyText;
     var unitName = unitEl && unitEl.value.trim() ? unitEl.value.trim() : DEFAULT_APP_SETTINGS.unitName;
     if (mailEl && mailEl.value.trim() && mailEl.value.indexOf('@') === -1) {
         alert('⛔ Adresse mail invalide.');
@@ -11614,14 +11584,13 @@ function SAVE_PARAMETRES_NOW() {
     MAIL_ASSIST = mail;
     ABT_ENABLED = abtEnabled;
     ABT_LABEL = abtLabel;
-    MAIL_BODY_TEXT = mailBodyText;
     UNIT_NAME = unitName;
     try {
         var current = JSON.parse(localStorage.getItem(APP_SETTINGS_KEY) || '{}');
         current.mailAssist = mail;
         current.abtEnabled = abtEnabled;
         current.abtLabel = abtLabel;
-        current.mailBodyText = mailBodyText;
+        delete current.mailBodyText;
         current.unitName = unitName;
         localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(current));
     } catch (e) {}
@@ -11642,11 +11611,10 @@ function SAVE_PARAMETRES_NOW() {
 }
 
 function RESET_PARAMETRES() {
-    if (!confirm('Revenir aux valeurs par défaut (unité, destinataire, texte du mail, option ABT) ?')) return;
+    if (!confirm('Revenir aux valeurs par défaut (unité, destinataire, option ABT) ?')) return;
     MAIL_ASSIST = DEFAULT_APP_SETTINGS.mailAssist;
     ABT_ENABLED = DEFAULT_APP_SETTINGS.abtEnabled;
     ABT_LABEL = DEFAULT_APP_SETTINGS.abtLabel;
-    MAIL_BODY_TEXT = DEFAULT_APP_SETTINGS.mailBodyText;
     UNIT_NAME = DEFAULT_APP_SETTINGS.unitName;
     try {
         localStorage.removeItem(APP_SETTINGS_KEY);
@@ -11763,7 +11731,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 198;
+var APP_CODE_VERSION = 199;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12839,11 +12807,8 @@ function PROCESS_SYNC_QUEUE() {
         REMOVE_FROM_SYNC_QUEUE(item.id);
         UPDATE_MAIL_QUEUE_UI();
         ENVOYER_MAIL();
-    } else if (item.type === 'AIDE' || item.type === 'OM_DEMANDE') {
-        window.location.href = 'mailto:' + MAIL_ASSIST + '?subject=' + encodeURIComponent(item.sujet) + '&body=' + encodeURIComponent(item.body);
-        REMOVE_FROM_SYNC_QUEUE(item.id);
-    } else if (item.type === 'QR') {
-        // Ancien QR code de groupe en attente : l'envoi aux participants passe désormais par TRIGONE.
+    } else {
+        // Anciens envois par mail ou QR code en attente : tout passe désormais par TRIGONE.
         REMOVE_FROM_SYNC_QUEUE(item.id);
     }
     UPDATE_NETWORK_UI();
@@ -13406,10 +13371,6 @@ function AFFICHER_CONFIG_INITIALE() {
     // Réglages communs à Mise en route et Compte-rendu (écran de choix, roue crantée).
     if (window.JUMELAGE_REGLAGES) { if (!(window.JUMELAGE_REGLAGES_FAITS && JUMELAGE_REGLAGES_FAITS())) window.JUMELAGE_REGLAGES({ premiere: true }); else MARQUER_PREMIER_LANCEMENT_FAIT(); return; }
     if (DEMO_MODE_ACTIF) return;
-    var mailBodyEl = document.getElementById('CONFIG-MAIL-BODY');
-    if (mailBodyEl && !mailBodyEl.value) {
-        mailBodyEl.value = 'Bonjour,\n\nVeuillez trouver ci-joint le compte-rendu de ma mission.\n\nCordialement,';
-    }
     // Jumelage : l'unité déjà saisie dans TRIGONE Mise en route pré-remplit le champ.
     var uniteEl = document.getElementById('CONFIG-UNIT-NAME');
     if (uniteEl && !uniteEl.value) {
@@ -13426,11 +13387,10 @@ function VALIDER_CONFIG_INITIALE() {
 
     var unitName = document.getElementById('CONFIG-UNIT-NAME').value.trim();
     var mail = document.getElementById('CONFIG-MAIL-ASSIST').value.trim();
-    var mailBody = document.getElementById('CONFIG-MAIL-BODY').value.trim();
     var pin1 = document.getElementById('CONFIG-PIN-1').value.trim();
     var pin2 = document.getElementById('CONFIG-PIN-2').value.trim();
 
-    if (!unitName || !mail || !mailBody || !pin1 || !pin2) {
+    if (!unitName || !mail || !pin1 || !pin2) {
         erreurEl.textContent = '⛔ Merci de remplir les 4 champs avant de continuer.';
         erreurEl.classList.remove('HIDDEN');
         return;
@@ -13453,21 +13413,17 @@ function VALIDER_CONFIG_INITIALE() {
     // Sauvegarde vers le meme stockage que Mon Espace, et synchro des champs pour la prochaine ouverture
     UNIT_NAME = unitName;
     MAIL_ASSIST = mail;
-    MAIL_BODY_TEXT = mailBody;
     try {
         var current = JSON.parse(localStorage.getItem(APP_SETTINGS_KEY) || '{}');
         current.unitName = unitName;
         current.mailAssist = mail;
-        current.mailBodyText = mailBody;
         localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(current));
     } catch (e) {}
     PIN_ENREGISTRER(pin1);
     var unitField = document.getElementById('PARAM-UNIT-NAME');
     var mailField = document.getElementById('PARAM-MAIL-ASSIST');
-    var mailBodyField = document.getElementById('PARAM-MAIL-BODY');
     if (unitField) unitField.value = unitName;
     if (mailField) mailField.value = mail;
-    if (mailBodyField) mailBodyField.value = mailBody;
     PIN_UI.deverrouille = true;
     RENDER_CIE_OPTIONS();
     MARQUER_PREMIER_LANCEMENT_FAIT();
@@ -16700,7 +16656,7 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
 // Récapitule les pièces jointes déclarées (cochées / absentes avec motif), pour les faire apparaître
 // noir sur blanc dans le mail lui-même : l'assistant Chorus DT voit tout de suite, sans ouvrir le PDF,
 // ce qui est censé être joint — et peut repérer un écart si rien n'arrive en pièce jointe.
-function GET_PJ_RECAP_TEXTE_MAIL() {
+function GET_PJ_RECAP_TEXTE() {
     var besoin;
     try { besoin = BUILD_RECAP_CORE(false).BESOIN; } catch (e) { besoin = ['COMPTE-RENDU PDF']; }
     var items = [...new Set(besoin || [])];
@@ -16753,7 +16709,7 @@ function ENVOYER_MAIL() {
     if (M.COLLECTIVE) { sujet = 'COLLECTIF (CHEF DE MISSION) - ' + M.USER; }
     else if (M.IS_PAX) { sujet = 'COLLECTIF (PAX) - ' + M.USER; }
     if (M.LIBELLE_MISSION && M.LIBELLE_MISSION.trim()) { sujet += ' - ' + M.LIBELLE_MISSION.trim(); }
-    var corps = sujet + '\n\n' + GET_MAIL_BODY() + '\n\n' + GET_PJ_RECAP_TEXTE_MAIL();
+    var corps = sujet + '\n\n' + GET_PJ_RECAP_TEXTE();
     var besoin;
     try { besoin = BUILD_RECAP_CORE(false).BESOIN; } catch (e) { besoin = []; }
     var checked = M.PJ_CHECKED || {};

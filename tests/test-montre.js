@@ -45,6 +45,7 @@ module.exports = async function(srv) {
     // Réglages › Montre connectée : explications, deux cadrans illustrés, essai.
     await p.evaluate(() => OUVRIR_PARAMETRES()); await attendre(400);
     verifier(await p.evaluate(() => { const f = document.getElementById('PARAM-FOLD-MONTRE'); return !!f && f.querySelectorAll('svg.MONTRE-SVG').length === 2 && /Galaxy Wearable/.test(f.textContent); }), 'réglages : rubrique « Montre connectée » (explications, 2 cadrans)');
+    verifier(await p.evaluate(() => !document.getElementById('PARAM-MAIL-BODY') && !document.getElementById('CONFIG-MAIL-BODY') && !/corps du mail/i.test(document.body.innerHTML) && typeof GET_MAIL_BODY === 'undefined'), 'plus de « Texte du corps du mail » (tout passe par TRIGONE)');
     await p.evaluate(() => ESSAI_NOTIF_MONTRE()); await attendre(1200);
     verifier(await p.evaluate(() => navigator.serviceWorker.ready.then(r => r.getNotifications({ tag: 'trigone-montre-essai' })).then(l => l.length === 1 && l[0].actions[0].title === 'Arrivée sur site')), 'essai : notification avec bouton envoyée');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
