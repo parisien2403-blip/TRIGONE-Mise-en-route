@@ -383,11 +383,15 @@ module.exports = async function() {
     verifier((await c.textContent('#PAGE-STAGE')).includes('ADJ BOUQUET GP'), 'Chorus DT : le compte-rendu arrive dans la section « Comptes-rendus de mission »');
     verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'recu'), 'suivi : compte-rendu « récupéré par l\'assistant Chorus DT » (le missionnaire est prévenu)');
     await c.locator('.MER-RECU:has(.MER-RECU-cr) .BTN-PRIMARY').click(); await attendre(1200);
+    // Lignes : « PDF complet » (compte-rendu + justificatifs), puis les fichiers séparés.
+    const dlTout = c.waitForEvent('download');
+    await c.locator('#MER-MODALE-FOND button:has-text("Télécharger")').nth(0).click();
+    verifier(/\+ justificatifs\.pdf$/.test((await dlTout).suggestedFilename()), 'Chorus DT : compte-rendu et justificatif téléchargés en un seul PDF');
     const dl = c.waitForEvent('download');
-    await c.locator('#MER-MODALE-FOND button:has-text("Télécharger")').nth(1).click();
+    await c.locator('#MER-MODALE-FOND button:has-text("Télécharger")').nth(2).click();
     verifier((await dl).suggestedFilename() === 'nds_test.pdf', 'Chorus DT : le justificatif se télécharge');
     const fen = c.waitForEvent('popup', { timeout: 10000 }).catch(() => null);
-    await c.locator('#MER-MODALE-FOND button:has-text("Aperçu")').first().click();
+    await c.locator('#MER-MODALE-FOND button:has-text("Aperçu")').nth(1).click();
     const pop = await fen;
     verifier(!!pop && /^blob:/.test(pop.url()), 'Chorus DT : « Aperçu » ouvre le PDF du compte-rendu');
     if (pop) await pop.close();

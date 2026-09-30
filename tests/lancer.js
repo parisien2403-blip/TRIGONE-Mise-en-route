@@ -19,6 +19,7 @@ const TESTS = {
     'question': ['Question au missionnaire au lieu d\'un refus', require('./test-question')],
     'controle': ['Contrôle du compte-rendu avant envoi', require('./test-controle')],
     'distance': ['Distance automatique des indemnités kilométriques', require('./test-distance')],
+    'pdf-complet': ['Compte-rendu et justificatifs en un seul PDF (assistant Chorus DT)', require('./test-pdf-complet')],
     'raccourcis': ['Raccourcis de l\'icône et validation groupée', require('./test-raccourcis')],
     'attente': ['Envois sans réseau (boîte d\'envoi) et agenda', require('./test-attente')],
     'erreurs': ['Remontée des erreurs (page administrateur)', require('./test-erreurs')],

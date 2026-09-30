@@ -24,6 +24,22 @@ module.exports = async function(srv) {
     verifier(r.type === 'application/pdf' && r.entete === '%PDF-' && r.pdf < r.taille * 0.15, 'Compte-rendu : justificatif en PDF, ' + Math.round(r.taille / 1024) + ' Ko → ' + Math.round(r.pdf / 1024) + ' Ko');
     verifier(r.origine, 'la photo d\'origine reste disponible (bouton « photo d\'origine »)');
     verifier(r.dafScanne && !r.dafRecadre, 'photo qui remplit déjà le cadre : scannée sans recadrage');
+    // Justificatif en couleur : un tampon bleu sur une feuille blanche reste bleu après le scan.
+    const coul = await p.evaluate(async () => {
+        const c = document.createElement('canvas'); c.width = 900; c.height = 1200;
+        const g = c.getContext('2d'); g.fillStyle = '#6b5b4b'; g.fillRect(0, 0, 900, 1200);
+        g.fillStyle = '#f2efe8'; g.fillRect(120, 120, 660, 960);
+        g.fillStyle = '#1f3fbf'; g.fillRect(300, 500, 300, 160);
+        g.fillStyle = '#222'; g.fillRect(200, 250, 500, 30);
+        const blob = await new Promise(ok => c.toBlob(ok, 'image/jpeg', 0.95));
+        const s = await JUMELAGE_SCANNER_PHOTO(new File([blob], 'tampon.jpg', { type: 'image/jpeg' }));
+        const bm = await createImageBitmap(s), k = document.createElement('canvas'); k.width = bm.width; k.height = bm.height;
+        const h = k.getContext('2d'); h.drawImage(bm, 0, 0);
+        const px = h.getImageData(Math.round(bm.width * 0.5), Math.round(bm.height * (580 - 120) / 960), 1, 1).data;
+        const fond = h.getImageData(Math.round(bm.width * 0.1), Math.round(bm.height * 0.9), 1, 1).data;
+        return { r: px[0], g: px[1], b: px[2], fond: [fond[0], fond[1], fond[2]] };
+    });
+    verifier(coul.b > coul.r + 80 && coul.b > coul.g + 60 && coul.fond.every(v => v > 230), 'scan en couleur : tampon bleu gardé bleu (' + [coul.r, coul.g, coul.b].join(',') + '), fond blanc');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();
 };
