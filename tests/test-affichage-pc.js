@@ -33,5 +33,19 @@ module.exports = async function(srv) {
     verifier(await r.evaluate(() => document.documentElement.clientWidth) === 1280, 'écran annoncé petit : affichage PC appliqué et stable');
     await r.click('.JUM-VERSION'); await attendre(500);
     verifier((await r.evaluate(() => (document.querySelector('.JUM-NOUV') || {}).textContent || '')).includes('Écran : 360 × 780'), 'numéro de version touché : diagnostic de l\'écran affiché');
+    // Écran peu haut (pliable ouvert, 600 × 620) avec Boîte de réception et Espace valideur : le logo garde une vraie
+    // taille, la même dans les deux applis, et les onglets du bas restent entiers.
+    const ctx4 = await tactile(600, 620), l = await ctx4.newPage(), mesures = [];
+    for (const app of ['', 'cr/']) {
+        await l.goto(srv.url + app); await l.evaluate(preparer, APP_CODE); await l.reload(); await attendre(2500);
+        mesures.push(await l.evaluate(() => { document.querySelectorAll('.JUM-CHOIX').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix');
+            if (window.TPL_ACCUEIL) { MER_COMPTE_ACTIF = () => true; MER_EST_VALIDEUR = () => true; SHOW_PAGE('ACCUEIL'); } else SHOW_PAGE('P0');
+            return new Promise(ok => setTimeout(() => { const i = document.querySelector('.MER-LOGO-IMG, #P0 .welcome-logo').getBoundingClientRect();
+                const d = [...document.querySelectorAll('.P0-TAB')].filter(t => t.offsetParent).pop().getBoundingClientRect();
+                ok({ h: i.height, bas: d.bottom <= innerHeight }); }, 600)); }));
+    }
+    verifier(mesures[0].h >= 150 && mesures[1].h >= 144 && Math.abs(mesures[1].h / mesures[0].h - 0.96) < 0.03 && mesures.every(m => m.bas),
+        'écran peu haut : logos grands (' + mesures.map(m => Math.round(m.h)).join(' / ') + ' px), même taille dans les deux applis, onglets entiers');
+    await ctx4.close();
     await ctx.close(); await ctx2.close(); await ctx3.close(); await b.close();
 };
