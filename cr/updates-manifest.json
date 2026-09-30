@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 207,
-  "appCodeMessage": "Nouveau (chef de mission collective) : « Suivi de l'équipe » montre qui a envoyé son compte-rendu, avec « Relancer les retardataires ». Une notification vous prévient à chaque envoi d'un participant.",
+  "appCodeVersion": 208,
+  "appCodeMessage": "Mission collective : l'assistant Chorus DT voit aussi quels participants ont envoyé leur compte-rendu.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

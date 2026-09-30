@@ -71,7 +71,9 @@ async function baseBoite(env) {
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS erreur_appareil (sig TEXT NOT NULL, appareil TEXT NOT NULL, PRIMARY KEY (sig, appareil))'),
             // Missions collectives : quels participants ont envoyé leur compte-rendu (référence de la mission, adresses,
             // date d'envoi ; rien du contenu). Visible du seul chef de mission ; effacé après 90 jours.
-            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS equipe (ref TEXT NOT NULL, mail TEXT NOT NULL, chef TEXT NOT NULL, recu INTEGER, envoye INTEGER, relance INTEGER, PRIMARY KEY (ref, mail))')
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS equipe (ref TEXT NOT NULL, mail TEXT NOT NULL, chef TEXT NOT NULL, recu INTEGER, envoye INTEGER, relance INTEGER, PRIMARY KEY (ref, mail))'),
+            // Assistants Chorus DT qui ont reçu un compte-rendu de la mission : ils voient aussi le suivi de l'équipe.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS equipe_lecteur (ref TEXT NOT NULL, mail TEXT NOT NULL, le INTEGER, PRIMARY KEY (ref, mail))')
         ]);
         TABLES_PRETES = true;
     }
@@ -356,7 +358,10 @@ async function suiviEquipe(env, moi, type, dest, ref, qui, origine) {
         return;
     }
     if (type !== 'CR') return;
+    // Compte-rendu du chef ou d'un participant : l'assistant Chorus DT destinataire peut suivre l'équipe.
+    const duChef = await db.prepare('SELECT 1 AS x FROM equipe WHERE ref = ? AND chef = ? LIMIT 1').bind(ref, moi.mail).first();
     const l = await db.prepare('SELECT chef FROM equipe WHERE ref = ? AND mail = ?').bind(ref, moi.mail).first();
+    if (duChef || l) await db.prepare('INSERT OR IGNORE INTO equipe_lecteur (ref, mail, le) VALUES (?, ?, ?)').bind(ref, dest, le).run();
     if (!l) return;
     await db.prepare('UPDATE equipe SET envoye = ? WHERE ref = ? AND mail = ?').bind(le, ref, moi.mail).run();
     const reste = (await db.prepare('SELECT COUNT(*) AS n FROM equipe WHERE ref = ? AND envoye IS NULL').bind(ref).first() || {}).n || 0;
@@ -656,7 +661,10 @@ async function api(requete, env, url, ctx) {
         if (!ref) return erreur(400, 'Référence manquante.');
         const db = await baseBoite(env);
         await db.prepare('DELETE FROM equipe WHERE recu < ?').bind(Date.now() - 90 * JOUR * 1000).run();
-        const r = (await db.prepare('SELECT mail, recu, envoye, relance FROM equipe WHERE ref = ? AND chef = ?').bind(ref, moi.mail).all()).results || [];
+        await db.prepare('DELETE FROM equipe_lecteur WHERE le < ?').bind(Date.now() - 90 * JOUR * 1000).run();
+        // Le chef de mission, ou un assistant Chorus DT qui a reçu un compte-rendu de cette mission.
+        const lecteur = await db.prepare('SELECT 1 AS x FROM equipe_lecteur WHERE ref = ? AND mail = ?').bind(ref, moi.mail).first();
+        const r = (await db.prepare('SELECT mail, recu, envoye, relance FROM equipe WHERE ref = ? AND (chef = ? OR ?)').bind(ref, moi.mail, lecteur ? 1 : 0).all()).results || [];
         return json({ ok: true, equipe: r });
     }
     if (chemin === 'equipe/relance' && methode === 'POST') {
