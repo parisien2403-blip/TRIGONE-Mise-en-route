@@ -60,7 +60,7 @@ module.exports = async function() {
             await p.click('.JUM-CPT-MENU [data-action="parametres"]'); await attendre(400);
             let tout = '';
             for (const r of await p.$$eval('.JUM-PARAM-NAV [data-rub]', l => l.map(x => x.getAttribute('data-rub')))) { await p.click('.JUM-PARAM-NAV [data-rub="' + r + '"]'); await attendre(100); tout += await p.textContent('.JUM-PARAM-CONTENU'); }
-            verifier(['Mes rôles', 'Notifications', 'Ajouter un appareil', 'Notice', 'Références', 'Signaler un problème', 'Sauvegarder mes données', 'Réinitialiser TRIGONE', 'Partager TRIGONE'].every(t => tout.includes(t)),
+            verifier(['Mes rôles', 'Notifications', 'Ajouter un appareil', 'Notice', 'Références', 'Signaler un problème', 'Sauvegarder dans un fichier', 'Réinitialiser TRIGONE', 'Partager TRIGONE'].every(t => tout.includes(t)),
                 'Paramètres : compte, notifications, appareils, notice, références, signalement, sauvegarde, réinitialisation, partage');
             await p.evaluate(() => JUMELAGE_FERMER_PARAMETRES());
         }

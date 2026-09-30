@@ -655,7 +655,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 114, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 115, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1337,7 +1337,7 @@
             document.body.appendChild(lien); lien.click();
             setTimeout(function() { URL.revokeObjectURL(lien.href); lien.remove(); }, 1500);
             ecrireTxt(CLE_DERNIERE_SAUVEGARDE, String(Date.now()));
-            annoncer('Sauvegarde téléchargée', 'Le fichier « ' + lien.download + ' » contient tout TRIGONE : demandes, documents, bibliothèque, comptes-rendus, remboursements, médailles, réglages et pièces jointes. Rangez-le en lieu sûr (mail à vous-même, clé USB, Drive…) : « Restaurer une sauvegarde » le remet en place, sur cet appareil ou un autre.', 'ok', 'ok');
+            annoncer('Sauvegarde téléchargée', 'Le fichier « ' + lien.download + ' » contient tout TRIGONE : demandes, documents, bibliothèque, comptes-rendus, remboursements, médailles, réglages et pièces jointes. Rangez-le en lieu sûr (mail à vous-même, clé USB, Drive…) : Paramètres › Données › « Restaurer depuis un fichier » le remet en place, sur cet appareil ou un autre.', 'ok', 'ok');
         });
     };
     function restaurer(fichier) {
@@ -2797,12 +2797,12 @@
         var propres = appli.filter(function(x) { return !AIDE_APPLI.test(x.titre); });
         if (propres.length) r.push({ id: 'appli', titre: DANS_CR ? 'Compte-rendu' : 'Mise en route', icone: ic('document'), aide: 'Réglages propres à ' + (DANS_CR ? 'l\'appli Compte-rendu de mission' : 'l\'appli Mise en route') + '.',
             lignes: propres.map(function(x, i) { return L('appli' + i, ic(x.icone), x.titre, x.sous, x.action); }) });
-        r.push({ id: 'donnees', titre: 'Données', icone: ic('disquette'), aide: 'Tout TRIGONE est rangé sur cet appareil : sauvegardez-le régulièrement.', lignes: [
-            L('sauvegarder', ic('disquette'), 'Sauvegarder mes données', 'Un fichier pour tout TRIGONE', function() { window.JUMELAGE_SAUVEGARDER(); }),
-            L('restaurer', ic('importer'), 'Restaurer une sauvegarde', 'Depuis un fichier, sur cet appareil ou un nouveau', function() { window.JUMELAGE_RESTAURER(); }),
+        r.push({ id: 'donnees', titre: 'Données', icone: ic('disquette'), aide: c ? 'Tout TRIGONE est rangé sur cet appareil : la sauvegarde automatique le garde aussi, chiffré, dans votre compte.' : 'Tout TRIGONE est rangé sur cet appareil : sauvegardez-le dans un fichier, ou connectez-vous pour la sauvegarde automatique.', lignes: [
             NB_ATTENTE && L('attente', ic('mail'), 'Envois en attente (' + NB_ATTENTE + ')', 'Faits sans réseau : ils partent tout seuls au retour du réseau', function() { window.JUMELAGE_ATTENTE(); }),
             c && L('sauvauto', ic('disquette'), 'Sauvegarde automatique', window.JUMELAGE_SAUVEGARDE_AUTO_RESUME(), function() { window.JUMELAGE_SAUVEGARDE_AUTO(); }),
             c && !etatSauvAuto().actif && L('restaurercompte', ic('importer'), 'Restaurer depuis mon compte', 'Nouvel appareil : avec votre code de récupération', function() { window.JUMELAGE_RESTAURER_COMPTE(); }),
+            L('sauvegarder', ic('disquette'), 'Sauvegarder dans un fichier', 'Un fichier pour tout TRIGONE, à ranger où vous voulez', function() { window.JUMELAGE_SAUVEGARDER(); }),
+            L('restaurer', ic('importer'), 'Restaurer depuis un fichier', 'Sur cet appareil ou un nouveau', function() { window.JUMELAGE_RESTAURER(); }),
             c && L('effacer', CORBEILLE_SVG, 'Se déconnecter et effacer', 'Retirer le compte et les données de cet appareil', deconnecterEtEffacer, true),
             L('reinitialiser', CORBEILLE_SVG, 'Réinitialiser TRIGONE', 'Tout effacer sur cet appareil', function() { window.JUMELAGE_REINITIALISER(); }, true)
         ] });
@@ -2934,7 +2934,7 @@
             var etat = d.querySelector('.JUM-DEM-ETAT');
             d.querySelector('.JUM-DEM-FICHIER').addEventListener('click', function() {
                 window.JUMELAGE_SAUVEGARDER();
-                etat.textContent = 'Fichier de sauvegarde téléchargé. Ouvrez TRIGONE à la nouvelle adresse, puis bouton du compte › Paramètres › Données › « Restaurer une sauvegarde ».';
+                etat.textContent = 'Fichier de sauvegarde téléchargé. Ouvrez TRIGONE à la nouvelle adresse, puis bouton du compte › Paramètres › Données › « Restaurer depuis un fichier ».';
             });
             d.querySelector('.JUM-DEM-GO').addEventListener('click', function() {
                 var bouton = this, fenetre = window.open(adresseCible().replace(/[?#].*$/, '') + '?demenagement=1', '_blank');
