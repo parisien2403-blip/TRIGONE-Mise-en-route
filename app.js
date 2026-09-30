@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 154;
+var APP_CODE_VERSION = 155;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3444,8 +3444,11 @@ window.addEventListener('DOMContentLoaded', function() {
     var versSuivi = /[?&]espace=suivi/.test(location.search);
     // Rappel « demande refusée à corriger » : Documents.
     var versDocuments = /[?&]espace=documents/.test(location.search);
+    // Raccourci de l'icône de l'appli (appui long) : « Nouvelle demande ».
+    var versNouvelle = /[?&]espace=nouvelle/.test(location.search);
     if (/[?&]espace=/.test(location.search) && history.replaceState) history.replaceState(null, document.title, location.pathname);
-    SHOW_PAGE(versChorus ? 'CHORUS' : versBoite ? 'RECEPTION' : versSuivi ? 'BIBLIOTHEQUE' : versDocuments ? 'PANIER' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
+    SHOW_PAGE(versChorus ? 'CHORUS' : versBoite ? 'RECEPTION' : versSuivi ? 'BIBLIOTHEQUE' : versDocuments ? 'PANIER' : versNouvelle ? 'ACCUEIL' : BROUILLON_EN_COURS() ? 'REPRISE' : 'ACCUEIL');
+    if (versNouvelle) setTimeout(DEMARRER_NOUVELLE_DEMANDE, 400);
     if (window.JUMELAGE_ANIMER_ARRIVEE) setTimeout(JUMELAGE_ANIMER_ARRIVEE, 30);
     // Première ouverture : présentation, puis « Avant de commencer ». Ensuite : code d'accès s'il est activé.
     var vue = false;
@@ -3630,8 +3633,13 @@ function TPL_DOSSIERS(page, l) {
         });
         return TPL_GRILLE_DOSSIERS(page, ds);
     }
+    // « À signer » : plusieurs demandes du même niveau → toutes ouvertes d'un coup dans l'Espace valideur, déjà cochées.
+    var groupe = ouvert.id === 'signer' ? [1, 2].map(function(n) {
+        var l = ouvert.aTraiter.filter(function(e) { return e.nature === 'niveau' + n; }), nb = l.reduce(function(t, e) { return t + (e.n > 1 ? e.n : 1); }, 0);
+        return nb > 1 ? '<button type="button" class="BTN BTN-PRIMARY" style="margin:0 0 12px;" onclick="OUVRIR_TOUT_SIGNER(' + n + ')">✍️ Tout ouvrir et signer — ' + nb + ' demandes' + (ouvert.aTraiter.some(function(e) { return e.nature === 'niveau' + (3 - n); }) ? ' (' + n + (n === 1 ? 'er' : 'e') + ' niveau)' : '') + '</button>' : '';
+    }).join('') : '';
     return TPL_TETE_DOSSIER(page, ouvert) +
-        (ouvert.aide ? '<p class="MER-HINT" style="margin:0 0 10px;">' + ouvert.aide + '</p>' : '') +
+        (ouvert.aide ? '<p class="MER-HINT" style="margin:0 0 10px;">' + ouvert.aide + '</p>' : '') + groupe +
         (ouvert.aTraiter.length ? ouvert.aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Rien à traiter dans ce dossier.</div>') +
         TPL_RECU_TRAITES(page + '-' + ouvert.id, 'Traités', ouvert.traites);
 }
@@ -3781,6 +3789,31 @@ function OUVRIR_RECU(id) {
             var deja = (x.ids || []).length && x.ids.every(function(i) { return GET_A_VALIDER().some(function(e) { return e.id === i + '#' + (niveau - 1); }); });
             SHOW_PAGE('VALIDATION');
             if (!deja) IMPORTER_A_VALIDER(faux);
+        });
+    }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
+}
+// Validation groupée : toutes les demandes « à signer » d'un niveau sont ouvertes d'un coup dans l'Espace valideur et
+// cochées ; le valideur relit (aperçu, pièces jointes), décoche au besoin, puis « Valider la sélection » : une signature
+// par demande, comme une par une. Rôle valideur pas encore actif : comme « Ouvrir et signer ».
+function OUVRIR_TOUT_SIGNER(niveau) {
+    var items = (JUMELAGE_BOITE_LISTE() || []).filter(function(x) { return x.nature === 'niveau' + niveau && x.statut !== 'traite'; });
+    if (!items.length) return;
+    CHARGER_LISTE_VALIDEURS().then(RESTAURER_ACCES).then(function() {
+        var h = HABILITATION_COURANTE();
+        return (!h || h.role !== niveau) && MER_ROLES_MEMO[niveau] ? MER_PASSER_ROLE(niveau) : null;
+    }).then(function() {
+        var h = HABILITATION_COURANTE();
+        if (!h || h.retire) { OUVRIR_RECU(items[0].id); return; }
+        return Promise.all(items.map(function(x) { return JUMELAGE_BOITE_FICHIER(x.id); })).then(function(fichiers) {
+            items.forEach(function(x) { JUMELAGE_BOITE_MARQUER(x.id, 'ouvert'); });
+            SHOW_PAGE('VALIDATION');
+            IMPORTER_A_VALIDER({ files: fichiers, value: '' });
+            // Une fois la liste affichée (contrôle des signatures fait) : tout est coché, prêt à valider.
+            setTimeout(function() {
+                Array.prototype.forEach.call(document.querySelectorAll('.MER-VAL-SEL'), function(c) { c.checked = true; });
+                var n = document.querySelectorAll('.MER-VAL-SEL').length;
+                if (n > 1) MSG_INFO(n + ' demandes prêtes à signer', 'Elles sont toutes cochées. Relisez-les (aperçu, pièces jointes), décochez celles à traiter à part, puis touchez « ✔ Valider la sélection » : chacune reçoit votre signature. Il restera à « Transmettre les décisions ».', '✍️');
+            }, 1500);
         });
     }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
 }

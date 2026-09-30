@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v161';
+const CACHE_NAME = 'trigone-mise-en-route-v162';
 const ASSETS = [
   './',
   './manifest.json',
@@ -22,6 +22,10 @@ const ASSETS = [
   './mascotte-maj.webp',
   './mascotte-code.webp',
   './icon-192.png',
+  './raccourci-demande.png',
+  './raccourci-mission.png',
+  './raccourci-boite.png',
+  './raccourci-bibliotheque.png',
   './icon-512.png',
   './icon-512-maskable.png',
   './apple-touch-icon.png',

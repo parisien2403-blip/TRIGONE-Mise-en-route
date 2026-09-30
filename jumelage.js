@@ -655,7 +655,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 107, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 108, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3580,7 +3580,8 @@
     var dejaChoisi = false;
     try { dejaChoisi = sessionStorage.getItem(CLE_CHOIX) === '1'; } catch (e) {}
     // Ouverture depuis une notification (boîte de réception ou espace Assistant Chorus DT) : droit à l'espace visé.
-    if (!DANS_CR && /[?&]espace=(boite|chorus|suivi|documents)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
+    // Aussi : raccourcis de l'icône de l'appli (appui long) et notification « Départ en mission aujourd'hui » (Compte-rendu).
+    if (DANS_CR ? /[?&](espace|depart)=/.test(location.search) : /[?&]espace=(boite|chorus|suivi|documents|nouvelle)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
     // Juste après une mise à jour (nouvelle publication chargée, quelle qu'en soit la cause) : retour à l'écran de choix.
     var buildVu = +lireTxt('trigone_build_vu') || 0;
     var apresMaj = false;
