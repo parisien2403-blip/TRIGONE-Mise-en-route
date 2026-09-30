@@ -46,6 +46,11 @@ module.exports = async function(srv) {
     await p.evaluate(() => OUVRIR_PARAMETRES()); await attendre(400);
     verifier(await p.evaluate(() => { const f = document.getElementById('PARAM-FOLD-MONTRE'); return !!f && f.querySelectorAll('svg.MONTRE-SVG').length === 2 && /Galaxy Wearable/.test(f.textContent); }), 'réglages : rubrique « Montre connectée » (explications, 2 cadrans)');
     verifier(await p.evaluate(() => !document.getElementById('PARAM-MAIL-BODY') && !document.getElementById('CONFIG-MAIL-BODY') && !/corps du mail/i.test(document.body.innerHTML) && typeof GET_MAIL_BODY === 'undefined'), 'plus de « Texte du corps du mail » (tout passe par TRIGONE)');
+    verifier(await p.evaluate(() => { MAIL_ASSIST = 'chorus@test.fr'; UNIT_NAME = '4°RIISC'; ABT_ENABLED = true; const c = window.confirm; window.confirm = () => true;
+        RESET_PARAMETRES(); window.confirm = c; const r = JSON.parse(localStorage.getItem(APP_SETTINGS_KEY) || '{}');
+        return MAIL_ASSIST === 'chorus@test.fr' && UNIT_NAME === '4°RIISC' && ABT_ENABLED === DEFAULT_APP_SETTINGS.abtEnabled && !('abtEnabled' in r)
+            && !document.getElementById('POURQUOI-OVERLAY') && !document.getElementById('CONFIG-INITIALE-OVERLAY') && !document.getElementById('SYNC-BTN'); }),
+        'réglages par défaut : destinataire Chorus DT et unité (profil commun) gardés ; anciens écrans et file d\'envoi retirés');
     await p.evaluate(() => ESSAI_NOTIF_MONTRE()); await attendre(1200);
     verifier(await p.evaluate(() => navigator.serviceWorker.ready.then(r => r.getNotifications({ tag: 'trigone-montre-essai' })).then(l => l.length === 1 && l[0].actions[0].title === 'Arrivée sur site')), 'essai : notification avec bouton envoyée');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));

@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=103"></script>
+<script src="../jumelage.js?v=104"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -241,34 +241,6 @@ body.dark-mode .medaille-card { background: #1f1f1f; }
 body.dark-mode .medaille-titre { color: #f5f5f5; }
 body.dark-mode .medaille-texte { color: #a3a3a3; }
 
-.config-page {
-  position: fixed;
-  inset: 0;
-  z-index: 99994;
-  background: var(--tg-surface, #fff);
-  display: flex;
-  flex-direction: column;
-  overflow: hidden;
-}
-.config-page.HIDDEN { display: none; }
-.config-scroll { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
-.config-content { max-width: 420px; margin: 0 auto; padding: 40px 26px 50px; }
-.config-logo { width: 52px; height: auto; display: block; margin: 0 auto 14px; }
-.config-titre {
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 700;
-  font-size: 1.5em;
-  text-align: center;
-  color: var(--tg-ink, #1a1a1a);
-  margin: 0 0 8px;
-}
-.config-soustitre {
-  text-align: center;
-  font-size: 0.85em;
-  color: var(--tg-muted, #64748b);
-  line-height: 1.5;
-  margin: 0 0 30px;
-}
 .config-champ { margin-bottom: 24px; }
 .config-champ label {
   display: block;
@@ -292,24 +264,7 @@ body.dark-mode .medaille-texte { color: #a3a3a3; }
 }
 .config-champ textarea { resize: vertical; }
 .config-champ input:focus, .config-champ textarea:focus { outline: none; border-color: var(--tg-accent, #5A7A94); }
-.config-hint { font-size: 0.76em; color: var(--tg-muted, #64748b); margin: 0 0 10px; }
-.config-pin-row { display: flex; gap: 12px; }
-.config-pin-row input {
-  flex: 1 1 0;
-  min-width: 0;
-  box-sizing: border-box;
-  padding: 12px 10px;
-  border-radius: 10px;
-  border: 1.5px solid #cbd5e1;
-  font-size: 1em;
-  letter-spacing: 0.15em;
-  text-align: center;
-  font-family: inherit;
-  background: var(--tg-surface, #fff);
-  color: var(--tg-ink, #1a1a1a);
-}
-.config-pin-row input:focus { outline: none; border-color: var(--tg-accent, #5A7A94); }
-.config-pin-erreur { color: #dc2626; font-size: 0.8em; font-weight: 600; margin: 8px 0 0; }
+
 .config-erreur { color: #dc2626; font-size: 0.85em; font-weight: 600; text-align: center; margin: 0 0 16px; }
 .config-cta {
   display: block;
@@ -325,104 +280,11 @@ body.dark-mode .medaille-texte { color: #a3a3a3; }
   cursor: pointer;
 }
 .config-cta:active { transform: scale(0.98); }
-body.dark-mode .config-page { background: #141414; }
-body.dark-mode .config-titre { color: #f5f5f5; }
-body.dark-mode .config-soustitre { color: #a3a3a3; }
+
 body.dark-mode .config-champ label { color: #f5f5f5; }
-body.dark-mode .config-champ input, body.dark-mode .config-champ textarea, body.dark-mode .config-pin-row input {
+body.dark-mode .config-champ input, body.dark-mode .config-champ textarea {
   background: #1f1f1f; border-color: #4a4a4a; color: #e5e5e5;
 }
-body.dark-mode .config-hint { color: #a3a3a3; }
-
-.pourquoi-page {
-  position: fixed;
-  inset: 0;
-  z-index: 99995;
-  background: var(--tg-surface, #fff);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 32px 28px;
-  text-align: center;
-  overflow: hidden;
-}
-.pourquoi-page.HIDDEN { display: none; }
-.pourquoi-halo {
-  position: absolute;
-  width: 380px; height: 380px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(90,122,148,0.12) 0%, rgba(90,122,148,0.04) 45%, transparent 70%);
-  animation: pourquoiHaloPulse 4s ease-in-out infinite;
-}
-@keyframes pourquoiHaloPulse {
-  0%, 100% { transform: scale(1); opacity: 0.7; }
-  50% { transform: scale(1.1); opacity: 1; }
-}
-.pourquoi-content { position: relative; max-width: 380px; }
-.pourquoi-logo {
-  width: 88px; height: auto;
-  opacity: 0;
-  transform: scale(0.75);
-}
-.pourquoi-page.jouer .pourquoi-logo { animation: pourquoiLogoIn 0.7s cubic-bezier(0.2,0.8,0.2,1) 0.1s forwards; }
-@keyframes pourquoiLogoIn { to { opacity: 1; transform: scale(1); } }
-.pourquoi-wordmark {
-  margin-top: 16px;
-  display: flex;
-  justify-content: center;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 700;
-  font-size: 1.7em;
-  letter-spacing: 0.08em;
-  color: var(--tg-ink, #1a1a1a);
-}
-.pourquoi-wordmark span { display: inline-block; opacity: 0; transform: translateY(12px); }
-.pourquoi-page.jouer .pourquoi-wordmark span { animation: pourquoiLetterIn 0.5s cubic-bezier(0.2,0.8,0.2,1) forwards; }
-@keyframes pourquoiLetterIn { to { opacity: 1; transform: translateY(0); } }
-.pourquoi-titre {
-  margin: 26px 0 0;
-  font-family: Georgia, 'Times New Roman', serif;
-  font-weight: 700;
-  font-size: 1.55em;
-  line-height: 1.35;
-  color: var(--tg-ink, #1a1a1a);
-  opacity: 0;
-}
-.pourquoi-page.jouer .pourquoi-titre { animation: pourquoiFadeUp 0.7s ease 1.05s forwards; }
-.pourquoi-texte {
-  margin: 16px 0 0;
-  font-size: 0.95em;
-  line-height: 1.55;
-  color: var(--tg-muted, #64748b);
-  opacity: 0;
-}
-.pourquoi-page.jouer .pourquoi-texte { animation: pourquoiFadeUp 0.7s ease 1.35s forwards; }
-@keyframes pourquoiFadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.pourquoi-cta {
-  position: relative;
-  margin-top: 34px;
-  padding: 15px 38px;
-  border: none;
-  border-radius: 999px;
-  background: var(--tg-ink, #1a1a1a);
-  color: #fff;
-  font-weight: 700;
-  font-size: 0.95em;
-  letter-spacing: 0.02em;
-  cursor: pointer;
-  opacity: 0;
-}
-.pourquoi-page.jouer .pourquoi-cta { animation: pourquoiFadeUp 0.7s ease 1.65s forwards; }
-.pourquoi-cta:active { transform: scale(0.96); }
-body.dark-mode .pourquoi-page { background: #141414; }
-body.dark-mode .pourquoi-halo { background: radial-gradient(circle, rgba(122,157,181,0.16) 0%, rgba(122,157,181,0.05) 45%, transparent 70%); }
-body.dark-mode .pourquoi-wordmark, body.dark-mode .pourquoi-titre { color: #f5f5f5; }
-body.dark-mode .pourquoi-texte { color: #a3a3a3; }
-body.dark-mode .pourquoi-cta { background: #f5f5f5; color: #141414; }
 
 .msg-wrap {
   position: relative;
@@ -693,40 +555,13 @@ body.dark-mode .app-credit {
   color: #8fb0c7;
 }
 .app-version-tag { opacity: 0.75; }
-.P0-REF-BTN {
-  position: absolute;
-  top: 10px;
-  right: 10px;
-  z-index: 5;
-  padding: 6px 12px;
-  border-radius: 999px;
-  border: 1.5px solid var(--tg-border);
-  background: rgba(255, 255, 255, 0.9);
-  color: var(--tg-muted, #64748b);
-  font-family: inherit;
-  font-size: 0.68em;
-  font-weight: 700;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  line-height: 1;
-  cursor: pointer;
-  transition: transform 0.15s, border-color 0.15s, color 0.15s;
-}
-.P0-REF-BTN:active { transform: scale(0.95); }
-.P0-CHECK-UPDATE-BTN { top: 40px; }
-.P0-SIGNALER-BTN { top: 70px; }
-/* Petits écrans : les trois boutons (Références, Mise à jour, Signaler) passent en rangée de pastilles rondes,
-   icône seule (le nom reste en info-bulle et pour les lecteurs d'écran), au-dessus du logo sans le recouvrir. */
+
+/* Petits écrans : le logo commence sous le bouton du compte, sans le recouvrir. */
 @media (max-width: 400px), (orientation: portrait) and (max-height: 700px) {
   #P0 .P0-INNER { padding-top: 44px; }
-  #P0 .P0-REF-BTN { top: 4px; width: 34px; height: 34px; padding: 0; font-size: 0; gap: 0; justify-content: center; }
-  #P0 .P0-REF-BTN .JUM-IC { width: 16px; height: 16px; }
-  #P0 #BTN-SIGNALER { right: 10px; }
-  #P0 #BTN-CHECK-UPDATE { right: 52px; }
-  #P0 #BTN-REFERENCES { right: 94px; }
+
 }
-.P0-REF-BTN:hover { border-color: var(--tg-accent-light); color: var(--tg-ink); }
-body.dark-mode .P0-REF-BTN { background: rgba(36, 36, 36, 0.9); border-color: #404040; color: #a3a3a3; }
+
 .P0-COLOR-SWATCHES { display: flex; flex-wrap: wrap; gap: 10px; }
 .P0-COLOR-SWATCH {
   width: 40px;
@@ -911,7 +746,7 @@ body.dark-mode .ADMIN-BOX label { color: #d4d4d4; }
 body.dark-mode .ADMIN-BOX .CIE-HINT { color: #a3a3a3; }
 body.dark-mode .ADMIN-BOX .check-container label { color: #e5e5e5; }
 body.dark-mode #PARAMS-SAVED-HINT { color: #4ade80 !important; }
-body.dark-mode .notice-fold-premier { background: rgba(90,122,148,0.15); border-color: #7A9DB5; }
+
 .BTN-ADMIN-CLOSE {
   width: 100%; padding: 10px; border: 1.5px solid #cbd5e1; border-radius: 10px;
   cursor: pointer; background: transparent; color: #64748b;
@@ -3465,8 +3300,6 @@ body.has-network-banner { padding-top: 52px; }
   display: flex; align-items: center; justify-content: center; gap: 10px; flex-wrap: wrap;
 }
 .NETWORK-BANNER.offline { background: #B71C1C; color: white; }
-.NETWORK-BANNER.queue { background: #F57C00; color: white; }
-.SYNC-BTN { background: white; color: #F57C00; border: none; padding: 6px 14px; border-radius: 8px; font-weight: bold; cursor: pointer; font-size: 0.85em; }
 
 .UPDATE-BANNER {
   position: fixed; top: 0; left: 0; right: 0; z-index: 1000;
@@ -3486,7 +3319,6 @@ body.has-network-banner { padding-top: 52px; }
 }
 .UPDATE-BANNER-BTN.primary { background: #fff; color: #3d5363; border-color: #fff; }
 .UPDATE-BANNER.a-jour { background: linear-gradient(135deg, #16a34a, #15803d); }
-
 
 /* —— Bibliothèque (style accueil TRIGONE) —— */
 #P-BIB {
@@ -4597,7 +4429,7 @@ body.dark-mode .RESUME-CONFIRM-TXT { color: #a3a3a3; }
 .notice-fold summary::after { content: ' +'; float: right; color: #5a7a94; font-weight: 900; font-size: 1.15em; }
 .notice-fold[open] summary::after { content: ' −'; }
 .notice-fold .notice-mini, .notice-fold p { padding: 0 14px 12px; margin: 0; font-size: 0.82em; color: var(--sm2-muted); line-height: 1.5; }
-.notice-fold-premier { border-color: var(--tg-accent, #5A7A94); border-width: 1.5px; background: var(--tg-tint, #E8F0F6); box-shadow: 0 0 0 3px rgba(90,122,148,0.12); }
+
 .notice-role { margin: 14px 0 6px; font-size: 0.78em; font-weight: 800; text-transform: uppercase; letter-spacing: 0.06em; color: var(--sm2-accent); }
 .notice-role:first-child { margin-top: 0; }
 .NOTICE-HINT {
@@ -5011,7 +4843,7 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
   body .PC-MENU { display: flex; }
   .PC-MENU { position: fixed; left: 0; top: 0; bottom: 0; width: 248px; z-index: 50; flex-direction: column; gap: 4px;
     padding: 22px 16px 16px; background: var(--sm2-surface-solid, #fff); border-right: 1px solid rgba(15,23,42,0.08); overflow-y: auto; }
-  body .P0-TAB-BAR, body .P0-REF-BTN { display: none !important; }
+  body .P0-TAB-BAR{ display: none !important; }
   body .THEME-TOGGLE { left: 200px; right: auto; top: 12px; width: 36px; height: 36px; }
   body .page-stage { max-width: 1100px; }
   /* Départ mission : identité à gauche, mission et lieux à droite */
@@ -5196,50 +5028,6 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
   </div>
 </div>
 
-<div id="CONFIG-INITIALE-OVERLAY" class="config-page HIDDEN">
-  <div class="config-scroll">
-    <div class="config-content">
-      <img src="phoenix-icon.png" alt="TRIGONE" class="config-logo">
-      <h1 class="config-titre">Avant de commencer</h1>
-      <p class="config-soustitre">Ces informations sont utilisées pour chaque compte-rendu. Modifiables à tout moment : menu du compte › Mon profil.</p>
-
-      <div class="config-champ">
-        <label for="CONFIG-UNIT-NAME">Nom de l'unité</label>
-        <input type="text" id="CONFIG-UNIT-NAME" data-no-uppercase="1" placeholder="EX : 4° RIISC" autocomplete="off">
-      </div>
-
-      <div class="config-champ">
-        <label for="CONFIG-MAIL-ASSIST">Adresse mail du destinataire (assistant Chorus DT / gestionnaire)</label>
-        <input type="email" id="CONFIG-MAIL-ASSIST" placeholder="EX : prenom.nom@interieur.gouv.fr" autocomplete="off">
-      </div>
-
-      <div class="config-champ">
-        <label>Code d'accès à 4 chiffres</label>
-        <p class="config-hint">Demandé à chaque ouverture de TRIGONE, pour protéger vos données.</p>
-        <div class="config-pin-row">
-          <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="CONFIG-PIN-1" placeholder="Code" autocomplete="off">
-          <input type="tel" inputmode="numeric" pattern="[0-9]*" maxlength="4" id="CONFIG-PIN-2" placeholder="Confirmer" autocomplete="off">
-        </div>
-        <p id="CONFIG-PIN-ERREUR" class="config-pin-erreur HIDDEN">Les deux codes ne correspondent pas.</p>
-      </div>
-
-      <p id="CONFIG-ERREUR" class="config-erreur HIDDEN"></p>
-      <button type="button" class="config-cta" onclick="VALIDER_CONFIG_INITIALE()">Continuer →</button>
-    </div>
-  </div>
-</div>
-
-<div id="POURQUOI-OVERLAY" class="pourquoi-page HIDDEN">
-  <div class="pourquoi-halo"></div>
-  <div class="pourquoi-content">
-    <img src="phoenix-icon.png" alt="TRIGONE" class="pourquoi-logo">
-    <div class="pourquoi-wordmark" id="POURQUOI-WORDMARK"></div>
-    <h1 class="pourquoi-titre">Vous rentrez de mission.<br>TRIGONE prend la suite.</h1>
-    <p class="pourquoi-texte">Frais calculés, règles respectées, envoi préparé — à vous de valider, TRIGONE fait le reste.</p>
-  </div>
-  <button type="button" class="pourquoi-cta" onclick="FERMER_POURQUOI_TRIGONE()">Continuer →</button>
-</div>
-
 <div id="PAX-ENVOI-OVERLAY" class="QR-OVERLAY HIDDEN" aria-hidden="true">
 <div class="QR-OVERLAY-CARD QR-CARD PAX-ENVOI">
 <button type="button" class="QR-OVERLAY-CLOSE" onclick="FERMER_ENVOI_PAX()" title="Fermer">✕</button>
@@ -5256,7 +5044,6 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 
 <div id="NETWORK-BANNER" class="NETWORK-BANNER HIDDEN">
 <span id="NETWORK-BANNER-TEXT"></span>
-<button id="SYNC-BTN" class="SYNC-BTN HIDDEN" onclick="PROCESS_SYNC_QUEUE()">Synchroniser</button>
 </div>
 
 <script>
@@ -6290,19 +6077,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 </details>
 
-<details class="notice-fold HIDDEN" id="PARAM-FOLD-UNITE">
-<summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="5"/><path d="M8.5 12.5 7 22l5-3 5 3-1.5-9.5"/></svg></span>Identité de l'unité</summary>
-<div class="ADMIN-SECTION">
-<label for="PARAM-UNIT-NAME" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Nom de l'unité (affiché sur l'écran, le PDF, les invitations)</label>
-<input type="text" id="PARAM-UNIT-NAME" data-no-uppercase="1" placeholder="EX : 4° RIISC" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em; margin-bottom:14px;">
-<p class="CIE-HINT" style="margin:0;">Votre grade, nom, prénom, NID et compagnie se renseignent à chaque mission (écran Départ) et restent mémorisés automatiquement d'une fois sur l'autre — rien à régler ici.</p>
-</div>
-</details>
 
-<div class="HIDDEN">
-<label for="PARAM-MAIL-ASSIST" class="HIDDEN" style="display:block; font-size:0.78em; font-weight:600; margin-bottom:4px;">Adresse mail du destinataire (assistant Chorus DT / gestionnaire)</label>
-<input type="email" id="PARAM-MAIL-ASSIST" class="HIDDEN" placeholder="EX : prenom.nom@interieur.gouv.fr" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid #cbd5e1; font-size:0.9em; margin-bottom:14px;">
-</div>
 
 <details class="notice-fold">
 <summary><span class="FOLD-ICON"><svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2"/><path d="M8 6h8M8 12h.01M12 12h.01M16 12h.01M8 16h.01M12 16h.01M16 16h.01"/></svg></span>Calculs &amp; barèmes</summary>
@@ -6480,9 +6255,6 @@ function IS_ROUTE_TRANSPORT(type) {
     return ['VF', 'AVION', 'BATEAUX'].includes(type);
 }
 
-function TRANSPORT_IS_RETOUR(suf) {
-    return suf === 'R' || suf === 'R-ANX';
-}
 
 function TRANSPORT_RETOUR_USES_LIEU_ARRIVEE(type) {
     return type === 'VRM' || type === 'VRC';
@@ -6495,24 +6267,6 @@ function PLACE_LABEL(type) {
     return 'Lieu';
 }
 
-function ROUTE_EXAMPLES(type, isRetour) {
-    if (type === 'VF') {
-        return isRetour
-            ? { dep: 'PARIS', arr: 'LIBOURNE', hDep: '18H00', hArr: '21H15' }
-            : { dep: 'LIBOURNE', arr: 'PARIS', hDep: '08H00', hArr: '11H30' };
-    }
-    if (type === 'BATEAUX') {
-        return isRetour
-            ? { dep: 'BASTIA', arr: 'TOULON', hDep: '18H00', hArr: '21H15' }
-            : { dep: 'TOULON', arr: 'BASTIA', hDep: '08H00', hArr: '11H30' };
-    }
-    if (type === 'AVION') {
-        return isRetour
-            ? { dep: 'BASTIA', arr: 'MARSEILLE', hDep: '18H00', hArr: '21H15' }
-            : { dep: 'MARSEILLE', arr: 'BASTIA', hDep: '08H00', hArr: '11H30' };
-    }
-    return { dep: '', arr: '', hDep: '08H00', hArr: '11H30' };
-}
 
 function SPLIT_LEGACY_GH(g, h) {
     var gp = String(g || '').split(/\s*\/\s*/);
@@ -6525,17 +6279,6 @@ function SPLIT_LEGACY_GH(g, h) {
     };
 }
 
-function JOIN_LEGACY_GH(dep, arr, hDep, hArr) {
-    dep = (dep || '').trim();
-    arr = (arr || '').trim();
-    hDep = (hDep || '').trim();
-    hArr = (hArr || '').trim();
-    var g = dep && arr ? dep + ' / ' + arr : (dep || arr);
-    var h = '';
-    if (hDep && hArr) h = hDep + ' / ' + hArr;
-    else if (hDep || hArr) h = hDep || hArr;
-    return { g: g, h: h };
-}
 
 function MIGRATE_TRANSPORT_PARTS(pk) {
     if (M['G_' + pk + '_DEP'] || M['G_' + pk + '_ARR']) return;
@@ -6547,12 +6290,6 @@ function MIGRATE_TRANSPORT_PARTS(pk) {
     M['H_' + pk + '_ARR'] = s.hArr;
 }
 
-function REFRESH_TRANSPORT_JOINED(pk) {
-    if (!M['G_' + pk + '_DEP'] && !M['G_' + pk + '_ARR']) return;
-    var j = JOIN_LEGACY_GH(M['G_' + pk + '_DEP'], M['G_' + pk + '_ARR'], M['H_' + pk + '_DEP'], M['H_' + pk + '_ARR']);
-    M['G_' + pk] = j.g;
-    M['H_' + pk] = j.h;
-}
 
 function MIGRATE_TRANSPORT_TO_DEST(pk) {
     if ((M['G_' + pk] || '').trim()) return;
@@ -6859,7 +6596,8 @@ function WRITE_TRANSPORT_TO_DOM() {
     });
     WRITE_ABT_TO_DOM();
 }
-var SYNC_QUEUE_KEY = 'mission_sync_queue';
+var SYNC_QUEUE_KEY = 'mission_sync_queue'; // ancienne file d'envois par mail : vidée au démarrage
+try { localStorage.removeItem(SYNC_QUEUE_KEY); } catch (e) {}
 var SAVED_USER_KEY = 'mission_saved_user';
 var SAVED_CIE_KEY = 'mission_saved_cie';
 var SAVED_CIE_PAX_KEY = 'mission_saved_cie_pax';
@@ -7064,12 +6802,6 @@ function REPAS_LIGNE(d, slot) {
 // A utiliser partout où un montant repas/hebergement est affiché ou calculé,
 // pour que l'affichage suive toujours le mode France/Etranger de la mission.
 
-function GET_REPAS_RATE_DISPLAY(state) {
-    var S = state || M;
-    if (!S.MISSION_ETRANGER) return 20;
-    var r = GET_REPAS_RATE_EUR(S);
-    return r == null ? 20 : r;
-}
 
 function GET_HEBERG_RATE_FOR_JOUR(J, state) {
     var S = state || M;
@@ -7080,16 +6812,6 @@ function GET_HEBERG_RATE_FOR_JOUR(J, state) {
     return J && J.V === 'GRANDE' ? 120 : (J && J.V === 'PARIS' ? 140 : 90);
 }
 
-function GET_HEBERG_ZONE_LABEL_DISPLAY(J, state) {
-    var S = state || M;
-    if (S && S.MISSION_ETRANGER) {
-        var r = GET_HEBERG_RATE_EUR(S);
-        return r == null ? '⚠ taux manquant' : (FORMAT_EURO(r) + ' € · ' + (S.PAYS_MISSION || 'Étranger'));
-    }
-    var rate = GET_HEBERG_RATE_FOR_JOUR(J, S);
-    var zoneTxt = J && J.V === 'PARIS' ? 'Paris' : (J && J.V === 'GRANDE' ? 'Grande ville' : 'Autre ville');
-    return rate + ' € · ' + zoneTxt;
-}
 
 var CIE_LABEL = 'Compagnie';
 var CIE_OPTIONS = ['1ère Cie', '4ème Cie'];
@@ -7789,10 +7511,6 @@ function CR_PREVIEW_CELL(val) {
     return ESC_HTML(String(val == null || val === '' ? 'N/A' : val)).replace(/\n/g, '<br>');
 }
 
-function CR_PREVIEW_REPAS_CELL(aff, declared) {
-    if (declared === 'PAYANT' && aff === 'GRATUIT*') return '<span class="REPAS-HORS-CRENEAU">GRATUIT</span>';
-    return ESC_HTML(aff);
-}
 
 function CR_PREVIEW_HEBERG_CELL(aff, J) {
     if (J && J.L === 'PAYANT' && !J.L_ABT && aff === 'NEANT*') return '<span class="REPAS-HORS-CRENEAU">NEANT</span>';
@@ -7809,13 +7527,6 @@ function CR_PREVIEW_KV_TABLE(pairs) {
     return '<table class="cr-preview-table"><tbody>' + rows + '</tbody></table>';
 }
 
-function CR_PREVIEW_TRANSPORT_PAIR(label, type, leg, pk) {
-    if (!type || type === 'NEANT') {
-        if (/annexe/i.test(label)) return null;
-        return { label: label, value: 'Aucun' };
-    }
-    return { label: label, value: FORMAT_TRANSPORT_PDF(type, leg, pk) };
-}
 
 function BUILD_LEG_PREVIEW_HTML(leg, legNum, isChained, legIdx, issueKeys) {
     var title = (M.LEGS && M.LEGS.length) ? ('Mission ' + legNum) : 'Mission';
@@ -8725,12 +8436,6 @@ function UPDATE_BIBLIOTHEQUE_BUTTONS() {
     if (b1) b1.classList.toggle('HIDDEN', !show);
 }
 
-function BIB_TAB_LABEL(entry) {
-    var lbl = 'Mission du ' + entry.debut;
-    if (entry.user) lbl += ' · ' + entry.user;
-    if (entry.forfaitOfficiel != null) lbl += ' — ' + FORMAT_EURO(entry.forfaitOfficiel) + ' €';
-    return lbl;
-}
 
 function BIB_CARD_SVG() {
     return '<svg viewBox="0 0 24 24"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M16 13H8M16 17H8M10 9H8"/></svg>';
@@ -8808,9 +8513,6 @@ function OUVRIR_BIB_RECAP(idx) {
     BIB_AFFICHER_DETAIL();
 }
 
-function FERMER_BIB_RECAP() {
-    BIB_RETOUR_LISTE();
-}
 
 // Suivi d'un compte-rendu envoyé dans TRIGONE (étapes tenues par le serveur) : identifiant de l'envoi gardé à
 // l'archivage ; pour un envoi plus ancien, rapprochement par l'heure d'envoi (à 10 minutes près).
@@ -9290,14 +8992,6 @@ function FORFAIT_MISSION_HIDDEN_DESKTOP(key) {
     return !!GET_FORFAIT_DESKTOP_HIDDEN()[key];
 }
 
-function FORFAIT_DESKTOP_HIDE_KEY(key) {
-    if (!key || !ENVOI_CHORUS_BLOQUE_DESKTOP()) return;
-    try {
-        var arr = JSON.parse(sessionStorage.getItem(FORFAIT_DESKTOP_HIDDEN_KEY) || '[]');
-        if (arr.indexOf(key) < 0) arr.push(key);
-        sessionStorage.setItem(FORFAIT_DESKTOP_HIDDEN_KEY, JSON.stringify(arr));
-    } catch (e) {}
-}
 
 function CLEAR_FORFAIT_DESKTOP_HIDDEN() {
     try { sessionStorage.removeItem(FORFAIT_DESKTOP_HIDDEN_KEY); } catch (e) {}
@@ -9686,8 +9380,6 @@ function RENDRE_EQUIPE_MER() {
 }
 
 // ===================== SIGNALER UN PROBLÈME =====================
-// Adresse dédiée à TRIGONE (pas la boîte de l'assistant Chorus DT / MAIL_ASSIST, qui reçoit les CR).
-var TRIGONE_SUPPORT_MAIL = 'trigone.app@outlook.fr';
 
 var PAGE_LABELS_SIGNALEMENT = {
     P0: 'Accueil', P1: 'Départ mission', P2: 'Mission en cours', 'P2-FIN': 'Frais de mission',
@@ -9706,14 +9398,7 @@ function GET_LABEL_ECRAN_ACTUEL() {
 }
 
 function SIGNALER_PROBLEME() {
-    if (window.JUMELAGE_SIGNALER) { JUMELAGE_SIGNALER(GET_LABEL_ECRAN_ACTUEL()); return; }
-    var sujet = 'TRIGONE - Signalement (V' + APP_VERSION_AFFICHEE + ')';
-    var corps = 'Décrivez ici ce qui s\'est passé :\n\n\n\n'
-        + '---\n'
-        + 'Version TRIGONE : V' + APP_VERSION_AFFICHEE + '\n'
-        + 'Écran concerné : ' + GET_LABEL_ECRAN_ACTUEL() + '\n'
-        + 'Connecté à internet : ' + (navigator.onLine ? 'oui' : 'non');
-    window.location.href = 'mailto:' + TRIGONE_SUPPORT_MAIL + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
+    if (window.JUMELAGE_SIGNALER) JUMELAGE_SIGNALER(GET_LABEL_ECRAN_ACTUEL());
 }
 
 function UPDATE_MAIL_BUTTON() {
@@ -9924,10 +9609,6 @@ function RESTORE_CIE_TABS() {
     if (cie) M.CIE = cie;
 }
 
-function CIE_INFO_HTML() {
-    var label = GET_CIE_LABEL(M.CIE);
-    return label ? ('<br>' + CIE_LABEL.toUpperCase() + ' : ' + label) : '';
-}
 
 function GET_SAVED_USER() {
     return SAVED_USER_CACHE || '';
@@ -10239,10 +9920,6 @@ function REPAS_ISSUE_KEY(legIdx, jourIdx, slot) {
     return legIdx + ':' + jourIdx + ':' + slot;
 }
 
-function GET_CURRENT_LEG_IDX(state) {
-    var S = state || M;
-    return S.LEGS ? S.LEGS.length : 0;
-}
 
 function CAN_DECLARE_REPAS_PAYANT(legIdx, jourIdx, slot, state) {
     var S = state || M;
@@ -10292,38 +9969,6 @@ function CAN_DECLARE_REPAS_PAYANT(legIdx, jourIdx, slot, state) {
     return true;
 }
 
-function GET_REPAS_INELIGIBLE_TITLE(legIdx, jourIdx, slot) {
-    var dep = GET_MISSION_DEPART_HORODATAGE();
-    var ret = GET_MISSION_RETOUR_HORODATAGE();
-    var flat = [];
-    GET_MISSION_LEGS_FROM_STATE(M).forEach(function(leg, li) {
-        (leg.JOURS || []).forEach(function(J, ji) {
-            flat.push({ legIdx: li, jourIdx: ji });
-        });
-    });
-    var entry = flat.filter(function(e) { return e.legIdx === legIdx && e.jourIdx === jourIdx; })[0];
-    if (!entry) return 'Repas non éligible au forfait';
-    // Same DATE-based first/last logic as CAN_DECLARE_REPAS_PAYANT
-    var realFlat = flat.filter(function(e) {
-        var J = GET_MISSION_LEGS_FROM_STATE(M)[e.legIdx] && (GET_MISSION_LEGS_FROM_STATE(M)[e.legIdx].JOURS || [])[e.jourIdx];
-        return J && !J.EXPERIENCE;
-    });
-    var firstDate = realFlat.length ? (GET_MISSION_LEGS_FROM_STATE(M)[realFlat[0].legIdx].JOURS[realFlat[0].jourIdx].DATE) : null;
-    var lastDate  = realFlat.length ? (GET_MISSION_LEGS_FROM_STATE(M)[realFlat[realFlat.length-1].legIdx].JOURS[realFlat[realFlat.length-1].jourIdx].DATE) : null;
-    var curJ = entry ? (GET_MISSION_LEGS_FROM_STATE(M)[entry.legIdx] && (GET_MISSION_LEGS_FROM_STATE(M)[entry.legIdx].JOURS || [])[entry.jourIdx]) : null;
-    var entryDate = curJ ? curJ.DATE : null;
-    var isFirst = entryDate && firstDate ? (entryDate === firstDate) : (entry === flat[0]);
-    var isLast  = entryDate && lastDate  ? (entryDate === lastDate)  : (entry === flat[flat.length - 1]);
-    var parts = [];
-    if (slot === 'MIDI') {
-        if (isFirst) parts.push('départ ≤ 11h00' + (dep ? ' (actuel : ' + FORMAT_HORODATAGE_TIME(dep) + ')' : ''));
-        if (isLast)  parts.push('retour ≥ 14h00' + (ret ? ' (actuel : ' + FORMAT_HORODATAGE_TIME(ret) + ')' : ''));
-    } else if (slot === 'SOIR') {
-        if (isFirst) parts.push('départ ≤ 18h00' + (dep ? ' (actuel : ' + FORMAT_HORODATAGE_TIME(dep) + ')' : ''));
-        if (isLast)  parts.push('retour ≥ 21h00' + (ret ? ' (actuel : ' + FORMAT_HORODATAGE_TIME(ret) + ')' : ''));
-    }
-    return 'Non éligible — ' + parts.join(' · ');
-}
 
 function HEBERG_ISSUE_KEY(legIdx, jourIdx) {
     return 'H:' + legIdx + ':' + jourIdx;
@@ -10353,32 +9998,7 @@ function CAN_DECLARE_HEBERG_PAYANT(legIdx, jourIdx, state) {
     return true;
 }
 
-function GET_HEBERG_INELIGIBLE_TITLE(legIdx, jourIdx) {
-    var retStr = GET_MISSION_RETOUR_HORODATAGE_STR();
-    var lieu = M.LIEU_RET ? FORMAT_LIEU_DEP(M.LIEU_RET) : 'résidence administrative/familiale';
-    var msg = 'Non éligible — retour sur ' + lieu + ' le même jour avant minuit';
-    if (retStr) msg += ' (retour : ' + retStr + ')';
-    return msg;
-}
 
-function SANITIZE_JOURS_REPAS_ELIGIBILITE() {
-    if (!M.JOURS || !M.JOURS.length) return;
-    var legIdx = GET_CURRENT_LEG_IDX();
-    var changed = false;
-    M.JOURS.forEach(function(J, I) {
-        ['MIDI', 'SOIR'].forEach(function(slot) {
-            if (J[slot] === 'PAYANT' && !CAN_DECLARE_REPAS_PAYANT(legIdx, I, slot)) {
-                J[slot] = 'GRATUIT';
-                changed = true;
-            }
-        });
-        if (J.L === 'PAYANT' && !J.L_ABT && !CAN_DECLARE_HEBERG_PAYANT(legIdx, I)) {
-            J.L = 'NEANT';
-            changed = true;
-        }
-    });
-    if (changed) SAVE_STATE();
-}
 
 function EVAL_REPAS_ELIGIBILITE(state) {
     var S = state || M;
@@ -10467,13 +10087,6 @@ function LEG_JOUR_FORFAIT_OFFICIEL(J) {
     return LEG_JOUR_FORFAIT(J);
 }
 
-function CALC_JOURS_TOTAL(jours, officialOnly) {
-    var total = 0;
-    (jours || []).forEach(function(J) {
-        total += officialOnly ? LEG_JOUR_FORFAIT_OFFICIEL(J) : LEG_JOUR_FORFAIT(J);
-    });
-    return total;
-}
 
 function CALC_FORFAIT_MISSION_COURANTE() {
     return CALC_FORFAIT_FROM_STATE(M);
@@ -10483,15 +10096,6 @@ function CALC_FORFAIT_TOTAL() {
     return CALC_FORFAIT_FROM_STATE(M);
 }
 
-function COUNT_EXPERIENCE_DAYS_MISSION() {
-    var n = 0;
-    function count(arr) {
-        (arr || []).forEach(function(J) { if (J.EXPERIENCE) n++; });
-    }
-    if (M.LEGS) M.LEGS.forEach(function(leg) { count(leg.JOURS); });
-    count(M.JOURS);
-    return n;
-}
 
 function PARSE_DEBUT_PERIOD(debutStr) {
     if (!debutStr) return null;
@@ -11141,17 +10745,6 @@ function RENDER_FORFAIT_STAT() {
     if (FORFAIT_UI.selectedKey) RENDER_FORFAIT_MISSION_DETAIL();
 }
 
-function GET_GAUGE_MAX(total) {
-    var days = 0;
-    function countOfficial(arr) {
-        (arr || []).forEach(function(J) { if (!J.EXPERIENCE) days++; });
-    }
-    if (M.LEGS) M.LEGS.forEach(function(leg) { countOfficial(leg.JOURS); });
-    countOfficial(M.JOURS);
-    days = Math.max(days, 1);
-    var maxPossible = days * 180;
-    return Math.max(maxPossible, total + 20, 100);
-}
 
 function GET_CURRENT_LEG_SNAPSHOT() {
     return {
@@ -11250,11 +10843,6 @@ function MISSION_HAS_TC(S) {
     return HAS_TC_FROM_STATE(S || M);
 }
 
-function GET_REPAS_AFFICHE(J, legIdx, jourIdx, slot, issueKeys) {
-    var val = J[slot] || 'GRATUIT';
-    if (val === 'PAYANT' && issueKeys && issueKeys[REPAS_ISSUE_KEY(legIdx, jourIdx, slot)]) return 'GRATUIT';
-    return val;
-}
 
 function GET_HEBERG_AFFICHE(J, legIdx, jourIdx, issueKeys) {
     if (!LEG_HAS_HEBERG_PAYANT(J)) return FORMAT_HEBERG_RECAP(J);
@@ -11266,29 +10854,13 @@ function GET_HEBERG_AFFICHE_PDF(J, legIdx, jourIdx, issueKeys) {
     return GET_HEBERG_AFFICHE(J, legIdx, jourIdx, issueKeys);
 }
 
-function GET_REPAS_AFFICHE_PDF(J, legIdx, jourIdx, slot, issueKeys) {
-    var aff = GET_REPAS_AFFICHE(J, legIdx, jourIdx, slot, issueKeys);
-    if (J[slot] === 'PAYANT' && aff === 'GRATUIT') return 'GRATUIT*';
-    return aff;
-}
 
-function CALC_FORFAIT_DECLARE_TOTAL() {
-    var total = 0;
-    GET_MISSION_LEGS_FROM_STATE(M).forEach(function(leg) {
-        (leg.JOURS || []).forEach(function(J) {
-            total += LEG_JOUR_FORFAIT_OFFICIEL(J);
-        });
-    });
-    return total;
-}
 
 function CALC_FORFAIT_ELIGIBLE_TOTAL() {
     return CALC_FORFAIT_FROM_STATE(M);
 }
 
-function REFRESH_FORFAIT_ENTRY_COURANTE() {}
 
-function REFRESH_BIBLIOTHEQUE_COURANTE() {}
 
 function BUILD_PJ_RAPPEL_HTML() {
     var msgs = [];
@@ -11531,26 +11103,13 @@ function OUVRIR_PARAMETRES() {
     try { RENDER_ALERTES_PAGE(); } catch (e) { console.error('Erreur RENDER_ALERTES_PAGE:', e); }
     try {
         var introEl = document.getElementById('PARAMS-INTRO-TXT');
-        var premierLancement = !PREMIER_LANCEMENT_FAIT();
         if (introEl) {
-            introEl.innerHTML = premierLancement
-                ? '👋 Bienvenue sur TRIGONE ! Avant de commencer, dépliez la section ci-dessous surlignée pour renseigner votre unité.'
-                : 'Votre espace personnel — dépliez une section pour la régler. Rien à toucher si les valeurs par défaut vous conviennent.';
+            introEl.innerHTML = 'Votre espace personnel — dépliez une section pour la régler. Rien à toucher si les valeurs par défaut vous conviennent.';
         }
-        var foldUnite = document.getElementById('PARAM-FOLD-UNITE');
-        if (premierLancement) {
-            if (foldUnite) { foldUnite.open = true; foldUnite.classList.add('notice-fold-premier'); }
-        } else {
-            if (foldUnite) { foldUnite.open = false; foldUnite.classList.remove('notice-fold-premier'); }
-        }
-        var mailEl = document.getElementById('PARAM-MAIL-ASSIST');
         var abtEnEl = document.getElementById('PARAM-ABT-ENABLED');
         var abtLblEl = document.getElementById('PARAM-ABT-LABEL');
-        var unitEl = document.getElementById('PARAM-UNIT-NAME');
-        if (mailEl) mailEl.value = MAIL_ASSIST;
         if (abtEnEl) abtEnEl.checked = ABT_ENABLED;
         if (abtLblEl) abtLblEl.value = ABT_LABEL;
-        if (unitEl) unitEl.value = UNIT_NAME;
     } catch (e) { console.error('Erreur remplissage Mon Espace:', e); }
     try { TOGGLE_PARAM_ABT_FIELD(); } catch (e) { console.error('Erreur TOGGLE_PARAM_ABT_FIELD:', e); }
     try { UPDATE_IK_RATES_INFO(); } catch (e) { console.error('Erreur UPDATE_IK_RATES_INFO:', e); }
@@ -11587,29 +11146,17 @@ function SAVE_PARAMETRES() {
 }
 
 function SAVE_PARAMETRES_NOW() {
-    var mailEl = document.getElementById('PARAM-MAIL-ASSIST');
     var abtEnEl = document.getElementById('PARAM-ABT-ENABLED');
     var abtLblEl = document.getElementById('PARAM-ABT-LABEL');
-    var unitEl = document.getElementById('PARAM-UNIT-NAME');
-    var mail = mailEl && mailEl.value.trim() ? mailEl.value.trim() : DEFAULT_APP_SETTINGS.mailAssist;
     var abtEnabled = abtEnEl ? !!abtEnEl.checked : DEFAULT_APP_SETTINGS.abtEnabled;
     var abtLabel = abtLblEl && abtLblEl.value.trim() ? abtLblEl.value.trim() : DEFAULT_APP_SETTINGS.abtLabel;
-    var unitName = unitEl && unitEl.value.trim() ? unitEl.value.trim() : DEFAULT_APP_SETTINGS.unitName;
-    if (mailEl && mailEl.value.trim() && mailEl.value.indexOf('@') === -1) {
-        alert('⛔ Adresse mail invalide.');
-        return;
-    }
-    MAIL_ASSIST = mail;
     ABT_ENABLED = abtEnabled;
     ABT_LABEL = abtLabel;
-    UNIT_NAME = unitName;
     try {
         var current = JSON.parse(localStorage.getItem(APP_SETTINGS_KEY) || '{}');
-        current.mailAssist = mail;
         current.abtEnabled = abtEnabled;
         current.abtLabel = abtLabel;
         delete current.mailBodyText;
-        current.unitName = unitName;
         localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(current));
     } catch (e) {}
     APPLY_ABT_SETTINGS();
@@ -11629,13 +11176,14 @@ function SAVE_PARAMETRES_NOW() {
 }
 
 function RESET_PARAMETRES() {
-    if (!confirm('Revenir aux valeurs par défaut (unité, destinataire, option ABT) ?')) return;
-    MAIL_ASSIST = DEFAULT_APP_SETTINGS.mailAssist;
+    if (!confirm('Revenir aux valeurs par défaut (option Demande de réservation) ?')) return;
     ABT_ENABLED = DEFAULT_APP_SETTINGS.abtEnabled;
     ABT_LABEL = DEFAULT_APP_SETTINGS.abtLabel;
-    UNIT_NAME = DEFAULT_APP_SETTINGS.unitName;
+    // L'unité et le destinataire (assistant Chorus DT) viennent du profil commun : ils restent.
     try {
-        localStorage.removeItem(APP_SETTINGS_KEY);
+        var current = JSON.parse(localStorage.getItem(APP_SETTINGS_KEY) || '{}');
+        delete current.abtEnabled; delete current.abtLabel;
+        localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(current));
     } catch (e) {}
     APPLY_ABT_SETTINGS();
     TRANSPORT_SUFFIXES.forEach(RECALC_IK);
@@ -11655,64 +11203,7 @@ function UPDATE_IK_RATES_INFO() {
         + '<br><span style="font-family:monospace;">' + detail + '</span>';
 }
 
-function IMPORTER_IK_RATES(input) {
-    var file = input && input.files && input.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        var data;
-        try {
-            data = JSON.parse(e.target.result);
-        } catch (err) {
-            alert('⛔ Fichier invalide : ce n\'est pas un JSON correct.');
-            input.value = '';
-            return;
-        }
-        if (!data || typeof data !== 'object' || Array.isArray(data)) {
-            alert('⛔ Format attendu : un objet JSON du type {"5cv": 0.32, "6-7cv": 0.41, "8cv": 0.45}');
-            input.value = '';
-            return;
-        }
-        var nbValides = 0;
-        var next = {};
-        ['5cv', '6-7cv', '8cv'].forEach(function(k) {
-            var v = parseFloat(data[k]);
-            if (!isNaN(v) && v > 0) { next[k] = v; nbValides++; }
-        });
-        if (nbValides === 0) {
-            alert('⛔ Aucun taux valide trouvé dans ce fichier. Clés attendues : "5cv", "6-7cv", "8cv".');
-            input.value = '';
-            return;
-        }
-        if (next['5cv'] != null) IK_RATE_5 = next['5cv'];
-        if (next['6-7cv'] != null) IK_RATE_67 = next['6-7cv'];
-        if (next['8cv'] != null) IK_RATE_8 = next['8cv'];
-        var today = new Date();
-        var dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-        IK_RATES_DATE = 'importés le ' + dateStr;
-        try {
-            localStorage.setItem(IK_RATES_KEY, JSON.stringify({ '5cv': IK_RATE_5, '6-7cv': IK_RATE_67, '8cv': IK_RATE_8 }));
-            localStorage.setItem(IK_RATES_DATE_KEY, IK_RATES_DATE);
-        } catch (err) {}
-        UPDATE_IK_RATES_INFO();
-        alert('✓ ' + nbValides + ' taux kilométriques importés et enregistrés.');
-        input.value = '';
-    };
-    reader.readAsText(file);
-}
 
-function EXPORTER_IK_RATES() {
-    var data = { '5cv': IK_RATE_5, '6-7cv': IK_RATE_67, '8cv': IK_RATE_8 };
-    var blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'trigone_taux_ik.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-}
 
 function REINIT_IK_RATES() {
     MSG_CONFIRM('Revenir aux taux d\'origine ?', 'Les taux kilométriques importés seront perdus.', 'Réinitialiser', function() {
@@ -11749,7 +11240,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 200;
+var APP_CODE_VERSION = 201;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12012,60 +11503,7 @@ function UPDATE_TAUX_CHANGE_INFO() {
     }
 }
 
-function IMPORTER_TAUX_CHANGE(input) {
-    var file = input && input.files && input.files[0];
-    if (!file) return;
-    var reader = new FileReader();
-    reader.onload = function(e) {
-        var data;
-        try {
-            data = JSON.parse(e.target.result);
-        } catch (err) {
-            alert('⛔ Fichier invalide : ce n\'est pas un JSON correct.');
-            input.value = '';
-            return;
-        }
-        if (!data || typeof data !== 'object' || Array.isArray(data)) {
-            alert('⛔ Format attendu : un objet JSON du type {"EURO": 1, "DOLLAR US": 0.92, ...}');
-            input.value = '';
-            return;
-        }
-        var nbValides = 0;
-        Object.keys(data).forEach(function(k) {
-            var v = parseFloat(data[k]);
-            if (!isNaN(v) && v > 0) { EXCHANGE_RATES[k] = v; nbValides++; }
-        });
-        if (nbValides === 0) {
-            alert('⛔ Aucun taux valide trouvé dans ce fichier.');
-            input.value = '';
-            return;
-        }
-        var today = new Date();
-        var dateStr = String(today.getDate()).padStart(2, '0') + '/' + String(today.getMonth() + 1).padStart(2, '0') + '/' + today.getFullYear();
-        EXCHANGE_RATES_DATE = 'importés le ' + dateStr;
-        try {
-            localStorage.setItem(EXCHANGE_RATES_KEY, JSON.stringify(EXCHANGE_RATES));
-            localStorage.setItem(EXCHANGE_RATES_DATE_KEY, EXCHANGE_RATES_DATE);
-        } catch (err) {}
-        UPDATE_TAUX_CHANGE_INFO();
-        UPDATE_PAYS_MISSION_HINT();
-        alert('✓ ' + nbValides + ' taux de change importés et enregistrés.');
-        input.value = '';
-    };
-    reader.readAsText(file);
-}
 
-function EXPORTER_TAUX_CHANGE() {
-    var blob = new Blob([JSON.stringify(EXCHANGE_RATES, null, 2)], { type: 'application/json' });
-    var url = URL.createObjectURL(blob);
-    var a = document.createElement('a');
-    a.href = url;
-    a.download = 'trigone_taux_change.json';
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-    setTimeout(function() { URL.revokeObjectURL(url); }, 1000);
-}
 
 function REINIT_TAUX_CHANGE() {
     MSG_CONFIRM('Revenir aux taux d\'origine ?', 'Les taux de change importés seront perdus.', 'Réinitialiser', function() {
@@ -12412,10 +11850,6 @@ function REMPLIR_MES_STATS() {
     document.getElementById('MES-STATS-CONTENU').innerHTML = html;
 }
 
-function OUVRIR_MES_STATS() {
-    FERMER_PARAMETRES();
-    SHOW_PAGE('P-STATS');
-}
 // ======================================================================================
 
 // ===================== SIMULATEUR AVANT DÉPART =====================
@@ -12703,85 +12137,26 @@ function SET_GAUGE_VISIBLE(visible) {
     document.body.classList.remove('has-forfait-gauge');
 }
 
-function GET_SYNC_QUEUE() {
-    try { return JSON.parse(localStorage.getItem(SYNC_QUEUE_KEY) || '[]'); } catch(e) { return []; }
-}
-
-function SAVE_SYNC_QUEUE(q) {
-    localStorage.setItem(SYNC_QUEUE_KEY, JSON.stringify(q));
-    UPDATE_NETWORK_UI();
-}
-
-function ADD_TO_SYNC_QUEUE(item) {
-    var q = GET_SYNC_QUEUE();
-    if (item.type === 'MAIL' || item.type === 'AIDE') {
-        q = q.filter(function(i) { return i.type !== item.type; });
-    }
-    q.push(Object.assign({ id: Date.now() + '-' + Math.random().toString(36).slice(2), createdAt: new Date().toISOString() }, item));
-    SAVE_SYNC_QUEUE(q);
-    UPDATE_NETWORK_UI();
-    UPDATE_MAIL_QUEUE_UI();
-}
-
-function HAS_PENDING_MAIL() {
-    return GET_SYNC_QUEUE().some(function(i) { return i.type === 'MAIL'; });
-}
-
 function UPDATE_MAIL_QUEUE_UI() {
-    var sendBtn = document.getElementById('BTN-SEND');
     var offlineHint = document.getElementById('OFFLINE-SEND-HINT');
-    if (offlineHint) {
-        offlineHint.classList.toggle('HIDDEN', navigator.onLine && !HAS_PENDING_MAIL());
-    }
-    if (!sendBtn) return;
-    if (HAS_PENDING_MAIL()) {
-        if (HAS_EXPERIENCE_SAISIE()) {
-            sendBtn.textContent = '📧 ENVOI IMPOSSIBLE (EXPÉRIENCE DE SAISIE)';
-            sendBtn.classList.add('BTN-DISABLED');
-            sendBtn.disabled = true;
-        } else {
-            sendBtn.textContent = '📧 ENVOI MAIL EN ATTENTE';
-            sendBtn.classList.remove('BTN-DISABLED');
-            sendBtn.disabled = false;
-        }
-    } else {
-        UPDATE_MAIL_BUTTON();
-    }
-}
-
-function REMOVE_FROM_SYNC_QUEUE(id) {
-    SAVE_SYNC_QUEUE(GET_SYNC_QUEUE().filter(function(i) { return i.id !== id; }));
+    if (offlineHint) offlineHint.classList.toggle('HIDDEN', navigator.onLine);
+    if (document.getElementById('BTN-SEND')) UPDATE_MAIL_BUTTON();
 }
 
 function UPDATE_NETWORK_UI() {
     var banner = document.getElementById('NETWORK-BANNER');
     var text = document.getElementById('NETWORK-BANNER-TEXT');
-    var btn = document.getElementById('SYNC-BTN');
     if (!banner) return;
-    var q = GET_SYNC_QUEUE();
     if (!navigator.onLine) {
         banner.classList.remove('HIDDEN');
         banner.className = 'NETWORK-BANNER offline';
-        var pendingMsg = q.length
-            ? '📴 Hors ligne — ' + q.length + ' envoi(s) en attente · saisie et PDF OK'
-            : '📴 Hors ligne — saisie mission et PDF OK · envois à la reconnexion';
-        text.textContent = pendingMsg;
-        btn.classList.add('HIDDEN');
+        text.textContent = '📴 Hors ligne — saisie mission et PDF OK · envois à la reconnexion';
         document.body.classList.add('has-network-banner');
-        UPDATE_MAIL_QUEUE_UI();
-        return;
-    }
-    if (q.length > 0) {
-        banner.classList.remove('HIDDEN');
-        banner.className = 'NETWORK-BANNER queue';
-        text.textContent = '🔄 ' + q.length + ' action(s) en attente de synchronisation';
-        btn.classList.remove('HIDDEN');
-        document.body.classList.add('has-network-banner');
-        UPDATE_MAIL_QUEUE_UI();
     } else {
         banner.classList.add('HIDDEN');
         document.body.classList.remove('has-network-banner');
     }
+    UPDATE_MAIL_QUEUE_UI();
 }
 
 function REGISTER_SERVICE_WORKER() {
@@ -12793,13 +12168,7 @@ function REGISTER_SERVICE_WORKER() {
 function INIT_OFFLINE_MODE() {
     REGISTER_SERVICE_WORKER();
     UPDATE_NETWORK_UI();
-    window.addEventListener('online', function() {
-        UPDATE_NETWORK_UI();
-        var q = GET_SYNC_QUEUE();
-        if (q.length && confirm('Connexion rétablie. ' + q.length + ' action(s) en attente. Synchroniser maintenant ?')) {
-            PROCESS_SYNC_QUEUE();
-        }
-    });
+    window.addEventListener('online', UPDATE_NETWORK_UI);
     window.addEventListener('offline', UPDATE_NETWORK_UI);
     var hiddenAt = 0;
     document.addEventListener('visibilitychange', function() {
@@ -12813,23 +12182,6 @@ function INIT_OFFLINE_MODE() {
             hiddenAt = 0;
         }
     });
-}
-
-function PROCESS_SYNC_QUEUE() {
-    if (!navigator.onLine) { alert('Pas de connexion réseau.'); return; }
-    var q = GET_SYNC_QUEUE();
-    if (!q.length) { UPDATE_NETWORK_UI(); return; }
-    var item = q[0];
-    if (item.type === 'MAIL') {
-        // Ancien envoi par mail mis en attente : il passe désormais par la boîte TRIGONE.
-        REMOVE_FROM_SYNC_QUEUE(item.id);
-        UPDATE_MAIL_QUEUE_UI();
-        ENVOYER_MAIL();
-    } else {
-        // Anciens envois par mail ou QR code en attente : tout passe désormais par TRIGONE.
-        REMOVE_FROM_SYNC_QUEUE(item.id);
-    }
-    UPDATE_NETWORK_UI();
 }
 
 function COMPACT_QR_PAYLOAD(obj) {
@@ -13383,119 +12735,11 @@ function PIN_VALIDER_SUITE(ok) {
     if (dest) SHOW_PAGE(dest);
 }
 
-var POURQUOI_VU_KEY = 'trigone_pourquoi_vu';
-
 function AFFICHER_CONFIG_INITIALE() {
-    // Réglages communs à Mise en route et Compte-rendu (écran de choix, roue crantée).
-    if (window.JUMELAGE_REGLAGES) { if (!(window.JUMELAGE_REGLAGES_FAITS && JUMELAGE_REGLAGES_FAITS())) window.JUMELAGE_REGLAGES({ premiere: true }); else MARQUER_PREMIER_LANCEMENT_FAIT(); return; }
-    if (DEMO_MODE_ACTIF) return;
-    // Jumelage : l'unité déjà saisie dans TRIGONE Mise en route pré-remplit le champ.
-    var uniteEl = document.getElementById('CONFIG-UNIT-NAME');
-    if (uniteEl && !uniteEl.value) {
-        try { var r = JSON.parse(localStorage.getItem('mer_reglages') || '{}'); uniteEl.value = (r.identite && r.identite.unite) || r.derniereUnite || ''; } catch (e) {}
-    }
-    document.getElementById('CONFIG-INITIALE-OVERLAY').classList.remove('HIDDEN');
+    // Premier lancement : réglages communs à Mise en route et Compte-rendu (jumelage.js).
+    if (window.JUMELAGE_REGLAGES_FAITS && JUMELAGE_REGLAGES_FAITS()) MARQUER_PREMIER_LANCEMENT_FAIT();
+    else if (window.JUMELAGE_REGLAGES) window.JUMELAGE_REGLAGES({ premiere: true });
 }
-
-function VALIDER_CONFIG_INITIALE() {
-    var erreurEl = document.getElementById('CONFIG-ERREUR');
-    var pinErreurEl = document.getElementById('CONFIG-PIN-ERREUR');
-    erreurEl.classList.add('HIDDEN');
-    pinErreurEl.classList.add('HIDDEN');
-
-    var unitName = document.getElementById('CONFIG-UNIT-NAME').value.trim();
-    var mail = document.getElementById('CONFIG-MAIL-ASSIST').value.trim();
-    var pin1 = document.getElementById('CONFIG-PIN-1').value.trim();
-    var pin2 = document.getElementById('CONFIG-PIN-2').value.trim();
-
-    if (!unitName || !mail || !pin1 || !pin2) {
-        erreurEl.textContent = '⛔ Merci de remplir les 4 champs avant de continuer.';
-        erreurEl.classList.remove('HIDDEN');
-        return;
-    }
-    if (mail.indexOf('@') === -1) {
-        erreurEl.textContent = '⛔ Adresse mail invalide.';
-        erreurEl.classList.remove('HIDDEN');
-        return;
-    }
-    if (!/^[0-9]{4}$/.test(pin1)) {
-        erreurEl.textContent = '⛔ Le code doit contenir exactement 4 chiffres.';
-        erreurEl.classList.remove('HIDDEN');
-        return;
-    }
-    if (pin1 !== pin2) {
-        pinErreurEl.classList.remove('HIDDEN');
-        return;
-    }
-
-    // Sauvegarde vers le meme stockage que Mon Espace, et synchro des champs pour la prochaine ouverture
-    UNIT_NAME = unitName;
-    MAIL_ASSIST = mail;
-    try {
-        var current = JSON.parse(localStorage.getItem(APP_SETTINGS_KEY) || '{}');
-        current.unitName = unitName;
-        current.mailAssist = mail;
-        localStorage.setItem(APP_SETTINGS_KEY, JSON.stringify(current));
-    } catch (e) {}
-    PIN_ENREGISTRER(pin1);
-    var unitField = document.getElementById('PARAM-UNIT-NAME');
-    var mailField = document.getElementById('PARAM-MAIL-ASSIST');
-    if (unitField) unitField.value = unitName;
-    if (mailField) mailField.value = mail;
-    PIN_UI.deverrouille = true;
-    RENDER_CIE_OPTIONS();
-    MARQUER_PREMIER_LANCEMENT_FAIT();
-
-    var overlay = document.getElementById('CONFIG-INITIALE-OVERLAY');
-    overlay.style.transition = 'opacity 0.3s ease';
-    overlay.style.opacity = '0';
-    setTimeout(function() {
-        overlay.classList.add('HIDDEN');
-        overlay.style.opacity = '';
-        overlay.style.transition = '';
-        var presentationCommuneVue = false;
-        try { presentationCommuneVue = localStorage.getItem('trigone_presentation_jumelage_vue') === '1'; } catch (e) {}
-        if (!presentationCommuneVue) AFFICHER_POURQUOI_TRIGONE();
-    }, 300);
-}
-
-function AFFICHER_POURQUOI_TRIGONE() {
-    // Présentation unique de TRIGONE (jumelage.js), commune aux deux applis.
-    if (window.JUMELAGE_PRESENTATION) { window.JUMELAGE_PRESENTATION({ premiere: !(window.JUMELAGE_PRESENTATION_VUE && JUMELAGE_PRESENTATION_VUE()) }); return; }
-    var overlay = document.getElementById('POURQUOI-OVERLAY');
-    var wordmark = document.getElementById('POURQUOI-WORDMARK');
-    wordmark.innerHTML = '';
-    var reduceMotion = (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches);
-    'TRIGONE'.split('').forEach(function(ch, i) {
-        var s = document.createElement('span');
-        s.textContent = ch;
-        s.style.animationDelay = (reduceMotion ? 0 : (0.35 + i * 0.055)) + 's';
-        wordmark.appendChild(s);
-    });
-    overlay.classList.remove('jouer');
-    overlay.classList.remove('HIDDEN');
-    void overlay.offsetWidth; // force le navigateur à repartir de zéro avant de rejouer les animations
-    overlay.classList.add('jouer');
-}
-
-function FERMER_POURQUOI_TRIGONE() {
-    var overlay = document.getElementById('POURQUOI-OVERLAY');
-    try { localStorage.setItem(POURQUOI_VU_KEY, '1'); } catch (e) {}
-    overlay.style.transition = 'opacity 0.35s ease';
-    overlay.style.opacity = '0';
-    setTimeout(function() {
-        overlay.classList.add('HIDDEN');
-        overlay.style.opacity = '';
-        overlay.style.transition = '';
-        if (POURQUOI_UI_ONFERMETURE) {
-            var suite = POURQUOI_UI_ONFERMETURE;
-            POURQUOI_UI_ONFERMETURE = null;
-            suite();
-        }
-    }, 350);
-}
-
-var POURQUOI_UI_ONFERMETURE = null;
 
 function ACTIVER_PIN_DEPUIS_ESPACE() {
     PIN_UI.saisie = '';
@@ -13662,7 +12906,6 @@ function FINALISER_DEMARRAGE() {
     } else if (M.DEBUT && !M.IS_PAX) {
         APPLIQUER_HORODATAGES_MONTRE().then(MONTRE_NOTIF_MAJ);
     } else if (!PREMIER_LANCEMENT_FAIT() && !M.IS_PAX && !HAS_ACTIVE_MISSION_DATA(M)) {
-        POURQUOI_UI_ONFERMETURE = null;
         setTimeout(AFFICHER_CONFIG_INITIALE, 2150);
     }
     if (!M.IS_PAX) {
@@ -14112,10 +13355,6 @@ function FERMER_LISTE_MISES_EN_ROUTE() {
     overlay.classList.remove('medaille-in');
     setTimeout(function() { overlay.classList.add('HIDDEN'); }, 300);
 }
-function ALLER_VERS_MISE_EN_ROUTE() {
-    try { sessionStorage.setItem('trigone_bascule', '1'); sessionStorage.setItem('trigone_choix_fait', '1'); } catch (e) {}
-    location.replace('../');   // sans entrée d'historique : la flèche retour ne revient pas ici
-}
 function CHOISIR_MISE_EN_ROUTE(i) {
     var x = MER_LISTE_DEMANDES[i];
     if (!x) return;
@@ -14251,23 +13490,10 @@ function SYNC_P1_ANX_FOLD_FOR(suf) {
 }
 function SYNC_P1_A_ANX_FOLD() { SYNC_P1_ANX_FOLD_FOR('A-ANX'); }
 function SYNC_P1_R_ANX_FOLD() { SYNC_P1_ANX_FOLD_FOR('R-ANX'); }
-function SYNC_P1_ANX_FOLD() { SYNC_P1_A_ANX_FOLD(); SYNC_P1_R_ANX_FOLD(); }
 
-function GET_ACTIVE_TRANS_TAB() {
-    return 'A';
-}
 
-function FOCUS_TRANS_TAB(tab) {
-    READ_TRANSPORT_FROM_DOM();
-}
 
-function UPDATE_P1_TRANS_UI() {
-    TOGGLE_SPEC('A');
-    TOGGLE_SPEC('R');
-    UPDATE_BOUTON_LANCER_P1();
-}
 
-function P1_UPDATE_ALLER_RECAP() {}
 
 function P1_ON_TRANS_A_CHANGE() {
     // Le type de transport doit être connu de M dès sa sélection, pas seulement au moment de « Départ en
@@ -14414,10 +13640,6 @@ function TOGGLE_SPEC(T, annexe) {
     UPDATE_BOUTON_LANCER_P1();
 }
 
-function SAVE_ROUTE_DATETIME() {
-    READ_TRANSPORT_FROM_DOM();
-    SAVE_STATE();
-}
 
 // ===================== CORRECTION MANUELLE DES HORODATAGES (P2) =====================
 var HORO_LABELS = { ARR_SITE: 'arrivée sur site', DEP_SITE: 'départ du site', FIN_RETOUR_HORODATE: 'fin de mission' };
@@ -14987,237 +14209,25 @@ function UPDATE_EXP_SAISIE_UI() {
     if (document.getElementById('MAIL-DEST-HINT')) UPDATE_MAIL_BUTTON();
 }
 
-function ADD_DAY() {
-    if (M.IS_PAX) return;
-    var todayKey = GET_DAY_DATE_KEY(new Date());
-    var isExp = false;
-    if (M.JOURS.length > 0) {
-        var last = M.JOURS[M.JOURS.length - 1];
-        if (last.DATE === todayKey) {
-            var msg = '⚠️ Attention\n\nVous ajoutez un jour supplémentaire pour la même date calendaire (' + FORMAT_DAY_DATE(todayKey) + ').\n\n';
-            msg += 'Cela engendre une expérience de saisie : le jour ne sera pas compté dans le forfait et l\'envoi du CR à l\'assist. DT sera bloqué tant que ce jour n\'aura pas été supprimé.\n\n';
-            msg += 'Confirmez-vous vouloir continuer ?';
-            if (!confirm(msg)) return;
-            isExp = true;
-        }
-    }
-    var jour = { DATE: todayKey, MIDI: 'GRATUIT', SOIR: 'GRATUIT', L: 'NEANT', L_ABT: false, V: 'PETITE', TC: false, MANUAL: true };
-    if (isExp) {
-        jour.EXPERIENCE = true;
-        M.EXPERIENCE_SAISIE = true;
-    }
-    M.JOURS.push(jour);
-    M.ACTIVE_DAY_IDX = M.JOURS.length - 1;
-    SAVE_STATE();
-    RENDER();
-    UPDATE_GAUGE();
-    UPDATE_EXP_SAISIE_UI();
-}
 
-function REFRESH_EXPERIENCE_SAISIE_FLAG() {
-    function check(arr) { return arr && arr.some(function(J) { return J.EXPERIENCE; }); }
-    var has = false;
-    if (M.LEGS) M.LEGS.forEach(function(leg) { if (check(leg.JOURS)) has = true; });
-    if (check(M.JOURS)) has = true;
-    M.EXPERIENCE_SAISIE = has;
-}
 
-function REMOVE_JOUR(I) {
-    if (M.IS_PAX || M.RECAP_LOCKED) return;
-    if (!M.JOURS || M.JOURS.length <= 1) {
-        alert('Il doit rester au moins un jour de mission.');
-        return;
-    }
-    if (I < 0 || I >= M.JOURS.length) return;
-    var J = M.JOURS[I];
-    var label = 'Jour ' + (I + 1) + (J.DATE ? ' (' + FORMAT_DAY_DATE(J.DATE) + ')' : '');
-    var msg = J.EXPERIENCE
-        ? 'Supprimer ce jour (expérience de saisie) ?\n\n' + label
-        : 'Supprimer ' + label + ' ?\n\nLes frais saisis pour ce jour seront perdus.';
-    if (!confirm(msg)) return;
 
-    if (!M.JOURS_REMOVED) M.JOURS_REMOVED = [];
-    var dateKey = J.DATE;
-    var sameDateCount = M.JOURS.filter(function(x) { return x && x.DATE === dateKey; }).length;
-    M.JOURS.splice(I, 1);
-    if (dateKey && sameDateCount === 1 && M.JOURS_REMOVED.indexOf(dateKey) < 0) {
-        M.JOURS_REMOVED.push(dateKey);
-    }
-    REFRESH_EXPERIENCE_SAISIE_FLAG();
 
-    if (M.ACTIVE_DAY_IDX == null || M.ACTIVE_DAY_IDX >= M.JOURS.length) {
-        M.ACTIVE_DAY_IDX = Math.max(0, M.JOURS.length - 1);
-    } else if (M.ACTIVE_DAY_IDX > I) {
-        M.ACTIVE_DAY_IDX--;
-    } else if (M.ACTIVE_DAY_IDX === I) {
-        M.ACTIVE_DAY_IDX = Math.min(I, M.JOURS.length - 1);
-    }
 
-    SAVE_STATE();
-    RENDER();
-    UPDATE_GAUGE();
-    UPDATE_EXP_SAISIE_UI();
-}
 
-function GET_ACTIVE_DAY_IDX() {
-    var n = M.JOURS ? M.JOURS.length : 0;
-    if (!n) return 0;
-    var idx = M.ACTIVE_DAY_IDX != null ? M.ACTIVE_DAY_IDX : n - 1;
-    if (idx < 0) idx = 0;
-    if (idx >= n) idx = n - 1;
-    M.ACTIVE_DAY_IDX = idx;
-    return idx;
-}
 
-function FOCUS_DAY(i) {
-    if (i < 0 || !M.JOURS || i >= M.JOURS.length) return;
-    M.ACTIVE_DAY_IDX = i;
-    SAVE_STATE();
-    RENDER();
-}
 
-function RENDER_FRAIS_DAY_TABS(active) {
-    var tabsEl = document.getElementById('FRAIS-DAYS-TABS');
-    if (!tabsEl) return;
-    tabsEl.innerHTML = '';
-    tabsEl.classList.remove('HIDDEN');
-    M.JOURS.forEach(function(J, I) {
-        var tab = document.createElement('button');
-        tab.type = 'button';
-        tab.setAttribute('role', 'tab');
-        tab.setAttribute('aria-selected', I === active ? 'true' : 'false');
-        var cls = 'frais-day-tab';
-        if (I === active) cls += ' is-active';
-        if (J.EXPERIENCE) cls += ' is-experience';
-        tab.className = cls;
-        tab.textContent = J.DATE ? FORMAT_DAY_DATE(J.DATE) : 'J' + (I + 1);
-        tab.title = 'Jour ' + (I + 1) + (J.DATE ? ' · ' + FORMAT_DAY_DATE(J.DATE) : '');
-        tab.onclick = function(idx) { return function() { FOCUS_DAY(idx); }; }(I);
-        tabsEl.appendChild(tab);
-    });
-    var activeTab = tabsEl.children[active];
-    if (activeTab && activeTab.scrollIntoView) {
-        activeTab.scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
-    }
-}
 
-function FRAIS_DAY_NAV_HTML(I, n) {
-    if (n < 2) return '';
-    return '<div class="FRAIS-DAY-NAV">' +
-        '<button type="button" class="FRAIS-DAY-NAV-BTN"' + (I <= 0 ? ' disabled' : '') + ' onclick="FOCUS_DAY(' + (I - 1) + ')" aria-label="Jour précédent">‹</button>' +
-        '<span class="FRAIS-DAY-NAV-LBL">Jour ' + (I + 1) + ' / ' + n + '</span>' +
-        '<button type="button" class="FRAIS-DAY-NAV-BTN"' + (I >= n - 1 ? ' disabled' : '') + ' onclick="FOCUS_DAY(' + (I + 1) + ')" aria-label="Jour suivant">›</button>' +
-        '</div>';
-}
 
-function RENDER_DAY_TABS(n, active) {
-    var tabsEl = document.getElementById('DAYS-TABS');
-    if (!tabsEl) return;
-    tabsEl.innerHTML = '';
-    if (n < 1) {
-        tabsEl.classList.add('HIDDEN');
-        return;
-    }
-    tabsEl.classList.remove('HIDDEN');
-    M.JOURS.forEach(function(J, I) {
-        var tab = document.createElement('button');
-        tab.type = 'button';
-        var cls = 'day-intercalaire';
-        if (I === active) cls += ' day-tab-active';
-        if (J.EXPERIENCE) cls += ' day-tab-experience';
-        tab.className = cls;
-        tab.textContent = J.DATE ? FORMAT_DAY_DATE(J.DATE) : 'J' + (I + 1);
-        tab.title = 'Jour ' + (I + 1) + (J.DATE ? ' · ' + FORMAT_DAY_DATE(J.DATE) : '');
-        tab.setAttribute('aria-label', 'Afficher le jour ' + (I + 1));
-        tab.onclick = function(idx) { return function() { FOCUS_DAY(idx); }; }(I);
-        tabsEl.appendChild(tab);
-    });
-}
 
-function UPDATE_DAY_STACK_SIZE() {
-    var stack = document.getElementById('LISTE');
-    var tabsEl = document.getElementById('DAYS-TABS');
-    if (!stack || !stack.classList.contains('days-stack')) return;
-    var card = stack.querySelector('.DAY-BOX');
-    if (!card) {
-        stack.style.minHeight = '';
-        if (tabsEl) tabsEl.style.minHeight = '';
-        return;
-    }
-    var h = card.offsetHeight;
-    if (tabsEl && !tabsEl.classList.contains('HIDDEN')) {
-        tabsEl.style.minHeight = h + 'px';
-    }
-}
 
-function SET_JOUR_REPAS(I, slot, val) {
-    if (M.IS_PAX || M.RECAP_LOCKED) return;
-    if (val === 'PAYANT' && !CAN_DECLARE_REPAS_PAYANT(GET_CURRENT_LEG_IDX(), I, slot)) return;
-    M.JOURS[I][slot] = val;
-    SAVE_STATE();
-    UPDATE_GAUGE();
-    RENDER();
-}
-
-function SET_JOUR_HEBERG(I, val) {
-    if (M.IS_PAX || M.RECAP_LOCKED) return;
-    if (val === 'PAYANT' && !CAN_DECLARE_HEBERG_PAYANT(GET_CURRENT_LEG_IDX(), I)) return;
-    if (val === 'PAYANT') {
-        M.JOURS[I].L_ABT = false;
-        M.JOURS[I].L = 'PAYANT';
-    } else {
-        M.JOURS[I].L = 'NEANT';
-    }
-    SAVE_STATE();
-    UPDATE_GAUGE();
-    RENDER();
-}
-
-function SET_JOUR_ZONE(I, val) {
-    if (M.IS_PAX || M.RECAP_LOCKED) return;
-    M.JOURS[I].V = val;
-    SAVE_STATE();
-    UPDATE_GAUGE();
-}
-
-function TOGGLE_JOUR_TC(I) {
-    if (M.IS_PAX || M.RECAP_LOCKED) return;
-    M.JOURS[I].TC = !M.JOURS[I].TC;
-    SAVE_STATE();
-    UPDATE_GAUGE();
-    RENDER();
-}
 
 function FRAIS_PILL(dis, active, pay, label, onclick) {
     var cls = 'FRAIS-PILL' + (active ? ' is-on' : '') + (pay && active ? ' is-pay' : '');
     return '<button type="button" class="' + cls + '"' + dis + ' onclick="' + onclick + '">' + label + '</button>';
 }
 
-function FRAIS_REPAS_PILLS(dis, I, slot, J) {
-    var legIdx = GET_CURRENT_LEG_IDX();
-    var val = J[slot] || 'GRATUIT';
-    var html = FRAIS_PILL(dis, val === 'GRATUIT', false, 'Gratuit', 'SET_JOUR_REPAS(' + I + ',\'' + slot + '\',\'GRATUIT\')');
-    if (!CAN_DECLARE_REPAS_PAYANT(legIdx, I, slot)) {
-        var title = GET_REPAS_INELIGIBLE_TITLE(legIdx, I, slot).replace(/"/g, '&quot;');
-        html += '<span class="FRAIS-PILL is-inelig" title="' + title + '">Non éligible</span>';
-    } else {
-        html += FRAIS_PILL(dis, val === 'PAYANT', true, 'Payant · ' + FORMAT_EURO(GET_REPAS_RATE_DISPLAY(M)) + ' €', 'SET_JOUR_REPAS(' + I + ',\'' + slot + '\',\'PAYANT\')');
-    }
-    return html;
-}
 
-function FRAIS_HEBERG_PILLS(dis, I, J) {
-    var legIdx = GET_CURRENT_LEG_IDX();
-    var hebergPay = J.L === 'PAYANT' && !J.L_ABT;
-    var html = FRAIS_PILL(dis + (J.L_ABT ? ' disabled' : ''), !hebergPay, false, 'Aucun', 'SET_JOUR_HEBERG(' + I + ',\'NEANT\')');
-    if (!CAN_DECLARE_HEBERG_PAYANT(legIdx, I)) {
-        var title = GET_HEBERG_INELIGIBLE_TITLE(legIdx, I).replace(/"/g, '&quot;');
-        html += '<span class="FRAIS-PILL is-inelig" title="' + title + '">Non éligible</span>';
-    } else {
-        html += FRAIS_PILL(dis + (J.L_ABT ? ' disabled' : ''), hebergPay, true, 'Nuitée payante', 'SET_JOUR_HEBERG(' + I + ',\'PAYANT\')');
-    }
-    return html;
-}
 
 function ADJ_PAYANT_REPAS(slot, delta) {
     if (M.IS_PAX || M.RECAP_LOCKED) return;
@@ -15308,15 +14318,6 @@ function RELOCK_ZONE(legIdx, jourIdx) {
     RENDER();
 }
 
-function SET_TC(legIdx, jourIdx) {
-    if (M.IS_PAX || M.RECAP_LOCKED) return;
-    var legs = GET_MISSION_LEGS_FROM_STATE(M);
-    if (!legs[legIdx] || !legs[legIdx].JOURS || !legs[legIdx].JOURS[jourIdx]) return;
-    legs[legIdx].JOURS[jourIdx].TC = !legs[legIdx].JOURS[jourIdx].TC;
-    SAVE_STATE();
-    UPDATE_GAUGE();
-    RENDER();
-}
 
 function TOGGLE_TC_GLOBAL() {
     if (M.IS_PAX || M.RECAP_LOCKED) return;
@@ -15783,20 +14784,7 @@ function RENDER() {
     RENDER_FRAIS_MAIN_PANELS();
 }
 
-function MAJ_LOG(I, V) {
-    SET_JOUR_HEBERG(I, V === 'PAYANT' ? 'PAYANT' : 'NEANT');
-}
 
-function TOGGLE_HEBERG_ABT(I) {
-    if (M.IS_PAX || M.RECAP_LOCKED) return;
-    var el = document.getElementById('HEB-ABT-' + I);
-    var abt = el && el.checked;
-    M.JOURS[I].L_ABT = abt;
-    if (abt) M.JOURS[I].L = 'NEANT';
-    SAVE_STATE();
-    UPDATE_GAUGE();
-    RENDER();
-}
 
 function VALIDATE_BEFORE_RECAP() {
     var blockers = [];
@@ -15976,8 +14964,6 @@ function UPDATE_PDF_SEND_HINT() {
     hint.classList.remove('HIDDEN');
     if (HAS_EXPERIENCE_SAISIE()) {
         hint.textContent = 'PDF téléchargeable pour contrôle — envoi à ' + ASSIST_CHORUS_LABEL + ' bloqué (expérience de saisie).';
-    } else if (HAS_PENDING_MAIL()) {
-        hint.textContent = 'Envoi mail à ' + ASSIST_CHORUS_LABEL + ' en attente — à la reconnexion, « Synchroniser » en haut (PDF déjà téléchargé).';
     } else if (!navigator.onLine) {
         hint.textContent = 'Hors ligne — l\'envoi à ' + ASSIST_CHORUS_LABEL + ' se fera dès le retour du réseau.';
     } else {
@@ -16025,7 +15011,7 @@ function VALIDER_BOUTON() {
     var downloadBtn = document.getElementById('BTN-DOWNLOAD-PDF');
     var pjHint = document.getElementById('PJ-INCOMPLETE-HINT');
     var pjResolved = ALL_PJ_RESOLVED();
-    if (sendBtn && !HAS_PENDING_MAIL()) {
+    if (sendBtn) {
         // pjResolved doit aussi être vérifié ici, pas seulement pour débloquer le téléchargement du PDF :
         // sans ça, décocher une pièce obligatoire (ex. la facture d'hôtel) après avoir déjà téléchargé le
         // PDF laissait le bouton Envoyer actif, alors que l'aide affichée promet « aucune exception possible ».
@@ -16113,12 +15099,6 @@ function ENRICH_VILLE_FIELD(inputId, afterCallback) {
     });
 }
 
-function BLUR_FRAIS_VILLE(inputId) {
-    ENRICH_VILLE_FIELD(inputId, function() {
-        READ_FRAIS_TRAJET_FROM_DOM();
-        SAVE_STATE();
-    });
-}
 
 function BLUR_P1_DEST(inputId) {
     ENRICH_VILLE_FIELD(inputId, function() {
@@ -16689,21 +15669,6 @@ function GET_PJ_RECAP_TEXTE() {
     return 'Pièces jointes à ce compte-rendu :\n' + lignes.join('\n');
 }
 
-// Les pièces que le missionnaire a déclaré avoir (cochées), pour la relecture juste avant l'envoi.
-function GET_NOM_FICHIER_PDF() {
-    var cleanUser = (M.USER || 'MISSION').replace(/[^a-zA-Z0-9_\-]/g, '_');
-    return 'CR_MISSION_' + cleanUser + '.pdf';
-}
-function GET_PJ_LISTE_A_JOINDRE() {
-    var besoin;
-    try { besoin = BUILD_RECAP_CORE(false).BESOIN; } catch (e) { besoin = ['COMPTE-RENDU PDF']; }
-    var items = [...new Set(besoin || [])];
-    var checked = M.PJ_CHECKED || {};
-    var nomPdf = GET_NOM_FICHIER_PDF();
-    return items.filter(function(x) { return checked[x]; }).map(function(x) {
-        return x === 'COMPTE-RENDU PDF' ? (nomPdf + ' (déjà dans vos téléchargements)') : x;
-    });
-}
 
 // Envoi du compte-rendu à l'assistant Chorus DT, directement dans sa boîte TRIGONE (chiffré) : le PDF du
 // compte-rendu est joint automatiquement, les justificatifs sont choisis dans la fenêtre d'envoi (jumelage.js).
@@ -16766,28 +15731,6 @@ function FINALISER_ENVOI_MAIL() {
     UPDATE_REMINDER_BANNER();
 }
 
-function RESET_APP() {
-    var raw = localStorage.getItem('mission_data');
-    var data = null;
-    if (raw) {
-        try { data = JSON.parse(raw); } catch (e) {}
-    }
-    if (!data && HAS_ACTIVE_MISSION_DATA(M)) data = M;
-    if (data && data.MAIL_SENT) {
-        if (!confirm('Démarrer une nouvelle mission ?\n\nLa mission envoyée sera effacée de cet appareil (votre CR reste dans votre mail).')) return;
-        CLOTURER_MISSION_ACTIVE();
-        RELOAD_ACCUEIL_PROPRE();
-        return;
-    }
-    if (data && HAS_ACTIVE_MISSION_DATA(data)) {
-        if (!confirm('Abandonner la mission en cours ?\n\nLa saisie ne sera pas enregistrée dans la bibliothèque.')) return;
-    }
-    MISSION_FERMETURE_EN_COURS = true;
-    localStorage.removeItem('mission_data');
-    localStorage.removeItem(SYNC_QUEUE_KEY);
-    sessionStorage.removeItem('restore_prompted');
-    location.reload();
-}
 </script>
 <datalist id="DEST-HISTORY-LIST"></datalist>
 </body>
