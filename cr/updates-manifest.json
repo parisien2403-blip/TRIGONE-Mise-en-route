@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 209,
-  "appCodeMessage": "Nouveau : valideurs et assistant Chorus DT peuvent « ❓ Poser une question » au missionnaire au lieu de refuser ; il répond depuis sa Boîte de réception (dossier Questions) et la demande avance.",
+  "appCodeVersion": 210,
+  "appCodeMessage": "Nouveau : indemnités kilométriques — la distance se calcule toute seule entre la ville de départ et la ville d'arrivée, le kilométrage et le montant se remplissent seuls (modifiables).",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

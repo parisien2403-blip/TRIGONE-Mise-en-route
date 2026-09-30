@@ -498,6 +498,23 @@ async function envoyerCode(env, mail, code) {
     return false;
 }
 
+// « NOGENT-LE-ROTROU (28400) » → { nom: 'NOGENT-LE-ROTROU', cp: '28400' } (le code postal départage les homonymes).
+function nettoyerVille(v) {
+    v = String(v || '').slice(0, 100).trim();
+    const cp = (/\((\d{5})\)\s*$/.exec(v) || /\b(\d{5})\b/.exec(v) || [])[1] || '';
+    const nom = v.replace(/\(\s*\d{4,6}\s*\)\s*$/, '').replace(/\b\d{5}\b/, '').replace(/\s+/g, ' ').trim().toUpperCase();
+    return { nom, cp };
+}
+async function situerVille(v) {
+    const r = await fetch('https://api-adresse.data.gouv.fr/search/?q=' + encodeURIComponent(v.nom) + '&type=municipality&limit=1' + (v.cp ? '&postcode=' + v.cp : ''));
+    if (!r.ok) throw new Error('BAN ' + r.status);
+    const d = await r.json();
+    const f = d && d.features && d.features[0];
+    if (!f || !f.geometry) return null;
+    const p = f.properties || {};
+    return { lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], nom: String(p.city || p.name || v.nom).toUpperCase() + (p.postcode ? ' (' + p.postcode + ')' : '') };
+}
+
 async function api(requete, env, url, ctx) {
     const kv = env.TRIGONE_KV;
     if (!kv || !env.TRIGONE_DB) return erreur(503, 'Boîte aux lettres non configurée.');
@@ -535,6 +552,35 @@ async function api(requete, env, url, ctx) {
         } catch (e) {
             if (garde) return json({ ok: true, date: garde.date, taux: garde.taux, source: 'BCE' });
             return erreur(502, 'Taux de change indisponibles pour le moment.');
+        }
+    }
+    // Distance routière entre deux communes françaises (indemnités kilométriques du Compte-rendu) : communes situées
+    // par la Base adresse nationale, itinéraire routier calculé par OSRM (OpenStreetMap). Résultat gardé 180 jours.
+    // Public : seuls deux noms de villes transitent, rien n'est rattaché à une personne.
+    if (chemin === 'distance' && methode === 'GET') {
+        const de = nettoyerVille(url.searchParams.get('de')), a = nettoyerVille(url.searchParams.get('a'));
+        if (!de.nom || !a.nom) return erreur(400, 'Villes de départ et d\'arrivée attendues.');
+        if (de.nom === a.nom && de.cp === a.cp) return json({ ok: true, km: 0 });
+        const cle = 'distance:' + [de.nom + '|' + de.cp, a.nom + '|' + a.cp].sort().join('>');
+        const garde = await kv.get(cle, 'json');
+        if (garde) return json({ ok: true, km: garde.km });
+        const ip = requete.headers.get('CF-Connecting-IP') || 'local';
+        const n = +(await kv.get('limite-distance:' + ip)) || 0;
+        if (n >= 120) return erreur(429, 'Trop de calculs de distance. Réessayez dans une heure.');
+        await kv.put('limite-distance:' + ip, String(n + 1), { expirationTtl: 3600 });
+        try {
+            const [p1, p2] = await Promise.all([situerVille(de), situerVille(a)]);
+            if (!p1 || !p2) return erreur(404, 'Ville introuvable : ' + (!p1 ? de.nom : a.nom) + '.');
+            const r = await fetch('https://router.project-osrm.org/route/v1/driving/' + p1.lon + ',' + p1.lat + ';' + p2.lon + ',' + p2.lat + '?overview=false');
+            if (!r.ok) throw new Error('OSRM ' + r.status);
+            const d = await r.json();
+            const m = d && d.routes && d.routes[0] && d.routes[0].distance;
+            if (!(m >= 0)) throw new Error('OSRM illisible');
+            const res = { km: Math.round(m / 1000), de: p1.nom, a: p2.nom };
+            await kv.put(cle, JSON.stringify(res), { expirationTtl: 180 * 86400 });
+            return json({ ok: true, km: res.km });
+        } catch (e) {
+            return erreur(502, 'Calcul de distance indisponible pour le moment.');
         }
     }
     // Clé publique VAPID : l'appareil s'abonne aux notifications avec elle.
