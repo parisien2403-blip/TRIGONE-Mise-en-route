@@ -15,6 +15,8 @@ const TESTS = {
     'demenagement': ['Déménagement vers l\'adresse Cloudflare', require('./test-demenagement')],
     'scan': ['Justificatifs photo scannés (recadrés, allégés, en PDF)', require('./test-scan')],
     'rappel': ['Rappel « départ en mission » (notification le jour du départ)', require('./test-rappel')],
+    'sauvegarde-auto': ['Sauvegarde automatique chiffrée dans le compte', require('./test-sauvegarde-auto')],
+    'erreurs': ['Remontée des erreurs (page administrateur)', require('./test-erreurs')],
     'boite': ['Boîte aux lettres TRIGONE (envois directs chiffrés)', require('./test-boite')]
 };
 (async () => {

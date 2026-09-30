@@ -11,6 +11,8 @@
 //   code:<mail>                { empreinte, essais }                      — 15 min
 //   limite:<mail>              nombre de codes demandés                   — 1 h
 //   msg:<id>                   { iv, ct } contenu chiffré                 — 30 jours
+//   sauvegarde:<mail>          sauvegarde automatique, chiffrée sur l'appareil avec une clé tirée du code de récupération
+//                              de l'utilisateur (jamais transmis) : octets illisibles + { sel, iv, le, taille }
 //   D1 (TRIGONE_DB), table boite : une ligne par envoi et par appareil destinataire (clé enveloppée, de, type, date)
 //
 // Réglages (Cloudflare › Workers › trigone-mise-en-route › Paramètres › Variables et secrets) :
@@ -19,6 +21,8 @@
 //   EXPEDITEUR_MAIL             adresse d'envoi validée dans Brevo
 //   DOMAINES_AUTORISES          ex. « interieur.gouv.fr » (sous-domaines compris), séparés par des virgules
 //   MODE_TEST = "1"             tests locaux uniquement : le code est renvoyé au lieu d'être envoyé par mail
+//   ADMIN_MAILS                 adresse(s) de l'administrateur, séparées par des virgules : seule(s) à voir la page
+//                               « Erreurs de l'appli » (Paramètres › Aide)
 
 import { connect } from 'cloudflare:sockets';
 
@@ -60,7 +64,11 @@ async function baseBoite(env) {
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS muet (mail TEXT NOT NULL, appareil TEXT NOT NULL, PRIMARY KEY (mail, appareil))'),
             // Rappels « départ en mission » : l'heure seule (le contenu de la demande reste chiffré, inconnu du serveur).
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS rappel (ref TEXT NOT NULL, mail TEXT NOT NULL, quand INTEGER NOT NULL, envoye INTEGER, PRIMARY KEY (ref, mail))'),
-            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS rappel_quand ON rappel (quand)')
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS rappel_quand ON rappel (quand)'),
+            // Erreurs techniques remontées par les applis, anonymes (ni nom, ni mail, ni donnée de mission) et
+            // regroupées par signature ; appareils comptés par un identifiant au hasard. Effacées après 30 jours.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS erreur (sig TEXT PRIMARY KEY, app TEXT, ecran TEXT, msg TEXT, src TEXT, pile TEXT, v INTEGER, ua TEXT, n INTEGER, premier INTEGER, dernier INTEGER)'),
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS erreur_appareil (sig TEXT NOT NULL, appareil TEXT NOT NULL, PRIMARY KEY (sig, appareil))')
         ]);
         TABLES_PRETES = true;
     }
@@ -334,6 +342,17 @@ async function envoyerRappels(env, origine, maintenant) {
         url: '/cr/?depart=' + encodeURIComponent(x.ref) }, origine).catch(() => {})));
     return aEnvoyer.length;
 }
+// Erreurs : purge (30 jours, 1 000 signatures au plus).
+async function purgerErreurs(env, maintenant) {
+    const db = await baseBoite(env);
+    await db.prepare('DELETE FROM erreur WHERE dernier < ?').bind(maintenant - 30 * JOUR * 1000).run();
+    await db.prepare('DELETE FROM erreur WHERE sig NOT IN (SELECT sig FROM erreur ORDER BY dernier DESC LIMIT 1000)').run();
+    await db.prepare('DELETE FROM erreur_appareil WHERE sig NOT IN (SELECT sig FROM erreur)').run();
+}
+function estAdmin(env, mail) {
+    if (env.MODE_TEST === '1' && /^admin\./.test(mail)) return true;   // tests locaux uniquement
+    return String(env.ADMIN_MAILS || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean).indexOf(String(mail).toLowerCase()) >= 0;
+}
 async function origineConnue(env, origine) {
     const db = await tableReglage(env);
     if (origine) { await db.prepare('INSERT INTO reglage (cle, valeur) VALUES (?, ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur WHERE reglage.valeur <> excluded.valeur').bind('origine', origine).run(); return origine; }
@@ -555,8 +574,78 @@ async function api(requete, env, url, ctx) {
         return json({ ok: true, mail: l.mail, appareil: app.id, jeton, paquet: l.paquet });
     }
 
+    // Erreur technique remontée par une appli (sans compte : elle peut survenir avant la connexion). Anonyme :
+    // version, écran, message et emplacement dans le code, type d'appareil. Limitée par adresse réseau.
+    if (chemin === 'erreur' && methode === 'POST') {
+        const ip = requete.headers.get('CF-Connecting-IP') || 'local';
+        const n = +(await kv.get('limite-erreur:' + ip)) || 0;
+        if (n >= 60) return json({ ok: true });
+        await kv.put('limite-erreur:' + ip, String(n + 1), { expirationTtl: 3600 });
+        const c = await requete.json().catch(() => ({}));
+        const t = (v, l) => String(v || '').slice(0, l);
+        const x = { app: t(c.app, 8), ecran: t(c.ecran, 80), msg: t(c.msg, 300), src: t(c.src, 160), pile: t(c.pile, 600), v: Math.round(+c.v || 0), ua: t(c.ua, 60), appareil: t(c.appareil, 24) };
+        if (!x.msg || !/^(mer|cr|choix)$/.test(x.app)) return json({ ok: true });
+        const sig = (await empreinte(x.app + '|' + x.msg + '|' + x.src)).slice(0, 32), le = Date.now(), db = await baseBoite(env);
+        await db.batch([
+            db.prepare('INSERT INTO erreur (sig, app, ecran, msg, src, pile, v, ua, n, premier, dernier) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1, ?, ?) ' +
+                'ON CONFLICT (sig) DO UPDATE SET n = n + 1, dernier = excluded.dernier, v = MAX(v, excluded.v), ecran = excluded.ecran, ua = excluded.ua, pile = excluded.pile')
+                .bind(sig, x.app, x.ecran, x.msg, x.src, x.pile, x.v, x.ua, le, le),
+            db.prepare('INSERT OR IGNORE INTO erreur_appareil (sig, appareil) VALUES (?, ?)').bind(sig, x.appareil || 'inconnu')
+        ]);
+        return json({ ok: true });
+    }
+
     const moi = await appareilConnecte(env, requete);
     if (!moi) return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
+    // Sauvegarde automatique : un seul exemplaire par compte, remplacé à chaque envoi. Chiffrée dans l'appareil
+    // (AES-GCM, clé tirée du code de récupération par PBKDF2) : ce serveur ne peut pas la lire.
+    if (chemin === 'sauvegarde' && methode === 'POST') {
+        const n = +(await kv.get('limite-sauv:' + moi.mail)) || 0;
+        if (n >= 20) return erreur(429, 'Trop de sauvegardes en peu de temps : réessayez dans une heure.');
+        await kv.put('limite-sauv:' + moi.mail, String(n + 1), { expirationTtl: 3600 });
+        const c = await requete.json().catch(() => ({}));
+        if (!/^[\w+/=]{16,64}$/.test(String(c.sel || '')) || !/^[\w+/=]{12,32}$/.test(String(c.iv || '')) || typeof c.ct !== 'string') return erreur(400, 'Sauvegarde invalide.');
+        let octets;
+        try { octets = Uint8Array.from(atob(c.ct), ch => ch.charCodeAt(0)); } catch (e) { return erreur(400, 'Sauvegarde invalide.'); }
+        if (octets.length > TAILLE_MAX) return erreur(413, 'Sauvegarde trop volumineuse (24 Mo au plus) : retirez des pièces jointes anciennes.');
+        const meta = { sel: c.sel, iv: c.iv, le: Date.now(), taille: octets.length, appareil: String(c.appareil || '').slice(0, 60) };
+        await kv.put('sauvegarde:' + moi.mail, octets, { metadata: meta });
+        return json({ ok: true, le: meta.le, taille: meta.taille });
+    }
+    if (chemin === 'sauvegarde/info' && methode === 'GET') {
+        const r = await kv.getWithMetadata('sauvegarde:' + moi.mail, 'stream');
+        if (r.value) r.value.cancel().catch(() => {});
+        const m = r.metadata;
+        return json({ ok: true, existe: !!m, le: m ? m.le : 0, taille: m ? m.taille : 0, appareil: m ? m.appareil : '' });
+    }
+    if (chemin === 'sauvegarde' && methode === 'GET') {
+        const r = await kv.getWithMetadata('sauvegarde:' + moi.mail, 'arrayBuffer');
+        if (!r.value || !r.metadata) return erreur(404, 'Aucune sauvegarde dans votre compte TRIGONE.');
+        const o = new Uint8Array(r.value); let t = '';
+        for (let i = 0; i < o.length; i += 0x8000) t += String.fromCharCode.apply(null, o.subarray(i, i + 0x8000));
+        return json({ ok: true, sel: r.metadata.sel, iv: r.metadata.iv, le: r.metadata.le, ct: btoa(t) });
+    }
+    if (chemin === 'sauvegarde' && methode === 'DELETE') {
+        await kv.delete('sauvegarde:' + moi.mail);
+        return json({ ok: true });
+    }
+    // Page « Erreurs de l'appli » : réservée à l'administrateur (ADMIN_MAILS).
+    if (chemin === 'admin' && methode === 'GET') return json({ ok: true, admin: estAdmin(env, moi.mail) });
+    if (chemin === 'erreurs' && methode === 'GET') {
+        if (!estAdmin(env, moi.mail)) return erreur(403, 'Réservé à l\'administrateur de TRIGONE.');
+        const db = await baseBoite(env);
+        await purgerErreurs(env, Date.now());
+        const r = (await db.prepare('SELECT e.*, (SELECT COUNT(*) FROM erreur_appareil a WHERE a.sig = e.sig) AS appareils FROM erreur e ORDER BY dernier DESC LIMIT 200').all()).results || [];
+        return json({ ok: true, erreurs: r });
+    }
+    if (chemin === 'erreurs/corrige' && methode === 'POST') {
+        if (!estAdmin(env, moi.mail)) return erreur(403, 'Réservé à l\'administrateur de TRIGONE.');
+        const sig = String((await requete.json().catch(() => ({}))).sig || '');
+        const db = await baseBoite(env);
+        if (sig === '*') await db.batch([db.prepare('DELETE FROM erreur'), db.prepare('DELETE FROM erreur_appareil')]);
+        else if (/^[\w-]{8,64}$/.test(sig)) await db.batch([db.prepare('DELETE FROM erreur WHERE sig = ?').bind(sig), db.prepare('DELETE FROM erreur_appareil WHERE sig = ?').bind(sig)]);
+        return json({ ok: true });
+    }
 
     // Liaison : un appareil configuré dépose son paquet chiffré (15 minutes, une seule utilisation), rangé sous
     // l'empreinte du code (id) : le serveur ne connaît ni le code ni le contenu.
@@ -817,7 +906,10 @@ export default {
     async scheduled(evenement, env, ctx) {
         if (!env.TRIGONE_DB) return;
         // Déclencheur toutes les 5 minutes : nouvelle publication (notification sans attendre) ; relances à l'heure pile.
-        if (new Date(evenement.scheduledTime || Date.now()).getUTCMinutes() < 5) ctx.waitUntil(origineConnue(env).then(o => relancer(env, o, Date.now(), false)).catch(() => {}));
+        if (new Date(evenement.scheduledTime || Date.now()).getUTCMinutes() < 5) {
+            ctx.waitUntil(origineConnue(env).then(o => relancer(env, o, Date.now(), false)).catch(() => {}));
+            ctx.waitUntil(purgerErreurs(env, Date.now()).catch(() => {}));
+        }
         ctx.waitUntil(notifierMiseAJour(env).catch(() => {}));
         ctx.waitUntil(origineConnue(env).then(o => envoyerRappels(env, o, Date.now())).catch(() => {}));
     }
