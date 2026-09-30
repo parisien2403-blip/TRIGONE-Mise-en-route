@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=106"></script>
+<script src="../jumelage.js?v=107"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -8530,6 +8530,7 @@ function CR_SUIVI_DE(entry) {
     return trouve;
 }
 function TPL_BIB_SUIVI(entry) {
+    if (entry.attente) return '<span class="BIB-CARD-SUIVI-TXT" style="color:#b45309;font-weight:700;">⏳ En attente de réseau : le compte-rendu partira tout seul vers ' + ASSIST_CHORUS_LABEL + ' dès le retour du réseau.</span>';
     var s = CR_SUIVI_DE(entry);
     if (!s) return '';
     var rang = { chorus: 1, recu: 2, traite: 3 }[s.etape] || 1;
@@ -8544,6 +8545,10 @@ function TPL_BIB_SUIVI(entry) {
         : 'Envoyé le ' + jour(der.le) + ' : pas encore récupéré par ' + ASSIST_CHORUS_LABEL + '.';
     return '<span class="BIB-CARD-SUIVI">' + pts + '</span><span class="BIB-CARD-SUIVI-TXT">' + txt + '</span>';
 }
+window.JUMELAGE_APRES_ENVOI_DIFFERE = function() {
+    var liste = document.getElementById('BIB-LIST');
+    if (liste && !liste.classList.contains('HIDDEN') && liste.offsetParent) RENDER_BIBLIOTHEQUE();
+};
 window.addEventListener('trigone-suivi', function() {
     var liste = document.getElementById('BIB-LIST');
     if (liste && !liste.classList.contains('HIDDEN') && liste.offsetParent) RENDER_BIBLIOTHEQUE();
@@ -11240,7 +11245,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 203;
+var APP_CODE_VERSION = 204;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -14977,7 +14982,7 @@ function UPDATE_PDF_SEND_HINT() {
     if (HAS_EXPERIENCE_SAISIE()) {
         hint.textContent = 'PDF téléchargeable pour contrôle — envoi à ' + ASSIST_CHORUS_LABEL + ' bloqué (expérience de saisie).';
     } else if (!navigator.onLine) {
-        hint.textContent = 'Hors ligne — l\'envoi à ' + ASSIST_CHORUS_LABEL + ' se fera dès le retour du réseau.';
+        hint.textContent = 'Hors ligne — vous pouvez envoyer quand même : le compte-rendu partira tout seul vers ' + ASSIST_CHORUS_LABEL + ' dès le retour du réseau.';
     } else {
         hint.textContent = 'L\'envoi joint automatiquement le PDF du compte-rendu ; vous y ajoutez vos justificatifs (photos ou PDF). Le PDF téléchargé est pour vous.';
     }
@@ -15694,10 +15699,6 @@ function ENVOYER_MAIL() {
         alert('Une pièce jointe obligatoire n\'est plus cochée (ex. facture d\'hôtel). Cochez-la ou indiquez un motif avant d\'envoyer.');
         return;
     }
-    if (!navigator.onLine) {
-        alert('Hors ligne : l\'envoi du compte-rendu demande du réseau. Réessayez dès que vous êtes connecté (votre saisie est enregistrée).');
-        return;
-    }
     if (!window.JUMELAGE_ENVOYER_CR) { alert('Envoi indisponible : fermez et rouvrez TRIGONE.'); return; }
     SAVE_OBS();
     var sujet = 'CR MISSION - ' + M.USER;
@@ -15718,8 +15719,17 @@ function ENVOYER_MAIL() {
         corps: corps,
         pieces: pieces,
         pdf: function() { return GENERER_PDF(0, true, 'blob'); },
+        // Sans réseau : le compte-rendu part tout seul au retour du réseau ; la mission archivée reçoit alors l'identifiant de l'envoi.
+        meta: { maj: [{ cle: BIBLIOTHEQUE_KEY, cherche: { debut: M.DEBUT, user: M.USER || '' }, pose: { envoiId: '$id', envoyeLe: '$maintenant' }, retire: ['attente'] }] },
         succes: function(r) {
             FINALISER_ENVOI_MAIL();
+            if (r && r.differe) {
+                var libA = GET_BIBLIOTHEQUE();
+                libA.forEach(function(e) { if (e.debut === M.DEBUT && e.user === (M.USER || '')) e.attente = true; });
+                try { localStorage.setItem(BIBLIOTHEQUE_KEY, JSON.stringify(libA)); } catch (e) {}
+                MSG_INFO('Pas de réseau : envoi en attente', 'Votre compte-rendu et vos justificatifs sont prêts : ils partiront tout seuls vers ' + ASSIST_CHORUS_LABEL + ' dès le retour du réseau (à la prochaine ouverture de TRIGONE avec du réseau si vous la fermez). Une notification « Envoyé » vous préviendra. La mission est archivée dans votre Bibliothèque.', '📤');
+                return;
+            }
             // La mission archivée garde l'identifiant de l'envoi : son suivi s'affiche dans la Bibliothèque.
             if (r && r.id) {
                 var lib = GET_BIBLIOTHEQUE();

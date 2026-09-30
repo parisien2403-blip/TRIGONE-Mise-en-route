@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 153;
+var APP_CODE_VERSION = 154;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -415,9 +415,13 @@ function GET_BIBLIOTHEQUE() {
     try { return JSON.parse(localStorage.getItem(STORAGE_BIBLIOTHEQUE) || '[]'); } catch (e) { return []; }
 }
 function SAVE_BIBLIOTHEQUE(l) { if (DEMO_ACTIF) return; try { localStorage.setItem(STORAGE_BIBLIOTHEQUE, JSON.stringify(l.slice(0, 50))); } catch (e) {} }
-function ARCHIVER_ENVOI(demandes, destinataire) {
-    var l = GET_BIBLIOTHEQUE();
-    l.unshift({ id: 'e' + Date.now(), envoyeLe: new Date().toISOString(), destinataire: destinataire, demandes: demandes });
+// Un envoi fait sans réseau vient de partir (boîte d'envoi, jumelage.js) : la Bibliothèque ouverte se met à jour.
+window.JUMELAGE_APRES_ENVOI_DIFFERE = function() { if (PAGE_ACTUELLE === 'BIBLIOTHEQUE') { var y = window.scrollY; SHOW_PAGE('BIBLIOTHEQUE'); window.scrollTo(0, y); } };
+// attente : envoi fait sans réseau, parti plus tard tout seul (la boîte d'envoi efface alors « attente »).
+function ARCHIVER_ENVOI(demandes, destinataire, id, attente) {
+    var l = GET_BIBLIOTHEQUE(), e = { id: id || 'e' + Date.now(), envoyeLe: new Date().toISOString(), destinataire: destinataire, demandes: demandes };
+    if (attente) e.attente = true;
+    l.unshift(e);
     SAVE_BIBLIOTHEQUE(l);
 }
 // Suivi d'une demande envoyée (tenu par le serveur : étape, date, auteur) : frise Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT.
@@ -517,12 +521,14 @@ function TPL_BIBLIOTHEQUE() {
         return '<div class="MER-PANIER-ITEM' + (sel && sel[e.id] ? ' MER-BIB-COCHEE' : '') + '" style="align-items:flex-start;">' +
             (sel ? '<label class="MER-BIB-CASE"><input type="checkbox"' + (sel[e.id] ? ' checked' : '') + ' onchange="BIB_COCHER(\'' + e.id + '\', this.checked); this.closest(\'.MER-PANIER-ITEM\').classList.toggle(\'MER-BIB-COCHEE\', this.checked)" aria-label="Sélectionner"></label>' : '') +
             '<div class="MER-PANIER-ITEM-TXT">' +
-            '<span class="MER-BADGE">Envoyée le ' + ESC(new Date(e.envoyeLe).toLocaleDateString('fr-FR')) + '</span>' +
+            (e.attente ? '<span class="MER-BADGE" style="background:rgba(180,83,9,0.12);color:#b45309;">⏳ En attente de réseau — partira toute seule</span>'
+                : '<span class="MER-BADGE">Envoyée le ' + ESC(new Date(e.envoyeLe).toLocaleDateString('fr-FR')) + '</span>') +
             '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(objets) + (e.destinataire ? '<br>À ' + ESC(e.destinataire) : '') + '</div>' +
             (DEMO_ACTIF ? '' : e.demandes.map(function(d) { return TPL_SUIVI_DEMANDE(d.id, e.demandes.length > 1 ? RESUME_DEMANDE(d).noms : ''); }).join('')) +
             (sel ? '' : '<div class="MER-VAL-ACTIONS">' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
+                (e.demandes.some(function(d) { return d.trajets && d.trajets.aller && d.trajets.aller.dateDep; }) ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_AGENDA(\'' + e.id + '\')">📅 Agenda</button>' : '') +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_SUPPRIMER(\'' + e.id + '\')">Supprimer</button>' +
             '</div>') + '</div></div>';
@@ -537,6 +543,77 @@ function TPL_BIBLIOTHEQUE() {
     return '<div class="CARD"><h2>Bibliothèque</h2>' + TPL_TETE_DOSSIER('BIBLIOTHEQUE', ouvert) +
         barre + (items || '<div class="MER-EMPTY">Aucune demande dans ce dossier.</div>') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_DOSSIER(\'BIBLIOTHEQUE\', null)">‹ Dossiers</button></div>';
+}
+// ===================== AGENDA =====================
+// « 📅 Agenda » (Bibliothèque) : la mission dans l'agenda du téléphone (fichier .ics : Samsung, Apple, Outlook…,
+// par le menu de partage quand il existe) ou dans Google Agenda. Du départ aller à l'arrivée retour, trajets
+// détaillés, rappel la veille. Rien ne part sur internet sauf si l'on choisit Google Agenda.
+function MER_ICS_TEXTE(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+function MER_ICS_DATE(v) { var d = new Date(v), z = function(n) { return ('0' + n).slice(-2); };
+    return d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + 'T' + z(d.getHours()) + z(d.getMinutes()) + '00'; }
+function MER_ICS_PLIER(l) { var out = [], i = 0; while (l.length - i > 74) { out.push((i ? ' ' : '') + l.slice(i, i + 74)); i += 74; } out.push((i ? ' ' : '') + l.slice(i)); return out.join('\r\n'); }
+function MER_EVENEMENT(d) {
+    var a = (d.trajets && d.trajets.aller) || {}, r = (d.trajets && d.trajets.retour) || {};
+    var debut = a.dateDep, fin = r.dateArr || r.dateDep || a.dateArr;
+    if (!fin || new Date(fin) <= new Date(debut)) fin = new Date(new Date(debut).getTime() + 2 * 3600000).toISOString();
+    var heure = function(v) { return v ? new Date(v).toLocaleDateString('fr-FR') + ' ' + new Date(v).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''; };
+    var trajet = function(nom, x) {
+        if (!x.lieuDep && !x.lieuArr && !x.paysArr) return '';
+        return nom + ' : ' + [x.moyen ? MOYENS[x.moyen] : '', [x.lieuDep || x.paysDep, x.lieuArr || x.paysArr].filter(Boolean).join(' → ')].filter(Boolean).join(', ') +
+            (x.dateDep ? ' — départ ' + heure(x.dateDep) : '') + (x.dateArr ? ', arrivée ' + heure(x.dateArr) : '');
+    };
+    var qui = (d.personnes || []).map(function(p) { return [p.grade, (p.nom || '').toUpperCase(), p.prenom].filter(Boolean).join(' '); }).join(', ');
+    return { titre: (d.type === 'FORMATION' ? 'Formation' : 'Mission') + (d.objet ? ' — ' + d.objet : ''), debut: debut, fin: fin,
+        lieu: [a.lieuArr || '', a.paysArr || ''].filter(Boolean).join(', '),
+        texte: [trajet('Aller', a), trajet('Retour', r), qui ? 'Personnes : ' + qui : '', 'Demande de mise en route TRIGONE'].filter(Boolean).join('\n'), uid: (d.id || 'mer' + Date.now()) + '@trigone' };
+}
+function MER_ICS(liste) {
+    var maintenant = new Date(), z = function(n) { return ('0' + n).slice(-2); };
+    var stamp = maintenant.getUTCFullYear() + z(maintenant.getUTCMonth() + 1) + z(maintenant.getUTCDate()) + 'T' + z(maintenant.getUTCHours()) + z(maintenant.getUTCMinutes()) + '00Z';
+    var l = ['BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//TRIGONE//Mise en route//FR', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH'];
+    liste.forEach(function(ev) {
+        l.push('BEGIN:VEVENT', 'UID:' + ev.uid, 'DTSTAMP:' + stamp, 'DTSTART:' + MER_ICS_DATE(ev.debut), 'DTEND:' + MER_ICS_DATE(ev.fin),
+            'SUMMARY:' + MER_ICS_TEXTE(ev.titre), 'LOCATION:' + MER_ICS_TEXTE(ev.lieu), 'DESCRIPTION:' + MER_ICS_TEXTE(ev.texte),
+            'BEGIN:VALARM', 'TRIGGER:-P1D', 'ACTION:DISPLAY', 'DESCRIPTION:' + MER_ICS_TEXTE('Départ demain : ' + ev.titre), 'END:VALARM', 'END:VEVENT');
+    });
+    l.push('END:VCALENDAR');
+    return l.map(MER_ICS_PLIER).join('\r\n') + '\r\n';
+}
+function MER_AGENDA(id) {
+    var e = BIB_TROUVER(id); if (!e) return;
+    var evs = e.demandes.filter(function(d) { return d.trajets && d.trajets.aller && d.trajets.aller.dateDep; }).map(MER_EVENEMENT);
+    // Une demande collective (ou plusieurs demandes pour la même mission) : un seul événement.
+    var vus = {}; evs = evs.filter(function(ev) { var k = ev.debut + '|' + ev.titre; if (vus[k]) return false; vus[k] = true; return true; });
+    if (!evs.length) return;
+    MER_AGENDA_EVS = evs;
+    var ev = evs[0];
+    AFFICHER_MODALE('Ajouter à mon agenda',
+        '<p style="font-size:0.86em; line-height:1.5;"><b>' + ESC(ev.titre) + '</b><br>' + ESC(new Date(ev.debut).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })) +
+            ' → ' + ESC(new Date(ev.fin).toLocaleString('fr-FR', { dateStyle: 'full', timeStyle: 'short' })) + (evs.length > 1 ? '<br>+ ' + (evs.length - 1) + ' autre(s) mission(s)' : '') + '</p>' +
+        '<p class="MER-HINT">Trajets aller et retour dans la description, rappel la veille du départ.</p>' +
+        '<button type="button" class="BTN BTN-PRIMARY" style="margin-top:6px;" onclick="MER_AGENDA_ICS()">📅 Agenda du téléphone</button>' +
+        '<p class="MER-HINT" style="margin:4px 0 10px;">Samsung, Apple, Outlook… : choisissez votre agenda dans la liste qui s\'ouvre (ou ouvrez le fichier téléchargé).</p>' +
+        '<button type="button" class="BTN BTN-GHOST" onclick="MER_AGENDA_GOOGLE()">Google Agenda</button>',
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Fermer</button>');
+}
+var MER_AGENDA_EVS = [];
+function MER_AGENDA_ICS() {
+    var nom = 'Mission - ' + (MER_AGENDA_EVS[0].titre.replace(/^(Mission|Formation) — /, '') || 'TRIGONE').replace(/[\\/:*?"<>|]/g, '').slice(0, 60) + '.ics';
+    var f = new File([MER_ICS(MER_AGENDA_EVS)], nom, { type: 'text/calendar' });
+    FERMER_MODALE();
+    // Téléphone : menu de partage (l'appli Agenda l'importe) ; sinon, le fichier est téléchargé.
+    if (navigator.canShare && navigator.share && /Android|iPhone|iPad/.test(navigator.userAgent) && navigator.canShare({ files: [f] })) {
+        navigator.share({ files: [f], title: MER_AGENDA_EVS[0].titre }).catch(function() {});
+        return;
+    }
+    var a = document.createElement('a'); a.href = URL.createObjectURL(f); a.download = nom; document.body.appendChild(a); a.click();
+    setTimeout(function() { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
+}
+function MER_AGENDA_GOOGLE() {
+    var ev = MER_AGENDA_EVS[0];
+    window.open('https://calendar.google.com/calendar/render?action=TEMPLATE&text=' + encodeURIComponent(ev.titre) + '&dates=' + MER_ICS_DATE(ev.debut) + '/' + MER_ICS_DATE(ev.fin) +
+        '&ctz=Europe%2FParis&details=' + encodeURIComponent(ev.texte) + '&location=' + encodeURIComponent(ev.lieu), '_blank');
+    FERMER_MODALE();
 }
 function BIB_TROUVER(id) { return GET_BIBLIOTHEQUE().filter(function(e) { return e.id === id; })[0]; }
 function BIB_PDF(id) {
@@ -2233,28 +2310,38 @@ function MER_HEURE_RAPPEL(d) {
     if (dep.getTime() - maintenant < 15 * 60 * 1000) return 0;
     return Math.max(quand, maintenant);
 }
+function MER_LISTE_RAPPELS(demandes) {
+    return (demandes || []).filter(function(d) { return d.id; }).map(function(d) { return { ref: d.id, quand: MER_HEURE_RAPPEL(d) }; }).filter(function(x) { return x.quand; });
+}
 function MER_PROGRAMMER_RAPPELS(demandes) {
-    if (!window.JUMELAGE_RAPPEL_DEPART) return;
-    var l = (demandes || []).filter(function(d) { return d.id; }).map(function(d) { return { ref: d.id, quand: MER_HEURE_RAPPEL(d) }; })
-        .filter(function(x) { return x.quand; });
-    if (l.length) JUMELAGE_RAPPEL_DEPART(l);
+    var l = MER_LISTE_RAPPELS(demandes);
+    if (l.length && window.JUMELAGE_RAPPEL_DEPART) JUMELAGE_RAPPEL_DEPART(l);
 }
 // Envoi direct (compte TRIGONE) : le .json complet, chiffré, déposé dans la boîte du 1er valideur.
 function ENVOYER_PANIER_DIRECT() {
     var reg = GET_REGLAGES(), panier = PANIER_A_ENVOYER(), b = document.getElementById('MER-BTN-DIRECT');
     if (b) { b.disabled = true; b.textContent = 'Envoi en cours…'; }
+    var idBib = 'e' + Date.now(), plus = panier.length > 1;
+    // Sans réseau : la demande part toute seule au retour du réseau (boîte d'envoi) ; une fois partie, la
+    // Bibliothèque la marque envoyée et le rappel du départ est programmé.
+    var opts = { differable: true, libelle: plus ? 'Vos ' + panier.length + ' demandes' : 'Votre demande' + (panier[0].objet ? ' « ' + panier[0].objet + ' »' : ''),
+        meta: { maj: [{ cle: 'mer_bibliotheque', cherche: { id: idBib }, pose: { envoyeLe: '$iso' }, retire: ['attente'] }], rappels: MER_LISTE_RAPPELS(panier) } };
     GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE').then(function(json) {
-        return JUMELAGE_ENVOYER_DIRECT(reg.mailSignataire, 'DEMANDE', NOM_FICHIER_BASE(panier) + '.json', json);
-    }).then(function() {
-        ARCHIVER_ENVOI(panier, reg.mailSignataire);
-        MER_PROGRAMMER_RAPPELS(panier);
+        return JUMELAGE_ENVOYER_DIRECT(reg.mailSignataire, 'DEMANDE', NOM_FICHIER_BASE(panier) + '.json', json, opts);
+    }).then(function(r) {
+        var differe = !!(r && r.differe);
+        ARCHIVER_ENVOI(panier, reg.mailSignataire, idBib, differe);
+        if (!differe) MER_PROGRAMMER_RAPPELS(panier);
         FERMER_MODALE();
         SAVE_PANIER([]);
         setTimeout(function() {
             SHOW_PAGE('ACCUEIL');
-            MSG_INFO(panier.length > 1 ? 'Demandes envoyées' : 'Demande envoyée', (panier.length > 1 ? 'Vos ' + panier.length + ' demandes sont arrivées' : 'Votre demande est arrivée') +
-                ' directement dans le TRIGONE du 1er valideur (' + reg.mailSignataire + '), chiffrée. ' + (panier.length > 1 ? 'Elles quittent' : 'Elle quitte') + ' Documents et ' +
-                (panier.length > 1 ? 'sont rangées' : 'est rangée') + ' dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
+            if (differe) MSG_INFO('Pas de réseau : envoi en attente', (plus ? 'Vos ' + panier.length + ' demandes partiront' : 'Votre demande partira') + ' toute' + (plus ? 's' : '') + ' seule' + (plus ? 's' : '') +
+                ' vers le 1er valideur (' + reg.mailSignataire + ') dès le retour du réseau, même si vous fermez TRIGONE entre-temps (elle part à la prochaine ouverture avec du réseau). Une notification « Envoyé » vous préviendra. En attendant, ' +
+                (plus ? 'elles sont rangées' : 'elle est rangée') + ' dans votre Bibliothèque (« en attente de réseau »).', '📤', 'mascotte-ok.webp');
+            else MSG_INFO(plus ? 'Demandes envoyées' : 'Demande envoyée', (plus ? 'Vos ' + panier.length + ' demandes sont arrivées' : 'Votre demande est arrivée') +
+                ' directement dans le TRIGONE du 1er valideur (' + reg.mailSignataire + '), chiffrée. ' + (plus ? 'Elles quittent' : 'Elle quitte') + ' Documents et ' +
+                (plus ? 'sont rangées' : 'est rangée') + ' dans votre Bibliothèque.', '✅', 'mascotte-ok.webp');
         }, 300);
     }).catch(function(e) {
         if (b) { b.disabled = false; b.textContent = '📨 Envoyer'; }

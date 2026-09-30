@@ -655,7 +655,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 106, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 107, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1798,9 +1798,20 @@
     };
     // Envoi direct : chiffré pour tous les appareils du destinataire. Rejette avec e.pasDeCompte si le destinataire
     // n'a pas encore de compte TRIGONE (l'envoi est alors bloqué : il doit d'abord activer son compte).
-    window.JUMELAGE_ENVOYER_DIRECT = function(destinataire, type, nom, texte) {
+    // opts.differable : sans réseau, l'envoi est mis en attente sur l'appareil et part tout seul au retour du réseau
+    // (réponse { differe: true }) ; opts.libelle (notification « Envoyé »), opts.meta (suite à faire une fois parti).
+    window.JUMELAGE_ENVOYER_DIRECT = function(destinataire, type, nom, texte, opts) {
+        opts = opts || {};
         if (!monCompte()) return Promise.reject(Object.assign(new Error('Activez d\'abord votre compte TRIGONE.'), { sansCompte: true }));
-        if (!navigator.onLine) return Promise.reject(new Error('Pas de connexion : l\'envoi direct demande du réseau.'));
+        var attente = function() { return mettreEnAttente({ dest: destinataire, type: type, nom: nom, texte: texte, libelle: opts.libelle || '', meta: opts.meta || null }); };
+        if (!navigator.onLine) return opts.differable ? attente() : Promise.reject(new Error('Pas de connexion : l\'envoi direct demande du réseau.'));
+        return envoyerMaintenant(destinataire, type, nom, texte).catch(function(e) {
+            if (opts.differable && erreurReseau(e)) return attente();
+            throw e;
+        });
+    };
+    function erreurReseau(e) { return !!e && !e.statut && !e.pasDeCompte && !e.sansCompte && (e instanceof TypeError || /fetch|network|réseau|Load failed/i.test(e.message || '')); }
+    function envoyerMaintenant(destinataire, type, nom, texte) {
         var dest = String(destinataire || '').trim().toLowerCase(), absent = null;
         return appelApi('cles?mail=' + encodeURIComponent(dest)).then(function(r) {
             // Destinataire absent (valideur, assistant Chorus DT) : l'envoi part chez son remplaçant (un refus, lui, va
@@ -1830,6 +1841,112 @@
             }
             return r;
         });
+    }
+    // ---------- Boîte d'envoi : envois faits sans réseau ----------
+    // Rangés dans l'appareil (IndexedDB « trigone-envois »), ils partent tout seuls au retour du réseau (événement
+    // « online », à l'ouverture, puis toutes les minutes tant qu'il en reste), dans l'ordre. Une fois parti : la suite
+    // prévue (meta.maj : mise à jour d'une liste enregistrée ; meta.rappels : rappel du départ), puis une notification
+    // « Envoyé ». Refus du serveur (ex. destinataire sans compte) : l'envoi reste, signalé, à réessayer ou supprimer.
+    var NB_ATTENTE = 0, videEnCours = null;
+    function baseEnvois() {
+        return new Promise(function(ok, ko) {
+            var r = indexedDB.open('trigone-envois', 1);
+            r.onupgradeneeded = function() { r.result.createObjectStore('attente', { keyPath: 'id' }); };
+            r.onsuccess = function() { ok(r.result); }; r.onerror = function() { ko(r.error); };
+        });
+    }
+    function envoisIdb(action, valeur) {
+        return baseEnvois().then(function(db) { return new Promise(function(ok, ko) {
+            var tx = db.transaction('attente', action === 'lire' ? 'readonly' : 'readwrite'), st = tx.objectStore('attente');
+            var r = action === 'lire' ? st.getAll() : action === 'effacer' ? st.delete(valeur) : st.put(valeur);
+            tx.oncomplete = function() { db.close(); var l = action === 'lire' ? (r.result || []) : null; if (l) NB_ATTENTE = l.length; ok(l); };
+            tx.onerror = function() { db.close(); ko(tx.error); };
+        }); });
+    }
+    function mettreEnAttente(x) {
+        x.id = 'a' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); x.cree = Date.now();
+        return envoisIdb('ecrire', x).then(function() {
+            NB_ATTENTE++;
+            setTimeout(function() { bandeau('Pas de réseau : envoi mis en attente, il partira tout seul dès le retour du réseau.'); }, 300);
+            return { differe: true, attente: x.id };
+        });
+    }
+    function appliquerSuite(meta, r) {
+        if (!meta) return;
+        (meta.maj || []).forEach(function(m) {
+            var l = lireJSON(m.cle); if (!Array.isArray(l)) return;
+            l.forEach(function(e) {
+                if (!Object.keys(m.cherche).every(function(k) { return e[k] === m.cherche[k]; })) return;
+                Object.keys(m.pose || {}).forEach(function(k) { var v = m.pose[k]; e[k] = v === '$id' ? r.id : v === '$maintenant' ? Date.now() : v === '$iso' ? new Date().toISOString() : v; });
+                (m.retire || []).forEach(function(k) { delete e[k]; });
+            });
+            ecrireTxt(m.cle, JSON.stringify(l));
+        });
+        if (meta.rappels && meta.rappels.length) window.JUMELAGE_RAPPEL_DEPART(meta.rappels);
+    }
+    function prevenirEnvoye(x) {
+        var t = (x.libelle || 'Votre envoi') + ' est parti' + (x.libelle && /s$/.test(x.libelle.split(' ')[0]) ? 's' : '') + ', chiffré, dans TRIGONE.';
+        if (window.Notification && Notification.permission === 'granted' && navigator.serviceWorker) {
+            navigator.serviceWorker.getRegistration().then(function(reg) {
+                if (reg) reg.showNotification('Envoyé', { body: t, tag: 'trigone-envoi-' + x.id, icon: (DANS_CR ? '../' : '') + 'icon-192.png' }); else bandeau(t);
+            }).catch(function() { bandeau(t); });
+        } else bandeau(t);
+    }
+    function viderAttente() {
+        if (videEnCours || !monCompte() || !navigator.onLine || !window.indexedDB) return videEnCours || Promise.resolve(0);
+        var partis = 0;
+        videEnCours = envoisIdb('lire').then(function(l) {
+            l = l.filter(function(x) { return !x.erreur; }).sort(function(a, b) { return a.cree - b.cree; });
+            return l.reduce(function(prec, x) {
+                return prec.then(function() {
+                    if (!navigator.onLine) return;
+                    return envoyerMaintenant(x.dest, x.type, x.nom, x.texte).then(function(r) {
+                        return envoisIdb('effacer', x.id).then(function() { partis++; NB_ATTENTE = Math.max(0, NB_ATTENTE - 1); appliquerSuite(x.meta, r || {}); prevenirEnvoye(x);
+                            try { if (window.JUMELAGE_APRES_ENVOI_DIFFERE) window.JUMELAGE_APRES_ENVOI_DIFFERE(x); } catch (e) {} });
+                    }, function(e) {
+                        if (erreurReseau(e)) return;   // toujours pas de réseau : on réessaiera
+                        x.erreur = e.message || String(e);
+                        return envoisIdb('ecrire', x).then(function() { bandeau('Envoi en attente impossible : ' + x.erreur + ' (Paramètres › Données › Envois en attente).'); });
+                    });
+                });
+            }, Promise.resolve());
+        }).catch(function() {}).then(function() { videEnCours = null; return partis; });
+        return videEnCours;
+    }
+    window.JUMELAGE_VIDER_ATTENTE = viderAttente;
+    window.JUMELAGE_ENVOIS_ATTENTE = function() { return window.indexedDB ? envoisIdb('lire').catch(function() { return []; }) : Promise.resolve([]); };
+    window.addEventListener('online', function() { setTimeout(viderAttente, 1500); });
+    setTimeout(function() {
+        window.JUMELAGE_ENVOIS_ATTENTE().then(function(l) {
+            if (!l.length) return;
+            if (!navigator.onLine) bandeau(l.length + ' envoi' + (l.length > 1 ? 's' : '') + ' en attente : départ automatique dès le retour du réseau.');
+            viderAttente();
+        });
+    }, 3000);
+    setInterval(function() { if (NB_ATTENTE) viderAttente(); }, 60000);
+    var fenAttente = null;
+    window.JUMELAGE_FERMER_ATTENTE = function() { if (fenAttente) { fenAttente.remove(); fenAttente = null; } };
+    window.JUMELAGE_ATTENTE = function() {
+        window.JUMELAGE_FERMER_ATTENTE();
+        var f = fenAttente = document.createElement('div'); f.className = 'JUM-REGLAGES'; f.setAttribute('role', 'dialog');
+        function dessiner(l) {
+            f.innerHTML = '<div class="JUM-R-CARTE"><div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('mail') : '') + '</span><div><h2>Envois en attente</h2>' +
+                '<p>Faits sans réseau : ils partent tout seuls dès que le réseau revient.</p></div><button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_ATTENTE()">✕</button></div><div class="JUM-R-CORPS">' +
+                (l.length ? l.map(function(x) {
+                    return '<div class="JUM-ERR" style="border-left-color:' + (x.erreur ? '#b91c1c' : '#5a7a94') + '"><b>' + esc(x.libelle || x.nom) + '</b><small>À ' + esc(x.dest) + ' · préparé le ' + new Date(x.cree).toLocaleString('fr-FR') + '</small>' +
+                        (x.erreur ? '<span class="JUM-ERR-MSG" style="color:#b91c1c">⛔ ' + esc(x.erreur) + '</span>' : '<small>⏳ Partira au retour du réseau</small>') +
+                        '<div class="JUM-ERR-BTN"><button type="button" class="JUM-R-SECOND" data-reessayer="' + x.id + '">Réessayer</button><button type="button" class="JUM-R-SECOND" data-supprimer="' + x.id + '">Supprimer</button></div></div>';
+                }).join('') : '<p class="JUM-R-AIDE" style="margin-top:14px;">✅ Aucun envoi en attente.</p>') +
+                '</div><div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_ATTENTE()">Fermer</button></div></div>';
+        }
+        function charger() { window.JUMELAGE_ENVOIS_ATTENTE().then(function(l) { if (fenAttente === f) dessiner(l); }); }
+        f.addEventListener('click', function(ev) {
+            var r = ev.target.closest('[data-reessayer]'), d = ev.target.closest('[data-supprimer]');
+            if (r) { window.JUMELAGE_ENVOIS_ATTENTE().then(function(l) { var x = l.filter(function(y) { return y.id === r.getAttribute('data-reessayer'); })[0]; if (!x) return;
+                delete x.erreur; return envoisIdb('ecrire', x); }).then(function() { if (!navigator.onLine) bandeau('Toujours pas de réseau : l\'envoi partira à son retour.'); return viderAttente(); }).then(charger); }
+            if (d && confirm('Supprimer cet envoi ? Il ne partira pas.')) envoisIdb('effacer', d.getAttribute('data-supprimer')).then(charger);
+        });
+        dessiner([]); document.body.appendChild(f); charger();
     };
     // Compte-rendu de fin de mission → boîte TRIGONE de l'assistant Chorus DT : le PDF du compte-rendu (produit par
     // Compte-rendu) et les justificatifs choisis ici (billets, factures : PDF ou photos, réduites avant l'envoi).
@@ -2006,7 +2123,6 @@
         });
         btn.addEventListener('click', function() {
             if (total() > TAILLE_MAX_CR) { err.textContent = '⛔ Trop volumineux : retirez un fichier (' + tailleLisible(TAILLE_MAX_CR) + ' au plus).'; return; }
-            if (!navigator.onLine) { err.textContent = '⛔ Pas de connexion : l\'envoi se fait dès que vous avez du réseau.'; return; }
             btn.disabled = true; btn.textContent = 'Envoi en cours…'; err.textContent = '';
             Promise.resolve().then(o.pdf).then(function(pdf) {
                 if (!pdf || !pdf.blob) throw new Error('Le PDF du compte-rendu n\'a pas pu être produit : réessayez.');
@@ -2014,7 +2130,8 @@
                     var fichiers = [{ nom: pdf.nom, type: 'application/pdf', b64: b64[0] }].concat(choisis.map(function(x, i) { return { nom: x.name, type: x.type || 'application/octet-stream', b64: b64[i + 1] }; }));
                     var contenu = JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: o.missionnaire || '', libelle: o.libelle || '', dates: o.dates || '',
                         corps: o.corps || '', de: compte.mail, envoyeLe: new Date().toISOString(), fichiers: fichiers });
-                    return window.JUMELAGE_ENVOYER_DIRECT(o.destinataire, 'CR', pdf.nom, contenu);
+                    return window.JUMELAGE_ENVOYER_DIRECT(o.destinataire, 'CR', pdf.nom, contenu, { differable: true, meta: o.meta || null,
+                        libelle: 'Votre compte-rendu' + (o.libelle && o.libelle !== 'Compte-rendu de mission' ? ' « ' + o.libelle + ' »' : '') });
                 });
             }).then(function(r) {
                 window.JUMELAGE_FERMER_ENVOI_CR();
@@ -2668,6 +2785,7 @@
         r.push({ id: 'donnees', titre: 'Données', icone: ic('disquette'), aide: 'Tout TRIGONE est rangé sur cet appareil : sauvegardez-le régulièrement.', lignes: [
             L('sauvegarder', ic('disquette'), 'Sauvegarder mes données', 'Un fichier pour tout TRIGONE', function() { window.JUMELAGE_SAUVEGARDER(); }),
             L('restaurer', ic('importer'), 'Restaurer une sauvegarde', 'Depuis un fichier, sur cet appareil ou un nouveau', function() { window.JUMELAGE_RESTAURER(); }),
+            NB_ATTENTE && L('attente', ic('mail'), 'Envois en attente (' + NB_ATTENTE + ')', 'Faits sans réseau : ils partent tout seuls au retour du réseau', function() { window.JUMELAGE_ATTENTE(); }),
             c && L('sauvauto', ic('disquette'), 'Sauvegarde automatique', window.JUMELAGE_SAUVEGARDE_AUTO_RESUME(), function() { window.JUMELAGE_SAUVEGARDE_AUTO(); }),
             c && !etatSauvAuto().actif && L('restaurercompte', ic('importer'), 'Restaurer depuis mon compte', 'Nouvel appareil : avec votre code de récupération', function() { window.JUMELAGE_RESTAURER_COMPTE(); }),
             c && L('effacer', CORBEILLE_SVG, 'Se déconnecter et effacer', 'Retirer le compte et les données de cet appareil', deconnecterEtEffacer, true),
