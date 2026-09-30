@@ -505,14 +505,41 @@ function nettoyerVille(v) {
     const nom = v.replace(/\(\s*\d{4,6}\s*\)\s*$/, '').replace(/\b\d{5}\b/, '').replace(/\s+/g, ' ').trim().toUpperCase();
     return { nom, cp };
 }
-async function situerVille(v) {
-    const r = await fetch('https://api-adresse.data.gouv.fr/search/?q=' + encodeURIComponent(v.nom) + '&type=municipality&limit=1' + (v.cp ? '&postcode=' + v.cp : ''));
-    if (!r.ok) throw new Error('BAN ' + r.status);
-    const d = await r.json();
-    const f = d && d.features && d.features[0];
-    if (!f || !f.geometry) return null;
-    const p = f.properties || {};
-    return { lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], nom: String(p.city || p.name || v.nom).toUpperCase() + (p.postcode ? ' (' + p.postcode + ')' : '') };
+// Appels aux services publics de cartographie : identifiés (User-Agent) et limités à 10 s chacun.
+async function lireJson(adresse) {
+    const r = await fetch(adresse, { headers: { 'User-Agent': 'TRIGONE/1.0 (indemnites kilometriques)', 'Accept': 'application/json' }, signal: AbortSignal.timeout(10000) });
+    if (!r.ok) throw new Error(new URL(adresse).hostname + ' ' + r.status);
+    return r.json();
+}
+// Commune → coordonnées : Géoplateforme de l'IGN (successeur de la Base adresse nationale), puis l'ancienne adresse.
+async function situerVille(v, traces) {
+    const q = 'q=' + encodeURIComponent(v.nom) + '&type=municipality&limit=1' + (v.cp ? '&postcode=' + v.cp : '');
+    for (const adresse of ['https://data.geopf.fr/geocodage/search?index=address&' + q, 'https://api-adresse.data.gouv.fr/search/?' + q]) {
+        try {
+            const d = await lireJson(adresse);
+            const f = d && d.features && d.features[0];
+            if (!f || !f.geometry) return null;
+            const p = f.properties || {};
+            return { lon: f.geometry.coordinates[0], lat: f.geometry.coordinates[1], nom: String(p.city || p.name || v.nom).toUpperCase() + (p.postcode ? ' (' + p.postcode + ')' : '') };
+        } catch (e) { traces.push(String(e.message || e)); }
+    }
+    throw new Error('géocodage');
+}
+// Distance routière en km : itinéraire de la Géoplateforme de l'IGN, puis OSRM (OpenStreetMap) en secours.
+async function distanceRoute(p1, p2, traces) {
+    try {
+        const d = await lireJson('https://data.geopf.fr/navigation/itineraire?resource=bdtopo-osrm&profile=car&optimization=fastest&distanceUnit=kilometer&getSteps=false&start=' + p1.lon + ',' + p1.lat + '&end=' + p2.lon + ',' + p2.lat);
+        const km = parseFloat(d && d.distance);
+        if (km >= 0) return km;
+        traces.push('IGN illisible');
+    } catch (e) { traces.push(String(e.message || e)); }
+    try {
+        const d = await lireJson('https://router.project-osrm.org/route/v1/driving/' + p1.lon + ',' + p1.lat + ';' + p2.lon + ',' + p2.lat + '?overview=false');
+        const m = d && d.routes && d.routes[0] && d.routes[0].distance;
+        if (m >= 0) return m / 1000;
+        traces.push('OSRM illisible');
+    } catch (e) { traces.push(String(e.message || e)); }
+    throw new Error('itinéraire');
 }
 
 async function api(requete, env, url, ctx) {
@@ -555,7 +582,7 @@ async function api(requete, env, url, ctx) {
         }
     }
     // Distance routière entre deux communes françaises (indemnités kilométriques du Compte-rendu) : communes situées
-    // par la Base adresse nationale, itinéraire routier calculé par OSRM (OpenStreetMap). Résultat gardé 180 jours.
+    // puis itinéraire calculé par la Géoplateforme de l'IGN (secours : Base adresse nationale, OSRM). Gardé 180 jours.
     // Public : seuls deux noms de villes transitent, rien n'est rattaché à une personne.
     if (chemin === 'distance' && methode === 'GET') {
         const de = nettoyerVille(url.searchParams.get('de')), a = nettoyerVille(url.searchParams.get('a'));
@@ -568,19 +595,16 @@ async function api(requete, env, url, ctx) {
         const n = +(await kv.get('limite-distance:' + ip)) || 0;
         if (n >= 120) return erreur(429, 'Trop de calculs de distance. Réessayez dans une heure.');
         await kv.put('limite-distance:' + ip, String(n + 1), { expirationTtl: 3600 });
+        const traces = [];
         try {
-            const [p1, p2] = await Promise.all([situerVille(de), situerVille(a)]);
+            const [p1, p2] = await Promise.all([situerVille(de, traces), situerVille(a, traces)]);
             if (!p1 || !p2) return erreur(404, 'Ville introuvable : ' + (!p1 ? de.nom : a.nom) + '.');
-            const r = await fetch('https://router.project-osrm.org/route/v1/driving/' + p1.lon + ',' + p1.lat + ';' + p2.lon + ',' + p2.lat + '?overview=false');
-            if (!r.ok) throw new Error('OSRM ' + r.status);
-            const d = await r.json();
-            const m = d && d.routes && d.routes[0] && d.routes[0].distance;
-            if (!(m >= 0)) throw new Error('OSRM illisible');
-            const res = { km: Math.round(m / 1000), de: p1.nom, a: p2.nom };
+            const res = { km: Math.round(await distanceRoute(p1, p2, traces)), de: p1.nom, a: p2.nom };
             await kv.put(cle, JSON.stringify(res), { expirationTtl: 180 * 86400 });
             return json({ ok: true, km: res.km });
         } catch (e) {
-            return erreur(502, 'Calcul de distance indisponible pour le moment.');
+            // Détail (services joints ou non) lisible en ouvrant l'adresse /api/distance?de=…&a=… dans un navigateur.
+            return json({ ok: false, erreur: 'Calcul de distance indisponible pour le moment.', etape: String(e.message || e), detail: traces }, 502);
         }
     }
     // Clé publique VAPID : l'appareil s'abonne aux notifications avec elle.
