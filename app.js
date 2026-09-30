@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 158;
+var APP_CODE_VERSION = 159;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -548,7 +548,7 @@ function TPL_BIBLIOTHEQUE() {
 // « 📅 Agenda » (Bibliothèque) : la mission dans l'agenda du téléphone (fichier .ics : Samsung, Apple, Outlook…,
 // par le menu de partage quand il existe) ou dans Google Agenda. Du départ aller à l'arrivée retour, trajets
 // détaillés, rappel la veille. Rien ne part sur internet sauf si l'on choisit Google Agenda.
-function MER_ICS_TEXTE(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
+function MER_ICS_TEXTE(t) { return String(t || '').replace(/\\/g, '\\\\').replace(/;/g, '\\;').replace(/,/g, '\\,').replace(/\r?\n/g, '\\n'); }
 function MER_ICS_DATE(v) { var d = new Date(v), z = function(n) { return ('0' + n).slice(-2); };
     return d.getFullYear() + z(d.getMonth() + 1) + z(d.getDate()) + 'T' + z(d.getHours()) + z(d.getMinutes()) + '00'; }
 function MER_ICS_PLIER(l) { var out = [], i = 0; while (l.length - i > 74) { out.push((i ? ' ' : '') + l.slice(i, i + 74)); i += 74; } out.push((i ? ' ' : '') + l.slice(i)); return out.join('\r\n'); }
@@ -2799,9 +2799,13 @@ function TPL_ENTREE_VALIDATION(e, h, sansCoche) {
             ESC(d.renvoi.motif) + (e.corrigee ? '<br><span style="color:#15803d;">✔ Corrigée par vous : à revalider</span>' : '') + '</div>';
         if (pourMoi) actions += '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="VALIDER_DEMANDES([\'' + e.id + '\'])">Valider</button>';
         if (pourMoi && d.renvoi && niveau === 1) actions += '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CORRIGER_PAR_VALIDEUR(\'' + e.id + '\')">✎ Corriger</button>';
+        // Pas pour moi : autre niveau de validation, ou validation précédente / pièce jointe non conforme.
+        if (pourMoi) {}
         else if (!precedenteKo) etat += '<div class="MER-HINT">Réservée au ' + LIBELLE_ROLE(niveau) + ' : vous ne pouvez pas la valider.</div>';
         else etat += '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">' + ((e.pjAlterees || []).length ? 'Demande non conforme' : 'Validation précédente non conforme') + ' : refusez cette demande.</div>';
+        if (d.mailDemandeur) actions += '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="POSER_QUESTION(\'mer\', \'' + e.id + '\')">❓ Question</button>';
         actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="DEMANDER_REFUS(\'' + e.id + '\')">' + (h.role === 2 ? 'Refuser / renvoyer' : d.renvoi ? 'Refuser au demandeur' : 'Refuser') + '</button>';
+        etat += TPL_ETAT_QUESTION(d.id);
     }
     // Mauvaise manipulation (mauvais fichier, doublon) : la demande reçue s'efface sans être validée ni refusée.
     if (!e.decision) actions += '<button type="button" class="BTN-DANGER-TEXT" onclick="EFFACER_RECUE(\'' + e.id + '\')">Effacer</button>';
@@ -3482,7 +3486,8 @@ var MER_BOITE_A_OUVRIR = null;
 var MER_NATURES_BOITE = {
     niveau1: ['À signer — 1er niveau', 'Ouvrir et signer'], niveau2: ['À signer — 2e niveau', 'Ouvrir et signer'],
     chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée — à corriger', 'Corriger dans Documents'],
-    cr: ['Compte-rendu de mission', 'Ouvrir'], collective: ['Mission collective — votre compte-rendu', 'Ouvrir mon compte-rendu'], renvoi: ['Renvoyée par le VALIDEUR 2', 'Ouvrir et corriger'], inconnu: ['Fichier reçu', 'Ouvrir']
+    cr: ['Compte-rendu de mission', 'Ouvrir'], collective: ['Mission collective — votre compte-rendu', 'Ouvrir mon compte-rendu'],
+    question: ['Question sur votre demande', 'Répondre'], reponse: ['Réponse à votre question', 'Vu'], renvoi: ['Renvoyée par le VALIDEUR 2', 'Ouvrir et corriger'], inconnu: ['Fichier reçu', 'Ouvrir']
 };
 function MER_EST_CHORUS(x) { return x.nature === 'chorus' || x.nature === 'cr'; }
 // Rôles changés dans les Réglages : la session valideur est reprise de la clé mémorisée (nouveau rôle, ou aucun).
@@ -3515,6 +3520,7 @@ function TPL_ENVOI_RECU(x) {
         (x.n > 1 ? ' <span class="MER-RECU-NOUVEAU" style="background:#1a1a1a;">' + x.n + ' demandes</span>' : '') +
         '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(x.noms || x.nom || 'Demande') + '</div>' +
         '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
+        (x.nature === 'question' || x.nature === 'reponse' ? '<div class="MER-QUESTION"><b>❓ ' + ESC(x.question) + '</b>' + (x.nature === 'reponse' ? '<span>💬 ' + ESC(x.reponse) + '</span>' : '') + '</div>' : '') +
         (x.nature === 'collective' ? '<div class="MER-HINT" style="margin-top:4px;">Mission déjà renseignée par votre chef de mission : complétez votre identité, joignez vos justificatifs, puis envoyez à l\'assistant Chorus DT.</div>' : '') +
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
         (x.nature === 'cr' && x.equipe ? '<div class="MER-HINT" style="margin-top:4px;">👥 Mission collective (' + (x.roleEquipe === 'participant' ? 'participant' : 'chef de mission') + ') : suivi de l\'équipe dans le détail</div>' : '') +
@@ -3526,11 +3532,17 @@ function TPL_ENVOI_RECU(x) {
             (x.nature === 'chorus'
                 ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', true)">👁 Aperçu</button>' +
                   '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">📄 Télécharger le PDF</button>' +
-                  '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="' + (traite ? 'ROUVRIR_RECU' : 'OUVRIR_RECU') + '(\'' + x.id + '\')">Contrôle détaillé</button>'
+                  '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="' + (traite ? 'ROUVRIR_RECU' : 'OUVRIR_RECU') + '(\'' + x.id + '\')">Contrôle détaillé</button>' +
+                  (traite ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="POSER_QUESTION(\'chorus\', \'' + x.id + '\')">❓ Question</button>') +
+                  ((x.ids || []).map(TPL_ETAT_QUESTION).join(''))
             // Compte-rendu : aperçu du PDF directement depuis la ligne, et détail (justificatifs).
             : x.nature === 'cr'
                 ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="APERCU_CR_RECU(\'' + x.id + '\')">👁 Aperçu</button>' +
                   '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_CR_RECU(\'' + x.id + '\')">📎 Compte-rendu et justificatifs</button>'
+            // Question : réponse en quelques mots ; réponse reçue : « Vu ».
+            : x.nature === 'question' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="REPONDRE_QUESTION(\'' + x.id + '\')">💬 Répondre</button>'
+            : x.nature === 'reponse' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">✔ Vu</button>'
+            : x.nature === 'question' || x.nature === 'reponse' ? ''
             // Mission collective : le compte-rendu prérempli par le chef de mission s'ouvre dans Compte-rendu.
             : x.nature === 'collective'
                 ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_COLLECTIVE_RECU(\'' + x.id + '\')">📝 ' + nat[1] + '</button>'
@@ -3590,7 +3602,8 @@ function MER_DOSSIERS(page, l) {
     ] : [
         { id: 'signer', titre: 'À signer', sous: 'Demandes de mise en route à valider', aide: 'Demandes reçues des missionnaires (1er valideur) ou du 1er valideur (2e valideur), et demandes renvoyées : « Ouvrir et signer ».', natures: ['niveau1', 'niveau2', 'renvoi'] },
         { id: 'refus', titre: 'Refusées — à corriger', sous: 'Vos demandes renvoyées avec un motif', aide: 'Vos demandes refusées par un valideur ou l\'assistant Chorus DT : corrigez-les dans Documents, puis renvoyez.', natures: ['refus'] },
-        { id: 'collective', titre: 'Missions collectives', sous: 'Comptes-rendus préremplis par le chef de mission', aide: 'Envoyés par votre chef de mission : « Ouvrir mon compte-rendu », joignez vos justificatifs, puis envoyez.', natures: ['collective'] }
+        { id: 'collective', titre: 'Missions collectives', sous: 'Comptes-rendus préremplis par le chef de mission', aide: 'Envoyés par votre chef de mission : « Ouvrir mon compte-rendu », joignez vos justificatifs, puis envoyez.', natures: ['collective'] },
+        { id: 'questions', titre: 'Questions', sous: 'Questions sur vos demandes, et réponses', aide: 'Un valideur ou l\'assistant Chorus DT vous pose une question plutôt que de refuser : « Répondre » et votre dossier avance. Vous y trouvez aussi les réponses aux questions que vous avez posées.', natures: ['question', 'reponse'] }
     ];
     var connues = [].concat.apply([], d.map(function(x) { return x.natures; }));
     var autres = l.filter(function(x) { return connues.indexOf(x.nature) < 0; });
@@ -3697,9 +3710,11 @@ function OUVRIR_CR_RECU(id) {
                     '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; margin:0;" onclick="TELECHARGER_FICHIER_CR(' + i + ')">⬇ Télécharger</button></div></div>';
             }).join('') +
             (cr.corps ? '<details class="MER-RECU-TRAITES" style="margin-top:10px;"><summary>Message du missionnaire</summary><pre style="white-space:pre-wrap; font:inherit; font-size:0.8em;">' + ESC(cr.corps) + '</pre></details>' : '') +
+            TPL_ETAT_QUESTION(id) +
             (cr.equipe ? '<div class="MER-SECTION-TITLE">Mission collective — ' + (cr.roleEquipe === 'participant' ? 'compte-rendu d\'un participant' : 'compte-rendu du chef de mission') + '</div><div id="MER-CR-EQUIPE" class="MER-HINT">Chargement du suivi des participants…</div>' : ''),
             '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Fermer</button>' +
             '<button type="button" class="BTN BTN-GHOST" onclick="TELECHARGER_FICHIER_CR(-1)">⬇ Tout</button>' +
+            '<button type="button" class="BTN BTN-GHOST" onclick="POSER_QUESTION(\'cr\')">❓ Question</button>' +
             '<button type="button" class="BTN BTN-PRIMARY" onclick="TRAITER_CR_RECU()">✔ Traité</button>');
         if (cr.equipe) MER_CR_EQUIPE(cr);
     }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
@@ -3844,6 +3859,89 @@ function OUVRIR_TOUT_SIGNER(niveau) {
         });
     }).catch(function(e) { MSG_ERREUR('Ouverture impossible', e.message || String(e)); });
 }
+// ===================== QUESTIONS (au lieu d'un refus) =====================
+// Un valideur (Espace valideur) ou l'assistant Chorus DT (compte-rendu, demande validée) pose une question au
+// missionnaire : elle part chiffrée dans sa boîte (envoi QUESTION) ; il répond en quelques mots (REPONSE) ; le dossier
+// reste où il est. Questions posées gardées sur l'appareil (trigone_questions : { ref: [{ le, q }] }) ; la réponse,
+// reçue dans la boîte, s'affiche sous la demande concernée.
+var CLE_QUESTIONS = 'trigone_questions';
+function MER_QUESTIONS() { try { return JSON.parse(localStorage.getItem(CLE_QUESTIONS) || '{}') || {}; } catch (e) { return {}; } }
+function TPL_ETAT_QUESTION(ref) {
+    var q = MER_QUESTIONS()[ref] || [];
+    var reps = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return x.nature === 'reponse' && x.ref === ref; });
+    if (!q.length && !reps.length) return '';
+    var h = function(ms) { return new Date(ms).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' }); };
+    return '<div class="MER-QUESTION">' + q.map(function(x) {
+        var r = reps.filter(function(y) { return y.question === x.q; })[0];
+        return '<b>❓ ' + ESC(x.q) + '</b><small>Posée le ' + h(x.le) + '</small>' + (r ? '<span>💬 ' + ESC(r.reponse) + '</span><small>Réponse du ' + h(r.le) + '</small>' : '<small>⏳ En attente de réponse</small>');
+    }).join('') + '</div>';
+}
+// genre : 'mer' (id d'entrée de l'Espace valideur), 'chorus' (id d'envoi reçu : demande validée), 'cr' (compte-rendu ouvert).
+function POSER_QUESTION(genre, id) {
+    var cible = null;
+    var suite = function(c) {
+        if (!c || !c.dest) { MSG_ERREUR('Question impossible', 'L\'adresse du missionnaire est inconnue pour ce dossier.'); return; }
+        cible = c;
+        AFFICHER_MODALE('Poser une question',
+            '<p style="font-size:0.86em; line-height:1.5;">À <b>' + ESC(c.noms || c.dest) + '</b>, sur « ' + ESC(c.objet || 'sa demande') + ' ». Elle arrive dans sa boîte TRIGONE avec une notification ; le dossier ne bouge pas en attendant sa réponse.</p>' +
+            '<textarea id="MER-QUESTION-TXT" rows="4" style="width:100%; box-sizing:border-box; padding:10px; border-radius:10px; border:1.5px solid var(--tg-border); font:inherit;" placeholder="Ex : Pourquoi un taxi le 2e jour ?"></textarea>',
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Annuler</button><button type="button" class="BTN BTN-PRIMARY" id="MER-QUESTION-GO">Envoyer la question</button>');
+        setTimeout(function() {
+            var t = document.getElementById('MER-QUESTION-TXT'); if (t) t.focus();
+            document.getElementById('MER-QUESTION-GO').onclick = function() {
+                var q = (t.value || '').trim();
+                if (q.length < 3) { t.focus(); return; }
+                var b = this; b.disabled = true; b.textContent = 'Envoi…';
+                var qui = [window.JUMELAGE_QUI ? JUMELAGE_QUI() : '', c.role].filter(Boolean).join(' — ');
+                JUMELAGE_ENVOYER_DIRECT(c.dest, 'QUESTION', 'Question.json', JSON.stringify({ app: 'TRIGONE-QUESTION', ref: c.ref, genre: genre, objet: c.objet || '', question: q, qui: qui }), { differable: true, libelle: 'Votre question' })
+                    .then(function() {
+                        var l = MER_QUESTIONS(); (l[c.ref] = l[c.ref] || []).push({ le: Date.now(), q: q });
+                        try { localStorage.setItem(CLE_QUESTIONS, JSON.stringify(l)); } catch (e) {}
+                        FERMER_MODALE();
+                        if (PAGE_ACTUELLE === 'VALIDATION') RENDER_VALIDATION_INPLACE();
+                        MSG_INFO('Question envoyée', (c.noms || c.dest) + ' la reçoit avec une notification. Sa réponse arrivera dans votre Boîte de réception (dossier Questions) et s\'affichera sous ce dossier.', '❓');
+                    }).catch(function(e) { b.disabled = false; b.textContent = 'Envoyer la question'; MSG_ERREUR('Question non envoyée', e.message || String(e)); });
+            };
+        }, 50);
+    };
+    if (genre === 'mer') {
+        var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0]; if (!e) return;
+        var h = HABILITATION_COURANTE();
+        suite({ dest: e.d.mailDemandeur, ref: e.d.id, objet: e.d.objet, noms: RESUME_DEMANDE(e.d).noms, role: h ? 'VALIDEUR ' + h.role : '' });
+    } else if (genre === 'cr') {
+        if (!MER_CR_OUVERT) return;
+        var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(y) { return y.id === MER_CR_OUVERT.id; })[0] || {};
+        suite({ dest: x.de || MER_CR_OUVERT.cr.de, ref: MER_CR_OUVERT.id, objet: MER_CR_OUVERT.cr.libelle, noms: MER_CR_OUVERT.cr.missionnaire, role: 'assistant Chorus DT' });
+    } else {
+        JUMELAGE_BOITE_FICHIER(id).then(function(f) { return f.text(); }).then(function(t) {
+            var d = (LIRE_JSON_MER(t).demandes || [])[0] || {};
+            suite({ dest: d.mailDemandeur, ref: d.id, objet: d.objet, noms: d.personnes ? RESUME_DEMANDE(d).noms : '', role: 'assistant Chorus DT' });
+        }).catch(function(e) { MSG_ERREUR('Question impossible', e.message || String(e)); });
+    }
+}
+// Le missionnaire répond (quelques mots) : la réponse repart chiffrée vers celui qui a posé la question.
+function REPONDRE_QUESTION(id) {
+    var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(y) { return y.id === id; })[0]; if (!x) return;
+    JUMELAGE_BOITE_MARQUER(id, 'ouvert');
+    AFFICHER_MODALE('Répondre',
+        '<p style="font-size:0.86em; line-height:1.5;"><b>' + ESC(x.noms || x.de) + '</b> vous demande, sur « ' + ESC(x.objet || 'votre demande') + ' » :</p>' +
+        '<div class="MER-QUESTION"><b>❓ ' + ESC(x.question) + '</b></div>' +
+        '<textarea id="MER-REPONSE-TXT" rows="4" style="width:100%; box-sizing:border-box; padding:10px; border-radius:10px; border:1.5px solid var(--tg-border); font:inherit;" placeholder="Votre réponse"></textarea>',
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Plus tard</button><button type="button" class="BTN BTN-PRIMARY" id="MER-REPONSE-GO">Envoyer la réponse</button>');
+    setTimeout(function() {
+        var t = document.getElementById('MER-REPONSE-TXT'); if (t) t.focus();
+        document.getElementById('MER-REPONSE-GO').onclick = function() {
+            var r = (t.value || '').trim(); if (r.length < 2) { t.focus(); return; }
+            var b = this; b.disabled = true; b.textContent = 'Envoi…';
+            JUMELAGE_ENVOYER_DIRECT(x.de, 'REPONSE', 'Reponse.json', JSON.stringify({ app: 'TRIGONE-REPONSE', ref: x.ref, genre: x.genre, objet: x.objet, question: x.question, reponse: r,
+                qui: window.JUMELAGE_QUI ? JUMELAGE_QUI() : '' }), { differable: true, libelle: 'Votre réponse' }).then(function() {
+                JUMELAGE_BOITE_MARQUER(id, 'traite');
+                FERMER_MODALE(); RECU_REAFFICHER();
+                MSG_INFO('Réponse envoyée', 'Elle arrive chez ' + (x.noms || x.de) + ', avec une notification : votre dossier peut avancer.', '✅');
+            }).catch(function(e) { b.disabled = false; b.textContent = 'Envoyer la réponse'; MSG_ERREUR('Réponse non envoyée', e.message || String(e)); });
+        };
+    }, 50);
+}
 // ASSIST CHORUS DT : PDF final (demande signée + NDS / DAF) d'un envoi reçu, en aperçu ou téléchargé.
 // Les signatures et les pièces jointes sont contrôlées d'abord : une demande non conforme ne donne pas de PDF.
 function CHORUS_PDF_RECU(id, apercu) {
@@ -3906,6 +4004,12 @@ window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
     var chorus = MER_ROLE_CHORUS() && nouveaux.every(MER_EST_CHORUS);
     if (nouveaux.length === 1 && x.nature === 'collective') {
         MER_BANDEAU_RECU('Mission collective', [x.objet, x.dates].filter(Boolean).join(' · ') + ' — de ' + (x.noms || x.de || '?') + '. Touchez pour ouvrir votre compte-rendu prérempli.', function() { OUVRIR_COLLECTIVE_RECU(x.id); });
+        return;
+    }
+    // Question (à vous) ou réponse (à votre question) : texte affiché directement.
+    if (nouveaux.length === 1 && (x.nature === 'question' || x.nature === 'reponse')) {
+        MER_BANDEAU_RECU(x.nature === 'question' ? 'Question sur votre demande' : 'Réponse à votre question', (x.noms || x.de || '?') + ' : « ' + (x.nature === 'question' ? x.question : x.reponse).slice(0, 140) + ' » Touchez pour ' + (x.nature === 'question' ? 'répondre.' : 'la voir.'),
+            function() { OUVRIR_DOSSIER('RECEPTION', 'questions'); if (x.nature === 'question') setTimeout(function() { REPONDRE_QUESTION(x.id); }, 300); });
         return;
     }
     MER_BANDEAU_RECU(x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' demandes reçues' : 'Demande reçue', (nouveaux.length > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
