@@ -240,6 +240,17 @@
         '.JUM-CR-FICHIER b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .JUM-CR-FICHIER small { color: #64748b; white-space: nowrap; }' +
         '.JUM-CR-RETIRER { border: 0; background: none; color: #b91c1c; font-size: 0.9rem; cursor: pointer; padding: 2px 4px; }' +
         '.JUM-CR-AJOUT { display: block; text-align: center; margin: 10px 0 0; cursor: pointer; }' +
+        '.JUM-S-CODE { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.25rem; font-weight: 800; letter-spacing: 0.06em; text-align: center; padding: 16px 8px; margin: 14px 0 4px; border: 2px dashed #5a7a94; border-radius: 14px; background: rgba(90,122,148,0.07); user-select: all; overflow-wrap: anywhere; }' +
+        '.JUM-S-OK { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 0.86rem; margin: 12px 0 4px; cursor: pointer; } .JUM-S-OK input { width: 20px; height: 20px; }' +
+        '.JUM-S-LISTE { list-style: none; padding: 0; margin: 14px 0 8px; display: flex; flex-direction: column; gap: 10px; font-size: 0.86rem; line-height: 1.45; }' +
+        '.JUM-S-ETAT { margin: 14px 0 10px; padding: 12px; border-radius: 12px; background: rgba(21,128,61,0.08); color: #15803d; font-weight: 700; font-size: 0.84rem; }' +
+        '.JUM-S-SAISIE { width: 100%; box-sizing: border-box; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.05rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; margin-top: 6px; }' +
+        'html body.dark-mode .JUM-S-CODE { border-color: #a9c3d6; background: rgba(169,195,214,0.08); } html body.dark-mode .JUM-S-ETAT { color: #4ade80; background: rgba(74,222,128,0.1); } html body.dark-mode .JUM-S-SAISIE { background: #1f1f1f; color: #ececec; border-color: #4a4a4a; }' +
+        '.JUM-ERR { border: 1px solid #e2e8f0; border-left: 4px solid #b45309; border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 0.82rem; display: flex; flex-direction: column; gap: 4px; }' +
+        '.JUM-ERR-MSG { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.76rem; overflow-wrap: anywhere; } .JUM-ERR small { color: #64748b; }' +
+        '.JUM-ERR pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.7rem; background: rgba(90,122,148,0.08); padding: 8px; border-radius: 8px; margin: 6px 0 0; }' +
+        '.JUM-ERR summary { cursor: pointer; font-size: 0.74rem; color: #5a7a94; } .JUM-ERR-BTN { display: flex; gap: 8px; margin-top: 4px; } .JUM-ERR-BTN button { flex: 1; padding: 8px; }' +
+        'html body.dark-mode .JUM-ERR { border-color: rgba(255,255,255,0.1); border-left-color: #f59e0b; } html body.dark-mode .JUM-ERR small { color: #a3a3a3; }' +
         '.JUM-CR-SCAN { display: block; font-style: normal; font-weight: 500; font-size: 0.72rem; color: #15803d; } .JUM-CR-ORIGINE { background: none; border: 0; padding: 0; font: inherit; color: #5a7a94; text-decoration: underline; cursor: pointer; }' +
         'html body.dark-mode .JUM-CR-SCAN { color: #4ade80; } html body.dark-mode .JUM-CR-ORIGINE { color: #a9c3d6; }' +
         'html body.dark-mode .JUM-CR-FICHIER { border-color: rgba(255,255,255,0.1); } html body.dark-mode .JUM-CR-FICHIER small { color: #a3a3a3; }' +
@@ -644,7 +655,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 105, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 106, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -697,6 +708,60 @@
         cr: { url: DANS_CR ? './' : 'cr/', logo: (DANS_CR ? '' : 'cr/') + 'logo_cr_accueil.png', nom: 'TRIGONE Compte-rendu de mission', sous: 'Au retour de mission' }
     };
     var ICI = DANS_CR ? 'cr' : 'mer', CLE_CHOIX = 'trigone_choix_fait';
+    // ---------- Remontée des erreurs ----------
+    // Une erreur technique (bug) est envoyée au serveur, anonyme : version, appli, écran, message et emplacement dans
+    // le code, type d'appareil. Jamais de nom, de mail ni de donnée de mission : adresses mail, suites de chiffres
+    // et textes entre guillemets sont masqués. 5 envois au plus par ouverture, une fois par erreur.
+    var erreursVues = {}, erreursEnvoyees = 0;
+    function masquer(t) {
+        return String(t || '').replace(/[\w.+-]+@[\w-]+(\.[\w-]+)+/g, '<mail>').replace(/(["'«])[^"'»]{12,}(["'»])/g, '$1…$2').replace(/\d[\d \-.,/]{3,}\d/g, '#');
+    }
+    function localiser(src) { return String(src || '').replace(location.origin, '').replace(/\?[^:\s)]*/g, ''); }
+    function appareilAnonyme() {
+        var id = lireTxt('trigone_appareil_anonyme');
+        if (!id) { id = Math.random().toString(36).slice(2, 12) + Date.now().toString(36).slice(-4); ecrireTxt('trigone_appareil_anonyme', id); }
+        return id;
+    }
+    function typeAppareil() {
+        var u = navigator.userAgent || '';
+        var sys = /iPhone|iPad/.test(u) ? 'iPhone/iPad' : /Android/.test(u) ? 'Android' : /Windows/.test(u) ? 'Windows' : /Mac OS/.test(u) ? 'Mac' : 'Autre';
+        var nav = /Edg\//.test(u) ? 'Edge' : /SamsungBrowser/.test(u) ? 'Samsung' : /Firefox\//.test(u) ? 'Firefox' : /CriOS|Chrome\//.test(u) ? 'Chrome' : /Safari\//.test(u) ? 'Safari' : '';
+        return sys + (nav ? ' · ' + nav : '') + (window.matchMedia && matchMedia('(display-mode: standalone)').matches ? ' · appli' : '');
+    }
+    function ecranActuel() {
+        if (document.querySelector('.JUM-CHOIX')) return 'Écran de choix';
+        try { if (DANS_CR && window.GET_LABEL_ECRAN_ACTUEL) return 'Compte-rendu › ' + window.GET_LABEL_ECRAN_ACTUEL(); } catch (e) {}
+        var NOMS = { ACCUEIL: 'Accueil', FORMULAIRE: 'Formulaire de demande', PANIER: 'Documents', BIBLIOTHEQUE: 'Bibliothèque', RECEPTION: 'Boîte de réception',
+            VALIDATION: 'Espace valideur', CHORUS: 'Espace Assistant Chorus DT', ESPACE: 'Mon espace', NOTICE: 'Notice', REFERENCES: 'Références', REPRISE: 'Reprise', VERIFIER: 'Vérifier un PDF' };
+        try { if (!DANS_CR && typeof window.PAGE_ACTUELLE === 'string') return 'Mise en route › ' + (NOMS[window.PAGE_ACTUELLE] || window.PAGE_ACTUELLE); } catch (e) {}
+        return DANS_CR ? 'Compte-rendu' : 'Mise en route';
+    }
+    function remonterErreur(msg, src, pile) {
+        msg = masquer(msg).slice(0, 300);
+        if (!msg || /^Script error\.?$/i.test(msg) || /ResizeObserver loop/i.test(msg)) return;   // extensions, bruit du navigateur
+        src = localiser(src);
+        if (src && /^(chrome|moz|safari)-extension:/.test(src)) return;
+        var cle = msg + '|' + src;
+        if (erreursVues[cle] || erreursEnvoyees >= 5 || /[?&]demo=/.test(location.search)) return;
+        erreursVues[cle] = true; erreursEnvoyees++;
+        try {
+            fetch((DANS_CR ? '../' : '') + 'api/erreur', { method: 'POST', keepalive: true, headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ app: document.querySelector('.JUM-CHOIX') ? 'choix' : ICI, ecran: ecranActuel(), msg: msg, src: src,
+                    pile: masquer(localiser(pile)).split('\n').slice(0, 6).join('\n'), v: BUILD, ua: typeAppareil(), appareil: appareilAnonyme() }) }).catch(function() {});
+        } catch (e) {}
+    }
+    window.addEventListener('error', function(e) {
+        if (!e || e.target !== window && e.target && e.target.tagName) return;   // image ou script qui ne charge pas : pas un bug
+        remonterErreur(e.message, (e.filename || '') + (e.lineno ? ':' + e.lineno + ':' + (e.colno || 0) : ''), e.error && e.error.stack);
+    });
+    window.addEventListener('unhandledrejection', function(e) {
+        var r = e && e.reason;
+        // Réseau coupé, serveur injoignable : pas un bug de l'appli.
+        if (!r || /Failed to fetch|NetworkError|Load failed|network|abort/i.test(String(r.message || r))) return;
+        if (r.statut) return;   // refus du serveur déjà expliqué à l'utilisateur
+        remonterErreur('Promesse rejetée : ' + (r.message || String(r)), '', r.stack);
+    });
+    window.JUMELAGE_REMONTER_ERREUR = remonterErreur;
     // Rôle « Assistant Chorus DT » : activé dans les Réglages avec le code remis par l'administrateur (seule son
     // empreinte figure ici). Son espace s'ouvre depuis le logo placé au centre de l'écran de choix.
     var CLE_ROLE_CHORUS = 'trigone_role_chorus', EMPREINTE_CODE_CHORUS = '1873312e8bec44f88043df4b267191cf334946fa92ae71e40c3d3d4867c9e49a';
@@ -1202,7 +1267,7 @@
     // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
     // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
     var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
-    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi|trigone_notif_muet)$/;
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi|trigone_notif_muet|trigone_admin|trigone_appareil_anonyme|trigone_sauvegarde_auto)$/;
     function basePieces(creer) {
         return new Promise(function(ok) {
             if (!window.indexedDB) { ok(null); return; }
@@ -1252,9 +1317,12 @@
         });
     }
     // Remet une sauvegarde en place. remplacer : efface d'abord les données actuelles (sinon ajoute / met à jour).
-    function appliquerSauvegarde(s, remplacer) {
+    function appliquerSauvegarde(s, remplacer, garderAppareil) {
         try {
+            var garde = {};
+            if (garderAppareil) for (var i = 0; i < localStorage.length; i++) { var k0 = localStorage.key(i); if (NON_SAUVEGARDE.test(k0)) garde[k0] = localStorage.getItem(k0); }
             if (remplacer) localStorage.clear();
+            Object.keys(garde).forEach(function(k) { localStorage.setItem(k, garde[k]); });
             Object.keys(s.donnees).forEach(function(k) { localStorage.setItem(k, s.donnees[k]); });
             localStorage.setItem(CLE_DERNIERE_SAUVEGARDE, String(Date.now()));
         } catch (e) { return Promise.reject(e); }
@@ -1298,6 +1366,198 @@
         lecteur.readAsText(fichier);
     }
     window.JUMELAGE_RESTAURER_FICHIER = restaurer;
+    // ---------- Sauvegarde automatique, chiffrée, dans le compte TRIGONE ----------
+    // Tout TRIGONE (le même contenu que « Sauvegarder mes données ») est compressé puis chiffré SUR L'APPAREIL
+    // (AES-GCM 256) avec une clé tirée d'un code de récupération de 20 caractères (≈ 100 bits, PBKDF2-SHA256,
+    // 310 000 tours) ; seul ce bloc illisible part au serveur. Le code n'est jamais transmis ni conservé : l'appareil
+    // garde seulement la clé, non exportable (IndexedDB). Sur un nouvel appareil : connexion au compte + code.
+    // Copie une fois par jour au plus, quand quelque chose a changé.
+    var CLE_SAUV_AUTO = 'trigone_sauvegarde_auto', ALPHABET_CODE = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    function etatSauvAuto() { return lireJSON(CLE_SAUV_AUTO) || {}; }
+    function ecrireSauvAuto(e) { ecrireTxt(CLE_SAUV_AUTO, JSON.stringify(e)); }
+    function genererCode() {
+        var o = new Uint8Array(20), t = '';
+        crypto.getRandomValues(o);
+        for (var i = 0; i < 20; i++) t += ALPHABET_CODE[o[i] % 32] + (i % 4 === 3 && i < 19 ? '-' : '');
+        return t;
+    }
+    function normaliserCode(t) { return String(t || '').toUpperCase().replace(/[^A-Z0-9]/g, '').replace(/O/g, '0').replace(/I/g, '1'); }
+    function deriverCleSauv(code, sel) {
+        return SUBTLE.importKey('raw', new TextEncoder().encode(normaliserCode(code)), 'PBKDF2', false, ['deriveKey']).then(function(k) {
+            return SUBTLE.deriveKey({ name: 'PBKDF2', salt: sel, iterations: 310000, hash: 'SHA-256' }, k, { name: 'AES-GCM', length: 256 }, false, ['encrypt', 'decrypt']);
+        });
+    }
+    function cleSauvIdb(action, valeur) {
+        return baseCles().then(function(db) { return new Promise(function(ok, ko) {
+            var tx = db.transaction('cles', action === 'lire' ? 'readonly' : 'readwrite'), st = tx.objectStore('cles');
+            var r = action === 'lire' ? st.get('sauvegarde') : action === 'effacer' ? st.delete('sauvegarde') : st.put(valeur, 'sauvegarde');
+            tx.oncomplete = function() { db.close(); ok(action === 'lire' ? (r.result || null) : null); };
+            tx.onerror = function() { db.close(); ko(tx.error); };
+        }); });
+    }
+    function flux(octets, transfo) {
+        if (!window[transfo]) return Promise.resolve(octets);
+        return new Response(new Blob([octets]).stream().pipeThrough(new window[transfo]('gzip'))).arrayBuffer().then(function(b) { return new Uint8Array(b); });
+    }
+    function empreinteHex(octets) { return SUBTLE.digest('SHA-256', octets).then(function(h) { return Array.prototype.map.call(new Uint8Array(h), function(x) { return ('0' + x.toString(16)).slice(-2); }).join(''); }); }
+    // Envoie la sauvegarde chiffrée. forcer : même sans changement, même si la dernière a moins de 20 h.
+    var sauvEnCours = null;
+    function envoyerSauvAuto(forcer) {
+        var e = etatSauvAuto();
+        if (!e.actif || !monCompte() || !navigator.onLine || window.JUMELAGE_RESTAURATION_EN_COURS) return Promise.resolve(null);
+        if (!forcer && e.derniere && Date.now() - e.derniere < 20 * 3600000) return Promise.resolve(null);
+        if (sauvEnCours) return sauvEnCours;
+        var texte, gz;
+        sauvEnCours = cleSauvIdb('lire').then(function(cle) {
+            if (!cle) throw new Error('Clé de sauvegarde absente sur cet appareil : réactivez la sauvegarde automatique.');
+            return collecterSauvegarde().then(function(sv) {
+                texte = new TextEncoder().encode(JSON.stringify({ donnees: sv.donnees, pieces: sv.pieces }));
+                return empreinteHex(texte).then(function(h) {
+                    if (!forcer && h === e.empreinte) return null;
+                    sv.compression = 'gzip';
+                    return flux(new TextEncoder().encode(JSON.stringify(sv)), 'CompressionStream').then(function(z) {
+                        gz = z; var iv = crypto.getRandomValues(new Uint8Array(12));
+                        return SUBTLE.encrypt({ name: 'AES-GCM', iv: iv }, cle, window.CompressionStream ? gz : new TextEncoder().encode(JSON.stringify(sv))).then(function(ct) {
+                            return appelApi('sauvegarde', { methode: 'POST', corps: { sel: e.sel, iv: versB64(iv), ct: versB64(ct), appareil: nomAppareil() } });
+                        });
+                    }).then(function(r) {
+                        var e2 = etatSauvAuto(); e2.derniere = r.le; e2.taille = r.taille; e2.empreinte = h; delete e2.erreur; ecrireSauvAuto(e2);
+                        ecrireTxt(CLE_DERNIERE_SAUVEGARDE, String(r.le));
+                        return r;
+                    });
+                });
+            });
+        }).catch(function(err) { var e2 = etatSauvAuto(); e2.erreur = err.message || String(err); ecrireSauvAuto(e2); throw err; })
+          .then(function(r) { sauvEnCours = null; return r; }, function(err) { sauvEnCours = null; throw err; });
+        return sauvEnCours;
+    }
+    window.JUMELAGE_SAUVEGARDE_AUTO_ENVOYER = envoyerSauvAuto;
+    // Copie automatique : 20 s après l'ouverture, puis toutes les 3 h tant que l'appli reste ouverte.
+    setTimeout(function() { envoyerSauvAuto(false).catch(function() {}); }, 20000);
+    setInterval(function() { envoyerSauvAuto(false).catch(function() {}); }, 3 * 3600000);
+    function tailleMo(o) { return o < 1048576 ? Math.max(1, Math.round(o / 1024)) + ' Ko' : (o / 1048576).toFixed(1).replace('.', ',') + ' Mo'; }
+    function dateHeure(ms) { var d = new Date(ms); return d.toLocaleDateString('fr-FR') + ' à ' + ('0' + d.getHours()).slice(-2) + ' h ' + ('0' + d.getMinutes()).slice(-2); }
+    window.JUMELAGE_SAUVEGARDE_AUTO_RESUME = function() {
+        var e = etatSauvAuto();
+        if (!e.actif) return 'Chiffrée dans votre compte TRIGONE, restaurable sur un nouvel appareil';
+        return e.erreur ? '⚠️ ' + e.erreur : e.derniere ? 'Activée · dernière copie le ' + dateHeure(e.derniere) : 'Activée · première copie en cours';
+    };
+    var fenSauv = null;
+    window.JUMELAGE_FERMER_SAUVEGARDE_AUTO = function() { if (fenSauv) { fenSauv.remove(); fenSauv = null; } };
+    function fenetreSauv(titre, sous, corps, pied) {
+        window.JUMELAGE_FERMER_SAUVEGARDE_AUTO();
+        fenSauv = document.createElement('div'); fenSauv.className = 'JUM-REGLAGES'; fenSauv.setAttribute('role', 'dialog');
+        fenSauv.innerHTML = '<div class="JUM-R-CARTE"><div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('disquette') : '') + '</span><div><h2>' + titre + '</h2><p>' + sous + '</p></div>' +
+            '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_SAUVEGARDE_AUTO()">✕</button></div><div class="JUM-R-CORPS">' + corps + '<p class="JUM-R-ERREUR" id="JUM-S-ERR"></p></div>' +
+            '<div class="JUM-R-PIED">' + pied + '</div></div>';
+        document.body.appendChild(fenSauv);
+        return fenSauv;
+    }
+    // Active (ou change) le code : nouveau code affiché une fois, nouvelle clé, première copie.
+    function activerSauv() {
+        var code = genererCode(), f = fenetreSauv('Votre code de récupération', 'Notez-le maintenant : il ne sera plus jamais affiché.',
+            '<div class="JUM-S-CODE" id="JUM-S-CODE">' + code + '</div>' +
+            '<button type="button" class="JUM-R-SECOND" id="JUM-S-COPIER" style="width:100%;margin:6px 0 12px;">Copier le code</button>' +
+            '<p class="JUM-R-AIDE">Ce code est la <b>seule</b> façon d\'ouvrir votre sauvegarde sur un nouvel appareil. Il n\'est envoyé nulle part : ni le serveur, ni l\'équipe TRIGONE ne le connaissent et ne peuvent le retrouver. Gardez-le <b>à part de votre téléphone</b> : sur papier, dans un gestionnaire de mots de passe, ou en photo sur un autre appareil.</p>' +
+            '<label class="JUM-S-OK"><input type="checkbox" id="JUM-S-NOTE"> J\'ai noté ce code en lieu sûr</label>',
+            '<button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_SAUVEGARDE_AUTO()">Annuler</button><button type="button" class="JUM-R-PRINCIPAL" id="JUM-S-GO" disabled>Activer</button>');
+        var go = f.querySelector('#JUM-S-GO');
+        f.querySelector('#JUM-S-NOTE').addEventListener('change', function(ev) { go.disabled = !ev.target.checked; });
+        f.querySelector('#JUM-S-COPIER').addEventListener('click', function(ev) {
+            var b = ev.target; (navigator.clipboard ? navigator.clipboard.writeText(code) : Promise.reject()).then(function() { b.textContent = 'Copié ✓'; }, function() {});
+        });
+        go.addEventListener('click', function() {
+            go.disabled = true; go.textContent = 'Chiffrement…';
+            var sel = crypto.getRandomValues(new Uint8Array(16));
+            deriverCleSauv(code, sel).then(function(cle) { return cleSauvIdb('ecrire', cle); }).then(function() {
+                ecrireSauvAuto({ actif: true, sel: versB64(sel) });
+                return envoyerSauvAuto(true);
+            }).then(function() {
+                code = null; window.JUMELAGE_FERMER_SAUVEGARDE_AUTO();
+                bandeau('Sauvegarde automatique activée : une copie chiffrée est dans votre compte TRIGONE.');
+            }).catch(function(e) { go.disabled = false; go.textContent = 'Activer'; f.querySelector('#JUM-S-ERR').textContent = '⛔ ' + (e.message || e); });
+        });
+    }
+    window.JUMELAGE_SAUVEGARDE_AUTO = function() {
+        if (!monCompte()) { annoncer('Connectez-vous d\'abord', 'La sauvegarde automatique se range dans votre compte TRIGONE : connectez-vous (Paramètres › Compte › Se connecter).', 'alerte', 'alerte'); return; }
+        var e = etatSauvAuto();
+        if (!e.actif) {
+            var f0 = fenetreSauv('Sauvegarde automatique', 'Ne perdez rien si votre téléphone est perdu, cassé ou changé.',
+                '<ul class="JUM-S-LISTE"><li>🔒 <b>Chiffrée sur votre téléphone</b> avant l\'envoi : le serveur ne reçoit qu\'un bloc illisible. Personne ne peut la lire, même en cas de piratage du serveur.</li>' +
+                '<li>🔑 Elle s\'ouvre avec un <b>code de récupération</b> que vous seul connaissez, donné une seule fois.</li>' +
+                '<li>🔄 Une copie par jour au plus, seulement quand quelque chose a changé ; rien à faire.</li>' +
+                '<li>📱 Nouveau téléphone : connectez-vous à votre compte, puis saisissez le code : tout revient.</li></ul>' +
+                '<p class="JUM-R-AIDE">⚠️ Code perdu = sauvegarde impossible à ouvrir, pour tout le monde. Il faudra donc le noter.</p>',
+                '<button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_SAUVEGARDE_AUTO()">Plus tard</button><button type="button" class="JUM-R-PRINCIPAL" id="JUM-S-ACT">Activer</button>');
+            f0.querySelector('#JUM-S-ACT').addEventListener('click', activerSauv);
+            return;
+        }
+        var f = fenetreSauv('Sauvegarde automatique', 'Activée sur cet appareil. Chiffrée : seul votre code de récupération l\'ouvre.',
+            '<div class="JUM-S-ETAT" id="JUM-S-ETAT">' + esc(window.JUMELAGE_SAUVEGARDE_AUTO_RESUME()) + (e.taille ? ' · ' + tailleMo(e.taille) : '') + '</div>' +
+            '<button type="button" class="JUM-PARAM-LIGNE" id="JUM-S-MAINT"><span><b>Sauvegarder maintenant</b><small>Envoyer une copie à jour tout de suite</small></span><i>›</i></button>' +
+            '<button type="button" class="JUM-PARAM-LIGNE" id="JUM-S-CODE2"><span><b>Changer de code de récupération</b><small>Code perdu ou divulgué : un nouveau code, l\'ancien ne sert plus</small></span><i>›</i></button>' +
+            '<button type="button" class="JUM-PARAM-LIGNE danger" id="JUM-S-OFF"><span><b>Désactiver</b><small>Arrêter et supprimer la copie du serveur</small></span><i>›</i></button>',
+            '<button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_SAUVEGARDE_AUTO()">Fermer</button>');
+        var err = f.querySelector('#JUM-S-ERR');
+        f.querySelector('#JUM-S-MAINT').addEventListener('click', function(ev) {
+            var b = ev.currentTarget; b.disabled = true; err.textContent = '';
+            envoyerSauvAuto(true).then(function(r) {
+                b.disabled = false; f.querySelector('#JUM-S-ETAT').textContent = window.JUMELAGE_SAUVEGARDE_AUTO_RESUME() + (r && r.taille ? ' · ' + tailleMo(r.taille) : '');
+            }, function(e2) { b.disabled = false; err.textContent = '⛔ ' + (e2.message || e2); });
+        });
+        f.querySelector('#JUM-S-CODE2').addEventListener('click', activerSauv);
+        f.querySelector('#JUM-S-OFF').addEventListener('click', function() {
+            if (!confirm('Désactiver la sauvegarde automatique ? La copie chiffrée sera supprimée du serveur.')) return;
+            appelApi('sauvegarde', { methode: 'DELETE' }).then(function() {
+                try { localStorage.removeItem(CLE_SAUV_AUTO); } catch (e3) {}
+                cleSauvIdb('effacer').catch(function() {});
+                window.JUMELAGE_FERMER_SAUVEGARDE_AUTO(); bandeau('Sauvegarde automatique désactivée ; la copie du serveur est supprimée.');
+            }, function(e3) { err.textContent = '⛔ ' + e3.message; });
+        });
+    };
+    // Restaurer depuis le compte (nouvel appareil) : code de récupération → déchiffrement → tout TRIGONE remis en place.
+    // o.apresConnexion : proposé juste après la connexion ; o.sinon : suite normale si l'utilisateur passe.
+    window.JUMELAGE_RESTAURER_COMPTE = function(o) {
+        o = o || {};
+        if (!monCompte()) { annoncer('Connectez-vous d\'abord', 'Connectez-vous à votre compte TRIGONE, puis revenez ici.', 'alerte', 'alerte'); return; }
+        appelApi('sauvegarde/info').then(function(info) {
+            if (!info.existe) { if (o.sinon) o.sinon(); else annoncer('Aucune sauvegarde', 'Votre compte TRIGONE ne contient pas de sauvegarde automatique. Activez-la depuis l\'appareil qui a vos données (Paramètres › Données).', 'alerte', 'alerte'); return; }
+            var f = fenetreSauv(o.apresConnexion ? 'Une sauvegarde vous attend' : 'Restaurer depuis mon compte',
+                'Sauvegarde du ' + dateHeure(info.le) + (info.appareil ? ' (' + esc(info.appareil) + ')' : '') + ' · ' + tailleMo(info.taille) + '.',
+                '<p class="JUM-R-AIDE">Saisissez votre code de récupération (20 caractères, reçu à l\'activation). Toutes les données TRIGONE de cet appareil seront remplacées par la sauvegarde.</p>' +
+                '<input type="text" id="JUM-S-SAISIE" class="JUM-S-SAISIE" autocomplete="off" autocapitalize="characters" spellcheck="false" placeholder="XXXX-XXXX-XXXX-XXXX-XXXX">',
+                '<button type="button" class="JUM-R-SECOND" id="JUM-S-PASSER">' + (o.apresConnexion ? 'Plus tard' : 'Annuler') + '</button><button type="button" class="JUM-R-PRINCIPAL" id="JUM-S-REST">Restaurer</button>');
+            var err = f.querySelector('#JUM-S-ERR'), btn = f.querySelector('#JUM-S-REST');
+            f.querySelector('#JUM-S-PASSER').addEventListener('click', function() { window.JUMELAGE_FERMER_SAUVEGARDE_AUTO(); if (o.sinon) o.sinon(); });
+            btn.addEventListener('click', function() {
+                var code = f.querySelector('#JUM-S-SAISIE').value;
+                if (normaliserCode(code).length !== 20) { err.textContent = '⛔ Le code contient 20 caractères (lettres et chiffres).'; return; }
+                btn.disabled = true; btn.textContent = 'Déchiffrement…'; err.textContent = '';
+                var sel, cle;
+                appelApi('sauvegarde').then(function(r) {
+                    sel = depuisB64(r.sel);
+                    return deriverCleSauv(code, sel).then(function(k) { cle = k;
+                        return SUBTLE.decrypt({ name: 'AES-GCM', iv: depuisB64(r.iv) }, k, depuisB64(r.ct)).catch(function() { var e4 = new Error('Code incorrect : vérifiez-le (les tirets et espaces ne comptent pas).'); e4.code = true; throw e4; });
+                    });
+                }).then(function(clair) {
+                    var brut = new Uint8Array(clair);
+                    return (brut[0] === 0x1f && brut[1] === 0x8b ? flux(brut, 'DecompressionStream') : Promise.resolve(brut)).then(function(t) { return JSON.parse(new TextDecoder().decode(t)); });
+                }).then(function(sv) {
+                    window.JUMELAGE_RESTAURATION_EN_COURS = true;
+                    try { if (window.JUMELAGE_AVANT_RESTAURATION) window.JUMELAGE_AVANT_RESTAURATION(); } catch (e5) {}
+                    return appliquerSauvegarde(sv, true, true).then(function() {
+                        // Cet appareil continue les copies automatiques avec le même code.
+                        ecrireSauvAuto({ actif: true, sel: versB64(sel), derniere: Date.now() });
+                        return cleSauvIdb('ecrire', cle);
+                    }).then(function() {
+                        try { sessionStorage.removeItem(CLE_CHOIX_FAIT); sessionStorage.setItem(CLE_DEVERROUILLE, '1'); } catch (e6) {}
+                        location.replace(DANS_CR ? '../' : './');
+                    });
+                }).catch(function(e7) { btn.disabled = false; btn.textContent = 'Restaurer'; err.textContent = '⛔ ' + (e7.message || e7); });
+            });
+        }).catch(function(e) { if (o.sinon) o.sinon(); else annoncer('Service indisponible', e.message, 'alerte', 'alerte'); });
+    };
+
     window.JUMELAGE_RESTAURER = function() {
         var champ = document.createElement('input');
         champ.type = 'file'; champ.accept = '.json,application/json'; champ.style.display = 'none';
@@ -2232,10 +2492,15 @@
                     declarerRoles();
                     window.JUMELAGE_RELEVER();
                     majBoutonsCompte();
-                    // Première connexion : l'identité est demandée une fois (« Compléter mon profil »), puis les notifications.
-                    if (!window.JUMELAGE_REGLAGES_FAITS()) { profilApresConnexion = true; setTimeout(function() { window.JUMELAGE_REGLAGES({ premiere: true, profil: true }); }, 500); return; }
-                    // Compte actif : la fenêtre se rouvre pour proposer les notifications (sur un geste de l'utilisateur).
-                    if (notifEtat() === 'a-demander' || notifEtat() === 'autorisee') setTimeout(window.JUMELAGE_COMPTE, 600); else suivreNotif();
+                    var suite = function() {
+                        // Première connexion : l'identité est demandée une fois (« Compléter mon profil »), puis les notifications.
+                        if (!window.JUMELAGE_REGLAGES_FAITS()) { profilApresConnexion = true; setTimeout(function() { window.JUMELAGE_REGLAGES({ premiere: true, profil: true }); }, 500); return; }
+                        // Compte actif : la fenêtre se rouvre pour proposer les notifications (sur un geste de l'utilisateur).
+                        if (notifEtat() === 'a-demander' || notifEtat() === 'autorisee') setTimeout(window.JUMELAGE_COMPTE, 600); else suivreNotif();
+                    };
+                    // Nouvel appareil (aucun profil ici) et sauvegarde automatique dans le compte : on propose de tout récupérer.
+                    if (!window.JUMELAGE_REGLAGES_FAITS() && !etatSauvAuto().actif) window.JUMELAGE_RESTAURER_COMPTE({ apresConnexion: true, sinon: suite });
+                    else suite();
                 });
             }).catch(function(e) { err.textContent = '⛔ ' + e.message; btnValider.disabled = false; });
         });
@@ -2402,7 +2667,9 @@
             lignes: propres.map(function(x, i) { return L('appli' + i, ic(x.icone), x.titre, x.sous, x.action); }) });
         r.push({ id: 'donnees', titre: 'Données', icone: ic('disquette'), aide: 'Tout TRIGONE est rangé sur cet appareil : sauvegardez-le régulièrement.', lignes: [
             L('sauvegarder', ic('disquette'), 'Sauvegarder mes données', 'Un fichier pour tout TRIGONE', function() { window.JUMELAGE_SAUVEGARDER(); }),
-            L('restaurer', ic('importer'), 'Restaurer une sauvegarde', 'Sur cet appareil ou un nouveau', function() { window.JUMELAGE_RESTAURER(); }),
+            L('restaurer', ic('importer'), 'Restaurer une sauvegarde', 'Depuis un fichier, sur cet appareil ou un nouveau', function() { window.JUMELAGE_RESTAURER(); }),
+            c && L('sauvauto', ic('disquette'), 'Sauvegarde automatique', window.JUMELAGE_SAUVEGARDE_AUTO_RESUME(), function() { window.JUMELAGE_SAUVEGARDE_AUTO(); }),
+            c && !etatSauvAuto().actif && L('restaurercompte', ic('importer'), 'Restaurer depuis mon compte', 'Nouvel appareil : avec votre code de récupération', function() { window.JUMELAGE_RESTAURER_COMPTE(); }),
             c && L('effacer', CORBEILLE_SVG, 'Se déconnecter et effacer', 'Retirer le compte et les données de cet appareil', deconnecterEtEffacer, true),
             L('reinitialiser', CORBEILLE_SVG, 'Réinitialiser TRIGONE', 'Tout effacer sur cet appareil', function() { window.JUMELAGE_REINITIALISER(); }, true)
         ] });
@@ -2410,7 +2677,8 @@
             .map(function(x, i) { return L('aide' + i, ic(x.icone), x.titre, x.sous, x.action); }).concat([
             L('presentation', '<img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="" style="width:20px;height:20px;">', 'Découvrir TRIGONE', 'Revoir la présentation', function() { window.JUMELAGE_PRESENTATION(); }),
             L('partager', ic('partage'), 'Partager TRIGONE', 'QR code et lien de l\'application', function() { window.JUMELAGE_PARTAGER_APPLI(); }),
-            L('signaler', ic('bouee'), 'Signaler un problème', 'Écrire à l\'équipe TRIGONE', function() { window.JUMELAGE_SIGNALER(ecran ? 'choix' : undefined); })
+            L('signaler', ic('bouee'), 'Signaler un problème', 'Écrire à l\'équipe TRIGONE', function() { window.JUMELAGE_SIGNALER(ecran ? 'choix' : undefined); }),
+            c && lireTxt(CLE_ADMIN) === '1' && L('erreurs', ic('bouee'), 'Erreurs de l\'appli', 'Administrateur : bugs remontés automatiquement', function() { window.JUMELAGE_ERREURS(); })
         ]) });
         r.forEach(function(x) { x.lignes = x.lignes.filter(Boolean); });
         return r;
@@ -2447,6 +2715,57 @@
         });
         ['pointerdown', 'pointerup'].forEach(function(t) { fenParam.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
         document.body.appendChild(fenParam);
+        // Administrateur ? (réponse du serveur, d'après ADMIN_MAILS) : la ligne « Erreurs de l'appli » apparaît ou disparaît.
+        if (c && navigator.onLine) {
+            var fen = fenParam;
+            appelApi('admin').then(function(r) {
+                var avant = lireTxt(CLE_ADMIN), apres = r.admin ? '1' : '';
+                if (avant === apres) return;
+                ecrireTxt(CLE_ADMIN, apres);
+                if (fenParam === fen) { var id = actuelle.id; rubs = rubriquesParametres(); actuelle = rubs.filter(function(x) { return x.id === id; })[0] || rubs[0]; dessiner(); }
+            }).catch(function() {});
+        }
+    };
+    // ---------- Erreurs de l'appli (administrateur) ----------
+    var CLE_ADMIN = 'trigone_admin', fenErreurs = null;
+    window.JUMELAGE_FERMER_ERREURS = function() { if (fenErreurs) { fenErreurs.remove(); fenErreurs = null; } };
+    window.JUMELAGE_ERREURS = function() {
+        if (fenErreurs || !document.body) return;
+        fenErreurs = document.createElement('div');
+        fenErreurs.className = 'JUM-REGLAGES';
+        fenErreurs.setAttribute('role', 'dialog');
+        var f = fenErreurs, liste = [];
+        var date = function(ms) { var d = new Date(ms); return d.toLocaleDateString('fr-FR') + ' ' + ('0' + d.getHours()).slice(-2) + ' h ' + ('0' + d.getMinutes()).slice(-2); };
+        var texte = function(x) { return 'TRIGONE — erreur remontée\nÉcran : ' + x.ecran + '\nMessage : ' + x.msg + '\nEmplacement : ' + (x.src || '—') + '\nVersion : V' + (x.v - 1) +
+            '\nFréquence : ' + x.n + ' fois, ' + x.appareils + ' appareil(s), du ' + date(x.premier) + ' au ' + date(x.dernier) + '\nAppareil : ' + x.ua + (x.pile ? '\nPile :\n' + x.pile : ''); };
+        function dessiner(etat) {
+            f.innerHTML = '<div class="JUM-R-CARTE"><div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('bouee') : '') + '</span><div><h2>Erreurs de l\'appli</h2>' +
+                '<p>Bugs remontés automatiquement par les appareils, sans aucune donnée personnelle. Regroupés, effacés après 30 jours.</p></div>' +
+                '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_ERREURS()">✕</button></div><div class="JUM-R-CORPS">' +
+                (etat ? '<p class="JUM-R-AIDE" style="margin-top:14px;">' + etat + '</p>' : !liste.length ? '<p class="JUM-R-AIDE" style="margin-top:14px;">✅ Aucune erreur depuis 30 jours.</p>' :
+                liste.map(function(x, i) {
+                    return '<div class="JUM-ERR"><b>' + esc(x.ecran || x.app) + '</b><span class="JUM-ERR-MSG">« ' + esc(x.msg) + ' »</span>' +
+                        '<small>' + x.n + ' fois · ' + x.appareils + ' appareil' + (x.appareils > 1 ? 's' : '') + ' · V' + (x.v - 1) + ' · dernière fois le ' + date(x.dernier) + '</small>' +
+                        '<details><summary>Détails techniques</summary><pre>' + esc(texte(x)) + '</pre></details>' +
+                        '<div class="JUM-ERR-BTN"><button type="button" class="JUM-R-SECOND" data-copier="' + i + '">Copier</button><button type="button" class="JUM-R-SECOND" data-corrige="' + i + '">Corrigée</button></div></div>';
+                }).join('')) + '</div><div class="JUM-R-PIED">' + (liste.length ? '<button type="button" class="JUM-R-SECOND" data-corrige="*">Tout effacer</button>' : '') +
+                '<button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_ERREURS()">Fermer</button></div></div>';
+        }
+        function charger() {
+            appelApi('erreurs').then(function(r) { liste = r.erreurs || []; if (fenErreurs === f) dessiner(); })
+                .catch(function(e) { if (fenErreurs === f) dessiner(e.statut === 403 ? 'Page réservée à l\'administrateur de TRIGONE.' : 'Liste indisponible : ' + esc(e.message) + '.'); });
+        }
+        f.addEventListener('click', function(ev) {
+            var b = ev.target.closest('[data-copier]');
+            if (b) { var t = texte(liste[+b.getAttribute('data-copier')]);
+                (navigator.clipboard ? navigator.clipboard.writeText(t) : Promise.reject()).then(function() { b.textContent = 'Copié ✓'; }, function() { window.prompt('Copiez ce texte :', t); }); return; }
+            var c2 = ev.target.closest('[data-corrige]');
+            if (c2) { var k = c2.getAttribute('data-corrige'); if (k === '*' && !confirm('Effacer toutes les erreurs de la liste ?')) return;
+                appelApi('erreurs/corrige', { methode: 'POST', corps: { sig: k === '*' ? '*' : liste[+k].sig } }).then(charger).catch(function() {}); }
+        });
+        dessiner('Chargement…');
+        document.body.appendChild(f);
+        charger();
     };
 
     // ---------- Déménagement : l'adresse officielle de TRIGONE est celle de Cloudflare ----------
@@ -2871,7 +3190,7 @@
     function toutEffacer() {
         try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
         var fin = function() { location.replace(DANS_CR ? '../' : './'); };
-        var bases = ['trigone-mise-en-route'];
+        var bases = ['trigone-mise-en-route', 'trigone-compte'];
         var supprimer = function(noms) { return Promise.all(noms.map(function(n) { return new Promise(function(ok) {
             try { var r = indexedDB.deleteDatabase(n); r.onsuccess = r.onerror = r.onblocked = function() { ok(); }; } catch (e) { ok(); }
         }); })); };

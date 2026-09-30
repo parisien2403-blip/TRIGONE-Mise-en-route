@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 105,
+  "build": 106,
   "notifier": true,
-  "message": "Nouveau : rappel le matin du départ avec le compte-rendu déjà rempli, et justificatifs photo scannés automatiquement."
+  "message": "Nouveau : sauvegarde automatique chiffrée dans votre compte TRIGONE, pour tout retrouver sur un nouveau téléphone (Paramètres › Données)."
 }
