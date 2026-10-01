@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=119"></script>
+<script src="../jumelage.js?v=120"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -175,6 +175,10 @@ body.dark-mode #INTRO-SPLASH { background: #1a1a1a; }
   transition: background 0.3s ease;
 }
 .MEDAILLE-OVERLAY.HIDDEN { display: none; }
+/* Phénix (pouce levé) félicite, en haut à droite de la carte de médaille */
+#MEDAILLE-OVERLAY .medaille-card { position: relative; overflow: visible; }
+.medaille-phenix { position: absolute; right: -12px; top: -78px; width: 128px; height: auto; pointer-events: none; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)); }
+@media (max-width: 420px) { .medaille-phenix { width: 104px; top: -62px; right: -6px; } }
 .MEDAILLE-OVERLAY.medaille-in { background: rgba(20, 20, 20, 0.76); }
 .medaille-card { opacity: 1; }
 .medaille-card {
@@ -4997,6 +5001,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <div id="MEDAILLE-OVERLAY" class="MEDAILLE-OVERLAY HIDDEN" onclick="if(event.target===this)FERMER_ECRAN_MEDAILLE()">
   <div class="medaille-confetti" aria-hidden="true"></div>
   <div class="medaille-card">
+    <img id="MEDAILLE-MASCOTTE" class="medaille-phenix" src="mascotte-pouce.webp" alt="" aria-hidden="true">
     <div class="medaille-eyebrow">Nouvelle distinction</div>
     <img id="MEDAILLE-IMG" class="medaille-img" src="" alt="Médaille TRIGONE">
     <h2 id="MEDAILLE-TITRE" class="medaille-titre"></h2>
@@ -11436,7 +11441,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 216;
+var APP_CODE_VERSION = 217;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
