@@ -240,23 +240,23 @@
         '.JUM-CR-FICHIER b { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; } .JUM-CR-FICHIER small { color: #64748b; white-space: nowrap; }' +
         '.JUM-CR-RETIRER { border: 0; background: none; color: #b91c1c; font-size: 0.9rem; cursor: pointer; padding: 2px 4px; }' +
         '.JUM-CR-AJOUT { display: block; text-align: center; margin: 10px 0 0; cursor: pointer; }' +
-        '.JUM-S-CODE { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.25rem; font-weight: 800; letter-spacing: 0.06em; text-align: center; padding: 16px 8px; margin: 14px 0 4px; border: 2px dashed #5a7a94; border-radius: 14px; background: rgba(90,122,148,0.07); user-select: all; overflow-wrap: anywhere; }' +
+        '.JUM-S-CODE { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.25rem; font-weight: 800; letter-spacing: 0.06em; text-align: center; padding: 16px 8px; margin: 14px 0 4px; border: 2px dashed #9a6f22; border-radius: 14px; background: rgba(214,167,86,0.07); user-select: all; overflow-wrap: anywhere; }' +
         '.JUM-S-OK { display: flex; gap: 10px; align-items: center; font-weight: 700; font-size: 0.86rem; margin: 12px 0 4px; cursor: pointer; } .JUM-S-OK input { width: 20px; height: 20px; }' +
         '.JUM-S-LISTE { list-style: none; padding: 0; margin: 14px 0 8px; display: flex; flex-direction: column; gap: 10px; font-size: 0.86rem; line-height: 1.45; }' +
         '.JUM-S-ETAT { margin: 14px 0 10px; padding: 12px; border-radius: 12px; background: rgba(21,128,61,0.08); color: #15803d; font-weight: 700; font-size: 0.84rem; }' +
         '.JUM-S-SAISIE { width: 100%; box-sizing: border-box; font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 1.05rem; letter-spacing: 0.05em; text-transform: uppercase; padding: 12px; border: 1.5px solid #cbd5e1; border-radius: 12px; margin-top: 6px; }' +
-        'html body.dark-mode .JUM-S-CODE { border-color: #a9c3d6; background: rgba(169,195,214,0.08); } html body.dark-mode .JUM-S-ETAT { color: #4ade80; background: rgba(74,222,128,0.1); } html body.dark-mode .JUM-S-SAISIE { background: #1f1f1f; color: #ececec; border-color: #4a4a4a; }' +
+        'html body.dark-mode .JUM-S-CODE { border-color: #e0b86a; background: rgba(169,195,214,0.08); } html body.dark-mode .JUM-S-ETAT { color: #4ade80; background: rgba(74,222,128,0.1); } html body.dark-mode .JUM-S-SAISIE { background: #1f1f1f; color: #ececec; border-color: #4a4a4a; }' +
         '.JUM-ERR { border: 1px solid #e2e8f0; border-left: 4px solid #b45309; border-radius: 12px; padding: 10px 12px; margin: 10px 0; font-size: 0.82rem; display: flex; flex-direction: column; gap: 4px; }' +
         '.JUM-ERR-MSG { font-family: ui-monospace, Menlo, Consolas, monospace; font-size: 0.76rem; overflow-wrap: anywhere; } .JUM-ERR small { color: #64748b; }' +
-        '.JUM-ERR pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.7rem; background: rgba(90,122,148,0.08); padding: 8px; border-radius: 8px; margin: 6px 0 0; }' +
-        '.JUM-ERR summary { cursor: pointer; font-size: 0.74rem; color: #5a7a94; } .JUM-ERR-BTN { display: flex; gap: 8px; margin-top: 4px; } .JUM-ERR-BTN button { flex: 1; padding: 8px; }' +
+        '.JUM-ERR pre { white-space: pre-wrap; overflow-wrap: anywhere; font-size: 0.7rem; background: rgba(214,167,86,0.08); padding: 8px; border-radius: 8px; margin: 6px 0 0; }' +
+        '.JUM-ERR summary { cursor: pointer; font-size: 0.74rem; color: #9a6f22; } .JUM-ERR-BTN { display: flex; gap: 8px; margin-top: 4px; } .JUM-ERR-BTN button { flex: 1; padding: 8px; }' +
         'html body.dark-mode .JUM-ERR { border-color: rgba(255,255,255,0.1); border-left-color: #f59e0b; } html body.dark-mode .JUM-ERR small { color: #a3a3a3; }' +
-        '.JUM-CR-SCAN { display: block; font-style: normal; font-weight: 500; font-size: 0.72rem; color: #15803d; } .JUM-CR-ORIGINE { background: none; border: 0; padding: 0; font: inherit; color: #5a7a94; text-decoration: underline; cursor: pointer; }' +
-        'html body.dark-mode .JUM-CR-SCAN { color: #4ade80; } html body.dark-mode .JUM-CR-ORIGINE { color: #a9c3d6; }' +
+        '.JUM-CR-SCAN { display: block; font-style: normal; font-weight: 500; font-size: 0.72rem; color: #15803d; } .JUM-CR-ORIGINE { background: none; border: 0; padding: 0; font: inherit; color: #9a6f22; text-decoration: underline; cursor: pointer; }' +
+        'html body.dark-mode .JUM-CR-SCAN { color: #4ade80; } html body.dark-mode .JUM-CR-ORIGINE { color: #e0b86a; }' +
         'html body.dark-mode .JUM-CR-FICHIER { border-color: rgba(255,255,255,0.1); } html body.dark-mode .JUM-CR-FICHIER small { color: #a3a3a3; }' +
-        '.JUM-BONJOUR { margin: 0 0 4px; text-align: center; font: 600 clamp(0.74rem, 3.5vw, 0.9rem)/1.3 Montserrat, system-ui, sans-serif; color: #5a7a94; letter-spacing: 0.01em; }' +
+        '.JUM-BONJOUR { margin: 0 0 4px; text-align: center; font: 600 clamp(0.74rem, 3.5vw, 0.9rem)/1.3 Montserrat, system-ui, sans-serif; color: #9a6f22; letter-spacing: 0.01em; }' +
         '@media (max-height: 600px) and (orientation: portrait) { .JUM-BONJOUR { display: none; } }' +
-        '.JUM-BONJOUR b { color: #1a1a1a; font-weight: 800; white-space: nowrap; } body.dark-mode .JUM-BONJOUR { color: #a9c3d6; } body.dark-mode .JUM-BONJOUR b { color: #f5f5f5; }' +
+        '.JUM-BONJOUR b { color: #1a1a1a; font-weight: 800; white-space: nowrap; } body.dark-mode .JUM-BONJOUR { color: #e0b86a; } body.dark-mode .JUM-BONJOUR b { color: #f5f5f5; }' +
         '.JUM-R-ACTIF { font-style: normal; font-size: 0.72rem; font-weight: 800; color: #15803d; background: rgba(21,128,61,0.1); border-radius: 999px; padding: 2px 8px; margin-left: 4px; white-space: nowrap; }' +
         '.JUM-BOITE-PASTILLE { display: inline-block; margin-top: 12px; padding: 6px 13px; border-radius: 999px; background: #b91c1c; color: #fff; font: 800 0.72rem Montserrat, system-ui, sans-serif; letter-spacing: 0.02em; box-shadow: 0 4px 12px rgba(185,28,28,0.3); animation: jum-pulse 2s ease-in-out infinite; }' +
         '@keyframes jum-pulse { 50% { transform: scale(1.06); } }' +
@@ -283,7 +283,7 @@
         '.JUM-CPT.deconnecte { padding: 8px 15px 8px 11px; background: #fff; color: #1a1a1a; border-color: rgba(26,26,26,0.14); box-shadow: 0 4px 14px rgba(0,0,0,0.14); }' +
         '.JUM-CPT.deconnecte:hover { background: #f1f5f9; }' +
         '.JUM-CPT > svg { width: 18px; height: 18px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }' +
-        '.JUM-AV { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #5a7a94; color: #fff; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; }' +
+        '.JUM-AV { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #9a6f22; color: #fff; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; }' +
         '.JUM-CPT-NOM { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
         '.JUM-CPT-PT { width: 9px; height: 9px; flex-shrink: 0; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 2px #1a1a1a; }' +
         '.JUM-CPT-PT.ok { background: #22c55e; } .JUM-CPT-PT.muet { background: #f59e0b; }' +
@@ -314,11 +314,11 @@
         '.JUM-CPT-TETE .JUM-AV { width: 44px; height: 44px; font-size: 0.95rem; }' +
         '.JUM-CPT-TETE b { display: block; font-size: 0.9rem; } .JUM-CPT-TETE small { display: block; font-size: 0.72rem; color: #64748b; margin-top: 2px; word-break: break-all; }' +
         '.JUM-CPT-ROLES { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 12px 10px; }' +
-        '.JUM-CPT-ROLES span { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 999px; background: #eef2f6; color: #5a7a94; }' +
+        '.JUM-CPT-ROLES span { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 999px; background: #eef2f6; color: #9a6f22; }' +
         '.JUM-CPT-ROLES span.or { background: #fbf4e6; color: #a87a2a; }' +
         '.JUM-CPT-MENU button { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 10px 12px; border-radius: 12px; text-align: left; cursor: pointer; color: #1a1a1a; font-family: inherit; }' +
         '.JUM-CPT-MENU button:hover { background: #f1f5f9; }' +
-        '.JUM-CPT-MENU button svg { width: 22px; height: 22px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-CPT-MENU button svg { width: 22px; height: 22px; flex-shrink: 0; fill: none; stroke: #9a6f22; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-CPT-MENU button b { display: block; font-size: 0.82rem; } .JUM-CPT-MENU button small { display: block; font-size: 0.68rem; color: #64748b; margin-top: 2px; }' +
         '.JUM-CPT-MENU .JUM-CPT-DANGER svg { stroke: #b91c1c; } .JUM-CPT-MENU .JUM-CPT-DANGER b { color: #b91c1c; } .JUM-CPT-MENU .JUM-CPT-DANGER:hover { background: #fef2f2; }' +
         '.JUM-CPT-SEP { height: 1px; background: #e2e8f0; margin: 4px 10px; }' +
@@ -332,7 +332,7 @@
         '.JUM-PARAM-CORPS { flex: 1; display: flex; min-height: 0; }' +
         '.JUM-PARAM-NAV { width: 210px; flex-shrink: 0; padding: 12px; border-right: 1px solid #e2e8f0; background: #f8fafc; overflow-y: auto; }' +
         '.JUM-PARAM-NAV button { display: flex; align-items: center; gap: 10px; width: 100%; border: 0; background: none; padding: 11px 12px; border-radius: 12px; cursor: pointer; color: #334155; font: 700 0.8rem Montserrat, system-ui, sans-serif; text-align: left; }' +
-        '.JUM-PARAM-NAV button svg, .JUM-PARAM-LIGNE svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-PARAM-NAV button svg, .JUM-PARAM-LIGNE svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #9a6f22; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-PARAM-NAV button:hover { background: #eef2f6; } .JUM-PARAM-NAV button.actif { background: #1a1a1a; color: #fff; } .JUM-PARAM-NAV button.actif svg { stroke: #fff; }' +
         '.JUM-PARAM-CONTENU { flex: 1; padding: 20px 24px; overflow-y: auto; }' +
         '.JUM-PARAM-CONTENU h3 { margin: 0 0 4px; font-size: 1rem; } .JUM-PARAM-CONTENU > p { margin: 0 0 14px; font-size: 0.76rem; color: #64748b; line-height: 1.45; }' +
@@ -354,14 +354,14 @@
         'html body.dark-mode .JUM-CPT-MENU, .JUM-CHOIX ~ .JUM-CPT-MENU.sombre { background: #1f1f1f; color: #ececec; }' +
         'html body.dark-mode .JUM-CPT-MENU button { color: #ececec; } html body.dark-mode .JUM-CPT-MENU button:hover { background: #2a2a2a; }' +
         'html body.dark-mode .JUM-CPT-MENU button small, html body.dark-mode .JUM-CPT-TETE small { color: #a3a3a3; } html body.dark-mode .JUM-CPT-SEP { background: #333; }' +
-        'html body.dark-mode .JUM-CPT-ROLES span { background: #2a2f35; color: #a9c3d6; } html body.dark-mode .JUM-CPT-ROLES span.or { background: #3a2f1c; color: #e0b86a; }' +
+        'html body.dark-mode .JUM-CPT-ROLES span { background: #2a2f35; color: #e0b86a; } html body.dark-mode .JUM-CPT-ROLES span.or { background: #3a2f1c; color: #e0b86a; }' +
         'html body.dark-mode .JUM-CPT.deconnecte { background: #262626; color: #f5f5f5; border-color: rgba(255,255,255,0.14); }' +
         /* Fenêtre « Se connecter » : deux onglets */
         '.JUM-CX-ONGLETS { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; padding: 4px; margin: 14px 0 6px; border-radius: 14px; background: #eef2f6; }' +
-        '.JUM-CX-ONGLETS button { border: 0; border-radius: 11px; padding: 10px 8px; background: none; color: #5a7a94; font: 800 0.72rem/1.25 Montserrat, system-ui, sans-serif; cursor: pointer; }' +
+        '.JUM-CX-ONGLETS button { border: 0; border-radius: 11px; padding: 10px 8px; background: none; color: #9a6f22; font: 800 0.72rem/1.25 Montserrat, system-ui, sans-serif; cursor: pointer; }' +
         '.JUM-CX-ONGLETS button.actif { background: #fff; color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }' +
         'html body.dark-mode .JUM-CX-ONGLETS { background: #262626; } html body.dark-mode .JUM-CX-ONGLETS button.actif { background: #3a3a3a; color: #f5f5f5; }' +
-        '.JUM-CX-SANS { display: block; margin: 14px auto 0; border: 0; background: none; color: #5a7a94; font: 700 0.74rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; }' +
+        '.JUM-CX-SANS { display: block; margin: 14px auto 0; border: 0; background: none; color: #9a6f22; font: 700 0.74rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; }' +
         /* Accueil de première ouverture et « Se connecter » : téléphone (accueil puis formulaire), PC (écran partagé) */
         '.JUM-REGLAGES.JUM-ACC { display: block; padding: 0; background: #0c0c0c; overflow-y: auto; -webkit-overflow-scrolling: touch; color: #1a1a1a; animation: jum-menu 0.25s ease both; }' +
         '.JUM-ACC-PAGE { position: relative; min-height: 100%; display: flex; flex-direction: column; }' +
@@ -385,7 +385,7 @@
         '.JUM-ACC-BTN.or { background: linear-gradient(180deg, #e2b866, #c99743); color: #1a1a1a; box-shadow: 0 12px 30px rgba(214,167,86,0.25); }' +
         '.JUM-ACC-BTN.ligne { margin-top: 12px; background: transparent; color: #f5f5f5; border: 1.5px solid rgba(255,255,255,0.28); }' +
         '.JUM-ACC-BTN.noir { background: #1a1a1a; color: #fff; } .JUM-ACC-BTN:disabled { opacity: 0.55; cursor: default; }' +
-        '.JUM-ACC-LIEN { display: block; margin: 18px auto 0; border: 0; background: none; color: #a9c3d6; font: 700 0.86rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
+        '.JUM-ACC-LIEN { display: block; margin: 18px auto 0; border: 0; background: none; color: #e0b86a; font: 700 0.86rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
         '.JUM-ACC-NOTE { margin-top: 12px; font-size: 0.72rem; color: #8a8a8a; }' +
         '.JUM-ACC-BAS { display: none; }' +
         '.JUM-ACC-FERMER { position: absolute; z-index: 3; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; border: 1px solid rgba(255,255,255,0.22); border-radius: 20px; padding: 8px 14px;' +
@@ -404,7 +404,7 @@
         '.JUM-ACC-CARTE h2 { margin: 0; font-size: 1.55rem; font-weight: 800; color: #1a1a1a; }' +
         '.JUM-ACC-AIDE { margin: 6px 0 20px; font-size: 0.84rem; line-height: 1.5; color: #64748b; }' +
         '.JUM-ACC-LBL { display: block; margin-bottom: 8px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #3b4651; }' +
-        '.JUM-ACC-CHAMP { position: relative; } .JUM-ACC-CHAMP svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; fill: none; stroke: #5a7a94; stroke-width: 2; pointer-events: none; }' +
+        '.JUM-ACC-CHAMP { position: relative; } .JUM-ACC-CHAMP svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; fill: none; stroke: #9a6f22; stroke-width: 2; pointer-events: none; }' +
         '.JUM-ACC-CHAMP input { width: 100%; height: 54px; box-sizing: border-box; padding: 0 14px 0 46px; border: 2px solid #d7dee6; border-radius: 14px; background: #fff; color: #1a1a1a; font: 500 16px Montserrat, system-ui, sans-serif; }' +
         '.JUM-ACC-CHAMP input:focus { outline: none; border-color: #1a1a1a; }' +
         '.JUM-ACC-CARTE #JUM-C-ENVOI { margin-top: 14px; }' +
@@ -413,13 +413,13 @@
         '.JUM-ACC-CODE span.plein { border-color: #1a1a1a; } .JUM-ACC-CODE span.curseur { border-color: #d6a756; box-shadow: 0 0 0 4px rgba(214,167,86,0.2); }' +
         '.JUM-ACC-CODE input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; font-size: 16px; color: transparent; background: transparent; caret-color: transparent; cursor: text; }' +
         '.JUM-ACC-ETAPE2 { margin-top: 18px; } .JUM-ACC-ETAPE2 .JUM-ACC-BTN { margin-top: 18px; }' +
-        '.JUM-ACC-RENVOI-SLOT { text-align: right; } .JUM-ACC-CARTE #JUM-C-ENVOI.renvoi { display: inline; width: auto; min-height: 0; margin: 10px 0 0; padding: 0; background: none; box-shadow: none; color: #5a7a94; font-size: 0.8rem; letter-spacing: 0; text-transform: none; }' +
+        '.JUM-ACC-RENVOI-SLOT { text-align: right; } .JUM-ACC-CARTE #JUM-C-ENVOI.renvoi { display: inline; width: auto; min-height: 0; margin: 10px 0 0; padding: 0; background: none; box-shadow: none; color: #9a6f22; font-size: 0.8rem; letter-spacing: 0; text-transform: none; }' +
         '.JUM-ACC-CARTE .JUM-R-ERREUR { margin-top: 10px; }' +
         '.JUM-ACC-OU { display: flex; align-items: center; gap: 12px; margin: 20px 0 14px; font-size: 0.74rem; color: #94a3b8; } .JUM-ACC-OU::before, .JUM-ACC-OU::after { content: ""; flex: 1; height: 1px; background: #e2e8f0; }' +
         '.JUM-ACC-AUTRE { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 50px; border: 1.5px solid #d6dde4; border-radius: 14px; background: #fff; color: #1a1a1a; font: 700 0.84rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
         '.JUM-ACC-AUTRE svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }' +
         '.JUM-ACC-SECU { display: flex; gap: 10px; margin-top: 18px; font-size: 0.74rem; line-height: 1.5; color: #64748b; }' +
-        '.JUM-ACC-SECU svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; fill: none; stroke: #5a7a94; stroke-width: 2; }' +
+        '.JUM-ACC-SECU svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; fill: none; stroke: #9a6f22; stroke-width: 2; }' +
         '.JUM-ACC-CARTE .JUM-CX-SANS { margin-top: 12px; }' +
         '@media (min-width: 900px) {' +
             ' .JUM-ACC-PAGE { flex-direction: row; min-height: 100vh; }' +
@@ -443,9 +443,9 @@
         'html body.dark-mode .JUM-ACC-ONGLETS { background: #262626; } html body.dark-mode .JUM-ACC-ONGLETS button { color: #a3a3a3; } html body.dark-mode .JUM-ACC-ONGLETS button.actif { background: #f5f5f5; color: #141414; }' +
         'html body.dark-mode .JUM-ACC-CHAMP input { background: #141414; color: #f5f5f5; border-color: #404040; } html body.dark-mode .JUM-ACC-CHAMP input:focus { border-color: #e5e5e5; }' +
         'html body.dark-mode .JUM-ACC-CODE span { background: #141414; color: #f5f5f5; border-color: #404040; } html body.dark-mode .JUM-ACC-CODE span.plein { border-color: #e5e5e5; } html body.dark-mode .JUM-ACC-CODE span.curseur { border-color: #d6a756; }' +
-        'html body.dark-mode .JUM-ACC-CARTE .JUM-CX-SANS { color: #a9c3d6; } html body.dark-mode .JUM-ACC-CARTE .JUM-R-AIDE { color: #a3a3a3; } html body.dark-mode .JUM-ACC-CARTE .JUM-R-LIEN { color: #a9c3d6; }' +
+        'html body.dark-mode .JUM-ACC-CARTE .JUM-CX-SANS { color: #e0b86a; } html body.dark-mode .JUM-ACC-CARTE .JUM-R-AIDE { color: #a3a3a3; } html body.dark-mode .JUM-ACC-CARTE .JUM-R-LIEN { color: #e0b86a; }' +
         'html body.dark-mode .JUM-ACC-BTN.noir { background: #f5f5f5; color: #141414; } html body.dark-mode .JUM-ACC-AUTRE { background: #1c1c1c; color: #ececec; border-color: #404040; }' +
-        'html body.dark-mode .JUM-ACC-OU::before, html body.dark-mode .JUM-ACC-OU::after { background: #333; } html body.dark-mode .JUM-ACC-CARTE #JUM-C-ENVOI.renvoi { color: #a9c3d6; }' +
+        'html body.dark-mode .JUM-ACC-OU::before, html body.dark-mode .JUM-ACC-OU::after { background: #333; } html body.dark-mode .JUM-ACC-CARTE #JUM-C-ENVOI.renvoi { color: #e0b86a; }' +
         '@media (min-width: 900px) { html body.dark-mode .JUM-ACC-FERMER { background: #1c1c1c; color: #d4d4d4; border-color: #404040; } }' +
         /* Signaler un problème : Phénix au casque */
         '.JUM-SIG { position: fixed; inset: 0; z-index: 99995; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,0.55); font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; }' +
@@ -476,22 +476,22 @@
         '.JUM-NOUV { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,15,15,0.35); animation: jum-menu 0.2s ease both; }' +
         '.JUM-NOUV.sortie { opacity: 0; transition: opacity 0.25s ease; }' +
         '.JUM-NOUV-CARTE { width: 100%; max-width: 420px; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 24px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); font-family: Montserrat, system-ui, sans-serif; }' +
-        '.JUM-NOUV-IC { display: inline-flex; width: 58px; height: 58px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(90,122,148,0.1); color: #5a7a94; }' +
+        '.JUM-NOUV-IC { display: inline-flex; width: 58px; height: 58px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(214,167,86,0.1); color: #9a6f22; }' +
         '.JUM-NOUV-IC svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-NOUV-IC[data-ton="ok"] { background: rgba(21,128,61,0.1); color: #15803d; }' +
         /* Mascotte cachée derrière la carte blanche : elle en dépasse, comme si elle se penchait derrière */
         '.JUM-NOUV-CARTE { position: relative; }' +
         '.JUM-NOUV-BTNS { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }' +
         /* Déménagement vers l'adresse Cloudflare */
-        '.JUM-DEM { position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center; justify-content: center; padding: 16px; background: linear-gradient(135deg, #F8FBFD 0%, #E8F0F6 100%); font-family: Montserrat, system-ui, sans-serif; overflow-y: auto; }' +
+        '.JUM-DEM { position: fixed; inset: 0; z-index: 2147483000; display: flex; align-items: center; justify-content: center; padding: 16px; background: linear-gradient(135deg, #f7f7f5 0%, #ecebe7 100%); font-family: Montserrat, system-ui, sans-serif; overflow-y: auto; }' +
         '.JUM-DEM-CARTE { width: 100%; max-width: 460px; background: #fff; color: #1a1a1a; border-radius: 24px; padding: 28px 24px 20px; text-align: center; box-shadow: 0 24px 60px rgba(26,45,62,0.16); }' +
         '.JUM-DEM-CARTE img { width: 84px; height: 84px; border-radius: 20px; box-shadow: 0 6px 18px rgba(0,0,0,0.15); }' +
         '.JUM-DEM-CARTE h2 { margin: 16px 0 8px; font-size: 1.2rem; font-weight: 800; } .JUM-DEM-CARTE p { margin: 0 0 16px; font-size: 0.88rem; line-height: 1.55; color: #404040; }' +
         '.JUM-DEM-GO { width: 100%; border: 0; border-radius: 14px; padding: 15px; background: #1a1a1a; color: #fff; font: 800 0.8rem Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-DEM-GO:disabled { opacity: 0.5; } .JUM-DEM-ETAT { min-height: 1.2em; margin: 12px 0 0 !important; font-weight: 700; color: #15803d !important; }' +
-        '.JUM-DEM-AIDE { text-align: left; font-size: 0.78rem; line-height: 1.5; color: #5a7a94; background: #F2F7FB; border-radius: 12px; padding: 12px 14px; margin: 8px 0 12px; }' +
-        '.JUM-DEM-FICHIER { border: 0; background: none; color: #5a7a94; font: 700 0.76rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; }' +
-        '.JUM-NOUV .JUM-NOUV-SECOND { background: #fff; color: #5a7a94; border: 1.5px solid #c9d6e0; }' +
+        '.JUM-DEM-AIDE { text-align: left; font-size: 0.78rem; line-height: 1.5; color: #9a6f22; background: #F2F7FB; border-radius: 12px; padding: 12px 14px; margin: 8px 0 12px; }' +
+        '.JUM-DEM-FICHIER { border: 0; background: none; color: #9a6f22; font: 700 0.76rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; }' +
+        '.JUM-NOUV .JUM-NOUV-SECOND { background: #fff; color: #9a6f22; border: 1.5px solid #c9d6e0; }' +
         '.JUM-NOUV-MASCOTTE { position: absolute; z-index: -1; right: -92px; bottom: 26px; width: 150px; height: auto; filter: drop-shadow(0 10px 16px rgba(0,0,0,0.25)); pointer-events: none; }' +
         '@media (max-width: 560px) { .JUM-NOUV-MASCOTTE { right: 12px; bottom: auto; top: -84px; width: 110px; } }' +
         '.JUM-NOUV h2 { margin: 12px 0 8px; font-size: 1.15rem; } .JUM-NOUV p { margin: 0 0 18px; font-size: 0.9rem; line-height: 1.55; color: #404040; }' +
@@ -566,12 +566,12 @@
         '@keyframes jum-menu { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }' +
         '.JUM-ROUE-MENU button { display: flex; align-items: center; gap: 12px; width: 100%; border: 0; background: none; padding: 11px 12px; border-radius: 12px; text-align: left; cursor: pointer; color: #1a1a1a; font-family: inherit; }' +
         '.JUM-ROUE-MENU button:hover { background: #f1f5f9; }' +
-        '.JUM-ROUE-MENU svg, .JUM-ROUE-MENU img { width: 26px; height: 26px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; object-fit: contain; }' +
+        '.JUM-ROUE-MENU svg, .JUM-ROUE-MENU img { width: 26px; height: 26px; flex-shrink: 0; fill: none; stroke: #9a6f22; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; object-fit: contain; }' +
         '.JUM-ROUE-SEP { height: 1px; background: #e2e8f0; margin: 4px 10px; }' +
         '.JUM-ROUE-MENU .JUM-ROUE-DANGER svg { stroke: #b91c1c; } .JUM-ROUE-MENU .JUM-ROUE-DANGER b { color: #b91c1c; } .JUM-ROUE-MENU .JUM-ROUE-DANGER:hover { background: #fef2f2; }' +
         '.JUM-ROUE-MENU b { display: block; font-size: 0.84rem; } .JUM-ROUE-MENU small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 2px; }' +
         '.THEME-TOGGLE svg { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; display: block; }' +
-        '.THEME-TOGGLE { color: #5a7a94; } body.dark-mode .THEME-TOGGLE { color: #e5e5e5; }' +
+        '.THEME-TOGGLE { color: #9a6f22; } body.dark-mode .THEME-TOGGLE { color: #e5e5e5; }' +
         '@media (max-width: 480px) { .THEME-TOGGLE svg { width: 17px; height: 17px; } }' +
         /* Icônes au trait qui remplacent les emoji */
         '.JUM-IC { display: inline-block; width: 1.15em; height: 1.15em; vertical-align: -0.2em; flex-shrink: 0; }' +
@@ -580,26 +580,26 @@
         '.JUM-IC[data-ton="ok"] { color: #15803d; } .JUM-IC[data-ton="danger"] { color: #b91c1c; } .JUM-IC[data-ton="alerte"] { color: #b45309; }' +
         'html body.dark-mode .JUM-IC[data-ton="ok"] { color: #86efac; } html body.dark-mode .JUM-IC[data-ton="danger"] { color: #f87171; } html body.dark-mode .JUM-IC[data-ton="alerte"] { color: #fbbf24; }' +
         /* Icône en tête des messages : pastille, comme les icônes des onglets */
-        '.msg-icone .JUM-IC { width: 58px; height: 58px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(90,122,148,0.1); color: #5a7a94; vertical-align: 0; }' +
+        '.msg-icone .JUM-IC { width: 58px; height: 58px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(214,167,86,0.1); color: #9a6f22; vertical-align: 0; }' +
         '.msg-icone .JUM-IC svg { stroke-width: 1.7; }' +
         '.msg-icone .JUM-IC[data-ton="ok"] { background: rgba(21,128,61,0.1); } .msg-icone .JUM-IC[data-ton="danger"] { background: rgba(185,28,28,0.09); } .msg-icone .JUM-IC[data-ton="alerte"] { background: rgba(180,83,9,0.1); }' +
-        'html body.dark-mode .msg-icone .JUM-IC { background: rgba(169,195,214,0.12); color: #a9c3d6; }' +
+        'html body.dark-mode .msg-icone .JUM-IC { background: rgba(169,195,214,0.12); color: #e0b86a; }' +
         'html body.dark-mode .msg-icone .JUM-IC[data-ton="ok"] { background: rgba(134,239,172,0.1); color: #86efac; } html body.dark-mode .msg-icone .JUM-IC[data-ton="danger"] { background: rgba(248,113,113,0.1); color: #f87171; } html body.dark-mode .msg-icone .JUM-IC[data-ton="alerte"] { background: rgba(251,191,36,0.1); color: #fbbf24; }' +
         /* ===== Démonstrations : plus de bandes jaunes et noires ===== */
         'body.jdemo .DEMO-RUBAN, body.jdemo .DEMO-BANDEAU, body.jdemo .DEMO-CONTROLES, body.jdemo .THEME-TOGGLE { display: none !important; }' +
-        'body.jdemo::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99989; box-shadow: inset 0 0 0 3px rgba(90,122,148,0.55); }' +
-        'body.jdemo .demo-zone, body.jdemo .demo-spotlight { outline: 2.5px solid #5a7a94 !important; outline-offset: 4px !important; border-radius: 12px; box-shadow: 0 0 0 9px rgba(90,122,148,0.16) !important; animation: jdemo-halo 2.4s ease-in-out infinite !important; position: relative; z-index: 3; }' +
-        '@keyframes jdemo-halo { 0%, 100% { box-shadow: 0 0 0 7px rgba(90,122,148,0.16); } 50% { box-shadow: 0 0 0 12px rgba(90,122,148,0.07); } }' +
-        'html body.dark-mode.jdemo .demo-zone, html body.dark-mode.jdemo .demo-spotlight { outline-color: #a9c3d6 !important; }' +
+        'body.jdemo::after { content: ""; position: fixed; inset: 0; pointer-events: none; z-index: 99989; box-shadow: inset 0 0 0 3px rgba(214,167,86,0.55); }' +
+        'body.jdemo .demo-zone, body.jdemo .demo-spotlight { outline: 2.5px solid #9a6f22 !important; outline-offset: 4px !important; border-radius: 12px; box-shadow: 0 0 0 9px rgba(214,167,86,0.16) !important; animation: jdemo-halo 2.4s ease-in-out infinite !important; position: relative; z-index: 3; }' +
+        '@keyframes jdemo-halo { 0%, 100% { box-shadow: 0 0 0 7px rgba(214,167,86,0.16); } 50% { box-shadow: 0 0 0 12px rgba(214,167,86,0.07); } }' +
+        'html body.dark-mode.jdemo .demo-zone, html body.dark-mode.jdemo .demo-spotlight { outline-color: #e0b86a !important; }' +
         '@media (min-width: 1100px) { html body.jdemo-reserve { padding-right: 400px !important; } }' +
         '.JDEMO-PASTILLE { position: fixed; top: calc(12px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); z-index: 99995; display: flex; align-items: center; gap: 9px; white-space: nowrap;' +
             ' background: #1a1a1a; color: #fff; border-radius: 999px; padding: 6px 6px 6px 14px; font: 800 11px Montserrat, system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }' +
-        '.JDEMO-PASTILLE i { width: 8px; height: 8px; border-radius: 50%; background: #7a9db5; box-shadow: 0 0 0 4px rgba(122,157,181,0.25); }' +
+        '.JDEMO-PASTILLE i { width: 8px; height: 8px; border-radius: 50%; background: #d6a756; box-shadow: 0 0 0 4px rgba(214,167,86,0.25); }' +
         '.JDEMO-PASTILLE b { font-weight: 600; letter-spacing: 0.04em; color: #cbd5e1; }' +
         '.JDEMO-QUITTER { border: 0; border-radius: 999px; background: rgba(255,255,255,0.14); color: #fff; font: 700 11px Montserrat, system-ui, sans-serif; padding: 6px 12px; letter-spacing: 0.04em; cursor: pointer; text-transform: none; }' +
         '.JDEMO-GUIDE { position: fixed; z-index: 99994; display: flex; align-items: flex-end; font-family: Montserrat, system-ui, sans-serif; pointer-events: none; }' +
         '.JDEMO-BULLE { pointer-events: auto; position: relative; background: #fff; color: #1a1a1a; border: 1px solid #e8e8e8; box-shadow: 0 18px 50px rgba(15,23,42,0.22); }' +
-        '.JDEMO-ETAPE { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #5a7a94; margin-bottom: 5px; }' +
+        '.JDEMO-ETAPE { font-size: 11px; font-weight: 800; letter-spacing: 0.14em; text-transform: uppercase; color: #9a6f22; margin-bottom: 5px; }' +
         '.JDEMO-TITRE { font-size: 17px; font-weight: 800; margin-bottom: 6px; }' +
         '.JDEMO-TEXTE { font-size: 13.5px; line-height: 1.55; color: #404040; }' +
         '.JDEMO-NAV { display: flex; align-items: center; gap: 10px; margin-top: 14px; }' +
@@ -628,19 +628,19 @@
         /* Mode sombre */
         'html body.dark-mode .JDEMO-BULLE { background: #1f1f1f; color: #ececec; border-color: rgba(255,255,255,0.09); box-shadow: 0 18px 50px rgba(0,0,0,0.5); }' +
         'html body.dark-mode .JDEMO-GUIDE.pc .JDEMO-BULLE::after { border-color: rgba(255,255,255,0.09); }' +
-        'html body.dark-mode .JDEMO-TEXTE { color: #c8c8c8; } html body.dark-mode .JDEMO-ETAPE { color: #a9c3d6; }' +
+        'html body.dark-mode .JDEMO-TEXTE { color: #c8c8c8; } html body.dark-mode .JDEMO-ETAPE { color: #e0b86a; }' +
         'html body.dark-mode .JDEMO-NAV button { background: #262626; color: #ececec; border-color: rgba(255,255,255,0.1); } html body.dark-mode .JDEMO-NAV .JDEMO-SUIV { background: #ececec; color: #141414; border-color: #ececec; }' +
         'html body.dark-mode .JDEMO-POINTS span { background: #3a3a3a; } html body.dark-mode .JDEMO-POINTS span.a { background: #ececec; }' +
         'html body.dark-mode.jdemo::after { box-shadow: inset 0 0 0 3px rgba(169,195,214,0.45); }' +
         '@media (prefers-reduced-motion: reduce) { body.jdemo .demo-zone, body.jdemo .demo-spotlight, .JDEMO-ENTREE .JDEMO-BULLE { animation: none !important; } }' +
         /* ===== Thème sombre commun : une seule palette pour les deux applis (gris neutres + bleu ardoise TRIGONE) =====
-           Fond #141414, surfaces #1f1f1f / #262626, texte #ececec, secondaire #a3a3a3, accent #a9c3d6 (bleu ardoise clair). */
+           Fond #141414, surfaces #1f1f1f / #262626, texte #ececec, secondaire #a3a3a3, accent #e0b86a (bleu ardoise clair). */
         'html body.dark-mode { --tg-muted: #a3a3a3; --tg-soft: #8f8f8f; --tg-border: rgba(255,255,255,0.09); }' +
         /* Notice : dépliants identiques dans les deux applis (« + » à droite, couleur d'accent, pas de triangle) */
         '.notice-fold > summary { list-style: none; } .notice-fold > summary::-webkit-details-marker { display: none; }' +
-        '.notice-fold > summary::after { content: " +"; float: right; color: #5a7a94; font-weight: 900; font-size: 1.15em; line-height: 1; }' +
+        '.notice-fold > summary::after { content: " +"; float: right; color: #9a6f22; font-weight: 900; font-size: 1.15em; line-height: 1; }' +
         '.notice-fold[open] > summary::after { content: " −"; }' +
-        'html body.dark-mode .notice-fold > summary::after { color: #a9c3d6; }' +
+        'html body.dark-mode .notice-fold > summary::after { color: #e0b86a; }' +
         'html body.dark-mode .notice-fold > summary { color: #ececec; }' +
         'html body.dark-mode .notice-fold li, html body.dark-mode .notice-fold p, html body.dark-mode .notice-mini li { color: #c8c8c8; }' +
         'html body.dark-mode .notice-fold b, html body.dark-mode .notice-mini b { color: #ececec; }' +
@@ -650,43 +650,43 @@
         'html body.dark-mode .NOTICE-CARD-TITLE, html body.dark-mode .BIB-EMPTY p, html body.dark-mode .P1-SECTION-LBL { color: #ececec; }' +
         'html body.dark-mode .P0-TAB.is-active .P0-TAB-LBL, html body.dark-mode .MER-DOCK-BTN.actif span, html body.dark-mode .P0-TAB.is-active .P0-LBL-COURT { color: #ececec; }' +
         /* Liens, boutons texte, danger */
-        'html body.dark-mode a:not([class]) { color: #a9c3d6; }' +
+        'html body.dark-mode a:not([class]) { color: #e0b86a; }' +
         'html body.dark-mode .BTN-DANGER-TEXT { color: #f87171; border-color: rgba(248,113,113,0.35); background: transparent; }' +
         /* Libellés de sections et sélections actives : une seule règle (pastille claire, texte foncé) */
         'html body.dark-mode .P1-SECTION-LBL, html body.dark-mode #P1 .P1-SECTION-LBL, html body.dark-mode #P1-IDENTITY-ZONE .P1-SECTION-LBL { color: #ececec; }' +
         'html body.dark-mode .MZ-TAB.active { background: #ececec; border-color: #ececec; color: #141414; }' +
         'html body.dark-mode .collective-zone, html body.dark-mode #P1 .collective-zone { background: rgba(169,195,214,0.08) !important; border-color: rgba(169,195,214,0.25) !important; }' +
-        'html body.dark-mode .collective-zone label { color: #a9c3d6 !important; }' +
-        'html body.dark-mode .LIB-CLEAR-ALL-BTN { color: #a9c3d6; border-color: rgba(169,195,214,0.3); background: transparent; }' +
+        'html body.dark-mode .collective-zone label { color: #e0b86a !important; }' +
+        'html body.dark-mode .LIB-CLEAR-ALL-BTN { color: #e0b86a; border-color: rgba(169,195,214,0.3); background: transparent; }' +
         'html body.dark-mode .BTN-ALERT, html body.dark-mode .ADMIN-SECTION .BTN-ALERT { background: #262626; color: #ececec; border-color: rgba(255,255,255,0.1); }' +
         'html body.dark-mode .NOTICE-HELP { background: #262626; color: #ececec; border-color: rgba(255,255,255,0.1); }' +
         /* Voile derrière les fenêtres : noir neutre (plus de voile bleu marine) */
         'html body.dark-mode .VALIDATION-MODAL, html body.dark-mode .NOTICE-MODAL, html body.dark-mode .QR-OVERLAY, html body.dark-mode #REFERENCES-MODAL, html body.dark-mode #PARAMS-MODAL { background: rgba(0,0,0,0.72); }' +
-        'html body.dark-mode .FOLD-ICON svg { stroke: #a9c3d6; }' +
-        'html body.dark-mode #FORFAIT-EXPORT-BTN, html body.dark-mode #FORFAIT-EXPORT-BTN.LIB-CLEAR-ALL-BTN { color: #a9c3d6 !important; border-color: rgba(169,195,214,0.3) !important; background: transparent !important; }' +
-        'html body.dark-mode .PC-BADGE { background: rgba(169,195,214,0.14); color: #a9c3d6; } html body.dark-mode .PC-BADGE.PC-BADGE-GRIS { background: rgba(255,255,255,0.07); color: #a3a3a3; }' +
+        'html body.dark-mode .FOLD-ICON svg { stroke: #e0b86a; }' +
+        'html body.dark-mode #FORFAIT-EXPORT-BTN, html body.dark-mode #FORFAIT-EXPORT-BTN.LIB-CLEAR-ALL-BTN { color: #e0b86a !important; border-color: rgba(169,195,214,0.3) !important; background: transparent !important; }' +
+        'html body.dark-mode .PC-BADGE { background: rgba(169,195,214,0.14); color: #e0b86a; } html body.dark-mode .PC-BADGE.PC-BADGE-GRIS { background: rgba(255,255,255,0.07); color: #a3a3a3; }' +
         /* Fenêtres de Compte-rendu : sans liseré violet, comme celles de Mise en route */
         '.ADMIN-BOX { border-left: 0 !important; }' +
         /* Présentation TRIGONE en mode sombre */
         'html body.dark-mode .JUM-PRES { background: linear-gradient(165deg, #1a1a1a 0%, #111 100%); color: #ececec; }' +
         'html body.dark-mode .JUM-PRES-LOGO { filter: brightness(0) invert(0.93); }' +
-        'html body.dark-mode .JUM-PRES-LIGNE, html body.dark-mode .JUM-PRES h1 em { color: #a9c3d6; }' +
+        'html body.dark-mode .JUM-PRES-LIGNE, html body.dark-mode .JUM-PRES h1 em { color: #e0b86a; }' +
         'html body.dark-mode .JUM-PRES-CHAPO { color: #a3a3a3; }' +
         'html body.dark-mode .JUM-PRES-TRAIT { background: linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(169,195,214,0.18) 50%, transparent calc(50% + 1px)); }' +
         'html body.dark-mode .JUM-PRES-CLAIR { background: #1f1f1f; border-color: rgba(255,255,255,0.09); color: #ececec; box-shadow: none; }' +
         'html body.dark-mode .JUM-PRES-SOMBRE { background: #ececec; color: #1a1a1a; }' +
-        'html body.dark-mode .JUM-PRES-CLAIR .JUM-PRES-NUM { color: #a9c3d6; } html body.dark-mode .JUM-PRES-SOMBRE .JUM-PRES-NUM { color: #5a7a94; }' +
-        'html body.dark-mode .JUM-PRES-CLAIR li::before { background: #a9c3d6; } html body.dark-mode .JUM-PRES-SOMBRE li::before { background: #5a7a94; }' +
+        'html body.dark-mode .JUM-PRES-CLAIR .JUM-PRES-NUM { color: #e0b86a; } html body.dark-mode .JUM-PRES-SOMBRE .JUM-PRES-NUM { color: #9a6f22; }' +
+        'html body.dark-mode .JUM-PRES-CLAIR li::before { background: #e0b86a; } html body.dark-mode .JUM-PRES-SOMBRE li::before { background: #9a6f22; }' +
         'html body.dark-mode .JUM-PRES-CLAIR li { border-top-color: rgba(255,255,255,0.08); } html body.dark-mode .JUM-PRES-SOMBRE li { border-top-color: rgba(0,0,0,0.08); }' +
         'html body.dark-mode .JUM-PRES-GARANTIES div { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.09); color: #d4d4d4; }' +
-        'html body.dark-mode .JUM-PRES-GARANTIES svg { stroke: #a9c3d6; }' +
+        'html body.dark-mode .JUM-PRES-GARANTIES svg { stroke: #e0b86a; }' +
         'html body.dark-mode .JUM-PRES-BTN { background: #ececec; color: #141414; } html body.dark-mode .JUM-PRES-BTN:hover { background: #fff; }' +
         'html body.dark-mode .JUM-R-X { background: #262626; color: #d4d4d4; border-color: rgba(255,255,255,0.1); }' +
         /* Présentation TRIGONE */
-        '.JUM-PRES { position: fixed; inset: 0; z-index: 99992; background: linear-gradient(165deg, #F8FBFD 0%, #E8F0F6 100%); color: #1a1a1a;' +
+        '.JUM-PRES { position: fixed; inset: 0; z-index: 99992; background: linear-gradient(165deg, #f7f7f5 0%, #ecebe7 100%); color: #1a1a1a;' +
             ' font-family: Montserrat, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; opacity: 0; transition: opacity 0.38s ease; }' +
         '.JUM-PRES.visible { opacity: 1; }' +
-        '.JUM-PRES-TRAIT { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(90,122,148,0.22) 50%, transparent calc(50% + 1px)); }' +
+        '.JUM-PRES-TRAIT { position: absolute; inset: 0; pointer-events: none; background: linear-gradient(to bottom right, transparent calc(50% - 1px), rgba(214,167,86,0.22) 50%, transparent calc(50% + 1px)); }' +
         '.JUM-PRES-DEFIL { position: absolute; inset: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }' +
         '.JUM-PRES-CONTENU { position: relative; max-width: 960px; margin: 0 auto; padding: max(34px, env(safe-area-inset-top, 0px)) 20px max(34px, env(safe-area-inset-bottom, 0px)); text-align: center; }' +
         '.JUM-PRES-CONTENU > * { opacity: 0; transform: translateY(12px); transition: opacity 0.6s ease, transform 0.6s cubic-bezier(0.2,0.8,0.2,1); }' +
@@ -696,30 +696,30 @@
         '.JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(6) { transition-delay: 0.4s; } .JUM-PRES.visible .JUM-PRES-CONTENU > :nth-child(n+7) { transition-delay: 0.5s; }' +
         '.JUM-PRES-LOGO { width: 92px; height: auto; }' +
         '.JUM-PRES-MARQUE { font-size: 2rem; font-weight: 800; letter-spacing: 0.34em; margin: 10px 0 4px; padding-left: 0.34em; }' +
-        '.JUM-PRES-LIGNE { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #5a7a94; }' +
+        '.JUM-PRES-LIGNE { font-size: 0.66rem; font-weight: 800; letter-spacing: 0.22em; text-transform: uppercase; color: #9a6f22; }' +
         '.JUM-PRES-LIGNE span { margin: 0 6px; }' +
         '@media (max-width: 440px) { .JUM-PRES-LIGNE { font-size: 0.58rem; letter-spacing: 0.1em; } .JUM-PRES-MARQUE { font-size: 1.7rem; } }' +
         '.JUM-PRES h1 { font-family: Georgia, "Times New Roman", serif; font-weight: 400; font-size: clamp(1.5rem, 4.2vw, 2.3rem); line-height: 1.25; margin: 26px 0 10px; }' +
-        '.JUM-PRES h1 em { font-style: normal; color: #5a7a94; }' +
+        '.JUM-PRES h1 em { font-style: normal; color: #9a6f22; }' +
         '.JUM-PRES-CHAPO { max-width: 620px; margin: 0 auto 26px; font-size: 0.9rem; line-height: 1.6; color: #525252; }' +
         '.JUM-PRES-DUO { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; text-align: left; }' +
         '@media (max-width: 640px) { .JUM-PRES-DUO { grid-template-columns: 1fr; } }' +
         '.JUM-PRES-VOLET { border-radius: 18px; padding: 20px 20px 16px; }' +
         '.JUM-PRES-CLAIR { background: #fff; border: 1px solid #e8e8e8; box-shadow: 0 10px 40px rgba(0,0,0,0.06); color: #1a1a1a; }' +
         '.JUM-PRES-SOMBRE { background: #1a1a1a; box-shadow: 0 10px 40px rgba(0,0,0,0.14); color: #f5f5f5; }' +
-        '.JUM-PRES-NUM { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #5a7a94; }' +
-        '.JUM-PRES-SOMBRE .JUM-PRES-NUM { color: #7a9db5; }' +
+        '.JUM-PRES-NUM { font-size: 0.64rem; font-weight: 800; letter-spacing: 0.16em; text-transform: uppercase; color: #9a6f22; }' +
+        '.JUM-PRES-SOMBRE .JUM-PRES-NUM { color: #d6a756; }' +
         '.JUM-PRES-TITRE { font-size: 1.1rem; font-weight: 800; margin: 6px 0 10px; }' +
         '.JUM-PRES-VOLET ul { margin: 0; padding: 0; list-style: none; }' +
-        '.JUM-PRES-VOLET li { position: relative; padding: 7px 0 7px 22px; font-size: 0.82rem; line-height: 1.45; border-top: 1px solid rgba(90,122,148,0.18); }' +
+        '.JUM-PRES-VOLET li { position: relative; padding: 7px 0 7px 22px; font-size: 0.82rem; line-height: 1.45; border-top: 1px solid rgba(214,167,86,0.18); }' +
         '.JUM-PRES-SOMBRE li { border-top-color: rgba(255,255,255,0.08); }' +
         '.JUM-PRES-VOLET li:first-child { border-top: 0; }' +
-        '.JUM-PRES-VOLET li::before { content: ""; position: absolute; left: 2px; top: 13px; width: 8px; height: 8px; border-radius: 2px; transform: rotate(45deg); background: #5a7a94; }' +
-        '.JUM-PRES-SOMBRE li::before { background: #7a9db5; }' +
+        '.JUM-PRES-VOLET li::before { content: ""; position: absolute; left: 2px; top: 13px; width: 8px; height: 8px; border-radius: 2px; transform: rotate(45deg); background: #9a6f22; }' +
+        '.JUM-PRES-SOMBRE li::before { background: #d6a756; }' +
         '.JUM-PRES-GARANTIES { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 18px 0 26px; }' +
         '@media (max-width: 640px) { .JUM-PRES-GARANTIES { grid-template-columns: 1fr; } }' +
         '.JUM-PRES-GARANTIES div { display: flex; align-items: center; gap: 10px; justify-content: center; padding: 12px; border-radius: 14px; background: rgba(255,255,255,0.7); border: 1px solid #e8e8e8; font-size: 0.78rem; font-weight: 600; color: #404040; }' +
-        '.JUM-PRES-GARANTIES svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #5a7a94; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-PRES-GARANTIES svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: #9a6f22; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-PRES-BTN { border: 0; border-radius: 14px; padding: 15px 44px; background: #1a1a1a; color: #fff; box-shadow: 0 10px 26px rgba(0,0,0,0.18); font: 800 0.84rem Montserrat, system-ui, sans-serif; letter-spacing: 0.14em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-PRES-BTN:hover { background: #333; }' +
         '@media (prefers-reduced-motion: reduce) { .JUM-PRES, .JUM-PRES-CONTENU > * { transition: none; } }' +
@@ -731,7 +731,7 @@
         '.JUM-R-TETE { display: flex; align-items: flex-start; gap: 14px; padding: 20px 20px 12px; border-bottom: 1px solid #eef2f6; }' +
         '.JUM-R-TETE h2 { margin: 0 0 4px; font-size: 1.15rem; }' +
         '.JUM-R-TETE p { margin: 0; font-size: 0.76rem; color: #64748b; line-height: 1.4; }' +
-        '.JUM-R-ICONE { flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; background: rgba(90,122,148,0.1); color: #5a7a94; display: flex; align-items: center; justify-content: center; }' +
+        '.JUM-R-ICONE { flex-shrink: 0; width: 42px; height: 42px; border-radius: 12px; background: rgba(214,167,86,0.1); color: #9a6f22; display: flex; align-items: center; justify-content: center; }' +
         '.JUM-R-ICONE svg { width: 24px; height: 24px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-R-X { margin-left: auto; border: 0; background: none; font-size: 1.1rem; color: #64748b; cursor: pointer; padding: 4px 6px; }' +
         '.JUM-R-CORPS { padding: 6px 20px 10px; overflow-y: auto; -webkit-overflow-scrolling: touch; }' +
@@ -740,20 +740,20 @@
         '@media (max-width: 520px) { .JUM-R-GRILLE { grid-template-columns: 1fr; } }' +
         '.JUM-R-CHAMP label { display: block; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 5px; color: #334155; }' +
         '.JUM-R-CHAMP input { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font: 500 0.9rem Montserrat, system-ui, sans-serif; color: #1a1a1a; background: #fff; }' +
-        '.JUM-R-CHAMP input:focus { outline: none; border-color: #5a7a94; }' +
+        '.JUM-R-CHAMP input:focus { outline: none; border-color: #9a6f22; }' +
         '.JUM-R-AIDE { font-size: 0.76rem; color: #64748b; margin: 0 0 10px; line-height: 1.45; }' +
         '.JUM-R-ETAPES { padding-left: 20px; } .JUM-R-ETAPES li { margin: 2px 0; }' +
         '.JUM-LIAISON-BLOC { margin: 0 0 14px; padding: 10px 12px; border-radius: 12px; background: #EEF2F6; border: 1px solid #cfdbe6; font-size: 0.8rem; }' +
         '.JUM-LIAISON-BLOC summary { cursor: pointer; line-height: 1.4; } .JUM-LIAISON-BLOC b { color: #1a1a1a; }' +
         '.JUM-LIAISON-CODE { text-align: center; font: 800 2rem/1.1 Montserrat, system-ui, sans-serif; letter-spacing: 0.14em; padding: 14px 8px 10px; margin: 10px 0 4px; border-radius: 14px; background: #1a1a1a; color: #fff; user-select: all; }' +
         '.JUM-LIAISON-TEMPS { text-align: center; font-size: 0.78rem; font-weight: 700; color: #a16207; margin-bottom: 8px; }' +
-        'html body.dark-mode .JUM-LIAISON-BLOC { background: rgba(122,157,181,0.1); border-color: rgba(122,157,181,0.25); } html body.dark-mode .JUM-LIAISON-BLOC b { color: #f5f5f5; }' +
+        'html body.dark-mode .JUM-LIAISON-BLOC { background: rgba(214,167,86,0.1); border-color: rgba(214,167,86,0.25); } html body.dark-mode .JUM-LIAISON-BLOC b { color: #f5f5f5; }' +
         '.JUM-R-ERREUR { color: #b91c1c; font-size: 0.8rem; font-weight: 700; margin: 12px 0 0; min-height: 1em; }' +
         '.JUM-R-PIED { display: flex; align-items: center; gap: 10px; padding: 12px 20px 16px; border-top: 1px solid #eef2f6; }' +
         '.JUM-R-PIED > .JUM-R-PRINCIPAL:only-child { flex: 1; padding: 15px 22px; }' +
         '.JUM-R-PRINCIPAL { margin-left: auto; border: 0; border-radius: 12px; padding: 13px 22px; background: #1a1a1a; color: #fff; font: 800 0.78rem Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; cursor: pointer; }' +
         '.JUM-R-SECOND { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 12px 18px; background: #fff; color: #1a1a1a; font: 800 0.74rem Montserrat, system-ui, sans-serif; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }' +
-        '.JUM-R-LIEN { border: 0; background: none; padding: 8px 0; color: #5a7a94; font: 700 0.74rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; text-align: left; }' +
+        '.JUM-R-LIEN { border: 0; background: none; padding: 8px 0; color: #9a6f22; font: 700 0.74rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; text-align: left; }' +
         'body.dark-mode .JUM-R-CARTE { background: #1f1f1f; color: #e5e5e5; } body.dark-mode .JUM-R-CHAMP label { color: #cbd5e1; }' +
         'body.dark-mode .JUM-R-CHAMP input { background: #141414; color: #f5f5f5; border-color: #404040; } body.dark-mode .JUM-R-TITRE { border-bottom-color: #e5e5e5; }' +
         'body.dark-mode .JUM-R-PRINCIPAL { background: #f5f5f5; color: #141414; } body.dark-mode .JUM-R-SECOND { background: #1f1f1f; color: #f5f5f5; border-color: #404040; }' +
@@ -776,47 +776,72 @@
         '.JUM-PIN-PAVE button:active { background: #2a2a2a; }' +
         '.JUM-PIN .JUM-R-LIEN { color: #a3a3a3; }' +
         /* Code d'accès — présentation PC */
-        '.JUM-PIN-PC { background: linear-gradient(135deg, #F8FBFD 0%, #E8F0F6 100%); }' +
+        '.JUM-PIN-PC { background: linear-gradient(135deg, #f7f7f5 0%, #ecebe7 100%); }' +
         '.JUM-PINPC { display: grid; grid-template-columns: 1fr 1.1fr; width: 100%; max-width: 820px; min-height: 460px; background: #fff; border-radius: 26px; overflow: hidden; box-shadow: 0 30px 80px rgba(26,45,62,0.18), 0 2px 6px rgba(26,45,62,0.06); color: #1a1a1a; }' +
         '.JUM-PINPC-MARQUE { background: #1a1a1a; color: #fff; padding: 40px 36px; display: flex; flex-direction: column; align-items: flex-start; position: relative; }' +
-        '.JUM-PINPC-MARQUE::after { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(122,157,181,0.22), transparent 55%); pointer-events: none; }' +
+        '.JUM-PINPC-MARQUE::after { content: ""; position: absolute; inset: 0; background: linear-gradient(160deg, rgba(214,167,86,0.22), transparent 55%); pointer-events: none; }' +
         '.JUM-PINPC-MARQUE img { width: 74px; height: 74px; object-fit: contain; filter: invert(1) brightness(1.4); opacity: 0.95; }' +
         '.JUM-PINPC-NOM { margin-top: 18px; font-size: 1.7rem; font-weight: 800; letter-spacing: 0.22em; }' +
-        '.JUM-PINPC-SOUS { margin-top: 6px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #a9c3d6; }' +
+        '.JUM-PINPC-SOUS { margin-top: 6px; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: #e0b86a; }' +
         '.JUM-PINPC-DATE { margin-top: auto; display: flex; flex-direction: column; gap: 2px; }' +
         '.JUM-PINPC-DATE b { font-size: 2.6rem; font-weight: 800; letter-spacing: 0.02em; }' +
         '.JUM-PINPC-DATE span { font-size: 0.82rem; color: #c7d4de; text-transform: capitalize; }' +
-        '.JUM-PINPC-NOTE { margin-top: 22px; display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: #a9c3d6; }' +
+        '.JUM-PINPC-NOTE { margin-top: 22px; display: flex; align-items: center; gap: 8px; font-size: 0.72rem; color: #e0b86a; }' +
         '.JUM-PINPC-NOTE svg { width: 15px; height: 15px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-PINPC-SAISIE { padding: 44px 44px 30px; display: flex; flex-direction: column; align-items: center; text-align: center; }' +
-        '.JUM-PINPC-IC { width: 56px; height: 56px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(90,122,148,0.1); color: #5a7a94; }' +
+        '.JUM-PINPC-IC { width: 56px; height: 56px; padding: 14px; box-sizing: border-box; border-radius: 18px; background: rgba(214,167,86,0.1); color: #9a6f22; }' +
         '.JUM-PINPC-IC svg { width: 100%; height: 100%; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }' +
         '.JUM-PINPC-SAISIE h2 { margin: 16px 0 6px; font-size: 1.3rem; font-weight: 800; }' +
-        '.JUM-PINPC-SAISIE p { margin: 0 0 24px; font-size: 0.85rem; color: #5a7a94; }' +
+        '.JUM-PINPC-SAISIE p { margin: 0 0 24px; font-size: 0.85rem; color: #9a6f22; }' +
         '.JUM-PIN-PC .JUM-PIN-POINTS { gap: 14px; margin-bottom: 8px; }' +
-        '.JUM-PIN-PC .JUM-PIN-POINT { width: 54px; height: 62px; border-radius: 14px; border: 1.5px solid #c9d6e0; background: #F8FBFD; position: relative; transition: border-color 0.15s ease, box-shadow 0.15s ease; }' +
-        '.JUM-PIN-PC .JUM-PIN-POINT.plein { background: #F8FBFD; border-color: #1a1a1a; }' +
+        '.JUM-PIN-PC .JUM-PIN-POINT { width: 54px; height: 62px; border-radius: 14px; border: 1.5px solid #c9d6e0; background: #f7f7f5; position: relative; transition: border-color 0.15s ease, box-shadow 0.15s ease; }' +
+        '.JUM-PIN-PC .JUM-PIN-POINT.plein { background: #f7f7f5; border-color: #1a1a1a; }' +
         '.JUM-PIN-PC .JUM-PIN-POINT.plein::after { content: ""; position: absolute; left: 50%; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 50%; background: #1a1a1a; }' +
-        '.JUM-PIN-PC .JUM-PIN-POINT.actif { border-color: #5a7a94; box-shadow: 0 0 0 4px rgba(90,122,148,0.15); }' +
+        '.JUM-PIN-PC .JUM-PIN-POINT.actif { border-color: #9a6f22; box-shadow: 0 0 0 4px rgba(214,167,86,0.15); }' +
         '.JUM-PIN-PC .JUM-PIN-ERREUR { color: #b91c1c; margin: 6px 0 4px; }' +
         '.JUM-PINPC-AIDE { font-size: 0.72rem; color: #7b8e9d; margin-bottom: 16px; }' +
-        '.JUM-PINPC-AIDE span { display: inline-block; padding: 1px 7px; border: 1px solid #c9d6e0; border-bottom-width: 2px; border-radius: 6px; font-weight: 700; color: #5a7a94; background: #fff; }' +
+        '.JUM-PINPC-AIDE span { display: inline-block; padding: 1px 7px; border: 1px solid #c9d6e0; border-bottom-width: 2px; border-radius: 6px; font-weight: 700; color: #9a6f22; background: #fff; }' +
         '.JUM-PIN-PC .JUM-PIN-PAVE { width: 100%; max-width: 250px; gap: 8px; margin-bottom: 12px; }' +
         '.JUM-PIN-PC .JUM-PIN-PAVE button { height: 42px; border-radius: 11px; border: 1px solid #dde6ee; background: #fff; color: #1a1a1a; font-size: 1rem; }' +
         '.JUM-PIN-PC .JUM-PIN-PAVE button:hover { background: #F2F7FB; border-color: #c9d6e0; }' +
-        '.JUM-PIN-PC .JUM-R-LIEN { color: #5a7a94; }' +
+        '.JUM-PIN-PC .JUM-R-LIEN { color: #9a6f22; }' +
         '.JUM-PIN-PC.sombre { background: linear-gradient(135deg, #0f1418 0%, #172029 100%); }' +
         '.JUM-PIN-PC.sombre .JUM-PINPC { background: #1b242c; color: #e8eef3; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }' +
         '.JUM-PIN-PC.sombre .JUM-PINPC-MARQUE { background: #0c1115; }' +
-        '.JUM-PIN-PC.sombre .JUM-PINPC-SAISIE p, .JUM-PIN-PC.sombre .JUM-R-LIEN { color: #a9c3d6; }' +
+        '.JUM-PIN-PC.sombre .JUM-PINPC-SAISIE p, .JUM-PIN-PC.sombre .JUM-R-LIEN { color: #e0b86a; }' +
         '.JUM-PIN-PC.sombre .JUM-PIN-POINT { background: #141b21; border-color: #33424f; }' +
         '.JUM-PIN-PC.sombre .JUM-PIN-POINT.plein { background: #141b21; border-color: #e8eef3; } .JUM-PIN-PC.sombre .JUM-PIN-POINT.plein::after { background: #e8eef3; }' +
         '.JUM-PIN-PC.sombre .JUM-PIN-PAVE button { background: #141b21; border-color: #2a3640; color: #e8eef3; }' +
-        '.JUM-PIN-PC.sombre .JUM-PINPC-AIDE span { background: #141b21; border-color: #33424f; color: #a9c3d6; }' +
+        '.JUM-PIN-PC.sombre .JUM-PINPC-AIDE span { background: #141b21; border-color: #33424f; color: #e0b86a; }' +
         '.JUM-PIN-PC.sombre .JUM-PIN-ERREUR { color: #f87171; }' +
         '.JUM-TRAIT { position: absolute; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; transition: opacity 0.2s ease; }' +
         '.JUM-CHOIX.choisi .JUM-TRAIT { opacity: 0; }' +
         '@media (prefers-reduced-motion: reduce) { .JUM-PAN, .JUM-BLOC { transition-duration: 0.01s; } }' +
+        /* ===== Thème noir et or (Mise en route, Compte-rendu, espaces valideur et Chorus DT) =====
+           Accueil et menu PC sur fond noir, accents or ; les cartes de saisie restent claires pour la lecture. */
+        'html body .MER-P0-SHELL, html body .P0-SHELL { background: radial-gradient(90% 60% at 50% 16%, #2b2b2b 0%, #161616 58%, #0c0c0c 100%) !important; color: #f5f5f5; border: 0; border-top: 2px solid #d6a756; box-shadow: 0 18px 50px rgba(0,0,0,0.35); }' +
+        'html body .MER-LOGO-IMG, html body #P0 .welcome-logo { filter: brightness(0) invert(0.95); }' +
+        'html body .MER-P0-SHELL .BTN-ACCUEIL:not(.BTN-ACCUEIL-PETIT), html body .P0-SHELL .P0-HERO .BTN-ACCUEIL { background: linear-gradient(180deg, #e2b866, #c99743) !important; color: #1a1a1a !important; box-shadow: 0 12px 30px rgba(214,167,86,0.25) !important; }' +
+        'html body .MER-P0-SHELL .BTN-ACCUEIL-PETIT { background: transparent !important; color: #f5f5f5 !important; border: 1.5px solid rgba(255,255,255,0.25) !important; box-shadow: none !important; }' +
+        'html body .MER-P0-SHELL .P0-TAB, html body .P0-SHELL .P0-TAB { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.12) !important; color: #e5e5e5 !important; box-shadow: none !important; }' +
+        'html body .MER-P0-SHELL .P0-TAB-ICON, html body .P0-SHELL .P0-TAB-ICON { background: rgba(214,167,86,0.12) !important; border-color: rgba(214,167,86,0.3) !important; color: #e0b86a !important; }' +
+        'html body .MER-P0-SHELL .JUM-BONJOUR, html body .P0-SHELL .JUM-BONJOUR { color: #a9a9a9; } html body .MER-P0-SHELL .JUM-BONJOUR b, html body .P0-SHELL .JUM-BONJOUR b { color: #e0b86a; }' +
+        'html body .MER-P0-SHELL .app-credit, html body .P0-SHELL .app-credit, html body .MER-P0-SHELL [class*="CREDIT"], html body .P0-SHELL [class*="CREDIT"] { color: #8a8a8a !important; }' +
+        'html body .MER-P0-SHELL .P0-LIEN, html body .MER-P0-SHELL a, html body .MER-P0-SHELL .LIEN-ACCUEIL, html body .P0-SHELL a, html body .P0-SHELL button:not(.BTN-ACCUEIL):not(.P0-TAB) { color: #e5e5e5; }' +
+        /* Bordure haute des cartes : or */
+        'html body .CARD:not(#MER-P0):not(#P0) { border-top-color: #d6a756; }' +
+        /* Menu PC : noir, onglet actif or */
+        '@media (min-width: 1100px) { html body .PC-MENU { background: radial-gradient(120% 50% at 30% 0, #2b2b2b, #141414 60%, #0c0c0c) !important; border-right: 0 !important; color: #e5e5e5; }' +
+            ' html body .PC-MARQUE { border-bottom-color: rgba(255,255,255,0.1); } html body .PC-MARQUE img { filter: brightness(0) invert(0.95); }' +
+            ' html body .PC-NAV, html body .PC-LIEN { color: #d4d4d4; } html body .PC-NAV:hover, html body .PC-LIEN:hover { background: rgba(255,255,255,0.06); }' +
+            ' html body .PC-NAV.actif { background: linear-gradient(180deg, #e2b866, #c99743) !important; color: #1a1a1a !important; }' +
+            ' html body .PC-SEP { background: rgba(255,255,255,0.1); } html body .PC-PIED { color: #777; }' +
+            ' html body .PC-BASCULE { color: #e5e5e5; border-color: rgba(255,255,255,0.14); } html body .PC-BASCULE img { filter: brightness(0) invert(0.92); opacity: 1; }' +
+            ' html body .PC-MENU .JUM-CPT { background: rgba(255,255,255,0.06); color: #f5f5f5; border-color: rgba(255,255,255,0.14); }' +
+            ' html body .PC-HERO { background: radial-gradient(80% 140% at 15% 0, #2b2b2b, #151515 60%, #0c0c0c) !important; color: #f5f5f5 !important; border: 0 !important; }' +
+            ' html body .PC-HERO .PC-HERO-LOGO { filter: brightness(0) invert(0.95); } html body .PC-HERO p, html body .PC-HERO span, html body .PC-HERO div { color: inherit; }' +
+            ' html body .PC-HERO .PC-BTN-CLAIR { background: transparent !important; color: #e5e5e5 !important; border-color: rgba(255,255,255,0.18) !important; } html body .PC-HERO .BTN-ACCUEIL:first-of-type, html body .PC-HERO .BTN-PRIMARY, html body .PC-HERO .BTN-START { background: linear-gradient(180deg, #e2b866, #c99743) !important; color: #1a1a1a !important; }' +
+        ' }' +
         '';
     var style = document.createElement('style');
     style.textContent = css;
@@ -827,7 +852,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 123, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 124, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -897,6 +922,16 @@
         img.src = (DANS_CR ? '../' : '') + 'logo-pdf.webp';
     })();
     window.JUMELAGE_LOGO_PRET = function() { return !!logoPdf; };
+    // Style noir et or des PDF, économe en encre : les en-têtes de tableaux sont soulignés d'un trait noir (pas d'aplat).
+    window.JUMELAGE_PDF_STYLE = function(doc) {
+        if (!doc || typeof doc.autoTableSetDefaults !== 'function') return;
+        doc.autoTableSetDefaults({ didDrawCell: function(d) {
+            if (d.section !== 'head' || d.cell.styles.fillColor) return;
+            var k = doc.internal.scaleFactor || 1;
+            doc.setDrawColor(26, 26, 26); doc.setLineWidth(1.1 / k);
+            doc.line(d.cell.x, d.cell.y + d.cell.height, d.cell.x + d.cell.width, d.cell.y + d.cell.height);
+        } });
+    };
     // cx : centre horizontal (celui du mot TRIGONE) ; y : haut de la vignette ; h : sa hauteur.
     window.JUMELAGE_LOGO_PDF = function(doc, cx, y, h) {
         if (!logoPdf) return false;
@@ -1495,10 +1530,35 @@
         });
         }, function(message) { refuser(message); });
     };
+    // Notification à l'écran : la glisser (vers le haut si elle est en haut, vers le bas si elle est en bas) la ferme.
+    // Un simple toucher garde son action ; un glissement ne la déclenche pas.
+    window.JUMELAGE_GLISSER_FERMER = function(el, sens, fermer) {
+        var y0 = null, dy = 0, glisse = false, base = '';
+        el.style.touchAction = 'none';
+        el.addEventListener('pointerdown', function(e) { el.style.transform = ''; base = getComputedStyle(el).transform; y0 = e.clientY; dy = 0; glisse = false; el.style.transition = 'none'; try { el.setPointerCapture(e.pointerId); } catch (x) {} });
+        el.addEventListener('pointermove', function(e) {
+            if (y0 === null) return;
+            dy = e.clientY - y0; if (sens * dy < 0) dy = dy / 4;
+            if (Math.abs(dy) > 8) glisse = true;
+            el.style.transform = (base && base !== 'none' ? base + ' ' : '') + 'translateY(' + dy + 'px)';
+            el.style.opacity = String(Math.max(0.2, 1 - Math.abs(dy) / 120));
+        });
+        function fin() {
+            if (y0 === null) return; y0 = null;
+            el.style.transition = 'transform .25s ease, opacity .25s ease';
+            if (sens * dy > 36) {
+                el.style.transform = (base && base !== 'none' ? base + ' ' : '') + 'translateY(' + (sens * 160) + 'px)'; el.style.opacity = '0';
+                setTimeout(function() { el.remove(); if (fermer) fermer(); }, 250);
+            } else { el.style.transform = ''; el.style.opacity = ''; }
+        }
+        el.addEventListener('pointerup', fin); el.addEventListener('pointercancel', fin);
+        el.addEventListener('click', function(e) { if (glisse) { e.stopImmediatePropagation(); e.preventDefault(); glisse = false; } }, true);
+    };
     function bandeau(texte) {
         var b = document.createElement('div');
         b.className = 'JUM-BANDEAU'; b.textContent = '✓ ' + texte;
         document.body.appendChild(b);
+        window.JUMELAGE_GLISSER_FERMER(b, 1);
         setTimeout(function() { b.classList.add('sortie'); }, 2600);
         setTimeout(function() { b.remove(); }, 3100);
     }
@@ -2227,7 +2287,7 @@
             f.innerHTML = '<div class="JUM-R-CARTE"><div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('mail') : '') + '</span><div><h2>Envois en attente</h2>' +
                 '<p>Faits sans réseau : ils partent tout seuls dès que le réseau revient.</p></div><button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_ATTENTE()">✕</button></div><div class="JUM-R-CORPS">' +
                 (l.length ? l.map(function(x) {
-                    return '<div class="JUM-ERR" style="border-left-color:' + (x.erreur ? '#b91c1c' : '#5a7a94') + '"><b>' + esc(x.libelle || x.nom) + '</b><small>À ' + esc(x.dest) + ' · préparé le ' + new Date(x.cree).toLocaleString('fr-FR') + '</small>' +
+                    return '<div class="JUM-ERR" style="border-left-color:' + (x.erreur ? '#b91c1c' : '#9a6f22') + '"><b>' + esc(x.libelle || x.nom) + '</b><small>À ' + esc(x.dest) + ' · préparé le ' + new Date(x.cree).toLocaleString('fr-FR') + '</small>' +
                         (x.erreur ? '<span class="JUM-ERR-MSG" style="color:#b91c1c">⛔ ' + esc(x.erreur) + '</span>' : '<small>⏳ Partira au retour du réseau</small>') +
                         '<div class="JUM-ERR-BTN"><button type="button" class="JUM-R-SECOND" data-reessayer="' + x.id + '">Réessayer</button><button type="button" class="JUM-R-SECOND" data-supprimer="' + x.id + '">Supprimer</button></div></div>';
                 }).join('') : '<p class="JUM-R-AIDE" style="margin-top:14px;">✅ Aucun envoi en attente.</p>') +

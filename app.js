@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 170;
+var APP_CODE_VERSION = 171;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1481,7 +1481,8 @@ function TPL_PANIER() {
 // ===================== GÉNÉRATION DU PDF =====================
 // Même style que le PDF de TRIGONE compte-rendu (bandeau, titres de section, tableaux autoTable),
 // uniquement avec ce que le missionnaire a saisi. Une page par demande, quelle que soit sa longueur.
-var PDF_ACCENT = [90, 122, 148], PDF_ZEBRE = [244, 246, 249], PDF_TEXTE = [30, 30, 30];
+// Noir et or, économe en encre : fond blanc, filets et titres or, en-têtes de tableaux soulignés.
+var PDF_ACCENT = [26, 26, 26], PDF_OR = [214, 167, 86], PDF_OR_TEXTE = [176, 128, 42], PDF_ZEBRE = [250, 248, 243], PDF_TEXTE = [30, 30, 30];
 
 function PDF_DATE(v) {
     if (!v) return '';
@@ -1499,27 +1500,27 @@ function PDF_RESA(d) {
 function PDF_OUI_NON_ALERTE(v) { return v ? { content: 'OUI', styles: { textColor: [200, 16, 16], fontStyle: 'bold' } } : 'NON'; }
 
 function PDF_BANDEAU(doc, d, M, L, edition) {
-    doc.setFillColor.apply(doc, PDF_ACCENT);
-    // Logo tricolore de TRIGONE au-dessus du nom (bandeau plus haut quand il est là).
-    var logo = !!(window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET()), h = logo ? 45 : 30, dy = logo ? 15 : 0;
-    doc.rect(0, 0, 210, h, 'F');
-    doc.setTextColor(255, 255, 255);
+    if (window.JUMELAGE_PDF_STYLE) JUMELAGE_PDF_STYLE(doc);
+    // En-tête blanc (logo tricolore au-dessus du nom, s'il est chargé), souligné d'un filet or.
+    var logo = !!(window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET()), h = logo ? 56 : 30, dy = logo ? 26 : 0;
+    doc.setFillColor.apply(doc, PDF_OR); doc.rect(0, h - 1, 210, 1, 'F');
+    doc.setTextColor.apply(doc, PDF_ACCENT);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
-    if (logo) window.JUMELAGE_LOGO_PDF(doc, M + 4 + doc.getTextWidth('TRIGONE') / 2, 4, 15);
+    if (logo) window.JUMELAGE_LOGO_PDF(doc, M + 4 + doc.getTextWidth('TRIGONE') / 2, 4, 25);
     doc.text('TRIGONE', M + 4, 14 + dy);
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90, 98, 110);
     var unite = d.personnes[0] && d.personnes[0].unite ? d.personnes[0].unite + ' — ' : '';
     doc.text(unite + 'Demande d\'ordre de mise en route', M + 4, 21 + dy);
-    doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor.apply(doc, PDF_OR_TEXTE);
     doc.text(d.type === 'FORMATION' ? 'FORMATION / STAGE' : 'MISSION', M + L - 4, 15 + dy, { align: 'right' });
-    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120, 120, 120);
     doc.text('Édité le ' + edition, M + L - 4, 21 + dy, { align: 'right' });
     doc.setTextColor.apply(doc, PDF_TEXTE);
     return h + 6;
 }
 
 function PDF_SECTION(doc, titre, x, y, P) {
-    doc.setFillColor.apply(doc, PDF_ACCENT);
+    doc.setFillColor.apply(doc, PDF_OR);
     doc.rect(x, y, 1.2, P.hSection - 1, 'F');
     doc.setTextColor.apply(doc, PDF_ACCENT);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(P.fSection);
@@ -1532,7 +1533,7 @@ function PDF_TABLEAU(doc, y, M, L, P, options) {
     var o = Object.assign({
         startY: y, margin: { left: M + 4, right: M + 4 }, theme: 'plain', pageBreak: 'avoid',
         styles: { font: 'helvetica', fontSize: P.fTable, cellPadding: P.pad, textColor: PDF_TEXTE, lineColor: [220, 225, 232] },
-        headStyles: { fillColor: PDF_ACCENT, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: P.fTable - 0.5 },
+        headStyles: { fillColor: false, textColor: PDF_ACCENT, fontStyle: 'bold', fontSize: P.fTable - 0.5 },
         alternateRowStyles: { fillColor: PDF_ZEBRE }
     }, options);
     doc.autoTable(o);
@@ -1621,8 +1622,8 @@ function PDF_CASES_VALIDATION(doc, d, M, L) {
         var x = x0 + i * (larg + 6), s = (d.validations || [])[i];
         doc.setDrawColor(210, 216, 225); doc.setLineWidth(0.3);
         doc.rect(x, y, larg, h);
-        doc.setFillColor.apply(doc, PDF_ACCENT); doc.rect(x, y, larg, 6.5, 'F');
-        doc.setTextColor(255, 255, 255); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
+        doc.setFillColor.apply(doc, PDF_OR); doc.rect(x, y + 6.5, larg, 0.6, 'F');
+        doc.setTextColor.apply(doc, PDF_ACCENT); doc.setFont('helvetica', 'bold'); doc.setFontSize(8);
         doc.text(i === 0 ? '1er VALIDEUR' : '2e VALIDEUR', x + 3, y + 4.4);
         doc.setTextColor.apply(doc, PDF_TEXTE);
         if (!s) {
@@ -1638,7 +1639,7 @@ function PDF_CASES_VALIDATION(doc, d, M, L) {
         doc.text(doc.splitTextToSize((s.grade + ' ' + s.nom + ' ' + s.prenom).trim(), larg - 6)[0], x + 3, y + 16);
         doc.setFont('helvetica', 'normal'); doc.setFontSize(8);
         doc.text(doc.splitTextToSize(s.fonction || '', larg - 6)[0], x + 3, y + 20.5);
-        doc.setTextColor.apply(doc, PDF_ACCENT); doc.setFont('helvetica', 'bold');
+        doc.setTextColor.apply(doc, PDF_OR_TEXTE); doc.setFont('helvetica', 'bold');
         doc.text('Le ' + le.toLocaleDateString('fr-FR') + ' à ' + le.toLocaleTimeString('fr-FR'), x + 3, y + 26.5);
         if (s.sig) {
             doc.setFont('helvetica', 'normal'); doc.setFontSize(6.5); doc.setTextColor(120, 120, 120);
@@ -2271,7 +2272,7 @@ function PREPARER_ENVOI() {
     var sansPJ = panier.filter(function(d) { return !(d.pieces || []).length; }).length;
     AFFICHER_MODALE('Avant d\'envoyer',
         '<p style="font-size:0.86em; line-height:1.5;">Vérifiez votre demande dans l\'aperçu, puis envoyez-la. Elle arrive, chiffrée, dans le TRIGONE du 1er valideur (<b>' + ESC(mail) + '</b>) :</p>' +
-        '<p style="font-size:0.86em; line-height:1.7; background:rgba(90,122,148,0.07); padding:10px 12px; border-radius:10px;">📨 ' + panier.length + ' demande(s)' +
+        '<p style="font-size:0.86em; line-height:1.7; background:rgba(214,167,86,0.07); padding:10px 12px; border-radius:10px;">📨 ' + panier.length + ' demande(s)' +
             (pj.length ? '<br><span style="color:var(--sm2-muted);">avec : ' + pj.map(function(p) { return ESC(p.nom); }).join(', ') + '</span>' : '') + '</p>' +
         (sansPJ ? '<p class="MER-HINT" style="color:#b45309; font-weight:700;">⚠ ' + sansPJ + ' demande(s) sans NDS ni DAF jointe.</p>' : '') +
         (panier.some(UTILISE_VRC) ? '<div style="font-size:0.86em; line-height:1.5; background:rgba(180,83,9,0.09); border:1.5px solid rgba(180,83,9,0.35); color:#92400e; padding:10px 12px; border-radius:10px; margin:10px 0;">' +
@@ -4134,7 +4135,7 @@ function MER_BANDEAU_RECU(titre, texte, surClic) {
     b.innerHTML = '<span class="MER-BANDEAU-RECU-IC">📥</span><span><b>' + ESC(titre) + '</b><br>' + ESC(texte) + '</span>';
     if (surClic) b.addEventListener('click', function() { b.remove(); surClic(); });
     document.body.appendChild(b);
-    requestAnimationFrame(function() { b.classList.add('visible'); });
+    requestAnimationFrame(function() { b.classList.add('visible'); if (window.JUMELAGE_GLISSER_FERMER) JUMELAGE_GLISSER_FERMER(b, -1); });
     setTimeout(function() { b.classList.remove('visible'); setTimeout(function() { b.remove(); }, 400); }, surClic ? 10000 : 6000);
 }
 // Espace valideur vide : les demandes à signer arrivent dans la Boîte de réception TRIGONE.
