@@ -468,9 +468,21 @@ async function envoyerSmtp(hote, port, utilisateur, motDePasse, de, a, sujet, te
 }
 
 // Envoi du code par mail : Brevo (BREVO_CLE) ou, à défaut, Mailjet (MAILJET_CLE + MAILJET_SECRET).
+// Rend true, ou le motif de l'échec (affiché à l'utilisateur et écrit dans les journaux Cloudflare) : clé refusée,
+// expéditeur non validé, compte Brevo suspendu ou quota atteint… Jamais la clé elle-même.
 async function envoyerCode(env, mail, code) {
+    const r = await envoyerCodeBrut(env, mail, code).catch(e => 'erreur : ' + (e && e.message || e));
+    if (r !== true) console.log('Envoi du code impossible', mail.replace(/^(.{0,3})[^@]*@/, '$1…@'), r);
+    return r;
+}
+async function motifRefus(service, r) {
+    let t = ''; try { t = await r.text(); } catch (e) {}
+    let m = t; try { const j = JSON.parse(t); m = j.message || j.code || (j.Messages && JSON.stringify(j.Messages[0].Errors)) || t; } catch (e) {}
+    return service + ' ' + r.status + (m ? ' : ' + String(m).slice(0, 160) : '');
+}
+async function envoyerCodeBrut(env, mail, code) {
     if (env.MODE_TEST === '1') return true;
-    if (!env.EXPEDITEUR_MAIL) return false;
+    if (!env.EXPEDITEUR_MAIL) return 'expéditeur non configuré (EXPEDITEUR_MAIL)';
     const sujet = 'Votre code TRIGONE : ' + code;
     const texte = 'Bonjour,\n\nVotre code pour activer votre compte TRIGONE : ' + code + '\n\nIl est valable 15 minutes. Si vous n\'avez rien demandé, ignorez ce message.\n\nTRIGONE';
     const html = '<div style="font-family:Arial,sans-serif;font-size:15px;color:#1a1a1a">Bonjour,<br><br>Votre code pour activer votre compte TRIGONE :<br>' +
@@ -482,10 +494,10 @@ async function envoyerCode(env, mail, code) {
             headers: { 'api-key': env.BREVO_CLE, 'Content-Type': 'application/json', Accept: 'application/json' },
             body: JSON.stringify({ sender: { email: env.EXPEDITEUR_MAIL, name: 'TRIGONE' }, to: [{ email: mail }], subject: sujet, textContent: texte, htmlContent: html })
         });
-        return r.ok;
+        return r.ok ? true : motifRefus('Brevo', r);
     }
     if (env.BREVO_SMTP_UTILISATEUR && env.BREVO_SMTP_CLE) {
-        return envoyerSmtp('smtp-relay.brevo.com', 465, env.BREVO_SMTP_UTILISATEUR, env.BREVO_SMTP_CLE, env.EXPEDITEUR_MAIL, mail, sujet, texte).catch(() => false);
+        return envoyerSmtp('smtp-relay.brevo.com', 465, env.BREVO_SMTP_UTILISATEUR, env.BREVO_SMTP_CLE, env.EXPEDITEUR_MAIL, mail, sujet, texte).then(() => true, e => 'Brevo ' + (e && e.message || e));
     }
     if (env.MAILJET_CLE && env.MAILJET_SECRET) {
         const r = await fetch('https://api.mailjet.com/v3.1/send', {
@@ -493,9 +505,9 @@ async function envoyerCode(env, mail, code) {
             headers: { Authorization: 'Basic ' + btoa(env.MAILJET_CLE + ':' + env.MAILJET_SECRET), 'Content-Type': 'application/json' },
             body: JSON.stringify({ Messages: [{ From: { Email: env.EXPEDITEUR_MAIL, Name: 'TRIGONE' }, To: [{ Email: mail }], Subject: sujet, TextPart: texte, HTMLPart: html }] })
         });
-        return r.ok;
+        return r.ok ? true : motifRefus('Mailjet', r);
     }
-    return false;
+    return 'aucun service d\'envoi configuré (BREVO_CLE ou BREVO_SMTP_*)';
 }
 
 // « NOGENT-LE-ROTROU (28400) » → { nom: 'NOGENT-LE-ROTROU', cp: '28400' } (le code postal départage les homonymes).
@@ -621,7 +633,8 @@ async function api(requete, env, url, ctx) {
         await kv.put('limite:' + mail, String(n + 1), { expirationTtl: 3600 });
         const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
         await kv.put('code:' + mail, JSON.stringify({ empreinte: await empreinte(mail + ':' + code), essais: 0 }), { expirationTtl: 900 });
-        if (!(await envoyerCode(env, mail, code))) return erreur(502, 'Le mail n\'a pas pu être envoyé. Réessayez plus tard.');
+        const envoi = await envoyerCode(env, mail, code);
+        if (envoi !== true) return erreur(502, 'Le mail n\'a pas pu être envoyé (' + envoi + ').');
         return json(env.MODE_TEST === '1' ? { ok: true, codeTest: code } : { ok: true });
     }
 
