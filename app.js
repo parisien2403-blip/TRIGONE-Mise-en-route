@@ -1503,9 +1503,9 @@ function PDF_BANDEAU(doc, d, M, L, edition) {
     // Logo tricolore de TRIGONE au-dessus du nom (bandeau plus haut quand il est là).
     var logo = !!(window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET()), h = logo ? 45 : 30, dy = logo ? 15 : 0;
     doc.rect(0, 0, 210, h, 'F');
-    if (logo) window.JUMELAGE_LOGO_PDF(doc, M + 4, 4, 15);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
+    if (logo) window.JUMELAGE_LOGO_PDF(doc, M + 4 + doc.getTextWidth('TRIGONE') / 2, 4, 15);
     doc.text('TRIGONE', M + 4, 14 + dy);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
     var unite = d.personnes[0] && d.personnes[0].unite ? d.personnes[0].unite + ' — ' : '';

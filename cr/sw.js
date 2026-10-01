@@ -35,6 +35,7 @@ const ASSETS = [
   '../jumelage.js',
   '../logo_chorus.webp',
   '../mascotte-assistance.webp',
+  '../logo-pdf.webp',
   '../fonts/montserrat.css',
   '../fonts/montserrat-latin.woff2',
   '../fonts/montserrat-latin-ext.woff2',
