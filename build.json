@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 122,
-  "notifier": true,
-  "message": "Assistant Chorus DT : bouton « ✔ Traité » après le PDF ; le missionnaire est prévenu et l'étape Chorus DT de son suivi passe au vert."
+  "build": 123,
+  "notifier": false,
+  "message": "Nouveau profil de première connexion en 3 étapes (identité, destinataires, code d'accès), au style de l'écran d'accueil."
 }
