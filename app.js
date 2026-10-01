@@ -447,7 +447,7 @@ function TPL_SUIVI_DEMANDE(id, nom) {
     }).join('<span class="MER-SUIVI-TRAIT"></span>');
     var par = der.qui ? ' (' + ESC(der.qui) + ')' : '';
     var texte = refus ? '<b style="color:#b91c1c;">Refusée</b>' + par + ' le ' + MER_DATE_HEURE(der.le) + (s.intervenant ? ' : renvoyée au demandeur.' : ' : voir votre Boîte de réception.')
-        : rang === 4 ? '<b style="color:#15803d;">Prise en charge par l\'assistant Chorus DT</b>' + par + ' le ' + MER_DATE_HEURE(der.le) + ' : ordre de mission en cours de création.'
+        : rang === 4 ? '<b style="color:#15803d;">Traitée par l\'assistant Chorus DT</b>' + par + ' le ' + MER_DATE_HEURE(der.le) + ' : ordre de mission créé dans Chorus DT.'
         : ({ envoyee: 'Envoyée', val1: 'Validée par le VALIDEUR 1', val2: 'Validée par le VALIDEUR 2', renvoi: 'Renvoyée au VALIDEUR 1 par le VALIDEUR 2' }[der.e] || 'Mise à jour') + par + ' le ' + MER_DATE_HEURE(der.le) +
           '. <b>En attente ' + (rang === 3 ? 'de l\'assistant Chorus DT' : 'du VALIDEUR ' + rang) + ' depuis ' + MER_DEPUIS(s.le) + '.</b>';
     return '<div class="MER-SUIVI' + (refus ? ' refus' : '') + '">' + (nom ? '<div class="MER-SUIVI-NOM">' + ESC(nom) + '</div>' : '') +
@@ -1953,7 +1953,7 @@ var MER_NOTICES = {
             '<b>Rappels</b> : une demande qui vous attend depuis plus de 24 h vous vaut une notification de rappel, puis une par 24 h tant qu\'elle n\'a pas avancé (du lundi au vendredi, de 8 h à 19 h). Le demandeur voit dans son suivi depuis quand elle attend.'] },
     CHORUS: { titre: 'Assistant Chorus DT', sous: 'Demandes validées · comptes-rendus · PDF', icone: MER_ICONES_NOTICE_CHECK(),
         etapes: ['<b>Paramètres › Compte › Mes rôles</b> : cochez <b>ASSIST CHORUS DT</b> et saisissez le code remis par l\'administrateur (il peut y avoir plusieurs assistants Chorus DT ; ce rôle se cumule avec VALIDEUR 1 / VALIDEUR 2). Votre espace apparaît au <b>centre de l\'écran de choix</b> (logo Assist Chorus-DT).',
-            '<b>Demandes de mise en route validées</b> : elles arrivent des 2e valideurs. Sur chaque ligne : <b>👁 Aperçu</b> ou <b>📄 Télécharger le PDF</b> (demande signée + NDS / DAF) ; TRIGONE contrôle d\'abord les signatures électroniques et les pièces jointes. <b>Contrôle détaillé</b> montre le résultat demande par demande. Un envoi qui n\'a pas les deux signatures est écarté.',
+            '<b>Demandes de mise en route validées</b> : elles arrivent des 2e valideurs. Sur chaque ligne : <b>👁 Aperçu</b> ou <b>📄 Télécharger le PDF</b> (demande signée + NDS / DAF) ; TRIGONE contrôle d\'abord les signatures électroniques et les pièces jointes. Une fois l\'ordre de mission créé dans Chorus DT, touchez <b>✔ Traité</b> (il apparaît après le téléchargement) : la demande passe dans vos « Traités » et le missionnaire est prévenu ; la dernière étape de son suivi, Chorus DT, passe au vert. <b>Contrôle détaillé</b> montre le résultat demande par demande. Un envoi qui n\'a pas les deux signatures est écarté.',
             '<b>✔ Conforme</b> : validée par les deux valideurs habilités, sans modification depuis. <b>✖ Non conforme</b> : la raison est indiquée (validation manquante, faux valideur, demande ou pièce jointe modifiée).',
             'Pour une demande conforme, <b>📄 PDF avec NDS / DAF</b> génère le PDF à traiter : la demande signée suivie des pages de ses pièces jointes (ou un seul PDF pour toutes les demandes conformes).',
             '<b>↩ Renvoyer au demandeur</b> : sur une demande reçue, renvoyez-la directement au demandeur avec un commentaire, sans repasser par les valideurs ; il la corrige et la renvoie (nouveau circuit de validation).',
@@ -3230,7 +3230,8 @@ function TELECHARGER_PDF_VERIFIE(indices) {
     GENERER_PDF_FINAL(demandes).then(function(octets) {
         FERMER_MSG();
         TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes, 'PDF_FINAL') + '.pdf', octets, 'application/pdf');
-        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(demandes.map(function(d) { return d.id; }), ['chorus']);
+        // Les envois de ces demandes restent « à traiter » : « ✔ Traité » apparaît sur leur ligne de l'espace Chorus DT.
+        CHORUS_PDF_FAIT_DEMANDES(demandes.map(function(d) { return d.id; }));
     }).catch(function(e) { FERMER_MSG(); setTimeout(function() { MSG_ERREUR('PDF impossible', e.message || String(e)); }, 350); });
 }
 
@@ -3545,7 +3546,11 @@ function TPL_ENVOI_RECU(x) {
             // Demande validée pour l'ASSIST CHORUS DT : aperçu et PDF directement depuis la ligne (contrôle fait avant).
             (x.nature === 'chorus'
                 ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', true)">👁 Aperçu</button>' +
-                  '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">📄 Télécharger le PDF</button>' +
+                  // PDF téléchargé : « ✔ Traité » apparaît, à toucher une fois l'ordre de mission créé dans Chorus DT.
+                  (!traite && x.pdfFait
+                    ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">📄 Retélécharger</button>' +
+                      '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL MER-CHORUS-TRAITE" onclick="CHORUS_TRAITER(\'' + x.id + '\')">✔ Traité</button>'
+                    : '<button type="button" class="BTN BTN-' + (traite ? 'GHOST' : 'PRIMARY') + ' BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">📄 Télécharger le PDF</button>') +
                   '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="' + (traite ? 'ROUVRIR_RECU' : 'OUVRIR_RECU') + '(\'' + x.id + '\')">Contrôle détaillé</button>' +
                   (traite ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="POSER_QUESTION(\'chorus\', \'' + x.id + '\')">❓ Question</button>') +
                   ((x.ids || []).map(TPL_ETAT_QUESTION).join(''))
@@ -4050,11 +4055,33 @@ function CHORUS_PDF_RECU(id, apercu) {
             return;
         }
         TELECHARGER_OCTETS(NOM_FICHIER_BASE(demandes, 'PDF_FINAL') + '.pdf', octets, 'application/pdf');
-        if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) JUMELAGE_BOITE_TRAITER_DEMANDES(demandes.map(function(d) { return d.id; }), ['chorus']);
+        // La demande reste « à traiter » : « ✔ Traité » apparaît sur sa ligne, à toucher une fois l'ordre de mission créé.
+        if (window.JUMELAGE_BOITE_PDF_FAIT) JUMELAGE_BOITE_PDF_FAIT(id);
+        if (PAGE_ACTUELLE === 'CHORUS') RECU_REAFFICHER();
     }).catch(function(e) {
         if (w) w.close();
         FERMER_MSG();
         setTimeout(function() { MSG_ERREUR(e.nonConforme ? 'Demande non conforme' : 'PDF impossible', e.message || String(e)); }, 350);
+    });
+}
+// « ✔ Traité » (après le PDF) : l'ordre de mission est créé dans Chorus DT. La demande passe en « Traités » et le
+// missionnaire (et ses valideurs) sont prévenus : la dernière étape de leur frise, Chorus DT, passe au vert.
+function CHORUS_TRAITER(id) {
+    var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(e) { return e.id === id; })[0]; if (!x) return;
+    MSG_CONFIRM('Demande traitée ?', 'L\'ordre de mission ' + (x.noms ? 'de ' + x.noms + ' ' : '') + 'est créé dans Chorus DT ? Le missionnaire en est prévenu, et la demande passe dans vos « Traités ».',
+        '✔ Oui, traitée', function() { CHORUS_MARQUER_TRAITE(id); }, '✅', 'mascotte-ok.webp');
+}
+function CHORUS_MARQUER_TRAITE(id) {
+    var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(e) { return e.id === id; })[0]; if (!x) return;
+    if (window.JUMELAGE_BOITE_TRAITER_DEMANDES && (x.ids || []).length) JUMELAGE_BOITE_TRAITER_DEMANDES(x.ids, ['chorus']);
+    else JUMELAGE_BOITE_MARQUER(id, 'traite');
+    if (PAGE_ACTUELLE === 'CHORUS') RECU_REAFFICHER();
+}
+// PDF produit depuis le « Contrôle détaillé » : les envois qui ne contiennent que ces demandes attendent leur « ✔ Traité ».
+function CHORUS_PDF_FAIT_DEMANDES(ids) {
+    if (!window.JUMELAGE_BOITE_PDF_FAIT) return;
+    (JUMELAGE_BOITE_LISTE() || []).forEach(function(x) {
+        if (x.nature === 'chorus' && x.statut !== 'traite' && (x.ids || []).length && x.ids.every(function(i) { return ids.indexOf(i) >= 0; })) JUMELAGE_BOITE_PDF_FAIT(x.id);
     });
 }
 // Envoi classé « traité » : il repasse « à traiter » (ex. classé trop tôt), puis s'ouvre.

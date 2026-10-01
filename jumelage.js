@@ -2549,6 +2549,10 @@
         });
         if (change) boiteEcrire(l);
     };
+    // Assistant Chorus DT : PDF final téléchargé, l'envoi attend son « ✔ Traité » (l'ordre de mission créé dans Chorus DT).
+    window.JUMELAGE_BOITE_PDF_FAIT = function(id) {
+        var l = boiteLire(); l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') { x.statut = 'ouvert'; x.pdfFait = Date.now(); } }); boiteEcrire(l);
+    };
     // Envoi classé « traité » trop tôt : il repasse « à traiter ».
     window.JUMELAGE_BOITE_ROUVRIR = function(id) {
         var l = boiteLire(); l.forEach(function(x) { if (x.id === id) { x.statut = 'ouvert'; delete x.traiteLe; } }); boiteEcrire(l);
