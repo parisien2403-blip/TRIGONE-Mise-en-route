@@ -2158,6 +2158,7 @@ body.dark-mode .MONTRE-ILLUS figcaption { color: #a3a3a3; }
 .PAX-ETAT.ok { color: #15803d; font-weight: 700; }
 .PAX-ETAT.ko { color: #b91c1c; font-weight: 700; }
 .PAX-ETAT.trouve { color: #9a6f22; font-weight: 700; }
+.PAX-ETAT.sans { color: #8a8a8a; }
 .PAX-ENVOI .BTN { width: 100%; margin-top: 8px; }
 .EQUIPE-LISTE { margin: 12px 0 8px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .EQUIPE-LIGNE { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1.5px solid var(--tg-border); border-left-width: 4px; border-radius: 12px; font-size: 0.84rem; }
@@ -5059,8 +5060,8 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <p class="QR-CARD-TITLE">Envoyer aux participants</p>
 <p class="QR-CARD-SUB">Chacun reçoit une notification et son compte-rendu déjà rempli : il complète son identité, joint ses justificatifs, puis l'envoie à l'assistant Chorus DT.</p>
 <div id="PAX-ENVOI-LISTE"></div>
-<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_LIGNE_PAX()">+ Ajouter un participant</button>
-<p class="QR-HINT">Les participants qui ont un compte TRIGONE sont retrouvés d'office grâce à leur matricule (NID). Pour les autres : adresse <b>professionnelle</b> ; pas encore de compte, il se connecte à TRIGONE avec cette adresse, puis vous renvoyez.</p>
+<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_LIGNE_PAX()">+ Ajouter un participant (par son matricule)</button>
+<p class="QR-HINT">Chaque participant est retrouvé par son <b>matricule (NID)</b>. Sans compte TRIGONE, il ne peut rien recevoir : qu'il crée son compte avec son matricule dans son profil, puis renvoyez.</p>
 <button type="button" id="BTN-PAX-ENVOYER" class="BTN BTN-START" onclick="ENVOYER_PAX_TRIGONE()">📨 Envoyer</button>
 </div>
 </div>
@@ -7029,7 +7030,7 @@ var NOTICE_MENU_EXTRA = '<details class="notice-fold"><summary><span class="FOLD
 
 var NOTICE_TEXTS = {
     INDIVIDUEL: '<p class="notice-lead">Parcours d\'une mission individuelle, de l\'accueil à l\'envoi du compte-rendu.</p><ol class="notice-steps"><li><b>Départ mission</b> : « 📋 À partir d\'une mise en route » reprend tout de la demande envoyée ; sinon grade, nom, prénom, NID, compagnie, libellé de la mission, lieu de départ et retour, transports aller puis retour (onglets Aller / Retour)</li><li><b>Sur site</b> : horodater l\'arrivée, puis appuyer sur <b>Je quitte le site</b> — un choix s\'ouvre alors : <b>vers une autre destination</b> ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît — c\'est cet appui qui arrête le chrono</li><li><b>Frais</b> : repas, nuitées et horaires de billet, à compléter chez vous sans limite de temps ; en véhicule personnel, le <b>kilométrage des IK est déjà calculé</b></li><li><b>Récapitulatif</b> : vérification, pièces jointes à cocher (certaines, comme la facture d\'hôtel, sont obligatoires — voir la fiche dédiée ci-dessous), observations, signature, PDF et envoi dans TRIGONE — avant l\'envoi, TRIGONE signale les <b>points à vérifier</b> (horodatages dans le désordre, billet incohérent, repas non éligible…) : « Corriger » ou « Envoyer quand même »</li><li>Après envoi : le CR est dans la <b>Bibliothèque</b> (montant <b>forfaitaire</b>, PDF retéléchargeable à tout moment)</li><li>Le suivi des dépenses se fait dans <b>Remboursement</b> (montants <b>frais réels</b>, indemnité kilométrique, et déduction automatique si une <b>avance de 75 %</b> a été perçue à la création de l\'OM)</li></ol><details class="notice-fold" style="margin-top:14px"><summary>Enchaîner vers une autre destination</summary><p style="padding:0 14px 12px;margin:0;font-size:0.82em;color:var(--sm2-muted);line-height:1.5">En choisissant <b>vers une autre destination</b> après <b>Je quitte le site</b>, un écran simplifié « Destination 2 » (puis 3, etc.) s\'ouvre : identité et compagnie déjà connues restent masquées, seuls le lieu de retour et les transports de cette étape sont à saisir.</p></details>',
-    COLLECTIF: '<p class="notice-lead">Mission collective : le chef saisit le groupe ; chaque participant finalise son propre envoi.</p><p class="notice-role">Chef de mission</p><ol class="notice-steps"><li>Cochez <b>Mission collective</b> et indiquez votre mail</li><li>Grade, identité, libellé de la mission, transports, horodatages (arrivée site, départ site, fin de mission) et frais du groupe</li><li>« Envoyer aux participants dans TRIGONE » : chacun reçoit une notification et son compte-rendu prérempli</li><li><b>Suivi de l\'équipe</b> : qui a envoyé son compte-rendu, qui est encore attendu ; « Relancer » prévient les retardataires. L\'assistant Chorus DT voit la même chronologie</li><li>Récap, signature, PDF et envoi dans TRIGONE</li><li>CR archivé en <b>Bibliothèque</b> · suivi en <b>Remboursement</b></li></ol><p class="notice-role">Participant</p><ol class="notice-steps"><li>Notification « Mission collective » : Mise en route › Boîte de réception › « Ouvrir mon compte-rendu »</li><li>La mission, les horodatages du chef et votre identité sont déjà repris : vérifiez-les et joignez vos justificatifs</li><li>Récap, signature, PDF et envoi dans TRIGONE</li></ol>',
+    COLLECTIF: '<p class="notice-lead">Mission collective : le chef saisit le groupe ; chaque participant finalise son propre envoi.</p><p class="notice-role">Chef de mission</p><ol class="notice-steps"><li>Cochez <b>Mission collective</b> et indiquez votre mail</li><li>Grade, identité, libellé de la mission, transports, horodatages (arrivée site, départ site, fin de mission) et frais du groupe</li><li>« Envoyer aux participants dans TRIGONE » : chacun est retrouvé par son matricule (NID) et reçoit une notification et son compte-rendu prérempli (sans compte TRIGONE, il ne peut rien recevoir)</li><li><b>Suivi de l\'équipe</b> : qui a envoyé son compte-rendu, qui est encore attendu ; « Relancer » prévient les retardataires. L\'assistant Chorus DT voit la même chronologie</li><li>Récap, signature, PDF et envoi dans TRIGONE</li><li>CR archivé en <b>Bibliothèque</b> · suivi en <b>Remboursement</b></li></ol><p class="notice-role">Participant</p><ol class="notice-steps"><li>Notification « Mission collective » : Mise en route › Boîte de réception › « Ouvrir mon compte-rendu »</li><li>La mission, les horodatages du chef et votre identité sont déjà repris : vérifiez-les et joignez vos justificatifs</li><li>Récap, signature, PDF et envoi dans TRIGONE</li></ol>',
     P1: '<ol class="notice-steps"><li>Nom et prénom</li><li>Compagnie (1<sup>re</sup> ou 4<sup>e</sup> Cie)</li><li>Collective : cochez et indiquez le mail du chef de mission</li><li>Lieu de départ et de retour (résidence administrative ou familiale)</li><li><b>Transport aller</b> puis <b>transport retour</b> — onglets Aller / Retour (un bloc à la fois)</li><li>VRM / VRC : destination · VF / avion / bateau : gare, port ou aéroport (les horaires se saisissent plus tard, dans Frais)</li><li>VRC — véhicule personnel : cochez <b>IK</b> si le chef de corps autorise l\'indemnité kilométrique, puis choisissez la puissance fiscale : la distance se calcule toute seule entre la ville de départ et la ville d\'arrivée (modifiable)</li><li>Une fois les 4 onglets complets, <b>Départ en mission</b> (dernier onglet, Top départ) — horodatage du départ</li></ol>',
     P2: '<ol class="notice-steps"><li><b>Arrivée sur site</b> — horodatage au bouton vert</li><li><b>Je quitte le site</b> — un choix s\'ouvre : <b>vers une autre destination</b> (enchaînement) ou <b>retour définitif</b></li><li>Retour définitif : le bouton rouge <b>Valider et voir le récap</b> apparaît alors — c\'est lui qui arrête le chrono</li><li>Les <b>frais</b> se saisissent ensuite sans pression du temps</li></ol>',
     'P2-FIN': '<ol class="notice-steps"><li><b>Horodatage terminé</b> — fixé à l\'étape précédente (bouton Valider et voir le récap)</li><li>Complétez vos frais chez vous, sans limite de temps</li><li><b>3 onglets</b> : Repas &amp; hébergement → Trajets → Récap &amp; valider</li><li><b>Repas</b> : gratuit par défaut — les jours se créent automatiquement</li><li><b>Trajets</b> : VF / avion / bateau — Aller / Retour avec date-heure de billet · VRC + IK — rappel du véhicule (distance déjà calculée au départ, montant dans Remboursement)</li><li><b>Récap</b> : vérifiez puis <b>Valider et voir le récapitulatif</b></li><li>Plusieurs jours : onglets J1, J2… — un jour à la fois</li><li><b>Expérience de saisie</b> : envoi bloqué — supprimez le jour en trop (×)</li></ol>',
@@ -12422,13 +12423,32 @@ function QR_DONNEES(pax, src) {
 // ===================== MISSION COLLECTIVE : ENVOI DANS TRIGONE =====================
 // Le chef de mission envoie le compte-rendu prérempli (données de la mission) dans la boîte TRIGONE de chaque
 // participant : notification, puis « Ouvrir mon compte-rendu » (Mise en route › Boîte de réception).
-var CLE_MAILS_PAX = 'trigone_mails_participants', ENVOI_PAX_SRC = null;
-function MAILS_PAX() { try { return JSON.parse(localStorage.getItem(CLE_MAILS_PAX) || '{}') || {}; } catch (e) { return {}; } }
-function CLE_PAX(p) { return [(p.nom || '').toUpperCase(), (p.prenom || '').toUpperCase()].join(' ').trim(); }
-function LIGNE_ENVOI_PAX(i, titre, mail, envoye) {
-    return '<div class="PAX-LIGNE" data-i="' + i + '"><b>' + ESC_HTML(titre) + '</b>' +
-        '<input type="email" class="PAX-MAIL" placeholder="prenom.nom@interieur.gouv.fr" autocomplete="off" value="' + ESC_HTML(mail || '') + '">' +
-        '<span class="PAX-ETAT' + (envoye ? ' ok' : '') + '">' + (envoye ? '✔ Envoyé le ' + ESC_HTML(envoye) : '') + '</span></div>';
+var ENVOI_PAX_SRC = null;
+function NID_CHIFFRES(v) { return String(v || '').replace(/\D/g, ''); }
+// Une ligne par participant : son compte TRIGONE est retrouvé par son matricule (NID). Sans compte, il ne peut rien
+// recevoir : pas d'adresse à saisir.
+function LIGNE_ENVOI_PAX(i, titre, nid) {
+    var n = NID_CHIFFRES(nid);
+    return '<div class="PAX-LIGNE" data-i="' + i + '" data-nid="' + n + '" data-mail=""><b>' + ESC_HTML(titre) + '</b>' +
+        (i === '+' ? '<input type="text" class="PAX-NID" inputmode="numeric" maxlength="14" placeholder="Son matricule (NID) : 067 50 10 191" autocomplete="off" onchange="CHERCHER_LIGNE_PAX(this)">' : '') +
+        '<span class="PAX-ETAT' + (i !== '+' && n.length !== 10 ? ' sans' : '') + '">' + (n.length === 10 ? 'Recherche de son compte TRIGONE…' : i === '+' ? '' : 'Matricule absent de la mise en route : son compte ne peut pas être retrouvé.') + '</span></div>';
+}
+function ETAT_LIGNE_PAX(el, mail, envois) {
+    var etat = el.querySelector('.PAX-ETAT');
+    el.setAttribute('data-mail', mail || '');
+    if (mail === null) { etat.className = 'PAX-ETAT ko'; etat.textContent = 'Recherche impossible : vérifiez la connexion, puis rouvrez cette fenêtre.'; }
+    else if (!mail) { etat.className = 'PAX-ETAT sans'; etat.textContent = 'Pas de compte TRIGONE : il ne peut rien recevoir. Qu\'il crée son compte (avec son matricule dans son profil), puis renvoyez.'; }
+    else if (envois[mail]) { etat.className = 'PAX-ETAT ok'; etat.textContent = '✔ Envoyé le ' + envois[mail] + ' — compte TRIGONE retrouvé par son matricule.'; }
+    else { etat.className = 'PAX-ETAT trouve'; etat.textContent = '✓ Compte TRIGONE retrouvé par son matricule'; }
+}
+function RETROUVER_COMPTES_PAX(lignes) {
+    var S = ENVOI_PAX_SRC || M, envois = S.PAX_ENVOIS || {};
+    lignes = lignes.filter(function(el) { return el.getAttribute('data-nid').length === 10; });
+    if (!lignes.length) return Promise.resolve();
+    var cherche = window.JUMELAGE_COMPTES_PAR_NID ? JUMELAGE_COMPTES_PAR_NID(lignes.map(function(el) { return el.getAttribute('data-nid'); })) : Promise.resolve(null);
+    return cherche.then(function(comptes) {
+        lignes.forEach(function(el) { ETAT_LIGNE_PAX(el, comptes ? (comptes[el.getAttribute('data-nid')] || '') : null, envois); });
+    });
 }
 // Mission archivée (Bibliothèque) : renvoi aux participants à partir de son instantané.
 function RENVOYER_PAX_BIBLIOTHEQUE(idx) {
@@ -12444,37 +12464,27 @@ function OUVRIR_ENVOI_PAX(src) {
         MSG_INFO('Connectez-vous à TRIGONE', 'L\'envoi aux participants passe par votre compte TRIGONE : touchez « Se connecter » en haut à droite.', '🔐');
         return;
     }
-    var memo = MAILS_PAX(), envois = S.PAX_ENVOIS || {};
-    var html = (S.PARTICIPANTS || []).map(function(p, i) {
-        var mail = p.mail || memo[CLE_PAX(p)] || '';
-        return LIGNE_ENVOI_PAX(i, [p.grade, p.nom, p.prenom].filter(Boolean).join(' '), mail, mail && envois[mail.toLowerCase()]);
+    var l = document.getElementById('PAX-ENVOI-LISTE');
+    l.innerHTML = (S.PARTICIPANTS || []).map(function(p, i) {
+        return LIGNE_ENVOI_PAX(i, [p.grade, p.nom, p.prenom].filter(Boolean).join(' '), p.nid);
     }).join('');
-    document.getElementById('PAX-ENVOI-LISTE').innerHTML = html;
     if (!(S.PARTICIPANTS || []).length) AJOUTER_LIGNE_PAX();
-    RETROUVER_COMPTES_PAX(S);
+    RETROUVER_COMPTES_PAX(Array.prototype.slice.call(l.querySelectorAll('.PAX-LIGNE')));
     var o = document.getElementById('PAX-ENVOI-OVERLAY');
     o.classList.remove('HIDDEN'); o.setAttribute('aria-hidden', 'false');
 }
-// Comptes TRIGONE des participants retrouvés par leur matricule (NID du profil) : adresse remplie d'office.
-function RETROUVER_COMPTES_PAX(S) {
-    var pax = S.PARTICIPANTS || [];
-    if (!window.JUMELAGE_COMPTES_PAR_NID || !pax.some(function(p) { return p.nid; })) return;
-    JUMELAGE_COMPTES_PAR_NID(pax.map(function(p) { return p.nid || ''; })).then(function(comptes) {
-        pax.forEach(function(p, i) {
-            var mail = comptes[String(p.nid || '').replace(/\D/g, '')];
-            var el = document.querySelector('#PAX-ENVOI-LISTE .PAX-LIGNE[data-i="' + i + '"]');
-            if (!mail || !el) return;
-            var champ = el.querySelector('.PAX-MAIL'), etat = el.querySelector('.PAX-ETAT'), actuel = champ.value.trim().toLowerCase();
-            if (actuel && actuel !== mail) return;   // adresse déjà saisie par le chef : il garde la main
-            champ.value = mail;
-            if (!etat.classList.contains('ok')) { etat.className = 'PAX-ETAT trouve'; etat.textContent = '✓ Compte TRIGONE retrouvé par son matricule'; }
-        });
-    });
-}
+// Participant absent de la mise en route : ajouté par son matricule.
 function AJOUTER_LIGNE_PAX() {
     var l = document.getElementById('PAX-ENVOI-LISTE');
-    l.insertAdjacentHTML('beforeend', LIGNE_ENVOI_PAX('+', 'Autre participant', '', ''));
-    var ins = l.querySelectorAll('.PAX-MAIL'); ins[ins.length - 1].focus();
+    l.insertAdjacentHTML('beforeend', LIGNE_ENVOI_PAX('+', 'Autre participant', ''));
+    var ins = l.querySelectorAll('.PAX-NID'); ins[ins.length - 1].focus();
+}
+function CHERCHER_LIGNE_PAX(champ) {
+    var el = champ.closest('.PAX-LIGNE'), n = NID_CHIFFRES(champ.value), etat = el.querySelector('.PAX-ETAT');
+    el.setAttribute('data-nid', n); el.setAttribute('data-mail', '');
+    if (n.length !== 10) { etat.className = 'PAX-ETAT ko'; etat.textContent = 'Le matricule doit comporter 10 chiffres.'; return; }
+    etat.className = 'PAX-ETAT'; etat.textContent = 'Recherche de son compte TRIGONE…';
+    RETROUVER_COMPTES_PAX([el]);
 }
 function FERMER_ENVOI_PAX() {
     var o = document.getElementById('PAX-ENVOI-OVERLAY');
@@ -12483,16 +12493,9 @@ function FERMER_ENVOI_PAX() {
 function ENVOYER_PAX_TRIGONE() {
     var S = ENVOI_PAX_SRC || M;
     var lignes = Array.prototype.slice.call(document.querySelectorAll('#PAX-ENVOI-LISTE .PAX-LIGNE'));
-    var a = lignes.map(function(el) { return { el: el, mail: (el.querySelector('.PAX-MAIL').value || '').trim().toLowerCase() }; })
-        .filter(function(x) { return x.mail; });
-    var mauvais = a.filter(function(x) { return !IS_VALID_EMAIL(x.mail); });
-    mauvais.forEach(function(x) { var s = x.el.querySelector('.PAX-ETAT'); s.className = 'PAX-ETAT ko'; s.textContent = 'Adresse mail invalide.'; });
-    if (!a.length) { MSG_INFO('Aucune adresse', 'Saisissez l\'adresse mail d\'au moins un participant.', '📧'); return; }
-    if (mauvais.length) return;
-    // Adresses mémorisées sur cet appareil (prochaines missions avec les mêmes personnes).
-    var memo = MAILS_PAX();
-    a.forEach(function(x) { var i = x.el.getAttribute('data-i'), p = (S.PARTICIPANTS || [])[+i]; if (p) { p.mail = x.mail; memo[CLE_PAX(p)] = x.mail; } });
-    try { localStorage.setItem(CLE_MAILS_PAX, JSON.stringify(memo)); } catch (e) {}
+    var a = lignes.map(function(el) { return { el: el, mail: el.getAttribute('data-mail') || '' }; }).filter(function(x) { return x.mail; });
+    if (!a.length) { MSG_INFO('Personne à qui envoyer', 'Aucun participant n\'a encore de compte TRIGONE. Qu\'ils créent leur compte (avec leur matricule dans leur profil), puis rouvrez cette fenêtre.', '👥'); return; }
+    a.forEach(function(x) { var p = (S.PARTICIPANTS || [])[+x.el.getAttribute('data-i')]; if (p) p.mail = x.mail; });
     var d0 = (S.DT_A_DEP || S.DEBUT || '').split(' ')[0], d1 = (S.DT_R_ARR || S.FIN_RETOUR_HORODATE || '').split(' ')[0];
     var contenu = function(p) {
         return JSON.stringify({ app: 'TRIGONE-COLLECTIVE', chef: [S.GRADE, S.USER].filter(Boolean).join(' '), libelle: S.LIBELLE_MISSION || '',
@@ -12511,7 +12514,7 @@ function ENVOYER_PAX_TRIGONE() {
                 s.className = 'PAX-ETAT ok'; s.textContent = '✔ Envoyé : il reçoit une notification.';
             }).catch(function(e) {
                 s.className = 'PAX-ETAT ko';
-                s.textContent = e && e.pasDeCompte ? 'Pas encore de compte TRIGONE : qu\'il se connecte à TRIGONE avec cette adresse, puis renvoyez.' : '✘ ' + ((e && e.message) || 'Envoi impossible.');
+                s.textContent = e && e.pasDeCompte ? 'Pas de compte TRIGONE : il ne peut rien recevoir.' : '✘ ' + ((e && e.message) || 'Envoi impossible.');
             });
         });
     }, Promise.resolve()).then(function() {

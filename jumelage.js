@@ -3116,11 +3116,13 @@
                 .catch(function(e) { if (e && e.statut === 409) ecrireTxt(CLE_NID_PUBLIE, marque); });
         }, 1500);
     }
-    // Participants d'une mission collective : { matricule (10 chiffres) : adresse du compte TRIGONE } pour ceux qui en ont un.
+    // Participants d'une mission collective : { matricule (10 chiffres) : adresse du compte TRIGONE } pour ceux qui en ont un ;
+    // null : recherche impossible (hors ligne, pas connecté, serveur).
     window.JUMELAGE_COMPTES_PAR_NID = function(nids) {
         nids = (nids || []).map(chiffres).filter(function(n) { return n.length === 10; });
-        if (!nids.length || !monCompte() || !navigator.onLine) return Promise.resolve({});
-        return appelApi('nids', { methode: 'POST', corps: { nids: nids } }).then(function(r) { return r.comptes || {}; }).catch(function() { return {}; });
+        if (!nids.length) return Promise.resolve({});
+        if (!monCompte() || !navigator.onLine) return Promise.resolve(null);
+        return appelApi('nids', { methode: 'POST', corps: { nids: nids } }).then(function(r) { return r.comptes || {}; }).catch(function() { return null; });
     };
     function majBoutonsCompte() {
         publierNid();
