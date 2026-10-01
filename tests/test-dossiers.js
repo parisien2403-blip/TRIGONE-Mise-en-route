@@ -32,12 +32,16 @@ module.exports = async function(srv) {
     await p.locator('#BIB-LIST .BIB-CARD').first().click(); await attendre(400);
     verifier(await p.evaluate(() => !document.getElementById('BIB-DETAIL-VIEW').classList.contains('HIDDEN') && /22\/09\/2026/.test(document.getElementById('BIB-DETAIL-DATE').textContent)), 'Bibliothèque : un compte-rendu s\'ouvre depuis son dossier');
     await p.evaluate(() => OUVRIR_STAT_FORFAIT()); await attendre(600);
+    // Le mois en cours a toujours son dossier (vide s'il n'a pas de mission) : écarté de la comparaison.
+    const moisCourant = (d => ['Janvier', 'Février', 'Mars', 'Avril', 'Mai', 'Juin', 'Juillet', 'Août', 'Septembre', 'Octobre', 'Novembre', 'Décembre'][d.getMonth()] + ' ' + d.getFullYear())(new Date());
+    const enPlus = ['Août 2026', 'Octobre 2025', 'Septembre 2026'].includes(moisCourant) ? 0 : 1;
     const r = await p.evaluate(() => ({ mois: Array.from(document.querySelectorAll('#FORFAIT-MONTH-LIST .MER-DOSSIER b')).map(x => x.textContent), ans: Array.from(document.querySelectorAll('.CR-DOSSIERS-AN')).map(x => x.textContent) }));
+    r.mois = r.mois.filter(m => m !== moisCourant || !enPlus);
     verifier(r.mois.filter(m => m !== 'Septembre 2026').concat(['Septembre 2026']).sort().join('|') === ['Août 2026', 'Octobre 2025', 'Septembre 2026'].sort().join('|') && r.mois[0] !== 'Octobre 2025' && r.ans[0] === '2026647,50 €' && r.ans[1] === '202560,00 €', 'Remboursement : un dossier par mois, regroupés par année avec leur total ' + JSON.stringify(r));
     await p.click('.MER-DOSSIER[data-dossier="2026-9"]'); await attendre(400);
     verifier(await p.evaluate(() => document.querySelectorAll('.FORFAIT-MISSION-ROW').length === 2 && /307,50/.test(document.getElementById('FORFAIT-YEAR-TOTAL').textContent)), 'Remboursement : « Septembre 2026 » ouvert : 2 missions, 307,50 €');
     await p.click('#FORFAIT-MONTH-LIST .MER-DOSSIER-RETOUR'); await attendre(400);
-    verifier(await p.evaluate(() => document.querySelectorAll('#FORFAIT-MONTH-LIST .MER-DOSSIER').length === 3), '« ‹ Dossiers » ramène à la liste des mois');
+    verifier((await p.evaluate(() => document.querySelectorAll('#FORFAIT-MONTH-LIST .MER-DOSSIER').length)) === 3 + enPlus, '« ‹ Dossiers » ramène à la liste des mois');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();
 };
