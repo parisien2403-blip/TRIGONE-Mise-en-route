@@ -447,6 +447,13 @@
         'html body.dark-mode .JUM-ACC-BTN.noir { background: #f5f5f5; color: #141414; } html body.dark-mode .JUM-ACC-AUTRE { background: #1c1c1c; color: #ececec; border-color: #404040; }' +
         'html body.dark-mode .JUM-ACC-OU::before, html body.dark-mode .JUM-ACC-OU::after { background: #333; } html body.dark-mode .JUM-ACC-CARTE #JUM-C-ENVOI.renvoi { color: #a9c3d6; }' +
         '@media (min-width: 900px) { html body.dark-mode .JUM-ACC-FERMER { background: #1c1c1c; color: #d4d4d4; border-color: #404040; } }' +
+        /* Signaler un problème : Phénix au casque */
+        '.JUM-SIG { position: fixed; inset: 0; z-index: 99995; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,23,42,0.55); font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; }' +
+        '.JUM-SIG-CARTE { position: relative; width: 100%; max-width: 380px; box-sizing: border-box; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 132px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); }' +
+        '.JUM-SIG-MASCOTTE { position: absolute; left: 50%; top: -46px; transform: translateX(-50%); width: 170px; height: auto; pointer-events: none; }' +
+        '.JUM-SIG-CARTE h2 { margin: 0 0 6px; font-size: 1.15rem; } .JUM-SIG-CARTE p { margin: 0 0 16px; font-size: 0.84rem; line-height: 1.5; color: #64748b; }' +
+        '.JUM-SIG-BTNS { display: flex; gap: 10px; } .JUM-SIG-BTNS button { flex: 1; margin: 0; }' +
+        'html body.dark-mode .JUM-SIG-CARTE { background: #1f1f1f; color: #ececec; } html body.dark-mode .JUM-SIG-CARTE p { color: #a3a3a3; }' +
         '.JUM-NOUV { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,15,15,0.35); animation: jum-menu 0.2s ease both; }' +
         '.JUM-NOUV.sortie { opacity: 0; transition: opacity 0.25s ease; }' +
         '.JUM-NOUV-CARTE { width: 100%; max-width: 420px; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 24px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); font-family: Montserrat, system-ui, sans-serif; }' +
@@ -801,7 +808,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 118, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 119, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3525,7 +3532,22 @@
 
     // ---------- Signaler un problème (écran de choix et les deux applis) ----------
     var MAIL_SUPPORT = 'trigone.app@outlook.fr';
+    // Phénix (casque d'assistance) présente le signalement, puis la messagerie s'ouvre avec les informations utiles.
     window.JUMELAGE_SIGNALER = function(ecran) {
+        if (document.querySelector('.JUM-SIG')) return;
+        var f = document.createElement('div');
+        f.className = 'JUM-SIG'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Signaler un problème');
+        f.innerHTML = '<div class="JUM-SIG-CARTE"><img class="JUM-SIG-MASCOTTE" src="' + (DANS_CR ? '../' : '') + 'mascotte-assistance.webp" alt="">' +
+            '<h2>Un souci avec TRIGONE ?</h2><p>Décrivez-le à l\'équipe : votre messagerie s\'ouvre avec la version et le type d\'appareil déjà indiqués.</p>' +
+            '<div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND">Annuler</button><button type="button" class="JUM-R-PRINCIPAL">Écrire à l\'équipe</button></div></div>';
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        var fermer = function() { f.remove(); };
+        f.addEventListener('click', function(e) { if (e.target === f) fermer(); });
+        f.querySelector('.JUM-R-SECOND').addEventListener('click', fermer);
+        f.querySelector('.JUM-R-PRINCIPAL').addEventListener('click', function() { fermer(); ecrireSignalement(ecran); });
+        document.body.appendChild(f);
+    };
+    function ecrireSignalement(ecran) {
         var appli = ecran === 'choix' ? 'Écran de choix des applis' : (DANS_CR ? 'Compte-rendu de mission' : 'Mise en route');
         var v = window.APP_VERSION_AFFICHEE || (typeof APP_VERSION_AFFICHEE !== 'undefined' ? APP_VERSION_AFFICHEE : '');
         var sujet = 'TRIGONE - Signalement (' + (DANS_CR ? 'Compte-rendu' : 'Mise en route') + (v ? ' V' + v : '') + ')';
@@ -3535,7 +3557,7 @@
             'Appareil : ' + (window.matchMedia && matchMedia('(min-width: 1100px)').matches ? 'ordinateur' : 'téléphone / tablette') + '\n' +
             'Connecté à internet : ' + (navigator.onLine ? 'oui' : 'non') + '\n' + window.JUMELAGE_INFOS_ECRAN();
         window.location.href = 'mailto:' + MAIL_SUPPORT + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
-    };
+    }
 
     // ---------- Code d'accès commun : demandé une fois à l'ouverture de TRIGONE ----------
     var pave = null, saisie = '';
