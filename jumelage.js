@@ -454,6 +454,25 @@
         '.JUM-SIG-CARTE h2 { margin: 0 0 6px; font-size: 1.15rem; } .JUM-SIG-CARTE p { margin: 0 0 16px; font-size: 0.84rem; line-height: 1.5; color: #64748b; }' +
         '.JUM-SIG-BTNS { display: flex; gap: 10px; } .JUM-SIG-BTNS button { flex: 1; margin: 0; }' +
         'html body.dark-mode .JUM-SIG-CARTE { background: #1f1f1f; color: #ececec; } html body.dark-mode .JUM-SIG-CARTE p { color: #a3a3a3; }' +
+        /* Profil de première connexion, en 3 étapes (même style que l'écran d'accueil) */
+        '.JUM-REGLAGES.JUM-PROFIL { background: radial-gradient(90% 70% at 50% 0%, #2b2b2b 0%, #151515 55%, #0c0c0c 100%); }' +
+        '.JUM-PROFIL .JUM-PF-CARTE { max-width: 500px; border-top: 0; border-radius: 26px; box-shadow: 0 30px 80px rgba(0,0,0,0.5); }' +
+        '.JUM-PF-TETE { padding: 22px 24px 6px; }' +
+        '.JUM-PF-BARRES { display: flex; gap: 8px; margin-bottom: 16px; } .JUM-PF-BARRES i { flex: 1; height: 6px; border-radius: 3px; background: #e2e8f0; transition: background 0.3s ease; } .JUM-PF-BARRES i.fait { background: #d6a756; }' +
+        '.JUM-PF-NUM { font: 800 0.66rem Montserrat, system-ui, sans-serif; letter-spacing: 0.2em; text-transform: uppercase; color: #b8862f; }' +
+        '.JUM-PF-TETE h2 { margin: 6px 0 4px; font: 800 1.5rem/1.2 Montserrat, system-ui, sans-serif; color: #1a1a1a; } .JUM-PF-TETE p { margin: 0; font-size: 0.84rem; line-height: 1.5; color: #64748b; }' +
+        '.JUM-PROFIL .JUM-R-CORPS { padding: 10px 24px 6px; }' +
+        '.JUM-PF-AVATAR { display: flex; justify-content: center; margin: 6px 0 16px; } .JUM-PF-AVATAR span { width: 76px; height: 76px; border-radius: 50%; background: #1a1a1a; color: #fff; display: flex; align-items: center; justify-content: center; font: 800 1.6rem Montserrat, system-ui, sans-serif; box-shadow: 0 0 0 3px #fff, 0 0 0 6px #d6a756; }' +
+        '.JUM-PF-CADENAS { display: flex; justify-content: center; margin: 6px 0 16px; } .JUM-PF-CADENAS svg { width: 64px; height: 64px; padding: 16px; box-sizing: border-box; border-radius: 50%; background: #1a1a1a; fill: none; stroke: #d6a756; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; box-shadow: 0 0 0 3px #fff, 0 0 0 6px #d6a756; }' +
+        '.JUM-PROFIL .JUM-R-GRILLE { grid-template-columns: 1fr 1fr; gap: 10px 10px; } .JUM-PROFIL .JUM-R-CHAMP { min-width: 0; }' +
+        '.JUM-PROFIL .JUM-R-CHAMP input { height: 50px; border-radius: 14px; border-width: 2px; font-size: 16px; }' +
+        '.JUM-PROFIL .JUM-R-CHAMP input:focus { border-color: #1a1a1a; }' +
+        '.JUM-PF-OPTION { margin-top: 14px; padding: 10px 12px; border-radius: 14px; background: #f6f8fa; font-size: 0.82rem; } .JUM-PF-OPTION summary { cursor: pointer; font-weight: 700; color: #3b4651; } .JUM-PF-OPTION .JUM-R-AIDE { margin-top: 8px; }' +
+        '.JUM-PF-PIED { border-top: 0; padding: 10px 24px 6px; } .JUM-PF-PIED .JUM-R-PRINCIPAL { flex: 1; padding: 16px 22px; border-radius: 16px; font-size: 0.86rem; }' +
+        '.JUM-PF-NOTE { margin: 4px 0 16px; text-align: center; font-size: 0.72rem; color: #94a3b8; }' +
+        'html body.dark-mode .JUM-PF-TETE h2 { color: #f5f5f5; } html body.dark-mode .JUM-PF-TETE p { color: #a3a3a3; } html body.dark-mode .JUM-PF-BARRES i { background: #333; } html body.dark-mode .JUM-PF-BARRES i.fait { background: #d6a756; }' +
+        'html body.dark-mode .JUM-PF-AVATAR span { background: #f5f5f5; color: #141414; box-shadow: 0 0 0 3px #1f1f1f, 0 0 0 6px #d6a756; } html body.dark-mode .JUM-PF-CADENAS svg { box-shadow: 0 0 0 3px #1f1f1f, 0 0 0 6px #d6a756; }' +
+        'html body.dark-mode .JUM-PF-OPTION { background: #262626; } html body.dark-mode .JUM-PF-OPTION summary { color: #cbd5e1; } html body.dark-mode .JUM-PROFIL .JUM-R-CHAMP input:focus { border-color: #e5e5e5; }' +
         '.JUM-NOUV { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,15,15,0.35); animation: jum-menu 0.2s ease both; }' +
         '.JUM-NOUV.sortie { opacity: 0; transition: opacity 0.25s ease; }' +
         '.JUM-NOUV-CARTE { width: 100%; max-width: 420px; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 24px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); font-family: Montserrat, system-ui, sans-serif; }' +
@@ -1117,11 +1136,62 @@
         function champ(id, label, val, attrs) {
             return '<div class="JUM-R-CHAMP"><label for="JUM-R-' + id + '">' + label + '</label><input id="JUM-R-' + id + '" value="' + esc(val) + '" ' + (attrs || 'type="text" autocomplete="off"') + '></div>';
         }
+        // Mes rôles : chacun est missionnaire ; valideurs et assistant Chorus DT cochent en plus leur rôle, avec son code.
+        var htmlRoles = '<div data-vue="roles"><div class="JUM-R-TITRE" id="JUM-R-SECTION-ROLES">Mes rôles</div>' +
+                '<p class="JUM-R-AIDE">Vous êtes missionnaire. Si un ou plusieurs de ces rôles vous ont été confiés, cochez-les (vous pouvez les avoir tous) : chaque code, remis par l\'administrateur, est demandé une seule fois.</p>' +
+                caseRole('VAL1', 'valideur1', '<b>VALIDEUR 1</b> (chef de service)', 'Code VALIDEUR 1') +
+                '<div id="JUM-R-FONCTION1-BLOC" style="display:none;">' + champ('FONCTION1', 'Ma fonction de VALIDEUR 1 (sur la signature)', val.fonction1 || (roleActif('valideur1') ? val.fonction : '') || '', 'type="text" autocomplete="off" placeholder="EX : COMMANDANT D\'UNITÉ"') + '</div>' +
+                caseRole('VAL2', 'valideur2', '<b>VALIDEUR 2</b>', 'Code VALIDEUR 2') +
+                '<div id="JUM-R-FONCTION2-BLOC" style="display:none;">' + champ('FONCTION2', 'Ma fonction de VALIDEUR 2 (sur la signature)', val.fonction2 || (roleActif('valideur2') && !roleActif('valideur1') ? val.fonction : '') || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE CORPS"') + '</div>' +
+                caseRole('CHORUS', 'chorus', '<b>ASSIST CHORUS DT</b>', 'Code ASSIST CHORUS DT') +
+                '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>';
+        // Première fois : le profil en 3 étapes (identité, destinataires, sécurité), au style de l'écran d'accueil.
+        function htmlProfilEtapes() {
+            var notifs = (/Android/i.test(navigator.userAgent || '') ? '<div class="JUM-R-TITRE">Notifications sur Android</div>' +
+                    '<p class="JUM-R-AIDE">Pour recevoir les notifications sans retard, même appli fermée : <b>Paramètres</b> du téléphone › <b>Applications</b> › <b>Chrome</b> › <b>Batterie</b> › <b>« Non restreinte »</b>.</p>' : '') +
+                (estIOS() ? '<div class="JUM-R-TITRE">Notifications sur iPhone / iPad</div>' +
+                    '<p class="JUM-R-AIDE">Installez TRIGONE sur l\'écran d\'accueil (Safari › <b>Partager</b> › <b>« Sur l\'écran d\'accueil »</b>) et ouvrez-la depuis cette icône pour activer les notifications.</p>' : '');
+            return '<div class="JUM-R-CARTE JUM-PF-CARTE">' +
+                '<div class="JUM-PF-TETE"><div class="JUM-PF-BARRES"><i data-b="1"></i><i data-b="2"></i><i data-b="3"></i></div>' +
+                    '<div class="JUM-PF-NUM" id="JUM-PF-NUM">Étape 1 sur 3</div><h2 id="JUM-PF-TITRE"></h2><p id="JUM-PF-TEXTE"></p></div>' +
+                '<div class="JUM-R-CORPS">' +
+                '<div data-etape="1">' +
+                    (!monCompte() ? '<details class="JUM-LIAISON-BLOC"><summary>📲 Déjà TRIGONE sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
+                        '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : tout est recopié.</p>' +
+                        htmlSaisieLiaison() + '</details>' : '') +
+                    '<div class="JUM-PF-AVATAR"><span id="JUM-PF-INIT">?</span></div>' +
+                    '<div class="JUM-R-GRILLE">' + champ('GRADE', 'Grade', r.grade, 'type="text" autocomplete="off" placeholder="EX : ADJUDANT"') +
+                        champ('CIE', 'Compagnie', r.cie, 'type="text" autocomplete="off" placeholder="EX : 4CIE"') +
+                        champ('NOM', 'Nom', r.nom, 'type="text" autocomplete="off" placeholder="EX : BOUQUET"') +
+                        champ('PRENOM', 'Prénom', r.prenom, 'type="text" autocomplete="off" data-no-uppercase="1" placeholder="EX : Germain-Pierre"') +
+                        champ('UNITE', 'Unité / entité', r.unite, 'type="text" autocomplete="off" placeholder="EX : 4°RIISC"') +
+                        champ('MATRICULE', 'Matricule / NID', formatMatricule(r.matricule), 'type="text" inputmode="numeric" autocomplete="off" placeholder="067 50 10 191"') + '</div></div>' +
+                '<div data-etape="2" style="display:none;">' +
+                    '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;">' + champ('MONMAIL', 'Mon mail', r.monMail, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
+                        champ('MAILVAL1', 'Mail de mon 1er valideur (chef de service)', r.mailVal1, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
+                        champ('MAILCHORUS', 'Mail de l\'assistant Chorus DT', r.mailChorus, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') + '</div>' +
+                    '<details class="JUM-PF-OPTION"><summary>Option « Demande de réservation » (hébergement, transport)</summary>' +
+                        '<p class="JUM-R-AIDE">Si votre unité passe par un organisme de réservation (ex. Amplitude), laissez la case cochée et indiquez son nom.</p>' +
+                        '<label class="JUM-R-CASE"><input type="checkbox" id="JUM-R-RESA"' + (r.resaActive !== false ? ' checked' : '') + '><span>Utiliser cette option</span></label>' +
+                        champ('RESALIB', 'Libellé affiché (vide : « Demande de réservation »)', r.resaLibelle || '', 'type="text" autocomplete="off" data-no-uppercase="1" placeholder="EX : Amplitude (ABT)"') + '</details></div>' +
+                '<div data-etape="3" style="display:none;">' +
+                    '<div class="JUM-PF-CADENAS">' + SVG_CADENAS_PF + '</div>' +
+                    '<div class="JUM-R-GRILLE">' + champ('CODE1', codeDefini() ? 'Nouveau code' : 'Code à 4 chiffres', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') +
+                        champ('CODE2', 'Confirmer le code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') + '</div>' +
+                    (codeDefini() ? '<p class="JUM-R-AIDE">🔒 Un code est déjà actif : laissez vide pour le garder.</p>' : '') + notifs + '</div>' +
+                // Rôles : pas à cette étape (Paramètres › Mes rôles), mais les cases restent présentes pour l'enregistrement.
+                '<div style="display:none;">' + htmlRoles + '</div></div>' +
+                '<p class="JUM-R-ERREUR" id="JUM-R-ERREUR"></p>' +
+                '</div>' +
+                '<div class="JUM-R-PIED JUM-PF-PIED"><button type="button" class="JUM-R-SECOND" id="JUM-PF-RETOUR" style="display:none;">← Retour</button>' +
+                    '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-PF-SUIVANT">Continuer</button></div>' +
+                '<p class="JUM-PF-NOTE">Enregistré sur cet appareil · modifiable plus tard dans Paramètres</p></div>';
+        }
         reglages = document.createElement('div');
-        reglages.className = 'JUM-REGLAGES';
+        reglages.className = 'JUM-REGLAGES' + (premiere ? ' JUM-PROFIL' : '');
         if (vue) reglages.setAttribute('data-vue', vue);
         reglages.setAttribute('role', 'dialog');
-        reglages.innerHTML = '<div class="JUM-R-CARTE">' +
+        reglages.innerHTML = premiere ? htmlProfilEtapes() : '<div class="JUM-R-CARTE">' +
             '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : ROUE_SVG) + '</span><div><h2>' + (premiere ? 'Compléter mon profil' : vue === 'roles' ? 'Mes rôles' : vue === 'absence' ? 'Absence' : 'Mon profil') + '</h2>' +
                 '<p>' + (premiere ? 'Une seule fois : ces informations pré-rempliront Mise en route et Compte-rendu de mission.' : vue === 'roles' ? 'VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT : chacun avec son code.' : vue === 'absence' ? 'Un remplaçant reçoit vos envois jusqu\'à la date choisie.' : 'Commun à Mise en route et Compte-rendu de mission.') + ' Enregistré sur cet appareil uniquement.</p></div>' +
                 (premiere ? '' : '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_REGLAGES()">✕</button>') + '</div>' +
@@ -1153,15 +1223,7 @@
                     champ('CODE2', 'Confirmer le code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') + '</div>' +
                 (codeDefini() ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_SUPPRIMER_CODE()">Supprimer le code d\'accès</button>' : '') +
                 '</div>' +
-                // Mes rôles : chacun est missionnaire ; valideurs et assistant Chorus DT cochent en plus leur rôle, avec son code.
-                '<div data-vue="roles"><div class="JUM-R-TITRE" id="JUM-R-SECTION-ROLES">Mes rôles</div>' +
-                '<p class="JUM-R-AIDE">Vous êtes missionnaire. Si un ou plusieurs de ces rôles vous ont été confiés, cochez-les (vous pouvez les avoir tous) : chaque code, remis par l\'administrateur, est demandé une seule fois.</p>' +
-                caseRole('VAL1', 'valideur1', '<b>VALIDEUR 1</b> (chef de service)', 'Code VALIDEUR 1') +
-                '<div id="JUM-R-FONCTION1-BLOC" style="display:none;">' + champ('FONCTION1', 'Ma fonction de VALIDEUR 1 (sur la signature)', val.fonction1 || (roleActif('valideur1') ? val.fonction : '') || '', 'type="text" autocomplete="off" placeholder="EX : COMMANDANT D\'UNITÉ"') + '</div>' +
-                caseRole('VAL2', 'valideur2', '<b>VALIDEUR 2</b>', 'Code VALIDEUR 2') +
-                '<div id="JUM-R-FONCTION2-BLOC" style="display:none;">' + champ('FONCTION2', 'Ma fonction de VALIDEUR 2 (sur la signature)', val.fonction2 || (roleActif('valideur2') && !roleActif('valideur1') ? val.fonction : '') || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE CORPS"') + '</div>' +
-                caseRole('CHORUS', 'chorus', '<b>ASSIST CHORUS DT</b>', 'Code ASSIST CHORUS DT') +
-                '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>' +
+                htmlRoles +
                 // Absence (valideur, assistant Chorus DT déjà actifs, compte TRIGONE actif) : remplaçant jusqu'à une date.
                 '</div><div data-vue="absence">' +
                 (!premiere && monCompte() && ['valideur1', 'valideur2', 'chorus'].some(roleActif) ? '<div class="JUM-R-TITRE" id="JUM-R-SECTION-ABSENCE">Absence</div>' +
@@ -1189,7 +1251,7 @@
                 '<button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_ENREGISTRER_REGLAGES(' + (premiere ? 'true' : 'false') + ')">' + (premiere ? 'Continuer →' : 'Enregistrer') + '</button>' +
             '</div></div>';
         document.body.appendChild(reglages);
-        if (premiere) brancherSaisieLiaison(reglages, false);
+        if (premiere) { brancherSaisieLiaison(reglages, false); brancherEtapesProfil(reglages); }
         var m = document.getElementById('JUM-R-MATRICULE');
         m.addEventListener('input', function() { m.value = formatMatricule(m.value); });
         ['VAL1', 'VAL2', 'CHORUS'].forEach(function(id) {
@@ -1202,6 +1264,48 @@
         var ancre = opts.section && document.getElementById('JUM-R-SECTION-' + opts.section.toUpperCase());
         if (ancre) setTimeout(function() { ancre.scrollIntoView({ block: 'start' }); }, 60);
     };
+    // Profil en 3 étapes : chaque étape est vérifiée avant de passer à la suivante ; la dernière enregistre comme avant.
+    var SVG_CADENAS_PF = '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
+    var ETAPES_PF = [
+        ['Votre identité', 'Saisie une seule fois : elle remplit toutes vos demandes et vos comptes-rendus.', ['GRADE', 'CIE', 'NOM', 'PRENOM', 'UNITE', 'MATRICULE']],
+        ['Vos destinataires', 'Où partent vos demandes (1er valideur) et vos comptes-rendus (assistant Chorus DT).', ['MONMAIL', 'MAILVAL1', 'MAILCHORUS']],
+        ['Votre code d\'accès', 'Demandé à chaque ouverture de TRIGONE, pour protéger vos données. Il ne quitte jamais votre appareil.', []]
+    ];
+    function brancherEtapesProfil(racine) {
+        var n = 1, err = racine.querySelector('#JUM-R-ERREUR'), corps = racine.querySelector('.JUM-R-CORPS');
+        function v(id) { var el = document.getElementById('JUM-R-' + id); return el ? el.value.trim() : ''; }
+        function majInit() {
+            var t = ((v('PRENOM').charAt(0) || '') + (v('NOM').charAt(0) || '')).toUpperCase();
+            racine.querySelector('#JUM-PF-INIT').textContent = t || '?';
+        }
+        ['NOM', 'PRENOM'].forEach(function(id) { document.getElementById('JUM-R-' + id).addEventListener('input', majInit); });
+        majInit();
+        function afficher() {
+            Array.prototype.forEach.call(racine.querySelectorAll('[data-etape]'), function(e) { e.style.display = +e.getAttribute('data-etape') === n ? '' : 'none'; });
+            Array.prototype.forEach.call(racine.querySelectorAll('.JUM-PF-BARRES i'), function(b) { b.classList.toggle('fait', +b.getAttribute('data-b') <= n); });
+            racine.querySelector('#JUM-PF-NUM').textContent = 'Étape ' + n + ' sur 3';
+            racine.querySelector('#JUM-PF-TITRE').textContent = ETAPES_PF[n - 1][0];
+            racine.querySelector('#JUM-PF-TEXTE').textContent = ETAPES_PF[n - 1][1];
+            racine.querySelector('#JUM-PF-RETOUR').style.display = n > 1 ? '' : 'none';
+            racine.querySelector('#JUM-PF-SUIVANT').textContent = n < 3 ? 'Continuer' : 'Terminer';
+            err.textContent = ''; corps.scrollTop = 0;
+        }
+        function refuser(t) { err.textContent = '⛔ ' + t; return false; }
+        function etapeOk() {
+            if (ETAPES_PF[n - 1][2].some(function(id) { return !v(id); })) return refuser('Merci de remplir tous les champs avant de continuer.');
+            if (n === 1 && chiffres(v('MATRICULE')).length !== 10) return refuser('Le matricule doit comporter 10 chiffres (ex : 067 50 10 191).');
+            if (n === 2 && ['MONMAIL', 'MAILVAL1', 'MAILCHORUS'].some(function(id) { return !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v(id)); })) return refuser('Une adresse mail n\'est pas valide.');
+            return true;
+        }
+        racine.querySelector('#JUM-PF-SUIVANT').addEventListener('click', function() {
+            if (!etapeOk()) return;
+            if (n < 3) { n++; afficher(); var f = racine.querySelector('[data-etape="' + n + '"] input'); if (f) f.focus(); return; }
+            window.JUMELAGE_ENREGISTRER_REGLAGES(true);
+        });
+        racine.querySelector('#JUM-PF-RETOUR').addEventListener('click', function() { if (n > 1) { n--; afficher(); } });
+        racine.addEventListener('keydown', function(e) { if (e.key === 'Enter' && e.target.tagName === 'INPUT') { e.preventDefault(); racine.querySelector('#JUM-PF-SUIVANT').click(); } });
+        afficher();
+    }
     // Absence : état actuel (lu sur le serveur), déclaration et fin.
     function initAbsence() {
         var etat = document.getElementById('JUM-R-ABS-ETAT'), err = document.getElementById('JUM-R-ABS-ERR'), btn = document.getElementById('JUM-R-ABS-OK');
