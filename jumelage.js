@@ -473,6 +473,67 @@
         '.JUM-VERSION { position: absolute; bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 12px); left: 50%; transform: translateX(-50%); z-index: 3; padding: 5px 12px; border-radius: 999px;' +
             ' border: 1px solid rgba(255,255,255,0.18); background: #1a1a1a; color: #f5f5f5; box-shadow: 0 4px 14px rgba(0,0,0,0.25); font: 700 12px Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; cursor: pointer; }' +
         '.JUM-CHOIX.choisi .JUM-VERSION { opacity: 0; }' +
+        /* Écran de choix V2 : les logos en grand, l'état de chaque appli dessous ; l'assistant Chorus DT a son propre espace.
+           Téléphone : Mise en route en haut, Compte-rendu en bas (avec Chorus : les deux côte à côte, son espace en bas).
+           PC : deux ou trois colonnes. */
+        '.JUM-CHOIX.JUM-V2 { display: grid; grid-template: "mer" 1fr "cr" 1fr / 1fr; }' +
+        '.JUM-CHOIX.JUM-V2.avec-chorus { grid-template: "mer cr" 1.15fr "chorus chorus" 1fr / 1fr 1fr; }' +
+        '.JUM-V2 .JUM-TRAIT { display: none; }' +
+        '.JUM-V2 .JUM-PAN { position: relative; inset: auto; clip-path: none; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; overflow: hidden; transition: filter 0.2s ease, opacity 0.3s ease; }' +
+        '.JUM-V2 .JUM-PAN-MER { grid-area: mer; } .JUM-V2 .JUM-PAN-CR { grid-area: cr; border-top: 3px solid #d6a756; } .JUM-V2 .JUM-PAN-CHORUS { grid-area: chorus; }' +
+        '.JUM-V2.avec-chorus .JUM-PAN-CR { border-top: 0; border-left: 3px solid #d6a756; }' +
+        '.JUM-V2 .JUM-PAN-CR { background: radial-gradient(90% 80% at 50% 40%, #262626 0%, #121212 70%); }' +
+        '.JUM-V2 .JUM-PAN-CHORUS { background: linear-gradient(165deg, #f7efe0 0%, #ead7b2 100%); color: #1a1a1a; border-top: 3px solid #d6a756; cursor: pointer; }' +
+        '.JUM-V2 .JUM-PAN.plein { position: absolute; inset: 0; z-index: 2; border: 0; }' +
+        '.JUM-V2.choisi .JUM-PAN:not(.plein) { opacity: 0; }' +
+        '.JUM-V2 .JUM-BLOC, .JUM-V2 .JUM-PAN.plein .JUM-BLOC { position: static; transform: none; left: auto; top: auto; gap: 10px; text-align: center; padding: 0 16px; }' +
+        '.JUM-V2 .JUM-PAN-MER img { width: min(46vw, 21vh, 230px); } .JUM-V2 .JUM-PAN-CR img { width: calc(min(46vw, 21vh, 230px) * 1.17); }' +
+        '.JUM-V2.avec-chorus .JUM-PAN-MER img { width: min(34vw, 17vh, 190px); } .JUM-V2.avec-chorus .JUM-PAN-CR img { width: calc(min(34vw, 17vh, 190px) * 1.17); }' +
+        '.JUM-V2 .JUM-SOUS { font-family: Montserrat, system-ui, sans-serif; letter-spacing: 0.26em; }' +
+        '.JUM-V2.avec-chorus .JUM-PAN-MER .JUM-SOUS, .JUM-V2.avec-chorus .JUM-PAN-CR .JUM-SOUS { font-size: 0.56rem; letter-spacing: 0.18em; }' +
+        '.JUM-DESC { display: none; }' +
+        '.JUM-ETAT { display: inline-flex; align-items: center; gap: 7px; max-width: 100%; padding: 6px 12px; border-radius: 999px; font: 700 0.7rem/1.3 Montserrat, system-ui, sans-serif; white-space: normal; }' +
+        '.JUM-ETAT::before { content: ""; flex-shrink: 0; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }' +
+        '.JUM-ETAT:empty { display: none; }' +
+        '.JUM-PAN-MER .JUM-ETAT { background: rgba(214,167,86,0.16); color: #8a5f12; } .JUM-PAN-CR .JUM-ETAT { background: rgba(34,197,94,0.13); color: #86efac; }' +
+        '.JUM-ETAT.alerte { background: rgba(185,28,28,0.1); color: #b91c1c; } .JUM-PAN-CR .JUM-ETAT.alerte { background: rgba(248,113,113,0.14); color: #fca5a5; }' +
+        '.JUM-V2 .JUM-BOITE-PASTILLE { margin-top: 0; }' +
+        '.JUM-GO { position: absolute; right: 16px; bottom: 16px; width: 34px; height: 34px; border-radius: 50%; display: flex; align-items: center; justify-content: center; pointer-events: none; }' +
+        '.JUM-GO svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-PAN-MER .JUM-GO { background: #1a1a1a; color: #fff; } .JUM-PAN-CR .JUM-GO { background: #d6a756; color: #1a1a1a; } .JUM-PAN-CHORUS .JUM-GO { background: #1a1a1a; color: #d6a756; }' +
+        '.JUM-V2.avec-chorus .JUM-PAN-MER .JUM-GO, .JUM-V2.avec-chorus .JUM-PAN-CR .JUM-GO { right: 10px; bottom: 10px; width: 28px; height: 28px; }' +
+        '.JUM-V2.choisi .JUM-GO { opacity: 0; }' +
+        /* Espace Assistant Chorus DT */
+        '.JUM-BLOC-CHORUS { display: flex; align-items: center; gap: 18px; padding: 0 20px calc(max(18px, env(safe-area-inset-bottom, 0px)) + 36px); max-width: 520px; width: 100%; box-sizing: border-box; }' +
+        '.JUM-CHORUS-LOGO { position: relative; flex-shrink: 0; }' +
+        '.JUM-V2 .JUM-CHORUS, .JUM-V2 .JUM-CHORUS:hover, .JUM-V2.choix-chorus .JUM-CHORUS { position: static; transform: none; width: min(32vw, 15vh, 150px); mix-blend-mode: normal; }' +
+        '.JUM-V2 .JUM-CHORUS img { filter: none; }' +
+        '.JUM-V2 .JUM-CHORUS-NB { display: none; }' +
+        '.JUM-V2.choisi .JUM-CHORUS-NB { opacity: 0; }' +
+        '.JUM-CPTS { flex: 1; min-width: 0; display: grid; gap: 8px; }' +
+        '.JUM-CPTS .JUM-SOUS { color: #8a5f12; margin-bottom: 2px; text-align: left; }' +
+        '.JUM-CPT-L { display: flex; align-items: center; gap: 10px; background: rgba(255,255,255,0.65); border-radius: 14px; padding: 8px 12px; font: 700 0.74rem/1.3 Montserrat, system-ui, sans-serif; color: #1a1a1a; text-align: left; }' +
+        '.JUM-CPT-L b { flex-shrink: 0; min-width: 26px; height: 26px; border-radius: 8px; background: #1a1a1a; color: #d6a756; display: flex; align-items: center; justify-content: center; font-size: 0.8rem; }' +
+        '.JUM-CPT-L.zero b { background: rgba(26,26,26,0.12); color: #6b5a3a; } .JUM-CPT-L.zero { color: #6b5a3a; }' +
+        '.JUM-V2.avec-chorus .JUM-MAJ-BTN, .JUM-V2.avec-chorus > .JUM-MODE { background: #1a1a1a; }' +
+        '.JUM-V2 .JUM-VERSION { top: calc(max(14px, env(safe-area-inset-top, 0px)) + 6px); bottom: auto; left: max(16px, env(safe-area-inset-left, 0px)); transform: none; }' +
+        '.JUM-V2:not(.avec-chorus) .JUM-PAN-CR .JUM-GO, .JUM-V2 .JUM-PAN-CHORUS .JUM-GO { bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 6px); }' +
+        '@media (orientation: landscape) {' +
+            ' .JUM-CHOIX.JUM-V2 { grid-template: "mer cr" 1fr / 1fr 1fr; } .JUM-CHOIX.JUM-V2.avec-chorus { grid-template: "mer cr chorus" 1fr / 1fr 1fr 1fr; }' +
+            ' .JUM-V2 .JUM-PAN-CR { border-top: 0; border-left: 3px solid #d6a756; } .JUM-V2 .JUM-PAN-CHORUS { border-top: 0; border-left: 3px solid #d6a756; }' +
+            ' .JUM-V2 .JUM-PAN-MER img, .JUM-V2.avec-chorus .JUM-PAN-MER img { width: min(26vw, 34vh, 280px); } .JUM-V2 .JUM-PAN-CR img, .JUM-V2.avec-chorus .JUM-PAN-CR img { width: calc(min(26vw, 34vh, 280px) * 1.17); }' +
+            ' .JUM-V2.avec-chorus .JUM-PAN-MER img { width: min(22vw, 32vh, 250px); } .JUM-V2.avec-chorus .JUM-PAN-CR img { width: calc(min(22vw, 32vh, 250px) * 1.17); }' +
+            ' .JUM-V2.avec-chorus .JUM-PAN-MER .JUM-SOUS, .JUM-V2.avec-chorus .JUM-PAN-CR .JUM-SOUS { font-size: 0.66rem; letter-spacing: 0.24em; }' +
+            ' .JUM-BLOC-CHORUS { flex-direction: column; text-align: center; padding: 0 28px; max-width: 380px; }' +
+            ' .JUM-V2 .JUM-CHORUS, .JUM-V2 .JUM-CHORUS:hover, .JUM-V2.choix-chorus .JUM-CHORUS { width: min(20vw, 30vh, 230px); }' +
+            ' .JUM-CPTS { width: 100%; } .JUM-CPTS .JUM-SOUS { text-align: center; margin-bottom: 6px; }' +
+            ' .JUM-V2 .JUM-GO, .JUM-V2.avec-chorus .JUM-PAN-MER .JUM-GO, .JUM-V2.avec-chorus .JUM-PAN-CR .JUM-GO { right: 22px; bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 6px); width: 42px; height: 42px; }' +
+        ' }' +
+        '@media (orientation: landscape) and (min-width: 1000px) and (min-height: 600px) {' +
+            ' .JUM-DESC { display: block; max-width: 330px; margin: 2px 0 4px; font: 500 0.86rem/1.5 Montserrat, system-ui, sans-serif; }' +
+            ' .JUM-PAN-MER .JUM-DESC { color: #5b6570; } .JUM-PAN-CR .JUM-DESC { color: #b5b5b5; }' +
+            ' .JUM-ETAT { font-size: 0.8rem; padding: 8px 14px; } .JUM-CPT-L { font-size: 0.84rem; padding: 10px 14px; }' +
+        ' }' +
         /* Menu de la roue crantée */
         '.JUM-ROUE-MENU { position: absolute; right: max(18px, env(safe-area-inset-right, 0px)); bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 62px); z-index: 4;' +
             ' background: #fff; border-radius: 16px; padding: 6px; min-width: 250px; box-shadow: 0 18px 44px rgba(0,0,0,0.45); font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; }' +
@@ -740,7 +801,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 117, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 118, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -793,6 +854,32 @@
         cr: { url: DANS_CR ? './' : 'cr/', logo: (DANS_CR ? '' : 'cr/') + 'logo_cr_accueil.png', nom: 'TRIGONE Compte-rendu de mission', sous: 'Au retour de mission' }
     };
     var ICI = DANS_CR ? 'cr' : 'mer', CLE_CHOIX = 'trigone_choix_fait';
+    // ---------- Logo tricolore des PDF (Mise en route, Compte-rendu, récapitulatifs) ----------
+    // Chargé une fois (icône de l'appli, en cache pour le hors ligne), réduit en JPEG léger ; posé dans une vignette
+    // blanche au-dessus de « TRIGONE » dans le bandeau. Logo pas encore chargé : le bandeau reste sans logo.
+    var logoPdf = null;
+    (function chargerLogoPdf() {
+        var img = new Image();
+        img.onload = function() {
+            try {
+                var c = document.createElement('canvas'); c.width = c.height = 240;
+                var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 240, 240); x.drawImage(img, 0, 0, 240, 240);
+                logoPdf = c.toDataURL('image/jpeg', 0.9);
+            } catch (e) {}
+        };
+        img.src = (DANS_CR ? '../' : '') + 'icon-512.png';
+    })();
+    window.JUMELAGE_LOGO_PRET = function() { return !!logoPdf; };
+    window.JUMELAGE_LOGO_PDF = function(doc, x, y, taille) {
+        if (!logoPdf) return false;
+        try {
+            var bord = taille * 0.06;
+            doc.setFillColor(255, 255, 255);
+            doc.roundedRect(x, y, taille, taille, taille * 0.14, taille * 0.14, 'F');
+            doc.addImage(logoPdf, 'JPEG', x + bord, y + bord, taille - 2 * bord, taille - 2 * bord, 'trigone-logo', 'FAST');
+            return true;
+        } catch (e) { return false; }
+    };
     // ---------- Remontée des erreurs ----------
     // Une erreur technique (bug) est envoyée au serveur, anonyme : version, appli, écran, message et emplacement dans
     // le code, type d'appareil. Jamais de nom, de mail ni de donnée de mission : adresses mail, suites de chiffres
@@ -2470,6 +2557,7 @@
             if (!p) { p = document.createElement('span'); p.className = 'JUM-BOITE-PASTILLE'; bloc.appendChild(p); }
             p.textContent = '📥 ' + n + (n > 1 ? ' demandes reçues' : ' demande reçue');
         }
+        majEtatsHub();
         var med = ecran.querySelector('.JUM-CHORUS'); if (!med) return;
         var nc = window.JUMELAGE_BOITE_NB('chorus'), pc = ecran.querySelector('.JUM-CHORUS-NB');
         if (!nc) { if (pc) pc.remove(); return; }
@@ -3566,11 +3654,52 @@
     }, true);
 
 
+    var FLECHE_GO = '<span class="JUM-GO" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span>';
+    var DESC_APPLIS = {
+        mer: 'Demande d\'ordre de mise en route individuelle ou collective, signée par les deux valideurs.',
+        cr: 'Horodatage, frais calculés, envoi du compte-rendu et des justificatifs en un seul PDF.'
+    };
     function panneau(cle) {
         var a = APPLIS[cle];
         return '<div class="JUM-PAN JUM-PAN-' + cle.toUpperCase() + '" data-app="' + cle + '" role="button" tabindex="0" aria-label="Ouvrir ' + a.nom + '">' +
-            '<div class="JUM-BLOC"><img src="' + a.logo + '" alt="' + a.nom + '"><span class="JUM-SOUS">' + a.sous + '</span></div></div>';
+            '<div class="JUM-BLOC"><img src="' + a.logo + '" alt="' + a.nom + '"><span class="JUM-SOUS">' + a.sous + '</span>' +
+            '<p class="JUM-DESC">' + DESC_APPLIS[cle] + '</p><span class="JUM-ETAT"></span></div>' + FLECHE_GO + '</div>';
     }
+    // Espace Assistant Chorus DT : son logo et ce qui l'attend (demandes validées, comptes-rendus reçus).
+    function panneauChorus() {
+        return '<div class="JUM-PAN JUM-PAN-CHORUS" data-app="chorus" role="button" tabindex="0" aria-label="Ouvrir l\'espace Assistant Chorus DT">' +
+            '<div class="JUM-BLOC-CHORUS"><div class="JUM-CHORUS-LOGO"><button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button></div>' +
+            '<div class="JUM-CPTS"><span class="JUM-SOUS">Mon espace</span>' +
+                '<div class="JUM-CPT-L" data-cpt="chorus"><b>0</b><span>Demandes validées à traiter</span></div>' +
+                '<div class="JUM-CPT-L" data-cpt="cr"><b>0</b><span>Comptes-rendus reçus</span></div></div></div>' + FLECHE_GO + '</div>';
+    }
+    // État du moment sous chaque logo : demande en cours de validation (ou refusée), mission commencée non envoyée.
+    var LIB_ETAPES_HUB = { val1: 'Demande chez le VALIDEUR 1', val2: 'Demande chez le VALIDEUR 2', chorus: 'Demande chez l\'assistant Chorus DT', renvoi: 'Demande renvoyée : à corriger', refus: 'Demande refusée : à corriger' };
+    function majEtatsHub() {
+        if (!ecran || !ecran.classList.contains('JUM-V2')) return;
+        var em = ecran.querySelector('.JUM-PAN-MER .JUM-ETAT'), ec = ecran.querySelector('.JUM-PAN-CR .JUM-ETAT');
+        if (em) {
+            var txt = '', alerte = false;
+            if (!ecran.querySelector('.JUM-PAN-MER .JUM-BOITE-PASTILLE')) {
+                var sv = window.JUMELAGE_SUIVI(), der = null;
+                Object.keys(sv).forEach(function(k) { var x = sv[k]; if (x && x.genre !== 'cr' && !x.intervenant && LIB_ETAPES_HUB[x.etape] && (!der || (x.le || 0) > (der.le || 0))) der = x; });
+                if (der) { txt = LIB_ETAPES_HUB[der.etape]; alerte = der.etape === 'refus' || der.etape === 'renvoi'; }
+            }
+            em.textContent = txt; em.classList.toggle('alerte', alerte);
+        }
+        if (ec) {
+            var m = lireJSON('mission_data'), t2 = '';
+            if (m && !m.MAIL_SENT && !m.IS_PAX && (m.DEBUT || m.ARR_SITE)) t2 = 'Mission en cours' + (m.DEBUT ? ' depuis le ' + String(m.DEBUT).split(' ')[0] : '');
+            ec.textContent = t2;
+        }
+        var l = boiteLire().filter(function(x) { return x.statut !== 'traite'; });
+        [['chorus', 'chorus'], ['cr', 'cr']].forEach(function(c) {
+            var el = ecran.querySelector('.JUM-CPT-L[data-cpt="' + c[0] + '"]'); if (!el) return;
+            var n = l.filter(function(x) { return x.nature === c[1]; }).reduce(function(t, x) { return t + (x.n > 1 ? x.n : 1); }, 0);
+            el.querySelector('b').textContent = n; el.classList.toggle('zero', !n);
+        });
+    }
+    window.addEventListener('trigone-suivi', majEtatsHub);
     // Côté touché : au-dessus ou au-dessous de la diagonale haut-droite → bas-gauche.
     function coteDuPoint(x, y) { return (x / window.innerWidth + y / window.innerHeight) < 1 ? 'mer' : 'cr'; }
 
@@ -3578,6 +3707,7 @@
         if (!ecran || ecran.classList.contains('choisi')) return;
         if (cle === 'chorus') {
             ecran.classList.add('choisi', 'choix-chorus');
+            var panC = ecran.querySelector('.JUM-PAN-CHORUS'); if (panC) panC.classList.add('plein');
             var surPlace = !DANS_CR && typeof window.MER_OUVRIR_CHORUS === 'function';
             setTimeout(function() {
                 if (window.JUMELAGE_OUVRIR_CHORUS() || surPlace) { ecran.classList.add('sortie'); setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 460); }
@@ -3606,7 +3736,7 @@
     // s'il les touche encore (écran de forme inhabituelle), il rétrécit jusqu'à laisser un petit écart.
     function placerChorus() {
         if (!ecran) return;
-        var c = ecran.querySelector('.JUM-CHORUS'); if (!c) return;
+        var c = ecran.querySelector('.JUM-CHORUS'); if (!c || ecran.classList.contains('JUM-V2')) return;
         ecran.style.removeProperty('--jum-chorus');
         var blocs = Array.prototype.slice.call(ecran.querySelectorAll('.JUM-BLOC'));
         function touche() {
@@ -3633,14 +3763,14 @@
         if (ecran || !document.body) return;
         if (document.body.classList.contains('demo-active')) return;
         ecran = document.createElement('div');
-        ecran.className = 'JUM-CHOIX';
+        ecran.className = 'JUM-CHOIX JUM-V2';
         ecran.setAttribute('role', 'dialog');
         ecran.setAttribute('aria-label', 'Choisir une application TRIGONE');
         ecran.innerHTML = panneau('mer') + panneau('cr') +
             '<svg class="JUM-TRAIT" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">' +
             '<line x1="100" y1="0" x2="0" y2="100" stroke="#d6a756" stroke-width="1.5" vector-effect="non-scaling-stroke" opacity="0.8"/></svg>' +
             // Assistant Chorus DT : son logo au centre, sur la diagonale, entre Mise en route et Compte-rendu.
-            (roleChorus() ? '<button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button>' : '') +
+            (roleChorus() ? panneauChorus() : '') +
             // Numéro de version, en haut à droite (le même dans les deux applis).
             (window.APP_VERSION_AFFICHEE ? '<div class="JUM-VERSION" title="Version de TRIGONE">V' + window.APP_VERSION_AFFICHEE + '</div>' : '') +
             // Mise à jour, en bas à gauche (pendant de la roue crantée).
@@ -3668,10 +3798,11 @@
             var menu = document.querySelector('.JUM-ROUE-MENU');
             if (menu) { menu.remove(); return; }
             if (fermerMenuCompte()) return;
-            choisir(coteDuPoint(e.clientX, e.clientY));
+            var pan = e.target.closest && e.target.closest('.JUM-PAN');
+            if (pan) choisir(pan.getAttribute('data-app'));
         });
         ecran.addEventListener('pointerdown', function(e) {
-            var p = ecran.querySelector('.JUM-PAN-' + coteDuPoint(e.clientX, e.clientY).toUpperCase());
+            var p = e.target.closest && e.target.closest('.JUM-PAN');
             if (p) p.classList.add('appuye');
         });
         ['pointerup', 'pointercancel', 'pointerleave'].forEach(function(t) {
