@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=124"></script>
+<script src="../jumelage.js?v=125"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -2157,6 +2157,7 @@ body.dark-mode .MONTRE-ILLUS figcaption { color: #a3a3a3; }
 .PAX-ETAT { display: block; font-size: 0.74em; margin-top: 3px; }
 .PAX-ETAT.ok { color: #15803d; font-weight: 700; }
 .PAX-ETAT.ko { color: #b91c1c; font-weight: 700; }
+.PAX-ETAT.trouve { color: #9a6f22; font-weight: 700; }
 .PAX-ENVOI .BTN { width: 100%; margin-top: 8px; }
 .EQUIPE-LISTE { margin: 12px 0 8px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
 .EQUIPE-LIGNE { display: flex; flex-direction: column; gap: 2px; padding: 10px 12px; border: 1.5px solid var(--tg-border); border-left-width: 4px; border-radius: 12px; font-size: 0.84rem; }
@@ -4555,6 +4556,7 @@ body.dark-mode .QR-CARD {
 body.dark-mode .QR-CARD-TITLE { color: #a3a3a3; }
 body.dark-mode .QR-CARD-SUB,
 body.dark-mode .QR-HINT { color: #a3a3a3; }
+body.dark-mode .PAX-ETAT.trouve { color: #e0b86a; }
 body.dark-mode .QR-OVERLAY { background: rgba(0, 0, 0, 0.72); }
 body.dark-mode .QR-OVERLAY-CLOSE { background: rgba(255, 255, 255, 0.1); color: #a3a3a3; }
 body.dark-mode .QR-FRAME {
@@ -5058,7 +5060,7 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <p class="QR-CARD-SUB">Chacun reçoit une notification et son compte-rendu déjà rempli : il complète son identité, joint ses justificatifs, puis l'envoie à l'assistant Chorus DT.</p>
 <div id="PAX-ENVOI-LISTE"></div>
 <button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_LIGNE_PAX()">+ Ajouter un participant</button>
-<p class="QR-HINT">Adresse <b>professionnelle</b> de son compte TRIGONE. Pas encore de compte : il se connecte à TRIGONE avec cette adresse, puis vous renvoyez.</p>
+<p class="QR-HINT">Les participants qui ont un compte TRIGONE sont retrouvés d'office grâce à leur matricule (NID). Pour les autres : adresse <b>professionnelle</b> ; pas encore de compte, il se connecte à TRIGONE avec cette adresse, puis vous renvoyez.</p>
 <button type="button" id="BTN-PAX-ENVOYER" class="BTN BTN-START" onclick="ENVOYER_PAX_TRIGONE()">📨 Envoyer</button>
 </div>
 </div>
@@ -11441,7 +11443,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 221;
+var APP_CODE_VERSION = 222;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12449,8 +12451,25 @@ function OUVRIR_ENVOI_PAX(src) {
     }).join('');
     document.getElementById('PAX-ENVOI-LISTE').innerHTML = html;
     if (!(S.PARTICIPANTS || []).length) AJOUTER_LIGNE_PAX();
+    RETROUVER_COMPTES_PAX(S);
     var o = document.getElementById('PAX-ENVOI-OVERLAY');
     o.classList.remove('HIDDEN'); o.setAttribute('aria-hidden', 'false');
+}
+// Comptes TRIGONE des participants retrouvés par leur matricule (NID du profil) : adresse remplie d'office.
+function RETROUVER_COMPTES_PAX(S) {
+    var pax = S.PARTICIPANTS || [];
+    if (!window.JUMELAGE_COMPTES_PAR_NID || !pax.some(function(p) { return p.nid; })) return;
+    JUMELAGE_COMPTES_PAR_NID(pax.map(function(p) { return p.nid || ''; })).then(function(comptes) {
+        pax.forEach(function(p, i) {
+            var mail = comptes[String(p.nid || '').replace(/\D/g, '')];
+            var el = document.querySelector('#PAX-ENVOI-LISTE .PAX-LIGNE[data-i="' + i + '"]');
+            if (!mail || !el) return;
+            var champ = el.querySelector('.PAX-MAIL'), etat = el.querySelector('.PAX-ETAT'), actuel = champ.value.trim().toLowerCase();
+            if (actuel && actuel !== mail) return;   // adresse déjà saisie par le chef : il garde la main
+            champ.value = mail;
+            if (!etat.classList.contains('ok')) { etat.className = 'PAX-ETAT trouve'; etat.textContent = '✓ Compte TRIGONE retrouvé par son matricule'; }
+        });
+    });
 }
 function AJOUTER_LIGNE_PAX() {
     var l = document.getElementById('PAX-ENVOI-LISTE');

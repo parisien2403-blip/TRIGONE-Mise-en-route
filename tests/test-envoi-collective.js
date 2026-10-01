@@ -22,20 +22,34 @@ module.exports = async function() {
         return p;
     }
     const pax = await appareil('PAX'), chef = await appareil('CHEF');
+    // Matricule du profil déclaré au serveur : le chef retrouvera le compte de LEROY sans saisir son adresse.
+    async function profilNid(p, matricule) {
+        await p.evaluate(m => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}'); r.matricule = m; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); JUMELAGE_MAJ_COMPTE(); }, matricule);
+        await attendre(3000);
+    }
+    const NID = '06' + String(Date.now()).slice(-8);   // matricule propre à cette exécution (un matricule n'a qu'un compte)
+    await profilNid(pax, NID);
+    verifier(await pax.evaluate(([m, n]) => localStorage.getItem('trigone_nid_publie') === m + '|' + n, [MAILS.PAX, NID]), 'participant : matricule du profil déclaré à son compte TRIGONE');
+    verifier(await chef.evaluate(n => fetch('api/nid', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: (c => 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton)(JSON.parse(localStorage.getItem('trigone_compte'))) },
+        body: JSON.stringify({ nid: n }) }).then(r => r.status), NID) === 409, 'serveur : un matricule déjà pris par un autre compte est refusé');
     // Chef : compte-rendu de la mission collective (repris de la mise en route à 3 personnes).
     await chef.goto(URL + 'cr/'); await attendre(2500);
     await chef.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); });
-    await chef.evaluate(() => APPLIQUER_MISE_EN_ROUTE({ objet: 'FORMATION SSIAP', trajets: {
+    await chef.evaluate(NID => APPLIQUER_MISE_EN_ROUTE({ objet: 'FORMATION SSIAP', trajets: {
         aller: { moyen: 'FERREE', residenceDep: 'GARNISON', lieuDep: 'LIBOURNE', cpDep: '33500', lieuArr: 'PARIS', cpArr: '75014', dateDep: '2026-10-05T06:52', dateArr: '2026-10-05T09:28' },
         retour: { moyen: 'FERREE', residenceArr: 'GARNISON', lieuDep: 'PARIS', cpDep: '75014', lieuArr: 'LIBOURNE', cpArr: '33500', dateDep: '2026-10-07T17:04', dateArr: '2026-10-07T19:41' } },
-        personnes: [{ grade: 'ADJ', nom: 'TEST', prenom: 'Chef', matricule: '067 12 34 567' }, { grade: 'CPL', nom: 'LEROY', prenom: 'Emma', matricule: '067 98 76 543', cie: '2CIE' }, { grade: 'SAP', nom: 'BERNARD', prenom: 'Hugo', matricule: '067 55 44 333' }] }));
+        personnes: [{ grade: 'ADJ', nom: 'TEST', prenom: 'Chef', matricule: '067 12 34 567' }, { grade: 'CPL', nom: 'LEROY', prenom: 'Emma', matricule: NID, cie: '2CIE' }, { grade: 'SAP', nom: 'BERNARD', prenom: 'Hugo', matricule: '067 55 44 333' }] }), NID);
     await attendre(1200);
     await chef.evaluate(m => { M.CHEF_MAIL = m; M.DEBUT = '05/10/2026 06:30:00'; SAVE_STATE(); document.querySelectorAll('#MSG-OVERLAY').forEach(e => e.classList.add('HIDDEN')); }, MAILS.CHEF);
     await chef.evaluate(() => OUVRIR_ENVOI_PAX()); await attendre(400);
     verifier(await chef.evaluate(() => !document.getElementById('PAX-ENVOI-OVERLAY').classList.contains('HIDDEN') && document.querySelectorAll('#PAX-ENVOI-LISTE .PAX-LIGNE').length === 2
         && /CPL LEROY Emma/.test(document.getElementById('PAX-ENVOI-LISTE').textContent)), 'chef : « Envoyer aux participants » liste les 2 participants de la mise en route');
+    await attendre(1500);
     const mails = await chef.$$('#PAX-ENVOI-LISTE .PAX-MAIL');
-    await mails[0].fill(MAILS.PAX); await mails[1].fill('sanscompte.' + suffixe + '@interieur.gouv.fr');
+    verifier(await mails[0].inputValue() === MAILS.PAX && await mails[1].inputValue() === ''
+        && /retrouvé par son matricule/.test(await chef.$eval('#PAX-ENVOI-LISTE .PAX-LIGNE[data-i="0"] .PAX-ETAT', e => e.textContent)),
+        'chef : adresse de LEROY remplie d\'office (compte TRIGONE retrouvé par son matricule), BERNARD sans compte reste vide');
+    await mails[1].fill('sanscompte.' + suffixe + '@interieur.gouv.fr');
     await chef.click('#BTN-PAX-ENVOYER'); await attendre(4000);
     const etats = await chef.$$eval('#PAX-ENVOI-LISTE .PAX-ETAT', l => l.map(e => e.className + ' | ' + e.textContent));
     verifier(/ok/.test(etats[0]) && /Envoyé/.test(etats[0]), 'chef : envoyé à LEROY (compte TRIGONE)');
@@ -53,7 +67,8 @@ module.exports = async function() {
     verifier(/\/cr\//.test(pax.url()), 'participant : « Ouvrir mon compte-rendu » ouvre Compte-rendu');
     verifier(await pax.evaluate(m => M.IS_PAX === true && M.LIBELLE_MISSION === 'FORMATION SSIAP' && M.CHEF_MAIL === m && M.T_A === 'VF' && !!M.DEBUT, MAILS.CHEF),
         'participant : compte-rendu prérempli (mission, trajets, chef en copie)');
-    verifier(await pax.evaluate(() => ['GRADE-USER-PAX', 'NOM-USER-PAX', 'PRENOM-USER-PAX', 'NID-USER-PAX', 'CIE-INPUT-PAX'].map(i => document.getElementById(i).value).join('|') === 'CPL|LEROY|Emma|06 798 765 43|' + M.CIE && M.CIE === '2CIE'),
+    verifier(await pax.evaluate(n => ['GRADE-USER-PAX', 'NOM-USER-PAX', 'PRENOM-USER-PAX', 'NID-USER-PAX', 'CIE-INPUT-PAX'].map(i => document.getElementById(i).value).join('|') === 'CPL|LEROY|Emma|' + n + '|' + M.CIE && M.CIE === '2CIE',
+        [NID.slice(0, 2), NID.slice(2, 5), NID.slice(5, 8), NID.slice(8)].join(' ')),
         'participant : son identité (grade, nom, prénom, NID, compagnie) préremplie depuis la mise en route');
     // Suivi de l'équipe : le participant envoie son compte-rendu (avec la référence de la mission) → le chef le voit ;
     // un 2e participant ne l'a pas fait → « Relancer » lui envoie un rappel (une fois par 12 h).

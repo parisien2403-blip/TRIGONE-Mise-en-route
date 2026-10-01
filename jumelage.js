@@ -852,7 +852,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 124, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 125, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2780,7 +2780,7 @@
                 });
             }, Promise.resolve());
         }).catch(function(e) {
-            if (e.statut === 401) { try { localStorage.removeItem(CLE_COMPTE); } catch (x) {} }
+            if (e.statut === 401) { try { localStorage.removeItem(CLE_COMPTE); localStorage.removeItem(CLE_NID_PUBLIE); } catch (x) {} }
         }).then(function() {
             var nb = nouveaux.reduce(function(t, x) { return t + (x.n > 1 ? x.n : 1); }, 0);   // nombre de demandes reçues
             if (ecartes) bandeau(ecartes + ' envoi(s) non conforme(s) écarté(s) de votre boîte de réception.');
@@ -3060,7 +3060,7 @@
     function deconnecter() {
         var go = function() {
             appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() {
-                try { localStorage.removeItem(CLE_COMPTE); localStorage.removeItem(CLE_MUET); } catch (e) {}
+                try { localStorage.removeItem(CLE_COMPTE); localStorage.removeItem(CLE_MUET); localStorage.removeItem(CLE_NID_PUBLIE); } catch (e) {}
                 cleIdb('effacer').catch(function() {});
                 window.JUMELAGE_FERMER_COMPTE(); majBoutonsCompte();
                 bandeau('Déconnecté : vos données restent sur cet appareil. « Se connecter », en haut à droite, pour reprendre.');
@@ -3102,7 +3102,28 @@
         var e = etatPoint();
         return 'Mon compte (' + monCompte().mail + ') — notifications ' + (e === 'ok' ? 'actives' : e === 'muet' ? 'coupées sur cet appareil' : 'non activées');
     }
+    // Matricule du profil déclaré au serveur (empreinte salée, pas en clair) : le chef de mission collective retrouve
+    // ainsi le compte TRIGONE de ses participants sans chercher leur adresse. Une fois par compte et par matricule.
+    var CLE_NID_PUBLIE = 'trigone_nid_publie', minuteurNid = null;
+    function publierNid() {
+        clearTimeout(minuteurNid);
+        minuteurNid = setTimeout(function() {
+            var c = monCompte(); if (!c || !navigator.onLine) return;
+            var nid = chiffres(lireReglages().matricule); if (nid.length !== 10) nid = '';
+            var marque = c.mail + '|' + nid;
+            if (lireTxt(CLE_NID_PUBLIE) === marque) return;
+            appelApi('nid', { methode: 'POST', corps: { nid: nid } }).then(function() { ecrireTxt(CLE_NID_PUBLIE, marque); })
+                .catch(function(e) { if (e && e.statut === 409) ecrireTxt(CLE_NID_PUBLIE, marque); });
+        }, 1500);
+    }
+    // Participants d'une mission collective : { matricule (10 chiffres) : adresse du compte TRIGONE } pour ceux qui en ont un.
+    window.JUMELAGE_COMPTES_PAR_NID = function(nids) {
+        nids = (nids || []).map(chiffres).filter(function(n) { return n.length === 10; });
+        if (!nids.length || !monCompte() || !navigator.onLine) return Promise.resolve({});
+        return appelApi('nids', { methode: 'POST', corps: { nids: nids } }).then(function(r) { return r.comptes || {}; }).catch(function() { return {}; });
+    };
     function majBoutonsCompte() {
+        publierNid();
         Array.prototype.forEach.call(document.querySelectorAll('.JUM-CPT'), function(b) {
             b.classList.toggle('deconnecte', !monCompte());
             b.innerHTML = htmlBoutonCompte(); b.title = titreBoutonCompte(); b.setAttribute('aria-label', titreBoutonCompte());

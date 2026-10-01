@@ -396,6 +396,17 @@ function json(corps, statut) {
 function erreur(statut, message) { return json({ ok: false, erreur: message }, statut); }
 function b64url(octets) { return btoa(String.fromCharCode.apply(null, octets)).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
 function hasard(n) { return crypto.getRandomValues(new Uint8Array(n)); }
+// Matricule (NID) : jamais gardé en clair ; empreinte salée (sel tiré au hasard une fois, propre à ce serveur).
+async function empreinteNid(env, nid) {
+    const db = await tableReglage(env);
+    let l = await db.prepare('SELECT valeur FROM reglage WHERE cle = ?').bind('sel-nid').first();
+    if (!l) {
+        await db.prepare('INSERT INTO reglage (cle, valeur) VALUES (?, ?) ON CONFLICT (cle) DO NOTHING').bind('sel-nid', b64url(hasard(24))).run();
+        l = await db.prepare('SELECT valeur FROM reglage WHERE cle = ?').bind('sel-nid').first();
+    }
+    return empreinte(l.valeur + ':' + nid);
+}
+function chiffresNid(v) { const c = String(v || '').replace(/\D/g, ''); return c.length === 10 ? c : ''; }
 async function empreinte(texte) {
     const h = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(texte));
     return b64url(new Uint8Array(h));
@@ -765,6 +776,39 @@ async function api(requete, env, url, ctx) {
         if (r.length) await db.batch(r.map(x => db.prepare('UPDATE equipe SET relance = ? WHERE ref = ? AND mail = ?').bind(maintenant, ref, x.mail)));
         return json({ ok: true, n: r.length });
     }
+    // Matricule (NID) du compte, déclaré par l'appli depuis le profil : il permet au chef de mission collective de
+    // retrouver le compte TRIGONE de ses participants. Un matricule appartient au premier compte qui le déclare
+    // (tant que ce compte existe) ; vide : le lien est retiré.
+    if (chemin === 'nid' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({}));
+        const nid = chiffresNid(c.nid);
+        if (c.nid && !nid) return erreur(400, 'Le matricule doit comporter 10 chiffres.');
+        const h = nid ? await empreinteNid(env, nid) : '';
+        if (h) {
+            const tenant = await kv.get('nid:' + h);
+            if (tenant && tenant !== moi.mail && await kv.get('compte:' + tenant)) return erreur(409, 'Ce matricule est déjà associé à un autre compte TRIGONE.');
+        }
+        if (moi.compte.nid && moi.compte.nid !== h && await kv.get('nid:' + moi.compte.nid) === moi.mail) await kv.delete('nid:' + moi.compte.nid);
+        if (h) { await kv.put('nid:' + h, moi.mail); moi.compte.nid = h; } else delete moi.compte.nid;
+        await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
+        return json({ ok: true });
+    }
+    // Comptes TRIGONE des participants d'une mission collective, retrouvés par leur matricule (50 au plus par appel,
+    // 300 par jour et par compte).
+    if (chemin === 'nids' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({}));
+        const nids = Array.from(new Set((Array.isArray(c.nids) ? c.nids : []).map(chiffresNid).filter(Boolean))).slice(0, 50);
+        const cleQuota = 'quota-nid:' + moi.mail + ':' + new Date().toISOString().slice(0, 10);
+        const deja = parseInt(await kv.get(cleQuota), 10) || 0;
+        if (deja + nids.length > 300) return erreur(429, 'Trop de recherches aujourd\'hui : saisissez les adresses.');
+        if (nids.length) await kv.put(cleQuota, String(deja + nids.length), { expirationTtl: 2 * JOUR });
+        const trouves = {};
+        await Promise.all(nids.map(async nid => {
+            const mail = await kv.get('nid:' + await empreinteNid(env, nid));
+            if (mail && await kv.get('compte:' + mail)) trouves[nid] = mail;
+        }));
+        return json({ ok: true, comptes: trouves });
+    }
     // Page « Erreurs de l'appli » : réservée à l'administrateur (ADMIN_MAILS).
     if (chemin === 'admin' && methode === 'GET') return json({ ok: true, admin: estAdmin(env, moi.mail) });
     if (chemin === 'erreurs' && methode === 'GET') {
@@ -991,7 +1035,10 @@ async function api(requete, env, url, ctx) {
         await (await baseBoite(env)).prepare('DELETE FROM muet WHERE mail = ? AND appareil = ?').bind(moi.mail, moi.appareil.id).run();
         moi.compte.appareils = moi.compte.appareils.filter(a => a.id !== moi.appareil.id);
         if (moi.compte.appareils.length) await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
-        else await kv.delete('compte:' + moi.mail);
+        else {
+            await kv.delete('compte:' + moi.mail);
+            if (moi.compte.nid && await kv.get('nid:' + moi.compte.nid) === moi.mail) await kv.delete('nid:' + moi.compte.nid);
+        }
         return json({ ok: true });
     }
     return erreur(404, 'Inconnu.');

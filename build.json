@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 124,
+  "build": 125,
   "notifier": true,
-  "message": "Nouveau style noir et or pour Mise en route, Compte-rendu et Chorus DT, et PDF noir et or économes en encre avec le logo TRIGONE agrandi."
+  "message": "Mission collective : les participants qui ont un compte TRIGONE sont retrouvés grâce à leur matricule, leur adresse est remplie d'office au moment d'envoyer le compte-rendu."
 }
