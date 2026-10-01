@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 164;
+var APP_CODE_VERSION = 165;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1500,19 +1500,22 @@ function PDF_OUI_NON_ALERTE(v) { return v ? { content: 'OUI', styles: { textColo
 
 function PDF_BANDEAU(doc, d, M, L, edition) {
     doc.setFillColor.apply(doc, PDF_ACCENT);
-    doc.rect(0, 0, 210, 30, 'F');
+    // Logo tricolore de TRIGONE au-dessus du nom (bandeau plus haut quand il est là).
+    var logo = !!(window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET()), h = logo ? 45 : 30, dy = logo ? 15 : 0;
+    doc.rect(0, 0, 210, h, 'F');
+    if (logo) window.JUMELAGE_LOGO_PDF(doc, M + 4, 4, 15);
     doc.setTextColor(255, 255, 255);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
-    doc.text('TRIGONE', M + 4, 14);
+    doc.text('TRIGONE', M + 4, 14 + dy);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5);
     var unite = d.personnes[0] && d.personnes[0].unite ? d.personnes[0].unite + ' — ' : '';
-    doc.text(unite + 'Demande d\'ordre de mise en route', M + 4, 21);
+    doc.text(unite + 'Demande d\'ordre de mise en route', M + 4, 21 + dy);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
-    doc.text(d.type === 'FORMATION' ? 'FORMATION / STAGE' : 'MISSION', M + L - 4, 15, { align: 'right' });
+    doc.text(d.type === 'FORMATION' ? 'FORMATION / STAGE' : 'MISSION', M + L - 4, 15 + dy, { align: 'right' });
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5);
-    doc.text('Édité le ' + edition, M + L - 4, 21, { align: 'right' });
+    doc.text('Édité le ' + edition, M + L - 4, 21 + dy, { align: 'right' });
     doc.setTextColor.apply(doc, PDF_TEXTE);
-    return 36;
+    return h + 6;
 }
 
 function PDF_SECTION(doc, titre, x, y, P) {

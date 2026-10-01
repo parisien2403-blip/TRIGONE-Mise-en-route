@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=117"></script>
+<script src="../jumelage.js?v=118"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -11436,7 +11436,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 214;
+var APP_CODE_VERSION = 215;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -11898,25 +11898,28 @@ function EXPORTER_REMBOURSEMENT_PDF(retryCount) {
         if (y + need > pageHeight - 60) { doc.addPage(); y = margin; }
     }
     function drawHeader() {
+        // Logo tricolore de TRIGONE au-dessus du nom : bandeau plus haut (dy) quand il est là.
+        var dy = window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET() ? 52 : 0;
         doc.setFillColor.apply(doc, PDF_BRAND);
-        doc.rect(0, 0, pageWidth, 76, 'F');
+        doc.rect(0, 0, pageWidth, 76 + dy, 'F');
+        if (dy) window.JUMELAGE_LOGO_PDF(doc, margin, 12, 42);
         doc.setFillColor.apply(doc, PDF_BRAND_LT);
-        doc.rect(0, 76, pageWidth, 3, 'F');
+        doc.rect(0, 76 + dy, pageWidth, 3, 'F');
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(21);
-        doc.text('TRIGONE', margin, 32);
+        doc.text('TRIGONE', margin, 32 + dy);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text((UNIT_NAME || '') + ' — Récapitulatif Remboursement', margin, 50);
+        doc.text((UNIT_NAME || '') + ' — Récapitulatif Remboursement', margin, 50 + dy);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.text('FRAIS RÉELS', pageWidth - margin, 32, { align: 'right' });
+        doc.text('FRAIS RÉELS', pageWidth - margin, 32 + dy, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50, { align: 'right' });
+        doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50 + dy, { align: 'right' });
         doc.setTextColor.apply(doc, PDF_INK);
-        y = 100;
+        y = 100 + dy;
     }
     drawHeader();
     doc.setDrawColor.apply(doc, PDF_BRAND_LT);
@@ -15450,25 +15453,28 @@ function GENERER_PDF_REMBOURSEMENT(key, retryCount) {
         if (y + need > pageHeight - 52) { doc.addPage(); y = margin; }
     }
     function drawPdfHeader() {
+        // Logo tricolore de TRIGONE au-dessus du nom : bandeau plus haut (dy) quand il est là.
+        var dy = window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET() ? 52 : 0;
         doc.setFillColor.apply(doc, PDF_BRAND);
-        doc.rect(0, 0, pageWidth, 76, 'F');
+        doc.rect(0, 0, pageWidth, 76 + dy, 'F');
+        if (dy) window.JUMELAGE_LOGO_PDF(doc, margin, 12, 42);
         doc.setFillColor.apply(doc, PDF_BRAND_LT);
-        doc.rect(0, 76, pageWidth, 3, 'F');
+        doc.rect(0, 76 + dy, pageWidth, 3, 'F');
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(21);
-        doc.text('TRIGONE', margin, 32);
+        doc.text('TRIGONE', margin, 32 + dy);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(UNIT_NAME + ' — Suivi remboursement', margin, 50);
+        doc.text(UNIT_NAME + ' — Suivi remboursement', margin, 50 + dy);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
-        doc.text('FRAIS RÉELS', pageWidth - margin, 32, { align: 'right' });
+        doc.text('FRAIS RÉELS', pageWidth - margin, 32 + dy, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50, { align: 'right' });
+        doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50 + dy, { align: 'right' });
         doc.setTextColor.apply(doc, PDF_INK);
-        y = 94;
+        y = 94 + dy;
     }
     function sectionTitle(title) {
         ensureSpace(30);
@@ -15612,26 +15618,29 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
     }
 
     function drawPdfHeader() {
+        // Logo tricolore de TRIGONE au-dessus du nom : bandeau plus haut (dy) quand il est là.
+        var dy = window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET() ? 52 : 0;
         doc.setFillColor.apply(doc, PDF_BRAND);
-        doc.rect(0, 0, pageWidth, 76, 'F');
+        doc.rect(0, 0, pageWidth, 76 + dy, 'F');
+        if (dy) window.JUMELAGE_LOGO_PDF(doc, margin, 12, 42);
         doc.setFillColor.apply(doc, PDF_BRAND_LT);
-        doc.rect(0, 76, pageWidth, 3, 'F');
+        doc.rect(0, 76 + dy, pageWidth, 3, 'F');
         doc.setTextColor(255, 255, 255);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(21);
-        doc.text('TRIGONE', margin, 32);
+        doc.text('TRIGONE', margin, 32 + dy);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
-        doc.text(UNIT_NAME + ' — Compte-rendu de mission', margin, 50);
+        doc.text(UNIT_NAME + ' — Compte-rendu de mission', margin, 50 + dy);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
         var omType = M.COLLECTIVE ? 'OM COLLECTIF' : (M.IS_PAX ? 'OM COLLECTIF — PARTICIPANT' : 'OM INDIVIDUEL');
-        doc.text(omType, pageWidth - margin, 32, { align: 'right' });
+        doc.text(omType, pageWidth - margin, 32 + dy, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
-        doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50, { align: 'right' });
+        doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50 + dy, { align: 'right' });
         doc.setTextColor.apply(doc, PDF_INK);
-        y = 94;
+        y = 94 + dy;
     }
 
     function sectionTitle(title) {
