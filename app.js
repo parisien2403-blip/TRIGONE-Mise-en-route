@@ -1502,11 +1502,11 @@ function PDF_OUI_NON_ALERTE(v) { return v ? { content: 'OUI', styles: { textColo
 function PDF_BANDEAU(doc, d, M, L, edition) {
     if (window.JUMELAGE_PDF_STYLE) JUMELAGE_PDF_STYLE(doc);
     // En-tête blanc (logo tricolore au-dessus du nom, s'il est chargé), souligné d'un filet or.
-    var logo = !!(window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET()), h = logo ? 45 : 30, dy = logo ? 15 : 0;
+    var logo = !!(window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET()), h = logo ? 56 : 30, dy = logo ? 26 : 0;
     doc.setFillColor.apply(doc, PDF_OR); doc.rect(0, h - 1, 210, 1, 'F');
     doc.setTextColor.apply(doc, PDF_ACCENT);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(20);
-    if (logo) window.JUMELAGE_LOGO_PDF(doc, M + 4 + doc.getTextWidth('TRIGONE') / 2, 4, 15);
+    if (logo) window.JUMELAGE_LOGO_PDF(doc, M + 4 + doc.getTextWidth('TRIGONE') / 2, 4, 25);
     doc.text('TRIGONE', M + 4, 14 + dy);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(8.5); doc.setTextColor(90, 98, 110);
     var unite = d.personnes[0] && d.personnes[0].unite ? d.personnes[0].unite + ' — ' : '';
@@ -2272,7 +2272,7 @@ function PREPARER_ENVOI() {
     var sansPJ = panier.filter(function(d) { return !(d.pieces || []).length; }).length;
     AFFICHER_MODALE('Avant d\'envoyer',
         '<p style="font-size:0.86em; line-height:1.5;">Vérifiez votre demande dans l\'aperçu, puis envoyez-la. Elle arrive, chiffrée, dans le TRIGONE du 1er valideur (<b>' + ESC(mail) + '</b>) :</p>' +
-        '<p style="font-size:0.86em; line-height:1.7; background:rgba(90,122,148,0.07); padding:10px 12px; border-radius:10px;">📨 ' + panier.length + ' demande(s)' +
+        '<p style="font-size:0.86em; line-height:1.7; background:rgba(214,167,86,0.07); padding:10px 12px; border-radius:10px;">📨 ' + panier.length + ' demande(s)' +
             (pj.length ? '<br><span style="color:var(--sm2-muted);">avec : ' + pj.map(function(p) { return ESC(p.nom); }).join(', ') + '</span>' : '') + '</p>' +
         (sansPJ ? '<p class="MER-HINT" style="color:#b45309; font-weight:700;">⚠ ' + sansPJ + ' demande(s) sans NDS ni DAF jointe.</p>' : '') +
         (panier.some(UTILISE_VRC) ? '<div style="font-size:0.86em; line-height:1.5; background:rgba(180,83,9,0.09); border:1.5px solid rgba(180,83,9,0.35); color:#92400e; padding:10px 12px; border-radius:10px; margin:10px 0;">' +
