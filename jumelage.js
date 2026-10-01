@@ -1530,10 +1530,35 @@
         });
         }, function(message) { refuser(message); });
     };
+    // Notification à l'écran : la glisser (vers le haut si elle est en haut, vers le bas si elle est en bas) la ferme.
+    // Un simple toucher garde son action ; un glissement ne la déclenche pas.
+    window.JUMELAGE_GLISSER_FERMER = function(el, sens, fermer) {
+        var y0 = null, dy = 0, glisse = false, base = '';
+        el.style.touchAction = 'none';
+        el.addEventListener('pointerdown', function(e) { el.style.transform = ''; base = getComputedStyle(el).transform; y0 = e.clientY; dy = 0; glisse = false; el.style.transition = 'none'; try { el.setPointerCapture(e.pointerId); } catch (x) {} });
+        el.addEventListener('pointermove', function(e) {
+            if (y0 === null) return;
+            dy = e.clientY - y0; if (sens * dy < 0) dy = dy / 4;
+            if (Math.abs(dy) > 8) glisse = true;
+            el.style.transform = (base && base !== 'none' ? base + ' ' : '') + 'translateY(' + dy + 'px)';
+            el.style.opacity = String(Math.max(0.2, 1 - Math.abs(dy) / 120));
+        });
+        function fin() {
+            if (y0 === null) return; y0 = null;
+            el.style.transition = 'transform .25s ease, opacity .25s ease';
+            if (sens * dy > 36) {
+                el.style.transform = (base && base !== 'none' ? base + ' ' : '') + 'translateY(' + (sens * 160) + 'px)'; el.style.opacity = '0';
+                setTimeout(function() { el.remove(); if (fermer) fermer(); }, 250);
+            } else { el.style.transform = ''; el.style.opacity = ''; }
+        }
+        el.addEventListener('pointerup', fin); el.addEventListener('pointercancel', fin);
+        el.addEventListener('click', function(e) { if (glisse) { e.stopImmediatePropagation(); e.preventDefault(); glisse = false; } }, true);
+    };
     function bandeau(texte) {
         var b = document.createElement('div');
         b.className = 'JUM-BANDEAU'; b.textContent = '✓ ' + texte;
         document.body.appendChild(b);
+        window.JUMELAGE_GLISSER_FERMER(b, 1);
         setTimeout(function() { b.classList.add('sortie'); }, 2600);
         setTimeout(function() { b.remove(); }, 3100);
     }

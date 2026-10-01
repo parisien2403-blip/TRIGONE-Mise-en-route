@@ -4135,7 +4135,7 @@ function MER_BANDEAU_RECU(titre, texte, surClic) {
     b.innerHTML = '<span class="MER-BANDEAU-RECU-IC">📥</span><span><b>' + ESC(titre) + '</b><br>' + ESC(texte) + '</span>';
     if (surClic) b.addEventListener('click', function() { b.remove(); surClic(); });
     document.body.appendChild(b);
-    requestAnimationFrame(function() { b.classList.add('visible'); });
+    requestAnimationFrame(function() { b.classList.add('visible'); if (window.JUMELAGE_GLISSER_FERMER) JUMELAGE_GLISSER_FERMER(b, -1); });
     setTimeout(function() { b.classList.remove('visible'); setTimeout(function() { b.remove(); }, 400); }, surClic ? 10000 : 6000);
 }
 // Espace valideur vide : les demandes à signer arrivent dans la Boîte de réception TRIGONE.
