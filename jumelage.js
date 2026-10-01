@@ -897,6 +897,16 @@
         img.src = (DANS_CR ? '../' : '') + 'logo-pdf.webp';
     })();
     window.JUMELAGE_LOGO_PRET = function() { return !!logoPdf; };
+    // Style noir et or des PDF, économe en encre : les en-têtes de tableaux sont soulignés d'un trait noir (pas d'aplat).
+    window.JUMELAGE_PDF_STYLE = function(doc) {
+        if (!doc || typeof doc.autoTableSetDefaults !== 'function') return;
+        doc.autoTableSetDefaults({ didDrawCell: function(d) {
+            if (d.section !== 'head' || d.cell.styles.fillColor) return;
+            var k = doc.internal.scaleFactor || 1;
+            doc.setDrawColor(26, 26, 26); doc.setLineWidth(1.1 / k);
+            doc.line(d.cell.x, d.cell.y + d.cell.height, d.cell.x + d.cell.width, d.cell.y + d.cell.height);
+        } });
+    };
     // cx : centre horizontal (celui du mot TRIGONE) ; y : haut de la vignette ; h : sa hauteur.
     window.JUMELAGE_LOGO_PDF = function(doc, cx, y, h) {
         if (!logoPdf) return false;

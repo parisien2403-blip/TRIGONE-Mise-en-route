@@ -11893,8 +11893,11 @@ function EXPORTER_REMBOURSEMENT_PDF(retryCount) {
     var pageHeight = doc.internal.pageSize.getHeight();
     var margin = 44;
     var contentW = pageWidth - margin * 2;
-    var PDF_BRAND = [90, 122, 148];
-    var PDF_BRAND_LT = [122, 157, 181];
+    // Noir et or, économe en encre : en-tête blanc souligné d'or, titres noirs à trait or, tableaux à en-têtes soulignés.
+    var PDF_BRAND = [26, 26, 26];
+    var PDF_BRAND_LT = [214, 167, 86];
+    var PDF_OR_TEXTE = [176, 128, 42];
+    if (window.JUMELAGE_PDF_STYLE) JUMELAGE_PDF_STYLE(doc);
     var PDF_INK = [26, 26, 26];
     var PDF_MUTED = [82, 82, 82];
     var y = 0;
@@ -11905,23 +11908,24 @@ function EXPORTER_REMBOURSEMENT_PDF(retryCount) {
     function drawHeader() {
         // Logo tricolore de TRIGONE au-dessus du nom : bandeau plus haut (dy) quand il est là.
         var dy = window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET() ? 52 : 0;
-        doc.setFillColor.apply(doc, PDF_BRAND);
-        doc.rect(0, 0, pageWidth, 76 + dy, 'F');
         doc.setFillColor.apply(doc, PDF_BRAND_LT);
         doc.rect(0, 76 + dy, pageWidth, 3, 'F');
-        doc.setTextColor(255, 255, 255);
+        doc.setTextColor.apply(doc, PDF_INK);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(21);
         if (dy) window.JUMELAGE_LOGO_PDF(doc, margin + doc.getTextWidth('TRIGONE') / 2, 12, 42);
         doc.text('TRIGONE', margin, 32 + dy);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
+        doc.setTextColor.apply(doc, PDF_MUTED);
         doc.text((UNIT_NAME || '') + ' — Récapitulatif Remboursement', margin, 50 + dy);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
+        doc.setTextColor.apply(doc, PDF_OR_TEXTE);
         doc.text('FRAIS RÉELS', pageWidth - margin, 32 + dy, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
+        doc.setTextColor.apply(doc, PDF_MUTED);
         doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50 + dy, { align: 'right' });
         doc.setTextColor.apply(doc, PDF_INK);
         y = 100 + dy;
@@ -11932,7 +11936,7 @@ function EXPORTER_REMBOURSEMENT_PDF(retryCount) {
     ordreGroupes.forEach(function(cle) {
         var groupe = groupes[cle];
         ensureSpace(46);
-        doc.setFillColor.apply(doc, PDF_BRAND);
+        doc.setFillColor.apply(doc, PDF_BRAND_LT);
         doc.rect(margin, y - 10, 4, 18, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
@@ -11951,7 +11955,7 @@ function EXPORTER_REMBOURSEMENT_PDF(retryCount) {
             body: groupe.lignes,
             margin: { left: margin, right: margin },
             styles: { fontSize: 9, cellPadding: 7, textColor: PDF_INK, lineColor: [226, 232, 240], lineWidth: 0.5 },
-            headStyles: { fillColor: PDF_BRAND, textColor: [255, 255, 255], fontStyle: 'bold', fontSize: 9 },
+            headStyles: { fillColor: false, textColor: PDF_INK, fontStyle: 'bold', fontSize: 9 },
             alternateRowStyles: { fillColor: [246, 248, 250] },
             columnStyles: {
                 0: { cellWidth: 95 },
@@ -11965,9 +11969,9 @@ function EXPORTER_REMBOURSEMENT_PDF(retryCount) {
     });
 
     ensureSpace(50);
-    doc.setFillColor.apply(doc, PDF_BRAND);
-    doc.roundedRect(margin, y - 6, contentW, 38, 4, 4, 'F');
-    doc.setTextColor(255, 255, 255);
+    doc.setDrawColor.apply(doc, PDF_BRAND_LT); doc.setLineWidth(1.5);
+    doc.roundedRect(margin, y - 6, contentW, 38, 4, 4, 'S');
+    doc.setTextColor.apply(doc, PDF_INK);
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(12);
     doc.text('TOTAL GÉNÉRAL', margin + 16, y + 17);
@@ -15447,8 +15451,11 @@ function GENERER_PDF_REMBOURSEMENT(key, retryCount) {
     var pageHeight = doc.internal.pageSize.getHeight();
     var margin = 44;
     var contentW = pageWidth - margin * 2;
-    var PDF_BRAND = [90, 122, 148];
-    var PDF_BRAND_LT = [122, 157, 181];
+    // Noir et or, économe en encre : en-tête blanc souligné d'or, titres noirs à trait or, tableaux à en-têtes soulignés.
+    var PDF_BRAND = [26, 26, 26];
+    var PDF_BRAND_LT = [214, 167, 86];
+    var PDF_OR_TEXTE = [176, 128, 42];
+    if (window.JUMELAGE_PDF_STYLE) JUMELAGE_PDF_STYLE(doc);
     var PDF_INK = [26, 26, 26];
     var PDF_MUTED = [82, 82, 82];
     var y = 0;
@@ -15460,30 +15467,31 @@ function GENERER_PDF_REMBOURSEMENT(key, retryCount) {
     function drawPdfHeader() {
         // Logo tricolore de TRIGONE au-dessus du nom : bandeau plus haut (dy) quand il est là.
         var dy = window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET() ? 52 : 0;
-        doc.setFillColor.apply(doc, PDF_BRAND);
-        doc.rect(0, 0, pageWidth, 76 + dy, 'F');
         doc.setFillColor.apply(doc, PDF_BRAND_LT);
         doc.rect(0, 76 + dy, pageWidth, 3, 'F');
-        doc.setTextColor(255, 255, 255);
+        doc.setTextColor.apply(doc, PDF_INK);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(21);
         if (dy) window.JUMELAGE_LOGO_PDF(doc, margin + doc.getTextWidth('TRIGONE') / 2, 12, 42);
         doc.text('TRIGONE', margin, 32 + dy);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
+        doc.setTextColor.apply(doc, PDF_MUTED);
         doc.text(UNIT_NAME + ' — Suivi remboursement', margin, 50 + dy);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
+        doc.setTextColor.apply(doc, PDF_OR_TEXTE);
         doc.text('FRAIS RÉELS', pageWidth - margin, 32 + dy, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
+        doc.setTextColor.apply(doc, PDF_MUTED);
         doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50 + dy, { align: 'right' });
         doc.setTextColor.apply(doc, PDF_INK);
         y = 94 + dy;
     }
     function sectionTitle(title) {
         ensureSpace(30);
-        doc.setFillColor.apply(doc, PDF_BRAND);
+        doc.setFillColor.apply(doc, PDF_BRAND_LT);
         doc.rect(margin, y - 10, 4, 18, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
@@ -15607,8 +15615,11 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
     var pageHeight = doc.internal.pageSize.getHeight();
     var margin = 44;
     var contentW = pageWidth - margin * 2;
-    var PDF_BRAND = [90, 122, 148];
-    var PDF_BRAND_LT = [122, 157, 181];
+    // Noir et or, économe en encre : en-tête blanc souligné d'or, titres noirs à trait or, tableaux à en-têtes soulignés.
+    var PDF_BRAND = [26, 26, 26];
+    var PDF_BRAND_LT = [214, 167, 86];
+    var PDF_OR_TEXTE = [176, 128, 42];
+    if (window.JUMELAGE_PDF_STYLE) JUMELAGE_PDF_STYLE(doc);
     var PDF_INK = [26, 26, 26];
     var PDF_MUTED = [82, 82, 82];
     var PDF_BG = [248, 250, 252];
@@ -15625,24 +15636,25 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
     function drawPdfHeader() {
         // Logo tricolore de TRIGONE au-dessus du nom : bandeau plus haut (dy) quand il est là.
         var dy = window.JUMELAGE_LOGO_PDF && window.JUMELAGE_LOGO_PRET() ? 52 : 0;
-        doc.setFillColor.apply(doc, PDF_BRAND);
-        doc.rect(0, 0, pageWidth, 76 + dy, 'F');
         doc.setFillColor.apply(doc, PDF_BRAND_LT);
         doc.rect(0, 76 + dy, pageWidth, 3, 'F');
-        doc.setTextColor(255, 255, 255);
+        doc.setTextColor.apply(doc, PDF_INK);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(21);
         if (dy) window.JUMELAGE_LOGO_PDF(doc, margin + doc.getTextWidth('TRIGONE') / 2, 12, 42);
         doc.text('TRIGONE', margin, 32 + dy);
         doc.setFontSize(10);
         doc.setFont('helvetica', 'normal');
+        doc.setTextColor.apply(doc, PDF_MUTED);
         doc.text(UNIT_NAME + ' — Compte-rendu de mission', margin, 50 + dy);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
+        doc.setTextColor.apply(doc, PDF_OR_TEXTE);
         var omType = M.COLLECTIVE ? 'OM COLLECTIF' : (M.IS_PAX ? 'OM COLLECTIF — PARTICIPANT' : 'OM INDIVIDUEL');
         doc.text(omType, pageWidth - margin, 32 + dy, { align: 'right' });
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
+        doc.setTextColor.apply(doc, PDF_MUTED);
         doc.text('Édité le ' + new Date().toLocaleString('FR-FR'), pageWidth - margin, 50 + dy, { align: 'right' });
         doc.setTextColor.apply(doc, PDF_INK);
         y = 94 + dy;
@@ -15650,7 +15662,7 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
 
     function sectionTitle(title) {
         ensureSpace(30);
-        doc.setFillColor.apply(doc, PDF_BRAND);
+        doc.setFillColor.apply(doc, PDF_BRAND_LT);
         doc.rect(margin, y - 10, 4, 18, 'F');
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(11);
@@ -15681,9 +15693,9 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
             doc.addPage();
             blockY = margin;
         }
-        doc.setFillColor.apply(doc, PDF_BRAND);
-        doc.rect(margin, blockY, contentW, headerH, 'F');
-        doc.setTextColor(255, 255, 255);
+        doc.setFillColor.apply(doc, PDF_BRAND_LT);
+        doc.rect(margin, blockY + headerH - 2, contentW, 2, 'F');
+        doc.setTextColor.apply(doc, PDF_INK);
         doc.setFont('helvetica', 'bold');
         doc.setFontSize(9);
         doc.text('Certification & signature missionnaire', margin + pad, blockY + 14);
@@ -15759,7 +15771,7 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
         body: idBody,
         margin: tableMargin,
         styles: { fontSize: 9, cellPadding: 6, textColor: PDF_INK },
-        headStyles: { fillColor: PDF_BRAND, textColor: 255, fontStyle: 'bold' },
+        headStyles: { fillColor: false, textColor: PDF_INK, fontStyle: 'bold' },
         alternateRowStyles: { fillColor: PDF_BG },
         columnStyles: { 0: { cellWidth: 118, fontStyle: 'bold', textColor: PDF_MUTED } },
         tableWidth: contentW
@@ -15836,7 +15848,7 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
             body: _allJourRows,
             margin: tableMargin,
             styles: { fontSize: 8.5, cellPadding: 5, textColor: PDF_INK },
-            headStyles: { fillColor: PDF_BRAND, textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: false, textColor: PDF_INK, fontStyle: 'bold' },
             alternateRowStyles: { fillColor: PDF_BG },
             tableWidth: contentW
         });
@@ -15868,7 +15880,7 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
             body: issueRows,
             margin: tableMargin,
             styles: { fontSize: 8, cellPadding: 5, textColor: PDF_INK, overflow: 'linebreak', valign: 'top' },
-            headStyles: { fillColor: [185, 28, 28], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: false, textColor: [185, 28, 28], fontStyle: 'bold' },
             alternateRowStyles: { fillColor: [254, 242, 242] },
             columnStyles: {
                 0: { cellWidth: 100, fontStyle: 'bold' },
@@ -15917,7 +15929,7 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
         body: [[pjText]],
         margin: tableMargin,
         styles: { fontSize: 9, cellPadding: 8, textColor: PDF_INK },
-        headStyles: { fillColor: PDF_BRAND, textColor: 255, fontStyle: 'bold' },
+        headStyles: { fillColor: false, textColor: PDF_INK, fontStyle: 'bold' },
         tableWidth: contentW,
         showHead: 'firstPage',
         rowPageBreak: 'avoid'
@@ -15936,7 +15948,7 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
             body: manquantesRows,
             margin: tableMargin,
             styles: { fontSize: 9, cellPadding: 8, textColor: PDF_INK },
-            headStyles: { fillColor: [185, 28, 28], textColor: 255, fontStyle: 'bold' },
+            headStyles: { fillColor: false, textColor: [185, 28, 28], fontStyle: 'bold' },
             columnStyles: { 0: { cellWidth: contentW * 0.5 }, 1: { cellWidth: contentW * 0.5 } },
             tableWidth: contentW,
             showHead: 'firstPage',
