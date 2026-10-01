@@ -226,7 +226,7 @@ function texteSuivi(etape, genre, n, qui) {
         val2: [p ? n + ' demandes validées' : 'Demande validée', x + ' été validée' + (p ? 's' : '') + ' par le VALIDEUR 1' + par + ' ; en attente du VALIDEUR 2.'],
         chorus: [p ? n + ' demandes validées' : 'Demande validée', x + ' été validée' + (p ? 's' : '') + ' par le VALIDEUR 2' + par + ' et transmise' + (p ? 's' : '') + ' à l\'assistant Chorus DT.'],
         renvoi: [p ? n + ' demandes renvoyées' : 'Demande renvoyée', x + ' été renvoyée' + (p ? 's' : '') + ' au VALIDEUR 1 par le VALIDEUR 2' + par + ', pour correction.'],
-        traite: [p ? n + ' demandes traitées' : 'Demande traitée', x + ' été prise' + (p ? 's' : '') + ' en charge par l\'assistant Chorus DT' + par + ' : votre ordre de mission est en cours de création.']
+        traite: [p ? n + ' demandes traitées' : 'Demande traitée', x + ' été traitée' + (p ? 's' : '') + ' par l\'assistant Chorus DT' + par + ' : votre ordre de mission est créé dans Chorus DT.']
     }[etape];
 }
 // Prévient tous les appareils abonnés d'un compte.

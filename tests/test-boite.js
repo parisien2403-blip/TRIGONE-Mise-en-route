@@ -339,18 +339,23 @@ module.exports = async function() {
     const pdf = await telechargement;
     verifier(/^4-OMR VALIDE/.test(pdf.suggestedFilename()), 'Chorus DT : « Télécharger le PDF » depuis la ligne donne le PDF final (' + pdf.suggestedFilename() + ')');
     await attendre(800);
-    verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().find(x => x.nature === 'chorus').statut === 'traite'), 'Chorus DT : la demande passe en « Traités » après le PDF');
-    verifier(Object.values(await suivi(m)).some(x => x.etape === 'traite'), 'suivi : demande « prise en charge par l\'assistant Chorus DT » après le PDF');
+    verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().find(x => x.nature === 'chorus').statut !== 'traite') && await c.locator('.MER-RECU:has(.MER-RECU-chorus) .MER-CHORUS-TRAITE').count() === 1,
+        'Chorus DT : après le PDF, la demande reste à traiter et « ✔ Traité » apparaît sur sa ligne');
+    verifier(!Object.values(await suivi(m)).some(x => x.etape === 'traite'), 'suivi : le PDF seul ne termine pas la demande');
+    await c.locator('.MER-RECU:has(.MER-RECU-chorus) .MER-CHORUS-TRAITE').click(); await attendre(400);
+    await c.click('#MSG-BOUTONS .BTN:has-text("Oui, traitée")'); await attendre(1500);
+    verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().find(x => x.nature === 'chorus').statut === 'traite'), 'Chorus DT : « ✔ Traité » passe la demande en « Traités »');
+    verifier(Object.values(await suivi(m)).some(x => x.etape === 'traite'), 'suivi : demande « traitée par l\'assistant Chorus DT » après « ✔ Traité »');
     // Les valideurs voient aussi la suite des demandes qu'ils ont validées.
     const sv1 = Object.values(await suivi(v1)), sv2 = Object.values(await suivi(v2));
     verifier(sv1.some(x => x.intervenant && x.etape === 'traite') && sv2.some(x => x.intervenant && x.etape === 'traite'),
         'suivi : le VALIDEUR 1 et le VALIDEUR 2 voient la prise en charge par l\'assistant Chorus DT');
     await v2.evaluate(() => OUVRIR_DOSSIER('RECEPTION', 'signer')); await attendre(1200);
     await v2.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
-    verifier(await v2.locator('.MER-RECU .MER-SUIVI-TXT:has-text("Prise en charge par l\'assistant Chorus DT")').count() >= 1,
+    verifier(await v2.locator('.MER-RECU .MER-SUIVI-TXT:has-text("Traitée par l\'assistant Chorus DT")').count() >= 1,
         'Boîte de réception du VALIDEUR 2 : frise de suivi sur la demande traitée');
     await m.evaluate(() => OUVRIR_DOSSIER('BIBLIOTHEQUE', 'traitees')); await attendre(1500);
-    verifier(await m.locator('.MER-SUIVI-TXT:has-text("Prise en charge par l\'assistant Chorus DT")').count() >= 1 && await m.locator('.MER-SUIVI-PT.fait').count() >= 4,
+    verifier(await m.locator('.MER-SUIVI-TXT:has-text("Traitée par l\'assistant Chorus DT")').count() >= 1 && await m.locator('.MER-SUIVI-PT.fait').count() >= 4,
         'Bibliothèque : frise de suivi Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT');
     await c.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
     await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Contrôle détaillé")').first().click(); await attendre(2500);

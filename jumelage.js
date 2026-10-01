@@ -808,7 +808,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 121, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 122, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2548,6 +2548,10 @@
             if (x.statut !== 'traite' && (x.ids || []).length && x.ids.every(function(i) { return ids.indexOf(i) >= 0; })) { x.statut = 'traite'; x.traiteLe = Date.now(); change = true; }
         });
         if (change) boiteEcrire(l);
+    };
+    // Assistant Chorus DT : PDF final téléchargé, l'envoi attend son « ✔ Traité » (l'ordre de mission créé dans Chorus DT).
+    window.JUMELAGE_BOITE_PDF_FAIT = function(id) {
+        var l = boiteLire(); l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') { x.statut = 'ouvert'; x.pdfFait = Date.now(); } }); boiteEcrire(l);
     };
     // Envoi classé « traité » trop tôt : il repasse « à traiter ».
     window.JUMELAGE_BOITE_ROUVRIR = function(id) {

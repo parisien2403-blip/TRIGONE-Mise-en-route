@@ -105,6 +105,10 @@ module.exports = async function() {
             CHORUS_PDF_RECU(x.id);
             for (let i = 0; i < 60 && !octets; i++) { await new Promise(r => setTimeout(r, 200)); if (/conforme/.test((document.getElementById('MSG-TEXTE') || {}).textContent || '')) break; }
             if (!octets) return { ok: false, raison: (document.getElementById('MSG-TEXTE') || {}).textContent };
+            // PDF téléchargé : « ✔ Traité » (ordre de mission créé dans Chorus DT).
+            const avant = JUMELAGE_BOITE_LISTE().find(e => e.id === x.id);
+            if (avant.statut === 'traite' || !avant.pdfFait) return { ok: false, raison: 'le PDF ne doit pas classer « traité » seul' };
+            CHORUS_MARQUER_TRAITE(x.id);
             await CHARGER_PDFLIB(); const doc = await PDFLib.PDFDocument.load(octets);
             return { ok: true, pages: doc.getPageCount(), traite: JUMELAGE_BOITE_LISTE().find(e => e.id === x.id).statut === 'traite' };
         });
