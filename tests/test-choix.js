@@ -38,6 +38,13 @@ module.exports = async function(srv) {
     await c.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1')); await c.reload(); await attendre(2500);
     const pdf = await c.evaluate(() => { const d = GENERER_PDF([DEMO_DEMANDE()]); return { pages: d.getNumberOfPages(), image: /\/Subtype \/Image/.test(d.output()) }; });
     verifier(pdf.image && pdf.pages === 1, 'PDF de demande : logo tricolore dans le bandeau, toujours une seule page');
+    // Signaler un problème : Phénix au casque, puis la messagerie.
+    await c.route('mailto:*', r => r.abort());
+    await c.evaluate(() => JUMELAGE_SIGNALER()); await attendre(800);
+    const sig = await c.evaluate(() => { const i = document.querySelector('.JUM-SIG .JUM-SIG-MASCOTTE'); return !!i && i.complete && i.naturalWidth > 0; });
+    verifier(sig, 'Signaler un problème : fenêtre avec Phénix au casque');
+    await c.click('.JUM-SIG .JUM-R-SECOND'); await attendre(300);
+    verifier(!(await c.$('.JUM-SIG')), 'Signaler un problème : « Annuler » referme la fenêtre');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
     await b.close();
 };
