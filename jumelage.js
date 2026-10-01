@@ -808,7 +808,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 120, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 121, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -862,28 +862,30 @@
     };
     var ICI = DANS_CR ? 'cr' : 'mer', CLE_CHOIX = 'trigone_choix_fait';
     // ---------- Logo tricolore des PDF (Mise en route, Compte-rendu, récapitulatifs) ----------
-    // Chargé une fois (icône de l'appli, en cache pour le hors ligne), réduit en JPEG léger ; posé dans une vignette
-    // blanche au-dessus de « TRIGONE » dans le bandeau. Logo pas encore chargé : le bandeau reste sans logo.
-    var logoPdf = null;
+    // Le phénix et la vague tricolore, sans le mot TRIGONE (logo-pdf.webp, en cache pour le hors ligne), réduit en JPEG
+    // léger ; posé dans une vignette blanche, centré au-dessus du mot « TRIGONE » du bandeau. Pas encore chargé : pas de logo.
+    var logoPdf = null, logoRatio = 1;
     (function chargerLogoPdf() {
         var img = new Image();
         img.onload = function() {
             try {
-                var c = document.createElement('canvas'); c.width = c.height = 240;
-                var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, 240, 240); x.drawImage(img, 0, 0, 240, 240);
-                logoPdf = c.toDataURL('image/jpeg', 0.9);
+                var w = 300, h = Math.round(300 * img.naturalHeight / img.naturalWidth);
+                var c = document.createElement('canvas'); c.width = w; c.height = h;
+                var x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, w, h); x.drawImage(img, 0, 0, w, h);
+                logoPdf = c.toDataURL('image/jpeg', 0.9); logoRatio = w / h;
             } catch (e) {}
         };
-        img.src = (DANS_CR ? '../' : '') + 'icon-512.png';
+        img.src = (DANS_CR ? '../' : '') + 'logo-pdf.webp';
     })();
     window.JUMELAGE_LOGO_PRET = function() { return !!logoPdf; };
-    window.JUMELAGE_LOGO_PDF = function(doc, x, y, taille) {
+    // cx : centre horizontal (celui du mot TRIGONE) ; y : haut de la vignette ; h : sa hauteur.
+    window.JUMELAGE_LOGO_PDF = function(doc, cx, y, h) {
         if (!logoPdf) return false;
         try {
-            var bord = taille * 0.06;
+            var bord = h * 0.08, hi = h - 2 * bord, wi = hi * logoRatio, w = wi + 2 * bord;
             doc.setFillColor(255, 255, 255);
-            doc.roundedRect(x, y, taille, taille, taille * 0.14, taille * 0.14, 'F');
-            doc.addImage(logoPdf, 'JPEG', x + bord, y + bord, taille - 2 * bord, taille - 2 * bord, 'trigone-logo', 'FAST');
+            doc.roundedRect(cx - w / 2, y, w, h, h * 0.14, h * 0.14, 'F');
+            doc.addImage(logoPdf, 'JPEG', cx - wi / 2, y + bord, wi, hi, 'trigone-logo', 'FAST');
             return true;
         } catch (e) { return false; }
     };
