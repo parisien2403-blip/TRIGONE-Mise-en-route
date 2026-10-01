@@ -22,25 +22,44 @@ module.exports = async function() {
         return p;
     }
     const pax = await appareil('PAX'), chef = await appareil('CHEF');
+    // Matricule du profil déclaré au serveur : le chef retrouvera le compte de LEROY sans saisir son adresse.
+    async function profilNid(p, matricule) {
+        await p.evaluate(m => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}'); r.matricule = m; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); JUMELAGE_MAJ_COMPTE(); }, matricule);
+        await attendre(3000);
+    }
+    const NID = '06' + String(Date.now()).slice(-8);   // matricule propre à cette exécution (un matricule n'a qu'un compte)
+    await profilNid(pax, NID);
+    verifier(await pax.evaluate(([m, n]) => localStorage.getItem('trigone_nid_publie') === m + '|' + n, [MAILS.PAX, NID]), 'participant : matricule du profil déclaré à son compte TRIGONE');
+    verifier(await chef.evaluate(n => fetch('api/nid', { method: 'POST', headers: { 'Content-Type': 'application/json', Authorization: (c => 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton)(JSON.parse(localStorage.getItem('trigone_compte'))) },
+        body: JSON.stringify({ nid: n }) }).then(r => r.status), NID) === 409, 'serveur : un matricule déjà pris par un autre compte est refusé');
     // Chef : compte-rendu de la mission collective (repris de la mise en route à 3 personnes).
     await chef.goto(URL + 'cr/'); await attendre(2500);
     await chef.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); });
-    await chef.evaluate(() => APPLIQUER_MISE_EN_ROUTE({ objet: 'FORMATION SSIAP', trajets: {
+    await chef.evaluate(NID => APPLIQUER_MISE_EN_ROUTE({ objet: 'FORMATION SSIAP', trajets: {
         aller: { moyen: 'FERREE', residenceDep: 'GARNISON', lieuDep: 'LIBOURNE', cpDep: '33500', lieuArr: 'PARIS', cpArr: '75014', dateDep: '2026-10-05T06:52', dateArr: '2026-10-05T09:28' },
         retour: { moyen: 'FERREE', residenceArr: 'GARNISON', lieuDep: 'PARIS', cpDep: '75014', lieuArr: 'LIBOURNE', cpArr: '33500', dateDep: '2026-10-07T17:04', dateArr: '2026-10-07T19:41' } },
-        personnes: [{ grade: 'ADJ', nom: 'TEST', prenom: 'Chef', matricule: '067 12 34 567' }, { grade: 'CPL', nom: 'LEROY', prenom: 'Emma', matricule: '067 98 76 543', cie: '2CIE' }, { grade: 'SAP', nom: 'BERNARD', prenom: 'Hugo', matricule: '067 55 44 333' }] }));
+        personnes: [{ grade: 'ADJ', nom: 'TEST', prenom: 'Chef', matricule: '067 12 34 567' }, { grade: 'CPL', nom: 'LEROY', prenom: 'Emma', matricule: NID, cie: '2CIE' }, { grade: 'SAP', nom: 'BERNARD', prenom: 'Hugo', matricule: '067 55 44 333' }] }), NID);
     await attendre(1200);
     await chef.evaluate(m => { M.CHEF_MAIL = m; M.DEBUT = '05/10/2026 06:30:00'; SAVE_STATE(); document.querySelectorAll('#MSG-OVERLAY').forEach(e => e.classList.add('HIDDEN')); }, MAILS.CHEF);
     await chef.evaluate(() => OUVRIR_ENVOI_PAX()); await attendre(400);
     verifier(await chef.evaluate(() => !document.getElementById('PAX-ENVOI-OVERLAY').classList.contains('HIDDEN') && document.querySelectorAll('#PAX-ENVOI-LISTE .PAX-LIGNE').length === 2
         && /CPL LEROY Emma/.test(document.getElementById('PAX-ENVOI-LISTE').textContent)), 'chef : « Envoyer aux participants » liste les 2 participants de la mise en route');
-    const mails = await chef.$$('#PAX-ENVOI-LISTE .PAX-MAIL');
-    await mails[0].fill(MAILS.PAX); await mails[1].fill('sanscompte.' + suffixe + '@interieur.gouv.fr');
+    await attendre(1500);
+    const lignes = () => chef.$$eval('#PAX-ENVOI-LISTE .PAX-LIGNE', l => l.map(e => ({ mail: e.getAttribute('data-mail'), etat: e.querySelector('.PAX-ETAT').className + ' | ' + e.querySelector('.PAX-ETAT').textContent })));
+    let l0 = await lignes();
+    verifier(l0[0].mail === MAILS.PAX && /trouve/.test(l0[0].etat) && /retrouvé par son matricule/.test(l0[0].etat) && !(await chef.$('#PAX-ENVOI-LISTE input')),
+        'chef : LEROY retrouvé par son matricule (compte TRIGONE), sans adresse à saisir');
+    verifier(l0[1].mail === '' && /sans/.test(l0[1].etat) && /Pas de compte TRIGONE/.test(l0[1].etat), 'chef : BERNARD sans compte TRIGONE → signalé, il ne peut rien recevoir');
+    // Participant ajouté à la main : par son matricule.
+    await chef.evaluate(() => AJOUTER_LIGNE_PAX()); await chef.fill('#PAX-ENVOI-LISTE .PAX-NID', '123'); await chef.press('#PAX-ENVOI-LISTE .PAX-NID', 'Tab'); await attendre(300);
+    verifier(/10 chiffres/.test((await lignes())[2].etat), 'chef : « + Ajouter un participant » refuse un matricule incomplet');
+    await chef.fill('#PAX-ENVOI-LISTE .PAX-NID', NID); await chef.press('#PAX-ENVOI-LISTE .PAX-NID', 'Tab'); await attendre(1500);
+    verifier((await lignes())[2].mail === MAILS.PAX, 'chef : « + Ajouter un participant » retrouve son compte par son matricule');
+    await chef.evaluate(() => { const l = document.querySelectorAll('#PAX-ENVOI-LISTE .PAX-LIGNE'); l[2].remove(); });
     await chef.click('#BTN-PAX-ENVOYER'); await attendre(4000);
-    const etats = await chef.$$eval('#PAX-ENVOI-LISTE .PAX-ETAT', l => l.map(e => e.className + ' | ' + e.textContent));
-    verifier(/ok/.test(etats[0]) && /Envoyé/.test(etats[0]), 'chef : envoyé à LEROY (compte TRIGONE)');
-    verifier(/ko/.test(etats[1]) && /Pas encore de compte TRIGONE/.test(etats[1]) && !/QR|WhatsApp/.test(etats[1]), 'chef : BERNARD sans compte TRIGONE → il doit se connecter à TRIGONE, puis renvoi');
-    verifier(await chef.evaluate(m => MAILS_PAX()['LEROY EMMA'] === m, MAILS.PAX), 'chef : adresse du participant mémorisée pour la prochaine fois');
+    l0 = await lignes();
+    verifier(/ok/.test(l0[0].etat) && /Envoyé/.test(l0[0].etat), 'chef : envoyé à LEROY (compte TRIGONE)');
+    verifier(/sans/.test(l0[1].etat) && !/Envoi/.test(l0[1].etat), 'chef : rien n\'est envoyé à BERNARD (pas de compte)');
     // Participant : relève, boîte de réception, ouverture du compte-rendu prérempli.
     await pax.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
     await pax.evaluate(() => SHOW_PAGE('RECEPTION')); await attendre(500);
@@ -53,7 +72,8 @@ module.exports = async function() {
     verifier(/\/cr\//.test(pax.url()), 'participant : « Ouvrir mon compte-rendu » ouvre Compte-rendu');
     verifier(await pax.evaluate(m => M.IS_PAX === true && M.LIBELLE_MISSION === 'FORMATION SSIAP' && M.CHEF_MAIL === m && M.T_A === 'VF' && !!M.DEBUT, MAILS.CHEF),
         'participant : compte-rendu prérempli (mission, trajets, chef en copie)');
-    verifier(await pax.evaluate(() => ['GRADE-USER-PAX', 'NOM-USER-PAX', 'PRENOM-USER-PAX', 'NID-USER-PAX', 'CIE-INPUT-PAX'].map(i => document.getElementById(i).value).join('|') === 'CPL|LEROY|Emma|06 798 765 43|' + M.CIE && M.CIE === '2CIE'),
+    verifier(await pax.evaluate(n => ['GRADE-USER-PAX', 'NOM-USER-PAX', 'PRENOM-USER-PAX', 'NID-USER-PAX', 'CIE-INPUT-PAX'].map(i => document.getElementById(i).value).join('|') === 'CPL|LEROY|Emma|' + n + '|' + M.CIE && M.CIE === '2CIE',
+        [NID.slice(0, 2), NID.slice(2, 5), NID.slice(5, 8), NID.slice(8)].join(' ')),
         'participant : son identité (grade, nom, prénom, NID, compagnie) préremplie depuis la mise en route');
     // Suivi de l'équipe : le participant envoie son compte-rendu (avec la référence de la mission) → le chef le voit ;
     // un 2e participant ne l'a pas fait → « Relancer » lui envoie un rappel (une fois par 12 h).
