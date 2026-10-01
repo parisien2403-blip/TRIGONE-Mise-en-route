@@ -20,9 +20,17 @@ module.exports = async function() {
         const ctx = await b.newContext({ viewport: { width: 480, height: 1000 } }); const f = await ctx.newPage();
         f.on('pageerror', e => erreurs.push('neuf : ' + e.message));
         await f.goto(URL); await attendre(3500);
-        await f.click('.JUM-PRES-BTN'); await attendre(1200);
-        verifier(await f.isVisible('.JUM-CONNEXION #JUM-C-MAIL') && (await f.textContent('.JUM-CX-ONGLETS')).includes('autre appareil') && !(await f.$('.JUM-REGLAGES:not(.JUM-CONNEXION)')),
-            'première ouverture : « Se connecter » proposé (mail ou code de liaison), sans réglages imposés');
+        verifier(await f.isVisible('.JUM-ACC [data-aller="creer"]') && await f.isVisible('.JUM-ACC [data-aller="connecter"]') && await f.isVisible('.JUM-ACC-BOUTONS [data-aller="liaison"]')
+            && !(await f.$('.JUM-PRES')) && !(await f.$('.JUM-REGLAGES:not(.JUM-CONNEXION)')),
+            'première ouverture : écran d\'accueil (Créer mon compte, Se connecter, autre appareil), sans réglages imposés');
+        await f.click('.JUM-ACC [data-aller="creer"]'); await attendre(300);
+        verifier(await f.isVisible('.JUM-CONNEXION #JUM-C-MAIL') && (await f.textContent('#JUM-C-TITRE')).includes('Bienvenue'), 'accueil : « Créer mon compte » ouvre le formulaire (mail puis code)');
+        await f.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await attendre(200);
+        verifier((await f.textContent('#JUM-C-TITRE')).includes('Bon retour'), 'accueil : onglet « Se connecter »');
+        await f.click('.JUM-ACC-AUTRE'); await attendre(200);
+        verifier(await f.isVisible('#JUM-L-CODE') && !(await f.isVisible('#JUM-C-MAIL')), 'accueil : « J\'ai déjà TRIGONE sur un autre appareil » → code de liaison');
+        await f.click('.JUM-ACC-RETOUR'); await attendre(200);
+        verifier(await f.isVisible('.JUM-ACC [data-aller="creer"]'), 'accueil : retour à l\'écran d\'accueil');
         await f.click('#JUM-C-PLUSTARD'); await attendre(600);
         verifier(!(await f.$('.JUM-REGLAGES')) && (await f.textContent('.JUM-CHOIX .JUM-CPT')).includes('Se connecter'),
             'première ouverture : « Plus tard » → écran d\'accueil libre, « Se connecter » en haut à droite');

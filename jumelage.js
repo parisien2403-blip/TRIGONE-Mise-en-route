@@ -362,6 +362,91 @@
         '.JUM-CX-ONGLETS button.actif { background: #fff; color: #1a1a1a; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }' +
         'html body.dark-mode .JUM-CX-ONGLETS { background: #262626; } html body.dark-mode .JUM-CX-ONGLETS button.actif { background: #3a3a3a; color: #f5f5f5; }' +
         '.JUM-CX-SANS { display: block; margin: 14px auto 0; border: 0; background: none; color: #5a7a94; font: 700 0.74rem Montserrat, system-ui, sans-serif; text-decoration: underline; cursor: pointer; }' +
+        /* Accueil de première ouverture et « Se connecter » : téléphone (accueil puis formulaire), PC (écran partagé) */
+        '.JUM-REGLAGES.JUM-ACC { display: block; padding: 0; background: #0c0c0c; overflow-y: auto; -webkit-overflow-scrolling: touch; color: #1a1a1a; animation: jum-menu 0.25s ease both; }' +
+        '.JUM-ACC-PAGE { position: relative; min-height: 100%; display: flex; flex-direction: column; }' +
+        '.JUM-ACC-MARQUE { position: relative; overflow: hidden; box-sizing: border-box; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column; text-align: center; color: #f5f5f5;' +
+            ' padding: calc(env(safe-area-inset-top, 0px) + 64px) 24px calc(env(safe-area-inset-bottom, 0px) + 24px); background: radial-gradient(90% 60% at 50% 22%, #2b2b2b 0%, #151515 55%, #0c0c0c 100%); }' +
+        '.JUM-ACC-MARQUE::before, .JUM-ACC-TETE::before { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: 0.5; background: linear-gradient(118deg, transparent 84%, rgba(214,167,86,0.85) 84% 84.3%, transparent 84.3%); }' +
+        '.JUM-ACC-HALO { position: absolute; width: 420px; height: 420px; left: 50%; top: -60px; transform: translateX(-50%); border-radius: 50%; pointer-events: none; background: radial-gradient(circle, rgba(214,167,86,0.16), transparent 65%); }' +
+        '.JUM-ACC-LOGO { position: relative; display: flex; flex-direction: column; align-items: center; gap: 12px; }' +
+        '.JUM-ACC-LOGO img { width: 92px; height: auto; filter: invert(1) brightness(1.15); }' +
+        '.JUM-ACC-MOT { font-size: 2.4rem; font-weight: 800; letter-spacing: 0.2em; padding-left: 0.2em; }' +
+        '.JUM-ACC-SOUS { position: relative; margin-top: 12px; color: #d6a756; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.3em; text-transform: uppercase; }' +
+        '.JUM-ACC-MARQUE h1 { display: none; }' +
+        '.JUM-ACC-TXT { position: relative; margin: 16px auto 0; max-width: 340px; font-size: 0.95rem; line-height: 1.55; color: #c9c9c9; }' +
+        '.JUM-ACC-PTS { position: relative; display: grid; gap: 10px; margin: 30px auto 0; width: 100%; max-width: 400px; text-align: left; }' +
+        '.JUM-ACC-PT { display: flex; align-items: center; gap: 14px; padding: 13px 16px; border-radius: 16px; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.09); }' +
+        '.JUM-ACC-PT svg { flex-shrink: 0; width: 22px; height: 22px; fill: none; stroke: #d6a756; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-ACC-PT b { display: block; font-size: 0.88rem; } .JUM-ACC-PT span { display: none; font-size: 0.78rem; color: #a8a8a8; margin-top: 2px; }' +
+        '.JUM-ACC-BOUTONS { position: relative; margin: auto auto 0; padding-top: 30px; width: 100%; max-width: 400px; }' +
+        '.JUM-ACC-BTN { display: flex; align-items: center; justify-content: center; width: 100%; min-height: 54px; box-sizing: border-box; border-radius: 16px; border: 0; cursor: pointer;' +
+            ' font: 800 0.88rem Montserrat, system-ui, sans-serif; letter-spacing: 0.08em; text-transform: uppercase; }' +
+        '.JUM-ACC-BTN.or { background: linear-gradient(180deg, #e2b866, #c99743); color: #1a1a1a; box-shadow: 0 12px 30px rgba(214,167,86,0.25); }' +
+        '.JUM-ACC-BTN.ligne { margin-top: 12px; background: transparent; color: #f5f5f5; border: 1.5px solid rgba(255,255,255,0.28); }' +
+        '.JUM-ACC-BTN.noir { background: #1a1a1a; color: #fff; } .JUM-ACC-BTN:disabled { opacity: 0.55; cursor: default; }' +
+        '.JUM-ACC-LIEN { display: block; margin: 18px auto 0; border: 0; background: none; color: #a9c3d6; font: 700 0.86rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
+        '.JUM-ACC-NOTE { margin-top: 12px; font-size: 0.72rem; color: #8a8a8a; }' +
+        '.JUM-ACC-BAS { display: none; }' +
+        '.JUM-ACC-FERMER { position: absolute; z-index: 3; top: calc(env(safe-area-inset-top, 0px) + 14px); right: 14px; border: 1px solid rgba(255,255,255,0.22); border-radius: 20px; padding: 8px 14px;' +
+            ' background: rgba(255,255,255,0.08); color: #e5e5e5; font: 700 0.76rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
+        '.JUM-ACC-FORM { display: none; position: relative; min-height: 100vh; min-height: 100dvh; background: #f6f8fa; padding-bottom: 24px; box-sizing: border-box; }' +
+        '.JUM-ACC[data-etape="form"] .JUM-ACC-MARQUE { display: none; } .JUM-ACC[data-etape="form"] .JUM-ACC-FORM { display: block; }' +
+        '.JUM-ACC-TETE { position: relative; overflow: hidden; height: 230px; padding-top: calc(env(safe-area-inset-top, 0px) + 30px); box-sizing: border-box; text-align: center; color: #f5f5f5;' +
+            ' background: radial-gradient(90% 90% at 50% 10%, #2b2b2b 0%, #151515 60%, #0c0c0c 100%); border-radius: 0 0 34px 34px; }' +
+        '.JUM-ACC-TETE img { width: 54px; filter: invert(1) brightness(1.15); } .JUM-ACC-TETE div { margin-top: 8px; font-size: 1.35rem; font-weight: 800; letter-spacing: 0.2em; padding-left: 0.2em; }' +
+        '.JUM-ACC-RETOUR { position: absolute; z-index: 3; top: calc(env(safe-area-inset-top, 0px) + 14px); left: 14px; width: 40px; height: 40px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.1); color: #f5f5f5; cursor: pointer; display: flex; align-items: center; justify-content: center; }' +
+        '.JUM-ACC-RETOUR svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-ACC-CARTE { position: relative; box-sizing: border-box; width: calc(100% - 32px); max-width: 470px; margin: -80px auto 0; padding: 24px 22px 22px; background: #fff; border-radius: 26px; box-shadow: 0 22px 54px rgba(26,40,52,0.12); }' +
+        '.JUM-ACC-ONGLETS { display: flex; padding: 4px; margin-bottom: 22px; border-radius: 14px; background: #eef2f6; }' +
+        '.JUM-ACC-ONGLETS button { flex: 1; border: 0; border-radius: 11px; padding: 11px 4px; background: none; color: #64748b; font: 700 0.84rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
+        '.JUM-ACC-ONGLETS button.actif { background: #1a1a1a; color: #fff; }' +
+        '.JUM-ACC-CARTE h2 { margin: 0; font-size: 1.55rem; font-weight: 800; color: #1a1a1a; }' +
+        '.JUM-ACC-AIDE { margin: 6px 0 20px; font-size: 0.84rem; line-height: 1.5; color: #64748b; }' +
+        '.JUM-ACC-LBL { display: block; margin-bottom: 8px; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.08em; text-transform: uppercase; color: #3b4651; }' +
+        '.JUM-ACC-CHAMP { position: relative; } .JUM-ACC-CHAMP svg { position: absolute; left: 15px; top: 50%; transform: translateY(-50%); width: 20px; height: 20px; fill: none; stroke: #5a7a94; stroke-width: 2; pointer-events: none; }' +
+        '.JUM-ACC-CHAMP input { width: 100%; height: 54px; box-sizing: border-box; padding: 0 14px 0 46px; border: 2px solid #d7dee6; border-radius: 14px; background: #fff; color: #1a1a1a; font: 500 16px Montserrat, system-ui, sans-serif; }' +
+        '.JUM-ACC-CHAMP input:focus { outline: none; border-color: #1a1a1a; }' +
+        '.JUM-ACC-CARTE #JUM-C-ENVOI { margin-top: 14px; }' +
+        '.JUM-ACC-CODE { position: relative; display: flex; gap: 8px; margin-top: 4px; }' +
+        '.JUM-ACC-CODE span { flex: 1; height: 58px; display: flex; align-items: center; justify-content: center; border-radius: 14px; border: 2px solid #d7dee6; font-size: 1.5rem; font-weight: 800; color: #1a1a1a; background: #fff; }' +
+        '.JUM-ACC-CODE span.plein { border-color: #1a1a1a; } .JUM-ACC-CODE span.curseur { border-color: #d6a756; box-shadow: 0 0 0 4px rgba(214,167,86,0.2); }' +
+        '.JUM-ACC-CODE input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; font-size: 16px; color: transparent; background: transparent; caret-color: transparent; cursor: text; }' +
+        '.JUM-ACC-ETAPE2 { margin-top: 18px; } .JUM-ACC-ETAPE2 .JUM-ACC-BTN { margin-top: 18px; }' +
+        '.JUM-ACC-RENVOI-SLOT { text-align: right; } .JUM-ACC-CARTE #JUM-C-ENVOI.renvoi { display: inline; width: auto; min-height: 0; margin: 10px 0 0; padding: 0; background: none; box-shadow: none; color: #5a7a94; font-size: 0.8rem; letter-spacing: 0; text-transform: none; }' +
+        '.JUM-ACC-CARTE .JUM-R-ERREUR { margin-top: 10px; }' +
+        '.JUM-ACC-OU { display: flex; align-items: center; gap: 12px; margin: 20px 0 14px; font-size: 0.74rem; color: #94a3b8; } .JUM-ACC-OU::before, .JUM-ACC-OU::after { content: ""; flex: 1; height: 1px; background: #e2e8f0; }' +
+        '.JUM-ACC-AUTRE { display: flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 50px; border: 1.5px solid #d6dde4; border-radius: 14px; background: #fff; color: #1a1a1a; font: 700 0.84rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
+        '.JUM-ACC-AUTRE svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; }' +
+        '.JUM-ACC-SECU { display: flex; gap: 10px; margin-top: 18px; font-size: 0.74rem; line-height: 1.5; color: #64748b; }' +
+        '.JUM-ACC-SECU svg { flex-shrink: 0; width: 18px; height: 18px; margin-top: 1px; fill: none; stroke: #5a7a94; stroke-width: 2; }' +
+        '.JUM-ACC-CARTE .JUM-CX-SANS { margin-top: 12px; }' +
+        '@media (min-width: 900px) {' +
+            ' .JUM-ACC-PAGE { flex-direction: row; min-height: 100vh; }' +
+            ' .JUM-REGLAGES.JUM-ACC .JUM-ACC-MARQUE { display: flex; flex: 1.05; min-height: 100vh; text-align: left; padding: 56px clamp(40px, 5vw, 72px) 34px; background: radial-gradient(90% 70% at 40% 30%, #2b2b2b 0%, #151515 55%, #0c0c0c 100%); }' +
+            ' .JUM-ACC-HALO { left: -60px; top: -40px; transform: none; width: 520px; height: 520px; }' +
+            ' .JUM-ACC-LOGO { flex-direction: row; gap: 16px; } .JUM-ACC-LOGO img { width: 60px; } .JUM-ACC-MOT { font-size: 1.7rem; padding-left: 0; }' +
+            ' .JUM-ACC-SOUS { display: none; }' +
+            ' .JUM-ACC-MARQUE h1 { display: block; position: relative; margin: auto 0 0; max-width: 620px; font-size: clamp(2rem, 3.2vw, 2.9rem); line-height: 1.12; font-weight: 800; letter-spacing: -0.01em; }' +
+            ' .JUM-ACC-MARQUE h1 em { font-style: normal; color: #d6a756; }' +
+            ' .JUM-ACC-TXT { margin: 18px 0 0; max-width: 560px; font-size: 1.02rem; }' +
+            ' .JUM-ACC-PTS { margin: 36px 0 auto; max-width: 560px; gap: 12px; } .JUM-ACC-PT { padding: 14px 18px; } .JUM-ACC-PT span { display: block; }' +
+            ' .JUM-ACC-BOUTONS { display: none; }' +
+            ' .JUM-ACC-BAS { display: flex; gap: 28px; position: relative; margin-top: 30px; font-size: 0.78rem; color: #8a8a8a; }' +
+            ' .JUM-REGLAGES.JUM-ACC .JUM-ACC-FORM { display: flex; flex: 1; align-items: center; justify-content: center; padding: 80px 40px 40px; min-height: 100vh; }' +
+            ' .JUM-ACC-TETE, .JUM-ACC-RETOUR { display: none; }' +
+            ' .JUM-ACC-CARTE { margin: 0; width: 470px; padding: 32px 34px 28px; }' +
+            ' .JUM-ACC-FERMER { top: 24px; right: 28px; background: #fff; color: #475569; border-color: #d6dde4; }' +
+        ' }' +
+        'html body.dark-mode .JUM-ACC-FORM { background: #111; } html body.dark-mode .JUM-ACC-CARTE { background: #1c1c1c; box-shadow: 0 22px 54px rgba(0,0,0,0.5); }' +
+        'html body.dark-mode .JUM-ACC-CARTE h2 { color: #f5f5f5; } html body.dark-mode .JUM-ACC-AIDE, html body.dark-mode .JUM-ACC-SECU { color: #a3a3a3; } html body.dark-mode .JUM-ACC-LBL { color: #cbd5e1; }' +
+        'html body.dark-mode .JUM-ACC-ONGLETS { background: #262626; } html body.dark-mode .JUM-ACC-ONGLETS button { color: #a3a3a3; } html body.dark-mode .JUM-ACC-ONGLETS button.actif { background: #f5f5f5; color: #141414; }' +
+        'html body.dark-mode .JUM-ACC-CHAMP input { background: #141414; color: #f5f5f5; border-color: #404040; } html body.dark-mode .JUM-ACC-CHAMP input:focus { border-color: #e5e5e5; }' +
+        'html body.dark-mode .JUM-ACC-CODE span { background: #141414; color: #f5f5f5; border-color: #404040; } html body.dark-mode .JUM-ACC-CODE span.plein { border-color: #e5e5e5; } html body.dark-mode .JUM-ACC-CODE span.curseur { border-color: #d6a756; }' +
+        'html body.dark-mode .JUM-ACC-CARTE .JUM-CX-SANS { color: #a9c3d6; } html body.dark-mode .JUM-ACC-CARTE .JUM-R-AIDE { color: #a3a3a3; } html body.dark-mode .JUM-ACC-CARTE .JUM-R-LIEN { color: #a9c3d6; }' +
+        'html body.dark-mode .JUM-ACC-BTN.noir { background: #f5f5f5; color: #141414; } html body.dark-mode .JUM-ACC-AUTRE { background: #1c1c1c; color: #ececec; border-color: #404040; }' +
+        'html body.dark-mode .JUM-ACC-OU::before, html body.dark-mode .JUM-ACC-OU::after { background: #333; } html body.dark-mode .JUM-ACC-CARTE #JUM-C-ENVOI.renvoi { color: #a9c3d6; }' +
+        '@media (min-width: 900px) { html body.dark-mode .JUM-ACC-FERMER { background: #1c1c1c; color: #d4d4d4; border-color: #404040; } }' +
         '.JUM-NOUV { position: absolute; inset: 0; z-index: 6; display: flex; align-items: center; justify-content: center; padding: 16px; background: rgba(15,15,15,0.35); animation: jum-menu 0.2s ease both; }' +
         '.JUM-NOUV.sortie { opacity: 0; transition: opacity 0.25s ease; }' +
         '.JUM-NOUV-CARTE { width: 100%; max-width: 420px; background: #fff; color: #1a1a1a; border-radius: 22px; padding: 24px 22px 18px; text-align: center; box-shadow: 0 24px 60px rgba(0,0,0,0.35); font-family: Montserrat, system-ui, sans-serif; }' +
@@ -655,7 +740,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 116, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 117, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -910,6 +995,7 @@
     window.JUMELAGE_REGLAGES = function(opts) {
         opts = opts || {};
         if (reglages || !document.body) return;
+        if (opts.premiere && !opts.profil && accueilAProposer()) { proposerAccueil(); return; }
         if (opts.premiere && !window.JUMELAGE_PRESENTATION_VUE()) {
             window.JUMELAGE_PRESENTATION({ premiere: true, apres: function() { window.JUMELAGE_REGLAGES(opts); } });
             return;
@@ -1224,8 +1310,15 @@
         cadenas: '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>',
         maj: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>'
     };
+    // Appareil neuf, sans compte ni profil : l'écran d'accueil (Créer mon compte / Se connecter) remplace la présentation.
+    function accueilAProposer() { return !monCompte() && !window.JUMELAGE_REGLAGES_FAITS() && lireTxt(CLE_CONNEXION_PROPOSEE) !== '1'; }
+    function proposerAccueil(apres) {
+        ecrireTxt(CLE_PRESENTATION, '1'); ecrireTxt(CLE_CONNEXION_PROPOSEE, '1');
+        window.JUMELAGE_CONNEXION({ premiere: true, apres: apres });
+    }
     window.JUMELAGE_PRESENTATION = function(opts) {
         opts = opts || {};
+        if (opts.premiere && accueilAProposer()) { proposerAccueil(opts.apres); return; }
         if (presentation || !document.body) { if (opts.apres) opts.apres(); return; }
         var dossier = DANS_CR ? '../' : '';
         function liste(items) { return '<ul>' + items.map(function(t) { return '<li>' + t + '</li>'; }).join('') + '</ul>'; }
@@ -2548,50 +2641,110 @@
         fenCompte.setAttribute('role', 'dialog');
         var fermer = function() {
             window.JUMELAGE_FERMER_COMPTE();
-            if (opts.premiere && window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
+            if (opts.apres) opts.apres();
+            else if (opts.premiere && window.JUMELAGE_APRES_REGLAGES) try { window.JUMELAGE_APRES_REGLAGES(); } catch (e) {}
         };
-        fenCompte.innerHTML = '<div class="JUM-R-CARTE">' +
-            '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : '') + '</span><div><h2>Se connecter à TRIGONE</h2>' +
-                '<p>Un compte à votre adresse professionnelle : vos demandes et comptes-rendus arrivent directement dans TRIGONE, chiffrés. Seul le destinataire peut les lire.</p></div>' +
-                '<button type="button" class="JUM-R-X" aria-label="Fermer" id="JUM-C-X">✕</button></div>' +
-            '<div class="JUM-R-CORPS">' +
-            '<div class="JUM-CX-ONGLETS" role="tablist"><button type="button" role="tab" class="actif" data-onglet="mail">Première connexion</button>' +
-                '<button type="button" role="tab" data-onglet="liaison">J\'ai déjà TRIGONE sur un autre appareil</button></div>' +
-            '<div data-volet="mail">' +
-            '<div class="JUM-R-TITRE">1. Votre adresse professionnelle</div>' +
-            '<div class="JUM-R-CHAMP"><label for="JUM-C-MAIL">Adresse mail</label><input id="JUM-C-MAIL" type="email" autocomplete="email" value="' + esc(r.monMail || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr"></div>' +
-            '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-ENVOI" style="margin:12px 0 0;">Recevoir le code par mail</button>' +
-            '<div id="JUM-C-ETAPE2" style="display:none;"><div class="JUM-R-TITRE">2. Code reçu par mail</div>' +
-                '<div class="JUM-R-CHAMP"><label for="JUM-C-CODE">Code à 6 chiffres</label><input id="JUM-C-CODE" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" placeholder="••••••"></div>' +
-                '<p class="JUM-R-AIDE" style="margin-top:8px;">Pas reçu ? Regardez dans les courriers indésirables, ou redemandez un code.</p></div>' +
-            '<p class="JUM-R-ERREUR" id="JUM-C-ERR"></p>' +
-            (window.JUMELAGE_REGLAGES_FAITS() ? '' : '<p class="JUM-R-AIDE" style="margin-top:10px;">Ensuite, TRIGONE vous demande une seule fois votre identité (grade, nom, compagnie…) et vos destinataires.</p>') +
+        // Accueil façon appli : téléphone, un écran d'accueil (Créer mon compte / Se connecter / autre appareil) puis le
+        // formulaire ; PC, écran partagé (TRIGONE à gauche, formulaire à droite). Créer un compte ou se connecter, c'est le
+        // même parcours (mail professionnel → code à 6 chiffres) ; seuls les textes changent.
+        var dossier = DANS_CR ? '../' : '';
+        var SVG = function(d) { return '<svg viewBox="0 0 24 24">' + d + '</svg>'; };
+        var pt = function(icone, titre, detail) { return '<div class="JUM-ACC-PT">' + SVG(icone) + '<div><b>' + titre + '</b><span>' + detail + '</span></div></div>'; };
+        fenCompte.className = 'JUM-REGLAGES JUM-CONNEXION JUM-ACC';
+        fenCompte.setAttribute('aria-label', 'Bienvenue dans TRIGONE');
+        fenCompte.setAttribute('data-etape', opts.premiere ? 'accueil' : 'form');
+        fenCompte.innerHTML = '<div class="JUM-ACC-PAGE">' +
+            '<button type="button" class="JUM-ACC-FERMER" id="JUM-C-PLUSTARD">' + (opts.premiere ? 'Plus tard' : 'Fermer ✕') + '</button>' +
+            '<div class="JUM-ACC-MARQUE"><div class="JUM-ACC-HALO"></div>' +
+                '<div class="JUM-ACC-LOGO"><img src="' + dossier + 'phoenix-icon.png" alt=""><div class="JUM-ACC-MOT">TRIGONE</div></div>' +
+                '<div class="JUM-ACC-SOUS">Vos missions, simplement</div>' +
+                '<h1>Vos missions,<br><em>de la mise en route au remboursement.</em></h1>' +
+                '<p class="JUM-ACC-TXT">Demande, validation, compte-rendu et transmission à l\'assistant Chorus DT : tout se fait ici, sans papier, sur PC comme sur téléphone.</p>' +
+                '<div class="JUM-ACC-PTS">' +
+                    pt('<path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M9 14l2 2 4-4"/>', 'Demande de mise en route signée en ligne', 'Validation par deux valideurs, signature électronique') +
+                    pt('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>', 'Compte-rendu et frais calculés tout seuls', 'Repas, nuitées, indemnités kilométriques') +
+                    pt('<rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>', 'Tout est chiffré, de bout en bout', 'Personne d\'autre que le destinataire ne peut lire vos envois') +
+                '</div>' +
+                '<div class="JUM-ACC-BOUTONS">' +
+                    '<button type="button" class="JUM-ACC-BTN or" data-aller="creer">Créer mon compte</button>' +
+                    '<button type="button" class="JUM-ACC-BTN ligne" data-aller="connecter">Se connecter</button>' +
+                    '<button type="button" class="JUM-ACC-LIEN" data-aller="liaison">J\'ai déjà TRIGONE sur un autre appareil</button>' +
+                    '<div class="JUM-ACC-NOTE">Avec votre adresse mail professionnelle · aucun mot de passe</div>' +
+                '</div>' +
+                '<div class="JUM-ACC-BAS"><span>4<sup>e</sup> RIISC</span><span>Conçu par Germain-Pierre BOUQUET</span></div>' +
             '</div>' +
-            '<div data-volet="liaison" style="display:none;">' +
-                '<p class="JUM-R-AIDE" style="margin-top:12px;">Sur l\'appareil où TRIGONE est déjà installé : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés. Pas de mail à attendre.</p>' +
-                htmlSaisieLiaison() + '</div>' +
-            '<button type="button" class="JUM-CX-SANS" id="JUM-C-SANS">Pas de réseau pour l\'instant ? Remplir mon profil sans compte</button>' +
-            '</div>' +
-            '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" id="JUM-C-PLUSTARD">' + (opts.premiere ? 'Plus tard' : 'Annuler') + '</button>' +
-            '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-VALIDER" disabled>Se connecter</button></div></div>';
+            '<div class="JUM-ACC-FORM">' +
+                '<button type="button" class="JUM-ACC-RETOUR" aria-label="Retour">' + SVG('<path d="M15 18l-6-6 6-6"/>') + '</button>' +
+                '<div class="JUM-ACC-TETE"><img src="' + dossier + 'phoenix-icon.png" alt=""><div>TRIGONE</div></div>' +
+                '<div class="JUM-ACC-CARTE">' +
+                '<div data-volet="mail">' +
+                    '<div class="JUM-ACC-ONGLETS" role="tablist"><button type="button" role="tab" class="actif" data-mode="creer">Créer mon compte</button><button type="button" role="tab" data-mode="connecter">Se connecter</button></div>' +
+                    '<h2 id="JUM-C-TITRE">Bienvenue 👋</h2>' +
+                    '<p class="JUM-ACC-AIDE" id="JUM-C-AIDE"></p>' +
+                    '<label class="JUM-ACC-LBL" for="JUM-C-MAIL">Adresse mail professionnelle</label>' +
+                    '<div class="JUM-ACC-CHAMP">' + SVG('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>') +
+                        '<input id="JUM-C-MAIL" type="email" autocomplete="email" value="' + esc(r.monMail || '') + '" placeholder="prenom.nom@interieur.gouv.fr"></div>' +
+                    '<button type="button" class="JUM-ACC-BTN noir" id="JUM-C-ENVOI">Recevoir le code par mail</button>' +
+                    '<div class="JUM-ACC-ETAPE2" id="JUM-C-ETAPE2" style="display:none;">' +
+                        '<label class="JUM-ACC-LBL" for="JUM-C-CODE">Code reçu par mail</label>' +
+                        '<div class="JUM-ACC-CODE"><span></span><span></span><span></span><span></span><span></span><span></span>' +
+                            '<input id="JUM-C-CODE" type="text" inputmode="numeric" maxlength="6" autocomplete="one-time-code" aria-label="Code à 6 chiffres"></div>' +
+                        '<div class="JUM-ACC-RENVOI-SLOT"></div>' +
+                        '<button type="button" class="JUM-ACC-BTN noir" id="JUM-C-VALIDER" disabled>Valider</button>' +
+                        '<p class="JUM-R-AIDE" style="margin:10px 0 0;">Pas reçu ? Regardez dans les courriers indésirables, ou renvoyez le code.</p></div>' +
+                    '<p class="JUM-R-ERREUR" id="JUM-C-ERR"></p>' +
+                    '<div class="JUM-ACC-OU">ou</div>' +
+                    '<button type="button" class="JUM-ACC-AUTRE" data-aller="liaison">' + SVG('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>') + 'J\'ai déjà TRIGONE sur un autre appareil</button>' +
+                '</div>' +
+                '<div data-volet="liaison" style="display:none;">' +
+                    '<h2>Relier cet appareil</h2>' +
+                    '<p class="JUM-ACC-AIDE">Sur l\'appareil où TRIGONE est déjà installé : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés. Pas de mail à attendre.</p>' +
+                    htmlSaisieLiaison() +
+                    '<button type="button" class="JUM-R-LIEN" data-aller="connecter" style="margin-top:10px;">← Avec mon adresse mail</button>' +
+                '</div>' +
+                '<div class="JUM-ACC-SECU">' + SVG('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>') + '<span>Vos demandes et comptes-rendus sont chiffrés sur votre appareil avant tout envoi.' +
+                    (window.JUMELAGE_REGLAGES_FAITS() ? '' : ' Ensuite, TRIGONE vous demande une seule fois votre profil.') + '</span></div>' +
+                '<button type="button" class="JUM-CX-SANS" id="JUM-C-SANS">Pas de réseau pour l\'instant ? Remplir mon profil sans compte</button>' +
+                '</div>' +
+            '</div></div>';
         document.body.appendChild(fenCompte);
         brancherSaisieLiaison(fenCompte, lireTxt('mer_config_faite') === '1' || lireTxt('trigone_premier_lancement_fait') === '1');
-        fenCompte.querySelector('#JUM-C-X').addEventListener('click', fermer);
         fenCompte.querySelector('#JUM-C-PLUSTARD').addEventListener('click', fermer);
         fenCompte.querySelector('#JUM-C-SANS').addEventListener('click', function() { window.JUMELAGE_FERMER_COMPTE(); window.JUMELAGE_REGLAGES(); });
-        Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-CX-ONGLETS button'), function(b) {
-            b.addEventListener('click', function() {
-                var o = b.getAttribute('data-onglet');
-                Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-CX-ONGLETS button'), function(x) { x.classList.toggle('actif', x === b); });
-                Array.prototype.forEach.call(fenCompte.querySelectorAll('[data-volet]'), function(v) { v.style.display = v.getAttribute('data-volet') === o ? '' : 'none'; });
-                fenCompte.querySelector('#JUM-C-VALIDER').style.display = o === 'mail' ? '' : 'none';
-            });
-        });
+        var TEXTES = {
+            creer: ['Bienvenue 👋', 'Indiquez votre adresse professionnelle : vous recevez un code à 6 chiffres par mail. Aucun mot de passe à retenir.'],
+            connecter: ['Bon retour 👋', 'Votre adresse professionnelle, puis le code à 6 chiffres reçu par mail : vous retrouvez votre compte TRIGONE.']
+        };
+        function mode(m) {
+            Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-ACC-ONGLETS button'), function(x) { x.classList.toggle('actif', x.getAttribute('data-mode') === m); });
+            fenCompte.querySelector('#JUM-C-TITRE').textContent = TEXTES[m][0];
+            fenCompte.querySelector('#JUM-C-AIDE').textContent = TEXTES[m][1];
+        }
+        function volet(v) { Array.prototype.forEach.call(fenCompte.querySelectorAll('[data-volet]'), function(x) { x.style.display = x.getAttribute('data-volet') === v ? '' : 'none'; }); }
+        function aller(but) {
+            fenCompte.setAttribute('data-etape', 'form'); fenCompte.scrollTop = 0;
+            if (but === 'liaison') { volet('liaison'); return; }
+            volet('mail'); mode(but);
+        }
+        mode('creer');
+        Array.prototype.forEach.call(fenCompte.querySelectorAll('[data-aller]'), function(b) { b.addEventListener('click', function() { aller(b.getAttribute('data-aller')); }); });
+        Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-ACC-ONGLETS button'), function(b) { b.addEventListener('click', function() { mode(b.getAttribute('data-mode')); }); });
+        fenCompte.querySelector('.JUM-ACC-RETOUR').addEventListener('click', function() { if (opts.premiere) { fenCompte.setAttribute('data-etape', 'accueil'); fenCompte.scrollTop = 0; } else fermer(); });
+        // Code à 6 chiffres : un seul champ (collage, remplissage automatique du code reçu par SMS/mail), affiché en 6 cases.
+        var champCode = fenCompte.querySelector('#JUM-C-CODE'), cases = fenCompte.querySelectorAll('.JUM-ACC-CODE span');
+        function majCases() {
+            var v = champCode.value.replace(/\D/g, '').slice(0, 6), actif = document.activeElement === champCode;
+            if (champCode.value !== v) champCode.value = v;
+            Array.prototype.forEach.call(cases, function(c, i) { c.textContent = v.charAt(i); c.classList.toggle('plein', i < v.length); c.classList.toggle('curseur', actif && i === Math.min(v.length, 5) && v.length < 6); });
+        }
+        ['input', 'focus', 'blur'].forEach(function(t) { champCode.addEventListener(t, majCases); });
+        champCode.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !btnValider.disabled) btnValider.click(); });
         var err = fenCompte.querySelector('#JUM-C-ERR'), champMail = fenCompte.querySelector('#JUM-C-MAIL'), mailDemande = '';
         var btnEnvoi = fenCompte.querySelector('#JUM-C-ENVOI'), btnValider = fenCompte.querySelector('#JUM-C-VALIDER');
         serviceDisponible().then(function(ok) {
             if (!ok && fenCompte) { err.textContent = navigator.onLine ? 'Le service de boîte aux lettres TRIGONE n\'est pas encore en service.' : 'Pas de connexion : réessayez une fois connecté.'; btnEnvoi.disabled = true; }
         });
+        champMail.addEventListener('keydown', function(e) { if (e.key === 'Enter') btnEnvoi.click(); });
         btnEnvoi.addEventListener('click', function() {
             var mail = champMail.value.trim().toLowerCase();
             if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) { err.textContent = '⛔ Adresse mail invalide.'; return; }
@@ -2599,15 +2752,15 @@
             appelApi('inscription/code', { methode: 'POST', corps: { mail: mail } }).then(function(rep) {
                 mailDemande = mail;
                 fenCompte.querySelector('#JUM-C-ETAPE2').style.display = '';
-                btnEnvoi.textContent = 'Renvoyer un code'; btnEnvoi.disabled = false; btnValider.disabled = false;
-                var champCode = fenCompte.querySelector('#JUM-C-CODE');
+                fenCompte.querySelector('.JUM-ACC-RENVOI-SLOT').appendChild(btnEnvoi); btnEnvoi.classList.add('renvoi');
+                btnEnvoi.textContent = 'Renvoyer le code'; btnEnvoi.disabled = false; btnValider.disabled = false;
                 if (rep.codeTest) champCode.value = rep.codeTest;   // tests locaux uniquement
-                champCode.focus();
-                err.style.color = '#15803d'; err.textContent = 'Code envoyé à ' + mail + '.';
-            }, function(e) { err.style.color = ''; err.textContent = '⛔ ' + e.message; btnEnvoi.disabled = false; btnEnvoi.textContent = 'Recevoir le code par mail'; });
+                champCode.focus(); majCases();
+                err.style.color = '#15803d'; err.textContent = '✓ Code envoyé à ' + mail + '.';
+            }, function(e) { err.style.color = ''; err.textContent = '⛔ ' + e.message; btnEnvoi.disabled = false; btnEnvoi.textContent = mailDemande ? 'Renvoyer le code' : 'Recevoir le code par mail'; });
         });
         btnValider.addEventListener('click', function() {
-            var code = fenCompte.querySelector('#JUM-C-CODE').value.trim();
+            var code = champCode.value.trim();
             if (!/^\d{6}$/.test(code)) { err.style.color = ''; err.textContent = '⛔ Le code contient 6 chiffres.'; return; }
             btnValider.disabled = true; err.style.color = ''; err.textContent = '';
             var paire;
