@@ -779,6 +779,11 @@
         '.JUM-PIN-PAVE button { height: 60px; border-radius: 16px; border: 1px solid #333; background: #1c1c1c; color: #f5f5f5; font: 700 1.3rem Montserrat, system-ui, sans-serif; cursor: pointer; }' +
         '.JUM-PIN-PAVE button:active { background: #2a2a2a; }' +
         '.JUM-PIN .JUM-R-LIEN { color: #a3a3a3; }' +
+        /* Empreinte (ou visage) : touche du pavé et bouton sur PC */
+        '.JUM-PIN-PAVE button.JUM-PIN-BIO { display: flex; align-items: center; justify-content: center; color: #d6a756; border-color: rgba(214,167,86,0.45); }' +
+        '.JUM-PIN-BIO svg { width: 30px; height: 30px; }' +
+        '.JUM-R-BIO { display: flex; align-items: center; gap: 10px; margin: 10px 0 4px; }' +
+        '.JUM-R-BIO svg { width: 26px; height: 26px; flex-shrink: 0; color: #b0802a; }' +
         /* Code d'accès — présentation PC */
         '.JUM-PIN-PC { background: linear-gradient(135deg, #f7f7f5 0%, #ecebe7 100%); }' +
         '.JUM-PINPC { display: grid; grid-template-columns: 1fr 1.1fr; width: 100%; max-width: 820px; min-height: 460px; background: #fff; border-radius: 26px; overflow: hidden; box-shadow: 0 30px 80px rgba(26,45,62,0.18), 0 2px 6px rgba(26,45,62,0.06); color: #1a1a1a; }' +
@@ -1141,7 +1146,52 @@
         });
     };
     window.JUMELAGE_POSER_CODE = poserCode;
-    window.JUMELAGE_EFFACER_CODE = function() { try { ['trigone_code_commun', 'trigone_pin_hash', 'mer_pin_hash'].forEach(function(k) { localStorage.removeItem(k); }); } catch (e) {} };
+    window.JUMELAGE_EFFACER_CODE = function() { try { ['trigone_code_commun', 'trigone_pin_hash', 'mer_pin_hash', CLE_BIO].forEach(function(k) { localStorage.removeItem(k); }); } catch (e) {} };
+    // ---------- Empreinte digitale (ou visage) : déverrouillage par le système de l'appareil ----------
+    // Passkey de l'appareil (WebAuthn, authentificateur intégré, vérification de l'utilisateur exigée) : TRIGONE ne voit
+    // jamais l'empreinte, le téléphone dit seulement « c'est bien la personne ». Elle complète le code à 4 chiffres, qui
+    // reste toujours possible (empreinte refusée, capteur indisponible). Rien n'est envoyé au serveur.
+    var CLE_BIO = 'trigone_bio_id', SVG_EMPREINTE = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M12 11c0 3.5-.6 6.3-2 8.5"/><path d="M8.5 10.5a3.5 3.5 0 0 1 7 0c0 1.6-.1 3.1-.4 4.5"/><path d="M5.6 8.3A7 7 0 0 1 19 10.5c0 1.1 0 2.2-.2 3.2"/><path d="M5 12.5c0 1.6-.3 3-.9 4.2"/><path d="M14.6 17.8c-.3 1.1-.7 2.1-1.2 3"/><path d="M7.4 4.6A9 9 0 0 1 20.8 9"/></svg>';
+    function b64u(octets) { return btoa(String.fromCharCode.apply(null, new Uint8Array(octets))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, ''); }
+    function deB64u(t) { t = t.replace(/-/g, '+').replace(/_/g, '/'); while (t.length % 4) t += '='; return Uint8Array.from(atob(t), function(c) { return c.charCodeAt(0); }); }
+    // Téléphone seulement (sur PC, le code à 4 chiffres au clavier reste la seule façon d'ouvrir TRIGONE).
+    function surTelephone() { return !(window.matchMedia && window.matchMedia('(min-width: 900px) and (pointer: fine)').matches); }
+    function bioActive() { return !!lireTxt(CLE_BIO) && codeDefini() && surTelephone(); }
+    function bioPossible() {
+        if (!surTelephone() || !window.PublicKeyCredential || !navigator.credentials || !PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable) return Promise.resolve(false);
+        return PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable().catch(function() { return false; });
+    }
+    function bioActiver() {
+        return navigator.credentials.create({ publicKey: {
+            challenge: crypto.getRandomValues(new Uint8Array(32)), rp: { name: 'TRIGONE' },
+            user: { id: crypto.getRandomValues(new Uint8Array(16)), name: 'TRIGONE', displayName: 'TRIGONE (cet appareil)' },
+            pubKeyCredParams: [{ type: 'public-key', alg: -7 }, { type: 'public-key', alg: -257 }],
+            authenticatorSelection: { authenticatorAttachment: 'platform', userVerification: 'required', residentKey: 'discouraged' },
+            timeout: 60000, attestation: 'none' } }).then(function(c) { ecrireTxt(CLE_BIO, b64u(c.rawId)); return true; });
+    }
+    // Déverrouillage : vrai seulement si le système a vérifié la personne (indicateur « UV » des données de l'authentificateur).
+    function bioVerifier() {
+        var id = lireTxt(CLE_BIO); if (!id) return Promise.resolve(false);
+        return navigator.credentials.get({ publicKey: { challenge: crypto.getRandomValues(new Uint8Array(32)),
+            allowCredentials: [{ type: 'public-key', id: deB64u(id) }], userVerification: 'required', timeout: 60000 } })
+            .then(function(c) { var a = new Uint8Array(c.response.authenticatorData); return !!(a.length > 32 && (a[32] & 0x04)); });
+    }
+    window.JUMELAGE_BIO_BASCULER = function() {
+        var zone = document.getElementById('JUM-R-BIO'), err = document.getElementById('JUM-R-ERREUR');
+        if (lireTxt(CLE_BIO)) { try { localStorage.removeItem(CLE_BIO); } catch (e) {} if (zone) dessinerBioReglages(zone); bandeau('Empreinte désactivée : le code à 4 chiffres reste demandé.'); return; }
+        if (!codeDefini()) { if (err) err.textContent = '⛔ Choisissez d\'abord votre code à 4 chiffres (il reste le code de secours).'; return; }
+        bioActiver().then(function() { if (zone) dessinerBioReglages(zone); bandeau('Empreinte activée : à la prochaine ouverture, posez votre doigt.'); },
+            function() { if (err) err.textContent = '⛔ L\'empreinte n\'a pas pu être enregistrée (annulée ou capteur indisponible).'; });
+    };
+    function dessinerBioReglages(zone) {
+        bioPossible().then(function(ok) {
+            if (!ok) { zone.innerHTML = ''; return; }
+            var actif = bioActive();
+            zone.innerHTML = '<div class="JUM-R-BIO">' + SVG_EMPREINTE + '<p class="JUM-R-AIDE" style="margin:0;">' + (actif ? '<b>Empreinte activée</b> : posez votre doigt (ou votre visage) pour ouvrir TRIGONE. Le code à 4 chiffres reste possible en secours.'
+                : 'Ouvrez TRIGONE avec votre <b>empreinte</b> (ou votre visage), le code à 4 chiffres restant en secours.') + '</p></div>' +
+                '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_BIO_BASCULER()">' + (actif ? 'Désactiver l\'empreinte' : 'Activer l\'empreinte') + '</button>';
+        });
+    }
     window.JUMELAGE_REGLAGES_FAITS = function() { return !!lireJSON(CLE_REGLAGES) || lireTxt('mer_config_faite') === '1'; };
 
     var reglages = null;
@@ -1261,6 +1311,7 @@
                 '<div class="JUM-R-GRILLE">' + champ('CODE1', codeDefini() ? 'Nouveau code' : 'Code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') +
                     champ('CODE2', 'Confirmer le code', '', 'type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"') + '</div>' +
                 (codeDefini() ? '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_SUPPRIMER_CODE()">Supprimer le code d\'accès</button>' : '') +
+                (codeDefini() ? '<div id="JUM-R-BIO"></div>' : '') +
                 '</div>' +
                 htmlRoles +
                 // Absence (valideur, assistant Chorus DT déjà actifs, compte TRIGONE actif) : remplaçant jusqu'à une date.
@@ -1290,6 +1341,7 @@
                 '<button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_ENREGISTRER_REGLAGES(' + (premiere ? 'true' : 'false') + ')">' + (premiere ? 'Continuer →' : 'Enregistrer') + '</button>' +
             '</div></div>';
         document.body.appendChild(reglages);
+        var zoneBio = document.getElementById('JUM-R-BIO'); if (zoneBio) dessinerBioReglages(zoneBio);
         if (premiere) { brancherSaisieLiaison(reglages, false); brancherEtapesProfil(reglages); }
         var m = document.getElementById('JUM-R-MATRICULE');
         m.addEventListener('input', function() { m.value = formatMatricule(m.value); });
@@ -3779,6 +3831,21 @@
             }
         });
     };
+    var bioEnCours = false;
+    // auto : proposée d'office à l'ouverture ; un refus du navigateur (pas de geste) reste silencieux, le doigt sur la touche relance.
+    window.JUMELAGE_PIN_BIO = function(auto) {
+        if (!pave || bioEnCours) return;
+        bioEnCours = true;
+        bioVerifier().then(function(ok) {
+            bioEnCours = false;
+            if (!pave) return;
+            if (ok) { if (window.JUMELAGE_MARQUER_DEVERROUILLE) window.JUMELAGE_MARQUER_DEVERROUILLE(); pave.remove(); pave = null; }
+            else pave.querySelector('.JUM-PIN-ERREUR').textContent = 'Empreinte non reconnue : entrez votre code.';
+        }, function() {
+            bioEnCours = false;
+            if (pave && auto !== true) pave.querySelector('.JUM-PIN-ERREUR').textContent = 'Empreinte annulée ou indisponible : entrez votre code.';
+        });
+    };
     // Efface toutes les données de TRIGONE sur l'appareil puis rouvre l'écran de choix, comme au premier jour.
     function toutEffacer() {
         try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
@@ -3811,11 +3878,13 @@
         saisie = '';
         pave = document.createElement('div');
         pave.className = 'JUM-PIN';
+        var bio = bioActive() && !!window.PublicKeyCredential;
         var touches = ['1', '2', '3', '4', '5', '6', '7', '8', '9', '', '0', 'x'].map(function(t) {
+            if (t === '' && bio) return '<button type="button" class="JUM-PIN-BIO" aria-label="Déverrouiller avec l\'empreinte" onclick="JUMELAGE_PIN_BIO()">' + SVG_EMPREINTE + '</button>';
             return t === '' ? '<span></span>' : '<button type="button" onclick="JUMELAGE_PIN_TOUCHE(\'' + t + '\')">' + (t === 'x' ? '⌫' : t) + '</button>';
         }).join('');
         var pc = window.matchMedia && window.matchMedia('(min-width: 900px) and (pointer: fine)').matches;
-        if (!pc) pave.innerHTML = '<div class="JUM-PIN-CARTE"><div class="JUM-PIN-TITRE">Code d\'accès</div><p>Entrez votre code à 4 chiffres pour ouvrir TRIGONE.</p>' +
+        if (!pc) pave.innerHTML = '<div class="JUM-PIN-CARTE"><div class="JUM-PIN-TITRE">Code d\'accès</div><p>' + (bio ? 'Posez votre doigt, ou entrez votre code à 4 chiffres.' : 'Entrez votre code à 4 chiffres pour ouvrir TRIGONE.') + '</p>' +
             '<div class="JUM-PIN-POINTS"><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span></div>' +
             '<div class="JUM-PIN-ERREUR"></div><div class="JUM-PIN-PAVE">' + touches + '</div>' +
             '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_CODE_OUBLIE()">Code oublié ?</button></div>';
@@ -3841,6 +3910,7 @@
             tic();
         }
         document.body.appendChild(pave); dessinerPoints();
+        if (bio) setTimeout(function() { window.JUMELAGE_PIN_BIO(true); }, 350);   // l'empreinte est proposée d'office ; le code reste là
         document.addEventListener('keydown', function clavier(e) {
             if (!pave) { document.removeEventListener('keydown', clavier); return; }
             if (/^\d$/.test(e.key)) window.JUMELAGE_PIN_TOUCHE(e.key); else if (e.key === 'Backspace') window.JUMELAGE_PIN_TOUCHE('x');
