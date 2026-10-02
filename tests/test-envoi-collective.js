@@ -110,6 +110,11 @@ module.exports = async function() {
         if (process.env.CAPTURES) await c.screenshot({ path: process.env.CAPTURES + '/chorus-equipe.png', fullPage: false });
         verifier(/1 sur 2/.test(chrono) && /CPL LEROY Emma/.test(chrono) && /reçu le/.test(chrono) && /dans votre boîte/.test(chrono) && /En attente — transmis par le chef/.test(chrono) && /relancé le/.test(chrono),
             'assistant Chorus DT : chronologie de l\'équipe (1 sur 2 reçus, LEROY reçu et dans sa boîte, l\'autre en attente, relancé)');
+        // Fenêtre « Suivi de l'équipe » restée ouverte : le compte-rendu du 2e participant y apparaît tout seul.
+        await chef.evaluate(() => { document.querySelectorAll('#MSG-OVERLAY').forEach(e => e.classList.add('HIDDEN')); OUVRIR_SUIVI_EQUIPE(); }); await attendre(1500);
+        await pax2.evaluate(([m, r]) => JUMELAGE_ENVOYER_DIRECT(m, 'CR', 'CR.pdf', JSON.stringify({ app: 'TRIGONE-CR', missionnaire: 'SGT PAX Deux', libelle: 'FORMATION SSIAP', fichiers: [], equipe: r, roleEquipe: 'participant' }), { equipe: r }), [MAILS.C, ref]);
+        await attendre(12000);
+        verifier(/Toute l'équipe a envoyé le sien/.test(await chef.evaluate(() => document.getElementById('EQUIPE-LISTE').innerText)), 'suivi de l\'équipe ouvert : mis à jour tout seul (sans rafraîchir)');
     }
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();

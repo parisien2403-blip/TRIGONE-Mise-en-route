@@ -12622,6 +12622,14 @@ function OUVRIR_SUIVI_EQUIPE(S) {
         }).catch(function(e) { btn.disabled = false; MSG_INFO('Relance impossible', e.message || String(e), '⛔'); });
     };
     charger();
+    // Mise à jour automatique tant que la fenêtre est ouverte : un compte-rendu envoyé par un participant apparaît
+    // tout seul (toutes les 10 s, et dès le retour dans l'appli), sans avoir à rafraîchir la page.
+    o._charger = charger; clearInterval(o._minuteur);
+    o._minuteur = setInterval(function() {
+        if (!document.body.contains(o)) { clearInterval(o._minuteur); return; }
+        if (!document.hidden && navigator.onLine) o._charger();
+    }, 10000);
+    if (!o._visible) { o._visible = true; document.addEventListener('visibilitychange', function() { if (!document.hidden && document.body.contains(o)) o._charger(); }); }
 }
 
 function HIDE_ALL_PAGES() {
