@@ -854,6 +854,10 @@
         '.JUM-CARTE-NOTE { margin: 16px 0 6px; padding: 12px 14px; border-radius: 14px; background: rgba(214,167,86,0.08); box-shadow: inset 0 0 0 1px rgba(214,167,86,0.25); font-size: 0.74rem; line-height: 1.5; color: #cfcfcf; } .JUM-CARTE-NOTE b { color: #e8c27a; }' +
         '.JUM-CARTE-PAGE .JUM-R-LIEN { color: #d6a756; display: block; margin: 8px auto 0; } .JUM-CARTE-PAGE .JUM-CARTE-REVOQUER { color: #a3a3a3; font-size: 0.72rem; margin-top: 14px; }' +
         /* Plein écran : le téléphone devient la carte */
+        '.JUM-NOTICE-LIVRET { display: flex; align-items: center; gap: 14px; width: 100%; margin: 0 0 14px; padding: 14px 16px; border: 1.5px solid #c9a24f; border-radius: 12px; cursor: pointer; text-align: left; background: radial-gradient(120% 140% at 20% 0%, #3b2a1c, #20160e 60%, #120c08); color: #e2b866; box-shadow: 0 6px 18px rgba(0,0,0,0.25), inset 0 0 0 4px rgba(201,162,79,0.18); font-family: Montserrat, system-ui, sans-serif; }' +
+        '.JUM-NOTICE-LIVRET img { width: 42px; height: 42px; flex-shrink: 0; filter: brightness(0) saturate(100%) invert(76%) sepia(43%) saturate(560%) hue-rotate(352deg) brightness(95%); }' +
+        '.JUM-NOTICE-LIVRET b { display: block; font: 400 19px Georgia, serif; letter-spacing: .08em; } .JUM-NOTICE-LIVRET small { display: block; font-size: 11.5px; color: #cdb488; margin-top: 2px; line-height: 1.35; }' +
+        '.JUM-NOTICE-LIVRET i { margin-left: auto; font-style: normal; font-size: 24px; color: #e2b866; }' +
         '.JUM-CARTE-PLEIN { background: #000; padding: 0; animation: none; z-index: 99997; }' +
         '.JUM-CARTE-PLEIN .JUM-CARTE-ZONE { position: absolute; left: 50%; top: 50%; width: 350px; height: 221px; perspective: 1400px; }' +
         '.JUM-CARTE-PLEIN .JUM-CARTE-TOURNE { left: 0; margin-left: 0; }' +
@@ -989,7 +993,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 142, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 143, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1772,6 +1776,92 @@
         setTimeout(function() { b.classList.add('sortie'); }, 2600);
         setTimeout(function() { b.remove(); }, 3100);
     }
+
+    // ---------- Notice TRIGONE (livret à pages qui tournent) ----------
+    // Contenu et mise en forme : notice/notice.js ; pages qui tournent : vendor/page-flip.min.js (chargés à la première ouverture).
+    // Téléphone : une page à la fois ; PC ou écran large : le livre ouvert, deux pages. chapitre : id d'un chapitre (ex. 'carte').
+    var fenNotice = null;
+    window.JUMELAGE_NOTICE_BOUTON = function() {
+        return '<button type="button" class="JUM-NOTICE-LIVRET" onclick="JUMELAGE_NOTICE()"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="">' +
+            '<span><b>Notice TRIGONE</b><small>Le livret complet : chaque écran expliqué pas à pas</small></span><i>›</i></button>';
+    };
+    window.JUMELAGE_NOTICE = function(chapitre) {
+        if (fenNotice) return;
+        var B = DANS_CR ? '../' : '', f = document.createElement('div'), livre = null, page = 0, N = null;
+        f.className = 'JUM-SIG JUM-NOTICE'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Notice TRIGONE');
+        f.innerHTML = '<div class="N-HAUT"><button type="button" class="N-FERMER" aria-label="Fermer la notice">✕</button><span class="N-TITRE">Notice TRIGONE</span>' +
+            '<button type="button" class="N-SOMMAIRE">Sommaire</button><span class="N-NUM"></span></div><div class="N-SCENE"><div class="N-CHARGE">Ouverture de la notice…</div></div>' +
+            '<button type="button" class="N-FLECHE N-PREC" aria-label="Page précédente">‹</button><button type="button" class="N-FLECHE N-SUIV" aria-label="Page suivante">›</button>';
+        var scene = f.querySelector('.N-SCENE'), num = f.querySelector('.N-NUM');
+        var majNum = function() {
+            if (!N) return; var n = N.pages.length;
+            num.textContent = page === 0 ? 'Couverture' : page >= n - 1 ? 'Dos' : (page + 1) + ' / ' + n;
+            f.querySelector('.N-PREC').disabled = page <= 0; f.querySelector('.N-SUIV').disabled = page >= n - 1;
+        };
+        var aller = function(n) { if (livre) { if (Math.abs(n - page) > 1) livre.turnToPage(n); else livre.flip(n); page = n; majNum(); } };
+        var construire = function() {
+            if (livre) { try { page = livre.getCurrentPageIndex(); livre.destroy(); } catch (e) {} livre = null; }
+            scene.innerHTML = '';
+            var deux = f.clientWidth > f.clientHeight && f.clientWidth >= 700, r = 566 / 400;
+            f.classList.toggle('tel', !deux);
+            var W = scene.clientWidth, H = scene.clientHeight;
+            // Téléphone : la page prend toute la hauteur de l'écran (page plus haute que 566, le texte respire, les captures grandissent).
+            var pw = deux ? Math.min((W - 130) / 2, (H - 24) / r) : Math.min(W - 12, 480, (H - 8) / r);
+            pw = Math.floor(pw); var e = pw / 400, hl = deux ? 566 : Math.max(566, Math.min(860, Math.floor((H - 8) / e))), ph = Math.floor(hl * e);
+            var el = document.createElement('div'); el.className = 'N-LIVRE';
+            el.innerHTML = N.pages.map(function(p, i) {
+                return '<div class="N-PAGE"' + (p.couverture ? ' data-density="hard"' : '') + '><div class="N-ECH' + (hl > 640 ? ' haut' : '') + '" style="height:' + hl + 'px;transform:scale(' + e + ')">' + p.html.replace(/\{B\}/g, B) +
+                    (p.couverture || i < 2 ? '' : '<div class="N-NUMP">' + (i + 1) + '</div>') + '</div></div>';
+            }).join('');
+            scene.appendChild(el);
+            livre = new window.St.PageFlip(el, { width: pw, height: ph, size: 'fixed', showCover: true, usePortrait: !deux, flippingTime: 1100, maxShadowOpacity: 0.55, mobileScrollSupport: false, startPage: page });
+            livre.loadFromHTML(el.querySelectorAll('.N-PAGE'));
+            livre.on('flip', function(ev) { page = ev.data; majNum(); });
+            el.addEventListener('click', function(ev) {
+                var b = ev.target.closest && ev.target.closest('[data-aller]'), z = ev.target.closest && ev.target.closest('[data-zoom]');
+                if (b) { ev.stopPropagation(); aller(+b.getAttribute('data-aller')); }
+                if (z) { ev.stopPropagation(); agrandir(z.getAttribute('data-zoom')); }
+            });
+            majNum();
+        };
+        // Capture touchée : affichée en grand, par-dessus le livre.
+        var agrandir = function(src) {
+            var z = document.createElement('div'); z.className = 'N-ZOOM'; z.innerHTML = '<img src="' + src + '" alt=""><span>Toucher pour revenir à la notice</span>';
+            z.addEventListener('click', function() { z.remove(); }); f.appendChild(z);
+        };
+        var touche = function(ev) {
+            var z = f.querySelector('.N-ZOOM'); if (z) { if (ev.key === 'Escape') z.remove(); return; }
+            if (!livre) return;
+            if (ev.key === 'ArrowRight' || ev.key === 'PageDown') livre.flipNext(); else if (ev.key === 'ArrowLeft' || ev.key === 'PageUp') livre.flipPrev(); else if (ev.key === 'Escape') fermer();
+        };
+        var minuteur = null, auRedim = function() { clearTimeout(minuteur); minuteur = setTimeout(function() { if (N) construire(); }, 250); };
+        var fermer = function() {
+            window.removeEventListener('resize', auRedim); document.removeEventListener('keydown', touche);
+            if (livre) try { livre.destroy(); } catch (e) {}
+            f.remove(); if (fenNotice === f) fenNotice = null;
+        };
+        f.querySelector('.N-FERMER').addEventListener('click', fermer);
+        f.querySelector('.N-SOMMAIRE').addEventListener('click', function() { aller(2); });
+        f.querySelector('.N-PREC').addEventListener('click', function() { if (livre) livre.flipPrev(); });
+        f.querySelector('.N-SUIV').addEventListener('click', function() { if (livre) livre.flipNext(); });
+        f._fermer = function() { var z = f.querySelector('.N-ZOOM'); if (z) z.remove(); else fermer(); }; f._aller = function(n) { if (livre) { livre.turnToPage(n); page = n; majNum(); } }; fenNotice = f;
+        document.body.appendChild(f);
+        var contenu = window.NOTICE_TRIGONE ? Promise.resolve() : new Promise(function(ok, ko) {
+            var sc = document.createElement('script'); sc.src = B + 'notice/notice.js?v=' + BUILD;
+            sc.onload = function() { ok(); }; sc.onerror = function() { ko(new Error('hors connexion')); }; document.head.appendChild(sc);
+        });
+        Promise.all([contenu, chargerScript('page-flip.min.js', function() { return !!window.St; })]).then(function() {
+            if (!f.isConnected) return;
+            N = window.NOTICE_TRIGONE;
+            if (!document.getElementById('N-CSS')) { var st = document.createElement('style'); st.id = 'N-CSS'; st.textContent = N.css; document.head.appendChild(st); }
+            if (chapitre) N.chapitres.forEach(function(c) { if (c.id === chapitre) page = c.page; });
+            construire();
+            window.addEventListener('resize', auRedim); document.addEventListener('keydown', touche);
+        }, function() {
+            f.querySelector('.N-CHARGE').innerHTML = 'La notice n\'est pas encore sur cet appareil.<br>Ouvrez-la une première fois avec du réseau : elle restera ensuite disponible hors connexion.';
+        });
+    };
+    fermeurs.push([function() { return fenNotice; }, function() { if (fenNotice) fenNotice._fermer(); }]);
 
     // ---------- Présentation TRIGONE (première ouverture, puis roue crantée > Découvrir TRIGONE) ----------
     var CLE_PRESENTATION = 'trigone_presentation_jumelage_vue', presentation = null;
@@ -3600,8 +3690,9 @@
             c && L('effacer', CORBEILLE_SVG, 'Se déconnecter et effacer', 'Retirer le compte et les données de cet appareil', deconnecterEtEffacer, true),
             L('reinitialiser', CORBEILLE_SVG, 'Réinitialiser TRIGONE', 'Tout effacer sur cet appareil', function() { window.JUMELAGE_REINITIALISER(); }, true)
         ] });
-        r.push({ id: 'aide', titre: 'Aide', icone: ic('bouee'), aide: 'Pour prendre en main TRIGONE, ou nous signaler un souci.', lignes: appli.filter(function(x) { return AIDE_APPLI.test(x.titre) && !/^Signaler/.test(x.titre); })
-            .map(function(x, i) { return L('aide' + i, ic(x.icone), x.titre, x.sous, x.action); }).concat([
+        r.push({ id: 'aide', titre: 'Aide', icone: ic('bouee'), aide: 'Pour prendre en main TRIGONE, ou nous signaler un souci.', lignes: [L('notice', ic('livre'), 'Notice TRIGONE', 'Le livret complet, avec les écrans expliqués pas à pas', function() { window.JUMELAGE_NOTICE(); })]
+            .concat(appli.filter(function(x) { return AIDE_APPLI.test(x.titre) && !/^Signaler/.test(x.titre); })
+            .map(function(x, i) { return L('aide' + i, ic(x.icone), x.titre, x.sous, x.action); })).concat([
             L('presentation', '<img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="" style="width:20px;height:20px;">', 'Découvrir TRIGONE', 'Revoir la présentation', function() { window.JUMELAGE_PRESENTATION(); }),
             L('partager', ic('partage'), 'Partager TRIGONE', 'QR code et lien de l\'application', function() { window.JUMELAGE_PARTAGER_APPLI(); }),
             L('signaler', ic('bouee'), 'Signaler un problème', 'Écrire à l\'équipe TRIGONE', function() { window.JUMELAGE_SIGNALER(ecran ? 'choix' : undefined); }),

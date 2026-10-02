@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 189;
+var APP_CODE_VERSION = 190;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2019,7 +2019,7 @@ function TPL_NOTICE() {
             '<ol class="notice-steps">' + n.etapes.map(function(e) { return '<li>' + e + '</li>'; }).join('') + '</ol>' +
             '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_NOTICE()">← Notice</button></div>';
     }
-    return '<div class="CARD"><h2>Notice</h2><p class="MER-HINT" style="margin:4px 0 16px;">Choisissez le guide selon votre rôle.</p>' +
+    return '<div class="CARD"><h2>Notice</h2>' + (window.JUMELAGE_NOTICE_BOUTON ? window.JUMELAGE_NOTICE_BOUTON() : '') + '<p class="MER-HINT" style="margin:4px 0 16px;">Ou le guide rapide selon votre rôle.</p>' +
         Object.keys(MER_NOTICES).map(function(k) {
             var c = MER_NOTICES[k];
             return '<button type="button" class="NOTICE-CARD" onclick="OUVRIR_NOTICE(\'' + k + '\')"><span class="NOTICE-CARD-ICON">' + c.icone + '</span>' +
