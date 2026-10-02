@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 185,
-  "appCodeMessage": "Nouveau : Ma carte TRIGONE (Paramètres › Compte) avec photo, QR code et affichage en grand ; scannez une carte pour ajouter un participant, un valideur, un remplaçant ou pointer les présents.",
+  "appCodeVersion": 186,
+  "appCodeMessage": "Carte TRIGONE : la signature ne chevauche plus la mention « Vérifié depuis le… », rôles sur une seule ligne.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
