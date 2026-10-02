@@ -163,19 +163,19 @@ module.exports = async function() {
     // Règle des boîtes : une demande ne peut pas partir vers le 2e valideur ni vers l'assistant Chorus DT
     for (const [qui, adr] of [['2e valideur', MAILS.V2], ['assistant Chorus DT', MAILS.C]]) {
         await m.evaluate(a => { const r = GET_REGLAGES(); r.mailSignataire = a; SAVE_REGLAGES(r); SHOW_PAGE('PANIER'); }, adr); await attendre(300);
-        await m.click('text=Envoyer mes documents'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
+        await m.click('text=/Envoyer (cette demande|ces [0-9]+ demandes)/'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
         verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Mauvais destinataire', 'règle des boîtes : une demande de missionnaire est refusée par la boîte du ' + qui);
         await m.evaluate(() => { FERMER_MSG(); FERMER_MODALE(); }); await attendre(400);
     }
     await m.evaluate(() => SHOW_PAGE('PANIER')); await attendre(300);
     // Destinataire sans compte TRIGONE : envoi bloqué, la demande reste dans Documents.
     await m.fill('#MER-MAIL-DEST', 'personne.' + suffixe + '@interieur.gouv.fr');
-    await m.click('text=Envoyer mes documents'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
+    await m.click('text=/Envoyer (cette demande|ces [0-9]+ demandes)/'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
     verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Pas encore de compte TRIGONE' && await m.evaluate(() => GET_PANIER().length === 2),
         'destinataire sans compte : envoi bloqué, les demandes restent dans Documents');
     await m.evaluate(() => { FERMER_MSG(); FERMER_MODALE(); SHOW_PAGE('PANIER'); }); await attendre(400);
     await m.fill('#MER-MAIL-DEST', MAILS.V1);
-    await m.click('text=Envoyer mes documents'); await attendre(500);
+    await m.click('text=/Envoyer (cette demande|ces [0-9]+ demandes)/'); await attendre(500);
     verifier(await m.isVisible('#MER-BTN-DIRECT'), 'demandeur : bouton « Envoyer » (boîte TRIGONE)');
     await m.click('#MER-BTN-DIRECT'); await attendre(3000);
     verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Demandes envoyées', 'demandeur : envoi direct réussi, sans pièce jointe ni mail');
@@ -428,8 +428,11 @@ module.exports = async function() {
     await v2.evaluate(() => JUMELAGE_FERMER_REGLAGES());
     await m.goto(URL); await attendre(2500);
     await m.goto(URL); await attendre(2500);
-    await m.evaluate(() => SHOW_PAGE('PANIER')); await m.evaluate(v => MER_AFFICHER_ABSENCE('MER-ABS-DEST', v), MAILS.V2); await attendre(1200);
+    // L'envoi est dans le dossier « Prêtes à envoyer » : une demande prête le temps de la vérification.
+    const panierAvant = await m.evaluate(() => { const p = GET_PANIER(); SAVE_PANIER(p.concat([VIDE_DEMANDE()])); MER_DOSSIER.PANIER = 'prets'; SHOW_PAGE('PANIER'); return p; });
+    await m.evaluate(v => MER_AFFICHER_ABSENCE('MER-ABS-DEST', v), MAILS.V2); await attendre(1200);
     verifier((await m.textContent('#MER-ABS-DEST')).includes('partira chez son remplaçant'), 'absence : l\'expéditeur est prévenu avant l\'envoi (« absent jusqu\'au … : votre envoi partira chez son remplaçant »)');
+    await m.evaluate(p => SAVE_PANIER(p), panierAvant);
     const envoiAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'VALIDATION_1', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
     verifier(envoiAbs.remplacant === MAILS.V1 && envoiAbs.absent === MAILS.V2, 'absence : l\'envoi destiné au VALIDEUR 2 part chez son remplaçant');
     const refusAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'REFUS', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
