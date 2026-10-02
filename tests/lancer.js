@@ -3,6 +3,7 @@ const { serveur, nombreEchecs } = require('./outils');
 const TESTS = {
     'parcours': ['Parcours complet (demande → valideurs → Chorus DT)', require('./test-parcours')],
     'code-acces': ['Code d\'accès unique à l\'ouverture', require('./test-code-acces')],
+    'retour': ['Bouton retour du téléphone (Paramètres et fenêtres)', require('./test-retour')],
     'empreinte': ['Empreinte digitale au déverrouillage (code à 4 chiffres en secours)', require('./test-empreinte')],
     'sauvegarde': ['Sauvegarde et restauration', require('./test-sauvegarde')],
     'hors-ligne': ['Sans réseau', require('./test-hors-ligne')],
