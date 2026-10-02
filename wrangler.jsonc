@@ -11,7 +11,7 @@
   "d1_databases": [{ "binding": "TRIGONE_DB", "database_name": "trigone-boite" }],
   "vars": {
     "DOMAINES_AUTORISES": "",
-    "EXPEDITEUR_MAIL": "parisien2403@msn.com",
+    "EXPEDITEUR_MAIL": "noreply@trigone-app.com",
     "BREVO_SMTP_UTILISATEUR": "bb488f001@smtp-brevo.com"
   },
   "keep_vars": true,
