@@ -512,6 +512,10 @@
         '.JUM-V2 .JUM-PAN-CHORUS { background: linear-gradient(165deg, #f7efe0 0%, #ead7b2 100%); color: #1a1a1a; border-top: 3px solid #d6a756; cursor: pointer; }' +
         '.JUM-V2 .JUM-PAN.plein { position: absolute; inset: 0; z-index: 2; border: 0; }' +
         '.JUM-V2.choisi .JUM-PAN:not(.plein) { opacity: 0; }' +
+        /* Au choix, le panneau touché grandit depuis sa place jusqu'à tout l'écran ; son logo glisse au centre et grossit. */
+        '.JUM-CHOIX.JUM-V2 .JUM-PAN.deploie { position: absolute; grid-area: auto; z-index: 3; border: 0; transition: left 0.62s cubic-bezier(0.22,0.8,0.24,1), top 0.62s cubic-bezier(0.22,0.8,0.24,1), width 0.62s cubic-bezier(0.22,0.8,0.24,1), height 0.62s cubic-bezier(0.22,0.8,0.24,1); }' +
+        '.JUM-CHOIX.JUM-V2 .JUM-PAN.deploie .JUM-BLOC, .JUM-CHOIX.JUM-V2 .JUM-PAN.deploie .JUM-BLOC-CHORUS { transition: transform 0.62s cubic-bezier(0.22,0.8,0.24,1); }' +
+        '.JUM-CHOIX.JUM-V2 .JUM-PAN.deploie.grand .JUM-BLOC { transform: scale(1.4); } .JUM-CHOIX.JUM-V2 .JUM-PAN.deploie.grand .JUM-BLOC-CHORUS { transform: scale(1.06); }' +
         '.JUM-V2 .JUM-BLOC, .JUM-V2 .JUM-PAN.plein .JUM-BLOC { position: static; transform: none; left: auto; top: auto; gap: 10px; text-align: center; padding: 0 16px; }' +
         '.JUM-V2 .JUM-PAN-MER img { width: min(46vw, 21vh, 230px); } .JUM-V2 .JUM-PAN-CR img { width: calc(min(46vw, 21vh, 230px) * 1.17); }' +
         '.JUM-V2.avec-chorus .JUM-PAN-MER img { width: min(34vw, 17vh, 190px); } .JUM-V2.avec-chorus .JUM-PAN-CR img { width: calc(min(34vw, 17vh, 190px) * 1.17); }' +
@@ -3918,32 +3922,45 @@
     // Côté touché : au-dessus ou au-dessous de la diagonale haut-droite → bas-gauche.
     function coteDuPoint(x, y) { return (x / window.innerWidth + y / window.innerHeight) < 1 ? 'mer' : 'cr'; }
 
+    // Le panneau touché grandit depuis sa place jusqu'à remplir l'écran (son logo glisse au centre et grossit),
+    // pendant que les autres s'effacent. Rend la durée de l'animation (0 : mouvement réduit, ou ancien écran).
+    function deployer(pan) {
+        var reduit = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        if (!pan || reduit || !ecran.classList.contains('JUM-V2')) { if (pan) pan.classList.add('plein'); return 0; }
+        var r = pan.getBoundingClientRect(), e = ecran.getBoundingClientRect();
+        pan.style.left = (r.left - e.left) + 'px'; pan.style.top = (r.top - e.top) + 'px';
+        pan.style.width = r.width + 'px'; pan.style.height = r.height + 'px';
+        pan.classList.add('deploie', 'plein');
+        void pan.offsetWidth;   // position de départ prise en compte avant l'agrandissement
+        pan.style.left = '0px'; pan.style.top = '0px'; pan.style.width = e.width + 'px'; pan.style.height = e.height + 'px';
+        pan.classList.add('grand');
+        return 620;
+    }
     function choisir(cle) {
         if (!ecran || ecran.classList.contains('choisi')) return;
         if (cle === 'chorus') {
             ecran.classList.add('choisi', 'choix-chorus');
-            var panC = ecran.querySelector('.JUM-PAN-CHORUS'); if (panC) panC.classList.add('plein');
+            var dureeC = deployer(ecran.querySelector('.JUM-PAN-CHORUS'));
             var surPlace = !DANS_CR && typeof window.MER_OUVRIR_CHORUS === 'function';
             setTimeout(function() {
                 if (window.JUMELAGE_OUVRIR_CHORUS() || surPlace) { ecran.classList.add('sortie'); setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 460); }
-            }, 380);
+            }, Math.max(380, dureeC + 80));
             return;
         }
         ecran.classList.add('choisi', 'choix-' + cle);
         try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {}
         var pan = ecran.querySelector('.JUM-PAN-' + cle.toUpperCase());
         pan.classList.remove('appuye');
-        // Le panneau s'étend une fois les autres logos effacés.
-        setTimeout(function() { pan.classList.add('plein'); }, 120);
+        var duree = deployer(pan), fin = Math.max(540, duree + 120);
         if (cle === ICI) {
             // L'appli était peut-être restée sur une autre page (espace Assistant Chorus DT) : elle revient à son accueil.
             if (typeof window.JUMELAGE_APRES_CHOIX === 'function') { try { window.JUMELAGE_APRES_CHOIX(cle); } catch (e) {} }
-            setTimeout(function() { ecran.classList.add('sortie'); }, 540);
-            setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, 1000);
+            setTimeout(function() { ecran.classList.add('sortie'); }, fin);
+            setTimeout(function() { if (ecran) { ecran.remove(); ecran = null; } document.documentElement.classList.remove('jum-choix'); }, fin + 460);
         } else {
             try { sessionStorage.setItem(CLE_BASCULE, '1'); } catch (e) {}
             // replace : pas d'entrée dans l'historique, la flèche retour du téléphone ne ramène pas à l'autre appli.
-            setTimeout(function() { location.replace(APPLIS[cle].url); }, 600);
+            setTimeout(function() { location.replace(APPLIS[cle].url); }, Math.max(600, duree + 80));
         }
     }
 
