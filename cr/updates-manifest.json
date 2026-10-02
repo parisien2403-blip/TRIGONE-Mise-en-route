@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 225,
-  "appCodeMessage": "Sur téléphone, ouvrez TRIGONE avec votre empreinte (ou votre visage) : Paramètres › Code d'accès › « Activer l'empreinte ». Le code à 4 chiffres reste en secours.",
+  "appCodeVersion": 226,
+  "appCodeMessage": "N° OMR sur chaque demande de mise en route et son compte-rendu ; registre des OMR pour l'assistant Chorus DT ; montre connectée dans Paramètres › Notifications.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
