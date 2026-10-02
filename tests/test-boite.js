@@ -62,8 +62,8 @@ module.exports = async function() {
                 'bouton de compte : connecté, « ADJ TEST » affiché');
             await p.click('.JUM-CPT-APPLI'); await attendre(400);
             const menu = await p.evaluate(() => (document.querySelector('.JUM-CPT-MENU') || {}).textContent || '');
-            verifier(['Paramètres', 'Se déconnecter'].every(t => menu.includes(t)) && !menu.includes('Sauvegarder') && menu.includes(MAILS_M) && (await p.$$('.JUM-CPT-MENU button')).length === 2,
-                'menu du compte : Paramètres et Se déconnecter seulement (pas de doublon avec la page Paramètres)');
+            verifier(['Ma carte TRIGONE', 'Paramètres', 'Se déconnecter'].every(t => menu.includes(t)) && !menu.includes('Sauvegarder') && menu.includes(MAILS_M) && (await p.$$('.JUM-CPT-MENU button')).length === 3,
+                'menu du compte : Ma carte, Paramètres et Se déconnecter seulement (pas de doublon avec la page Paramètres)');
             // Paramètres : toutes les rubriques, une page rangée.
             await p.click('.JUM-CPT-MENU [data-action="parametres"]'); await attendre(400);
             let tout = '';
