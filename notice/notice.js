@@ -271,6 +271,12 @@
         '.N-PAGE { background: #fbf8f1; overflow: hidden; }' +
         '.N-PAGE.--left { box-shadow: inset -12px 0 20px -14px rgba(0,0,0,.35); } .N-PAGE.--right { box-shadow: inset 12px 0 20px -14px rgba(0,0,0,.35); }' +
         '.N-ECH { position: absolute; left: 0; top: 0; width: 400px; height: 566px; transform-origin: 0 0; font-family: Montserrat, system-ui, sans-serif; color: ' + ENCRE + '; }' +
+        // Pages vernies : reflet en biais et lueur en haut à gauche, par-dessus la page (le toucher passe au travers).
+        '.N-ECH::after { content: ""; position: absolute; inset: 0; z-index: 3; pointer-events: none; background: ' +
+            'linear-gradient(118deg, rgba(255,255,255,0) 22%, rgba(255,255,255,.30) 34%, rgba(255,255,255,.06) 40%, rgba(255,255,255,0) 48%, rgba(255,255,255,0) 66%, rgba(255,255,255,.16) 74%, rgba(255,255,255,0) 82%), ' +
+            'radial-gradient(90% 45% at 18% 0%, rgba(255,255,255,.35), rgba(255,255,255,0) 70%), linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.035)); }' +
+        '.N-ECH:has(.n-couv)::after { opacity: .55; }' +
+        '.n-capt::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(125deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 38%); }' +
         '.N-ECH * { box-sizing: border-box; } .N-ECH button * { pointer-events: none; }' +
         '.N-NUMP { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font: 700 9.5px Montserrat, system-ui, sans-serif; letter-spacing: .14em; color: #a08b62; }' +
         // Couverture « cuir et dorure »
