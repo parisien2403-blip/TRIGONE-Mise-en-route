@@ -3796,7 +3796,9 @@ function TPL_REGISTRE() {
         var tete = '<div class="MER-REG-TETE"><b class="MER-REG-OMR">' + (x.omr ? 'N°' + ESC(x.omr) : 'Sans n°') + '</b><span class="MER-REG-MARQ ' + e.cls + '">' + e.txt + '</span></div>';
         var corps = cr
             ? '<div class="MER-REG-GRILLE cr"><span><small>CR rendu le</small>' + MER_REG_JOUR((x.crs || []).map(function(c) { return c.recuLe; }).sort().slice(-1)[0]) + '</span>' +
-                '<span class="large"><small>Objet</small>' + ESC(x.objet || '—') + '</span><span class="large"><small>Personnel</small>' + ESC(MER_REG_PERSONNEL(x)) + '</span>' +
+                '<span class="large"><small>Objet</small>' + ESC(x.objet || '—') + '</span><span><small>Code FD</small>' + ESC(x.codeFD || '—') + '</span>' +
+                '<span><small>Début</small>' + MER_REG_JOUR(x.debut) + '</span><span><small>Fin</small>' + MER_REG_JOUR(x.fin) + '</span>' +
+                '<span class="large"><small>Personnel</small>' + ESC(MER_REG_PERSONNEL(x)) + '</span>' +
                 '<span><small>Repas</small>' + MER_EUROS(m.repas) + '</span><span><small>Hébergement</small>' + MER_EUROS(m.hebergement) + '</span>' +
                 '<span><small>Transports</small>' + MER_EUROS(m.transports) + '</span><span><small>IK</small>' + MER_EUROS(m.ik) + '</span>' +
                 '<span><small>Transp. commun</small>' + MER_EUROS(m.tc) + '</span><span class="total"><small>Total</small>' + MER_EUROS(m.total) + '</span></div>'
@@ -3900,23 +3902,23 @@ function REGISTRE_PDF() {
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120, 120, 120);
     doc.text('Édité le ' + new Date().toLocaleString('fr-FR'), W - M, 18 + dy, { align: 'right' });
     doc.setFillColor(214, 167, 86); doc.rect(0, 22 + dy, W, 0.8, 'F');
-    var head = cr ? [['N° OMR', 'CR rendu le', 'Objet', 'Personnel', 'Repas', 'Hébergement', 'Transports', 'IK', 'Transp. commun', 'Total']]
+    var head = cr ? [['N° OMR', 'CR rendu le', 'Objet', 'Code FD', 'Début', 'Fin', 'Personnel', 'Repas', 'Hébergement', 'Transports', 'IK', 'Transp. commun', 'Total']]
         : [['N° OMR', 'Envoyée le', 'Objet', 'Code FD', 'Début', 'Fin', 'Personnel', 'CR attendu le', 'État']];
     var body = l.map(function(x) {
-        if (cr) { var m = MER_REG_MONTANTS(x); return [x.omr || '—', MER_REG_JOUR((x.crs || []).map(function(c) { return c.recuLe; }).sort().slice(-1)[0]), x.objet || '', MER_REG_PERSONNEL(x), MER_EUROS(m.repas), MER_EUROS(m.hebergement), MER_EUROS(m.transports), MER_EUROS(m.ik), MER_EUROS(m.tc), MER_EUROS(m.total)]; }
+        if (cr) { var m = MER_REG_MONTANTS(x); return [x.omr || '—', MER_REG_JOUR((x.crs || []).map(function(c) { return c.recuLe; }).sort().slice(-1)[0]), x.objet || '', x.codeFD || '—', MER_REG_JOUR(x.debut), MER_REG_JOUR(x.fin), MER_REG_PERSONNEL(x), MER_EUROS(m.repas), MER_EUROS(m.hebergement), MER_EUROS(m.transports), MER_EUROS(m.ik), MER_EUROS(m.tc), MER_EUROS(m.total)]; }
         var e = MER_REG_ETAT(x), ech = MER_REG_ECHEANCE(x);
         return [x.omr || '—', MER_REG_JOUR(x.omrLe || x.recuLe), x.objet || '', x.codeFD || '', MER_REG_JOUR(x.debut), MER_REG_JOUR(x.fin), MER_REG_PERSONNEL(x), ech ? ech.toLocaleDateString('fr-FR') : '—', e.txt.replace(/[✔⚠]\s?/g, '')];
     });
     var foot = null;
     if (cr) {
         var t = l.reduce(function(a, x) { var m = MER_REG_MONTANTS(x); Object.keys(a).forEach(function(k) { a[k] += m[k]; }); return a; }, { repas: 0, hebergement: 0, transports: 0, ik: 0, tc: 0, total: 0 });
-        foot = [['', '', '', 'TOTAL', MER_EUROS(t.repas), MER_EUROS(t.hebergement), MER_EUROS(t.transports), MER_EUROS(t.ik), MER_EUROS(t.tc), MER_EUROS(t.total)]];
+        foot = [['', '', '', '', '', '', 'TOTAL', MER_EUROS(t.repas), MER_EUROS(t.hebergement), MER_EUROS(t.transports), MER_EUROS(t.ik), MER_EUROS(t.tc), MER_EUROS(t.total)]];
     }
     doc.autoTable({ startY: 27 + dy, margin: { left: M, right: M }, head: head, body: body, foot: foot || undefined, showFoot: foot ? 'lastPage' : 'never',
         theme: 'plain', styles: { fontSize: 7.6, cellPadding: 1.6, textColor: [26, 26, 26], lineColor: [230, 230, 230], lineWidth: 0.1 },
         headStyles: { fillColor: false, textColor: [26, 26, 26], fontStyle: 'bold' }, footStyles: { fillColor: false, textColor: [26, 26, 26], fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [250, 248, 243] },
-        columnStyles: cr ? { 0: { fontStyle: 'bold' }, 9: { fontStyle: 'bold', halign: 'right' }, 4: { halign: 'right' }, 5: { halign: 'right' }, 6: { halign: 'right' }, 7: { halign: 'right' }, 8: { halign: 'right' } } : { 0: { fontStyle: 'bold' } } });
+        columnStyles: cr ? { 0: { fontStyle: 'bold' }, 12: { fontStyle: 'bold', halign: 'right' }, 7: { halign: 'right' }, 8: { halign: 'right' }, 9: { halign: 'right' }, 10: { halign: 'right' }, 11: { halign: 'right' } } : { 0: { fontStyle: 'bold' } } });
     try { doc.save('Registre OMR - ' + (cr ? 'comptes-rendus' : 'mises en route') + ' - ' + new Date().toISOString().slice(0, 10) + '.pdf'); }
     catch (e) { MSG_ERREUR('PDF impossible', e.message || String(e)); }
 }

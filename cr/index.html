@@ -8931,20 +8931,29 @@ function MONTRE_NOTIF_MAJ() {
     var suite = !M.ARR_SITE ? 'arrivee' : !M.DEP_SITE ? 'depart_site' : 'retour';
     var sig = actif ? M.DEBUT + '|' + suite : '', avant = '';
     try { avant = localStorage.getItem(CLE_MONTRE_SIG) || ''; } catch (e) {}
-    if (sig === avant) return;
+    var meme = sig === avant;
+    if (meme && !actif) return;
     try { localStorage.setItem(CLE_MONTRE_SIG, sig); } catch (e) {}
     navigator.serviceWorker.ready.then(function(reg) {
         if (!actif) return reg.getNotifications({ tag: 'trigone-montre' }).then(function(l) { l.forEach(function(n) { if (n.data && n.data.mission !== 'fin') n.close(); }); });
+        // Étape inchangée : la notification n'est remise que si elle a disparu (mise à jour de TRIGONE, volet vidé…),
+        // sans nouvelle alerte ; sinon la montre perdait ses boutons jusqu'à l'étape suivante.
+        return reg.getNotifications({ tag: 'trigone-montre' }).then(function(l) {
+            if (meme && l.some(function(n) { return n.data && n.data.mission === M.DEBUT; })) return;
+            return montrer(!meme);
+        });
+        function montrer(alerte) {
         var faits = ['Départ ' + MONTRE_HEURE(M.DEBUT) + ' ✓'];
         if (M.ARR_SITE) faits.push('Arrivée sur site ' + MONTRE_HEURE(M.ARR_SITE) + ' ✓');
         if (M.DEP_SITE) faits.push('Départ du site ' + MONTRE_HEURE(M.DEP_SITE) + ' ✓');
         return reg.showNotification('Mission en cours', {
             body: faits.join(' · ') + '\nProchaine étape : ' + MONTRE_BOUTONS[suite],
-            tag: 'trigone-montre', renotify: true, requireInteraction: true,
+            tag: 'trigone-montre', renotify: alerte, silent: !alerte, requireInteraction: true,
             icon: 'icon-192.png', badge: '../favicon-32.png',
             actions: [{ action: suite, title: MONTRE_BOUTONS[suite] }],
             data: { montre: true, faits: faits, mission: M.DEBUT }
         });
+        }
     }).catch(function() {});
 }
 // Réglages › Montre connectée : notification d'essai (bouton sans effet sur la mission).

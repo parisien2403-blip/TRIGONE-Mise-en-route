@@ -286,7 +286,15 @@
         '.JUM-AV { width: 28px; height: 28px; flex-shrink: 0; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #9a6f22; color: #fff; font-size: 0.7rem; font-weight: 800; letter-spacing: 0.04em; }' +
         '.JUM-CPT-NOM { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }' +
         '.JUM-CPT-PT { width: 9px; height: 9px; flex-shrink: 0; border-radius: 50%; background: #94a3b8; box-shadow: 0 0 0 2px #1a1a1a; }' +
-        '.JUM-CPT-PT.ok { background: #22c55e; } .JUM-CPT-PT.muet { background: #f59e0b; }' +
+        '.JUM-CPT-PT.ok { background: #22c55e; } .JUM-CPT-PT.muet { background: #f59e0b; } .JUM-CPT-PT.off { background: #ef4444; }' +
+        /* Montre connectée : voyant vert (notifications actives sur ce téléphone) ou rouge */
+        '.JUM-MONTRE-PT { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-left: -7px; vertical-align: top; box-shadow: 0 0 0 2px #fff; background: #ef4444; } .JUM-MONTRE-PT.ok { background: #22c55e; }' +
+        '.JUM-MONTRE .JUM-SIG-CARTE { padding-top: 22px; text-align: left; } .JUM-MONTRE-TETE { display: flex; align-items: center; gap: 12px; margin-bottom: 10px; }' +
+        '.JUM-MONTRE-TETE svg { width: 40px; height: 40px; flex-shrink: 0; stroke: #b0802a; fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-MONTRE-ETAT { display: flex; align-items: center; gap: 8px; padding: 10px 12px; border-radius: 12px; font-size: 0.82rem; font-weight: 700; margin: 0 0 12px; background: rgba(239,68,68,0.1); color: #b91c1c; }' +
+        '.JUM-MONTRE-ETAT.ok { background: rgba(34,197,94,0.12); color: #15803d; } .JUM-MONTRE-ETAT i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex-shrink: 0; }' +
+        '.JUM-MONTRE ol { margin: 0 0 12px; padding-left: 18px; font-size: 0.8rem; line-height: 1.5; color: #444; } .JUM-MONTRE-MSG { font-size: 0.78rem; color: #8a5f12; min-height: 1em; margin: 0 0 10px; }' +
+        'html body.dark-mode .JUM-MONTRE ol { color: #c4c4c4; } html body.dark-mode .JUM-MONTRE-PT { box-shadow: 0 0 0 2px #1f1f1f; }' +
         '.JUM-CHOIX > .JUM-CPT { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 3; }' +
         '.JUM-CHOIX.choisi > .JUM-CPT { opacity: 0; pointer-events: none; }' +
         /* Dans les applis (page d'accueil) : sur téléphone, pastille compacte en haut à gauche (le haut à droite porte le mode sombre
@@ -3346,7 +3354,8 @@
             ] },
             { id: 'notif', titre: 'Notifications', icone: ic('cloche'), aide: 'Réception d\'une demande, suivi de vos envois, nouvelles versions, et boutons d\'horodatage sur la montre.', lignes: c ? [
                 L('notif', ic('cloche'), 'Notifications', e === 'active' ? (notifMuet() ? 'Coupées sur cet appareil' : 'Actives sur cet appareil') + ' · tester' : 'Les activer sur cet appareil', function() { window.JUMELAGE_COMPTE(); }),
-                e === 'active' && L('muet', ic('cloche'), notifMuet() ? 'Rétablir les notifications ici' : 'Couper les notifications ici', 'Vos autres appareils ne changent pas', function() { window.JUMELAGE_NOTIF_MUET(); })
+                e === 'active' && L('muet', ic('cloche'), notifMuet() ? 'Rétablir les notifications ici' : 'Couper les notifications ici', 'Vos autres appareils ne changent pas', function() { window.JUMELAGE_NOTIF_MUET(); }),
+                surTelephone() && L('montre', ic('montre') + '<i class="JUM-MONTRE-PT' + (montrePrete() ? ' ok' : '') + '"></i>', 'Montre connectée', montrePrete() ? 'Prête : horodatage depuis le poignet · essai' : 'Notifications à activer pour la montre', function() { window.JUMELAGE_MONTRE(); })
             ] : [], vide: 'Connectez-vous d\'abord (rubrique Compte) pour recevoir les notifications.' }
         ];
         var propres = appli.filter(function(x) { return !AIDE_APPLI.test(x.titre); });
@@ -3586,6 +3595,7 @@
         disquette: '<path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 1-2Z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/>',
         alerte: '<path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/><path d="M12 9v4.5M12 17.2h.01"/>',
         telephone: '<rect x="6" y="2.5" width="12" height="19" rx="2.5"/><path d="M11 18.5h2"/>',
+        montre: '<rect x="6" y="6" width="12" height="12" rx="3"/><path d="M9 6 9.7 2.5h4.6L15 6M9 18l.7 3.5h4.6L15 18M12 9.5V12l1.6 1.2"/>',
         mail: '<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>',
         lecture: '<circle cx="12" cy="12" r="9"/><path d="M10 8.5v7l6-3.5-6-3.5Z"/>',
         voiture: '<path d="M5 16.5V12l2-5h10l2 5v4.5"/><path d="M4 12h16v4.5H4z"/><circle cx="7.5" cy="18" r="1.5"/><circle cx="16.5" cy="18" r="1.5"/>',
@@ -3888,6 +3898,38 @@
                 setTimeout(function() { if (pave) pave.querySelector('.JUM-PIN-POINTS').classList.remove('secoue'); }, 450);
             }
         });
+    };
+    // ---------- Montre connectée (Paramètres › Notifications) ----------
+    // Le téléphone relaie à la montre les notifications de TRIGONE : la montre est « prête » quand elles sont actives sur
+    // ce téléphone (TRIGONE ne peut pas voir la montre elle-même). Essai : une notification avec un bouton, sans effet.
+    function montrePrete() { return notifEtat() === 'active' && !notifMuet(); }
+    window.JUMELAGE_MONTRE = function() {
+        if (document.querySelector('.JUM-MONTRE')) return;
+        var f = document.createElement('div');
+        f.className = 'JUM-SIG JUM-MONTRE'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Montre connectée');
+        var ok = montrePrete();
+        f.innerHTML = '<div class="JUM-SIG-CARTE"><div class="JUM-MONTRE-TETE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('montre') : '') + '<div><h2 style="margin:0;">Montre connectée</h2>' +
+            '<small style="color:#8a8a8a;">Galaxy Watch, Pixel Watch, autre montre Wear OS…</small></div></div>' +
+            '<div class="JUM-MONTRE-ETAT' + (ok ? ' ok' : '') + '"><i></i>' + (ok ? 'Prête : les notifications de TRIGONE sont actives sur ce téléphone.' : 'Pas prête : activez les notifications de TRIGONE sur ce téléphone.') + '</div>' +
+            '<ol><li>Pendant une mission, la notification « Mission en cours » arrive sur la montre avec le bouton de l\'étape suivante (Arrivée sur site, Départ du site, Arrivée finale).</li>' +
+            '<li>Un appui sur la montre enregistre l\'heure exacte, même sans réseau.</li>' +
+            '<li>Dans l\'appli de la montre (ex. Galaxy Wearable › Notifications), autorisez <b>Chrome</b> et TRIGONE.</li></ol>' +
+            '<p class="JUM-MONTRE-MSG"></p>' +
+            '<div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND">Fermer</button><button type="button" class="JUM-R-PRINCIPAL">' + (ok ? 'Envoyer un essai' : 'Activer les notifications') + '</button></div></div>';
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        var fermer = function() { f.remove(); };
+        f.addEventListener('click', function(e) { if (e.target === f) fermer(); });
+        f.querySelector('.JUM-R-SECOND').addEventListener('click', fermer);
+        f.querySelector('.JUM-R-PRINCIPAL').addEventListener('click', function() {
+            var msg = f.querySelector('.JUM-MONTRE-MSG');
+            if (!montrePrete()) { fermer(); window.JUMELAGE_COMPTE(); return; }
+            navigator.serviceWorker.ready.then(function(reg) {
+                return reg.showNotification('Essai TRIGONE — montre', { body: 'Pendant une mission, ce bouton horodatera l\'étape suivante.', tag: 'trigone-montre-essai', renotify: true,
+                    icon: (DANS_CR ? '../' : '') + 'icon-192.png', badge: (DANS_CR ? '../' : '') + 'favicon-32.png', actions: [{ action: 'essai', title: 'Arrivée sur site' }] });
+            }).then(function() { msg.textContent = '✔ Essai envoyé : regardez votre montre (téléphone verrouillé, de préférence).'; },
+                function() { msg.textContent = 'Essai impossible : rouvrez TRIGONE puis réessayez.'; });
+        });
+        document.body.appendChild(f);
     };
     var bioEnCours = false;
     // auto : proposée d'office à l'ouverture ; un refus du navigateur (pas de geste) reste silencieux, le doigt sur la touche relance.
