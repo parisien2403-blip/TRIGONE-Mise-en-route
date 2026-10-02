@@ -274,16 +274,26 @@
         '.N-ECH * { box-sizing: border-box; } .N-ECH button * { pointer-events: none; }' +
         '.N-NUMP { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font: 700 9.5px Montserrat, system-ui, sans-serif; letter-spacing: .14em; color: #a08b62; }' +
         // Couverture « cuir et dorure »
-        '.n-couv { position: absolute; inset: 0; background: radial-gradient(120% 90% at 30% 10%, #3b2a1c, #20160e 60%, #120c08); overflow: hidden; }' +
-        '.n-couv::before { content: ""; position: absolute; inset: 0; opacity: .35; background-image: radial-gradient(rgba(255,255,255,.05) 1px, transparent 1.5px); background-size: 4px 4px; }' +
-        '.n-couv-cadre { position: absolute; inset: 18px; border: 1.5px solid #c9a24f; border-radius: 4px; } .n-couv-cadre::after { content: ""; position: absolute; inset: 6px; border: .6px solid rgba(201,162,79,.6); }' +
-        '.n-coin { position: absolute; width: 26px; height: 26px; border: 2px solid #e2b866; }' +
-        '.n-coin.a { top: 30px; left: 30px; border-right: 0; border-bottom: 0; } .n-coin.b { top: 30px; right: 30px; border-left: 0; border-bottom: 0; } .n-coin.c { bottom: 30px; left: 30px; border-right: 0; border-top: 0; } .n-coin.d { bottom: 30px; right: 30px; border-left: 0; border-top: 0; }' +
+        // Grain du cuir : deux bruits SVG (pores fins + marbrure), sur un brun chaud, coins assombris par l'usure.
+        '.n-couv { position: absolute; inset: 0; overflow: hidden; background-color: #5b3820; background-image: ' +
+            'radial-gradient(90% 70% at 32% 22%, rgba(255,205,150,.22), transparent 60%), radial-gradient(140% 110% at 50% 45%, transparent 52%, rgba(20,8,2,.72) 100%), ' +
+            'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27400%27 height=%27566%27%3E%3Cfilter id=%27m%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%27.012 .018%27 numOctaves=%274%27 seed=%273%27/%3E%3CfeColorMatrix values=%270 0 0 0 .16 0 0 0 0 .07 0 0 0 0 .02 0 0 0 .9 -.25%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23m)%27/%3E%3C/svg%3E"), ' +
+            'url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%27160%27 height=%27160%27%3E%3Cfilter id=%27g%27%3E%3CfeTurbulence type=%27fractalNoise%27 baseFrequency=%27.85%27 numOctaves=%273%27 seed=%277%27/%3E%3CfeColorMatrix values=%270 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 -1.4 1.05%27/%3E%3C/filter%3E%3Crect width=%27100%25%27 height=%27100%25%27 filter=%27url(%23g)%27 opacity=%27.55%27/%3E%3C/svg%3E"), ' +
+            'linear-gradient(160deg, #74482a, #5a361d 45%, #452713); background-size: auto, auto, 100% 100%, 160px 160px, auto; }' +
+        // Couture tout autour, et dos du livre (côté gauche) un peu plus sombre.
+        '.n-couv::after { content: ""; position: absolute; inset: 9px; border: 1.4px dashed rgba(236,205,160,.55); border-radius: 6px; box-shadow: 0 1px 0 rgba(0,0,0,.35); pointer-events: none; }' +
+        '.n-couv::before { content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 16px; background: linear-gradient(90deg, rgba(0,0,0,.45), rgba(0,0,0,.08) 70%, rgba(255,220,180,.10)); }' +
+        '.n-couv.dos::before { left: auto; right: 0; transform: scaleX(-1); }' +
+        // Dorure au fer : filets dorés légèrement enfoncés dans le cuir.
+        '.n-couv-cadre { position: absolute; inset: 22px; border: 1.6px solid #d4a955; border-radius: 3px; box-shadow: 0 1px 0 rgba(255,225,170,.25), inset 0 1px 1px rgba(0,0,0,.5); }' +
+        '.n-couv-cadre::after { content: ""; position: absolute; inset: 6px; border: .7px solid rgba(212,169,85,.7); }' +
+        '.n-coin { position: absolute; width: 26px; height: 26px; border: 2px solid #e2b866; filter: drop-shadow(0 1px 0 rgba(0,0,0,.5)); }' +
+        '.n-coin.a { top: 34px; left: 34px; border-right: 0; border-bottom: 0; } .n-coin.b { top: 34px; right: 34px; border-left: 0; border-bottom: 0; } .n-coin.c { bottom: 34px; left: 34px; border-right: 0; border-top: 0; } .n-coin.d { bottom: 34px; right: 34px; border-left: 0; border-top: 0; }' +
         '.n-couv-in { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #e2b866; text-align: center; }' +
-        '.n-couv img { width: 150px; filter: brightness(0) saturate(100%) invert(76%) sepia(43%) saturate(560%) hue-rotate(352deg) brightness(95%); }' +
-        '.n-couv h1 { font: 400 40px Georgia, serif; letter-spacing: .18em; margin: 18px 0 0 .18em; text-shadow: 0 1px 0 #6b4f1f, 0 -1px 0 #ffe7b0; }' +
-        '.n-couv h2 { font: italic 400 22px Georgia, serif; margin: 8px 0 0; color: #d9c08a; }' +
-        '.n-couv-bas { position: absolute; bottom: 52px; left: 0; right: 0; text-align: center; font: 700 10px Montserrat, sans-serif; letter-spacing: .3em; color: #b8955a; }' +
+        '.n-couv img { width: 150px; filter: brightness(0) saturate(100%) invert(76%) sepia(43%) saturate(560%) hue-rotate(352deg) brightness(95%) drop-shadow(0 -1px 0 rgba(0,0,0,.55)) drop-shadow(0 1px 0 rgba(255,225,170,.25)); }' +
+        '.n-couv h1 { font: 400 40px Georgia, serif; letter-spacing: .18em; margin: 18px 0 0 .18em; color: #e2b866; background: linear-gradient(180deg, #fbe3a6 0%, #e2b866 40%, #b07f2a 62%, #e8c27a 100%); -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent; filter: drop-shadow(0 -1px 0 rgba(0,0,0,.6)) drop-shadow(0 1px 0 rgba(255,225,170,.22)); }' +
+        '.n-couv h2 { font: italic 400 22px Georgia, serif; margin: 8px 0 0; color: #e0c48c; text-shadow: 0 -1px 0 rgba(0,0,0,.55); }' +
+        '.n-couv-bas { position: absolute; bottom: 56px; left: 0; right: 0; text-align: center; font: 700 10px Montserrat, sans-serif; letter-spacing: .3em; color: #d6b072; text-shadow: 0 -1px 0 rgba(0,0,0,.55); }' +
         '.n-couv.dos .n-couv-bas { letter-spacing: .16em; font-size: 8.5px; }' +
         // Pages
         '.n-p { position: absolute; inset: 0; padding: 26px 22px 34px; display: flex; flex-direction: column; font-size: 10.6px; line-height: 1.45; }' +
