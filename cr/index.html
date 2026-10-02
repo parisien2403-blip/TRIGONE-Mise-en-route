@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=133"></script>
+<script src="../jumelage.js?v=134"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -4979,8 +4979,9 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
   #P0 { --logo-accueil: clamp(130px, calc(var(--vh-reel, 100vh) * 0.27), 220px); }
   .P0-SHELL { gap: 6px; padding-top: 14px; }
   #P0 .P0-INNER { padding-top: 34px; }
-  #P0 .P0-LOGO-WRAP { flex: 0 0 auto; max-height: none; min-height: 0; margin-bottom: 6px; }
-  #P0 .welcome-logo { width: auto; height: calc(var(--logo-accueil) * 0.96); max-height: none; }
+  /* Le logo rétrécit si la place manque (médaille, texte agrandi du téléphone) : « Conçu par… » reste visible. */
+  #P0 .P0-LOGO-WRAP { flex: 0 1 auto; max-height: none; min-height: 64px; margin-bottom: 6px; }
+  #P0 .welcome-logo { width: auto; height: calc(var(--logo-accueil) * 0.96); max-height: 100%; max-width: 100%; object-fit: contain; }
   #P0 .P0-HERO { gap: 6px; }
   .P0-HERO .JUM-BONJOUR { margin: 0 0 2px; }
   #P0 .P0-HERO .BTN-ACCUEIL { padding: 15px 16px; }
@@ -11476,7 +11477,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 230;
+var APP_CODE_VERSION = 231;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
