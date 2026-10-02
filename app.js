@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 184;
+var APP_CODE_VERSION = 185;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -652,7 +652,7 @@ function TPL_MON_ESPACE() {
             '" placeholder="' + ph + '" oninput="' + (k === 'matricule' ? 'this.value=FORMAT_MATRICULE(this.value); ' : '') + 'var r=GET_REGLAGES(); r.identite=r.identite||{}; r.identite[\'' + k + '\']=this.value; SAVE_REGLAGES(r);"></div>';
     }
     function champMail(k, label, hint) {
-        return '<div class="MER-FIELD"><label>' + label + '</label><input type="email" value="' + ESC(r[k] || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
+        return '<div class="MER-FIELD"><label>' + label + '</label><input type="email" data-scan-carte value="' + ESC(r[k] || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
             'oninput="SET_REGLAGE(\'' + k + '\', this.value)">' + (hint ? '<p class="MER-HINT">' + hint + '</p>' : '') + '</div>';
     }
     return '<div class="CARD"><h2>Mon espace</h2>' +
@@ -991,6 +991,19 @@ function TELECHARGER_MODELE_LISTE() {
     TELECHARGER_TEXTE('modele_liste_personnel.csv', csv, 'text/csv;charset=utf-8');
 }
 function AJOUTER_PERSONNE() { D.personnes.push(VIDE_PERSONNE()); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
+// Carte TRIGONE scannée : la personne rejoint la demande (unité, CIE, grade, nom, prénom, matricule), sans rien taper.
+function SCANNER_PERSONNES() {
+    JUMELAGE_SCANNER_CARTE({ titre: 'Ajouter des personnes', sous: 'Scannez la carte TRIGONE de chaque personne de la mission.', continu: function(c) {
+        var nid = String(c.nid || '').replace(/\D/g, '');
+        var deja = D.personnes.some(function(p) { return nid && String(p.matricule || '').replace(/\D/g, '') === nid; });
+        if (deja) return { deja: true, texte: 'Déjà dans la demande' };
+        var p = { unite: c.unite || '', cie: c.cie || '', grade: c.grade || '', nom: (c.nom || '').toUpperCase(), prenom: c.prenom || '', matricule: c.nid || '' };
+        var vide = D.personnes.filter(function(x) { return !x.nom && !x.prenom && !x.matricule; })[0];
+        if (vide) Object.assign(vide, p); else D.personnes.push(Object.assign(VIDE_PERSONNE(), p));
+        SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE();
+        return { texte: '✔ Ajouté (' + D.personnes.length + ')' };
+    } });
+}
 function RETIRER_PERSONNE(i) { D.personnes.splice(i, 1); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
 
 // Pays étrangers : liste reprise de TRIGONE compte-rendu. Vide = France.
@@ -1190,6 +1203,7 @@ function TPL_ONGLET_IDENTITE() {
       '<div class="MER-SECTION-TITLE">Personnel concerné</div>' +
       D.personnes.map(function(_, i) { return TPL_PERSONNE(i); }).join('') +
       '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_PERSONNE()">+ Ajouter une personne (demande collective)</button>' +
+      (window.JUMELAGE_SCANNER_CARTE ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-top:8px;" onclick="SCANNER_PERSONNES()">📷 Scanner des cartes TRIGONE</button>' : '') +
       '<label class="BTN BTN-GHOST BTN-SMALL" style="margin-top:8px;">📥 Importer une liste (Excel, Calc ou CSV)' +
         '<input type="file" accept=".xlsx,.ods,.csv,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel" style="display:none;" onchange="IMPORTER_LISTE_PERSONNES(this)"></label>' +
       '<p class="MER-HINT" style="text-align:center;">Colonnes : UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID. <a href="#" onclick="TELECHARGER_MODELE_LISTE(); return false;">Télécharger le modèle</a></p>';
@@ -1438,7 +1452,7 @@ function TPL_ENVOI_PANIER(n) {
     setTimeout(function() { MER_AFFICHER_ABSENCE('MER-ABS-DEST', reg.mailSignataire); }, 0);
     return '<div class="MER-SECTION-TITLE">Envoi</div>' +
         '<div class="MER-FIELD"><label>Mail du 1er valideur (chef de service)</label>' +
-        '<input type="email" id="MER-MAIL-DEST" value="' + ESC(reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
+        '<input type="email" data-scan-carte id="MER-MAIL-DEST" value="' + ESC(reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
         'oninput="var r=GET_REGLAGES(); r.mailSignataire=this.value; SAVE_REGLAGES(r);" onchange="MER_AFFICHER_ABSENCE(\'MER-ABS-DEST\', this.value)"></div>' +
         '<div id="MER-ABS-DEST"></div>' +
         '<p class="MER-HINT" style="margin:-4px 0 14px;">' + (MER_COMPTE_ACTIF() ? 'Envoi chiffré, directement dans le TRIGONE du 1er valideur' + (n > 1 ? ' : les ' + n + ' demandes ci-dessus partent ensemble' : '') + '. Un refus éventuel vous revient dans votre Boîte de réception (' + ESC(JUMELAGE_COMPTE_MAIL()) + ').'
@@ -2912,9 +2926,9 @@ function TPL_TRANSMISSION_VALIDATION(v, h, liste) {
     var champ2 = h.role === 1 || dest.vers2, champChorus = h.role !== 1 || dest.versChorus;
     var decidees = liste.filter(function(e) { return e.decision; }).length;
     return '<div class="MER-SECTION-TITLE">Transmission</div>' +
-        (dest.vers1 ? '<div class="MER-FIELD"><label>Mail du VALIDEUR 1 (renvoi)</label><input type="email" value="' + ESC(v.mailValideur1 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur1\', this.value)"></div>' : '') +
-        (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
-        (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
+        (dest.vers1 ? '<div class="MER-FIELD"><label>Mail du VALIDEUR 1 (renvoi)</label><input type="email" data-scan-carte value="' + ESC(v.mailValideur1 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur1\', this.value)"></div>' : '') +
+        (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" data-scan-carte value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
+        (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" data-scan-carte value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
               '<p class="MER-HINT">Il reçoit les demandes validées dans son espace Assistant Chorus DT, qui contrôle les signatures et produit le PDF.</p></div>' : '') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📨 Transmettre les décisions (' + decidees + ')</button>';
 }

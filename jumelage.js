@@ -791,6 +791,94 @@
         '.JUM-PIN-BIO svg { width: 30px; height: 30px; }' +
         '.JUM-R-BIO { display: flex; align-items: center; gap: 10px; margin: 10px 0 4px; }' +
         '.JUM-R-BIO svg { width: 26px; height: 26px; flex-shrink: 0; color: #b0802a; }' +
+        /* Carte TRIGONE : carte au format CB (350 × 221 à l'échelle 1), noir et or, hologramme, recto / verso */
+        '.JUM-CARTE-FEN { background: radial-gradient(120% 70% at 50% 0%, #2b2b2b, #151515 55%, #0c0c0c); padding: 0; align-items: stretch; }' +
+        '.JUM-CARTE-PAGE { width: 100%; max-width: 520px; margin: 0 auto; padding: calc(14px + env(safe-area-inset-top, 0px)) 16px 28px; color: #f5f5f5; overflow-y: auto; box-sizing: border-box; font-family: Montserrat, system-ui, sans-serif; }' +
+        '.JUM-CARTE-TETE { display: flex; align-items: center; gap: 12px; margin-bottom: 24px; } .JUM-CARTE-TETE b { font-size: 1.1rem; display: block; } .JUM-CARTE-TETE small { color: #a3a3a3; font-weight: 600; font-size: 0.72rem; }' +
+        '.JUM-CARTE-RET { width: 38px; height: 38px; border-radius: 50%; border: 0; background: #222; color: #d6a756; font-size: 1.4rem; line-height: 1; cursor: pointer; flex-shrink: 0; }' +
+        '.JUM-CARTE-ZONE { position: relative; width: 100%; perspective: 1400px; }' +
+        '.JUM-CARTE-FEN.pc .JUM-CARTE-PAGE { max-width: 860px; } .JUM-CARTE-DUO { display: flex; gap: 24px; justify-content: center; flex-wrap: wrap; margin-bottom: 22px; }' +
+        '.JUM-CARTE-DUO .face { width: 350px; height: 221px; } .JUM-CARTE-FEN.pc .JUM-CARTE-BTNS { max-width: 480px; margin: 0 auto; } .JUM-CARTE-FEN.pc .JUM-CARTE-NOTE { max-width: 720px; margin-left: auto; margin-right: auto; }' +
+        '.JUM-CARTE-TOURNE { position: absolute; left: 50%; top: 0; width: 350px; height: 221px; margin-left: -175px; transform-origin: top center; cursor: pointer; -webkit-tap-highlight-color: transparent; }' +
+        '.JUM-CARTE-TOURNE .face { position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden; transition: transform 0.6s cubic-bezier(.2,.8,.2,1); }' +
+        '.JUM-CARTE-TOURNE .face.arriere { transform: rotateY(180deg); } .JUM-CARTE-TOURNE.verso .face.avant { transform: rotateY(-180deg); } .JUM-CARTE-TOURNE.verso .face.arriere { transform: rotateY(0); }' +
+        '.JUM-CARTE { position: relative; width: 350px; height: 221px; border-radius: 16px; overflow: hidden; color: #f5f5f5; font-family: Montserrat, system-ui, sans-serif; text-align: left; box-sizing: border-box;' +
+            ' background: radial-gradient(130% 120% at 0% 0%, #353026 0%, #1b1a17 45%, #0e0e0d 100%); box-shadow: 0 0 0 1px rgba(214,167,86,0.55), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08); }' +
+        '.JUM-CARTE.niv-bronze { box-shadow: 0 0 0 2px #b87333, 0 0 14px rgba(184,115,51,0.35), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08); }' +
+        '.JUM-CARTE.niv-argent { box-shadow: 0 0 0 2px #c9ced6, 0 0 16px rgba(201,206,214,0.4), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); }' +
+        '.JUM-CARTE.niv-or { box-shadow: 0 0 0 2.5px #e2b866, 0 0 22px rgba(226,184,102,0.55), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12); animation: jum-carte-or 3.2s ease-in-out infinite alternate; }' +
+        '@keyframes jum-carte-or { to { box-shadow: 0 0 0 2.5px #f1d08a, 0 0 34px rgba(241,208,138,0.75), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12); } }' +
+        '.JUM-CARTE-CHAMPS em.niv { font-style: normal; font-size: 6.5px; letter-spacing: 0.12em; padding: 1px 5px; border-radius: 99px; margin-left: 4px; vertical-align: 2px; background: rgba(214,167,86,0.18); color: #e8c27a; }' +
+        '.niv-bronze .JUM-CARTE-CHAMPS em.niv { background: rgba(184,115,51,0.25); color: #e0a070; } .niv-argent .JUM-CARTE-CHAMPS em.niv { background: rgba(201,206,214,0.22); color: #e4e8ee; }' +
+        '.JUM-CARTE-GUIL { position: absolute; inset: 0; opacity: 0.16; background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2714%27%3E%3Cpath d=%27M0 7 Q7 0 14 7 T28 7%27 fill=%27none%27 stroke=%27%23d6a756%27 stroke-width=%27.6%27/%3E%3Cpath d=%27M0 11 Q7 4 14 11 T28 11%27 fill=%27none%27 stroke=%27%23d6a756%27 stroke-width=%27.35%27/%3E%3C/svg%3E"); }' +
+        '.JUM-CARTE-HOLO { position: absolute; inset: 0; mix-blend-mode: screen; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255,236,190,0.28) 46%, rgba(173,216,230,0.18) 52%, rgba(255,200,230,0.14) 56%, transparent 64%) no-repeat;' +
+            ' background-size: 260% 100%; background-position: var(--jum-holo, 50%) 0; animation: jum-holo 7s ease-in-out infinite alternate; }' +
+        'html.jum-holo-capteur .JUM-CARTE-HOLO { animation: none; transition: background-position 0.12s linear; }' +
+        '@keyframes jum-holo { from { background-position: 0% 0; } to { background-position: 100% 0; } }' +
+        '.JUM-CARTE-FILI { position: absolute; right: -30px; bottom: -26px; width: 210px; opacity: 0.07; filter: invert(1); }' +
+        '.JUM-CARTE-HAUT { position: absolute; left: 16px; top: 12px; right: 14px; display: flex; align-items: center; gap: 8px; }' +
+        '.JUM-CARTE-HAUT img { width: 30px; filter: invert(1) brightness(1.4); } .JUM-CARTE-HAUT .t { font-weight: 800; letter-spacing: 0.28em; font-size: 12px; line-height: 1; }' +
+        '.JUM-CARTE-HAUT .t small { display: block; letter-spacing: 0.14em; font-size: 7.5px; color: #d6a756; margin-top: 3px; }' +
+        '.JUM-CARTE-HAUT .drap { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 8px; font-weight: 800; letter-spacing: 0.12em; color: #d6a756; }' +
+        '.JUM-CARTE-HAUT .drap i { display: inline-block; width: 18px; height: 12px; border-radius: 2px; background: linear-gradient(90deg, #1f3a93 33%, #fff 33% 66%, #d62828 66%); }' +
+        '.JUM-CARTE-PHOTO { position: absolute; left: 16px; top: 52px; width: 82px; height: 104px; border-radius: 9px; overflow: hidden; box-shadow: 0 0 0 1.5px #d6a756, 0 6px 14px rgba(0,0,0,0.5); background: #2a2a2a; }' +
+        '.JUM-CARTE-PHOTO img { width: 100%; height: 100%; object-fit: cover; display: block; }' +
+        '.JUM-CARTE-PHOTO span { display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; gap: 4px; color: #8a8a8a; font-size: 7.5px; text-align: center; }' +
+        '.JUM-CARTE-PHOTO span svg { width: 30px; height: 30px; fill: none; stroke: #6b6b6b; stroke-width: 1.5; }' +
+        '.JUM-CARTE-PUCE { position: absolute; left: 112px; top: 56px; width: 34px; height: 26px; border-radius: 5px; background: linear-gradient(135deg, #f1d08a, #b8862e); box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25); }' +
+        '.JUM-CARTE-PUCE::before { content: ""; position: absolute; inset: 6px 4px; border: 1px solid rgba(0,0,0,0.28); border-radius: 3px; } .JUM-CARTE-PUCE::after { content: ""; position: absolute; left: 50%; top: 3px; bottom: 3px; border-left: 1px solid rgba(0,0,0,0.28); }' +
+        '.JUM-CARTE-CHAMPS { position: absolute; left: 112px; top: 88px; right: 14px; display: grid; grid-template-columns: 1fr 1fr; gap: 5px 10px; }' +
+        '.JUM-CARTE-CHAMPS div { font-size: 10.5px; font-weight: 800; letter-spacing: 0.02em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
+        '.JUM-CARTE-CHAMPS small { display: block; font-size: 6.5px; letter-spacing: 0.14em; color: #d6a756; font-weight: 700; margin-bottom: 1px; } .JUM-CARTE-CHAMPS .l { grid-column: 1 / -1; font-size: 13.5px; }' +
+        '.JUM-CARTE-MRZ { position: absolute; left: 14px; right: 14px; bottom: 9px; font: 600 8.6px/1.35 "Courier New", monospace; letter-spacing: 0.09em; color: rgba(214,167,86,0.62); white-space: nowrap; overflow: hidden; }' +
+        '.JUM-CARTE-BANDE { position: absolute; left: 0; right: 0; top: 20px; height: 34px; background: linear-gradient(90deg, #0b0b0b, #1c1c1c, #0b0b0b); }' +
+        '.JUM-CARTE-QR { position: absolute; left: 16px; top: 66px; width: 118px; height: 118px; background: #fff; border-radius: 10px; padding: 7px; box-sizing: border-box; box-shadow: 0 0 0 1.5px #d6a756; overflow: hidden; }' +
+        '.JUM-CARTE-QR img, .JUM-CARTE-QR canvas { width: 100% !important; height: 100% !important; display: block; }' +
+        '.JUM-CARTE-QR span { display: flex; align-items: center; justify-content: center; height: 100%; color: #555; font-size: 8px; font-weight: 700; text-align: center; line-height: 1.4; }' +
+        '.JUM-CARTE-INFO { position: absolute; left: 148px; top: 62px; right: 14px; font-size: 9.5px; line-height: 1.45; color: #d4d4d4; } .JUM-CARTE-INFO b { color: #f5f5f5; }' +
+        '.JUM-CARTE-INFO .t { font-size: 7px; letter-spacing: 0.14em; color: #d6a756; font-weight: 800; margin-top: 5px; }' +
+        '.JUM-CARTE-INFO .roles { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; } .JUM-CARTE-INFO .roles span { font-size: 7px; font-weight: 800; letter-spacing: 0.05em; padding: 2px 6px; border-radius: 99px; background: rgba(214,167,86,0.16); color: #e8c27a; box-shadow: inset 0 0 0 1px rgba(214,167,86,0.45); }' +
+        '.JUM-CARTE-SIGN { position: absolute; left: 148px; right: 14px; bottom: 12px; border-top: 1px solid rgba(214,167,86,0.4); padding-top: 3px; font-size: 6.5px; letter-spacing: 0.14em; color: #8a8a8a; }' +
+        '.JUM-CARTE-SIGN i { position: absolute; right: 4px; bottom: 12px; font: italic 600 16px/1 "Brush Script MT", "Segoe Script", cursive; color: #e8c27a; letter-spacing: 0; }' +
+        '.JUM-CARTE-ASTUCE { text-align: center; color: #a3a3a3; font-size: 0.75rem; font-weight: 600; margin: 18px 0 18px; }' +
+        '.JUM-CARTE-PAGE .JUM-R-PRINCIPAL { width: 100%; margin: 0; background: linear-gradient(180deg, #e2b866, #c99743); color: #1a1a1a; border: 0; }' +
+        '.JUM-CARTE-BTNS { display: flex; gap: 10px; margin-top: 10px; } .JUM-CARTE-BTNS button { flex: 1; margin: 0; background: #1c1c1c; color: #f5f5f5; border-color: #333; }' +
+        '.JUM-CARTE-NOTE { margin: 16px 0 6px; padding: 12px 14px; border-radius: 14px; background: rgba(214,167,86,0.08); box-shadow: inset 0 0 0 1px rgba(214,167,86,0.25); font-size: 0.74rem; line-height: 1.5; color: #cfcfcf; } .JUM-CARTE-NOTE b { color: #e8c27a; }' +
+        '.JUM-CARTE-PAGE .JUM-R-LIEN { color: #d6a756; display: block; margin: 8px auto 0; }' +
+        /* Plein écran : le téléphone devient la carte */
+        '.JUM-CARTE-PLEIN { background: #000; padding: 0; animation: none; z-index: 99997; }' +
+        '.JUM-CARTE-PLEIN .JUM-CARTE-ZONE { position: absolute; left: 50%; top: 50%; width: 350px; height: 221px; perspective: 1400px; }' +
+        '.JUM-CARTE-PLEIN .JUM-CARTE-TOURNE { left: 0; margin-left: 0; }' +
+        '.JUM-CARTE-QUITTER { position: absolute; right: calc(14px + env(safe-area-inset-right, 0px)); top: calc(12px + env(safe-area-inset-top, 0px)); width: 36px; height: 36px; border-radius: 50%; border: 0; background: rgba(255,255,255,0.14); color: #ddd; font-size: 1rem; cursor: pointer; z-index: 2; }' +
+        /* Cadrage de la photo */
+        '.JUM-CARTE-CADRE .JUM-SIG-CARTE { padding-top: 22px; } .JUM-CADRE-ZONE { margin: 4px auto 12px; width: 190px; border-radius: 14px; overflow: hidden; box-shadow: 0 0 0 2px #d6a756; touch-action: none; }' +
+        '.JUM-CADRE-ZONE canvas { width: 100%; display: block; cursor: grab; } .JUM-CARTE-CADRE input[type=range] { width: 100%; accent-color: #c99743; margin-bottom: 14px; }' +
+        /* Scanner */
+        '.JUM-SCAN .JUM-SIG-CARTE { padding-top: 22px; } .JUM-SCAN-VUE { position: relative; width: 100%; aspect-ratio: 1; border-radius: 18px; overflow: hidden; background: radial-gradient(#3a3a3a, #141414); margin-bottom: 10px; }' +
+        '.JUM-SCAN-VUE video { width: 100%; height: 100%; object-fit: cover; display: block; }' +
+        '.JUM-SCAN-VUE .coins { position: absolute; left: 22%; top: 22%; right: 22%; bottom: 22%; } .JUM-SCAN-VUE .coins b { position: absolute; width: 28px; height: 28px; border: 3px solid #d6a756; }' +
+        '.JUM-SCAN-VUE .coins b:nth-child(1) { left: 0; top: 0; border-right: 0; border-bottom: 0; border-radius: 8px 0 0 0; } .JUM-SCAN-VUE .coins b:nth-child(2) { right: 0; top: 0; border-left: 0; border-bottom: 0; border-radius: 0 8px 0 0; }' +
+        '.JUM-SCAN-VUE .coins b:nth-child(3) { left: 0; bottom: 0; border-right: 0; border-top: 0; border-radius: 0 0 0 8px; } .JUM-SCAN-VUE .coins b:nth-child(4) { right: 0; bottom: 0; border-left: 0; border-top: 0; border-radius: 0 0 8px 0; }' +
+        '.JUM-SCAN-VUE .laser { position: absolute; left: 24%; right: 24%; top: 50%; height: 2px; background: #d6a756; box-shadow: 0 0 12px #d6a756; animation: jum-laser 1.8s ease-in-out infinite alternate; }' +
+        '@keyframes jum-laser { from { top: 26%; } to { top: 74%; } }' +
+        '.JUM-SCAN-ETAT { position: absolute; left: 0; right: 0; bottom: 10px; text-align: center; color: #fff; font-size: 0.75rem; font-weight: 700; text-shadow: 0 1px 4px rgba(0,0,0,0.8); padding: 0 10px; }' +
+        '.JUM-SCAN-RES div { display: flex; justify-content: space-between; gap: 10px; padding: 8px 10px; border-radius: 10px; margin-bottom: 6px; font-size: 0.78rem; text-align: left; background: rgba(34,197,94,0.1); }' +
+        '.JUM-SCAN-RES div.deja { background: rgba(214,167,86,0.12); } .JUM-SCAN-RES span { color: #15803d; font-weight: 700; white-space: nowrap; } .JUM-SCAN-RES div.deja span { color: #9a6f22; }' +
+        '.JUM-SCAN-MAIN { text-align: left; font-size: 0.75rem; margin-bottom: 12px; color: #64748b; } .JUM-SCAN-MAIN summary { cursor: pointer; font-weight: 700; }' +
+        '.JUM-SCAN-MAIN div { display: flex; gap: 8px; margin-top: 8px; } .JUM-SCAN-MAIN input { flex: 1; min-width: 0; height: 40px; border-radius: 10px; border: 1px solid #cbd5e1; padding: 0 10px; font: inherit; }' +
+        '.JUM-SCAN-MAIN button { margin: 0; flex: 0 0 auto; }' +
+        '.JUM-SCAN-ENV { position: relative; display: block; } .JUM-SCAN-ENV input { padding-right: 48px !important; width: 100%; box-sizing: border-box; }' +
+        '.JUM-SCAN-CHAMP { position: absolute; right: 6px; top: 50%; transform: translateY(-50%); width: 36px; height: 36px; border-radius: 10px; border: 0; background: rgba(214,167,86,0.14); color: #9a6f22; cursor: pointer; display: flex; align-items: center; justify-content: center; padding: 0; }' +
+        '.JUM-SCAN-CHAMP svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
+        'html body.dark-mode .JUM-SCAN-CHAMP { color: #e0b86a; }' +
+        /* Page de vérification d'une carte (QR code lu avec l'appareil photo) */
+        '.JUM-VERIF { position: fixed; inset: 0; z-index: 99998; display: flex; align-items: center; justify-content: center; padding: 16px; background: radial-gradient(120% 70% at 50% 0%, #2b2b2b, #151515 55%, #0c0c0c); font-family: Montserrat, system-ui, sans-serif; color: #f5f5f5; }' +
+        '.JUM-VERIF-CARTE { width: 100%; max-width: 380px; text-align: center; } .JUM-VERIF-CARTE img { width: 64px; filter: invert(1) brightness(1.4); }' +
+        '.JUM-VERIF-NOM { font-weight: 800; letter-spacing: 0.32em; margin: 6px 0 0 0.32em; } .JUM-VERIF-SOUS { color: #d6a756; font-size: 0.78rem; font-weight: 700; margin: 4px 0 24px; }' +
+        '.JUM-VERIF-RES { border-radius: 18px; padding: 20px 16px; margin-bottom: 20px; background: #1c1c1c; display: flex; flex-direction: column; gap: 6px; }' +
+        '.JUM-VERIF-RES b { font-size: 1.05rem; } .JUM-VERIF-RES .qui { font-size: 1.2rem; font-weight: 800; color: #f5f5f5; } .JUM-VERIF-RES span { color: #cfcfcf; font-size: 0.85rem; } .JUM-VERIF-RES small { color: #8a8a8a; margin-top: 6px; }' +
+        '.JUM-VERIF-RES.ok { box-shadow: inset 0 0 0 1.5px rgba(34,197,94,0.6); } .JUM-VERIF-RES.ok b { color: #22c55e; } .JUM-VERIF-RES.ko { box-shadow: inset 0 0 0 1.5px rgba(239,68,68,0.6); } .JUM-VERIF-RES.ko b { color: #ef4444; }' +
+        '.JUM-VERIF .JUM-R-PRINCIPAL { width: 100%; background: linear-gradient(180deg, #e2b866, #c99743); color: #1a1a1a; border: 0; }' +
         /* Empreinte façon TRIGONE (téléphone) : phénix, grande empreinte dorée qui respire ; verte reconnue, rouge refusée. */
         '.JUM-PIN.bio { background: radial-gradient(90% 55% at 50% 24%, #2b2b2b, #151515 60%, #0c0c0c); }' +
         '.JUM-BIOV-LOGO { width: 54px; height: 54px; object-fit: contain; filter: invert(1) brightness(1.4); opacity: 0.92; display: block; margin: 0 auto; }' +
@@ -893,7 +981,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 137, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 138, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1107,6 +1195,7 @@
     var RESA_DEFAUT = 'Demande de réservation';
     // Option « Demande de réservation » : { active, libelle } (libellé choisi par l'unité, sinon « Demande de réservation »).
     window.JUMELAGE_RESA = function() { var r = lireReglages(); return { active: r.resaActive !== false, libelle: r.resaLibelle || RESA_DEFAUT, defaut: !r.resaLibelle }; };
+    window.JUMELAGE_REGLAGES_LIRE = function() { return lireReglages(); };
     window.JUMELAGE_QUI = function() { var r = lireReglages(); return [r.grade, r.nom, r.prenom].filter(Boolean).join(' '); };
     function chiffres(v) { return String(v || '').replace(/\D/g, ''); }
     function formatMatricule(v) { var c = chiffres(v).slice(0, 10); return [c.slice(0, 3), c.slice(3, 5), c.slice(5, 7), c.slice(7)].filter(Boolean).join(' '); }
@@ -3471,6 +3560,7 @@
         var r = [
             { id: 'compte', titre: 'Compte', icone: ic('personne'), aide: c ? 'Connecté avec ' + c.mail + '.' : 'Vous n\'êtes pas connecté : connectez-vous pour envoyer et recevoir vos demandes et comptes-rendus.', lignes: [
                 !c && L('connexion', ic('personne'), 'Se connecter', 'Première connexion, ou autre appareil', function() { window.JUMELAGE_CONNEXION(); }),
+                L('carte', ic('carte'), 'Ma carte TRIGONE', 'Photo, QR code, afficher en grand', function() { window.JUMELAGE_CARTE(); }),
                 L('profil', ic('personne'), 'Mon profil', 'Identité, destinataires, demande de réservation, code d\'accès', function() { window.JUMELAGE_REGLAGES({ vue: 'profil' }); }),
                 L('roles', ic('groupe'), 'Mes rôles', aRole ? 'Valideur, assistant Chorus DT : gérer' : 'Valideur, assistant Chorus DT : ajouter un rôle avec son code', function() { window.JUMELAGE_REGLAGES({ vue: 'roles' }); }),
                 aRole && L('absence', ic('sablier'), 'Absence', 'Désigner un remplaçant pendant votre absence', function() { window.JUMELAGE_REGLAGES({ vue: 'absence' }); }),
@@ -3709,6 +3799,8 @@
     // Les textes des applis gardent leurs emoji ; à l'affichage, chacun est remplacé par l'icône au trait
     // correspondante (même style que les onglets). Rien ne change dans les mails, PDF ou notifications.
     var P = {
+        qr: '<path d="M4 4h6v6H4zM14 4h6v6h-6zM4 14h6v6H4z"/><path d="M14 14h2.5v2.5H14zM19 14h1M14 19.5v.5M17 17.5h3V20h-3z"/>',
+        carte: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16c.6-1.6 1.7-2.4 3-2.4s2.4.8 3 2.4M14 10h4M14 13h4"/>',
         cadenas: '<rect x="4.5" y="11" width="15" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 8 0V11"/>',
         cadenasOuvert: '<rect x="4.5" y="11" width="15" height="10" rx="2"/><path d="M8 11V7.5a4 4 0 0 1 7.8-1.2"/>',
         maj: '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>',
@@ -4001,6 +4093,395 @@
         window.location.href = 'mailto:' + MAIL_SUPPORT + '?subject=' + encodeURIComponent(sujet) + '&body=' + encodeURIComponent(corps);
     }
 
+    // ---------- Carte TRIGONE (Paramètres › Compte › Ma carte TRIGONE) ----------
+    // Recto : photo (gardée sur l'appareil), identité de Mon profil, hologramme qui suit le téléphone. Verso : QR code
+    // (adresse de l'appli + identifiant de carte tiré au hasard par le serveur) : un autre compte TRIGONE le scanne pour
+    // ajouter la personne à une mission collective, la désigner comme valideur, remplaçant…, ou la pointer au départ ;
+    // l'appareil photo d'un téléphone ouvre la page de vérification. « Afficher en grand » : le téléphone devient la carte.
+    var CLE_CARTE = 'trigone_carte', CLE_CARTE_PHOTO = 'trigone_carte_photo', fenCarte = null;
+    function carteIdentite() {
+        var r = lireReglages(), roles = rolesLocaux();
+        var n = 0; try { n = parseInt(localStorage.getItem('trigone_cr_envoyes_total') || '0', 10) || 0; } catch (e) {}
+        return { grade: r.grade || '', nom: (r.nom || '').toUpperCase(), prenom: r.prenom || '', unite: r.unite || '', cie: r.cie || '', nid: r.matricule || '', missions: n,
+            roles: ['MISSIONNAIRE'].concat(roles.valideur1 ? ['VALIDEUR 1'] : [], roles.valideur2 ? ['VALIDEUR 2'] : [], roles.chorus ? ['ASSIST CHORUS DT'] : []) };
+    }
+    // Identifiant de la carte (serveur) : demandé une fois, renvoyé quand Mon profil change (même identifiant).
+    window.JUMELAGE_CARTE_ID = function() {
+        var memo = lireJSON(CLE_CARTE) || {}, d = carteIdentite();
+        var sig = [d.grade, d.nom, d.prenom, d.unite, d.cie, d.nid].join('|');
+        if (!monCompte()) return Promise.resolve(null);
+        if (memo.id && memo.sig === sig && memo.mail === monCompte().mail) return Promise.resolve(memo);
+        if (!navigator.onLine) return Promise.resolve(memo.id && memo.mail === monCompte().mail ? memo : null);
+        return appelApi('carte', { methode: 'POST', corps: d }).then(function(r) {
+            var m = { id: r.id, depuis: r.depuis, sig: sig, mail: monCompte().mail }; ecrireTxt(CLE_CARTE, JSON.stringify(m)); return m;
+        }, function() { return memo.id ? memo : null; });
+    };
+    function lienCarte(id) { return location.origin + racineAppli + '?carte=' + encodeURIComponent(id); }
+    function chargerScript(nom, test) {
+        if (test()) return Promise.resolve();
+        return new Promise(function(ok, ko) {
+            var sc = document.createElement('script'); sc.src = (DANS_CR ? '../' : '') + 'vendor/' + nom;
+            sc.onload = function() { ok(); }; sc.onerror = function() { ko(new Error('Module indisponible hors connexion.')); };
+            document.head.appendChild(sc);
+        });
+    }
+    function mrz(d) {
+        var t = function(v, n) { return (String(v || '').toUpperCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^A-Z0-9]+/g, '<') + '<'.repeat(n)).slice(0, n); };
+        var l1 = t('TRGN<' + d.unite + '<<' + d.nom + '<<' + d.prenom, 34);
+        var c = String(d.nid || '').replace(/\D/g, '').slice(0, 10), s = 0; for (var i = 0; i < c.length; i++) s += (+c[i]) * [7, 3, 1][i % 3];
+        return [l1, t(c + '<' + d.grade.slice(0, 3) + '<' + d.cie, 33) + (s % 10)];
+    }
+    // Carte qui évolue : liseré bronze (1 compte-rendu envoyé), argent (10), or (20), comme les médailles.
+    function niveauCarte(n) { return n >= 20 ? ['or', 'OR'] : n >= 10 ? ['argent', 'ARGENT'] : n >= 1 ? ['bronze', 'BRONZE'] : ['', '']; }
+    function carteRecto(d) {
+        var photo = lireTxt(CLE_CARTE_PHOTO), m = mrz(d), base = DANS_CR ? '../' : '', niv = niveauCarte(d.missions);
+        return '<div class="JUM-CARTE recto' + (niv[0] ? ' niv-' + niv[0] : '') + '"><i class="JUM-CARTE-GUIL"></i><img class="JUM-CARTE-FILI" src="' + base + 'phoenix-icon.png" alt=""><i class="JUM-CARTE-HOLO"></i>' +
+            '<div class="JUM-CARTE-HAUT"><img src="' + base + 'phoenix-icon.png" alt=""><div class="t">TRIGONE<small>CARTE D\'IDENTITÉ · MISSIONS</small></div>' +
+                '<div class="drap"><i></i>' + esc(d.unite || 'TRIGONE') + '</div></div>' +
+            '<div class="JUM-CARTE-PHOTO">' + (photo ? '<img src="' + photo + '" alt="Photo">' : '<span>' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : '') + '<b>Ajouter<br>ma photo</b></span>') + '</div>' +
+            '<i class="JUM-CARTE-PUCE"></i>' +
+            '<div class="JUM-CARTE-CHAMPS"><div class="l"><small>NOM · PRÉNOM</small>' + esc((d.nom + ' ' + d.prenom).trim() || '—') + '</div>' +
+                '<div><small>GRADE</small>' + esc(d.grade || '—') + '</div><div><small>NID</small>' + esc(d.nid || '—') + '</div>' +
+                '<div><small>UNITÉ</small>' + esc([d.unite, d.cie].filter(Boolean).join(' · ') || '—') + '</div><div><small>MISSIONS</small>' + d.missions + (niv[1] ? ' <em class="niv">' + niv[1] + '</em>' : '') + '</div></div>' +
+            '<div class="JUM-CARTE-MRZ">' + esc(m[0]) + '<br>' + esc(m[1]) + '</div></div>';
+    }
+    function carteVerso(d, memo) {
+        var depuis = memo && memo.depuis ? new Date(memo.depuis).toLocaleDateString('fr-FR') : '', niv = niveauCarte(d.missions);
+        return '<div class="JUM-CARTE verso' + (niv[0] ? ' niv-' + niv[0] : '') + '"><i class="JUM-CARTE-GUIL"></i><i class="JUM-CARTE-HOLO"></i><i class="JUM-CARTE-BANDE"></i>' +
+            '<div class="JUM-CARTE-QR">' + (memo && memo.id ? '' : '<span>' + (monCompte() ? 'QR code à la prochaine connexion à internet' : 'Connectez-vous à votre compte TRIGONE pour activer le QR code') + '</span>') + '</div>' +
+            '<div class="JUM-CARTE-INFO"><div class="t">SCANNEZ POUR M\'AJOUTER</div>à une mission collective, comme valideur ou remplaçant : <b>compte TRIGONE</b> repris d\'un coup.' +
+                '<div class="t">RÔLES</div><div class="roles">' + d.roles.map(function(x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
+                '<div class="t">COMPTE</div>' + (memo && memo.id ? '<b>✔ Vérifié</b>' + (depuis ? ' · depuis le ' + depuis : '') : 'Non connecté') + '</div>' +
+            '<div class="JUM-CARTE-SIGN">SIGNATURE DU TITULAIRE<i>' + esc((d.prenom ? d.prenom.charAt(0) + '. ' : '') + (d.nom ? d.nom.charAt(0) + d.nom.slice(1).toLowerCase() : '')) + '</i></div></div>';
+    }
+    // QR code dessiné dans le verso (bibliothèque déjà livrée avec l'appli).
+    function dessinerQR(boite, id) {
+        if (!boite || !id) return;
+        chargerScript('qrcode.min.js', function() { return !!window.QRCode; }).then(function() {
+            boite.innerHTML = '';
+            try { new window.QRCode(boite, { text: lienCarte(id), width: 300, height: 300, colorDark: '#111111', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M }); boite.removeAttribute('title'); } catch (e) {}
+        }, function() {});
+    }
+    // Hologramme : le reflet suit l'inclinaison du téléphone (ou la souris), sinon il passe lentement.
+    var holoActif = false;
+    function suivreHolo() {
+        if (holoActif) return; holoActif = true;
+        var poser = function(x) { document.documentElement.style.setProperty('--jum-holo', (Math.max(-1, Math.min(1, x)) * 60 + 50) + '%'); };
+        window.addEventListener('deviceorientation', function(e) { if (e.gamma != null) { document.documentElement.classList.add('jum-holo-capteur'); poser(e.gamma / 35); } });
+        window.addEventListener('pointermove', function(e) { if (e.pointerType === 'mouse') { document.documentElement.classList.add('jum-holo-capteur'); poser(e.clientX / window.innerWidth * 2 - 1); } });
+    }
+    // Ajuste la carte (350 × 221 à l'échelle 1) à la largeur disponible.
+    function ajusterCarte(zone, max) {
+        var c = zone.querySelector('.JUM-CARTE-TOURNE'); if (!c) return;
+        var e = Math.min(max || 1.2, (zone.clientWidth || 350) / 350);
+        c.style.transform = 'scale(' + e + ')'; zone.style.height = Math.round(221 * e) + 'px';
+    }
+    window.JUMELAGE_FERMER_CARTE = function() { if (fenCarte) { fenCarte.remove(); fenCarte = null; } };
+    fermeurs.push([function() { return fenCarte; }, window.JUMELAGE_FERMER_CARTE]);
+    window.JUMELAGE_CARTE = function() {
+        if (!document.body) return;
+        window.JUMELAGE_FERMER_CARTE();
+        suivreHolo();
+        var d = carteIdentite(), memo = lireJSON(CLE_CARTE), tel = surTelephone();
+        if (memo && monCompte() && memo.mail !== monCompte().mail) memo = null;
+        fenCarte = document.createElement('div');
+        fenCarte.className = 'JUM-REGLAGES JUM-CARTE-FEN' + (tel ? '' : ' pc'); fenCarte.setAttribute('role', 'dialog'); fenCarte.setAttribute('aria-label', 'Ma carte TRIGONE');
+        var dessiner = function() {
+            var verso = fenCarte.querySelector('.JUM-CARTE-TOURNE.verso');
+            fenCarte.innerHTML = '<div class="JUM-CARTE-PAGE"><div class="JUM-CARTE-TETE"><button type="button" class="JUM-CARTE-RET" aria-label="Fermer">‹</button>' +
+                    '<div><b>Ma carte TRIGONE</b><small>Paramètres › Compte</small></div></div>' +
+                (tel ? '<div class="JUM-CARTE-ZONE"><div class="JUM-CARTE-TOURNE' + (verso ? ' verso' : '') + '" role="button" tabindex="0" aria-label="Retourner la carte">' +
+                    '<div class="face avant">' + carteRecto(d) + '</div><div class="face arriere">' + carteVerso(d, memo) + '</div></div></div>' +
+                '<p class="JUM-CARTE-ASTUCE">↻ Touchez la carte pour la retourner</p>' +
+                '<button type="button" class="JUM-R-PRINCIPAL JUM-CARTE-GRAND">⛶ Afficher en grand</button>'
+                // PC : recto et verso côte à côte, sans retournement ni plein écran.
+                : '<div class="JUM-CARTE-DUO"><div class="face avant">' + carteRecto(d) + '</div><div class="face arriere">' + carteVerso(d, memo) + '</div></div>') +
+                '<div class="JUM-CARTE-BTNS"><button type="button" class="JUM-R-SECOND JUM-CARTE-PHOTO-BTN">' + (lireTxt(CLE_CARTE_PHOTO) ? 'Changer la photo' : 'Ajouter ma photo') + '</button>' +
+                    '<button type="button" class="JUM-R-SECOND JUM-CARTE-PARTAGER">Partager</button></div>' +
+                '<p class="JUM-CARTE-NOTE">Remplie toute seule avec <b>Mon profil</b> (grade, nom, NID, unité). La photo reste <b>sur cet appareil</b>. ' +
+                    'Le QR code ne contient qu\'un identifiant : il ne donne accès à rien, il permet seulement à un compte TRIGONE de vous retrouver.</p>' +
+                '<button type="button" class="JUM-R-LIEN JUM-CARTE-PROFIL">Modifier Mon profil</button></div>';
+            if (memo && memo.id) dessinerQR(fenCarte.querySelector('.JUM-CARTE-QR'), memo.id);
+            if (tel) {
+                var zone = fenCarte.querySelector('.JUM-CARTE-ZONE'), tourne = fenCarte.querySelector('.JUM-CARTE-TOURNE');
+                ajusterCarte(zone, 1.25);
+                tourne.addEventListener('click', function() { tourne.classList.toggle('verso'); });
+                fenCarte.querySelector('.JUM-CARTE-GRAND').addEventListener('click', function() { window.JUMELAGE_CARTE_GRAND(tourne.classList.contains('verso')); });
+            }
+            fenCarte.querySelector('.JUM-CARTE-RET').addEventListener('click', window.JUMELAGE_FERMER_CARTE);
+            fenCarte.querySelector('.JUM-CARTE-PHOTO-BTN').addEventListener('click', function() { choisirPhoto(dessiner); });
+            fenCarte.querySelector('.JUM-CARTE-PARTAGER').addEventListener('click', function() { partagerCarte(d, memo); });
+            fenCarte.querySelector('.JUM-CARTE-PROFIL').addEventListener('click', function() { window.JUMELAGE_FERMER_CARTE(); window.JUMELAGE_REGLAGES({ vue: 'profil' }); });
+        };
+        dessiner();
+        ['pointerdown', 'pointerup'].forEach(function(t) { fenCarte.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
+        document.body.appendChild(fenCarte);
+        if (tel) ajusterCarte(fenCarte.querySelector('.JUM-CARTE-ZONE'), 1.25);
+        window.JUMELAGE_CARTE_ID().then(function(m) {
+            if (!fenCarte || !m || (memo && memo.id === m.id && memo.depuis === m.depuis)) return;
+            memo = m; var v = fenCarte.querySelector('.face.arriere'); if (v) { v.innerHTML = carteVerso(d, memo); dessinerQR(v.querySelector('.JUM-CARTE-QR'), m.id); }
+        });
+    };
+    // Plein écran : téléphone à l'horizontale, fond noir, écran maintenu allumé ; toucher retourne la carte.
+    window.JUMELAGE_CARTE_GRAND = function(verso) {
+        var d = carteIdentite(), memo = lireJSON(CLE_CARTE), veille = null;
+        var f = document.createElement('div'); f.className = 'JUM-SIG JUM-CARTE-PLEIN'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Carte TRIGONE en grand');
+        f.innerHTML = '<div class="JUM-CARTE-ZONE"><div class="JUM-CARTE-TOURNE' + (verso ? ' verso' : '') + '"><div class="face avant">' + carteRecto(d) + '</div><div class="face arriere">' + carteVerso(d, memo) + '</div></div></div>' +
+            '<button type="button" class="JUM-CARTE-QUITTER" aria-label="Fermer">✕</button>';
+        var ajuster = function() {
+            var z = f.querySelector('.JUM-CARTE-ZONE'), w = window.innerWidth, h = window.innerHeight, debout = h > w;
+            // Téléphone tenu debout (rotation impossible) : la carte est tournée d'un quart de tour pour remplir l'écran.
+            var e = debout ? Math.min((h - 40) / 350, (w - 24) / 221) : Math.min((w - 40) / 350, (h - 24) / 221);
+            z.style.transform = 'translate(-50%, -50%)' + (debout ? ' rotate(90deg)' : '') + ' scale(' + e + ')';
+        };
+        var fermer = function() {
+            window.removeEventListener('resize', ajuster);
+            try { if (screen.orientation && screen.orientation.unlock) screen.orientation.unlock(); } catch (e) {}
+            if (document.fullscreenElement && document.exitFullscreen) document.exitFullscreen().catch(function() {});
+            if (veille) veille.release().catch(function() {});
+            f.remove();
+        };
+        f.querySelector('.JUM-CARTE-QUITTER').addEventListener('click', function(e) { e.stopPropagation(); fermer(); });
+        f.querySelector('.JUM-CARTE-TOURNE').addEventListener('click', function() { this.classList.toggle('verso'); });
+        f._fermer = fermer;
+        document.body.appendChild(f);
+        if (memo && memo.id) dessinerQR(f.querySelector('.JUM-CARTE-QR'), memo.id);
+        ajuster(); window.addEventListener('resize', ajuster);
+        if (f.requestFullscreen) f.requestFullscreen({ navigationUI: 'hide' }).then(function() {
+            return screen.orientation && screen.orientation.lock ? screen.orientation.lock('landscape') : null;
+        }).catch(function() {}).then(function() { setTimeout(ajuster, 300); });
+        if (navigator.wakeLock) navigator.wakeLock.request('screen').then(function(v) { veille = v; }, function() {});
+        document.addEventListener('fullscreenchange', function q() { if (!document.fullscreenElement) { document.removeEventListener('fullscreenchange', q); if (f.isConnected) fermer(); } });
+    };
+    // Photo : appareil photo ou galerie, puis cadrage au doigt (glisser, zoom) ; gardée sur l'appareil (JPEG 300 × 380).
+    function choisirPhoto(apres) {
+        var entree = document.createElement('input'); entree.type = 'file'; entree.accept = 'image/*';
+        entree.addEventListener('change', function() {
+            var fich = entree.files && entree.files[0]; if (!fich) return;
+            var url = URL.createObjectURL(fich), img = new Image();
+            img.onload = function() { cadrerPhoto(img, function(donnee) { URL.revokeObjectURL(url); if (donnee) { ecrireTxt(CLE_CARTE_PHOTO, donnee); bandeau('Photo de la carte enregistrée sur cet appareil.'); } apres(); }); };
+            img.onerror = function() { URL.revokeObjectURL(url); bandeau('Image illisible : choisissez une autre photo.'); };
+            img.src = url;
+        });
+        entree.click();
+    }
+    function cadrerPhoto(img, fin) {
+        var f = document.createElement('div'); f.className = 'JUM-SIG JUM-CARTE-CADRE'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Cadrer ma photo');
+        f.innerHTML = '<div class="JUM-SIG-CARTE"><h2>Cadrez votre visage</h2><p>Glissez la photo avec le doigt, zoomez avec le curseur.</p>' +
+            '<div class="JUM-CADRE-ZONE"><canvas width="380" height="480"></canvas></div>' +
+            '<input type="range" min="1" max="4" step="0.01" value="1" aria-label="Zoom">' +
+            '<div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND">Annuler</button><button type="button" class="JUM-R-PRINCIPAL">Valider la photo</button></div>' +
+            (lireTxt(CLE_CARTE_PHOTO) ? '<button type="button" class="JUM-R-LIEN JUM-CADRE-SUPPR">Retirer la photo de la carte</button>' : '') + '</div>';
+        var cv = f.querySelector('canvas'), ctx = cv.getContext('2d'), zoom = f.querySelector('input');
+        var base = Math.max(cv.width / img.width, cv.height / img.height), z = 1, x = 0, y = 0;
+        var borner = function() {
+            var w = img.width * base * z, h = img.height * base * z;
+            x = Math.min(0, Math.max(cv.width - w, x)); y = Math.min(0, Math.max(cv.height - h, y));
+        };
+        var peindre = function() { borner(); ctx.fillStyle = '#222'; ctx.fillRect(0, 0, cv.width, cv.height); ctx.drawImage(img, x, y, img.width * base * z, img.height * base * z); };
+        x = (cv.width - img.width * base) / 2; y = (cv.height - img.height * base) / 2; peindre();
+        zoom.addEventListener('input', function() {
+            var cx = cv.width / 2, cy = cv.height / 2, nz = parseFloat(zoom.value);
+            x = cx - (cx - x) * nz / z; y = cy - (cy - y) * nz / z; z = nz; peindre();
+        });
+        var prise = null;
+        cv.addEventListener('pointerdown', function(e) { prise = { px: e.clientX, py: e.clientY, x: x, y: y }; cv.setPointerCapture(e.pointerId); });
+        cv.addEventListener('pointermove', function(e) {
+            if (!prise) return; var k = cv.width / cv.getBoundingClientRect().width;
+            x = prise.x + (e.clientX - prise.px) * k; y = prise.y + (e.clientY - prise.py) * k; peindre();
+        });
+        cv.addEventListener('pointerup', function() { prise = null; });
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        f.querySelector('.JUM-R-SECOND').addEventListener('click', function() { f.remove(); fin(null); });
+        f.querySelector('.JUM-R-PRINCIPAL').addEventListener('click', function() {
+            var out = document.createElement('canvas'); out.width = 300; out.height = 380;
+            out.getContext('2d').drawImage(cv, 0, 0, out.width, out.height);
+            f.remove(); fin(out.toDataURL('image/jpeg', 0.85));
+        });
+        var suppr = f.querySelector('.JUM-CADRE-SUPPR');
+        if (suppr) suppr.addEventListener('click', function() { try { localStorage.removeItem(CLE_CARTE_PHOTO); } catch (e) {} f.remove(); fin(null); });
+        document.body.appendChild(f);
+    }
+    // Image de la carte (recto et verso l'un sous l'autre) dessinée en PNG, puis partagée ou enregistrée.
+    function partagerCarte(d, memo) {
+        var E = 3, W = 350 * E, H = 221 * E, G = 24 * E, cv = document.createElement('canvas'); cv.width = W; cv.height = H * 2 + G;
+        var c = cv.getContext('2d'), photoSrc = lireTxt(CLE_CARTE_PHOTO), base = DANS_CR ? '../' : '';
+        var charger = function(src) { return new Promise(function(ok) { if (!src) return ok(null); var i = new Image(); i.onload = function() { ok(i); }; i.onerror = function() { ok(null); }; i.src = src; }); };
+        var qrUrl = memo && memo.id ? chargerScript('qrcode.min.js', function() { return !!window.QRCode; }).then(function() {
+            var b = document.createElement('div'); new window.QRCode(b, { text: lienCarte(memo.id), width: 300, height: 300, colorDark: '#111111', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M });
+            var cnv = b.querySelector('canvas'); return cnv ? cnv.toDataURL() : (b.querySelector('img') || {}).src;
+        }).catch(function() { return null; }) : Promise.resolve(null);
+        var arrondi = function(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
+        var fond = function(oy) {
+            var g = c.createRadialGradient(0, oy, 10, 0, oy, W * 1.1); g.addColorStop(0, '#353026'); g.addColorStop(0.45, '#1b1a17'); g.addColorStop(1, '#0e0e0d');
+            var nv = niveauCarte(d.missions)[0];
+            arrondi(0, oy, W, H, 16 * E); c.fillStyle = g; c.fill(); c.strokeStyle = nv === 'bronze' ? '#b87333' : nv === 'argent' ? '#c9ced6' : nv === 'or' ? '#e2b866' : 'rgba(214,167,86,0.6)'; c.lineWidth = (nv ? 3 : 2) * E; c.stroke();
+        };
+        var texte = function(t, x, y, taille, couleur, gras, esp) { c.font = (gras ? '800 ' : '600 ') + taille * E + 'px Montserrat, Arial, sans-serif'; c.fillStyle = couleur; if ('letterSpacing' in c) c.letterSpacing = (esp || 0) * E + 'px'; c.fillText(t, x * E, y); };
+        Promise.all([charger(photoSrc), charger(base + 'phoenix-icon.png'), qrUrl.then(charger)]).then(function(r) {
+            var photo = r[0], phenix = r[1], qr = r[2], or = '#d6a756';
+            c.fillStyle = '#0c0c0c'; c.fillRect(0, 0, cv.width, cv.height);
+            fond(0);
+            if (phenix) { c.save(); c.filter = 'invert(1)'; c.drawImage(phenix, 16 * E, 12 * E, 30 * E, 30 * E * phenix.height / phenix.width); c.restore(); }
+            texte('TRIGONE', 54, 26 * E, 12, '#f5f5f5', true, 3.4); texte('CARTE D\'IDENTITÉ · MISSIONS', 54, 37 * E, 7.5, or, true, 1);
+            c.textAlign = 'right'; texte(d.unite || '', 336, 26 * E, 8, or, true, 1); c.textAlign = 'left';
+            arrondi(16 * E, 52 * E, 82 * E, 104 * E, 9 * E); c.save(); c.clip();
+            if (photo) c.drawImage(photo, 16 * E, 52 * E, 82 * E, 104 * E); else { c.fillStyle = '#2a2a2a'; c.fillRect(16 * E, 52 * E, 82 * E, 104 * E); }
+            c.restore(); arrondi(16 * E, 52 * E, 82 * E, 104 * E, 9 * E); c.strokeStyle = or; c.lineWidth = 1.5 * E; c.stroke();
+            var gp = c.createLinearGradient(112 * E, 56 * E, 146 * E, 82 * E); gp.addColorStop(0, '#f1d08a'); gp.addColorStop(1, '#b8862e'); arrondi(112 * E, 56 * E, 34 * E, 26 * E, 5 * E); c.fillStyle = gp; c.fill();
+            var ch = [['NOM · PRÉNOM', (d.nom + ' ' + d.prenom).trim(), 112, 98, 13.5], ['GRADE', d.grade, 112, 128, 10.5], ['NID', d.nid, 228, 128, 10.5], ['UNITÉ', [d.unite, d.cie].filter(Boolean).join(' · '), 112, 152, 10.5], ['MISSIONS', String(d.missions), 228, 152, 10.5]];
+            ch.forEach(function(x) { texte(x[0], x[2], x[3] * E, 6.5, or, true, 1); texte(x[1] || '—', x[2], (x[3] + x[4] + 2) * E, x[4], '#f5f5f5', true, 0.2); });
+            var m = mrz(d); c.font = '600 ' + 8.6 * E + 'px "Courier New", monospace'; c.fillStyle = 'rgba(214,167,86,0.65)'; if ('letterSpacing' in c) c.letterSpacing = 0.8 * E + 'px';
+            c.fillText(m[0], 14 * E, 200 * E); c.fillText(m[1], 14 * E, 212 * E);
+            var oy = H + G; fond(oy); c.fillStyle = '#111'; c.fillRect(0, oy + 20 * E, W, 34 * E);
+            arrondi(16 * E, oy + 66 * E, 118 * E, 118 * E, 10 * E); c.fillStyle = '#fff'; c.fill(); c.strokeStyle = or; c.lineWidth = 1.5 * E; c.stroke();
+            if (qr) c.drawImage(qr, 23 * E, oy + 73 * E, 104 * E, 104 * E);
+            texte('SCANNEZ POUR M\'AJOUTER', 148, oy + 74 * E, 7, or, true, 1);
+            texte('mission collective, valideur, remplaçant…', 148, oy + 88 * E, 8.5, '#d4d4d4', false, 0);
+            texte('RÔLES', 148, oy + 108 * E, 7, or, true, 1); texte(d.roles.join(' · '), 148, oy + 121 * E, 8.5, '#e8c27a', true, 0.3);
+            texte('COMPTE', 148, oy + 141 * E, 7, or, true, 1); texte(memo && memo.id ? '✔ Vérifié' + (memo.depuis ? ' depuis le ' + new Date(memo.depuis).toLocaleDateString('fr-FR') : '') : 'Non connecté', 148, oy + 154 * E, 8.5, '#f5f5f5', true, 0);
+            cv.toBlob(function(blob) {
+                var nom = 'Carte TRIGONE - ' + (d.nom || 'moi') + '.png', fichier = new File([blob], nom, { type: 'image/png' });
+                if (navigator.canShare && navigator.canShare({ files: [fichier] })) navigator.share({ files: [fichier], title: 'Ma carte TRIGONE' }).catch(function() {});
+                else { var a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = nom; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function() { URL.revokeObjectURL(a.href); }, 4000); }
+            }, 'image/png');
+        });
+    }
+    // ---------- Scanner de cartes TRIGONE ----------
+    // Caméra arrière : lecteur intégré au navigateur (BarcodeDetector) ou, à défaut, jsQR (livré avec l'appli, chargé à la
+    // demande). Le QR code lu donne l'identifiant de la carte ; le serveur renvoie l'identité et le mail du compte.
+    // opts : { titre, sous, continu (fonction appelée à chaque carte, la fenêtre reste ouverte), bouton }.
+    // Sans caméra (PC) : coller le lien de la carte. Promesse : la carte lue (ou null si annulé) ; en continu : rien.
+    function lireCarteTexte(texte) {
+        var m = /[?&]carte=([A-Za-z0-9_-]{8,40})/.exec(String(texte || '')) || /^([A-Za-z0-9_-]{16})$/.exec(String(texte || '').trim());
+        if (!m) return Promise.reject(new Error('Ce QR code n\'est pas une carte TRIGONE.'));
+        return appelApi('carte?id=' + encodeURIComponent(m[1])).then(function(r) {
+            if (!r.valide) throw new Error('Carte inconnue ou compte TRIGONE supprimé.');
+            return r.carte;
+        });
+    }
+    window.JUMELAGE_CARTE_NOM = function(c) { return [c.grade, (c.nom || '').toUpperCase(), c.prenom].filter(Boolean).join(' '); };
+    var scanEnCours = null;
+    window.JUMELAGE_SCANNER_CARTE = function(opts) {
+        opts = opts || {};
+        if (scanEnCours) scanEnCours.fermer();
+        if (!monCompte()) { bandeau('Connectez-vous à votre compte TRIGONE pour lire une carte.'); return Promise.resolve(null); }
+        return new Promise(function(resoudre) {
+            var f = document.createElement('div'), flux = null, fini = false, dernier = '', dernierLe = 0, minuteur = null, lues = 0;
+            f.className = 'JUM-SIG JUM-SCAN'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', opts.titre || 'Scanner une carte TRIGONE');
+            f.innerHTML = '<div class="JUM-SIG-CARTE"><h2>' + esc(opts.titre || 'Scanner une carte TRIGONE') + '</h2><p>' + esc(opts.sous || 'Visez le QR code au verso de la carte.') + '</p>' +
+                '<div class="JUM-SCAN-VUE"><video playsinline muted></video><i class="coins"><b></b><b></b><b></b><b></b></i><i class="laser"></i><span class="JUM-SCAN-ETAT">Ouverture de la caméra…</span></div>' +
+                '<div class="JUM-SCAN-RES"></div>' +
+                '<details class="JUM-SCAN-MAIN"><summary>Pas de caméra ? Coller le lien de la carte</summary><div><input type="text" placeholder="https://…?carte=…" autocomplete="off" data-no-uppercase="1"><button type="button" class="JUM-R-SECOND">Lire</button></div></details>' +
+                '<div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND JUM-SCAN-FERMER">' + (opts.continu ? 'Terminé' : 'Annuler') + '</button></div></div>';
+            var video = f.querySelector('video'), etat = f.querySelector('.JUM-SCAN-ETAT'), res = f.querySelector('.JUM-SCAN-RES');
+            var fermer = function(valeur) {
+                if (fini) return; fini = true; scanEnCours = null;
+                clearTimeout(minuteur);
+                if (flux) flux.getTracks().forEach(function(t) { t.stop(); });
+                f.remove(); resoudre(valeur || null);
+            };
+            f._fermer = function() { fermer(null); };
+            scanEnCours = { fermer: f._fermer };
+            var traiter = function(texte) {
+                var maintenant = Date.now();
+                if (texte === dernier && maintenant - dernierLe < 4000) return Promise.resolve();
+                dernier = texte; dernierLe = maintenant;
+                etat.textContent = 'Lecture de la carte…';
+                return lireCarteTexte(texte).then(function(c) {
+                    if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) {}
+                    if (!opts.continu) { fermer(c); return; }
+                    lues++;
+                    var retour = opts.continu(c) || {}, mon = (lireReglages().unite || '').toUpperCase();
+                    if (c.unite && mon && c.unite.toUpperCase() !== mon && retour.texte && !retour.deja) retour.texte += ' · extérieur (' + c.unite + ')';
+                    res.insertAdjacentHTML('afterbegin', '<div class="' + (retour.deja ? 'deja' : 'ok') + '"><b>' + esc(window.JUMELAGE_CARTE_NOM(c)) + '</b><span>' + esc(retour.texte || '✔ Ajouté') + '</span></div>');
+                    etat.textContent = lues + ' carte' + (lues > 1 ? 's' : '') + ' lue' + (lues > 1 ? 's' : '') + ' · carte suivante…';
+                }).catch(function(e) { etat.textContent = '✘ ' + (e.message || 'Lecture impossible.'); });
+            };
+            f._lire = traiter;   // essais : lecture d'un lien sans caméra
+            f.querySelector('.JUM-SCAN-FERMER').addEventListener('click', function() { fermer(null); });
+            f.querySelector('.JUM-SCAN-MAIN button').addEventListener('click', function() { dernier = ''; traiter(f.querySelector('.JUM-SCAN-MAIN input').value); });
+            ['pointerdown', 'pointerup', 'click'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
+            document.body.appendChild(f);
+            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) { etat.textContent = 'Caméra indisponible : collez le lien de la carte ci-dessous.'; f.querySelector('.JUM-SCAN-MAIN').open = true; return; }
+            navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment', width: { ideal: 1280 } }, audio: false }).then(function(s) {
+                if (fini) { s.getTracks().forEach(function(t) { t.stop(); }); return; }
+                flux = s; video.srcObject = s; return video.play();
+            }).then(function() {
+                if (fini || !flux) return;
+                etat.textContent = 'Visez le QR code de la carte';
+                var detecteur = null, cv = document.createElement('canvas'), ctx = cv.getContext('2d', { willReadFrequently: true });
+                var pret = ('BarcodeDetector' in window) ? window.BarcodeDetector.getSupportedFormats().then(function(f) { if (f.indexOf('qr_code') >= 0) detecteur = new window.BarcodeDetector({ formats: ['qr_code'] }); }).catch(function() {}) : Promise.resolve();
+                pret.then(function() { return detecteur ? null : chargerScript('jsqr.min.js', function() { return !!window.jsQR; }); }).then(function() {
+                    var tour = function() {
+                        if (fini) return;
+                        var lu = detecteur ? detecteur.detect(video).then(function(l) { return l[0] && l[0].rawValue; }) : Promise.resolve().then(function() {
+                            var w = video.videoWidth, h = video.videoHeight; if (!w) return null;
+                            var e = Math.min(1, 720 / Math.max(w, h)); cv.width = Math.round(w * e); cv.height = Math.round(h * e);
+                            ctx.drawImage(video, 0, 0, cv.width, cv.height);
+                            var q = window.jsQR(ctx.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height, { inversionAttempts: 'dontInvert' });
+                            return q && q.data;
+                        });
+                        lu.then(function(t) { return t ? traiter(t) : null; }).catch(function() {}).then(function() { minuteur = setTimeout(tour, 200); });
+                    };
+                    tour();
+                }, function(e) { etat.textContent = e.message; });
+            }).catch(function() { if (!fini) { etat.textContent = 'Caméra refusée ou indisponible : collez le lien de la carte ci-dessous.'; f.querySelector('.JUM-SCAN-MAIN').open = true; } });
+        });
+    };
+    // Bouton « scanner » à côté des champs de mail (1er valideur, assistant Chorus DT, remplaçant, mails de Mise en route
+    // marqués data-scan-carte) : la carte lue remplit l'adresse de son compte TRIGONE.
+    var CHAMPS_SCAN = ['JUM-R-MAILVAL1', 'JUM-R-MAILCHORUS', 'JUM-R-ABSMAIL'];
+    function equiperChampsScan(racine) {
+        Array.prototype.forEach.call((racine || document).querySelectorAll('input[type="email"]'), function(ch) {
+            if (ch.dataset.scanCarteFait || !(CHAMPS_SCAN.indexOf(ch.id) >= 0 || ch.hasAttribute('data-scan-carte'))) return;
+            ch.dataset.scanCarteFait = '1';
+            var b = document.createElement('button'); b.type = 'button'; b.className = 'JUM-SCAN-CHAMP'; b.title = 'Scanner sa carte TRIGONE'; b.setAttribute('aria-label', 'Scanner sa carte TRIGONE');
+            b.innerHTML = window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('qr') : '▣';
+            var enveloppe = document.createElement('span'); enveloppe.className = 'JUM-SCAN-ENV';
+            ch.parentNode.insertBefore(enveloppe, ch); enveloppe.appendChild(ch); enveloppe.appendChild(b);
+            b.addEventListener('click', function(e) {
+                e.preventDefault(); e.stopPropagation();
+                var lb = (ch.labels && ch.labels[0]) || (ch.closest('div') && ch.closest('div').querySelector('label')), label = lb ? lb.textContent : 'Cette adresse';
+                window.JUMELAGE_SCANNER_CARTE({ titre: 'Scanner sa carte TRIGONE', sous: label + ' : son adresse TRIGONE est reprise de sa carte.' }).then(function(c) {
+                    if (!c) return;
+                    ch.value = c.mail; ch.dispatchEvent(new Event('input', { bubbles: true })); ch.dispatchEvent(new Event('change', { bubbles: true }));
+                    bandeau(window.JUMELAGE_CARTE_NOM(c) + ' : ' + c.mail);
+                });
+            });
+        });
+    }
+    window.JUMELAGE_EQUIPER_SCAN = equiperChampsScan;
+    function suivreChampsScan() {
+        equiperChampsScan(document);
+        new MutationObserver(function(ms) { if (ms.some(function(m) { return m.addedNodes.length; })) equiperChampsScan(document); }).observe(document.body, { childList: true, subtree: true });
+    }
+    if (document.body) suivreChampsScan(); else document.addEventListener('DOMContentLoaded', suivreChampsScan);
+    // Page de vérification : QR code d'une carte lu avec l'appareil photo d'un téléphone (lien « ?carte=… »).
+    (function() {
+        var id = null; try { id = new URLSearchParams(location.search).get('carte'); } catch (e) {}
+        if (!id) return;
+        var montrer = function() {
+            var f = document.createElement('div'); f.className = 'JUM-VERIF'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Vérification d\'une carte TRIGONE');
+            f.innerHTML = '<div class="JUM-VERIF-CARTE"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><div class="JUM-VERIF-NOM">TRIGONE</div>' +
+                '<p class="JUM-VERIF-SOUS">Vérification d\'une carte</p><div class="JUM-VERIF-RES">Vérification…</div>' +
+                '<button type="button" class="JUM-R-PRINCIPAL">Ouvrir TRIGONE</button></div>';
+            document.body.appendChild(f);
+            f.querySelector('button').addEventListener('click', function() { try { history.replaceState(null, '', location.pathname); } catch (e) {} f.remove(); });
+            var r = f.querySelector('.JUM-VERIF-RES'), quand = new Date();
+            fetch(API + 'carte?id=' + encodeURIComponent(id), { cache: 'no-store', headers: monCompte() ? { Authorization: 'TRIGONE ' + encodeURIComponent(monCompte().mail) + ' ' + monCompte().appareil + ' ' + monCompte().jeton } : {} })
+                .then(function(x) { return x.json(); }).then(function(j) {
+                    if (!j.valide) { r.className = 'JUM-VERIF-RES ko'; r.innerHTML = '<b>✘ Carte non reconnue</b><span>Cette carte n\'existe pas, ou le compte TRIGONE a été supprimé.</span>'; return; }
+                    var c = j.carte;
+                    r.className = 'JUM-VERIF-RES ok';
+                    r.innerHTML = '<b>✔ Carte TRIGONE authentique</b><span class="qui">' + esc(window.JUMELAGE_CARTE_NOM(c)) + '</span>' +
+                        '<span>' + esc([c.unite, c.cie].filter(Boolean).join(' · ')) + '</span>' +
+                        (c.depuis ? '<span>Compte TRIGONE depuis le ' + new Date(c.depuis).toLocaleDateString('fr-FR') + '</span>' : '') +
+                        '<small>Vérifié le ' + quand.toLocaleDateString('fr-FR') + ' à ' + quand.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</small>';
+                }).catch(function() { r.className = 'JUM-VERIF-RES ko'; r.innerHTML = '<b>Vérification impossible</b><span>Pas de connexion internet : réessayez.</span>'; });
+        };
+        if (document.body) montrer(); else document.addEventListener('DOMContentLoaded', montrer);
+    })();
     // ---------- Code d'accès commun : demandé une fois à l'ouverture de TRIGONE ----------
     var pave = null, saisie = '';
     function dessinerPoints() {
@@ -4171,6 +4652,7 @@
     var pileRetour = [], retoursIgnores = 0, fenetreQuittee = null;
     function estFenetreRetour(el) { return el.nodeType === 1 && FENETRES_RETOUR.some(function(c) { return el.classList.contains(c); }); }
     function fermerFenetre(el) {
+        if (el._fermer) { el._fermer(); return; }
         if (el.classList.contains('JUM-PRES')) { var b = el.querySelector('.JUM-PRES-BTN'); if (b) { b.click(); return; } }
         for (var i = 0; i < fermeurs.length && el.isConnected; i++) if (fermeurs[i][0]() === el) fermeurs[i][1]();
         if (el.isConnected) el.remove();
