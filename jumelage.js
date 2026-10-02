@@ -2546,6 +2546,7 @@
                     var fichiers = [{ nom: pdf.nom, type: 'application/pdf', b64: b64[0] }].concat(choisis.map(function(x, i) { return { nom: x.name, type: x.type || 'application/octet-stream', b64: b64[i + 1] }; }));
                     var contenu = JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: o.missionnaire || '', libelle: o.libelle || '', dates: o.dates || '',
                         corps: o.corps || '', de: compte.mail, envoyeLe: new Date().toISOString(), fichiers: fichiers,
+                        omr: o.omr || undefined, mref: o.mref || undefined, montants: o.montants || undefined,
                         // Mission collective : référence de l'équipe, rôle (chef / participant) et participants (nom, adresse).
                         equipe: o.equipe || undefined, roleEquipe: o.roleEquipe || undefined, participants: o.participants || undefined });
                     return window.JUMELAGE_ENVOYER_DIRECT(o.destinataire, 'CR', pdf.nom, contenu, { differable: true, meta: o.meta || null, equipe: o.equipe || null,
@@ -2712,7 +2713,8 @@
             if (d.app === 'TRIGONE-QUESTION' || d.app === 'TRIGONE-REPONSE') return { nature: d.app === 'TRIGONE-QUESTION' ? 'question' : 'reponse', n: 1, ids: [],
                 noms: d.qui || '', objet: d.objet || '', dates: '', lieu: '', ref: d.ref || '', genre: d.genre || '', question: String(d.question || '').slice(0, 2000), reponse: String(d.reponse || '').slice(0, 2000) };
             if (d.app === 'TRIGONE-CR') return { nature: 'cr', n: 1, ids: [], noms: d.missionnaire || '', objet: d.libelle || 'Compte-rendu de mission',
-                dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length, equipe: d.equipe || '', roleEquipe: d.roleEquipe || '' };
+                dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length, equipe: d.equipe || '', roleEquipe: d.roleEquipe || '',
+                omr: String(d.omr || '').slice(0, 30), mref: String(d.mref || '').slice(0, 60), montants: d.montants && typeof d.montants === 'object' ? d.montants : null };
             var ds = d.demandes || [], p0 = ((ds[0] || {}).personnes || [])[0] || {};
             var nature = ds.some(function(x) { return x.refus; }) ? 'refus'
                 : ds.length && ds.every(function(x) { return x.renvoi && !(x.validations || []).length; }) ? 'renvoi'
@@ -2720,13 +2722,60 @@
                 : ds.some(function(x) { return (x.validations || []).length === 1; }) ? 'niveau2' : 'niveau1';
             var a = ((ds[0] || {}).trajets || {}).aller || {}, r = ((ds[0] || {}).trajets || {}).retour || {};
             var jour = function(v) { try { return v ? new Date(v).toLocaleDateString('fr-FR') : ''; } catch (e) { return ''; } };
-            return { nature: nature, n: ds.length, ids: ds.map(function(x) { return x.id; }),
+            // Demandes validées (assistant Chorus DT) : de quoi remplir le registre OMR.
+            var registre = nature !== 'chorus' ? undefined : ds.map(function(x) {
+                var ax = (x.trajets || {}).aller || {}, rx = (x.trajets || {}).retour || {};
+                return { ref: x.id || '', omr: x.omr || '', omrLe: x.omrLe || '', objet: x.objet || '', type: x.type || '', codeFD: x.codeFD || '',
+                    debut: ax.dateDep || '', fin: rx.dateArr || '', mailDemandeur: x.mailDemandeur || '',
+                    personnes: (x.personnes || []).map(function(p) { return { grade: p.grade || '', nom: p.nom || '', prenom: p.prenom || '', nid: p.matricule || '' }; }) };
+            });
+            return { nature: nature, n: ds.length, ids: ds.map(function(x) { return x.id; }), registre: registre,
                 noms: [p0.grade, p0.nom, p0.prenom].filter(Boolean).join(' ') + (ds.length > 1 ? ' (+ ' + (ds.length - 1) + ')' : ((ds[0] || {}).personnes || []).length > 1 ? ' et ' + ((ds[0].personnes.length) - 1) + ' autre(s)' : ''),
                 objet: (ds[0] || {}).objet || '', dates: [jour(a.dateDep), jour(r.dateArr)].filter(Boolean).join(' → '),
                 lieu: a.paysArr || a.lieuArr || '' };
         } catch (e) { return { nature: 'inconnu', n: 0, ids: [] }; }
     }
     window.JUMELAGE_BOITE_LISTE = function() { return boiteLire(); };
+    // ---------- Registre OMR (assistant Chorus DT) ----------
+    // Une ligne par demande de mise en route validée reçue (n° OMR, date, objet, code FD, dates, personnes, échéance du
+    // compte-rendu = fin de mission + 30 jours) ; le compte-rendu reçu s'y rattache (même n° OMR ou même demande) avec ses
+    // montants. Gardé sur l'appareil (et dans la sauvegarde chiffrée du compte), dans l'ordre des n° OMR.
+    var CLE_REGISTRE = 'trigone_registre_omr';
+    function registreLire() { var l = lireJSON(CLE_REGISTRE); return Array.isArray(l) ? l : []; }
+    function registreEcrire(l) { ecrireTxt(CLE_REGISTRE, JSON.stringify(l)); try { window.dispatchEvent(new Event('trigone-registre')); } catch (e) {} }
+    function registreNouvel(el) {
+        var l = registreLire(), change = false;
+        if (el.nature === 'chorus' && el.registre) {
+            el.registre.forEach(function(x) {
+                if (!x.ref || l.some(function(y) { return y.ref === x.ref; })) return;
+                l.push(Object.assign({ recuLe: el.le || Date.now(), envoiId: el.id }, x)); change = true;
+            });
+        }
+        if (el.nature === 'cr') {
+            var cr = { recuLe: el.le || Date.now(), envoiId: el.id, de: el.de || '', noms: el.noms || '', objet: el.objet || '', dates: el.dates || '', montants: el.montants || null };
+            var ligne = l.filter(function(y) { return (el.omr && y.omr === el.omr) || (el.mref && y.ref === el.mref); })[0];
+            if (ligne) { ligne.crs = (ligne.crs || []).filter(function(c) { return c.envoiId !== el.id; }).concat([cr]); }
+            else l.push({ ref: 'cr-' + el.id, omr: el.omr || '', sansDemande: true, objet: el.objet || '', crs: [cr], recuLe: el.le || Date.now() });
+            change = true;
+        }
+        if (!change) return;
+        registreEcrire(l);
+        // Demande arrivée sans n° OMR (envoyée sans réseau, ou d'avant le registre) : l'assistant lui en donne un.
+        l.filter(function(y) { return !y.omr && !y.sansDemande; }).reduce(function(suite, y) {
+            return suite.then(function() {
+                return window.JUMELAGE_OMR_TIRER().then(function(r) {
+                    var l2 = registreLire(); l2.forEach(function(z) { if (z.ref === y.ref && !z.omr) { z.omr = r.numero; z.omrLe = r.le; z.omrChorus = true; } }); registreEcrire(l2);
+                }, function() {});
+            });
+        }, Promise.resolve());
+    }
+    window.JUMELAGE_REGISTRE = function() { return registreLire(); };
+    window.JUMELAGE_REGISTRE_MAJ = function(ref, maj) {
+        var l = registreLire();
+        if (maj === null) l = l.filter(function(y) { return y.ref !== ref; });
+        else l.forEach(function(y) { if (y.ref === ref) Object.assign(y, maj); });
+        registreEcrire(l);
+    };
     // filtre : 'chorus' (envois pour l'assistant Chorus DT), 'autres' (tout le reste), sinon tout.
     window.JUMELAGE_BOITE_NB = function(filtre) {
         // Nombre de demandes (un envoi peut en contenir plusieurs), pas d'envois.
@@ -2829,6 +2878,7 @@
                             }).then(function() {
                                 var el = Object.assign({ id: e.id, nom: o.nom || 'demande.json', de: x.de, le: x.le, type: x.type, statut: 'nouveau' }, info);
                                 var l = boiteLire(); l.unshift(el); boiteEcrire(l); nouveaux.push(el);
+                                registreNouvel(el);
                                 return appelApi('boite/' + e.id, { methode: 'DELETE' });
                             });
                         });
@@ -3172,6 +3222,14 @@
                 .catch(function(e) { if (e && e.statut === 409) ecrireTxt(CLE_NID_PUBLIE, marque); });
         }, 1500);
     }
+    // N° OMR : numéro suivant de la série commune ({ numero, le }) ; série (assistant Chorus DT) : { prefixe, prochain }.
+    window.JUMELAGE_OMR_TIRER = function() {
+        if (!monCompte() || !navigator.onLine) return Promise.reject(new Error('hors ligne'));
+        return appelApi('omr', { methode: 'POST' });
+    };
+    window.JUMELAGE_OMR_SERIE = function(nouvelle) {
+        return appelApi('omr/serie', nouvelle ? { methode: 'POST', corps: nouvelle } : {});
+    };
     // Participants d'une mission collective : { matricule (10 chiffres) : adresse du compte TRIGONE } pour ceux qui en ont un ;
     // null : recherche impossible (hors ligne, pas connecté, serveur).
     window.JUMELAGE_COMPTES_PAR_NID = function(nids) {

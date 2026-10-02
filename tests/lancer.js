@@ -9,6 +9,7 @@ const TESTS = {
     'reservation': ['Option Demande de réservation (hébergement / transport)', require('./test-reservation')],
     'collective': ['Mise en route collective → compte-rendu (participants repris)', require('./test-collective')],
     'envoi-collective': ['Mission collective envoyée aux participants dans TRIGONE', require('./test-envoi-collective')],
+    'registre': ['Registre OMR de l\'assistant Chorus DT (n° OMR, CR rapprochés, relances)', require('./test-registre')],
     'montre': ['Horodatage depuis la montre (notification avec bouton)', require('./test-montre')],
     'etranger': ['Mission à l\'étranger (barème, trajet en France, taux BCE)', require('./test-etranger')],
     'dossiers': ['Bibliothèque et Remboursement en dossiers', require('./test-dossiers')],

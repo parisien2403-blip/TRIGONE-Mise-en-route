@@ -508,6 +508,38 @@ body.dark-mode .MER-SUIVI-TRAIT { background: #525252; } body.dark-mode .MER-SUI
 .MER-EMPTY { text-align: center; padding: 30px 10px; color: var(--sm2-muted); font-size: 0.86em; }
 /* Dossiers (boîte de réception, espace Assistant Chorus DT) */
 .MER-DOSSIERS { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 10px; margin: 0 0 14px; }
+/* Registre des OMR (assistant Chorus DT) */
+.MER-REG-ENTREE { display: flex; align-items: center; gap: 12px; width: 100%; text-align: left; padding: 14px 16px; margin: 0 0 12px; border-radius: 16px; border: 1.5px solid rgba(214,167,86,0.55); background: linear-gradient(165deg, #1f1f1f, #121212); color: #f5f5f5; font: inherit; cursor: pointer; }
+.MER-REG-ENTREE b { display: block; font-size: 0.98rem; } .MER-REG-ENTREE small { display: block; color: #bdbdbd; font-size: 0.76rem; margin-top: 2px; }
+.MER-REG-ENTREE > span:nth-child(2) { flex: 1; min-width: 0; } .MER-REG-ENTREE .MER-DOSSIER-CHEV { color: #d6a756; }
+.MER-REG-ENTREE-IC { font-size: 1.6rem; } .MER-REG-ENTREE-IC.petit { font-size: 1.1rem; }
+.MER-REG-ONGLETS { display: flex; gap: 6px; margin: 4px 0 12px; padding: 4px; border-radius: 14px; background: #ecebe7; }
+.MER-REG-ONGLET { flex: 1; border: 0; border-radius: 10px; padding: 10px 8px; background: transparent; font: 700 0.8rem Montserrat, system-ui, sans-serif; color: #555; cursor: pointer; }
+.MER-REG-ONGLET span { display: inline-block; min-width: 20px; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,0.08); font-size: 0.72rem; }
+.MER-REG-ONGLET.actif { background: #1a1a1a; color: #fff; } .MER-REG-ONGLET.actif span { background: #d6a756; color: #1a1a1a; }
+.MER-REG-LIGNE { border: 1.5px solid var(--tg-border); border-left: 5px solid #d6a756; border-radius: 14px; padding: 12px 14px; margin: 0 0 10px; background: #fff; }
+.MER-REG-LIGNE.retard { border-left-color: #b91c1c; } .MER-REG-LIGNE.ok { border-left-color: #15803d; } .MER-REG-LIGNE.avenir { border-left-color: #9ca3af; }
+.MER-REG-TETE { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+.MER-REG-OMR { font-size: 1.02rem; letter-spacing: 0.02em; }
+.MER-REG-MARQ { font: 700 0.7rem Montserrat, system-ui, sans-serif; padding: 4px 10px; border-radius: 999px; background: rgba(214,167,86,0.16); color: #8a5f12; }
+.MER-REG-MARQ.retard { background: rgba(185,28,28,0.1); color: #b91c1c; } .MER-REG-MARQ.ok { background: rgba(21,128,61,0.12); color: #15803d; } .MER-REG-MARQ.avenir { background: rgba(0,0,0,0.06); color: #555; }
+.MER-REG-GRILLE { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; font-size: 0.82rem; }
+.MER-REG-GRILLE span { min-width: 0; overflow-wrap: anywhere; } .MER-REG-GRILLE span.large { grid-column: 1 / -1; }
+.MER-REG-GRILLE small { display: block; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: #8a8a8a; font-weight: 700; }
+.MER-REG-GRILLE span.total { font-weight: 800; color: #1a1a1a; }
+.MER-REG-ACTIONS { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
+.MER-REG-ACTIONS .BTN { width: auto; margin: 0; }
+.MER-REG-TOTAL { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 14px; background: #1a1a1a; color: #fff; margin: 4px 0 12px; font-size: 0.86rem; }
+.MER-REG-TOTAL b { color: #d6a756; font-size: 1.1rem; }
+.MER-REG-PIED { display: flex; flex-direction: column; gap: 6px; }
+@media (min-width: 1100px) {
+  .MER-REG-GRILLE.mer { grid-template-columns: 96px minmax(0, 2fr) 104px 92px 92px minmax(0, 2.2fr) 110px; }
+  .MER-REG-GRILLE.cr { grid-template-columns: 96px minmax(0, 1.6fr) minmax(0, 1.8fr) repeat(5, 96px) 110px; }
+  .MER-REG-GRILLE span.large { grid-column: auto; } .MER-REG-GRILLE small { white-space: nowrap; }
+  .MER-REG-GRILLE.cr span:nth-child(n+4) { text-align: right; } .MER-REG-PIED { flex-direction: row; align-items: center; } .MER-REG-PIED .BTN { width: auto; } }
+body.dark-mode .MER-REG-LIGNE { background: #1f1f1f; border-color: #3a3a3a; } body.dark-mode .MER-REG-ONGLETS { background: #262626; }
+body.dark-mode .MER-REG-ONGLET { color: #bdbdbd; } body.dark-mode .MER-REG-ONGLET.actif { background: #d6a756; color: #1a1a1a; } body.dark-mode .MER-REG-ONGLET.actif span { background: #1a1a1a; color: #d6a756; }
+body.dark-mode .MER-REG-GRILLE span.total { color: #f5f5f5; } body.dark-mode .MER-REG-MARQ { color: #e0b86a; }
 .MER-DOSSIER { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 14px; border: 1px solid var(--sm2-border, #e2e8f0); border-radius: 14px; background: var(--sm2-surface, #fff); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform .12s, box-shadow .12s; }
 .MER-DOSSIER:hover { box-shadow: 0 4px 14px rgba(15,23,42,.08); }
 .MER-DOSSIER:active { transform: scale(.985); }

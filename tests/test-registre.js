@@ -1,0 +1,81 @@
+// Registre OMR de l'assistant Chorus DT : n° OMR tiré à l'envoi (série commune), sur le PDF de la demande et du
+// compte-rendu ; registre « Mises en route » / « Comptes-rendus rendus » (échéance fin + 30 jours, relance, montants,
+// suppression, nouvelle série). Demande le serveur de test (TRIGONE_URL_BOITE) et le code ASSIST CHORUS DT.
+const { APP_CODE, navigateur, preparer, attendre, verifier } = require('./outils');
+
+module.exports = async function() {
+    const URL = process.env.TRIGONE_URL_BOITE, codeChorus = process.env.TRIGONE_CODE_CHORUS;
+    if (!URL || !codeChorus) { console.log('  (sauté : définissez TRIGONE_URL_BOITE et TRIGONE_CODE_CHORUS)'); return; }
+    const b = await navigateur(), erreurs = [], suffixe = Date.now().toString(36);
+    const MAILS = { M: 'missionnaire.' + suffixe + '@interieur.gouv.fr', C: 'chorus.' + suffixe + '@interieur.gouv.fr' };
+    async function appareil(nom, largeur) {
+        const ctx = await b.newContext({ viewport: { width: largeur || 480, height: 1000 }, acceptDownloads: true }), p = await ctx.newPage();
+        p.on('pageerror', e => erreurs.push(nom + ' : ' + e.message)); p.on('dialog', d => d.accept());
+        await p.goto(URL); await p.evaluate(preparer, APP_CODE);
+        await p.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1'));
+        await p.reload(); await attendre(2500);
+        await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
+        await p.fill('#JUM-C-MAIL', MAILS[nom]); await p.click('#JUM-C-ENVOI'); await attendre(1500);
+        await p.click('#JUM-C-VALIDER'); await attendre(1500);
+        await p.evaluate(() => JUMELAGE_FERMER_COMPTE());
+        return p;
+    }
+    const m = await appareil('M'), c = await appareil('C', 1440);
+    await c.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
+    await c.check('#JUM-R-CHORUS'); await c.fill('#JUM-R-CODECHORUS', codeChorus); await c.click('.JUM-R-PRINCIPAL'); await attendre(1500);
+    // Nouvelle série (assistant Chorus DT) : préfixe propre au test, pour des numéros prévisibles.
+    const pref = 'T' + suffixe.slice(-4) + '-';
+    const serie = await c.evaluate(p => JUMELAGE_OMR_SERIE({ prefixe: p, prochain: 7 }), pref);
+    verifier(serie.prefixe === pref && serie.prochain === 7, 'assistant Chorus DT : nouvelle série (préfixe, premier numéro)');
+    verifier(await m.evaluate(() => JUMELAGE_OMR_SERIE().then(() => 'ok', e => e.statut)) === 403, 'nouvelle série refusée à un compte sans rôle Chorus DT');
+    // Missionnaire : la demande reçoit son n° OMR à l'envoi (avec la date), signé avec elle, et sur le PDF.
+    const d = await m.evaluate(() => { const d = DEMO_DEMANDE(); d.id = 'reg' + Date.now(); return MER_NUMEROTER_OMR([d]).then(() => d); });
+    verifier(d.omr === pref + '0007' && !!d.omrLe, 'missionnaire : n° OMR tiré à l\'envoi (' + d.omr + ') avec sa date');
+    const d2 = await m.evaluate(() => { const d = DEMO_DEMANDE(); d.id = 'reg2' + Date.now(); return MER_NUMEROTER_OMR([d]).then(() => d); });
+    verifier(d2.omr === pref + '0008', 'série commune : la demande suivante prend le numéro suivant');
+    verifier(await m.evaluate(x => { const t = GENERER_PDF([x]).output(); return t.indexOf('OMR N') >= 0 && t.indexOf(x.omr) >= 0; }, d), 'PDF de la mise en route : « OMR N°… » en haut à droite');
+    // Demande validée arrivée chez l'assistant Chorus DT → ligne du registre (onglet Mises en route).
+    const fin = new Date(Date.now() - 40 * 86400000), debut = new Date(Date.now() - 42 * 86400000);
+    const envoyer = (dem) => m.evaluate(([x, dest, deb, fi]) => {
+        x.trajets.aller.dateDep = deb; x.trajets.retour.dateArr = fi; x.mailDemandeur = JUMELAGE_COMPTE_MAIL(); x.validations = [{ niveau: 1 }, { niveau: 2 }];
+        return JUMELAGE_ENVOYER_DIRECT(dest, 'CHORUS', 'demande.json', JSON.stringify({ demandes: [x] }));
+    }, [dem, MAILS.C, debut.toISOString().slice(0, 16), fin.toISOString().slice(0, 16)]);
+    await envoyer(d); await envoyer(d2);
+    await c.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
+    await c.evaluate(() => OUVRIR_REGISTRE('mer')); await attendre(600);
+    const reg = await c.evaluate(() => JUMELAGE_REGISTRE());
+    verifier(reg.length === 2 && reg.every(x => x.omr && x.codeFD && x.personnes.length), 'registre : une ligne par demande validée reçue (n° OMR, code FD, personnel)');
+    const texte = await c.evaluate(() => document.querySelector('.CARD').textContent);
+    verifier(texte.indexOf('N°' + pref + '0007') < texte.indexOf('N°' + pref + '0008') && /En retard/.test(texte), 'onglet Mises en route : ordre des n° OMR, « En retard » (fin de mission + 30 jours dépassée)');
+    // Relance du missionnaire : message dans sa boîte TRIGONE (Questions).
+    await c.evaluate(r => REGISTRE_MESSAGE(r, true), d.id); await attendre(1500);
+    verifier(/Rappel : votre compte-rendu/.test(await c.inputValue('#MER-REG-TXT')), 'relance : texte de rappel prérempli (modifiable)');
+    await c.click('#MER-REG-GO'); await attendre(2500);
+    verifier(await c.evaluate(r => (JUMELAGE_REGISTRE().filter(x => x.ref === r)[0].relances || []).length === 1, d.id), 'relance enregistrée sur la ligne (date)');
+    await c.evaluate(() => { FERMER_MSG && FERMER_MSG(); });
+    await m.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
+    verifier(await m.evaluate(() => JUMELAGE_BOITE_LISTE().some(x => x.nature === 'question' && /Rappel : votre compte-rendu/.test(x.question))), 'missionnaire : la relance arrive dans sa boîte (Questions)');
+    // Compte-rendu rendu (même n° OMR, montants) → la ligne passe dans « Comptes-rendus rendus », marquée validée.
+    await m.evaluate(([dest, omr, ref]) => JUMELAGE_ENVOYER_DIRECT(dest, 'CR', 'cr.pdf', JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: 'SGT DUPONT Jean', libelle: 'Formation', dates: '', corps: '', fichiers: [],
+        omr: omr, mref: ref, montants: { repas: 45.5, hebergement: 120, transports: 0, ik: 82.3, tc: 0, total: 247.8 } })), [MAILS.C, d.omr, d.id]);
+    await c.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
+    await c.evaluate(() => OUVRIR_REGISTRE('cr')); await attendre(600);
+    const t2 = await c.evaluate(() => document.querySelector('.CARD').textContent);
+    verifier(/Validé/.test(t2) && t2.indexOf(pref + '0007') >= 0 && /247,80/.test(t2) && /82,30/.test(t2), 'onglet Comptes-rendus rendus : ligne validée, montants (repas, hébergement, IK…) et total');
+    await c.evaluate(() => OUVRIR_REGISTRE('mer')); await attendre(400);
+    verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') < 0, 'la ligne rendue a quitté l\'onglet Mises en route');
+    // PDF de l'onglet, et suppression d'une ligne (mission annulée).
+    const dl = c.waitForEvent('download', { timeout: 15000 }); await c.evaluate(() => REGISTRE_PDF());
+    verifier(/Registre OMR - mises en route/.test((await dl).suggestedFilename()), 'PDF du registre (onglet affiché)');
+    await c.evaluate(r => REGISTRE_SUPPRIMER(r), d2.id); await attendre(400);
+    await c.click('#MSG-OVERLAY .BTN-PRIMARY, #MSG-OVERLAY .MSG-BTN-CONFIRM').catch(() => c.evaluate(() => { const b = [...document.querySelectorAll('#MSG-OVERLAY button')].find(x => /Supprimer/.test(x.textContent)); b && b.click(); }));
+    await attendre(400);
+    verifier(await c.evaluate(r => !JUMELAGE_REGISTRE().some(x => x.ref === r), d2.id), 'suppression d\'une ligne (mission annulée)');
+    // Compte-rendu : le n° OMR repris de la mise en route figure sur son PDF.
+    await m.goto(URL + 'cr/'); await attendre(2500);
+    await m.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); });
+    verifier(await m.evaluate(x => { APPLIQUER_MISE_EN_ROUTE(x); return M.OMR === x.omr && M.MER_REF === x.id; }, d), 'Compte-rendu « À partir d\'une mise en route » : n° OMR et demande repris');
+    verifier(await m.evaluate(() => { const o = MONTANTS_CR(M); return typeof o.total === 'number' && 'ik' in o && 'repas' in o; }), 'Compte-rendu : montants envoyés avec le CR (repas, hébergement, transports, IK, total)');
+    verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
+    await b.close();
+};

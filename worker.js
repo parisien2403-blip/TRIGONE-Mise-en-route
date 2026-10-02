@@ -809,6 +809,33 @@ async function api(requete, env, url, ctx) {
         }));
         return json({ ok: true, comptes: trouves });
     }
+    // Numéro OMR (ordre de mise en route) : une série commune à tout TRIGONE, tirée par l'appli du missionnaire à l'envoi
+    // de sa demande (ou, à défaut, par l'assistant Chorus DT à son arrivée). Incrément atomique (D1). L'assistant
+    // Chorus DT peut repartir sur une nouvelle série (préfixe libre, ex. « 2027- », et premier numéro).
+    if (chemin === 'omr' && methode === 'POST') {
+        const db = await tableReglage(env);
+        await db.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prochain', '1') ON CONFLICT (cle) DO NOTHING").run();
+        const r = await db.prepare("UPDATE reglage SET valeur = CAST(CAST(valeur AS INTEGER) + 1 AS TEXT) WHERE cle = 'omr-prochain' RETURNING valeur").first();
+        const n = parseInt(r && r.valeur, 10) - 1;
+        const p = await db.prepare("SELECT valeur FROM reglage WHERE cle = 'omr-prefixe'").first();
+        return json({ ok: true, numero: ((p && p.valeur) || '') + String(n).padStart(4, '0'), le: new Date().toISOString() });
+    }
+    if (chemin === 'omr/serie' && (methode === 'GET' || methode === 'POST')) {
+        if (!(moi.compte.roles || {}).chorus) return erreur(403, 'Réservé à l\'assistant Chorus DT.');
+        const db = await tableReglage(env);
+        if (methode === 'POST') {
+            const c = await requete.json().catch(() => ({}));
+            const prefixe = String(c.prefixe || '').replace(/[^0-9A-Za-z\-\/]/g, '').slice(0, 12), prochain = parseInt(c.prochain, 10);
+            if (!(prochain >= 1 && prochain < 1000000)) return erreur(400, 'Premier numéro invalide.');
+            await db.batch([
+                db.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prefixe', ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur").bind(prefixe),
+                db.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prochain', ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur").bind(String(prochain))
+            ]);
+        }
+        const p = await db.prepare("SELECT valeur FROM reglage WHERE cle = 'omr-prefixe'").first();
+        const n = await db.prepare("SELECT valeur FROM reglage WHERE cle = 'omr-prochain'").first();
+        return json({ ok: true, prefixe: (p && p.valeur) || '', prochain: parseInt(n && n.valeur, 10) || 1 });
+    }
     // Page « Erreurs de l'appli » : réservée à l'administrateur (ADMIN_MAILS).
     if (chemin === 'admin' && methode === 'GET') return json({ ok: true, admin: estAdmin(env, moi.mail) });
     if (chemin === 'erreurs' && methode === 'GET') {
