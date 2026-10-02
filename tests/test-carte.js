@@ -95,6 +95,15 @@ module.exports = async function() {
     await l.click('.JUM-SCAN-FERMER'); await attendre(300);
     const eqTxt = await l.evaluate(() => document.getElementById('MER-EQUIPE').innerText);
     verifier(/présent au départ le/.test(eqTxt) && /1°RIISC \(extérieur\)/.test(eqTxt), 'liste des participants : « 1°RIISC (extérieur) », « présent au départ le … »');
+    // Raccourci de l'icône (appui long) « Ma carte » : la carte s'ouvre directement.
+    await a.goto(URL + '?espace=carte'); await attendre(3000);
+    verifier(await a.evaluate(() => !!document.querySelector('.JUM-CARTE-FEN')), 'raccourci « Ma carte » de l\'icône : la carte s\'ouvre directement');
+    // Carte perdue ou volée : l'ancien QR code n'est plus reconnu, un nouveau le remplace.
+    await a.click('.JUM-CARTE-REVOQUER'); await attendre(400);
+    await a.click('.JUM-BIOC .JUM-R-PRINCIPAL'); await attendre(1500);
+    const nouveau = await a.evaluate(() => JSON.parse(localStorage.getItem('trigone_carte') || '{}').id);
+    const ancienEtat = await a.evaluate(id => fetch('api/carte?id=' + id).then(r => r.json()), memo.id), nouvelEtat = await a.evaluate(id => fetch('api/carte?id=' + id).then(r => r.json()), nouveau);
+    verifier(nouveau && nouveau !== memo.id && !ancienEtat.valide && nouvelEtat.valide, 'révocation : ancien QR code « non reconnu », nouveau QR code valide');
     // PC : recto et verso côte à côte, sans retournement ni plein écran.
     const ctxPc = await b.newContext({ viewport: { width: 1440, height: 900 } }), pc = await ctxPc.newPage();
     pc.on('pageerror', e => erreurs.push('PC : ' + e.message));

@@ -56,6 +56,19 @@
       ]
     },
     {
+      "name": "Ma carte TRIGONE",
+      "short_name": "Ma carte",
+      "description": "Ma carte TRIGONE : QR code, afficher en grand",
+      "url": "./?espace=carte",
+      "icons": [
+        {
+          "src": "./raccourci-carte.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Boîte de réception",
       "short_name": "Réception",
       "description": "Demandes reçues, à signer, refus",

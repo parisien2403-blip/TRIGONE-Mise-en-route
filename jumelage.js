@@ -5,7 +5,8 @@
 // Au changement d'appli : pas de nouvel écran d'ouverture, et le code à 4 chiffres n'est pas redemandé.
 (function() {
     var CLE_BASCULE = 'trigone_bascule', CLE_DEVERROUILLE = 'trigone_deverrouille', CLE_THEME = 'trigone_theme', CLE_CHOIX_FAIT = 'trigone_choix_fait';
-    var arrivee = false, fermeurs = [];   // fermeurs : [fenêtre ouverte, fonction qui la ferme] (bouton retour)
+    var arrivee = false, fermeurs = [];
+    var CARTE_AU_DEMARRAGE = /[?&]espace=carte/.test(location.search);   // raccourci « Ma carte » (appui long sur l'icône)   // fermeurs : [fenêtre ouverte, fonction qui la ferme] (bouton retour)
     try { arrivee = sessionStorage.getItem(CLE_BASCULE) === '1'; sessionStorage.removeItem(CLE_BASCULE); } catch (e) {}
 
     window.JUMELAGE_ARRIVEE = function() { return arrivee; };
@@ -851,7 +852,7 @@
         '.JUM-CARTE-PAGE .JUM-R-PRINCIPAL { width: 100%; margin: 0; background: linear-gradient(180deg, #e2b866, #c99743); color: #1a1a1a; border: 0; }' +
         '.JUM-CARTE-BTNS { display: flex; gap: 10px; margin-top: 10px; } .JUM-CARTE-BTNS button { flex: 1; margin: 0; background: #1c1c1c; color: #f5f5f5; border-color: #333; }' +
         '.JUM-CARTE-NOTE { margin: 16px 0 6px; padding: 12px 14px; border-radius: 14px; background: rgba(214,167,86,0.08); box-shadow: inset 0 0 0 1px rgba(214,167,86,0.25); font-size: 0.74rem; line-height: 1.5; color: #cfcfcf; } .JUM-CARTE-NOTE b { color: #e8c27a; }' +
-        '.JUM-CARTE-PAGE .JUM-R-LIEN { color: #d6a756; display: block; margin: 8px auto 0; }' +
+        '.JUM-CARTE-PAGE .JUM-R-LIEN { color: #d6a756; display: block; margin: 8px auto 0; } .JUM-CARTE-PAGE .JUM-CARTE-REVOQUER { color: #a3a3a3; font-size: 0.72rem; margin-top: 14px; }' +
         /* Plein écran : le téléphone devient la carte */
         '.JUM-CARTE-PLEIN { background: #000; padding: 0; animation: none; z-index: 99997; }' +
         '.JUM-CARTE-PLEIN .JUM-CARTE-ZONE { position: absolute; left: 50%; top: 50%; width: 350px; height: 221px; perspective: 1400px; }' +
@@ -988,7 +989,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 141, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 142, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -4215,7 +4216,8 @@
                     '<button type="button" class="JUM-R-SECOND JUM-CARTE-PARTAGER">Partager</button></div>' +
                 '<p class="JUM-CARTE-NOTE">Remplie toute seule avec <b>Mon profil</b> (grade, nom, NID, unité). La photo reste <b>sur cet appareil</b>. ' +
                     'Le QR code ne contient qu\'un identifiant : il ne donne accès à rien, il permet seulement à un compte TRIGONE de vous retrouver.</p>' +
-                '<button type="button" class="JUM-R-LIEN JUM-CARTE-PROFIL">Modifier Mon profil</button></div>';
+                '<button type="button" class="JUM-R-LIEN JUM-CARTE-PROFIL">Modifier Mon profil</button>' +
+                (memo && memo.id ? '<button type="button" class="JUM-R-LIEN JUM-CARTE-REVOQUER">Carte perdue ou volée ? Révoquer le QR code</button>' : '') + '</div>';
             if (memo && memo.id) dessinerQR(fenCarte.querySelector('.JUM-CARTE-QR'), memo.id);
             if (tel) {
                 var zone = fenCarte.querySelector('.JUM-CARTE-ZONE'), tourne = fenCarte.querySelector('.JUM-CARTE-TOURNE');
@@ -4227,6 +4229,8 @@
             fenCarte.querySelector('.JUM-CARTE-PHOTO-BTN').addEventListener('click', function() { choisirPhoto(dessiner); });
             fenCarte.querySelector('.JUM-CARTE-PARTAGER').addEventListener('click', function() { partagerCarte(d, memo); });
             fenCarte.querySelector('.JUM-CARTE-PROFIL').addEventListener('click', function() { window.JUMELAGE_FERMER_CARTE(); window.JUMELAGE_REGLAGES({ vue: 'profil' }); });
+            var rev = fenCarte.querySelector('.JUM-CARTE-REVOQUER');
+            if (rev) rev.addEventListener('click', function() { revoquerCarte(function(m) { memo = m; dessiner(); }); });
         };
         dessiner();
         ['pointerdown', 'pointerup'].forEach(function(t) { fenCarte.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
@@ -4237,6 +4241,23 @@
             memo = m; var v = fenCarte.querySelector('.face.arriere'); if (v) { v.innerHTML = carteVerso(d, memo); dessinerQR(v.querySelector('.JUM-CARTE-QR'), m.id); }
         });
     };
+    // Carte perdue, volée ou photographiée : l'ancien QR code devient « Carte non reconnue », un nouveau est créé.
+    function revoquerCarte(apres) {
+        var f = document.createElement('div'); f.className = 'JUM-SIG JUM-BIOC'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Révoquer le QR code');
+        f.innerHTML = '<div class="JUM-SIG-CARTE"><div class="JUM-BIOC-ROND">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('qr') : '') + '</div>' +
+            '<h2>Révoquer le QR code ?</h2><p>L\'ancien QR code ne marchera plus : scanné, il affichera « Carte non reconnue ». Votre carte reçoit aussitôt un nouveau QR code. Vos missions et votre compte ne changent pas.</p>' +
+            '<div class="JUM-BIOC-ERR"></div><div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND">Annuler</button><button type="button" class="JUM-R-PRINCIPAL">Révoquer</button></div></div>';
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        f.querySelector('.JUM-R-SECOND').addEventListener('click', function() { f.remove(); });
+        f.querySelector('.JUM-R-PRINCIPAL').addEventListener('click', function() {
+            var b = this; b.disabled = true;
+            appelApi('carte/revoquer', { methode: 'POST', corps: carteIdentite() }).then(function(r) {
+                var d = carteIdentite(), m = { id: r.id, depuis: r.depuis, sig: [d.grade, d.nom, d.prenom, d.unite, d.cie, d.nid].join('|'), mail: monCompte().mail };
+                ecrireTxt(CLE_CARTE, JSON.stringify(m)); f.remove(); bandeau('Nouveau QR code : l\'ancien ne marche plus.'); apres(m);
+            }, function(e) { b.disabled = false; f.querySelector('.JUM-BIOC-ERR').textContent = (e && e.message) || 'Révocation impossible : vérifiez la connexion.'; });
+        });
+        document.body.appendChild(f);
+    }
     // Plein écran : téléphone à l'horizontale, fond noir, écran maintenu allumé ; toucher retourne la carte.
     window.JUMELAGE_CARTE_GRAND = function(verso) {
         var d = carteIdentite(), memo = lireJSON(CLE_CARTE), veille = null;
@@ -4992,7 +5013,11 @@
     try { dejaChoisi = sessionStorage.getItem(CLE_CHOIX) === '1'; } catch (e) {}
     // Ouverture depuis une notification (boîte de réception ou espace Assistant Chorus DT) : droit à l'espace visé.
     // Aussi : raccourcis de l'icône de l'appli (appui long) et notification « Départ en mission aujourd'hui » (Compte-rendu).
-    if (DANS_CR ? /[?&](espace|depart)=/.test(location.search) : /[?&]espace=(boite|chorus|suivi|documents|nouvelle)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
+    if (DANS_CR ? /[?&](espace|depart)=/.test(location.search) : /[?&]espace=(boite|chorus|suivi|documents|nouvelle|carte)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
+    if (CARTE_AU_DEMARRAGE) {
+        var ouvrirCarte = function() { setTimeout(function() { window.JUMELAGE_CARTE(); try { history.replaceState(null, document.title, location.pathname); } catch (e) {} }, 400); };
+        if (document.readyState === 'complete') ouvrirCarte(); else window.addEventListener('load', ouvrirCarte);
+    }
     // Juste après une mise à jour (nouvelle publication chargée, quelle qu'en soit la cause) : retour à l'écran de choix.
     var buildVu = +lireTxt('trigone_build_vu') || 0;
     var apresMaj = false;

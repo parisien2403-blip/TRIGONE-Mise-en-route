@@ -6,7 +6,7 @@ const { RACINE, APP_CODE, navigateur, preparer, attendre, verifier } = require('
 
 module.exports = async function(srv) {
     const man = JSON.parse(fs.readFileSync(path.join(RACINE, 'manifest.json'), 'utf8')), sc = man.shortcuts || [];
-    verifier(sc.length === 4 && sc.every(x => x.url && x.icons && fs.existsSync(path.join(RACINE, x.icons[0].src))), 'manifeste : 4 raccourcis (' + sc.map(x => x.short_name).join(', ') + '), icônes présentes');
+    verifier(sc.length === 5 && sc.every(x => x.url && x.icons && fs.existsSync(path.join(RACINE, x.icons[0].src))), 'manifeste : 5 raccourcis (' + sc.map(x => x.short_name).join(', ') + '), icônes présentes');
     const b = await navigateur(), erreurs = [];
     const ouvrir = async url => {
         const ctx = await b.newContext({ viewport: { width: 412, height: 860 } }); await ctx.addInitScript(preparer, APP_CODE);

@@ -792,6 +792,20 @@ async function api(requete, env, url, ctx) {
 
     const moi = await appareilConnecte(env, requete);
     if (!moi) return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
+    // Carte perdue ou volée : l'ancien identifiant est effacé (son QR code devient « non reconnu »), un nouveau est tiré.
+    if (chemin === 'carte/revoquer' && methode === 'POST') {
+        const ancien = await kv.get('carte-de:' + moi.mail);
+        const avant = ancien ? await kv.get('carte:' + ancien, 'json') : null;
+        if (ancien) { await kv.delete('carte:' + ancien); await kv.delete('carte-de:' + moi.mail); }
+        const corps = await requete.json().catch(() => ({}));
+        const t = (v, n) => String(v || '').replace(/[<>]/g, '').trim().slice(0, n);
+        const id = b64url(crypto.getRandomValues(new Uint8Array(12)));
+        const depuis = (avant && avant.depuis) || Date.now();
+        await kv.put('carte-de:' + moi.mail, id);
+        await kv.put('carte:' + id, JSON.stringify({ mail: moi.mail, grade: t(corps.grade, 30), nom: t(corps.nom, 60), prenom: t(corps.prenom, 60),
+            unite: t(corps.unite, 40), cie: t(corps.cie, 40), nid: t(corps.nid, 20), depuis: depuis }));
+        return json({ ok: true, id: id, depuis: depuis });
+    }
     // Carte TRIGONE du compte : créée à la première ouverture, mise à jour avec Mon profil (même identifiant).
     if (chemin === 'carte' && methode === 'POST') {
         const corps = await requete.json().catch(() => ({}));
