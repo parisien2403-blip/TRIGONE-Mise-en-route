@@ -837,9 +837,9 @@
         '.JUM-CARTE-QR span { display: flex; align-items: center; justify-content: center; height: 100%; color: #555; font-size: 8px; font-weight: 700; text-align: center; line-height: 1.4; }' +
         '.JUM-CARTE-INFO { position: absolute; left: 148px; top: 62px; right: 14px; font-size: 9.5px; line-height: 1.45; color: #d4d4d4; } .JUM-CARTE-INFO b { color: #f5f5f5; }' +
         '.JUM-CARTE-INFO .t { font-size: 7px; letter-spacing: 0.14em; color: #d6a756; font-weight: 800; margin-top: 5px; }' +
-        '.JUM-CARTE-INFO .roles { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 3px; } .JUM-CARTE-INFO .roles span { font-size: 7px; font-weight: 800; letter-spacing: 0.05em; padding: 2px 6px; border-radius: 99px; background: rgba(214,167,86,0.16); color: #e8c27a; box-shadow: inset 0 0 0 1px rgba(214,167,86,0.45); }' +
+        '.JUM-CARTE-INFO .roles { display: flex; gap: 4px; flex-wrap: nowrap; margin-top: 3px; overflow: hidden; } .JUM-CARTE-INFO .roles span { font-size: 6.6px; font-weight: 800; letter-spacing: 0.04em; padding: 2px 5px; white-space: nowrap; border-radius: 99px; background: rgba(214,167,86,0.16); color: #e8c27a; box-shadow: inset 0 0 0 1px rgba(214,167,86,0.45); }' +
         '.JUM-CARTE-SIGN { position: absolute; left: 148px; right: 14px; bottom: 12px; border-top: 1px solid rgba(214,167,86,0.4); padding-top: 3px; font-size: 6.5px; letter-spacing: 0.14em; color: #8a8a8a; }' +
-        '.JUM-CARTE-SIGN i { position: absolute; right: 4px; bottom: 12px; font: italic 600 16px/1 "Brush Script MT", "Segoe Script", cursive; color: #e8c27a; letter-spacing: 0; }' +
+        '.JUM-CARTE-SIGN i { position: absolute; right: 4px; bottom: 2px; font: italic 600 14px/1 "Brush Script MT", "Segoe Script", cursive; color: #e8c27a; letter-spacing: 0; }' +
         '.JUM-CARTE-ASTUCE { text-align: center; color: #a3a3a3; font-size: 0.75rem; font-weight: 600; margin: 18px 0 18px; }' +
         '.JUM-CARTE-PAGE .JUM-R-PRINCIPAL { width: 100%; margin: 0; background: linear-gradient(180deg, #e2b866, #c99743); color: #1a1a1a; border: 0; }' +
         '.JUM-CARTE-BTNS { display: flex; gap: 10px; margin-top: 10px; } .JUM-CARTE-BTNS button { flex: 1; margin: 0; background: #1c1c1c; color: #f5f5f5; border-color: #333; }' +
@@ -981,7 +981,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 138, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 139, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -4103,7 +4103,7 @@
         var r = lireReglages(), roles = rolesLocaux();
         var n = 0; try { n = parseInt(localStorage.getItem('trigone_cr_envoyes_total') || '0', 10) || 0; } catch (e) {}
         return { grade: r.grade || '', nom: (r.nom || '').toUpperCase(), prenom: r.prenom || '', unite: r.unite || '', cie: r.cie || '', nid: r.matricule || '', missions: n,
-            roles: ['MISSIONNAIRE'].concat(roles.valideur1 ? ['VALIDEUR 1'] : [], roles.valideur2 ? ['VALIDEUR 2'] : [], roles.chorus ? ['ASSIST CHORUS DT'] : []) };
+            roles: (function(l) { return l.length ? l : ['MISSIONNAIRE']; })([].concat(roles.valideur1 ? ['VALIDEUR 1'] : [], roles.valideur2 ? ['VALIDEUR 2'] : [], roles.chorus ? ['CHORUS DT'] : [])) };
     }
     // Identifiant de la carte (serveur) : demandé une fois, renvoyé quand Mon profil change (même identifiant).
     window.JUMELAGE_CARTE_ID = function() {
