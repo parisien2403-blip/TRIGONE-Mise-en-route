@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 193,
-  "appCodeMessage": "Notice TRIGONE : bouton plein écran pour lire en grand.",
+  "appCodeVersion": 194,
+  "appCodeMessage": "Notice TRIGONE en tête des Paramètres. Registre des OMR : « Tout effacer et repartir à 0001 » pour l'assistant Chorus DT.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

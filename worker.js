@@ -953,6 +953,19 @@ async function api(requete, env, url, ctx) {
         return json({ ok: true, lignes: r.map(x => ({ ref: x.ref, supprime: !!x.supprime, par: x.par, maj: x.maj, ligne: x.supprime ? null : JSON.parse(x.donnees || '{}') })),
             dernier: r.reduce((m, x) => Math.max(m, x.maj), depuis) });
     }
+    // Remise à zéro du registre (assistant Chorus DT) : toutes les lignes marquées supprimées (les autres assistants les
+    // retirent à leur prochaine relève), et la numérotation OMR repart à 0001 sans préfixe.
+    if (chemin === 'registre/vider' && methode === 'POST') {
+        if (!(moi.compte.roles || {}).chorus) return erreur(403, 'Réservé à l\'assistant Chorus DT.');
+        const db = await baseBoite(env), u = UNITE_REGISTRE, le = Date.now();
+        const r = await db.prepare("UPDATE registre SET supprime = 1, donnees = '{}', maj = ?, par = ? WHERE unite = ? AND supprime = 0").bind(le, moi.mail, u).run();
+        const reg = await tableReglage(env);
+        await reg.batch([
+            reg.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prefixe', '') ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur"),
+            reg.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prochain', '1') ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur")
+        ]);
+        return json({ ok: true, effacees: (r.meta && r.meta.changes) || 0, dernier: le });
+    }
     // Page « Erreurs de l'appli » : réservée à l'administrateur (ADMIN_MAILS).
     if (chemin === 'admin' && methode === 'GET') return json({ ok: true, admin: estAdmin(env, moi.mail) });
     if (chemin === 'erreurs' && methode === 'GET') {

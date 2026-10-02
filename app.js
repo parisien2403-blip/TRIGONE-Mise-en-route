@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 193;
+var APP_CODE_VERSION = 194;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3852,7 +3852,8 @@ function TPL_REGISTRE() {
         (lignes || '<div class="MER-EMPTY">' + (cr ? 'Aucun compte-rendu rendu pour l\'instant.' : 'Aucune mise en route en attente de compte-rendu.') + '</div>') +
         (totaux && l.length ? '<div class="MER-REG-TOTAL"><span>Total des ' + l.length + ' mission' + (l.length > 1 ? 's' : '') + '</span><b>' + MER_EUROS(totaux.total) + '</b></div>' : '') +
         '<div class="MER-REG-PIED"><button type="button" class="BTN BTN-PRIMARY" onclick="REGISTRE_PDF()"' + (l.length ? '' : ' disabled') + '>📄 PDF de cet onglet</button>' +
-        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_SERIE()">🔢 Numérotation OMR (nouvelle série)</button></div>';
+        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_SERIE()">🔢 Numérotation OMR (nouvelle série)</button>' +
+        '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_VIDER()">🗑 Tout effacer et repartir à 0001</button></div>';
 }
 function REGISTRE_LIGNE(ref) { return (window.JUMELAGE_REGISTRE ? JUMELAGE_REGISTRE() : []).filter(function(x) { return x.ref === ref; })[0]; }
 function REGISTRE_SUPPRIMER(ref) {
@@ -3915,6 +3916,24 @@ function REGISTRE_SERIE_OK() {
     JUMELAGE_OMR_SERIE({ prefixe: p, prochain: n }).then(function(s) {
         FERMER_MODALE(); MSG_INFO('Nouvelle série', 'Prochain numéro : OMR N°' + s.prefixe + String(s.prochain).padStart(4, '0') + '.', '🔢');
     }).catch(function(e) { MSG_ERREUR('Numérotation non modifiée', e.message || String(e)); });
+}
+// Remise à zéro : tout le registre effacé (chez tous les assistants Chorus DT de l'unité) et numérotation à 0001.
+// Confirmation en tapant EFFACER, après un rappel de garder le PDF.
+function REGISTRE_VIDER() {
+    var r = MER_REGISTRE_LIGNES(), n = r.mer.length + r.cr.length;
+    AFFICHER_MODALE('Tout effacer et repartir à 0001',
+        '<p style="font-size:0.88em; line-height:1.5;">Les <b>' + n + ' ligne' + (n > 1 ? 's' : '') + '</b> du registre (mises en route et comptes-rendus rendus) seront effacées <b>chez tous les assistants Chorus DT de l\'unité</b>, et la numérotation repartira à <b>OMR N°0001</b>.</p>' +
+        '<p class="MER-HINT">Pensez à garder le PDF des deux onglets avant. Les demandes et comptes-rendus reçus restent dans votre boîte ; les demandes déjà numérotées chez les missionnaires gardent leur numéro. Impossible à annuler.</p>' +
+        '<div class="MER-FIELD"><label>Pour confirmer, tapez EFFACER</label><input type="text" id="MER-VIDER-MOT" autocomplete="off" placeholder="EFFACER"></div>',
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Annuler</button><button type="button" class="BTN BTN-PRIMARY" id="MER-VIDER-GO" style="background:#c0392b; border-color:#c0392b; color:#fff;" onclick="REGISTRE_VIDER_OK()">Tout effacer</button>');
+}
+function REGISTRE_VIDER_OK() {
+    if ((document.getElementById('MER-VIDER-MOT').value || '').trim().toUpperCase() !== 'EFFACER') { MSG_ERREUR('Confirmation', 'Tapez EFFACER pour confirmer.'); return; }
+    var b = document.getElementById('MER-VIDER-GO'); if (b) { b.disabled = true; b.textContent = 'Effacement…'; }
+    JUMELAGE_REGISTRE_VIDER().then(function() {
+        FERMER_MODALE(); SHOW_PAGE('CHORUS');
+        MSG_INFO('Registre remis à zéro', 'Le registre est vide, chez tous les assistants Chorus DT de l\'unité. La prochaine demande envoyée prendra le n° OMR N°0001.', '🔢');
+    }).catch(function(e) { if (b) { b.disabled = false; b.textContent = 'Tout effacer'; } MSG_ERREUR('Registre non effacé', e.message || String(e)); });
 }
 // PDF de l'onglet affiché (A4 paysage, noir et or, économe en encre).
 function REGISTRE_PDF() {

@@ -101,6 +101,18 @@ module.exports = async function() {
     await c2.evaluate(r => JUMELAGE_REGISTRE_MAJ(r, null), d3.id); await attendre(1200);
     await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1000);
     verifier(await c.evaluate(r => !JUMELAGE_REGISTRE().some(x => x.ref === r), d3.id), 'suppression faite par le 2e : la ligne disparaît chez le 1er');
+    // Tout effacer et repartir à 0001 : registre vidé chez les deux assistants, numérotation remise à 0001.
+    await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(800);
+    verifier(await c.evaluate(() => JUMELAGE_REGISTRE().length > 0), 'avant remise à zéro : le registre a des lignes');
+    await c.evaluate(() => OUVRIR_REGISTRE('mer')); await attendre(500);
+    await c.evaluate(() => [...document.querySelectorAll('button')].find(b => /Tout effacer et repartir/.test(b.textContent)).click()); await attendre(400);
+    await c.fill('#MER-VIDER-MOT', 'effacer'); await c.click('#MER-VIDER-GO'); await attendre(1500);
+    verifier(await c.evaluate(() => JUMELAGE_REGISTRE().length === 0 && /remis à zéro/.test(document.body.textContent)), 'Tout effacer (mot EFFACER) : registre vide chez le 1er assistant');
+    await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1200);
+    verifier(await c2.evaluate(() => JUMELAGE_REGISTRE().length === 0), 'remise à zéro : registre vide aussi chez le 2e assistant');
+    const serie0 = await c.evaluate(() => JUMELAGE_OMR_SERIE());
+    verifier(serie0.prochain === 1 && serie0.prefixe === '', 'remise à zéro : prochain numéro OMR N°0001 (' + serie0.prefixe + serie0.prochain + ')');
+    verifier(await m.evaluate(() => { const c = JSON.parse(localStorage.getItem('trigone_compte')); return fetch('api/registre/vider', { method: 'POST', headers: { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton, 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.status); }) === 403, 'remise à zéro refusée à un compte sans rôle Chorus DT');
     verifier(await m.evaluate(() => { const c = JSON.parse(localStorage.getItem('trigone_compte')); return fetch('api/registre', { method: 'POST', headers: { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton, 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.status); }) === 403, 'registre commun refusé à un compte sans rôle Chorus DT');
     // Compte-rendu : le n° OMR repris de la mise en route figure sur son PDF.
     await m.goto(URL + 'cr/'); await attendre(2500);
