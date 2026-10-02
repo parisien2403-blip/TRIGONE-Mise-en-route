@@ -993,7 +993,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 146, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 147, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3571,6 +3571,17 @@
         if (!monCompte() || !navigator.onLine) return Promise.reject(new Error('hors ligne'));
         return appelApi('omr', { methode: 'POST' });
     };
+    // Registre remis à zéro (assistant Chorus DT) : toutes les lignes effacées chez tous les assistants de l'unité, et la
+    // numérotation repart à 0001 (sans préfixe). Les demandes déjà numérotées chez les missionnaires gardent leur numéro.
+    window.JUMELAGE_REGISTRE_VIDER = function() {
+        if (!monCompte() || !navigator.onLine) return Promise.reject(new Error('Il faut du réseau et votre compte TRIGONE.'));
+        return appelApi('registre/vider', { methode: 'POST' }).then(function(r) {
+            ecrireTxt(CLE_REG_FILE, JSON.stringify({ lignes: {}, supprimer: {} }));
+            registreEcrire([]);
+            if (r.dernier) ecrireTxt(CLE_REG_DEPUIS, String(r.dernier));
+            return r;
+        });
+    };
     window.JUMELAGE_OMR_SERIE = function(nouvelle) {
         return appelApi('omr/serie', nouvelle ? { methode: 'POST', corps: nouvelle } : {});
     };
@@ -3741,7 +3752,8 @@
                 '<div class="JUM-PARAM-TETE">' + (c ? '<span class="JUM-AV">' + esc(initiales()) + '</span>' : '') + '<h2>Paramètres</h2><button type="button" class="JUM-PARAM-FERMER" aria-label="Fermer">✕</button></div>' +
                 '<div class="JUM-PARAM-CORPS"><nav class="JUM-PARAM-NAV">' + rubs.map(function(x) {
                     return '<button type="button" data-rub="' + x.id + '" class="' + (x === actuelle ? 'actif' : '') + '">' + x.icone + x.titre + '</button>'; }).join('') + '</nav>' +
-                '<div class="JUM-PARAM-CONTENU"><h3>' + esc(actuelle.titre) + '</h3><p>' + esc(actuelle.aide || '') + '</p>' +
+                '<div class="JUM-PARAM-CONTENU">' + (actuelle === rubs[0] ? window.JUMELAGE_NOTICE_BOUTON().replace(' onclick="JUMELAGE_NOTICE()"', ' data-notice="1"') : '') +
+                '<h3>' + esc(actuelle.titre) + '</h3><p>' + esc(actuelle.aide || '') + '</p>' +
                 (actuelle.lignes.length ? actuelle.lignes.map(function(l) {
                     return '<button type="button" class="JUM-PARAM-LIGNE' + (l.danger ? ' danger' : '') + '" data-action="' + l.id + '">' + l.icone + '<span><b>' + esc(l.titre) + '</b><small>' + esc(l.sous || '') + '</small></span><i aria-hidden="true">›</i></button>'; }).join('')
                     : '<div class="JUM-PARAM-VIDE">' + esc(actuelle.vide || '') + '</div>') + '</div></div></div>';
@@ -3751,6 +3763,7 @@
             if (ev.target === fenParam || ev.target.closest('.JUM-PARAM-FERMER')) { window.JUMELAGE_FERMER_PARAMETRES(); return; }
             var r = ev.target.closest('[data-rub]');
             if (r) { actuelle = rubs.filter(function(x) { return x.id === r.getAttribute('data-rub'); })[0] || actuelle; dessiner(); return; }
+            if (ev.target.closest('[data-notice]')) { window.JUMELAGE_FERMER_PARAMETRES(); window.JUMELAGE_NOTICE(); return; }
             var b = ev.target.closest('[data-action]'); if (!b) return;
             var l = actuelle.lignes.filter(function(x) { return x.id === b.getAttribute('data-action'); })[0];
             if (!l) return;

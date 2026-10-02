@@ -13,6 +13,9 @@ module.exports = async function(srv) {
     // Paramètres › Aide › Notice TRIGONE
     await p.evaluate(() => JUMELAGE_PARAMETRES('aide')); await attendre(300);
     verifier(await p.evaluate(() => !!document.querySelector('.JUM-PARAM [data-action="notice"]')), 'Paramètres › Aide : ligne « Notice TRIGONE »');
+    await p.evaluate(() => JUMELAGE_PARAMETRES()); await attendre(300);
+    verifier(await p.evaluate(() => !!document.querySelector('.JUM-PARAM [data-notice] b') && document.querySelector('.JUM-PARAM [data-notice] b').textContent === 'Notice TRIGONE'), 'Paramètres (première page) : bouton « Notice TRIGONE » en tête');
+    await p.evaluate(() => JUMELAGE_PARAMETRES('aide')); await attendre(300);
     await p.click('.JUM-PARAM [data-action="notice"]'); await attendre(2500);
     const info = await p.evaluate(() => {
         const N = window.NOTICE_TRIGONE, f = document.querySelector('.JUM-NOTICE');
