@@ -791,6 +791,31 @@
         '.JUM-PIN-BIO svg { width: 30px; height: 30px; }' +
         '.JUM-R-BIO { display: flex; align-items: center; gap: 10px; margin: 10px 0 4px; }' +
         '.JUM-R-BIO svg { width: 26px; height: 26px; flex-shrink: 0; color: #b0802a; }' +
+        /* Empreinte façon TRIGONE (téléphone) : phénix, grande empreinte dorée qui respire ; verte reconnue, rouge refusée. */
+        '.JUM-PIN.bio { background: radial-gradient(90% 55% at 50% 24%, #2b2b2b, #151515 60%, #0c0c0c); }' +
+        '.JUM-BIOV-LOGO { width: 54px; height: 54px; object-fit: contain; filter: invert(1) brightness(1.4); opacity: 0.92; display: block; margin: 0 auto; }' +
+        '.JUM-BIOV-NOM { font-weight: 800; letter-spacing: 0.32em; font-size: 0.86rem; margin: 6px 0 0 0.32em; color: #f5f5f5; }' +
+        '.JUM-BIOV-ROND { position: relative; width: 150px; height: 150px; margin: 38px auto 0; padding: 0; border: 0; background: none; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; -webkit-tap-highlight-color: transparent; transition: width 0.25s, height 0.25s, margin 0.25s; }' +
+        '.JUM-BIOV-ROND::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: radial-gradient(circle, rgba(214,167,86,0.3), rgba(214,167,86,0) 70%); animation: jum-respire 2.4s ease-in-out infinite; }' +
+        '.JUM-BIOV-ROND::after { content: ""; position: absolute; inset: 8px; border-radius: 50%; border: 2px solid rgba(214,167,86,0.5); }' +
+        '.JUM-BIOV-ROND svg { position: relative; width: 84px; height: 84px; color: #d6a756; transition: color 0.25s; }' +
+        '@keyframes jum-respire { 0%, 100% { transform: scale(0.92); opacity: 0.75; } 50% { transform: scale(1.06); opacity: 1; } }' +
+        '.JUM-BIOV-T1 { font-size: 1.22rem; font-weight: 800; margin-top: 26px; color: #f5f5f5; } .JUM-BIOV-T1 span { color: #d6a756; }' +
+        '.JUM-PIN-CARTE .JUM-BIOV-T2 { font-size: 0.84rem; color: #b5b5b5; margin: 8px 0 12px; }' +
+        '.JUM-PIN.bio .JUM-BIOV-CODE { display: none; } .JUM-PIN.bio.code .JUM-BIOV-CODE { display: block; margin-top: 4px; }' +
+        '.JUM-PIN.bio.code .JUM-BIOV-ROND { width: 96px; height: 96px; margin-top: 16px; } .JUM-PIN.bio.code .JUM-BIOV-ROND svg { width: 54px; height: 54px; }' +
+        '.JUM-PIN.bio.code .JUM-BIOV-T1, .JUM-PIN.bio.code .JUM-BIOV-T2, .JUM-PIN.bio.code .JUM-BIOV-VERS { display: none; }' +
+        '.JUM-PIN.bio.ok .JUM-BIOV-ROND::before { background: radial-gradient(circle, rgba(34,197,94,0.34), rgba(34,197,94,0) 70%); animation: none; } .JUM-PIN.bio.ok .JUM-BIOV-ROND::after { border-color: rgba(34,197,94,0.65); } .JUM-PIN.bio.ok .JUM-BIOV-ROND svg, .JUM-PIN.bio.ok .JUM-BIOV-T1 span { color: #22c55e; }' +
+        '.JUM-PIN.bio.ko .JUM-BIOV-ROND::before { background: radial-gradient(circle, rgba(239,68,68,0.3), rgba(239,68,68,0) 70%); animation: none; } .JUM-PIN.bio.ko .JUM-BIOV-ROND::after { border-color: rgba(239,68,68,0.65); } .JUM-PIN.bio.ko .JUM-BIOV-ROND svg { color: #ef4444; }' +
+        '.JUM-PIN.bio .JUM-PIN-ERREUR { margin-top: 10px; } .JUM-PIN.bio .JUM-R-LIEN.JUM-BIOV-VERS { color: #d6a756; font-weight: 700; }' +
+        '.JUM-PIN.bio.ok .JUM-BIOV-VERS { visibility: hidden; }' +
+        '.JUM-PIN.bio.sortie { opacity: 0; transition: opacity 0.3s ease 0.35s; }' +
+        /* Cartes d'activation (avant puis après la fenêtre du téléphone) */
+        '.JUM-BIOC .JUM-SIG-CARTE { padding-top: 26px; } .JUM-BIOC.fait .JUM-SIG-CARTE { padding-top: 132px; }' +
+        '.JUM-BIOC-ROND { position: relative; width: 112px; height: 112px; margin: 0 auto 14px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: radial-gradient(circle, rgba(214,167,86,0.24), rgba(214,167,86,0) 70%); box-shadow: inset 0 0 0 2px rgba(214,167,86,0.5); color: #b0802a; }' +
+        '.JUM-BIOC-ROND svg { width: 62px; height: 62px; } .JUM-BIOC.fait .JUM-BIOC-ROND { width: 64px; height: 64px; margin-bottom: 10px; background: rgba(34,197,94,0.12); box-shadow: inset 0 0 0 2px rgba(34,197,94,0.5); color: #16a34a; } .JUM-BIOC.fait .JUM-BIOC-ROND svg { width: 36px; height: 36px; }' +
+        '.JUM-BIOC-ERR { color: #dc2626; font-size: 0.8rem; font-weight: 700; min-height: 1.1em; margin: -6px 0 10px; }' +
+        'html body.dark-mode .JUM-BIOC-ROND { color: #d6a756; } html body.dark-mode .JUM-BIOC.fait .JUM-BIOC-ROND { color: #22c55e; }' +
         /* Code d'accès — présentation PC */
         '.JUM-PIN-PC { background: linear-gradient(135deg, #f7f7f5 0%, #ecebe7 100%); }' +
         '.JUM-PINPC { display: grid; grid-template-columns: 1fr 1.1fr; width: 100%; max-width: 820px; min-height: 460px; background: #fff; border-radius: 26px; overflow: hidden; box-shadow: 0 30px 80px rgba(26,45,62,0.18), 0 2px 6px rgba(26,45,62,0.06); color: #1a1a1a; }' +
@@ -868,7 +893,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 132, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 133, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1187,8 +1212,33 @@
         var zone = document.getElementById('JUM-R-BIO'), err = document.getElementById('JUM-R-ERREUR');
         if (lireTxt(CLE_BIO)) { try { localStorage.removeItem(CLE_BIO); } catch (e) {} if (zone) dessinerBioReglages(zone); bandeau('Empreinte désactivée : le code à 4 chiffres reste demandé.'); return; }
         if (!codeDefini()) { if (err) err.textContent = '⛔ Choisissez d\'abord votre code à 4 chiffres (il reste le code de secours).'; return; }
-        bioActiver().then(function() { if (zone) dessinerBioReglages(zone); bandeau('Empreinte activée : à la prochaine ouverture, posez votre doigt.'); },
-            function() { if (err) err.textContent = '⛔ L\'empreinte n\'a pas pu être enregistrée (annulée ou capteur indisponible).'; });
+        if (document.querySelector('.JUM-BIOC')) return;
+        var f = document.createElement('div');
+        f.className = 'JUM-SIG JUM-BIOC'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Empreinte digitale');
+        f.innerHTML = '<div class="JUM-SIG-CARTE"><div class="JUM-BIOC-ROND">' + SVG_EMPREINTE + '</div>' +
+            '<h2>Ouvrir TRIGONE avec votre empreinte</h2><p>Votre téléphone va vous demander de poser votre doigt (ou votre visage). Votre empreinte reste dans le téléphone : TRIGONE ne la voit jamais. Le code à 4 chiffres reste possible en secours.</p>' +
+            '<div class="JUM-BIOC-ERR"></div>' +
+            '<div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND">Plus tard</button><button type="button" class="JUM-R-PRINCIPAL">Continuer</button></div></div>';
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        var fermer = function() { f.remove(); };
+        f.addEventListener('click', function(e) { if (e.target === f) fermer(); });
+        f.querySelector('.JUM-R-SECOND').addEventListener('click', fermer);
+        f.querySelector('.JUM-R-PRINCIPAL').addEventListener('click', function() {
+            var bouton = this; bouton.disabled = true;
+            bioActiver().then(function() {
+                if (zone) dessinerBioReglages(zone);
+                f.classList.add('fait');
+                f.querySelector('.JUM-SIG-CARTE').innerHTML = '<img class="JUM-SIG-MASCOTTE" src="' + (DANS_CR ? '../' : '') + 'mascotte-pouce.webp" alt="">' +
+                    '<div class="JUM-BIOC-ROND">' + SVG_EMPREINTE + '</div><h2>Empreinte activée ✓</h2>' +
+                    '<p>À la prochaine ouverture, posez simplement votre doigt : TRIGONE s\'ouvre.</p>' +
+                    '<div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-PRINCIPAL">Parfait</button></div>';
+                f.querySelector('.JUM-R-PRINCIPAL').addEventListener('click', fermer);
+            }, function() {
+                bouton.disabled = false;
+                f.querySelector('.JUM-BIOC-ERR').textContent = 'Empreinte non enregistrée (annulée ou capteur indisponible). Réessayez.';
+            });
+        });
+        document.body.appendChild(f);
     };
     function dessinerBioReglages(zone) {
         bioPossible().then(function(ok) {
@@ -3914,6 +3964,7 @@
     }
     window.JUMELAGE_PIN_TOUCHE = function(ch) {
         if (!pave) return;
+        pave.classList.add('code');   // écran empreinte : taper un chiffre affiche le code
         if (ch === 'x') saisie = saisie.slice(0, -1); else if (saisie.length < 4) saisie += ch;
         dessinerPoints();
         if (saisie.length === 4) window.JUMELAGE_VERIFIER_CODE(saisie).then(function(ok) {
@@ -3965,15 +4016,24 @@
     // auto : proposée d'office à l'ouverture ; un refus du navigateur (pas de geste) reste silencieux, le doigt sur la touche relance.
     window.JUMELAGE_PIN_BIO = function(auto) {
         if (!pave || bioEnCours) return;
-        bioEnCours = true;
+        bioEnCours = true; pave.classList.remove('ko');
+        var refus = function(texte) { pave.classList.add('ko', 'code'); pave.querySelector('.JUM-PIN-ERREUR').textContent = texte; };
         bioVerifier().then(function(ok) {
             bioEnCours = false;
             if (!pave) return;
-            if (ok) { if (window.JUMELAGE_MARQUER_DEVERROUILLE) window.JUMELAGE_MARQUER_DEVERROUILLE(); pave.remove(); pave = null; }
-            else pave.querySelector('.JUM-PIN-ERREUR').textContent = 'Empreinte non reconnue : entrez votre code.';
+            if (!ok) { refus('Empreinte non reconnue : entrez votre code.'); return; }
+            if (window.JUMELAGE_MARQUER_DEVERROUILLE) window.JUMELAGE_MARQUER_DEVERROUILLE();
+            var p = pave; pave = null;
+            if (!p.classList.contains('bio')) { p.remove(); return; }
+            // « Bienvenue ✓ » en vert un instant, puis TRIGONE apparaît.
+            p.classList.remove('code'); p.classList.add('ok', 'sortie');
+            p.querySelector('.JUM-BIOV-T1').innerHTML = '<span>Bienvenue ✓</span>';
+            p.querySelector('.JUM-BIOV-T2').textContent = 'TRIGONE s\'ouvre…';
+            p.querySelector('.JUM-PIN-ERREUR').textContent = '';
+            setTimeout(function() { p.remove(); }, 650);
         }, function() {
             bioEnCours = false;
-            if (pave && auto !== true) pave.querySelector('.JUM-PIN-ERREUR').textContent = 'Empreinte annulée ou indisponible : entrez votre code.';
+            if (pave && auto !== true) refus('Empreinte annulée ou indisponible : entrez votre code.');
         });
     };
     // Efface toutes les données de TRIGONE sur l'appareil puis rouvre l'écran de choix, comme au premier jour.
@@ -4014,7 +4074,19 @@
             return t === '' ? '<span></span>' : '<button type="button" onclick="JUMELAGE_PIN_TOUCHE(\'' + t + '\')">' + (t === 'x' ? '⌫' : t) + '</button>';
         }).join('');
         var pc = window.matchMedia && window.matchMedia('(min-width: 900px) and (pointer: fine)').matches;
-        if (!pc) pave.innerHTML = '<div class="JUM-PIN-CARTE"><div class="JUM-PIN-TITRE">Code d\'accès</div><p>' + (bio ? 'Posez votre doigt, ou entrez votre code à 4 chiffres.' : 'Entrez votre code à 4 chiffres pour ouvrir TRIGONE.') + '</p>' +
+        var points = '<div class="JUM-PIN-POINTS"><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span></div>';
+        if (!pc && bio) {
+            // Téléphone avec empreinte : écran TRIGONE (le code à 4 chiffres s'affiche sur demande ou si l'empreinte échoue).
+            pave.className = 'JUM-PIN bio';
+            var qui = window.JUMELAGE_QUI ? window.JUMELAGE_QUI() : '';
+            pave.innerHTML = '<div class="JUM-PIN-CARTE"><img class="JUM-BIOV-LOGO" src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt=""><div class="JUM-BIOV-NOM">TRIGONE</div>' +
+                '<button type="button" class="JUM-BIOV-ROND" aria-label="Déverrouiller avec l\'empreinte" onclick="JUMELAGE_PIN_BIO()">' + SVG_EMPREINTE + '</button>' +
+                '<div class="JUM-BIOV-T1">Bonjour' + (qui ? ', <span>' + esc(qui) + '</span>' : '') + '</div><div class="JUM-BIOV-T2">Posez votre doigt pour ouvrir TRIGONE</div>' +
+                '<button type="button" class="JUM-R-LIEN JUM-BIOV-VERS" onclick="JUMELAGE_PIN_MODE_CODE()">Utiliser mon code</button>' +
+                '<div class="JUM-PIN-ERREUR"></div>' +
+                '<div class="JUM-BIOV-CODE">' + points + '<div class="JUM-PIN-PAVE">' + touches + '</div>' +
+                '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_CODE_OUBLIE()">Code oublié ?</button></div></div>';
+        } else if (!pc) pave.innerHTML = '<div class="JUM-PIN-CARTE"><div class="JUM-PIN-TITRE">Code d\'accès</div><p>' + (bio ? 'Posez votre doigt, ou entrez votre code à 4 chiffres.' : 'Entrez votre code à 4 chiffres pour ouvrir TRIGONE.') + '</p>' +
             '<div class="JUM-PIN-POINTS"><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span><span class="JUM-PIN-POINT"></span></div>' +
             '<div class="JUM-PIN-ERREUR"></div><div class="JUM-PIN-PAVE">' + touches + '</div>' +
             '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_CODE_OUBLIE()">Code oublié ?</button></div>';
@@ -4046,6 +4118,7 @@
             if (/^\d$/.test(e.key)) window.JUMELAGE_PIN_TOUCHE(e.key); else if (e.key === 'Backspace') window.JUMELAGE_PIN_TOUCHE('x');
         });
     }
+    window.JUMELAGE_PIN_MODE_CODE = function() { if (pave) pave.classList.add('code'); };
     window.JUMELAGE_CODE_ACTIF = codeActif;
     if (!DEMENAGEMENT && !RECEPTION_DEMENAGEMENT && codeActif() && !(window.JUMELAGE_DEVERROUILLE && window.JUMELAGE_DEVERROUILLE())) {
         if (document.body) demanderCode(); else document.addEventListener('DOMContentLoaded', demanderCode);

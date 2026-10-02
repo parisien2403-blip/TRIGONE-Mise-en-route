@@ -16,8 +16,12 @@ module.exports = async function(srv) {
     await p.evaluate(() => JUMELAGE_POSER_CODE('1234')); await attendre(300);
     await p.evaluate(() => JUMELAGE_REGLAGES()); await attendre(800);
     verifier(/Activer l'empreinte/.test(await p.evaluate(() => (document.getElementById('JUM-R-BIO') || {}).textContent || '')), 'Paramètres : « Activer l\'empreinte » proposé (capteur présent, code actif)');
-    await p.evaluate(() => JUMELAGE_BIO_BASCULER()); await attendre(1500);
+    await p.evaluate(() => JUMELAGE_BIO_BASCULER()); await attendre(500);
+    verifier(/Ouvrir TRIGONE avec votre empreinte/.test(await p.evaluate(() => (document.querySelector('.JUM-BIOC') || {}).textContent || '')) && await p.evaluate(() => !localStorage.getItem('trigone_bio_id')), 'activation : carte TRIGONE avant la fenêtre du téléphone');
+    await p.click('.JUM-BIOC .JUM-R-PRINCIPAL'); await attendre(1500);
     verifier(await p.evaluate(() => !!localStorage.getItem('trigone_bio_id') && /Empreinte activée/.test(document.getElementById('JUM-R-BIO').textContent)), 'empreinte activée (enregistrée sur l\'appareil)');
+    verifier(/Empreinte activée ✓/.test(await p.evaluate(() => (document.querySelector('.JUM-BIOC.fait') || {}).textContent || '')), 'activation : confirmation « Empreinte activée ✓ » avec la mascotte');
+    await p.click('.JUM-BIOC .JUM-R-PRINCIPAL'); await attendre(300);
     await p.evaluate(() => JUMELAGE_FERMER_REGLAGES());
     // Nouvelle ouverture : empreinte proposée d'office → TRIGONE s'ouvre.
     const p2 = await ctx.newPage(); p2.on('pageerror', e => erreurs.push(e.message));
@@ -26,7 +30,7 @@ module.exports = async function(srv) {
     const cred = (await cdp.send('WebAuthn.getCredentials', { authenticatorId })).credentials[0];
     await cdp2.send('WebAuthn.addCredential', { authenticatorId: auth2.authenticatorId, credential: cred });
     await p2.goto(srv.url); await attendre(500);
-    verifier(await p2.evaluate(() => !!document.querySelector('.JUM-PIN .JUM-PIN-BIO')) || await p2.evaluate(() => !document.querySelector('.JUM-PIN')), 'ouverture : touche empreinte sur le pavé du code');
+    verifier(await p2.evaluate(() => !!document.querySelector('.JUM-PIN.bio .JUM-BIOV-ROND')) || await p2.evaluate(() => !document.querySelector('.JUM-PIN')), 'ouverture : écran empreinte façon TRIGONE');
     await attendre(2500);
     verifier(await p2.evaluate(() => !document.querySelector('.JUM-PIN')), 'empreinte reconnue : TRIGONE s\'ouvre sans le code');
     // Empreinte refusée (personne non vérifiée) : message, le code à 4 chiffres ouvre toujours.
@@ -36,7 +40,9 @@ module.exports = async function(srv) {
     const auth3 = await cdp3.send('WebAuthn.addVirtualAuthenticator', { options: { protocol: 'ctap2', transport: 'internal', hasResidentKey: true, hasUserVerification: true, isUserVerified: false, automaticPresenceSimulation: true } });
     await cdp3.send('WebAuthn.addCredential', { authenticatorId: auth3.authenticatorId, credential: cred });
     await p3.goto(srv.url); await attendre(3000);
-    verifier(await p3.evaluate(() => !!document.querySelector('.JUM-PIN')), 'empreinte non vérifiée : le code reste demandé');
+    verifier(await p3.evaluate(() => !!document.querySelector('.JUM-PIN.bio') && !document.querySelector('.JUM-PIN.ko')), 'essai automatique refusé : l\'écran reste doré, sans message');
+    await p3.click('.JUM-BIOV-ROND'); await attendre(2000);
+    verifier(await p3.evaluate(() => !!document.querySelector('.JUM-PIN.bio.ko.code') && /non reconnue|annulée/.test(document.querySelector('.JUM-PIN-ERREUR').textContent)), 'empreinte non reconnue : état rouge, le code s\'affiche');
     await p3.keyboard.type('1234'); await attendre(800);
     verifier(await p3.evaluate(() => !document.querySelector('.JUM-PIN')), 'secours : le code à 4 chiffres ouvre TRIGONE');
     // Désactivation, et suppression du code : l'empreinte part avec lui.
