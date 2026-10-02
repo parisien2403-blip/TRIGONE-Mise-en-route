@@ -258,7 +258,8 @@
         '.JUM-NOTICE { background: radial-gradient(120% 80% at 50% 0%, #2b2b2b, #141414 60%, #0b0b0b); padding: 0; display: block; z-index: 99996; overflow: hidden; touch-action: none; }' +
         '.N-HAUT { position: absolute; top: 0; left: 0; right: 0; height: 48px; display: flex; align-items: center; gap: 8px; padding: 0 10px; color: #e2b866; z-index: 3; }' +
         '.N-HAUT button { background: rgba(255,255,255,0.08); color: #f1e3c0; border: 1px solid rgba(226,184,102,0.35); border-radius: 999px; height: 34px; padding: 0 14px; font: 700 13px Montserrat, system-ui, sans-serif; cursor: pointer; }' +
-        '.N-HAUT .N-FERMER { width: 34px; padding: 0; font-size: 16px; }' +
+        '.N-HAUT .N-FERMER, .N-HAUT .N-PLEIN { width: 34px; padding: 0; font-size: 16px; flex-shrink: 0; display: inline-flex; align-items: center; justify-content: center; }' +
+        '.N-HAUT .N-SOMMAIRE { flex-shrink: 0; } @media (max-width: 380px) { .N-HAUT .N-SOMMAIRE { padding: 0 10px; } .N-HAUT .N-TITRE { font-size: 14px; } }' +
         '.N-HAUT .N-TITRE { flex: 1; font: italic 400 16px Georgia, serif; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
         '.N-HAUT .N-NUM { font: 700 12px Montserrat, system-ui, sans-serif; color: #b8955a; min-width: 44px; text-align: right; }' +
         '.N-SCENE { position: absolute; top: 48px; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-start; justify-content: center; overflow: hidden; }' +
