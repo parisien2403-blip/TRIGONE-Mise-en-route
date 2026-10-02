@@ -988,7 +988,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 140, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 141, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -4883,6 +4883,9 @@
             var cpt = ecran && ecran.querySelector(':scope > .JUM-CPT'); if (!cpt || !btnCarte.isConnected) return;
             var r = cpt.getBoundingClientRect(); if (!r.width) return;
             btnCarte.style.right = Math.round(window.innerWidth - r.left + 10) + 'px'; btnCarte.style.top = Math.round(r.top + (r.height - btnCarte.offsetHeight) / 2) + 'px';
+            // Petit écran (nom long, texte agrandi) : pas la place à gauche du compte sans toucher le n° de version → juste dessous.
+            var v = ecran.querySelector('.JUM-VERSION'), rv = v && v.getBoundingClientRect(), rc = btnCarte.getBoundingClientRect();
+            if (rv && rv.width && rc.left < rv.right + 8) { btnCarte.style.right = Math.round(window.innerWidth - r.right) + 'px'; btnCarte.style.top = Math.round(r.bottom + 8) + 'px'; }
         };
         requestAnimationFrame(placerCarte); setTimeout(placerCarte, 400); setTimeout(placerCarte, 1500);
         window.addEventListener('resize', placerCarte);
