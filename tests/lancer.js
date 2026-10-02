@@ -13,6 +13,7 @@ const TESTS = {
     'montre': ['Horodatage depuis la montre (notification avec bouton)', require('./test-montre')],
     'etranger': ['Mission à l\'étranger (barème, trajet en France, taux BCE)', require('./test-etranger')],
     'dossiers': ['Bibliothèque et Remboursement en dossiers', require('./test-dossiers')],
+    'bibliotheque': ['Bibliothèques sans limite (mémoire utilisée, mémoire pleine)', require('./test-bibliotheque-illimitee')],
     'affichage-pc': ['Affichage PC sur tablette et pliable', require('./test-affichage-pc')],
     'demenagement': ['Déménagement vers l\'adresse Cloudflare', require('./test-demenagement')],
     'scan': ['Justificatifs photo scannés (recadrés, allégés, en PDF)', require('./test-scan')],

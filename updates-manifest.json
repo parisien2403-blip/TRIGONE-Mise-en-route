@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 176,
-  "appCodeMessage": "N° OMR sur chaque demande de mise en route et son compte-rendu ; registre des OMR pour l'assistant Chorus DT ; montre connectée dans Paramètres › Notifications.",
+  "appCodeVersion": 177,
+  "appCodeMessage": "Bibliothèques : toutes vos missions sont gardées (plus de limite à 3 comptes-rendus), avec la mémoire utilisée affichée ; supprimez ce que vous voulez.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
