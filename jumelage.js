@@ -993,7 +993,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 143, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 144, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1808,9 +1808,10 @@
             // Téléphone : la page prend toute la hauteur de l'écran (page plus haute que 566, le texte respire, les captures grandissent).
             var pw = deux ? Math.min((W - 130) / 2, (H - 24) / r) : Math.min(W - 12, 480, (H - 8) / r);
             pw = Math.floor(pw); var e = pw / 400, hl = deux ? 566 : Math.max(566, Math.min(860, Math.floor((H - 8) / e))), ph = Math.floor(hl * e);
-            var el = document.createElement('div'); el.className = 'N-LIVRE';
+            // Livre posé à hauteur fixe (pas centré par flex) : il ne saute pas pendant que la page tourne.
+            var el = document.createElement('div'); el.className = 'N-LIVRE'; el.style.marginTop = Math.max(0, Math.floor((H - ph) / 2)) + 'px'; el.style.height = ph + 'px';
             el.innerHTML = N.pages.map(function(p, i) {
-                return '<div class="N-PAGE"' + (p.couverture ? ' data-density="hard"' : '') + '><div class="N-ECH' + (hl > 640 ? ' haut' : '') + '" style="height:' + hl + 'px;transform:scale(' + e + ')">' + p.html.replace(/\{B\}/g, B) +
+                return '<div class="N-PAGE"' + (p.couverture && deux ? ' data-density="hard"' : '') + '><div class="N-ECH' + (hl > 640 ? ' haut' : '') + '" style="height:' + hl + 'px;transform:scale(' + e + ')">' + p.html.replace(/\{B\}/g, B) +
                     (p.couverture || i < 2 ? '' : '<div class="N-NUMP">' + (i + 1) + '</div>') + '</div></div>';
             }).join('');
             scene.appendChild(el);
