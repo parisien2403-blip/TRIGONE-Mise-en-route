@@ -289,6 +289,7 @@ Version 43 : BOÎTE AUX LETTRES TRIGONE (envois directs d'appli à appli, chiffr
 - MISE EN SERVICE (une seule fois, Cloudflare › Workers & Pages › trigone-mise-en-route › Paramètres › Variables et secrets) :
     BREVO_CLE (type Secret) : clé API Brevo (Brevo › SMTP & API › Clés API).
     EXPEDITEUR_MAIL (type Texte) : adresse d'expédition validée dans Brevo (Brevo › Expéditeurs).
+    ATTENTION : EXPEDITEUR_MAIL est aussi écrit dans wrangler.jsonc (« vars ») et c'est cette valeur qui est remise à chaque publication (keep_vars ne garde que les variables absentes du fichier). Expéditeur actuel : noreply@trigone-app.com (domaine trigone-app.com authentifié dans Brevo : SPF, DKIM, DMARC). Pour le changer, modifier wrangler.jsonc, pas seulement Cloudflare.
 - Tests : tests/test-boite.js avec « npx wrangler dev --var MODE_TEST:1 » (voir tests/LISEZ-MOI.md).
 
 Serveur : envoi des codes par Brevo (BREVO_CLE) ou, à défaut, par Mailjet (secrets MAILJET_CLE + MAILJET_SECRET), avec EXPEDITEUR_MAIL validé chez le fournisseur choisi.
