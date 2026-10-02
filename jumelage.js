@@ -295,6 +295,13 @@
         '.JUM-MONTRE-ETAT.ok { background: rgba(34,197,94,0.12); color: #15803d; } .JUM-MONTRE-ETAT i { width: 10px; height: 10px; border-radius: 50%; background: currentColor; flex-shrink: 0; }' +
         '.JUM-MONTRE ol { margin: 0 0 12px; padding-left: 18px; font-size: 0.8rem; line-height: 1.5; color: #444; } .JUM-MONTRE-MSG { font-size: 0.78rem; color: #8a5f12; min-height: 1em; margin: 0 0 10px; }' +
         'html body.dark-mode .JUM-MONTRE ol { color: #c4c4c4; } html body.dark-mode .JUM-MONTRE-PT { box-shadow: 0 0 0 2px #1f1f1f; }' +
+        '.JUM-CARTE-ACCES { position: absolute; z-index: 3; top: max(14px, env(safe-area-inset-top, 0px)); right: 190px; height: 38px; display: flex; align-items: center; gap: 8px; padding: 0 14px 0 10px; border-radius: 999px; cursor: pointer;' +
+            ' border: 1.5px solid #d6a756; background: linear-gradient(135deg, #2b2620, #121212); color: #f5f5f5; font: 800 0.72rem Montserrat, system-ui, sans-serif; letter-spacing: 0.06em; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }' +
+        '.JUM-CARTE-ACCES i { width: 24px; height: 16px; border-radius: 3px; background: linear-gradient(135deg, #f1d08a, #b8862e); position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25); }' +
+        '.JUM-CARTE-ACCES i::after { content: ""; position: absolute; left: 3px; top: 4px; width: 7px; height: 6px; border-radius: 1.5px; background: #1a1a1a; opacity: 0.55; }' +
+        '.JUM-CHOIX.choisi .JUM-CARTE-ACCES { opacity: 0; pointer-events: none; }' +
+        '.JUM-CPT-ZONE .JUM-CARTE-ACCES { position: static; height: 38px; padding: 0 9px; } .JUM-CPT-ZONE .JUM-CARTE-ACCES span { display: none; }' +
+        '@media (max-width: 520px) { .JUM-CARTE-ACCES span { display: none; } .JUM-CARTE-ACCES { padding: 0 10px; } }' +
         '.JUM-CHOIX > .JUM-CPT { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 3; }' +
         '.JUM-CHOIX.choisi > .JUM-CPT { opacity: 0; pointer-events: none; }' +
         /* Dans les applis (page d'accueil) : sur téléphone, pastille compacte en haut à gauche (le haut à droite porte le mode sombre
@@ -3489,6 +3496,12 @@
         if (!boutonAppli) {
             boutonAppli = document.createElement('div'); boutonAppli.className = 'JUM-CPT-ZONE';
             boutonAppli.appendChild(creerBoutonCompte('JUM-CPT-APPLI')); boutonAppli.appendChild(creerBoutonModePc());
+            // Ma carte TRIGONE : accès direct depuis l'accueil de l'appli.
+            var bc = document.createElement('button'); bc.type = 'button'; bc.className = 'JUM-CARTE-ACCES'; bc.title = 'Ma carte TRIGONE'; bc.setAttribute('aria-label', 'Ma carte TRIGONE');
+            bc.innerHTML = '<i></i><span>Ma carte</span>';
+            ['pointerdown', 'pointerup'].forEach(function(t) { bc.addEventListener(t, function(e) { e.stopPropagation(); }); });
+            bc.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_CARTE(); });
+            boutonAppli.appendChild(bc);
             document.body.appendChild(boutonAppli);
         }
         boutonAppli.style.display = visible ? '' : 'none';
@@ -3506,7 +3519,8 @@
         var m = document.createElement('div');
         m.className = 'JUM-CPT-MENU'; m.setAttribute('role', 'menu');
         // Menu court : le reste (rôles, notifications, appareils, réglages de l'appli, données, aide) est dans Paramètres.
-        var lignesCourtes = '<button type="button" data-action="parametres">' + ROUE_SVG + '<span><b>Paramètres</b><small>Profil, rôles, notifications, ' + (appli.length ? (DANS_CR ? 'compte-rendu' : 'mise en route') + ', ' : '') + 'données, aide</small></span></button>';
+        var lignesCourtes = '<button type="button" data-action="carte">' + ic('carte') + '<span><b>Ma carte TRIGONE</b><small>Photo, QR code, afficher en grand</small></span></button>' +
+            '<button type="button" data-action="parametres">' + ROUE_SVG + '<span><b>Paramètres</b><small>Profil, rôles, notifications, ' + (appli.length ? (DANS_CR ? 'compte-rendu' : 'mise en route') + ', ' : '') + 'données, aide</small></span></button>';
         if (!c) m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">?</span><div><b>Pas connecté</b><small>Connectez-vous pour envoyer et recevoir vos demandes et comptes-rendus.</small></div></div>' +
             '<button type="button" data-action="connexion">' + ic('personne') + '<span><b>Se connecter</b><small>Première connexion, ou autre appareil</small></span></button>' +
             '<div class="JUM-CPT-SEP"></div>' + lignesCourtes;
@@ -3522,6 +3536,7 @@
             var a = b.getAttribute('data-action');
             if (a === 'connexion') window.JUMELAGE_CONNEXION();
             else if (a === 'parametres') window.JUMELAGE_PARAMETRES();
+            else if (a === 'carte') window.JUMELAGE_CARTE();
             else if (a === 'aide') window.JUMELAGE_PARAMETRES('aide');
             else if (a === 'sauver') window.JUMELAGE_SAUVEGARDER();
             else if (a === 'restaurer') window.JUMELAGE_RESTAURER();
@@ -4857,6 +4872,20 @@
             '<button type="button" class="JUM-ROUE JUM-MAJ-BTN" aria-label="Mise à jour de TRIGONE" title="Mise à jour">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('maj') : '') + '</button>';
         // Mon compte, en haut à droite : « Se connecter », ou la pastille du compte et son menu.
         ecran.appendChild(creerBoutonCompte());
+        // Ma carte TRIGONE, juste à gauche du compte : accès direct.
+        var btnCarte = document.createElement('button');
+        btnCarte.type = 'button'; btnCarte.className = 'JUM-CARTE-ACCES'; btnCarte.title = 'Ma carte TRIGONE'; btnCarte.setAttribute('aria-label', 'Ma carte TRIGONE');
+        btnCarte.innerHTML = '<i></i><span>Ma carte</span>';
+        ['pointerdown', 'pointerup'].forEach(function(t) { btnCarte.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        btnCarte.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_CARTE(); });
+        ecran.appendChild(btnCarte);
+        var placerCarte = function() {
+            var cpt = ecran && ecran.querySelector(':scope > .JUM-CPT'); if (!cpt || !btnCarte.isConnected) return;
+            var r = cpt.getBoundingClientRect(); if (!r.width) return;
+            btnCarte.style.right = Math.round(window.innerWidth - r.left + 10) + 'px'; btnCarte.style.top = Math.round(r.top + (r.height - btnCarte.offsetHeight) / 2) + 'px';
+        };
+        requestAnimationFrame(placerCarte); setTimeout(placerCarte, 400); setTimeout(placerCarte, 1500);
+        window.addEventListener('resize', placerCarte);
         // Affichage PC (tablette, pliable ouvert), en bas à gauche à côté de la mise à jour.
         ecran.appendChild(creerBoutonModePc());
         var badge = ecran.querySelector('.JUM-VERSION');
