@@ -774,8 +774,36 @@ async function api(requete, env, url, ctx) {
         return json({ ok: true });
     }
 
+    // Carte TRIGONE : le QR code du verso porte un identifiant au hasard (rien de lisible). Lu par l'appli d'un compte
+    // connecté (ajout à une mission collective, mail d'un valideur, remplaçant, pointage) : identité complète avec mail
+    // et NID ; lu par n'importe quel téléphone (page de vérification) : seulement grade, nom, prénom et unité.
+    if (chemin === 'carte' && methode === 'GET') {
+        const id = String(new URL(requete.url).searchParams.get('id') || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40);
+        const lecteur = await appareilConnecte(env, requete);
+        const quota = 'quota-carte:' + (lecteur ? lecteur.mail : (requete.headers.get('CF-Connecting-IP') || 'ip')) + ':' + new Date().toISOString().slice(0, 13);
+        const n = +(await kv.get(quota)) || 0;
+        if (n >= (lecteur ? 200 : 60)) return erreur(429, 'Trop de cartes lues en peu de temps : réessayez plus tard.');
+        await kv.put(quota, String(n + 1), { expirationTtl: 2 * 3600 });
+        const c = id ? await kv.get('carte:' + id, 'json') : null;
+        if (!c || !(await kv.get('compte:' + c.mail))) return json({ ok: true, valide: false });
+        const pub = { grade: c.grade || '', nom: c.nom || '', prenom: c.prenom || '', unite: c.unite || '', cie: c.cie || '', depuis: c.depuis || 0 };
+        return json({ ok: true, valide: true, carte: lecteur ? Object.assign(pub, { mail: c.mail, nid: c.nid || '', moi: c.mail === lecteur.mail }) : pub });
+    }
+
     const moi = await appareilConnecte(env, requete);
     if (!moi) return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
+    // Carte TRIGONE du compte : créée à la première ouverture, mise à jour avec Mon profil (même identifiant).
+    if (chemin === 'carte' && methode === 'POST') {
+        const corps = await requete.json().catch(() => ({}));
+        const t = (v, n) => String(v || '').replace(/[<>]/g, '').trim().slice(0, n);
+        let id = await kv.get('carte-de:' + moi.mail);
+        const avant = id ? await kv.get('carte:' + id, 'json') : null;
+        if (!id) { id = b64url(crypto.getRandomValues(new Uint8Array(12))); await kv.put('carte-de:' + moi.mail, id); }
+        const depuis = (avant && avant.depuis) || Math.min.apply(null, moi.compte.appareils.map(a => a.cree || Date.now()).concat([Date.now()]));
+        await kv.put('carte:' + id, JSON.stringify({ mail: moi.mail, grade: t(corps.grade, 30), nom: t(corps.nom, 60), prenom: t(corps.prenom, 60),
+            unite: t(corps.unite, 40), cie: t(corps.cie, 40), nid: t(corps.nid, 20), depuis: depuis }));
+        return json({ ok: true, id: id, depuis: depuis });
+    }
     // Sauvegarde automatique : un seul exemplaire par compte, remplacé à chaque envoi. Chiffrée dans l'appareil
     // (AES-GCM, clé tirée du code de récupération par PBKDF2) : ce serveur ne peut pas la lire.
     if (chemin === 'sauvegarde' && methode === 'POST') {
@@ -1155,6 +1183,8 @@ async function api(requete, env, url, ctx) {
             const monNid = (await kv.get('nid-de:' + moi.mail)) || moi.compte.nid || '';
             if (monNid && await kv.get('nid:' + monNid) === moi.mail) await kv.delete('nid:' + monNid);
             await kv.delete('nid-de:' + moi.mail);
+            const maCarte = await kv.get('carte-de:' + moi.mail);
+            if (maCarte) { await kv.delete('carte:' + maCarte); await kv.delete('carte-de:' + moi.mail); }
         }
         return json({ ok: true });
     }

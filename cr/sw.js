@@ -1,6 +1,6 @@
 // Copie jumelée dans TRIGONE Mise en route (dossier cr/) : caches préfixés « trigone-cr- » ; ceux de
 // Mise en route (« trigone-mise-en-route- ») ne sont jamais effacés d'ici.
-const CACHE_NAME = 'trigone-cr-v526';
+const CACHE_NAME = 'trigone-cr-v527';
 const ASSETS = [
   './',
   './manifest.json',
@@ -39,7 +39,9 @@ const ASSETS = [
   '../fonts/montserrat.css',
   '../fonts/montserrat-latin.woff2',
   '../fonts/montserrat-latin-ext.woff2',
-  '../logo_mer.webp'
+  '../logo_mer.webp',
+  '../vendor/qrcode.min.js',
+  '../vendor/jsqr.min.js'
 ];
 
 function cacheOne(cache, url, attempt) {
