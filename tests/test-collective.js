@@ -34,7 +34,7 @@ module.exports = async function(srv) {
     verifier(await p.evaluate(() => M.PARTICIPANTS.length === 2 && M.PARTICIPANTS[0].nom === 'LEROY' && M.PARTICIPANTS[0].nid === '06 798 765 43' && M.PARTICIPANTS[1].nom === 'BERNARD'),
         'les 2 autres missionnaires sont repris (grade, nom, prénom, NID, compagnie)');
     const zone = await p.evaluate(() => { const z = document.getElementById('MER-EQUIPE'); return z.classList.contains('HIDDEN') ? '' : z.textContent; });
-    verifier(/Participants repris de la mise en route \(2\)/.test(zone) && zone.includes('CPL LEROY Emma') && zone.includes('SAP BERNARD Hugo'), 'identification : la liste des participants est affichée');
+    verifier(/Participants \(2\)/.test(zone) && zone.includes('CPL LEROY Emma') && zone.includes('SAP BERNARD Hugo'), 'identification : la liste des participants est affichée');
     verifier(await p.evaluate(() => !document.getElementById('CHEF-MAIL-ZONE').classList.contains('HIDDEN')), 'mail du chef de mission demandé (les participants le mettent en copie)');
     const recap = await p.evaluate(() => BUILD_RECAP_CORE(false).R);
     verifier(/MISSION COLLECTIVE - CHEF DE MISSION/.test(recap) && /PARTICIPANTS \(2\)/.test(recap) && recap.includes('CPL LEROY Emma'), 'récapitulatif du compte-rendu : les participants y figurent');
