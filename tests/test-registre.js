@@ -7,7 +7,7 @@ module.exports = async function() {
     const URL = process.env.TRIGONE_URL_BOITE, codeChorus = process.env.TRIGONE_CODE_CHORUS;
     if (!URL || !codeChorus) { console.log('  (sauté : définissez TRIGONE_URL_BOITE et TRIGONE_CODE_CHORUS)'); return; }
     const b = await navigateur(), erreurs = [], suffixe = Date.now().toString(36);
-    const MAILS = { M: 'missionnaire.' + suffixe + '@interieur.gouv.fr', C: 'chorus.' + suffixe + '@interieur.gouv.fr' };
+    const MAILS = { M: 'missionnaire.' + suffixe + '@interieur.gouv.fr', C: 'chorus.' + suffixe + '@interieur.gouv.fr', C2: 'chorus2.' + suffixe + '@interieur.gouv.fr' };
     async function appareil(nom, largeur) {
         const ctx = await b.newContext({ viewport: { width: largeur || 480, height: 1000 }, acceptDownloads: true }), p = await ctx.newPage();
         p.on('pageerror', e => erreurs.push(nom + ' : ' + e.message)); p.on('dialog', d => d.accept());
@@ -43,7 +43,8 @@ module.exports = async function() {
     await envoyer(d); await envoyer(d2);
     await c.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
     await c.evaluate(() => OUVRIR_REGISTRE('mer')); await attendre(600);
-    const reg = await c.evaluate(() => JUMELAGE_REGISTRE());
+    // Registre commun : il peut contenir les lignes d'autres essais ; on ne regarde que celles de cette série.
+    const reg = await c.evaluate(p => JUMELAGE_REGISTRE().filter(x => String(x.omr).indexOf(p) === 0), pref);
     verifier(reg.length === 2 && reg.every(x => x.omr && x.codeFD && x.personnes.length), 'registre : une ligne par demande validée reçue (n° OMR, code FD, personnel)');
     const texte = await c.evaluate(() => document.querySelector('.CARD').textContent);
     verifier(texte.indexOf('N°' + pref + '0007') < texte.indexOf('N°' + pref + '0008') && /En retard/.test(texte), 'onglet Mises en route : ordre des n° OMR, « En retard » (fin de mission + 30 jours dépassée)');
@@ -71,6 +72,36 @@ module.exports = async function() {
     await c.click('#MSG-OVERLAY .BTN-PRIMARY, #MSG-OVERLAY .MSG-BTN-CONFIRM').catch(() => c.evaluate(() => { const b = [...document.querySelectorAll('#MSG-OVERLAY button')].find(x => /Supprimer/.test(x.textContent)); b && b.click(); }));
     await attendre(400);
     verifier(await c.evaluate(r => !JUMELAGE_REGISTRE().some(x => x.ref === r), d2.id), 'suppression d\'une ligne (mission annulée)');
+    // Deuxième assistant Chorus DT de l'unité : il voit le même registre (lignes reçues par le premier, suppression comprise).
+    const c2 = await appareil('C2');
+    await c2.evaluate(() => JUMELAGE_REGLAGES()); await attendre(400);
+    await c2.check('#JUM-R-CHORUS'); await c2.fill('#JUM-R-CODECHORUS', codeChorus); await c2.click('.JUM-R-PRINCIPAL'); await attendre(1500);
+    await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(800);
+    await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1500);
+    const reg2 = await c2.evaluate(p => JUMELAGE_REGISTRE().filter(x => String(x.omr).indexOf(p) === 0), pref);
+    verifier(reg2.length === 1 && reg2[0].ref === d.id && (reg2[0].crs || []).length === 1 && !!reg2[0].recuPar, '2e assistant : même registre (ligne et CR reçus par le 1er ; ligne supprimée absente)');
+    await c2.evaluate(() => OUVRIR_REGISTRE('cr')); await attendre(600);
+    verifier(/Demande reçue par/.test(await c2.evaluate(() => document.querySelector('.CARD').textContent)), '2e assistant : « Demande reçue par… » affiché');
+    // Demande reçue par le 1er, compte-rendu reçu par le 2e : une seule ligne, validée chez les deux.
+    const d3 = await m.evaluate(() => { const d = DEMO_DEMANDE(); d.id = 'reg3' + Date.now(); return MER_NUMEROTER_OMR([d]).then(() => d); });
+    await envoyer(d3);
+    await c.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
+    await m.evaluate(([dest, omr, ref]) => JUMELAGE_ENVOYER_DIRECT(dest, 'CR', 'cr.pdf', JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: 'SGT DUPONT Jean', libelle: 'Formation', dates: '', corps: '', fichiers: [],
+        omr: omr, mref: ref, montants: { repas: 10, hebergement: 0, transports: 0, ik: 0, tc: 0, total: 10 } })), [MAILS.C2, d3.omr, d3.id]);
+    await c2.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
+    await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1000);
+    await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1000);
+    const l1 = await c.evaluate(o => JUMELAGE_REGISTRE().filter(x => x.omr === o), d3.omr), l2 = await c2.evaluate(o => JUMELAGE_REGISTRE().filter(x => x.omr === o), d3.omr);
+    verifier(l1.length === 1 && l2.length === 1 && l1[0].ref === d3.id && l2[0].ref === d3.id && (l1[0].crs || []).length === 1 && (l2[0].crs || []).length === 1,
+        'demande chez le 1er, CR chez le 2e : réunis sur une seule ligne, chez les deux');
+    // Relance par le 2e, suppression par le 2e : visibles chez le 1er.
+    await c2.evaluate(r => JUMELAGE_REGISTRE_MAJ(r, { relances: [Date.now()], relancesQui: { 1: 'ADJ TEST' } }), d3.id); await attendre(1200);
+    await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1000);
+    verifier(await c.evaluate(r => (JUMELAGE_REGISTRE().filter(x => x.ref === r)[0].relances || []).length === 1, d3.id), 'relance faite par le 2e : visible chez le 1er');
+    await c2.evaluate(r => JUMELAGE_REGISTRE_MAJ(r, null), d3.id); await attendre(1200);
+    await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1000);
+    verifier(await c.evaluate(r => !JUMELAGE_REGISTRE().some(x => x.ref === r), d3.id), 'suppression faite par le 2e : la ligne disparaît chez le 1er');
+    verifier(await m.evaluate(() => { const c = JSON.parse(localStorage.getItem('trigone_compte')); return fetch('api/registre', { method: 'POST', headers: { Authorization: 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton, 'Content-Type': 'application/json' }, body: '{}' }).then(r => r.status); }) === 403, 'registre commun refusé à un compte sans rôle Chorus DT');
     // Compte-rendu : le n° OMR repris de la mise en route figure sur son PDF.
     await m.goto(URL + 'cr/'); await attendre(2500);
     await m.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); });

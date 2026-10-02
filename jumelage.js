@@ -893,7 +893,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 136, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 137, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2831,28 +2831,71 @@
     var CLE_REGISTRE = 'trigone_registre_omr';
     function registreLire() { var l = lireJSON(CLE_REGISTRE); return Array.isArray(l) ? l : []; }
     function registreEcrire(l) { ecrireTxt(CLE_REGISTRE, JSON.stringify(l)); try { window.dispatchEvent(new Event('trigone-registre')); } catch (e) {} }
+    // Partage entre les assistants Chorus DT de l'unité : chaque ligne nouvelle ou modifiée (et chaque suppression) part
+    // au serveur, qui renvoie ce que les autres assistants ont changé. Sans réseau, la file attend la prochaine relève.
+    var CLE_REG_FILE = 'trigone_registre_a_envoyer', CLE_REG_DEPUIS = 'trigone_registre_depuis', registreSynchroEnCours = null;
+    function registreFile() { var f = lireJSON(CLE_REG_FILE); return f && typeof f === 'object' && f.lignes ? f : { lignes: {}, supprimer: {} }; }
+    function registreAEnvoyer(refs, supprimer) {
+        var f = registreFile(), t = Date.now();
+        refs.forEach(function(r) { f.lignes[r] = t; });
+        if (supprimer) refs.forEach(function(r) { delete f.lignes[r]; f.supprimer[r] = t; });
+        ecrireTxt(CLE_REG_FILE, JSON.stringify(f));
+        setTimeout(function() { window.JUMELAGE_REGISTRE_SYNCHRO(); }, 300);
+    }
+    function registrePartage() { return !!monCompte() && !!rolesLocaux().chorus; }
+    window.JUMELAGE_REGISTRE_SYNCHRO = function() {
+        if (!registrePartage() || !navigator.onLine) return Promise.resolve(false);
+        if (registreSynchroEnCours) return registreSynchroEnCours;
+        var f = registreFile(), l = registreLire(), premiere = !lireTxt(CLE_REG_DEPUIS);
+        // Première fois : tout le registre de l'appareil rejoint le registre commun.
+        if (premiere) l.forEach(function(y) { if (!f.lignes[y.ref]) f.lignes[y.ref] = 1; });
+        var refs = Object.keys(f.lignes).slice(0, 200), suppr = Object.keys(f.supprimer).slice(0, 200);
+        var lignes = refs.map(function(r) { return l.filter(function(y) { return y.ref === r; })[0]; }).filter(Boolean);
+        registreSynchroEnCours = appelApi('registre', { methode: 'POST', corps: { lignes: lignes, supprimer: suppr, depuis: +lireTxt(CLE_REG_DEPUIS) || 0 } }).then(function(r) {
+            // Retirés de la file seulement s'ils n'ont pas changé pendant l'envoi.
+            var f2 = registreFile();
+            refs.forEach(function(x) { if (f2.lignes[x] === f.lignes[x]) delete f2.lignes[x]; });
+            suppr.forEach(function(x) { if (f2.supprimer[x] === f.supprimer[x]) delete f2.supprimer[x]; });
+            ecrireTxt(CLE_REG_FILE, JSON.stringify(f2));
+            var l2 = registreLire(), change = false;
+            (r.lignes || []).forEach(function(x) {
+                if (f2.lignes[x.ref] || f2.supprimer[x.ref]) return;   // modifiée ici entre-temps : la version de l'appareil partira ensuite
+                var i = -1; l2.forEach(function(y, j) { if (y.ref === x.ref) i = j; });
+                if (x.supprime) { if (i >= 0) { l2.splice(i, 1); change = true; } return; }
+                if (!x.ligne) return;
+                if (i >= 0) { if (JSON.stringify(l2[i]) !== JSON.stringify(x.ligne)) { l2[i] = x.ligne; change = true; } }
+                else { l2.push(x.ligne); change = true; }
+            });
+            if (change) registreEcrire(l2);
+            ecrireTxt(CLE_REG_DEPUIS, String(r.dernier || 1));
+            registreSynchroEnCours = null;
+            if (Object.keys(f2.lignes).length || Object.keys(f2.supprimer).length) { if (refs.length + suppr.length >= 200) return window.JUMELAGE_REGISTRE_SYNCHRO(); }
+            return true;
+        }, function() { registreSynchroEnCours = null; return false; });
+        return registreSynchroEnCours;
+    };
     function registreNouvel(el) {
-        var l = registreLire(), change = false;
+        var l = registreLire(), modifs = [], qui = window.JUMELAGE_QUI() || (monCompte() || {}).mail || '';
         if (el.nature === 'chorus' && el.registre) {
             el.registre.forEach(function(x) {
                 if (!x.ref || l.some(function(y) { return y.ref === x.ref; })) return;
-                l.push(Object.assign({ recuLe: el.le || Date.now(), envoiId: el.id }, x)); change = true;
+                l.push(Object.assign({ recuLe: el.le || Date.now(), envoiId: el.id, recuPar: qui }, x)); modifs.push(x.ref);
             });
         }
         if (el.nature === 'cr') {
-            var cr = { recuLe: el.le || Date.now(), envoiId: el.id, de: el.de || '', noms: el.noms || '', objet: el.objet || '', dates: el.dates || '', montants: el.montants || null };
+            var cr = { recuLe: el.le || Date.now(), envoiId: el.id, de: el.de || '', noms: el.noms || '', objet: el.objet || '', dates: el.dates || '', montants: el.montants || null, recuPar: qui };
             var ligne = l.filter(function(y) { return (el.omr && y.omr === el.omr) || (el.mref && y.ref === el.mref); })[0];
-            if (ligne) { ligne.crs = (ligne.crs || []).filter(function(c) { return c.envoiId !== el.id; }).concat([cr]); }
-            else l.push({ ref: 'cr-' + el.id, omr: el.omr || '', sansDemande: true, objet: el.objet || '', crs: [cr], recuLe: el.le || Date.now() });
-            change = true;
+            if (ligne) { ligne.crs = (ligne.crs || []).filter(function(c) { return c.envoiId !== el.id; }).concat([cr]); modifs.push(ligne.ref); }
+            else { l.push({ ref: 'cr-' + el.id, omr: el.omr || '', mref: el.mref || '', sansDemande: true, objet: el.objet || '', crs: [cr], recuLe: el.le || Date.now() }); modifs.push('cr-' + el.id); }
         }
-        if (!change) return;
-        registreEcrire(l);
+        if (!modifs.length) return;
+        registreEcrire(l); registreAEnvoyer(modifs);
         // Demande arrivée sans n° OMR (envoyée sans réseau, ou d'avant le registre) : l'assistant lui en donne un.
         l.filter(function(y) { return !y.omr && !y.sansDemande; }).reduce(function(suite, y) {
             return suite.then(function() {
                 return window.JUMELAGE_OMR_TIRER().then(function(r) {
                     var l2 = registreLire(); l2.forEach(function(z) { if (z.ref === y.ref && !z.omr) { z.omr = r.numero; z.omrLe = r.le; z.omrChorus = true; } }); registreEcrire(l2);
+                    registreAEnvoyer([y.ref]);
                 }, function() {});
             });
         }, Promise.resolve());
@@ -2862,7 +2905,7 @@
         var l = registreLire();
         if (maj === null) l = l.filter(function(y) { return y.ref !== ref; });
         else l.forEach(function(y) { if (y.ref === ref) Object.assign(y, maj); });
-        registreEcrire(l);
+        registreEcrire(l); registreAEnvoyer([ref], maj === null);
     };
     // filtre : 'chorus' (envois pour l'assistant Chorus DT), 'autres' (tout le reste), sinon tout.
     window.JUMELAGE_BOITE_NB = function(filtre) {
@@ -2943,6 +2986,7 @@
         if (releveEnCours) { releveARefaire = true; return releveEnCours; }
         releveEnCours = releverUneFois().then(function(n) {
             releveEnCours = null;
+            window.JUMELAGE_REGISTRE_SYNCHRO();   // registre OMR commun aux assistants Chorus DT
             if (releveARefaire) { releveARefaire = false; return window.JUMELAGE_RELEVER().then(function(m) { return n + m; }); }
             return n;
         });

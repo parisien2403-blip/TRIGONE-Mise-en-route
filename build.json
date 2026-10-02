@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 136,
-  "notifier": false,
-  "message": "PDF du compte-rendu : la date de la mission s'affiche bien jour/mois/année (02/10/2026 et non 10/02/2026)."
+  "build": 137,
+  "notifier": true,
+  "message": "Registre OMR commun à tous les assistants Chorus DT de l'unité : chacun voit toutes les mises en route et tous les comptes-rendus, avec qui les a reçus."
 }

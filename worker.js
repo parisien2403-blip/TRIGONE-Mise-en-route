@@ -75,11 +75,66 @@ async function baseBoite(env) {
             // date d'envoi ; rien du contenu). Visible du seul chef de mission ; effacé après 90 jours.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS equipe (ref TEXT NOT NULL, mail TEXT NOT NULL, chef TEXT NOT NULL, recu INTEGER, envoye INTEGER, relance INTEGER, PRIMARY KEY (ref, mail))'),
             // Assistants Chorus DT qui ont reçu un compte-rendu de la mission : ils voient aussi le suivi de l'équipe.
-            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS equipe_lecteur (ref TEXT NOT NULL, mail TEXT NOT NULL, le INTEGER, PRIMARY KEY (ref, mail))')
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS equipe_lecteur (ref TEXT NOT NULL, mail TEXT NOT NULL, le INTEGER, PRIMARY KEY (ref, mail))'),
+            // Registre OMR partagé par les assistants Chorus DT d'une unité : une ligne par demande (donnees = JSON),
+            // supprime = 1 pour une ligne retirée (mission annulée), gardée pour que les autres appareils la retirent aussi.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS registre (unite TEXT NOT NULL, ref TEXT NOT NULL, omr TEXT, mref TEXT, donnees TEXT, maj INTEGER, supprime INTEGER DEFAULT 0, par TEXT, PRIMARY KEY (unite, ref))'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS registre_maj ON registre (unite, maj)')
         ]);
         TABLES_PRETES = true;
     }
     return env.TRIGONE_DB;
+}
+
+// ---------- Registre OMR partagé ----------
+const UNITE_REGISTRE = 'principale';
+// Comptes-rendus d'une ligne : réunis sans doublon (un par envoi).
+function registreUnirCrs(a, b) {
+    const vus = {}, r = [];
+    (a || []).concat(b || []).forEach(c => { const k = c && (c.envoiId || JSON.stringify(c)); if (!c || vus[k]) return; vus[k] = 1; r.push(c); });
+    return r;
+}
+// Deux versions d'une même ligne : les champs renseignés de la nouvelle l'emportent ; comptes-rendus, relances et
+// auteurs des relances sont additionnés (deux assistants peuvent agir en même temps).
+function registreFusion(a, b) {
+    const r = Object.assign({}, a);
+    Object.keys(b).forEach(k => { if (b[k] !== '' && b[k] != null) r[k] = b[k]; });
+    r.crs = registreUnirCrs(a.crs, b.crs);
+    r.relances = Array.from(new Set((a.relances || []).concat(b.relances || []))).sort((x, y) => x - y);
+    r.relancesQui = Object.assign({}, a.relancesQui || {}, b.relancesQui || {});
+    if (a.omr) r.omr = a.omr;
+    return r;
+}
+async function registreEcrireLigne(db, u, ligne, le, par) {
+    await db.prepare('INSERT INTO registre (unite, ref, omr, mref, donnees, maj, supprime, par) VALUES (?, ?, ?, ?, ?, ?, 0, ?) ' +
+        'ON CONFLICT (unite, ref) DO UPDATE SET omr = excluded.omr, mref = excluded.mref, donnees = excluded.donnees, maj = excluded.maj, par = excluded.par WHERE registre.supprime = 0')
+        .bind(u, ligne.ref, ligne.omr || '', ligne.mref || '', JSON.stringify(ligne), le, par).run();
+}
+async function registreSupprimerLigne(db, u, ref, le, par) {
+    await db.prepare('UPDATE registre SET supprime = 1, maj = ?, par = ? WHERE unite = ? AND ref = ?').bind(le, par, u, ref).run();
+}
+async function registreFusionner(db, u, x, le, par) {
+    const avant = await db.prepare('SELECT * FROM registre WHERE unite = ? AND ref = ?').bind(u, x.ref).first();
+    if (avant && avant.supprime) return;   // retirée par un assistant : elle ne revient pas
+    let ligne = avant ? registreFusion(JSON.parse(avant.donnees || '{}'), x) : x;
+    // Compte-rendu arrivé seul chez un assistant et demande chez un autre : réunis sur la ligne de la demande
+    // (même n° OMR, ou même demande d'origine).
+    if (ligne.omr || ligne.mref) {
+        const autres = (await db.prepare('SELECT * FROM registre WHERE unite = ? AND supprime = 0 AND ref <> ? AND ((omr <> \'\' AND omr = ?) OR ref = ? OR (mref <> \'\' AND mref = ?))')
+            .bind(u, ligne.ref, ligne.omr || '', ligne.mref || '', ligne.ref).all()).results || [];
+        for (const a of autres) {
+            const d = JSON.parse(a.donnees || '{}');
+            if (ligne.sansDemande && !d.sansDemande) {
+                d.crs = registreUnirCrs(d.crs, ligne.crs);
+                await registreEcrireLigne(db, u, d, le, par);
+                await db.prepare("INSERT INTO registre (unite, ref, omr, mref, donnees, maj, supprime, par) VALUES (?, ?, '', '', '{}', ?, 1, ?) " +
+                    'ON CONFLICT (unite, ref) DO UPDATE SET supprime = 1, maj = excluded.maj, par = excluded.par').bind(u, ligne.ref, le, par).run();
+                return;
+            }
+            if (!ligne.sansDemande && d.sansDemande) { ligne.crs = registreUnirCrs(ligne.crs, d.crs); await registreSupprimerLigne(db, u, a.ref, le, par); }
+        }
+    }
+    await registreEcrireLigne(db, u, ligne, le, par);
 }
 
 // Remise à zéro des comptes TRIGONE (fin des essais, demandée par l'administrateur) : au premier appel après la
@@ -837,6 +892,24 @@ async function api(requete, env, url, ctx) {
         const p = await db.prepare("SELECT valeur FROM reglage WHERE cle = 'omr-prefixe'").first();
         const n = await db.prepare("SELECT valeur FROM reglage WHERE cle = 'omr-prochain'").first();
         return json({ ok: true, prefixe: (p && p.valeur) || '', prochain: parseInt(n && n.valeur, 10) || 1 });
+    }
+    // Registre OMR partagé : tous les assistants Chorus DT de l'unité voient la même liste, quel que soit celui qui a
+    // reçu la demande ou le compte-rendu. Envoi des lignes nouvelles ou modifiées et des suppressions, réponse : tout ce
+    // qui a changé depuis « depuis » (maj). Aujourd'hui une seule unité ; chaque régiment aura la sienne.
+    if (chemin === 'registre' && methode === 'POST') {
+        if (!(moi.compte.roles || {}).chorus) return erreur(403, 'Réservé à l\'assistant Chorus DT.');
+        const c = await requete.json().catch(() => ({}));
+        const db = await baseBoite(env), u = UNITE_REGISTRE, le = Date.now();
+        const refOk = r => typeof r === 'string' && r.length > 0 && r.length <= 120;
+        const supprimer = (Array.isArray(c.supprimer) ? c.supprimer : []).filter(refOk).slice(0, 200);
+        const lignes = (Array.isArray(c.lignes) ? c.lignes : []).filter(x => x && typeof x === 'object' && refOk(x.ref) && JSON.stringify(x).length <= 20000).slice(0, 200);
+        for (const ref of supprimer) await db.prepare("INSERT INTO registre (unite, ref, omr, mref, donnees, maj, supprime, par) VALUES (?, ?, '', '', '{}', ?, 1, ?) " +
+            'ON CONFLICT (unite, ref) DO UPDATE SET supprime = 1, maj = excluded.maj, par = excluded.par').bind(u, ref, le, moi.mail).run();
+        for (const x of lignes) await registreFusionner(db, u, x, le, moi.mail);
+        const depuis = +c.depuis || 0;
+        const r = (await db.prepare('SELECT ref, donnees, maj, supprime, par FROM registre WHERE unite = ? AND maj >= ? ORDER BY maj LIMIT 2000').bind(u, depuis).all()).results || [];
+        return json({ ok: true, lignes: r.map(x => ({ ref: x.ref, supprime: !!x.supprime, par: x.par, maj: x.maj, ligne: x.supprime ? null : JSON.parse(x.donnees || '{}') })),
+            dernier: r.reduce((m, x) => Math.max(m, x.maj), depuis) });
     }
     // Page « Erreurs de l'appli » : réservée à l'administrateur (ADMIN_MAILS).
     if (chemin === 'admin' && methode === 'GET') return json({ ok: true, admin: estAdmin(env, moi.mail) });
