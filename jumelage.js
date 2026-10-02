@@ -993,7 +993,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 145, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 146, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1781,6 +1781,8 @@
     // Contenu et mise en forme : notice/notice.js ; pages qui tournent : vendor/page-flip.min.js (chargés à la première ouverture).
     // Téléphone : une page à la fois ; PC ou écran large : le livre ouvert, deux pages. chapitre : id d'un chapitre (ex. 'carte').
     var fenNotice = null;
+    var PLEIN_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg>';
+    var QUITTER_PLEIN_SVG = '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>';
     window.JUMELAGE_NOTICE_BOUTON = function() {
         return '<button type="button" class="JUM-NOTICE-LIVRET" onclick="JUMELAGE_NOTICE()"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="">' +
             '<span><b>Notice TRIGONE</b><small>Le livret complet : chaque écran expliqué pas à pas</small></span><i>›</i></button>';
@@ -1790,7 +1792,8 @@
         var B = DANS_CR ? '../' : '', f = document.createElement('div'), livre = null, page = 0, N = null;
         f.className = 'JUM-SIG JUM-NOTICE'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Notice TRIGONE');
         f.innerHTML = '<div class="N-HAUT"><button type="button" class="N-FERMER" aria-label="Fermer la notice">✕</button><span class="N-TITRE">Notice TRIGONE</span>' +
-            '<button type="button" class="N-SOMMAIRE">Sommaire</button><span class="N-NUM"></span></div><div class="N-SCENE"><div class="N-CHARGE">Ouverture de la notice…</div></div>' +
+            '<button type="button" class="N-SOMMAIRE">Sommaire</button>' +
+            (document.fullscreenEnabled && f.requestFullscreen ? '<button type="button" class="N-PLEIN" aria-label="Plein écran" title="Plein écran">' + PLEIN_SVG + '</button>' : '') + '<span class="N-NUM"></span></div><div class="N-SCENE"><div class="N-CHARGE">Ouverture de la notice…</div></div>' +
             '<button type="button" class="N-FLECHE N-PREC" aria-label="Page précédente">‹</button><button type="button" class="N-FLECHE N-SUIV" aria-label="Page suivante">›</button>';
         var scene = f.querySelector('.N-SCENE'), num = f.querySelector('.N-NUM');
         var majNum = function() {
@@ -1806,7 +1809,7 @@
             f.classList.toggle('tel', !deux);
             var W = scene.clientWidth, H = scene.clientHeight;
             // Téléphone : la page prend toute la hauteur de l'écran (page plus haute que 566, le texte respire, les captures grandissent).
-            var pw = deux ? Math.min((W - 130) / 2, (H - 24) / r) : Math.min(W - 12, 480, (H - 8) / r);
+            var pw = deux ? Math.min((W - 130) / 2, (H - 24) / r) : Math.min(W - (f.classList.contains('plein') ? 0 : 12), 480, (H - 8) / r);
             pw = Math.floor(pw); var e = pw / 400, hl = deux ? 566 : Math.max(566, Math.min(860, Math.floor((H - 8) / e))), ph = Math.floor(hl * e);
             // Livre posé à hauteur fixe (pas centré par flex) : il ne saute pas pendant que la page tourne.
             var el = document.createElement('div'); el.className = 'N-LIVRE'; el.style.marginTop = Math.max(0, Math.floor((H - ph) / 2)) + 'px'; el.style.height = ph + 'px';
@@ -1850,13 +1853,20 @@
             if (ev.key === 'ArrowRight' || ev.key === 'PageDown') livre.flipNext(); else if (ev.key === 'ArrowLeft' || ev.key === 'PageUp') livre.flipPrev(); else if (ev.key === 'Escape') fermer();
         };
         var minuteur = null, auRedim = function() { clearTimeout(minuteur); minuteur = setTimeout(function() { if (N) construire(); }, 250); };
+        // Plein écran (au choix) : les barres du téléphone disparaissent, les pages gagnent toute la hauteur.
+        var surPlein = function() { f.classList.toggle('plein', document.fullscreenElement === f); var b = f.querySelector('.N-PLEIN'); if (b) b.innerHTML = document.fullscreenElement === f ? QUITTER_PLEIN_SVG : PLEIN_SVG; auRedim(); };
+        document.addEventListener('fullscreenchange', surPlein);
         var fermer = function() {
-            window.removeEventListener('resize', auRedim); document.removeEventListener('keydown', touche);
+            window.removeEventListener('resize', auRedim); document.removeEventListener('keydown', touche); document.removeEventListener('fullscreenchange', surPlein);
+            if (document.fullscreenElement === f && document.exitFullscreen) document.exitFullscreen().catch(function() {});
             if (livre) try { livre.destroy(); } catch (e) {}
             f.remove(); if (fenNotice === f) fenNotice = null;
         };
         f.querySelector('.N-FERMER').addEventListener('click', fermer);
         f.querySelector('.N-SOMMAIRE').addEventListener('click', function() { aller(2); });
+        if (f.querySelector('.N-PLEIN')) f.querySelector('.N-PLEIN').addEventListener('click', function() {
+            if (document.fullscreenElement) document.exitFullscreen().catch(function() {}); else f.requestFullscreen({ navigationUI: 'hide' }).catch(function() {});
+        });
         f.querySelector('.N-PREC').addEventListener('click', function() { if (livre) livre.flipPrev(); });
         f.querySelector('.N-SUIV').addEventListener('click', function() { if (livre) livre.flipNext(); });
         f._fermer = function() { var z = f.querySelector('.N-ZOOM'); if (z) z.remove(); else fermer(); }; f._aller = function(n) { if (livre) { livre.turnToPage(n); page = n; majNum(); } }; fenNotice = f;

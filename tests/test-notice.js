@@ -45,8 +45,14 @@ module.exports = async function(srv) {
     verifier(await p.evaluate(() => !!document.querySelector('.N-ZOOM img')), 'capture touchée : affichée en grand');
     p.goBack().catch(() => {}); await attendre(600);
     verifier(await p.evaluate(() => !document.querySelector('.N-ZOOM') && !!document.querySelector('.JUM-NOTICE')), 'retour : la capture se ferme, la notice reste ouverte');
-    await p.click('.N-FERMER'); await attendre(300);
-    verifier(await p.evaluate(() => !document.querySelector('.JUM-NOTICE')), '✕ : la notice se ferme');
+    // Plein écran au choix
+    await p.click('.N-PLEIN'); await attendre(1000);
+    verifier(await p.evaluate(() => document.fullscreenElement === document.querySelector('.JUM-NOTICE') && document.querySelector('.JUM-NOTICE').classList.contains('plein')), 'bouton plein écran : la notice passe en plein écran');
+    await p.click('.N-PLEIN'); await attendre(800);
+    verifier(await p.evaluate(() => !document.fullscreenElement && !!document.querySelector('.JUM-NOTICE')), 'second appui : sortie du plein écran, la notice reste ouverte');
+    await p.click('.N-PLEIN'); await attendre(800);
+    await p.click('.N-FERMER'); await attendre(500);
+    verifier(await p.evaluate(() => !document.querySelector('.JUM-NOTICE') && !document.fullscreenElement), '✕ : la notice se ferme (et quitte le plein écran)');
     // Ouverture directe sur un chapitre
     await p.evaluate(() => JUMELAGE_NOTICE('secu')); await attendre(1500);
     const secu = await p.evaluate(() => NOTICE_TRIGONE.chapitres.find(c => c.id === 'secu').page + 1);
