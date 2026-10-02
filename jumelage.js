@@ -5,7 +5,7 @@
 // Au changement d'appli : pas de nouvel écran d'ouverture, et le code à 4 chiffres n'est pas redemandé.
 (function() {
     var CLE_BASCULE = 'trigone_bascule', CLE_DEVERROUILLE = 'trigone_deverrouille', CLE_THEME = 'trigone_theme', CLE_CHOIX_FAIT = 'trigone_choix_fait';
-    var arrivee = false;
+    var arrivee = false, fermeurs = [];   // fermeurs : [fenêtre ouverte, fonction qui la ferme] (bouton retour)
     try { arrivee = sessionStorage.getItem(CLE_BASCULE) === '1'; sessionStorage.removeItem(CLE_BASCULE); } catch (e) {}
 
     window.JUMELAGE_ARRIVEE = function() { return arrivee; };
@@ -893,7 +893,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 134, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 135, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1560,7 +1560,7 @@
             if (!a || a.role === niveau) return r[2] ? accesValideur('ecrire', r[2]) : accesValideur('effacer');
         }).catch(function() {});
     }
-    window.JUMELAGE_FERMER_REGLAGES = function() { if (reglages) { reglages.remove(); reglages = null; } };
+    window.JUMELAGE_FERMER_REGLAGES = function() { if (reglages) { reglages.remove(); reglages = null; } }; fermeurs.push([function() { return reglages; }, window.JUMELAGE_FERMER_REGLAGES]);
     window.JUMELAGE_PASSER_REGLAGES = function() {
         ecrireTxt('mer_config_faite', '1'); ecrireTxt('trigone_premier_lancement_fait', '1');
         window.JUMELAGE_FERMER_REGLAGES();
@@ -1909,7 +1909,7 @@
         return e.erreur ? '⚠️ ' + e.erreur : e.derniere ? 'Activée · dernière copie le ' + dateHeure(e.derniere) : 'Activée · première copie en cours';
     };
     var fenSauv = null;
-    window.JUMELAGE_FERMER_SAUVEGARDE_AUTO = function() { if (fenSauv) { fenSauv.remove(); fenSauv = null; } };
+    window.JUMELAGE_FERMER_SAUVEGARDE_AUTO = function() { if (fenSauv) { fenSauv.remove(); fenSauv = null; } }; fermeurs.push([function() { return fenSauv; }, window.JUMELAGE_FERMER_SAUVEGARDE_AUTO]);
     function fenetreSauv(titre, sous, corps, pied) {
         window.JUMELAGE_FERMER_SAUVEGARDE_AUTO();
         fenSauv = document.createElement('div'); fenSauv.className = 'JUM-REGLAGES'; fenSauv.setAttribute('role', 'dialog');
@@ -2402,7 +2402,7 @@
     }, 3000);
     setInterval(function() { if (NB_ATTENTE) viderAttente(); }, 60000);
     var fenAttente = null;
-    window.JUMELAGE_FERMER_ATTENTE = function() { if (fenAttente) { fenAttente.remove(); fenAttente = null; } };
+    window.JUMELAGE_FERMER_ATTENTE = function() { if (fenAttente) { fenAttente.remove(); fenAttente = null; } }; fermeurs.push([function() { return fenAttente; }, window.JUMELAGE_FERMER_ATTENTE]);
     window.JUMELAGE_ATTENTE = function() {
         window.JUMELAGE_FERMER_ATTENTE();
         var f = fenAttente = document.createElement('div'); f.className = 'JUM-REGLAGES'; f.setAttribute('role', 'dialog');
@@ -2542,7 +2542,7 @@
         }).catch(function() { return f; });
     }
     window.JUMELAGE_SCANNER_PHOTO = scannerPhoto;
-    window.JUMELAGE_FERMER_ENVOI_CR = function() { if (fenCr) { fenCr.remove(); fenCr = null; } };
+    window.JUMELAGE_FERMER_ENVOI_CR = function() { if (fenCr) { fenCr.remove(); fenCr = null; } }; fermeurs.push([function() { return fenCr; }, window.JUMELAGE_FERMER_ENVOI_CR]);
     // o : { destinataire, missionnaire, libelle, dates, corps, pieces (justificatifs déclarés), pdf() → Promise<{ nom, blob }>, succes() }
     window.JUMELAGE_ENVOYER_CR = function(o) {
         if (fenCr || !document.body) return;
@@ -3009,7 +3009,7 @@
 
     // Fenêtre « Compte TRIGONE » : activer (mail pro → code reçu), état, déconnexion de l'appareil.
     var fenCompte = null;
-    window.JUMELAGE_FERMER_COMPTE = function() { if (fenCompte) { fenCompte.remove(); fenCompte = null; } };
+    window.JUMELAGE_FERMER_COMPTE = function() { if (fenCompte) { fenCompte.remove(); fenCompte = null; } }; fermeurs.push([function() { return fenCompte; }, window.JUMELAGE_FERMER_COMPTE]);
     window.JUMELAGE_COMPTE = function(opts) {
         opts = opts || {};
         if (fenCompte || !document.body) return;
@@ -3461,7 +3461,7 @@
         return r;
     }
     var fenParam = null;
-    window.JUMELAGE_FERMER_PARAMETRES = function() { if (fenParam) { fenParam.remove(); fenParam = null; } };
+    window.JUMELAGE_FERMER_PARAMETRES = function() { if (fenParam) { fenParam.remove(); fenParam = null; } }; fermeurs.push([function() { return fenParam; }, window.JUMELAGE_FERMER_PARAMETRES]);
     window.JUMELAGE_PARAMETRES = function(section) {
         window.JUMELAGE_FERMER_PARAMETRES();
         fermerMenuCompte(); var mr = document.querySelector('.JUM-ROUE-MENU'); if (mr) mr.remove();
@@ -3470,6 +3470,7 @@
         fenParam = document.createElement('div');
         fenParam.className = 'JUM-PARAM';
         var dessiner = function() {
+            fenParam.setAttribute('data-rubrique', actuelle.id);
             fenParam.innerHTML = '<div class="JUM-PARAM-CARTE" role="dialog" aria-label="Paramètres">' +
                 '<div class="JUM-PARAM-TETE">' + (c ? '<span class="JUM-AV">' + esc(initiales()) + '</span>' : '') + '<h2>Paramètres</h2><button type="button" class="JUM-PARAM-FERMER" aria-label="Fermer">✕</button></div>' +
                 '<div class="JUM-PARAM-CORPS"><nav class="JUM-PARAM-NAV">' + rubs.map(function(x) {
@@ -3505,7 +3506,7 @@
     };
     // ---------- Erreurs de l'appli (administrateur) ----------
     var CLE_ADMIN = 'trigone_admin', fenErreurs = null;
-    window.JUMELAGE_FERMER_ERREURS = function() { if (fenErreurs) { fenErreurs.remove(); fenErreurs = null; } };
+    window.JUMELAGE_FERMER_ERREURS = function() { if (fenErreurs) { fenErreurs.remove(); fenErreurs = null; } }; fermeurs.push([function() { return fenErreurs; }, window.JUMELAGE_FERMER_ERREURS]);
     window.JUMELAGE_ERREURS = function() {
         if (fenErreurs || !document.body) return;
         fenErreurs = document.createElement('div');
@@ -3860,7 +3861,7 @@
     // ---------- Partager TRIGONE (roue crantée de l'écran de choix) : QR code et lien de l'application ----------
     // Pour installer TRIGONE sur un autre téléphone : il scanne le QR code (appareil photo), ou reçoit le lien.
     var fenPartage = null;
-    window.JUMELAGE_FERMER_PARTAGE = function() { if (fenPartage) { fenPartage.remove(); fenPartage = null; } };
+    window.JUMELAGE_FERMER_PARTAGE = function() { if (fenPartage) { fenPartage.remove(); fenPartage = null; } }; fermeurs.push([function() { return fenPartage; }, window.JUMELAGE_FERMER_PARTAGE]);
     window.JUMELAGE_PARTAGER_APPLI = function() {
         if (fenPartage || !document.body) return;
         var lien = new URL(APPLIS.mer.url, location.href).href.split(/[?#]/)[0];
@@ -4118,6 +4119,54 @@
             if (/^\d$/.test(e.key)) window.JUMELAGE_PIN_TOUCHE(e.key); else if (e.key === 'Backspace') window.JUMELAGE_PIN_TOUCHE('x');
         });
     }
+    // ---------- Bouton « retour » du téléphone ----------
+    // Chaque fenêtre de TRIGONE ajoute une étape à l'historique : « retour » ferme la fenêtre du dessus au lieu de quitter
+    // l'appli. Une fenêtre ouverte depuis Paramètres y ramène, sur la même rubrique. Une fenêtre fermée par ses boutons
+    // rend son étape (sauf si une autre s'ouvre aussitôt à sa place : Paramètres › ligne choisie).
+    var FENETRES_RETOUR = ['JUM-PARAM', 'JUM-REGLAGES', 'JUM-SIG', 'JUM-PARTAGE', 'JUM-CPT-MENU', 'JUM-PRES'];
+    var pileRetour = [], retoursIgnores = 0, fenetreQuittee = null;
+    function estFenetreRetour(el) { return el.nodeType === 1 && FENETRES_RETOUR.some(function(c) { return el.classList.contains(c); }); }
+    function fermerFenetre(el) {
+        if (el.classList.contains('JUM-PRES')) { var b = el.querySelector('.JUM-PRES-BTN'); if (b) { b.click(); return; } }
+        for (var i = 0; i < fermeurs.length && el.isConnected; i++) if (fermeurs[i][0]() === el) fermeurs[i][1]();
+        if (el.isConnected) el.remove();
+    }
+    function fenetreAjoutee(el) {
+        var etape = { el: el, rubrique: null };
+        if (fenetreQuittee) {
+            // Remplace la fenêtre qui vient de se fermer : même étape d'historique ; ouverte depuis Paramètres → y revenir.
+            clearTimeout(fenetreQuittee.minuteur);
+            etape.rubrique = fenetreQuittee.el.classList.contains('JUM-PARAM') ? fenetreQuittee.el.getAttribute('data-rubrique') : fenetreQuittee.rubrique;
+            fenetreQuittee = null;
+        } else {
+            try { history.pushState({ trigone: 1 }, ''); } catch (e) { return; }
+        }
+        pileRetour.push(etape);
+    }
+    function fenetreRetiree(el) {
+        for (var i = pileRetour.length - 1; i >= 0; i--) if (pileRetour[i].el === el) break;
+        if (i < 0) return;
+        var etape = pileRetour.splice(i, 1)[0];
+        if (fenetreQuittee) { clearTimeout(fenetreQuittee.minuteur); retoursIgnores++; history.back(); }
+        fenetreQuittee = { el: el, rubrique: etape.rubrique, minuteur: setTimeout(function() { fenetreQuittee = null; retoursIgnores++; history.back(); }, 350) };
+    }
+    window.addEventListener('popstate', function() {
+        if (retoursIgnores) { retoursIgnores--; return; }
+        var etape = pileRetour.pop();
+        if (!etape) { if (history.state && history.state.trigone) history.back(); return; }   // étape restée d'avant un rechargement
+        fermerFenetre(etape.el);
+        if (etape.rubrique && window.JUMELAGE_PARAMETRES) window.JUMELAGE_PARAMETRES(etape.rubrique);
+    });
+    function suivreFenetres() {
+        if (history.state && history.state.trigone) history.back();
+        new MutationObserver(function(mutations) {
+            mutations.forEach(function(m) {
+                Array.prototype.forEach.call(m.removedNodes, function(n) { if (estFenetreRetour(n)) fenetreRetiree(n); });
+                Array.prototype.forEach.call(m.addedNodes, function(n) { if (estFenetreRetour(n) && n.isConnected) fenetreAjoutee(n); });
+            });
+        }).observe(document.body, { childList: true });
+    }
+    if (document.body) suivreFenetres(); else document.addEventListener('DOMContentLoaded', suivreFenetres);
     window.JUMELAGE_PIN_MODE_CODE = function() { if (pave) pave.classList.add('code'); };
     window.JUMELAGE_CODE_ACTIF = codeActif;
     if (!DEMENAGEMENT && !RECEPTION_DEMENAGEMENT && codeActif() && !(window.JUMELAGE_DEVERROUILLE && window.JUMELAGE_DEVERROUILLE())) {
