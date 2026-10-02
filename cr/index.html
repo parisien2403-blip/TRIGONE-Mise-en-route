@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=142"></script>
+<script src="../jumelage.js?v=143"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -5400,7 +5400,8 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 </header>
 <div id="NOTICE-LIST-VIEW" class="BIB-VIEW">
-<p class="NOTICE-LEAD-HINT">Choisissez le guide selon votre type de mission.</p>
+<div id="NOTICE-LIVRET"></div>
+<p class="NOTICE-LEAD-HINT">Ou le guide rapide selon votre type de mission.</p>
 <div class="NOTICE-MENU-LIST">
 <button type="button" class="NOTICE-CARD" onclick="NOTICE_OUVRIR_DETAIL('INDIVIDUEL')">
 <span class="NOTICE-CARD-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
@@ -7139,6 +7140,8 @@ function NOTICE_OUVRIR_DETAIL(key) {
 
 function OUVRIR_NOTICE_MENU() {
     NOTICE_UI.selectedKey = null;
+    var livret = document.getElementById('NOTICE-LIVRET');
+    if (livret && window.JUMELAGE_NOTICE_BOUTON) livret.innerHTML = JUMELAGE_NOTICE_BOUTON();
     NOTICE_AFFICHER_LISTE();
     SHOW_PAGE('P-NOTICE');
 }
@@ -11508,7 +11511,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 239;
+var APP_CODE_VERSION = 240;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
