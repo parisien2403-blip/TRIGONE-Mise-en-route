@@ -43,6 +43,19 @@
       ]
     },
     {
+      "name": "Ma carte TRIGONE",
+      "short_name": "Ma carte",
+      "description": "Ma carte TRIGONE : QR code, afficher en grand",
+      "url": "./?espace=carte",
+      "icons": [
+        {
+          "src": "./raccourci-carte.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
       "name": "Ma mission",
       "short_name": "Ma mission",
       "description": "Compte-rendu : démarrer ou reprendre ma mission",
