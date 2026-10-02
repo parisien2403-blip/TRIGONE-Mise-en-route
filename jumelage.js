@@ -993,7 +993,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 144, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 145, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1815,7 +1815,7 @@
                     (p.couverture || i < 2 ? '' : '<div class="N-NUMP">' + (i + 1) + '</div>') + '</div></div>';
             }).join('');
             scene.appendChild(el);
-            livre = new window.St.PageFlip(el, { width: pw, height: ph, size: 'fixed', showCover: true, usePortrait: !deux, flippingTime: 1100, maxShadowOpacity: 0.55, mobileScrollSupport: false, startPage: page });
+            livre = new window.St.PageFlip(el, { width: pw, height: ph, size: 'fixed', showCover: true, usePortrait: !deux, flippingTime: 1100, maxShadowOpacity: 0.55, mobileScrollSupport: false, startPage: page, swipeDistance: 100000 });
             livre.loadFromHTML(el.querySelectorAll('.N-PAGE'));
             livre.on('flip', function(ev) { page = ev.data; majNum(); });
             el.addEventListener('click', function(ev) {
@@ -1830,6 +1830,20 @@
             var z = document.createElement('div'); z.className = 'N-ZOOM'; z.innerHTML = '<img src="' + src + '" alt=""><span>Toucher pour revenir à la notice</span>';
             z.addEventListener('click', function() { z.remove(); }); f.appendChild(z);
         };
+        // Glisser du doigt : la page tourne au premier geste, lent ou rapide, même un peu en biais
+        // (le glissement de la bibliothèque ne compte que les gestes de moins d'un quart de seconde).
+        var doigt = null;
+        f.addEventListener('touchstart', function(ev) { var t = ev.touches[0]; doigt = ev.touches.length === 1 && livre && !f.querySelector('.N-ZOOM') ? { x: t.clientX, y: t.clientY, p: livre.getCurrentPageIndex() } : null; }, { passive: true });
+        f.addEventListener('touchend', function(ev) {
+            if (!doigt || !livre) return; var t = ev.changedTouches[0], dx = t.clientX - doigt.x, dy = t.clientY - doigt.y, avant = doigt.p; doigt = null;
+            if (Math.abs(dx) < 35 || Math.abs(dx) < Math.abs(dy) * 1.2) return;
+            // Après la bibliothèque : si elle tourne déjà la page (coin tiré), on ne fait rien de plus. Un glissement lent
+            // parti du milieu de la page la laisse « pliée » sans rien tourner : c'est ce qui obligeait à recommencer.
+            setTimeout(function() {
+                if (!livre || livre.getState() === 'flipping' || livre.getCurrentPageIndex() !== avant) return;
+                if (dx < 0) livre.flipNext('bottom'); else livre.flipPrev('bottom');
+            }, 60);
+        });
         var touche = function(ev) {
             var z = f.querySelector('.N-ZOOM'); if (z) { if (ev.key === 'Escape') z.remove(); return; }
             if (!livre) return;
