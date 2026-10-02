@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=128"></script>
+<script src="../jumelage.js?v=129"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -8931,20 +8931,29 @@ function MONTRE_NOTIF_MAJ() {
     var suite = !M.ARR_SITE ? 'arrivee' : !M.DEP_SITE ? 'depart_site' : 'retour';
     var sig = actif ? M.DEBUT + '|' + suite : '', avant = '';
     try { avant = localStorage.getItem(CLE_MONTRE_SIG) || ''; } catch (e) {}
-    if (sig === avant) return;
+    var meme = sig === avant;
+    if (meme && !actif) return;
     try { localStorage.setItem(CLE_MONTRE_SIG, sig); } catch (e) {}
     navigator.serviceWorker.ready.then(function(reg) {
         if (!actif) return reg.getNotifications({ tag: 'trigone-montre' }).then(function(l) { l.forEach(function(n) { if (n.data && n.data.mission !== 'fin') n.close(); }); });
+        // Étape inchangée : la notification n'est remise que si elle a disparu (mise à jour de TRIGONE, volet vidé…),
+        // sans nouvelle alerte ; sinon la montre perdait ses boutons jusqu'à l'étape suivante.
+        return reg.getNotifications({ tag: 'trigone-montre' }).then(function(l) {
+            if (meme && l.some(function(n) { return n.data && n.data.mission === M.DEBUT; })) return;
+            return montrer(!meme);
+        });
+        function montrer(alerte) {
         var faits = ['Départ ' + MONTRE_HEURE(M.DEBUT) + ' ✓'];
         if (M.ARR_SITE) faits.push('Arrivée sur site ' + MONTRE_HEURE(M.ARR_SITE) + ' ✓');
         if (M.DEP_SITE) faits.push('Départ du site ' + MONTRE_HEURE(M.DEP_SITE) + ' ✓');
         return reg.showNotification('Mission en cours', {
             body: faits.join(' · ') + '\nProchaine étape : ' + MONTRE_BOUTONS[suite],
-            tag: 'trigone-montre', renotify: true, requireInteraction: true,
+            tag: 'trigone-montre', renotify: alerte, silent: !alerte, requireInteraction: true,
             icon: 'icon-192.png', badge: '../favicon-32.png',
             actions: [{ action: suite, title: MONTRE_BOUTONS[suite] }],
             data: { montre: true, faits: faits, mission: M.DEBUT }
         });
+        }
     }).catch(function() {});
 }
 // Réglages › Montre connectée : notification d'essai (bouton sans effet sur la mission).
@@ -9450,6 +9459,8 @@ function APPLY_QR_DATA(data) {
     if (nidPaxEl) { nidPaxEl.value = GET_SAVED_NID(); FORMAT_NID_INPUT(nidPaxEl); }
     // Envoi du chef dans TRIGONE : l'identité du participant, reprise de la mise en route, est préremplie.
     M.EQUIPE_REF = data.EQUIPE || '';
+    // N° OMR de la mise en route (commun à toute l'équipe) : repris sur le PDF et envoyé avec le compte-rendu.
+    M.OMR = data.OMR || ''; M.MER_REF = data.MREF || '';
     var px = data.PAX && typeof data.PAX === 'object' ? data.PAX : null;
     if (px) {
         var mettre = function(id, v) { var el = document.getElementById(id); if (el && v) el.value = String(v).slice(0, 80); };
@@ -10483,6 +10494,18 @@ function BUILD_FORFAIT_ENTRY_FROM_STATE(S) {
     };
 }
 
+// Montants déclarés au compte-rendu (registre OMR de l'assistant Chorus DT) : repas, hébergement, transports (billets),
+// indemnités kilométriques, transports en commun, total.
+function MONTANTS_CR(S) {
+    var e = BUILD_FORFAIT_ENTRY_FROM_STATE(S || M), r2 = function(v) { return Math.round((v || 0) * 100) / 100; };
+    var num = function(v) { var n = parseFloat(String(v == null ? '' : v).replace(',', '.')); return isNaN(n) || n < 0 ? 0 : n; };
+    var transports = (e.transports || []).reduce(function(t, x) { return t + (x.abt ? 0 : num(x.montant)); }, 0);
+    var ik = (e.ikSlots || []).reduce(function(t, x) { return t + num(x.montant); }, 0);
+    var tc = e.hasTc ? num(e.tcMontant) : 0;
+    var o = { repas: r2(e.repasAuto), hebergement: r2(e.hebergAuto), transports: r2(transports), ik: r2(ik), tc: r2(tc) };
+    o.total = r2(o.repas + o.hebergement + o.transports + o.ik + o.tc);
+    return o;
+}
 function CALC_MANUAL_TOTAL(entry) {
     var t = 0;
     (entry.transports || []).forEach(function(s) {
@@ -11444,7 +11467,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 225;
+var APP_CODE_VERSION = 226;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12414,6 +12437,8 @@ function QR_DONNEES(pax, src) {
     if (pax) o.PAX = { grade: pax.grade || '', nom: pax.nom || '', prenom: pax.prenom || '', nid: pax.nid || '', cie: pax.cie || '' };
     // Référence de la mission collective : le compte-rendu du participant la renvoie, le chef suit qui l'a envoyé.
     if ((src || M).EQUIPE_REF) o.EQUIPE = (src || M).EQUIPE_REF;
+    if ((src || M).OMR) o.OMR = (src || M).OMR;
+    if ((src || M).MER_REF) o.MREF = (src || M).MER_REF;
     return btoa(unescape(encodeURIComponent(JSON.stringify(COMPACT_QR_PAYLOAD(o)))));
 }
 
@@ -13685,6 +13710,8 @@ function PRENDRE_MISE_EN_ROUTE(d, jourJ) {
 }
 function APPLIQUER_MISE_EN_ROUTE(d, jourJ) {
     M.EQUIPE_REF = '';   // nouvelle mission : nouvelle équipe
+    // N° OMR et référence de la demande de mise en route : rapprochement chez l'assistant Chorus DT.
+    M.OMR = d.omr || ''; M.MER_REF = d.id || '';
     // La personne concernée : celle dont le nom est l'identité enregistrée, sinon la première de la demande.
     var id = IDENTITE_MISE_EN_ROUTE(), moi = (id.nom || '').trim().toUpperCase();
     var pers = (d.personnes || []).filter(function(p) { return moi && (p.nom || '').trim().toUpperCase() === moi; })[0] || (d.personnes || [])[0] || {};
@@ -13789,6 +13816,7 @@ function ENTRER() {
     M.PARTICIPANTS = [];
     M.MER_HORAIRES = null;
     M.EQUIPE_REF = '';
+    M.OMR = ''; M.MER_REF = '';
     var cb = document.getElementById('IS-COLLECTIVE');
     if (cb) {
         cb.checked = false;
@@ -15674,6 +15702,12 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
         doc.setTextColor.apply(doc, PDF_OR_TEXTE);
         var omType = M.COLLECTIVE ? 'OM COLLECTIF' : (M.IS_PAX ? 'OM COLLECTIF — PARTICIPANT' : 'OM INDIVIDUEL');
         doc.text(omType, pageWidth - margin, 32 + dy, { align: 'right' });
+        // N° OMR de la mise en route, en haut à droite : rapprochement avec le PDF de la demande.
+        if (M.OMR) {
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor.apply(doc, PDF_INK);
+            doc.text('OMR N°' + M.OMR, pageWidth - margin, dy ? 40 : 18, { align: 'right' });
+            doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.setTextColor.apply(doc, PDF_OR_TEXTE);
+        }
         doc.setFont('helvetica', 'normal');
         doc.setFontSize(9);
         doc.setTextColor.apply(doc, PDF_MUTED);
@@ -16089,6 +16123,8 @@ function ENVOYER_MAIL() {
         corps: corps,
         pieces: pieces,
         pdf: function() { return GENERER_PDF(0, true, 'blob'); },
+        // Registre OMR de l'assistant Chorus DT : n° OMR, demande de mise en route d'origine et montants déclarés.
+        omr: M.OMR || '', mref: M.MER_REF || '', montants: MONTANTS_CR(M),
         // Mission collective : le chef comme chaque participant envoie la référence de l'équipe ; l'assistant Chorus DT
         // voit ainsi qui a déjà envoyé son compte-rendu (et le chef, la liste de ses participants).
         equipe: (M.IS_PAX || M.COLLECTIVE) && M.EQUIPE_REF ? M.EQUIPE_REF : null,
