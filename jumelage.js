@@ -804,6 +804,12 @@
         '.JUM-CARTE-TOURNE .face.arriere { transform: rotateY(180deg); } .JUM-CARTE-TOURNE.verso .face.avant { transform: rotateY(-180deg); } .JUM-CARTE-TOURNE.verso .face.arriere { transform: rotateY(0); }' +
         '.JUM-CARTE { position: relative; width: 350px; height: 221px; border-radius: 16px; overflow: hidden; color: #f5f5f5; font-family: Montserrat, system-ui, sans-serif; text-align: left; box-sizing: border-box;' +
             ' background: radial-gradient(130% 120% at 0% 0%, #353026 0%, #1b1a17 45%, #0e0e0d 100%); box-shadow: 0 0 0 1px rgba(214,167,86,0.55), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08); }' +
+        '.JUM-CARTE.niv-bronze { box-shadow: 0 0 0 2px #b87333, 0 0 14px rgba(184,115,51,0.35), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.08); }' +
+        '.JUM-CARTE.niv-argent { box-shadow: 0 0 0 2px #c9ced6, 0 0 16px rgba(201,206,214,0.4), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.1); }' +
+        '.JUM-CARTE.niv-or { box-shadow: 0 0 0 2.5px #e2b866, 0 0 22px rgba(226,184,102,0.55), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12); animation: jum-carte-or 3.2s ease-in-out infinite alternate; }' +
+        '@keyframes jum-carte-or { to { box-shadow: 0 0 0 2.5px #f1d08a, 0 0 34px rgba(241,208,138,0.75), 0 18px 40px rgba(0,0,0,0.6), inset 0 1px 0 rgba(255,255,255,0.12); } }' +
+        '.JUM-CARTE-CHAMPS em.niv { font-style: normal; font-size: 6.5px; letter-spacing: 0.12em; padding: 1px 5px; border-radius: 99px; margin-left: 4px; vertical-align: 2px; background: rgba(214,167,86,0.18); color: #e8c27a; }' +
+        '.niv-bronze .JUM-CARTE-CHAMPS em.niv { background: rgba(184,115,51,0.25); color: #e0a070; } .niv-argent .JUM-CARTE-CHAMPS em.niv { background: rgba(201,206,214,0.22); color: #e4e8ee; }' +
         '.JUM-CARTE-GUIL { position: absolute; inset: 0; opacity: 0.16; background-image: url("data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 width=%2728%27 height=%2714%27%3E%3Cpath d=%27M0 7 Q7 0 14 7 T28 7%27 fill=%27none%27 stroke=%27%23d6a756%27 stroke-width=%27.6%27/%3E%3Cpath d=%27M0 11 Q7 4 14 11 T28 11%27 fill=%27none%27 stroke=%27%23d6a756%27 stroke-width=%27.35%27/%3E%3C/svg%3E"); }' +
         '.JUM-CARTE-HOLO { position: absolute; inset: 0; mix-blend-mode: screen; pointer-events: none; background: linear-gradient(115deg, transparent 30%, rgba(255,236,190,0.28) 46%, rgba(173,216,230,0.18) 52%, rgba(255,200,230,0.14) 56%, transparent 64%) no-repeat;' +
             ' background-size: 260% 100%; background-position: var(--jum-holo, 50%) 0; animation: jum-holo 7s ease-in-out infinite alternate; }' +
@@ -1189,6 +1195,7 @@
     var RESA_DEFAUT = 'Demande de réservation';
     // Option « Demande de réservation » : { active, libelle } (libellé choisi par l'unité, sinon « Demande de réservation »).
     window.JUMELAGE_RESA = function() { var r = lireReglages(); return { active: r.resaActive !== false, libelle: r.resaLibelle || RESA_DEFAUT, defaut: !r.resaLibelle }; };
+    window.JUMELAGE_REGLAGES_LIRE = function() { return lireReglages(); };
     window.JUMELAGE_QUI = function() { var r = lireReglages(); return [r.grade, r.nom, r.prenom].filter(Boolean).join(' '); };
     function chiffres(v) { return String(v || '').replace(/\D/g, ''); }
     function formatMatricule(v) { var c = chiffres(v).slice(0, 10); return [c.slice(0, 3), c.slice(3, 5), c.slice(5, 7), c.slice(7)].filter(Boolean).join(' '); }
@@ -4124,21 +4131,23 @@
         var c = String(d.nid || '').replace(/\D/g, '').slice(0, 10), s = 0; for (var i = 0; i < c.length; i++) s += (+c[i]) * [7, 3, 1][i % 3];
         return [l1, t(c + '<' + d.grade.slice(0, 3) + '<' + d.cie, 33) + (s % 10)];
     }
+    // Carte qui évolue : liseré bronze (1 compte-rendu envoyé), argent (10), or (20), comme les médailles.
+    function niveauCarte(n) { return n >= 20 ? ['or', 'OR'] : n >= 10 ? ['argent', 'ARGENT'] : n >= 1 ? ['bronze', 'BRONZE'] : ['', '']; }
     function carteRecto(d) {
-        var photo = lireTxt(CLE_CARTE_PHOTO), m = mrz(d), base = DANS_CR ? '../' : '';
-        return '<div class="JUM-CARTE recto"><i class="JUM-CARTE-GUIL"></i><img class="JUM-CARTE-FILI" src="' + base + 'phoenix-icon.png" alt=""><i class="JUM-CARTE-HOLO"></i>' +
+        var photo = lireTxt(CLE_CARTE_PHOTO), m = mrz(d), base = DANS_CR ? '../' : '', niv = niveauCarte(d.missions);
+        return '<div class="JUM-CARTE recto' + (niv[0] ? ' niv-' + niv[0] : '') + '"><i class="JUM-CARTE-GUIL"></i><img class="JUM-CARTE-FILI" src="' + base + 'phoenix-icon.png" alt=""><i class="JUM-CARTE-HOLO"></i>' +
             '<div class="JUM-CARTE-HAUT"><img src="' + base + 'phoenix-icon.png" alt=""><div class="t">TRIGONE<small>CARTE D\'IDENTITÉ · MISSIONS</small></div>' +
                 '<div class="drap"><i></i>' + esc(d.unite || 'TRIGONE') + '</div></div>' +
             '<div class="JUM-CARTE-PHOTO">' + (photo ? '<img src="' + photo + '" alt="Photo">' : '<span>' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : '') + '<b>Ajouter<br>ma photo</b></span>') + '</div>' +
             '<i class="JUM-CARTE-PUCE"></i>' +
             '<div class="JUM-CARTE-CHAMPS"><div class="l"><small>NOM · PRÉNOM</small>' + esc((d.nom + ' ' + d.prenom).trim() || '—') + '</div>' +
                 '<div><small>GRADE</small>' + esc(d.grade || '—') + '</div><div><small>NID</small>' + esc(d.nid || '—') + '</div>' +
-                '<div><small>UNITÉ</small>' + esc([d.unite, d.cie].filter(Boolean).join(' · ') || '—') + '</div><div><small>MISSIONS</small>' + d.missions + '</div></div>' +
+                '<div><small>UNITÉ</small>' + esc([d.unite, d.cie].filter(Boolean).join(' · ') || '—') + '</div><div><small>MISSIONS</small>' + d.missions + (niv[1] ? ' <em class="niv">' + niv[1] + '</em>' : '') + '</div></div>' +
             '<div class="JUM-CARTE-MRZ">' + esc(m[0]) + '<br>' + esc(m[1]) + '</div></div>';
     }
     function carteVerso(d, memo) {
-        var depuis = memo && memo.depuis ? new Date(memo.depuis).toLocaleDateString('fr-FR') : '';
-        return '<div class="JUM-CARTE verso"><i class="JUM-CARTE-GUIL"></i><i class="JUM-CARTE-HOLO"></i><i class="JUM-CARTE-BANDE"></i>' +
+        var depuis = memo && memo.depuis ? new Date(memo.depuis).toLocaleDateString('fr-FR') : '', niv = niveauCarte(d.missions);
+        return '<div class="JUM-CARTE verso' + (niv[0] ? ' niv-' + niv[0] : '') + '"><i class="JUM-CARTE-GUIL"></i><i class="JUM-CARTE-HOLO"></i><i class="JUM-CARTE-BANDE"></i>' +
             '<div class="JUM-CARTE-QR">' + (memo && memo.id ? '' : '<span>' + (monCompte() ? 'QR code à la prochaine connexion à internet' : 'Connectez-vous à votre compte TRIGONE pour activer le QR code') + '</span>') + '</div>' +
             '<div class="JUM-CARTE-INFO"><div class="t">SCANNEZ POUR M\'AJOUTER</div>à une mission collective, comme valideur ou remplaçant : <b>compte TRIGONE</b> repris d\'un coup.' +
                 '<div class="t">RÔLES</div><div class="roles">' + d.roles.map(function(x) { return '<span>' + esc(x) + '</span>'; }).join('') + '</div>' +
@@ -4305,7 +4314,8 @@
         var arrondi = function(x, y, w, h, r) { c.beginPath(); c.moveTo(x + r, y); c.arcTo(x + w, y, x + w, y + h, r); c.arcTo(x + w, y + h, x, y + h, r); c.arcTo(x, y + h, x, y, r); c.arcTo(x, y, x + w, y, r); c.closePath(); };
         var fond = function(oy) {
             var g = c.createRadialGradient(0, oy, 10, 0, oy, W * 1.1); g.addColorStop(0, '#353026'); g.addColorStop(0.45, '#1b1a17'); g.addColorStop(1, '#0e0e0d');
-            arrondi(0, oy, W, H, 16 * E); c.fillStyle = g; c.fill(); c.strokeStyle = 'rgba(214,167,86,0.6)'; c.lineWidth = 2 * E; c.stroke();
+            var nv = niveauCarte(d.missions)[0];
+            arrondi(0, oy, W, H, 16 * E); c.fillStyle = g; c.fill(); c.strokeStyle = nv === 'bronze' ? '#b87333' : nv === 'argent' ? '#c9ced6' : nv === 'or' ? '#e2b866' : 'rgba(214,167,86,0.6)'; c.lineWidth = (nv ? 3 : 2) * E; c.stroke();
         };
         var texte = function(t, x, y, taille, couleur, gras, esp) { c.font = (gras ? '800 ' : '600 ') + taille * E + 'px Montserrat, Arial, sans-serif'; c.fillStyle = couleur; if ('letterSpacing' in c) c.letterSpacing = (esp || 0) * E + 'px'; c.fillText(t, x * E, y); };
         Promise.all([charger(photoSrc), charger(base + 'phoenix-icon.png'), qrUrl.then(charger)]).then(function(r) {
@@ -4382,7 +4392,8 @@
                     if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) {}
                     if (!opts.continu) { fermer(c); return; }
                     lues++;
-                    var retour = opts.continu(c) || {};
+                    var retour = opts.continu(c) || {}, mon = (lireReglages().unite || '').toUpperCase();
+                    if (c.unite && mon && c.unite.toUpperCase() !== mon && retour.texte && !retour.deja) retour.texte += ' · extérieur (' + c.unite + ')';
                     res.insertAdjacentHTML('afterbegin', '<div class="' + (retour.deja ? 'deja' : 'ok') + '"><b>' + esc(window.JUMELAGE_CARTE_NOM(c)) + '</b><span>' + esc(retour.texte || '✔ Ajouté') + '</span></div>');
                     etat.textContent = lues + ' carte' + (lues > 1 ? 's' : '') + ' lue' + (lues > 1 ? 's' : '') + ' · carte suivante…';
                 }).catch(function(e) { etat.textContent = '✘ ' + (e.message || 'Lecture impossible.'); });

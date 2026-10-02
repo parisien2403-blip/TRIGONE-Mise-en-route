@@ -21,13 +21,16 @@ module.exports = async function() {
         return { p, ctx };
     }
     const nidA = String(Date.now()).slice(-10);
-    const { p: a } = await appareil('A', { grade: 'SGT', nom: 'CARTIER', prenom: 'Lou', matricule: nidA, unite: '4°RIISC', cie: '2CIE' });
+    const { p: a } = await appareil('A', { grade: 'SGT', nom: 'CARTIER', prenom: 'Lou', matricule: nidA, unite: '1°RIISC', cie: '2CIE' });
     // Paramètres › Compte › Ma carte TRIGONE
     await a.evaluate(() => JUMELAGE_PARAMETRES('compte')); await attendre(400);
     verifier(await a.evaluate(() => !!document.querySelector('.JUM-PARAM [data-action="carte"]')), 'Paramètres › Compte : « Ma carte TRIGONE »');
     await a.click('.JUM-PARAM [data-action="carte"]'); await attendre(2500);
     const recto = await a.evaluate(() => document.querySelector('.JUM-CARTE.recto').innerText);
-    verifier(/CARTIER Lou/.test(recto) && /SGT/.test(recto) && /4°RIISC · 2CIE/.test(recto) && /TRGN<4/.test(recto), 'recto : identité de Mon profil et ligne « passeport »');
+    verifier(/CARTIER Lou/.test(recto) && /SGT/.test(recto) && /1°RIISC · 2CIE/.test(recto) && /TRGN<1</.test(recto), 'recto : identité de Mon profil et ligne « passeport »');
+    // Carte qui évolue : liseré argent à 12 comptes-rendus envoyés (or à 20).
+    await a.evaluate(() => { localStorage.setItem('trigone_cr_envoyes_total', '12'); JUMELAGE_CARTE(); }); await attendre(1500);
+    verifier(await a.evaluate(() => document.querySelector('.JUM-CARTE.recto').classList.contains('niv-argent') && /12 ARGENT/.test(document.querySelector('.JUM-CARTE.recto').innerText)), 'carte qui évolue : liseré argent et pastille « ARGENT » à 12 missions');
     const memo = await a.evaluate(() => JSON.parse(localStorage.getItem('trigone_carte') || '{}'));
     verifier(!!memo.id && await a.evaluate(() => !!document.querySelector('.JUM-CARTE.verso .JUM-CARTE-QR canvas, .JUM-CARTE.verso .JUM-CARTE-QR img')), 'verso : identifiant de carte (serveur) et QR code dessiné');
     verifier(/Vérifié/.test(await a.evaluate(() => document.querySelector('.JUM-CARTE.verso').innerText)), 'verso : compte « ✔ Vérifié »');
@@ -77,7 +80,7 @@ module.exports = async function() {
         await l.evaluate(x => document.querySelector('.JUM-SCAN')._lire(x), lien); await attendre(1500);
         const pers = await l.evaluate(() => D.personnes.map(p => [p.grade, p.nom, p.prenom, p.matricule, p.cie].join('|')));
         verifier(pers.some(x => x === 'SGT|CARTIER|Lou|' + nidA + '|2CIE'), 'demande collective : la personne scannée est ajoutée (grade, nom, matricule, CIE)');
-        verifier(/Ajouté/.test(await l.evaluate(() => document.querySelector('.JUM-SCAN-RES').innerText)), 'scan en continu : « ✔ Ajouté », la caméra reste ouverte pour la suivante');
+        verifier(/Ajouté .*extérieur \(1°RIISC\)/.test(await l.evaluate(() => document.querySelector('.JUM-SCAN-RES').innerText)), 'scan en continu : « ✔ Ajouté · extérieur (1°RIISC) » (autre unité), la caméra reste ouverte');
         await l.evaluate(x => document.querySelector('.JUM-SCAN')._lire(x), lien + '&'); await attendre(1200);
         verifier(/Déjà dans la demande/.test(await l.evaluate(() => document.querySelector('.JUM-SCAN-RES').innerText)), 'même carte une 2e fois : « Déjà dans la demande »');
         await l.click('.JUM-SCAN-FERMER'); await attendre(300);
@@ -90,7 +93,8 @@ module.exports = async function() {
     const pres = await l.evaluate(() => M.PARTICIPANTS.map(p => p.nom + '|' + p.mail + '|' + (p.present || '')));
     verifier(pres.length === 1 && pres[0].indexOf('CARTIER|' + MAILS.A + '|') === 0 && / à \d\dh\d\d$/.test(pres[0]), 'pointage au départ : participant ajouté, présent à l\'heure du scan');
     await l.click('.JUM-SCAN-FERMER'); await attendre(300);
-    verifier(/présent au départ le/.test(await l.evaluate(() => document.getElementById('MER-EQUIPE').innerText)), 'liste des participants : « présent au départ le … »');
+    const eqTxt = await l.evaluate(() => document.getElementById('MER-EQUIPE').innerText);
+    verifier(/présent au départ le/.test(eqTxt) && /1°RIISC \(extérieur\)/.test(eqTxt), 'liste des participants : « 1°RIISC (extérieur) », « présent au départ le … »');
     // PC : recto et verso côte à côte, sans retournement ni plein écran.
     const ctxPc = await b.newContext({ viewport: { width: 1440, height: 900 } }), pc = await ctxPc.newPage();
     pc.on('pageerror', e => erreurs.push('PC : ' + e.message));

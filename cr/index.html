@@ -9577,7 +9577,9 @@ function TOGGLE_CHEF_MAIL() {
 
 // Équipe d'une mise en route collective : toutes les personnes de la demande, reprises dans le CR du chef.
 function LIGNE_PARTICIPANT(p) {
-    return [p.grade, p.nom, p.prenom].filter(Boolean).join(' ') + (p.nid ? ' — NID ' + p.nid : '') + (p.cie ? ' — ' + p.cie : '') +
+    // Personnel d'une autre unité (ex. en formation chez nous) : son unité est indiquée.
+    var ext = p.unite && M.UNITE_CHEF_REF && p.unite.toUpperCase() !== M.UNITE_CHEF_REF ? p.unite + ' (extérieur) — ' : '';
+    return [p.grade, p.nom, p.prenom].filter(Boolean).join(' ') + (p.nid ? ' — NID ' + p.nid : '') + (p.cie ? ' — ' + ext + p.cie : ext ? ' — ' + ext.slice(0, -3) : '') +
         (p.present ? ' — présent au départ le ' + p.present : '');
 }
 function RENDRE_EQUIPE_MER() {
@@ -9592,12 +9594,14 @@ function RENDRE_EQUIPE_MER() {
 }
 // Carte TRIGONE d'un participant : retrouvé dans la liste (matricule ou adresse), sinon ajouté.
 function PARTICIPANT_DE_CARTE(S, c) {
+    var reg = window.JUMELAGE_REGLAGES_LIRE ? JUMELAGE_REGLAGES_LIRE() : {};
+    if (reg.unite) S.UNITE_CHEF_REF = String(reg.unite).toUpperCase();
     var nid = NID_CHIFFRES(c.nid), mail = String(c.mail || '').toLowerCase();
     S.PARTICIPANTS = S.PARTICIPANTS || [];
     var i = -1;
     S.PARTICIPANTS.forEach(function(p, j) { if ((nid && NID_CHIFFRES(p.nid) === nid) || (mail && String(p.mail || '').toLowerCase() === mail)) i = j; });
     var nouveau = i < 0;
-    if (nouveau) { S.PARTICIPANTS.push({ grade: c.grade || '', nom: (c.nom || '').toUpperCase(), prenom: c.prenom || '', nid: c.nid || '', cie: c.cie || '', mail: mail }); i = S.PARTICIPANTS.length - 1; }
+    if (nouveau) { S.PARTICIPANTS.push({ grade: c.grade || '', nom: (c.nom || '').toUpperCase(), prenom: c.prenom || '', nid: c.nid || '', cie: c.cie || '', unite: c.unite || '', mail: mail }); i = S.PARTICIPANTS.length - 1; }
     else if (mail) S.PARTICIPANTS[i].mail = mail;
     return { i: i, p: S.PARTICIPANTS[i], nouveau: nouveau };
 }
