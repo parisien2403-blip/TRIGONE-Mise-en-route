@@ -261,7 +261,7 @@
         '.N-HAUT .N-FERMER { width: 34px; padding: 0; font-size: 16px; }' +
         '.N-HAUT .N-TITRE { flex: 1; font: italic 400 16px Georgia, serif; letter-spacing: .04em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }' +
         '.N-HAUT .N-NUM { font: 700 12px Montserrat, system-ui, sans-serif; color: #b8955a; min-width: 44px; text-align: right; }' +
-        '.N-SCENE { position: absolute; top: 48px; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; }' +
+        '.N-SCENE { position: absolute; top: 48px; left: 0; right: 0; bottom: 0; display: flex; align-items: flex-start; justify-content: center; overflow: hidden; }' +
         '.N-FLECHE { position: absolute; top: 50%; transform: translateY(-50%); width: 44px; height: 64px; border: 0; border-radius: 10px; background: rgba(255,255,255,0.07); color: #e2b866; font-size: 34px; line-height: 1; cursor: pointer; z-index: 3; }' +
         '.N-FLECHE:disabled { opacity: .25; cursor: default; } .N-PREC { left: 10px; } .N-SUIV { right: 10px; }' +
         '.JUM-NOTICE.tel .N-SCENE { bottom: 52px; } .JUM-NOTICE.tel .N-FLECHE { top: auto; bottom: 6px; transform: none; width: 84px; height: 40px; font-size: 26px; border-radius: 999px; }' +
