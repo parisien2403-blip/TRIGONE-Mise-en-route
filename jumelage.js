@@ -2178,27 +2178,37 @@
     // Les rôles cochés sur l'appareil sont comparés à ceux que le serveur connaît pour le compte, et ceux qui manquent
     // sont redéclarés (compte réactivé, remise à zéro, déclaration perdue…) : à l'ouverture, au retour dans l'appli.
     var dernierControleRoles = 0;
-    function declarerRoles() {
+    // Rôles de l'appareil → compte TRIGONE, en une seule requête (ajouts et retraits ensemble), puis vérification :
+    // un rôle qui n'apparaît pas encore sur le compte est redéclaré (jusqu'à 3 fois), sans rien demander à la personne.
+    var rolesARetirer = {}, minuteurRoles = null;
+    function declarerRoles(essai) {
         var c = monCompte(); if (!c || !navigator.onLine) return Promise.resolve();
-        var voulus = Object.keys(rolesLocaux());
-        if (!voulus.length) return Promise.resolve();
+        var voulus = Object.keys(rolesLocaux()), retirer = Object.keys(rolesARetirer);
+        if (!voulus.length && !retirer.length) return Promise.resolve();
         dernierControleRoles = Date.now();
         return appelApi('cles?mail=' + encodeURIComponent(c.mail)).then(function(x) {
             var serveur = x.roles || {};
-            return Promise.all(voulus.filter(function(role) { return !serveur[role]; }).map(function(role) {
-                return appelApi('role', { methode: 'POST', corps: { role: role, actif: true } });
-            }));
-        }).catch(function() {});
+            var ajouter = voulus.filter(function(role) { return !serveur[role]; }), aRetirer = retirer.filter(function(role) { return serveur[role]; });
+            if (!ajouter.length && !aRetirer.length) { rolesARetirer = {}; return; }
+            return appelApi('roles', { methode: 'POST', corps: { ajouter: ajouter, retirer: aRetirer } }).then(function() {
+                rolesARetirer = {};
+                // Vérification quelques secondes plus tard ; redéclaration si le compte ne les montre pas encore.
+                if ((essai || 0) < 3) setTimeout(function() { declarerRoles((essai || 0) + 1); }, [3000, 8000, 20000][essai || 0]);
+            });
+        }).catch(function() {
+            if ((essai || 0) < 3) setTimeout(function() { declarerRoles((essai || 0) + 1); }, 8000);
+        });
     }
     document.addEventListener('visibilitychange', function() {
         if (document.visibilityState === 'visible' && Date.now() - dernierControleRoles > 5 * 60 * 1000) declarerRoles();
     });
     window.JUMELAGE_DECLARER_ROLE = function(role, actif) {
         var r = lireJSON(CLE_ROLES_LOCAUX) || {};
-        if (actif) r[role] = true; else delete r[role];
+        if (actif) { r[role] = true; delete rolesARetirer[role]; } else { delete r[role]; rolesARetirer[role] = true; }
         ecrireTxt(CLE_ROLES_LOCAUX, JSON.stringify(r));
-        if (!actif && monCompte()) appelApi('role', { methode: 'POST', corps: { role: role, actif: false } }).catch(function() {});
-        declarerRoles();
+        // Plusieurs rôles changés d'un coup : une seule déclaration, juste après.
+        clearTimeout(minuteurRoles);
+        minuteurRoles = setTimeout(function() { declarerRoles(0); }, 200);
     };
     window.JUMELAGE_COMPTE_MAIL = function() { var c = monCompte(); return c ? c.mail : ''; };
     // Absence d'un destinataire (avant l'envoi) : { mail du remplaçant, jusqu } ou null. Mémorisée 5 minutes.
