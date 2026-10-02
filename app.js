@@ -414,7 +414,12 @@ function GET_BIBLIOTHEQUE() {
     if (DEMO_ACTIF) return [{ id: 'demo', envoyeLe: new Date().toISOString(), destinataire: DEMO_REGLAGES.mailSignataire, demandes: DEMO_PANIER.length ? DEMO_PANIER : [D] }];
     try { return JSON.parse(localStorage.getItem(STORAGE_BIBLIOTHEQUE) || '[]'); } catch (e) { return []; }
 }
-function SAVE_BIBLIOTHEQUE(l) { if (DEMO_ACTIF) return; try { localStorage.setItem(STORAGE_BIBLIOTHEQUE, JSON.stringify(l.slice(0, 50))); } catch (e) {} }
+// Toutes les demandes envoyées sont gardées (plus de limite de nombre), tant que la mémoire de TRIGONE le permet.
+function SAVE_BIBLIOTHEQUE(l) {
+    if (DEMO_ACTIF) return;
+    try { localStorage.setItem(STORAGE_BIBLIOTHEQUE, JSON.stringify(l)); }
+    catch (e) { if (window.JUMELAGE_MEMOIRE_PLEINE) JUMELAGE_MEMOIRE_PLEINE(); }
+}
 // Un envoi fait sans réseau vient de partir (boîte d'envoi, jumelage.js) : la Bibliothèque ouverte se met à jour.
 window.JUMELAGE_APRES_ENVOI_DIFFERE = function() { if (PAGE_ACTUELLE === 'BIBLIOTHEQUE') { var y = window.scrollY; SHOW_PAGE('BIBLIOTHEQUE'); window.scrollTo(0, y); } };
 // attente : envoi fait sans réseau, parti plus tard tout seul (la boîte d'envoi efface alors « attente »).
@@ -507,7 +512,8 @@ function TPL_BIBLIOTHEQUE() {
         MER_DOSSIER.BIBLIOTHEQUE = null; MER_BIB_VISIBLES = null;
         if (!DEMO_ACTIF && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
         return '<div class="CARD"><h2>Bibliothèque</h2>' +
-            '<p class="MER-HINT" style="margin:4px 0 16px;">Vos demandes de mise en route envoyées, rangées selon leur <b>suivi</b> (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT) ; une notification vous prévient à chaque étape. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route »).</p>' +
+            '<p class="MER-HINT" style="margin:4px 0 6px;">Vos demandes de mise en route envoyées, rangées selon leur <b>suivi</b> (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT) ; une notification vous prévient à chaque étape. Au retour, TRIGONE Compte-rendu de mission les propose (« À partir d\'une mise en route »).</p>' +
+            (window.JUMELAGE_MEMOIRE_TEXTE ? '<p class="MER-HINT MER-BIB-MEMOIRE" style="margin:0 0 16px;">💾 ' + ESC(JUMELAGE_MEMOIRE_TEXTE(tout.length, 'demande gardée', 'demandes gardées')) + '. Toutes sont gardées ; supprimez celles dont vous n\'avez plus besoin.</p>' : '') +
             TPL_GRILLE_DOSSIERS('BIBLIOTHEQUE', ds) +
             '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_BIB_SELECTION = null; SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
     }

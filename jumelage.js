@@ -2744,6 +2744,27 @@
         } catch (e) { return { nature: 'inconnu', n: 0, ids: [] }; }
     }
     window.JUMELAGE_BOITE_LISTE = function() { return boiteLire(); };
+    // ---------- Mémoire de TRIGONE sur l'appareil ----------
+    // Bibliothèques sans limite de nombre : elles gardent tout, tant que la mémoire de TRIGONE le permet (environ 5 Mo
+    // de texte par appareil, partagés par les deux applis ; justificatifs et pièces jointes sont rangés à part).
+    // Stockage « persistant » demandé : le navigateur ne vide pas TRIGONE de lui-même quand l'appareil manque de place.
+    var MEMOIRE_MAX = 5 * 1024 * 1024;
+    try { if (navigator.storage && navigator.storage.persist) navigator.storage.persisted().then(function(p) { if (!p) navigator.storage.persist(); }).catch(function() {}); } catch (e) {}
+    window.JUMELAGE_MEMOIRE = function() {
+        var o = 0;
+        try { for (var i = 0; i < localStorage.length; i++) { var k = localStorage.key(i); o += (k.length + (localStorage.getItem(k) || '').length) * 2; } } catch (e) {}
+        return { octets: o, pct: Math.min(100, Math.round(o / MEMOIRE_MAX * 100)) };
+    };
+    // « 12 comptes-rendus gardés sur cet appareil · mémoire de TRIGONE utilisée : 8 % ».
+    window.JUMELAGE_MEMOIRE_TEXTE = function(n, singulier, pluriel) {
+        var m = window.JUMELAGE_MEMOIRE();
+        return n + ' ' + (n > 1 ? pluriel : singulier) + ' sur cet appareil · mémoire de TRIGONE utilisée : ' + Math.max(1, m.pct) + ' %' + (m.pct >= 85 ? ' — pensez à supprimer d\'anciennes missions' : '');
+    };
+    // Enregistrement impossible (mémoire pleine) : la personne est prévenue, rien n'est perdu de ce qui est déjà gardé.
+    window.JUMELAGE_MEMOIRE_PLEINE = function() {
+        var t = 'La mémoire de TRIGONE sur cet appareil est pleine : supprimez d\'anciennes missions dans la Bibliothèque (Mise en route ou Compte-rendu), puis réessayez.';
+        if (typeof window.MSG_INFO === 'function') window.MSG_INFO('Mémoire pleine', t, '💾'); else window.alert(t);
+    };
     // ---------- Registre OMR (assistant Chorus DT) ----------
     // Une ligne par demande de mise en route validée reçue (n° OMR, date, objet, code FD, dates, personnes, échéance du
     // compte-rendu = fin de mission + 30 jours) ; le compte-rendu reçu s'y rattache (même n° OMR ou même demande) avec ses
