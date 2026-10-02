@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 182,
-  "appCodeMessage": "Bouton retour du téléphone : il ferme la fenêtre ouverte et ramène aux Paramètres (même rubrique) au lieu de tout fermer.",
+  "appCodeVersion": 183,
+  "appCodeMessage": "PDF du compte-rendu : la date de la mission s'affiche bien jour/mois/année (02/10/2026 et non 10/02/2026).",
   "appMessageVersion": 0,
   "appMessage": ""
 }

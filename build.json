@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 135,
-  "notifier": true,
-  "message": "Bouton retour du téléphone : il ferme la fenêtre ouverte et ramène aux Paramètres (même rubrique) au lieu de tout fermer."
+  "build": 136,
+  "notifier": false,
+  "message": "PDF du compte-rendu : la date de la mission s'affiche bien jour/mois/année (02/10/2026 et non 10/02/2026)."
 }

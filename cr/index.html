@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=135"></script>
+<script src="../jumelage.js?v=136"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -11477,7 +11477,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 232;
+var APP_CODE_VERSION = 233;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -15781,12 +15781,9 @@ function GENERER_PDF(retryCount, readOnlyMode, sortie) {
     function appendLegPdf(leg, legNum, isChained, legIdx) {
         legIdx = legIdx != null ? legIdx : 0;
         var legDateStr = '';
-        if (leg.DEBUT) {
-            var dt = new Date(leg.DEBUT);
-            if (!isNaN(dt.getTime())) {
-                legDateStr = ' — ' + dt.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric' });
-            }
-        }
+        // DEBUT est enregistré à la française (« 02/10/2026 18:29:00 ») : new Date() le lirait mois/jour (10/02).
+        var jma = leg.DEBUT && String(leg.DEBUT).match(/(\d{1,2})\/(\d{1,2})\/(\d{4})/);
+        if (jma) legDateStr = ' — ' + ('0' + jma[1]).slice(-2) + '/' + ('0' + jma[2]).slice(-2) + '/' + jma[3];
         var legTitle = (M.LEGS && M.LEGS.length) ? ('Mission ' + legNum + legDateStr) : ('Mission' + legDateStr);
         var prevLeg = (legIdx > 0 && M.LEGS && M.LEGS[legIdx - 1]) ? M.LEGS[legIdx - 1] : null;
         var transportBody = BUILD_CHRONO_TRANSPORT_ROWS(leg, isChained, prevLeg, legIdx);
