@@ -315,7 +315,6 @@
         '.JUM-CHOIX > .JUM-MODE { position: absolute; z-index: 3; bottom: calc(max(18px, env(safe-area-inset-bottom, 0px)) + 5px); left: calc(max(18px, env(safe-area-inset-left, 0px)) + 66px); width: 42px; height: 42px; background: #1a1a1a; color: #f5f5f5; border-color: rgba(255,255,255,0.18); }' +
         '.JUM-CHOIX.choisi > .JUM-MODE { opacity: 0; pointer-events: none; }' +
         /* Compte-rendu, téléphone : la médaille de l'accueil se décale pour laisser la place au bouton de compte. */
-        '@media (max-width: 1099px) { .P0-MEDAILLE-BADGE { left: 54px !important; } }' +
         '.JUM-CPT-MENU { position: fixed; z-index: 99988; width: min(320px, calc(100vw - 24px)); background: #fff; color: #1a1a1a; border-radius: 18px; padding: 6px; box-shadow: 0 18px 44px rgba(0,0,0,0.4);' +
             ' font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; max-height: calc(100vh - 90px); overflow-y: auto; }' +
         '.JUM-CPT-TETE { display: flex; gap: 12px; align-items: center; padding: 12px 12px 10px; }' +
@@ -869,7 +868,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 131, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 132, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
