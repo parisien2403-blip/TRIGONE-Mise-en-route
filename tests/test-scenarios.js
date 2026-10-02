@@ -68,9 +68,9 @@ module.exports = async function() {
     }
     async function envoyerDocuments(dest) {
         await m.evaluate(() => { AJOUTER_AU_PANIER(); }); await attendre(500); await fermer(m);
-        await m.evaluate(() => { MER_DOSSIER.PANIER = null; SHOW_PAGE('PANIER'); }); await attendre(300);
+        await m.evaluate(() => { MER_DOSSIER.PANIER = 'prets'; SHOW_PAGE('PANIER'); }); await attendre(300);
         await m.fill('#MER-MAIL-DEST', dest);
-        await m.click('text=Envoyer mes documents'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(3000);
+        await m.click('text=/Envoyer (cette demande|ces \d+ demandes)/'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(3000);
         const t = await titreMsg(m); await fermer(m); return t;
     }
     // Valideur : relève, « Tout ouvrir et signer », décision, transmission.

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 172;
+var APP_CODE_VERSION = 173;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1237,8 +1237,9 @@ function TPL_RAPPEL_RESA() {
         ESC(MER_RESA().defaut ? 'demande de réservation' : 'demande de réservation — ' + MER_RESA().libelle) + '</b>, avec la NDS ou la DAF.</p>';
 }
 function TPL_ONGLET_CONDITIONS() {
-    return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Durant le déplacement</div>' +
-      TPL_RESERVATION() +
+    // Demande de réservation en tête de l'onglet, au-dessus de « Durant le déplacement ».
+    var resa = TPL_RESERVATION();
+    return resa + '<div class="MER-SECTION-TITLE"' + (resa ? '' : ' style="margin-top:0;"') + '>Durant le déplacement</div>' +
       TOGGLE_OUI_NON('Nourri à titre onéreux', 'nourriDeplacement') +
       TOGGLE_OUI_NON('Transport en commun', 'transportCommun') +
       '<div class="MER-SECTION-TITLE">Durant la mission</div>' +
@@ -1345,8 +1346,8 @@ function AJOUTER_AU_PANIER() {
     panier.push(D);
     SAVE_PANIER(panier);
     CLEAR_BROUILLON();
-    MER_DOSSIER.PANIER = null; SHOW_PAGE('PANIER');
-    MSG_INFO('Ajoutée à vos Documents', 'La demande de ' + noms + ' est rangée dans Documents, où elle attend son envoi au 1er valideur. Vous pouvez y ajouter d\'autres demandes pour les envoyer ensemble, en un seul mail.', '✅', 'mascotte-ok.webp');
+    MER_DOSSIER.PANIER = 'prets'; SHOW_PAGE('PANIER');
+    MSG_INFO('Ajoutée à vos Documents', 'La demande de ' + noms + ' est rangée dans Documents › Prêtes à envoyer, où elle attend son envoi au 1er valideur. Vous pouvez y ajouter d\'autres demandes pour les envoyer ensemble, en un seul envoi.', '✅', 'mascotte-ok.webp');
 }
 
 // ---- Correction par le VALIDEUR 1 d'une demande renvoyée par le VALIDEUR 2 ----
@@ -1422,13 +1423,26 @@ function MER_AFFICHER_ABSENCE(id, mail) {
         el.innerHTML = rp ? '<div class="MER-ABSENCE">🟠 <b>' + ESC(mail) + '</b> est absent jusqu\'au <b>' + new Date(rp.jusqu).toLocaleDateString('fr-FR') + '</b> : votre envoi partira chez son remplaçant, <b>' + ESC(rp.mail) + '</b>.</div>' : '';
     });
 }
-// Documents en dossiers : « Prêtes à envoyer » et « Refusées — à corriger » (toujours affichés, même vides) ;
-// l'envoi (1er valideur) reste sous les dossiers et part avec toutes les demandes.
+// Documents en dossiers : « Prêtes à envoyer » et « Refusées — à corriger » (toujours affichés, même vides).
+// L'envoi (1er valideur) se fait dans le dossier « Prêtes à envoyer », sous les demandes qui partent : on voit ce qui
+// part. Une demande refusée ne part qu'une fois corrigée (elle passe alors dans « Prêtes à envoyer »).
+function PANIER_PRETES() { return GET_PANIER().filter(function(d) { return !d.refus; }); }
+function TPL_ENVOI_PANIER(n) {
+    var reg = GET_REGLAGES();
+    setTimeout(function() { MER_AFFICHER_ABSENCE('MER-ABS-DEST', reg.mailSignataire); }, 0);
+    return '<div class="MER-SECTION-TITLE">Envoi</div>' +
+        '<div class="MER-FIELD"><label>Mail du 1er valideur (chef de service)</label>' +
+        '<input type="email" id="MER-MAIL-DEST" value="' + ESC(reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
+        'oninput="var r=GET_REGLAGES(); r.mailSignataire=this.value; SAVE_REGLAGES(r);" onchange="MER_AFFICHER_ABSENCE(\'MER-ABS-DEST\', this.value)"></div>' +
+        '<div id="MER-ABS-DEST"></div>' +
+        '<p class="MER-HINT" style="margin:-4px 0 14px;">' + (MER_COMPTE_ACTIF() ? 'Envoi chiffré, directement dans le TRIGONE du 1er valideur' + (n > 1 ? ' : les ' + n + ' demandes ci-dessus partent ensemble' : '') + '. Un refus éventuel vous revient dans votre Boîte de réception (' + ESC(JUMELAGE_COMPTE_MAIL()) + ').'
+            : 'L\'envoi se fait directement dans TRIGONE : connectez-vous d\'abord (bouton « Se connecter » en haut à droite).') + '</p>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📨 Envoyer ' + (n > 1 ? 'ces ' + n + ' demandes' : 'cette demande') + '</button>';
+}
 function TPL_PANIER() {
     var panier = GET_PANIER();
-    var reg = GET_REGLAGES();
     var ds = [
-        { id: 'prets', titre: 'Prêtes à envoyer', sous: 'Demandes complètes, en attente d\'envoi', filtre: function(d) { return !d.refus; } },
+        { id: 'prets', titre: 'Prêtes à envoyer', sous: 'Demandes complètes : ouvrez le dossier pour les vérifier et les envoyer', filtre: function(d) { return !d.refus; } },
         { id: 'refus', titre: 'Refusées — à corriger', sous: 'Revenues avec le motif du refus', filtre: function(d) { return !!d.refus; } }
     ];
     ds.forEach(function(x) {
@@ -1449,7 +1463,7 @@ function TPL_PANIER() {
     var items = (ouvert ? ouvert.liste : []).map(function(d) {
         var r = RESUME_DEMANDE(d);
         var refus = d.refus ? '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Refusée par ' + PAR_QUI(d.refus) + ' (' +
-            ESC(d.refus.grade + ' ' + d.refus.nom) + ') : ' + ESC(d.refus.motif) + '<br>Modifiez-la puis renvoyez-la.</div>' : '';
+            ESC(d.refus.grade + ' ' + d.refus.nom) + ') : ' + ESC(d.refus.motif) + '<br>Modifiez-la : une fois corrigée, elle passe dans « Prêtes à envoyer ».</div>' : '';
         return '<div class="MER-PANIER-ITEM"><div class="MER-PANIER-ITEM-TXT">' +
             '<div class="MER-PANIER-ITEM-TITRE">' + ESC(r.noms) + '</div>' +
             '<div class="MER-PANIER-ITEM-SUB">' + ESC(r.sous) + '</div>' + refus +
@@ -1457,23 +1471,17 @@ function TPL_PANIER() {
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MODIFIER_DEMANDE(\'' + d.id + '\')">Modifier</button>' +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="RETIRER_DU_PANIER(\'' + d.id + '\')">Retirer</button></div></div>';
     }).join('');
-    setTimeout(function() { MER_AFFICHER_ABSENCE('MER-ABS-DEST', reg.mailSignataire); }, 0);
     if (ouvert) return '<div class="CARD"><h2>Mes documents</h2>' + TPL_TETE_DOSSIER('PANIER', ouvert) +
         (items || '<div class="MER-EMPTY">Aucune demande dans ce dossier.</div>') +
+        (ouvert.id === 'prets' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
+            (ouvert.nb ? TPL_ENVOI_PANIER(ouvert.nb) : '') : '') +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_DOSSIER(\'PANIER\', null)">‹ Dossiers</button></div>';
+    var pretes = ds[0].nb;
     return '<div class="CARD">' +
         '<h2>Mes documents</h2>' +
-        '<p class="MER-HINT" style="margin:4px 0 14px;">' + panier.length + ' demande(s) à envoyer ensemble, en un seul envoi TRIGONE.</p>' +
+        '<p class="MER-HINT" style="margin:4px 0 14px;">' + (pretes ? 'Ouvrez « Prêtes à envoyer » pour vérifier ' + (pretes > 1 ? 'vos ' + pretes + ' demandes et les envoyer' : 'votre demande et l\'envoyer') + ' au 1er valideur.' : 'Aucune demande prête à envoyer.') + '</p>' +
         TPL_GRILLE_DOSSIERS('PANIER', ds) +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="DEMARRER_NOUVELLE_DEMANDE()">+ Ajouter une autre demande</button>' +
-        '<div class="MER-SECTION-TITLE">Envoi</div>' +
-        '<div class="MER-FIELD"><label>Mail du 1er valideur (chef de service)</label>' +
-        '<input type="email" id="MER-MAIL-DEST" value="' + ESC(reg.mailSignataire || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" ' +
-        'oninput="var r=GET_REGLAGES(); r.mailSignataire=this.value; SAVE_REGLAGES(r);" onchange="MER_AFFICHER_ABSENCE(\'MER-ABS-DEST\', this.value)"></div>' +
-        '<div id="MER-ABS-DEST"></div>' +
-        '<p class="MER-HINT" style="margin:-4px 0 14px;">' + (MER_COMPTE_ACTIF() ? 'Envoi chiffré, directement dans le TRIGONE du 1er valideur. Un refus éventuel vous revient dans votre Boîte de réception (' + ESC(JUMELAGE_COMPTE_MAIL()) + ').'
-            : 'L\'envoi se fait directement dans TRIGONE : connectez-vous d\'abord (bouton « Se connecter » en haut à droite).') + '</p>' +
-        '<button type="button" class="BTN BTN-PRIMARY" onclick="PREPARER_ENVOI()">📨 Envoyer mes documents (' + panier.length + ')</button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' +
     '</div>';
 }
@@ -2092,7 +2100,7 @@ var DEMO_ETAPES = [
       zones: ['[data-champ="reservation"]', '[data-champ="nourriMission"]', '[data-champ="logeMission"]'] },
     { page: 'FORMULAIRE', onglet: 'IMPUTATION', titre: 'Étape 5 — Imputation', texte: 'Le code FD suffit : TRIGONE affiche le centre financier, le centre de coût et le code activité. Joignez ensuite la NDS ou la DAF (PDF ou photo).',
       zones: ['[data-path="codeFD"]', '#MER-FD-INFO', '.MER-PANIER-ITEM'] },
-    { page: 'PANIER', titre: 'Documents', texte: 'La demande y attend son envoi (plusieurs demandes peuvent partir ensemble). Vérifiez le mail du 1er valideur, puis « Envoyer mes documents ».',
+    { page: 'PANIER', titre: 'Documents', texte: 'La demande attend son envoi dans le dossier « Prêtes à envoyer » (plusieurs demandes peuvent partir ensemble). Vérifiez ce qui part et le mail du 1er valideur, puis « Envoyer cette demande ».',
       zones: ['.MER-PANIER-ITEM', '#MER-MAIL-DEST', '.CARD > .BTN-PRIMARY'] },
     { page: 'PANIER', envoi: true, titre: 'Avant d\'envoyer', texte: 'Aperçu du PDF, puis « Envoyer » : la demande et ses pièces jointes arrivent, chiffrées, directement dans le TRIGONE du 1er valideur.',
       zones: ['#MER-BTN-DIRECT'] },
@@ -2117,6 +2125,7 @@ function DEMO_ETAPE(i) {
     DEMO_IDX = i;
     FERMER_MODALE();
     if (e.onglet) MER_ACTIVE_TAB = e.onglet;
+    if (e.page === 'PANIER') MER_DOSSIER.PANIER = 'prets';
     SHOW_PAGE(e.page);
     if (e.envoi) PREPARER_ENVOI();
     if (e.onglet === 'IMPUTATION') CHARGER_CODIER().then(function() { if (DEMO_ACTIF && DEMO_IDX === i) { AFFICHER_CODE_FD(); DEMO_ZONES(e); } });
@@ -2257,8 +2266,8 @@ function PREPARER_ENVOI() {
     if (!mail || mail.indexOf('@') === -1) { MSG_ERREUR('Mail manquant', 'Merci de renseigner l\'adresse mail du 1er valideur avant l\'envoi.'); return; }
     reg.mailSignataire = mail; SAVE_REGLAGES(reg);
 
-    var panier = GET_PANIER();
-    if (!panier.length) return;
+    var panier = DEMO_ACTIF ? GET_PANIER() : PANIER_PRETES();
+    if (!panier.length) { MSG_INFO('Rien à envoyer', 'Aucune demande prête à envoyer : une demande refusée part une fois corrigée.', '📄'); return; }
     // Envoi uniquement par la boîte TRIGONE : sans compte actif, rien ne part (la demande reste dans Documents).
     if (!MER_COMPTE_ACTIF() && !DEMO_ACTIF) {
         AFFICHER_MODALE('Compte TRIGONE à activer',
@@ -2283,7 +2292,7 @@ function PREPARER_ENVOI() {
     );
 }
 function VOIR_APERCU_PANIER() {
-    try { window.open(GENERER_PDF(GET_PANIER()).output('bloburl'), '_blank'); }
+    try { window.open(GENERER_PDF(DEMO_ACTIF ? GET_PANIER() : PANIER_PRETES()).output('bloburl'), '_blank'); }
     catch (e) { MSG_ERREUR('PDF impossible', 'Erreur lors de la génération du PDF : ' + e.message); }
 }
 
@@ -2308,7 +2317,7 @@ function SUJET_MAIL(etape, demandes) {
 }
 
 function PANIER_A_ENVOYER() {
-    var reg = GET_REGLAGES(), panier = GET_PANIER();
+    var reg = GET_REGLAGES(), panier = PANIER_PRETES();
     // Un refus revient au demandeur, dans sa boîte TRIGONE : l'adresse de son compte.
     var moi = (window.JUMELAGE_COMPTE_MAIL && JUMELAGE_COMPTE_MAIL()) || (reg.mailDemandeur || '').trim();
     panier.forEach(function(d) { d.mailDemandeur = moi; d.validations = []; delete d.refus; delete d.renvoi; delete d.mailValideur1; });
@@ -2348,7 +2357,7 @@ function ENVOYER_PANIER_DIRECT() {
         ARCHIVER_ENVOI(panier, reg.mailSignataire, idBib, differe);
         if (!differe) MER_PROGRAMMER_RAPPELS(panier);
         FERMER_MODALE();
-        SAVE_PANIER([]);
+        SAVE_PANIER(GET_PANIER().filter(function(d) { return d.refus; }));   // les refusées non corrigées restent
         setTimeout(function() {
             SHOW_PAGE('ACCUEIL');
             if (differe) MSG_INFO('Pas de réseau : envoi en attente', (plus ? 'Vos ' + panier.length + ' demandes partiront' : 'Votre demande partira') + ' toute' + (plus ? 's' : '') + ' seule' + (plus ? 's' : '') +

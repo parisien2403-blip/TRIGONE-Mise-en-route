@@ -163,19 +163,19 @@ module.exports = async function() {
     // Règle des boîtes : une demande ne peut pas partir vers le 2e valideur ni vers l'assistant Chorus DT
     for (const [qui, adr] of [['2e valideur', MAILS.V2], ['assistant Chorus DT', MAILS.C]]) {
         await m.evaluate(a => { const r = GET_REGLAGES(); r.mailSignataire = a; SAVE_REGLAGES(r); SHOW_PAGE('PANIER'); }, adr); await attendre(300);
-        await m.click('text=Envoyer mes documents'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
+        await m.click('text=/Envoyer (cette demande|ces \d+ demandes)/'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
         verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Mauvais destinataire', 'règle des boîtes : une demande de missionnaire est refusée par la boîte du ' + qui);
         await m.evaluate(() => { FERMER_MSG(); FERMER_MODALE(); }); await attendre(400);
     }
     await m.evaluate(() => SHOW_PAGE('PANIER')); await attendre(300);
     // Destinataire sans compte TRIGONE : envoi bloqué, la demande reste dans Documents.
     await m.fill('#MER-MAIL-DEST', 'personne.' + suffixe + '@interieur.gouv.fr');
-    await m.click('text=Envoyer mes documents'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
+    await m.click('text=/Envoyer (cette demande|ces \d+ demandes)/'); await attendre(500); await m.click('#MER-BTN-DIRECT'); await attendre(2500);
     verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Pas encore de compte TRIGONE' && await m.evaluate(() => GET_PANIER().length === 2),
         'destinataire sans compte : envoi bloqué, les demandes restent dans Documents');
     await m.evaluate(() => { FERMER_MSG(); FERMER_MODALE(); SHOW_PAGE('PANIER'); }); await attendre(400);
     await m.fill('#MER-MAIL-DEST', MAILS.V1);
-    await m.click('text=Envoyer mes documents'); await attendre(500);
+    await m.click('text=/Envoyer (cette demande|ces \d+ demandes)/'); await attendre(500);
     verifier(await m.isVisible('#MER-BTN-DIRECT'), 'demandeur : bouton « Envoyer » (boîte TRIGONE)');
     await m.click('#MER-BTN-DIRECT'); await attendre(3000);
     verifier((await m.evaluate(() => document.getElementById('MSG-TITRE').textContent)) === 'Demandes envoyées', 'demandeur : envoi direct réussi, sans pièce jointe ni mail');

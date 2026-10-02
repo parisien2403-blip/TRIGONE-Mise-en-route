@@ -62,7 +62,7 @@ module.exports = async function(srv, options) {
     verifier(await m.evaluate(() => document.getElementById('MSG-TITRE').textContent) === 'Ajoutée à vos Documents', 'message « Ajoutée à vos Documents »');
     await m.evaluate(() => FERMER_MSG()); await attendre(400);
     await m.fill('#MER-MAIL-DEST', 'chef@test.fr');
-    await m.click('text=Envoyer mes documents'); await attendre(500);
+    await m.click('text=/Envoyer (cette demande|ces \d+ demandes)/'); await attendre(500);
     // Plus d'envoi par mail : sans compte TRIGONE, rien ne part et la demande reste dans Documents.
     verifier((await m.textContent('#MER-MODALE-FOND')).includes('Compte TRIGONE à activer') && !(await m.isVisible('#MER-BTN-DIRECT')),
         'sans compte TRIGONE : envoi bloqué, activation du compte proposée');
