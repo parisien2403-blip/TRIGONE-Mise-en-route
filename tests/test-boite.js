@@ -119,6 +119,10 @@ module.exports = async function() {
     await v1.fill('#JUM-R-CODEVAL1', code1); await v1.click('.JUM-R-PRINCIPAL'); await attendre(6000);
     verifier(await v1.evaluate(() => { const r = JSON.parse(localStorage.getItem('trigone_roles_locaux')); return !document.querySelector('.JUM-REGLAGES') && r.valideur1 === true && r.valideur2 === true; }),
         'Mes rôles : VALIDEUR 1 et VALIDEUR 2 activés ensemble, chacun avec son code');
+    await attendre(1500);
+    const rolesV1 = (await v1.evaluate(m => { const x = JSON.parse(localStorage.getItem('trigone_compte'));
+        return fetch('api/cles?mail=' + encodeURIComponent(m), { headers: { Authorization: 'TRIGONE ' + encodeURIComponent(x.mail) + ' ' + x.appareil + ' ' + x.jeton } }).then(r => r.json()); }, MAILS.V1)).roles || {};
+    verifier(rolesV1.valideur1 === true && rolesV1.valideur2 === true, 'Mes rôles : les deux rôles cochés ensemble sont bien enregistrés sur le compte (dès le premier enregistrement)');
     await v1.evaluate(() => SHOW_PAGE('VALIDATION')); await attendre(2500);
     verifier(await v1.evaluate(() => { const h = HABILITATION_COURANTE(); return !!h && h.role === 1 && h.fonction === 'CHEF DE SERVICE'; }), 'Mes rôles : l\'Espace valideur est connecté d\'office (VALIDEUR 1)');
     verifier(await v1.locator('.MER-BASCULE-ROLE button').count() === 2, 'deux rôles valideur : bascule VALIDEUR 1 / VALIDEUR 2 affichée');

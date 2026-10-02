@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=130"></script>
+<script src="../jumelage.js?v=131"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -179,6 +179,16 @@ body.dark-mode #INTRO-SPLASH { background: #1a1a1a; }
 #MEDAILLE-OVERLAY .medaille-card { position: relative; overflow: visible; }
 .medaille-phenix { position: absolute; right: -12px; top: -78px; width: 128px; height: auto; pointer-events: none; filter: drop-shadow(0 8px 16px rgba(0,0,0,0.25)); }
 @media (max-width: 420px) { .medaille-phenix { width: 104px; top: -62px; right: -6px; } }
+/* La mascotte dépasse au-dessus de la carte : la fenêtre garde toujours la place de sa tête (écran bas, pliable, paysage)
+   et défile si besoin, au lieu de centrer la carte au risque de couper la mascotte. */
+#MEDAILLE-OVERLAY { align-items: flex-start; overflow-y: auto; padding: calc(96px + env(safe-area-inset-top, 0px)) 24px 24px; }
+#MEDAILLE-OVERLAY .medaille-card { margin: auto 0; flex-shrink: 0; }
+@media (max-height: 640px) {
+  #MEDAILLE-OVERLAY { padding-top: calc(76px + env(safe-area-inset-top, 0px)); }
+  #MEDAILLE-OVERLAY .medaille-card { padding: 22px 22px 20px; }
+  #MEDAILLE-OVERLAY .medaille-img { width: 96px; margin-bottom: 8px; }
+  #MEDAILLE-OVERLAY .medaille-phenix { width: 96px; top: -60px; }
+}
 .MEDAILLE-OVERLAY.medaille-in { background: rgba(20, 20, 20, 0.76); }
 .medaille-card { opacity: 1; }
 .medaille-card {
@@ -11470,7 +11480,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 227;
+var APP_CODE_VERSION = 228;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;

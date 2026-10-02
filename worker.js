@@ -788,9 +788,11 @@ async function api(requete, env, url, ctx) {
             const tenant = await kv.get('nid:' + h);
             if (tenant && tenant !== moi.mail && await kv.get('compte:' + tenant)) return erreur(409, 'Ce matricule est déjà associé à un autre compte TRIGONE.');
         }
-        if (moi.compte.nid && moi.compte.nid !== h && await kv.get('nid:' + moi.compte.nid) === moi.mail) await kv.delete('nid:' + moi.compte.nid);
-        if (h) { await kv.put('nid:' + h, moi.mail); moi.compte.nid = h; } else delete moi.compte.nid;
-        await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
+        // Empreinte du matricule de ce compte, dans sa propre clé : le compte lui-même n'est pas réécrit (une réécriture
+        // pouvait effacer des rôles déclarés au même moment).
+        const avant = (await kv.get('nid-de:' + moi.mail)) || moi.compte.nid || '';
+        if (avant && avant !== h && await kv.get('nid:' + avant) === moi.mail) await kv.delete('nid:' + avant);
+        if (h) { await kv.put('nid:' + h, moi.mail); await kv.put('nid-de:' + moi.mail, h); } else await kv.delete('nid-de:' + moi.mail);
         return json({ ok: true });
     }
     // Comptes TRIGONE des participants d'une mission collective, retrouvés par leur matricule (50 au plus par appel,
@@ -869,6 +871,19 @@ async function api(requete, env, url, ctx) {
     // Rôles du compte (déclarés par l'appli après le code valideur ou le code Assistant Chorus DT) : ils décident de ce
     // que chaque boîte peut recevoir. 1er valideur : les demandes des missionnaires ; 2e valideur : les envois des
     // 1ers valideurs ; assistant Chorus DT : les envois des 2es valideurs. Un refus revient à tout compte (le demandeur).
+    // Tous les rôles de l'appareil en une seule écriture (plusieurs rôles cochés d'un coup : des déclarations séparées
+    // et simultanées s'écrasaient, un seul rôle restait). ajouter / retirer : listes de rôles.
+    if (chemin === 'roles' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({}));
+        const ajouter = (Array.isArray(c.ajouter) ? c.ajouter : []).filter(r => ROLES.indexOf(r) >= 0);
+        const retirer = (Array.isArray(c.retirer) ? c.retirer : []).filter(r => ROLES.indexOf(r) >= 0);
+        const frais = (await kv.get('compte:' + moi.mail, 'json')) || moi.compte;
+        frais.roles = frais.roles || {};
+        ajouter.forEach(r => { frais.roles[r] = true; });
+        retirer.forEach(r => { delete frais.roles[r]; });
+        await kv.put('compte:' + moi.mail, JSON.stringify(frais));
+        return json({ ok: true, roles: frais.roles });
+    }
     if (chemin === 'role' && methode === 'POST') {
         const { role, actif } = await requete.json().catch(() => ({}));
         if (ROLES.indexOf(role) < 0) return erreur(400, 'Rôle inconnu.');
@@ -1064,7 +1079,9 @@ async function api(requete, env, url, ctx) {
         if (moi.compte.appareils.length) await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
         else {
             await kv.delete('compte:' + moi.mail);
-            if (moi.compte.nid && await kv.get('nid:' + moi.compte.nid) === moi.mail) await kv.delete('nid:' + moi.compte.nid);
+            const monNid = (await kv.get('nid-de:' + moi.mail)) || moi.compte.nid || '';
+            if (monNid && await kv.get('nid:' + monNid) === moi.mail) await kv.delete('nid:' + monNid);
+            await kv.delete('nid-de:' + moi.mail);
         }
         return json({ ok: true });
     }
