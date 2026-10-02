@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 183;
+var APP_CODE_VERSION = 184;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3782,12 +3782,23 @@ function MER_REG_MONTANTS(x) {
     Object.keys(t).forEach(function(k) { t[k] = Math.round(t[k] * 100) / 100; });
     return t;
 }
+// Registre commun aux assistants Chorus DT : qui a reçu la demande et le(s) compte(s)-rendu(s).
+function MER_REG_RECU_PAR(x) {
+    var t = [];
+    if (x.recuPar) t.push('Demande reçue par ' + ESC(x.recuPar));
+    var crPar = Array.from(new Set((x.crs || []).map(function(c) { return c.recuPar; }).filter(Boolean)));
+    if (crPar.length) t.push('CR reçu par ' + crPar.map(ESC).join(', '));
+    return t.length ? '<p class="MER-HINT MER-REG-PAR" style="margin:4px 0 0;">👤 ' + t.join(' · ') + '</p>' : '';
+}
 function MER_EUROS(v) { return (Math.round((v || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
 function MER_REGISTRE_LIGNES() {
     var l = (window.JUMELAGE_REGISTRE ? JUMELAGE_REGISTRE() : []).slice().sort(MER_OMR_COMPARER);
     return { mer: l.filter(function(x) { return !MER_REG_RENDU(x); }), cr: l.filter(MER_REG_RENDU) };
 }
-function OUVRIR_REGISTRE(onglet) { MER_REGISTRE_ONGLET = onglet || MER_REGISTRE_ONGLET; MER_DOSSIER.CHORUS = 'registre'; SHOW_PAGE('CHORUS'); window.scrollTo(0, 0); }
+function OUVRIR_REGISTRE(onglet) {
+    MER_REGISTRE_ONGLET = onglet || MER_REGISTRE_ONGLET; MER_DOSSIER.CHORUS = 'registre'; SHOW_PAGE('CHORUS'); window.scrollTo(0, 0);
+    if (window.JUMELAGE_REGISTRE_SYNCHRO) JUMELAGE_REGISTRE_SYNCHRO();   // changements faits par les autres assistants
+}
 function TPL_BOUTON_REGISTRE() {
     var r = MER_REGISTRE_LIGNES(), retard = r.mer.filter(function(x) { return MER_REG_ETAT(x).cls === 'retard'; }).length;
     return '<button type="button" class="MER-REG-ENTREE" onclick="OUVRIR_REGISTRE(\'mer\')"><span class="MER-REG-ENTREE-IC">📋</span><span><b>Registre des OMR</b>' +
@@ -3807,12 +3818,13 @@ function TPL_REGISTRE() {
                 '<span class="large"><small>Personnel</small>' + ESC(MER_REG_PERSONNEL(x)) + '</span>' +
                 '<span><small>Repas</small>' + MER_EUROS(m.repas) + '</span><span><small>Hébergement</small>' + MER_EUROS(m.hebergement) + '</span>' +
                 '<span><small>Transports</small>' + MER_EUROS(m.transports) + '</span><span><small>IK</small>' + MER_EUROS(m.ik) + '</span>' +
-                '<span><small>Transp. commun</small>' + MER_EUROS(m.tc) + '</span><span class="total"><small>Total</small>' + MER_EUROS(m.total) + '</span></div>'
+                '<span><small>Transp. commun</small>' + MER_EUROS(m.tc) + '</span><span class="total"><small>Total</small>' + MER_EUROS(m.total) + '</span></div>' + MER_REG_RECU_PAR(x)
             : '<div class="MER-REG-GRILLE mer"><span><small>Envoyée le</small>' + MER_REG_JOUR(x.omrLe || x.recuLe) + '</span><span class="large"><small>Objet</small>' + ESC(x.objet || '—') + '</span>' +
                 '<span><small>Code FD</small>' + ESC(x.codeFD || '—') + '</span><span><small>Début</small>' + MER_REG_JOUR(x.debut) + '</span><span><small>Fin</small>' + MER_REG_JOUR(x.fin) + '</span>' +
                 '<span class="large"><small>Personnel</small>' + ESC(MER_REG_PERSONNEL(x)) + '</span>' +
                 '<span><small>CR attendu le</small>' + (MER_REG_ECHEANCE(x) ? MER_REG_ECHEANCE(x).toLocaleDateString('fr-FR') : '—') + '</span></div>' +
-                ((x.relances || []).length ? '<p class="MER-HINT" style="margin:4px 0 0;">🔔 Relancé le ' + x.relances.map(MER_REG_JOUR).join(', ') + '</p>' : '') +
+                MER_REG_RECU_PAR(x) +
+                ((x.relances || []).length ? '<p class="MER-HINT" style="margin:4px 0 0;">🔔 Relancé le ' + x.relances.map(function(t) { var q = (x.relancesQui || {})[t]; return MER_REG_JOUR(t) + (q ? ' (par ' + ESC(q) + ')' : ''); }).join(', ') + '</p>' : '') +
                 '<div class="MER-REG-ACTIONS"><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', true)">🔔 Relancer pour le CR</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', false)">✉ Message</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_SUPPRIMER(\'' + ref + '\')">Supprimer</button></div>';
@@ -3822,7 +3834,7 @@ function TPL_REGISTRE() {
     return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="OUVRIR_DOSSIER(\'CHORUS\', null)">‹ Dossiers</button><span class="MER-REG-ENTREE-IC petit">📋</span><b>Registre des OMR</b></div>' +
         '<div class="MER-REG-ONGLETS">' + onglet('mer', 'Mises en route', r.mer.length) + onglet('cr', 'Comptes-rendus rendus', r.cr.length) + '</div>' +
         '<p class="MER-HINT" style="margin:0 0 10px;">' + (cr ? 'Missions dont le compte-rendu est rendu, avec les montants déclarés par le missionnaire.'
-            : 'Demandes validées reçues, dans l\'ordre des n° OMR. Le compte-rendu est attendu au plus tard ' + MER_REGISTRE_DELAI + ' jours après la fin de mission ; une fois rendu, la ligne passe dans « Comptes-rendus rendus ».') + '</p>' +
+            : 'Demandes validées reçues par les assistants Chorus DT de l\'unité (registre commun), dans l\'ordre des n° OMR. Le compte-rendu est attendu au plus tard ' + MER_REGISTRE_DELAI + ' jours après la fin de mission ; une fois rendu, la ligne passe dans « Comptes-rendus rendus ».') + '</p>' +
         (lignes || '<div class="MER-EMPTY">' + (cr ? 'Aucun compte-rendu rendu pour l\'instant.' : 'Aucune mise en route en attente de compte-rendu.') + '</div>') +
         (totaux && l.length ? '<div class="MER-REG-TOTAL"><span>Total des ' + l.length + ' mission' + (l.length > 1 ? 's' : '') + '</span><b>' + MER_EUROS(totaux.total) + '</b></div>' : '') +
         '<div class="MER-REG-PIED"><button type="button" class="BTN BTN-PRIMARY" onclick="REGISTRE_PDF()"' + (l.length ? '' : ' disabled') + '>📄 PDF de cet onglet</button>' +
@@ -3831,7 +3843,7 @@ function TPL_REGISTRE() {
 function REGISTRE_LIGNE(ref) { return (window.JUMELAGE_REGISTRE ? JUMELAGE_REGISTRE() : []).filter(function(x) { return x.ref === ref; })[0]; }
 function REGISTRE_SUPPRIMER(ref) {
     var x = REGISTRE_LIGNE(ref); if (!x) return;
-    MSG_CONFIRM('Supprimer cette ligne ?', (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || '') + '\n\nÀ faire par exemple pour une mission annulée. La ligne disparaît du registre ; le n° OMR n\'est pas réattribué.', 'Supprimer',
+    MSG_CONFIRM('Supprimer cette ligne ?', (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || '') + '\n\nÀ faire par exemple pour une mission annulée. La ligne disparaît du registre, chez tous les assistants Chorus DT de l\'unité ; le n° OMR n\'est pas réattribué.', 'Supprimer',
         function() { JUMELAGE_REGISTRE_MAJ(ref, null); SHOW_PAGE('CHORUS'); }, '🗑', 'mascotte-poubelle.webp', true);
 }
 // Relance (texte prérempli, modifiable) ou message libre au(x) missionnaire(s) : arrive dans sa boîte TRIGONE avec une
@@ -3863,7 +3875,7 @@ function REGISTRE_MESSAGE(ref, relance) {
             Promise.all(dests.map(function(d) {
                 return JUMELAGE_ENVOYER_DIRECT(d, 'QUESTION', 'Question.json', JSON.stringify({ app: 'TRIGONE-QUESTION', ref: x.ref, genre: 'registre', objet: (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || ''), question: q, qui: qui }), { differable: true, libelle: 'Votre message' });
             })).then(function() {
-                if (relance) JUMELAGE_REGISTRE_MAJ(x.ref, { relances: (x.relances || []).concat([Date.now()]) });
+                if (relance) { var t = Date.now(), rq = {}; rq[t] = window.JUMELAGE_QUI ? JUMELAGE_QUI() : ''; JUMELAGE_REGISTRE_MAJ(x.ref, { relances: (x.relances || []).concat([t]), relancesQui: Object.assign({}, x.relancesQui || {}, rq) }); }
                 FERMER_MODALE(); SHOW_PAGE('CHORUS');
                 MSG_INFO(relance ? 'Relance envoyée' : 'Message envoyé', 'Il arrive dans la boîte TRIGONE du missionnaire, avec une notification. Sa réponse arrivera dans votre Boîte de réception (Questions).', relance ? '🔔' : '✉');
             }).catch(function(e) { b.disabled = false; b.textContent = 'Envoyer'; MSG_ERREUR('Envoi impossible', e.message || String(e)); });

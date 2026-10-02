@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=136"></script>
+<script src="../jumelage.js?v=137"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -11477,7 +11477,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 233;
+var APP_CODE_VERSION = 234;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12622,6 +12622,14 @@ function OUVRIR_SUIVI_EQUIPE(S) {
         }).catch(function(e) { btn.disabled = false; MSG_INFO('Relance impossible', e.message || String(e), '⛔'); });
     };
     charger();
+    // Mise à jour automatique tant que la fenêtre est ouverte : un compte-rendu envoyé par un participant apparaît
+    // tout seul (toutes les 10 s, et dès le retour dans l'appli), sans avoir à rafraîchir la page.
+    o._charger = charger; clearInterval(o._minuteur);
+    o._minuteur = setInterval(function() {
+        if (!document.body.contains(o)) { clearInterval(o._minuteur); return; }
+        if (!document.hidden && navigator.onLine) o._charger();
+    }, 10000);
+    if (!o._visible) { o._visible = true; document.addEventListener('visibilitychange', function() { if (!document.hidden && document.body.contains(o)) o._charger(); }); }
 }
 
 function HIDE_ALL_PAGES() {
