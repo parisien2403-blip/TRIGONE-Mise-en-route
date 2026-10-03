@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 142;
+    var VERSION = 150;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i></button>'; }
     function r(n) { return '<span class="n-r">' + n + '</span>'; }
@@ -56,7 +56,7 @@
         '<h5>Sur PC (Chrome ou Edge)</h5>' + et(['Ouvrez l\'adresse, puis cliquez sur l\'icône <b>Installer</b> à droite de la barre d\'adresse.']) +
         astuce('Paramètres › Aide › <b>Partager TRIGONE</b> affiche un QR code : un collègue le scanne pour installer TRIGONE à son tour.'), 'inst'));
     ajouter(page('L\'écran d\'accueil', duo('01-choix', et([r(1) + ' <b>Mise en route</b> : toucher pour faire une demande avant le départ.', r(2) + ' <b>Compte-rendu de mission</b> : toucher pour démarrer ou reprendre une mission.',
-        r(3) + ' <b>Mon compte</b> : se connecter, Paramètres, se déconnecter.', r(4) + ' <b>Ma carte TRIGONE</b> : accès direct à votre carte.', r(5) + ' <b>Mise à jour</b> : vérifier qu\'une nouvelle version est disponible.', r(6) + ' <b>Numéro de version</b> de TRIGONE.'])) +
+        r(3) + ' <b>Mon compte</b> : se connecter, Paramètres, se déconnecter.', r(4) + ' <b>Ma carte TRIGONE</b> : accès direct à votre carte. À côté : la <b>roue ⚙</b> (Paramètres) et le bouton <b>Notice</b> (ce livret).', r(5) + ' <b>Mise à jour</b> : vérifier qu\'une nouvelle version est disponible.', r(6) + ' <b>Numéro de version</b> de TRIGONE.'])) +
         savoir('Un assistant Chorus DT voit en plus un 3<sup>e</sup> espace, <b>ASSIST CHORUS-DT</b> (chapitre 10).'), 'inst'));
     ajouter(page('Mises à jour, thème et PC', '<h5>Mises à jour</h5><p>TRIGONE se met à jour <b>tout seul</b> à l\'ouverture. Une notification « Nouveautés » présente les changements. Le bouton ↻ de l\'écran d\'accueil force la vérification.</p>' +
         '<h5>Clair ou sombre</h5><p>Le bouton <b>☾ / ☀</b> en haut à droite des applis passe du thème clair au thème sombre.</p>' +
@@ -93,7 +93,7 @@
     ajouter(chapitre(5, 'Les Paramètres', 'Toutes les options de TRIGONE sont rangées dans une seule page, par rubriques : Compte, Notifications, réglages de l\'appli, Données et Aide.',
         ['Ouvrir les Paramètres', 'Les rubriques', 'Montre connectée'], 'param'));
     ajouter(page('Ouvrir les Paramètres', duo('10-parametres-compte', et(['Touchez la <b>pastille de votre compte</b> (vos initiales) puis <b>Paramètres</b>.', r(1) + ' Choisissez une <b>rubrique</b> en haut.', '<b>Compte</b> : ' + r(2) + ' Ma carte TRIGONE, ' + r(3) + ' Mon profil, ' + r(4) + ' Mes rôles, Absence, Ajouter un appareil.', '<b>Notifications</b> : activer, couper sur cet appareil, tester, montre connectée.'])), 'param'));
-    ajouter(page('Les autres rubriques', duo('11-parametres-donnees', et(['<b>Mise en route / Compte-rendu</b> : réglages propres à l\'appli ouverte (notice, références, montants…).', '<b>Données</b> : sauvegarde automatique, restaurer depuis le compte, sauvegarder ou restaurer un fichier, se déconnecter et effacer, réinitialiser TRIGONE.', '<b>Aide</b> : cette notice, Découvrir TRIGONE, Partager TRIGONE, <b>Signaler un problème</b>.'])) +
+    ajouter(page('Les autres rubriques', duo('11-parametres-donnees', et(['<b>Compte-rendu</b> (dans l\'appli Compte-rendu) : réglages du compte-rendu (rappels, envoi, barèmes, étranger).', '<b>Données</b> : sauvegarde automatique, restaurer depuis le compte, sauvegarder ou restaurer un fichier, se déconnecter et effacer, réinitialiser TRIGONE.', '<b>Aide</b> : cette notice, Références, Mise à jour, Découvrir TRIGONE, Partager TRIGONE, <b>Signaler un problème</b>.', 'Accès direct : la <b>roue ⚙</b> de l\'écran d\'accueil ouvre les Paramètres ; le bouton <b>Notice</b> (livre) ouvre cette notice.'])) +
         attention('« Réinitialiser TRIGONE » et « Se déconnecter et effacer » suppriment <b>toutes</b> les données de l\'appareil. Faites d\'abord une sauvegarde.'), 'param'));
     ajouter(page('Montre connectée', duo('82-montre', et(['Paramètres › Notifications › <b>Montre connectée</b> (pastille verte = prête, rouge = pas prête).', 'Activez les notifications de TRIGONE sur le téléphone.', 'Dans l\'appli de la montre (ex. Galaxy Wearable › Notifications), autorisez <b>Chrome</b> et TRIGONE.', 'Pendant une mission, la notification « Mission en cours » arrive sur la montre avec le bouton de l\'étape suivante : <b>un appui horodate</b>, même sans réseau.'])), 'param'));
 
