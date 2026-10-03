@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 211;
+var APP_CODE_VERSION = 212;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3589,7 +3589,7 @@ var MER_NATURES_BOITE = {
     niveau1: ['À signer — 1er niveau', 'Ouvrir et signer'], niveau2: ['À signer — 2e niveau', 'Ouvrir et signer'],
     chorus: ['Pour l\'assistant Chorus DT', 'Ouvrir et contrôler'], refus: ['Demande refusée — à corriger', 'Corriger dans Documents'],
     cr: ['Compte-rendu de mission', 'Ouvrir'], collective: ['Mission collective — votre compte-rendu', 'Ouvrir mon compte-rendu'],
-    question: ['Question sur votre demande', 'Répondre'], reponse: ['Réponse à votre question', 'Vu'], renvoi: ['Renvoyée par le VALIDEUR 2', 'Ouvrir et corriger'], inconnu: ['Fichier reçu', 'Ouvrir']
+    question: ['Question sur votre demande', 'Répondre'], reponse: ['Réponse à votre question', 'Vu'], renvoi: ['Renvoyée par le VALIDEUR 2', 'Ouvrir et corriger'], justif: ['Justificatif reçu par mail', 'Voir'], inconnu: ['Fichier reçu', 'Ouvrir']
 };
 function MER_EST_CHORUS(x) { return x.nature === 'chorus' || x.nature === 'cr'; }
 // Rôles changés dans les Réglages : la session valideur est reprise de la clé mémorisée (nouveau rôle, ou aucun).
@@ -3624,6 +3624,8 @@ function TPL_ENVOI_RECU(x) {
         '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
         (x.nature === 'question' || x.nature === 'reponse' ? '<div class="MER-QUESTION"><b>❓ ' + ESC(x.question) + '</b>' + (x.nature === 'reponse' ? '<span>💬 ' + ESC(x.reponse) + '</span>' : '') + '</div>' : '') +
         (x.nature === 'collective' ? '<div class="MER-HINT" style="margin-top:4px;">Mission déjà renseignée par votre chef de mission : complétez votre identité, joignez vos justificatifs, puis envoyez à l\'assistant Chorus DT.</div>' : '') +
+        (x.nature === 'justif' ? (x.verifie ? '' : '<div class="MER-HINT" style="margin-top:4px; color:#b45309; font-weight:800;">⚠ À vérifier : expéditeur inconnu de TRIGONE. Gardez-le seulement s\'il est bien à vous.</div>') +
+            '<div class="MER-JUSTIF-PJ">' + (x.fichiers || []).map(function(f, i) { return '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_JUSTIF(\'' + x.id + '\', ' + i + ')">' + (/pdf/.test(f.type) ? '📄 ' : '🖼️ ') + ESC(f.nom) + '</button>'; }).join('') + '</div>' : '') +
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
         (x.nature === 'cr' && x.equipe ? '<div class="MER-HINT" style="margin-top:4px;">👥 Mission collective (' + (x.roleEquipe === 'participant' ? 'participant' : 'chef de mission') + ') : suivi de l\'équipe dans le détail</div>' : '') +
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
@@ -3649,6 +3651,11 @@ function TPL_ENVOI_RECU(x) {
             : x.nature === 'question' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="REPONDRE_QUESTION(\'' + x.id + '\')">💬 Répondre</button>'
             : x.nature === 'reponse' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">✔ Vu</button>'
             : x.nature === 'question' || x.nature === 'reponse' ? ''
+            // Justificatif reçu par mail : à garder (expéditeur inconnu), puis rangé une fois joint au compte-rendu.
+            : x.nature === 'justif'
+                ? (x.verifie ? '' : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_JUSTIF_VERIFIE(\'' + x.id + '\'); RECU_REAFFICHER();">✔ C\'est bien à moi</button>') +
+                  (traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="JUMELAGE_BOITE_ROUVRIR(\'' + x.id + '\'); RECU_REAFFICHER();">↺ Remettre à joindre</button>'
+                      : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">✔ Rangé</button>')
             // Mission collective : le compte-rendu prérempli par le chef de mission s'ouvre dans Compte-rendu.
             : x.nature === 'collective'
                 ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_COLLECTIVE_RECU(\'' + x.id + '\')">📝 ' + nat[1] + '</button>'
@@ -3709,6 +3716,7 @@ function MER_DOSSIERS(page, l) {
         { id: 'signer', titre: 'À signer', sous: 'Demandes de mise en route à valider', aide: 'Demandes reçues des missionnaires (1er valideur) ou du 1er valideur (2e valideur), et demandes renvoyées : « Ouvrir et signer ».', natures: ['niveau1', 'niveau2', 'renvoi'] },
         { id: 'refus', titre: 'Refusées — à corriger', sous: 'Vos demandes renvoyées avec un motif', aide: 'Vos demandes refusées par un valideur ou l\'assistant Chorus DT : corrigez-les dans Documents, puis renvoyez.', natures: ['refus'] },
         { id: 'collective', titre: 'Missions collectives', sous: 'Comptes-rendus préremplis par le chef de mission', aide: 'Envoyés par votre chef de mission : « Ouvrir mon compte-rendu », joignez vos justificatifs, puis envoyez.', natures: ['collective'] },
+        { id: 'justif', titre: 'Justificatifs', sous: 'Factures et billets reçus par mail', aide: MER_AIDE_JUSTIF(), natures: ['justif'] },
         { id: 'questions', titre: 'Questions', sous: 'Questions sur vos demandes, et réponses', aide: 'Un valideur ou l\'assistant Chorus DT vous pose une question plutôt que de refuser : « Répondre » et votre dossier avance. Vous y trouvez aussi les réponses aux questions que vous avez posées.', natures: ['question', 'reponse'] }
     ];
     var connues = [].concat.apply([], d.map(function(x) { return x.natures; }));
@@ -3722,6 +3730,19 @@ function MER_DOSSIERS(page, l) {
         x.nouveau = x.aTraiter.some(function(e) { return e.statut === 'nouveau'; });
     });
     return d;
+}
+// Justificatifs : l'adresse où les envoyer (créée avec Mon profil).
+function MER_AIDE_JUSTIF() {
+    var a = window.JUMELAGE_ADRESSE_CONNUE ? JUMELAGE_ADRESSE_CONNUE() : '';
+    return 'Factures d\'hôtel, billets de train ou d\'avion : envoyez-les ou <b>transférez-les</b> à ' + (a ? '<b>' + ESC(a) + '</b> <button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; display:inline-block; margin:0 0 0 4px; padding:4px 10px;" onclick="JUMELAGE_COPIER_ADRESSE(this)">Copier</button>' : 'votre adresse TRIGONE (Ma carte)') +
+        '. Seules les pièces jointes PDF et photos sont gardées, chiffrées. Au compte-rendu : « 📥 Depuis ma boîte TRIGONE ». Un expéditeur inconnu (hôtel…) arrive « à vérifier ».';
+}
+function VOIR_JUSTIF(id, i) {
+    JUMELAGE_JUSTIF_FICHIER(id, i).then(function(f) {
+        var u = URL.createObjectURL(f), w = window.open(u, '_blank');
+        if (!w) { var a = document.createElement('a'); a.href = u; a.download = f.name; document.body.appendChild(a); a.click(); a.remove(); }
+        setTimeout(function() { URL.revokeObjectURL(u); }, 60000);
+    }).catch(function(e) { MSG_ERREUR('Justificatif introuvable', e.message || String(e)); });
 }
 // Dossier où range un envoi (bandeau de réception : ouverture directe du bon dossier).
 function MER_DOSSIER_DE(page, x) {
@@ -4631,7 +4652,8 @@ window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
             function() { OUVRIR_DOSSIER('RECEPTION', 'questions'); if (x.nature === 'question') setTimeout(function() { REPONDRE_QUESTION(x.id); }, 300); });
         return;
     }
-    MER_BANDEAU_RECU(x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' demandes reçues' : 'Demande reçue', (nouveaux.length > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
+    var tousJustif = nouveaux.every(function(e) { return e.nature === 'justif'; });
+    MER_BANDEAU_RECU(tousJustif ? (nouveaux.length > 1 ? nouveaux.length + ' justificatifs reçus par mail' : 'Justificatif reçu par mail') : x.nature === 'cr' && n === 1 ? 'Compte-rendu reçu' : n > 1 ? n + ' demandes reçues' : 'Demande reçue', (nouveaux.length > 1 ? 'Dernière : ' : '') + [x.noms, x.objet].filter(Boolean).join(' · ') + ' — de ' + (x.de || '?') + '. Touchez pour ouvrir ' +
         (chorus ? 'l\'espace Assistant Chorus DT.' : 'la boîte de réception.'), function() { var pg = chorus ? 'CHORUS' : 'RECEPTION'; OUVRIR_DOSSIER(pg, MER_DOSSIER_DE(pg, x)); });
 };
 // Mise en route choisie sur l'écran de choix alors que l'espace Assistant Chorus DT était affiché dessous : accueil.

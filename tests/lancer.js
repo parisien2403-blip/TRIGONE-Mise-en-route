@@ -14,6 +14,7 @@ const TESTS = {
     'envoi-collective': ['Mission collective envoyée aux participants dans TRIGONE', require('./test-envoi-collective')],
     'multi-appareils': ['Un compte sur deux appareils (traité sur le PC → traité sur le téléphone)', require('./test-multi-appareils')],
     'participants': ['Onglet Participants : cartes TRIGONE et photos chiffrées de bout en bout', require('./test-participants')],
+    'justificatifs': ['Justificatifs reçus par mail (adresse prénom.nom, pièces jointes chiffrées, compte-rendu)', require('./test-justificatifs')],
     'registre': ['Registre OMR de l\'assistant Chorus DT (n° OMR, CR rapprochés, relances)', require('./test-registre')],
     'montre': ['Horodatage depuis la montre (notification avec bouton)', require('./test-montre')],
     'etranger': ['Mission à l\'étranger (barème, trajet en France, taux BCE)', require('./test-etranger')],

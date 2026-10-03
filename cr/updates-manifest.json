@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 261,
-  "appCodeMessage": "Onglet Participants : la carte TRIGONE de chaque personne d'une demande ; photo partageable, chiffrée de bout en bout (Ma carte).",
+  "appCodeVersion": 262,
+  "appCodeMessage": "Justificatifs par mail : votre adresse prénom.nom@trigone-app.com (Ma carte) ; factures et billets reçus dans Boîte de réception › Justificatifs, à joindre au compte-rendu. Votre photo s'affiche aussi sur vos autres appareils.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
