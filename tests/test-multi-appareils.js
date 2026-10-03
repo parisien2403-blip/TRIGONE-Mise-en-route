@@ -57,7 +57,9 @@ module.exports = async function() {
     const d3 = await envoyer();
     await pc.evaluate(() => JUMELAGE_RELEVER()); await attendre(2500);
     await pc.evaluate(d => JUMELAGE_BOITE_TRAITER_DEMANDES([d], ['niveau1']), d3); await attendre(1500);
+    await tel.evaluate(() => { window.__annonces = []; const av = window.JUMELAGE_APRES_RELEVE; window.JUMELAGE_APRES_RELEVE = n => { window.__annonces.push(n.length); if (av) av(n); }; });
     await tel.evaluate(() => JUMELAGE_RELEVER()); await attendre(3500);
+    verifier(await tel.evaluate(() => !window.__annonces.length), 'traitée sur le PC : pas de message de réception sur le téléphone');
     verifier((await boite(tel, d3)).statut === 'traite', 'traitée sur le PC avant que le téléphone ne la relève : elle y arrive déjà « traitée »');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.slice(0, 3).join(' | ') : ''));
     await b.close();

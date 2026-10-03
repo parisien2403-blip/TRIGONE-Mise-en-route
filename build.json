@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 165,
-  "notifier": true,
-  "message": "Justificatifs par mail : votre adresse prénom.nom@trigone-app.com (Ma carte) ; factures et billets reçus dans Boîte de réception › Justificatifs, à joindre au compte-rendu. Votre photo s'affiche aussi sur vos autres appareils."
+  "build": 166,
+  "notifier": false,
+  "message": "Correctif : un envoi déjà traité sur un autre de vos appareils n'affiche plus de message de réception."
 }

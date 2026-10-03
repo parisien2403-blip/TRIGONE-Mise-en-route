@@ -1038,7 +1038,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 165, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 166, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3585,6 +3585,11 @@
         }).catch(function(e) {
             if (e.statut === 401) { try { localStorage.removeItem(CLE_COMPTE); localStorage.removeItem(CLE_NID_PUBLIE); } catch (x) {} }
         }).then(function() {
+            // Déjà traité sur un autre de mes appareils (PC ↔ téléphone) : rangé tout de suite, sans message de réception.
+            return nouveaux.length ? window.JUMELAGE_BOITE_ETATS().catch(function() {}) : null;
+        }).then(function() {
+            var dejaTraites = boiteLire().filter(function(y) { return y.statut === 'traite'; }).map(function(y) { return y.id; });
+            nouveaux = nouveaux.filter(function(x) { return dejaTraites.indexOf(x.id) < 0; });
             var nb = nouveaux.reduce(function(t, x) { return t + (x.n > 1 ? x.n : 1); }, 0);   // nombre de demandes reçues
             if (ecartes) bandeau(ecartes + ' envoi(s) non conforme(s) écarté(s) de votre boîte de réception.');
             if (nouveaux.length) {
