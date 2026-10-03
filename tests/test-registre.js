@@ -63,6 +63,9 @@ module.exports = async function() {
     await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(600);
     const t2 = await c.evaluate(() => document.querySelector('.CARD').textContent);
     verifier(/Validé/.test(t2) && t2.indexOf(pref + '0007') >= 0 && /247,80/.test(t2) && /82,30/.test(t2), 'registre : la ligne passe à « Validé — CR rendu », avec ses montants (repas, hébergement, IK…) et le total');
+    const sommes = await c.evaluate(() => { const g = document.querySelector('.MER-REG-TOTAL .MER-REG-SOMMES'); return g ? g.textContent : ''; });
+    verifier(/Repas/.test(sommes) && /IK/.test(sommes) && /Hébergement/.test(sommes) && /82,30/.test(sommes) && /247,80/.test(sommes), 'registre : en bas, le total de chaque rubrique (repas, hébergement, transports, IK, transp. commun, total)');
+    verifier(await c.evaluate(() => getComputedStyle(document.querySelector('.MER-REG-LIGNE .MER-REG-GRILLE small')).color === 'rgb(26, 26, 26)'), 'registre : libellés (Code FD, Début…) en noir');
     await c.evaluate(() => OUVRIR_REGISTRE('retard')); await attendre(400);
     verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') < 0, 'filtre « En retard » : la ligne rendue n\'y est plus');
     await c.evaluate(() => OUVRIR_REGISTRE('ok')); await attendre(400);

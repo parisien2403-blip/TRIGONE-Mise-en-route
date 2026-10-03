@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 155,
-  "notifier": true,
-  "message": "Registre des OMR : un seul tableau, l'étape de chaque mission (à venir, en cours, CR attendu, en retard, validé), mis à jour tout seul."
+  "build": 156,
+  "notifier": false,
+  "message": "Registre des OMR : libellés en noir et, en bas, le total de chaque rubrique (repas, hébergement, transports, IK…)."
 }
