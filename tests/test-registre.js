@@ -53,7 +53,24 @@ module.exports = async function() {
     verifier(/Rappel : votre compte-rendu/.test(await c.inputValue('#MER-REG-TXT')), 'relance : texte de rappel prérempli (modifiable)');
     await c.click('#MER-REG-GO'); await attendre(2500);
     verifier(await c.evaluate(r => (JUMELAGE_REGISTRE().filter(x => x.ref === r)[0].relances || []).length === 1, d.id), 'relance enregistrée sur la ligne (date)');
-    await c.evaluate(() => { FERMER_MSG && FERMER_MSG(); });
+    await c.evaluate(() => { FERMER_MSG && FERMER_MSG(); }); await attendre(500);
+    // Relance groupée : les CR en retard pas encore relancés depuis 24 h (ici la 2e demande), une seule confirmation.
+    await c.evaluate(p => { MER_REGISTRE_CRIT.texte = p; OUVRIR_REGISTRE('tout'); }, pref); await attendre(600);
+    const bandeauRel = await c.evaluate(() => (document.querySelector('.MER-REG-RELANCE') || {}).textContent || '');
+    verifier(/2 comptes-rendus en retard/.test(bandeauRel) && /1 déjà relancé/.test(bandeauRel) && /Relancer les 1 en retard/.test(bandeauRel), 'relance groupée : « ' + bandeauRel + ' »');
+    await c.click('.MER-REG-RELANCE button'); await attendre(800);
+    await c.click('#MSG-BOUTONS .BTN-PRIMARY, #MSG-BOUTONS button:last-child'); await attendre(3500);
+    verifier(await c.evaluate(r => (JUMELAGE_REGISTRE().filter(x => x.ref === r)[0].relances || []).length === 1, d2.id) && /Tous relancés/.test(await c.evaluate(() => (document.querySelector('.MER-REG-RELANCE') || {}).textContent || '')), 'relance groupée : la 2e demande relancée, puis « Tous relancés »');
+    await c.evaluate(() => { FERMER_MSG && FERMER_MSG(); MER_REGISTRE_CRIT.texte = ''; });
+    // Un registre par régiment : l'en-tête d'unité sépare les registres et les séries OMR ; « 4RIISC » (ou sans unité) = registre d'origine.
+    const parUnite = (u, chemin, corps) => c.evaluate(([u, chemin, corps]) => { const k = JSON.parse(localStorage.getItem('trigone_compte')); const h = { Authorization: 'TRIGONE ' + encodeURIComponent(k.mail) + ' ' + k.appareil + ' ' + k.jeton, 'Content-Type': 'application/json' }; if (u) h['X-Trigone-Unite'] = u;
+        return fetch('api/' + chemin, { method: corps ? 'POST' : 'GET', headers: h, body: corps ? JSON.stringify(corps) : undefined }).then(r => r.json()); }, [u, chemin, corps]);
+    const enLignes = (r, p) => (r.lignes || []).filter(x => !x.supprime && x.ligne && String(x.ligne.omr || '').indexOf(p) === 0).length;
+    const r4 = await parUnite('4RIISC', 'registre', { depuis: 0 }), r0 = await parUnite('', 'registre', { depuis: 0 }), r1 = await parUnite('1RIISC', 'registre', { depuis: 0 });
+    verifier(enLignes(r4, pref) > 0 && enLignes(r4, pref) === enLignes(r0, pref) && enLignes(r1, pref) === 0, 'un registre par régiment : 4°RIISC (registre d\'origine) ' + enLignes(r4, pref) + ' ligne(s), 1°RIISC aucune');
+    await parUnite('1RIISC', 'omr/serie', { prefixe: 'U1-', prochain: 500 });
+    const s1 = await parUnite('1RIISC', 'omr/serie'), s4 = await parUnite('4RIISC', 'omr/serie');
+    verifier(s1.prefixe === 'U1-' && s1.prochain === 500 && s4.prefixe !== 'U1-', 'numérotation OMR par régiment : série 1°RIISC « U1-0500 », celle du 4°RIISC inchangée');
     await m.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
     verifier(await m.evaluate(() => JUMELAGE_BOITE_LISTE().some(x => x.nature === 'question' && /Rappel : votre compte-rendu/.test(x.question))), 'missionnaire : la relance arrive dans sa boîte (Questions)');
     // Compte-rendu rendu (même n° OMR, montants) → la ligne passe dans « Comptes-rendus rendus », marquée validée.

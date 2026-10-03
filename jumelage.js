@@ -601,6 +601,12 @@
             'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB.has-badge::after { top: 2px !important; right: calc(50% - 20px) !important; border-color: #121212 !important; }' +
         '}' +
         '@media (min-width: 1100px) { .JUM-ONG-CARTE, .JUM-ONG-NOTICE, .JUM-ONG-PC { display: none !important; } }' +
+        '.JUM-HORS-RESEAU { position: fixed; z-index: 2147482000; top: calc(62px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 16px; border: 1px solid rgba(251,191,36,0.6); background: rgba(24,18,6,0.94); color: #fde68a; font: 800 0.66rem Montserrat, system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.3); -webkit-tap-highlight-color: transparent; }' +
+        '.JUM-HORS-RESEAU b { display: flex; align-items: center; white-space: nowrap; font-weight: 800; }' +
+        '.JUM-HR-PT { position: absolute; left: 9px; top: 11px; width: 7px; height: 7px; border-radius: 50%; background: #f59e0b; box-shadow: 0 0 0 3px rgba(245,158,11,0.25); }' +
+        '.JUM-HORS-RESEAU b { padding-left: 9px; }' +
+        '.JUM-HORS-RESEAU small { display: none; font: 600 0.72rem/1.35 Montserrat, system-ui, sans-serif; letter-spacing: 0; text-transform: none; color: #fef3c7; text-align: center; }' +
+        '.JUM-HORS-RESEAU.ouvert { width: 320px; } .JUM-HORS-RESEAU.ouvert small { display: block; }' +
         '.JUM-DOCK { display: none; }' +
         '@media (max-width: 1099px) {' +
             '.JUM-CHOIX.JUM-V2 { grid-template: "mer" 1fr "cr" 1fr "dock" auto / 1fr; }' +
@@ -2556,6 +2562,8 @@
         opts = opts || {};
         var c = monCompte(), entetes = { 'Content-Type': 'application/json' };
         if (c) entetes.Authorization = 'TRIGONE ' + encodeURIComponent(c.mail) + ' ' + c.appareil + ' ' + c.jeton;
+        // Unité du profil : un registre et une numérotation OMR par régiment sur le serveur.
+        var u = normeUnite(lireReglages().unite); if (u) entetes['X-Trigone-Unite'] = u;
         return fetch(API + chemin, { method: opts.methode || 'GET', headers: entetes, body: opts.corps ? JSON.stringify(opts.corps) : undefined, cache: 'no-store' })
             .then(function(r) {
                 return r.json().catch(function() { return { ok: false, erreur: 'Service indisponible.' }; }).then(function(j) {
@@ -2843,7 +2851,7 @@
         return baseEnvois().then(function(db) { return new Promise(function(ok, ko) {
             var tx = db.transaction('attente', action === 'lire' ? 'readonly' : 'readwrite'), st = tx.objectStore('attente');
             var r = action === 'lire' ? st.getAll() : action === 'effacer' ? st.delete(valeur) : st.put(valeur);
-            tx.oncomplete = function() { db.close(); var l = action === 'lire' ? (r.result || []) : null; if (l) NB_ATTENTE = l.length; ok(l); };
+            tx.oncomplete = function() { db.close(); var l = action === 'lire' ? (r.result || []) : null; if (l) { NB_ATTENTE = l.length; if (pastilleReseau) majPastilleReseau(); } ok(l); };
             tx.onerror = function() { db.close(); ko(tx.error); };
         }); });
     }
@@ -2900,6 +2908,35 @@
     window.JUMELAGE_VIDER_ATTENTE = viderAttente;
     window.JUMELAGE_ENVOIS_ATTENTE = function() { return window.indexedDB ? envoisIdb('lire').catch(function() { return []; }) : Promise.resolve([]); };
     window.addEventListener('online', function() { setTimeout(viderAttente, 1500); });
+    // Hors réseau : pastille discrète en haut au centre (deux applis et page de garde). Un toucher explique que tout est
+    // gardé sur l'appareil (horodatages, envois) et partira tout seul ; au retour du réseau, un bandeau le confirme.
+    var pastilleReseau = null;
+    function majPastilleReseau() {
+        if (!document.body) return;
+        var hors = navigator.onLine === false;
+        if (!hors) { if (pastilleReseau) { pastilleReseau.remove(); pastilleReseau = null; } return; }
+        if (!pastilleReseau) {
+            pastilleReseau = document.createElement('button'); pastilleReseau.type = 'button'; pastilleReseau.className = 'JUM-HORS-RESEAU';
+            ['pointerdown', 'pointerup'].forEach(function(t) { pastilleReseau.addEventListener(t, function(e) { e.stopPropagation(); }); });
+            pastilleReseau.addEventListener('click', function(e) {
+                e.stopPropagation();
+                var o = pastilleReseau.classList.toggle('ouvert');
+                clearTimeout(pastilleReseau.minuterie);
+                if (o) pastilleReseau.minuterie = setTimeout(function() { if (pastilleReseau) pastilleReseau.classList.remove('ouvert'); }, 7000);
+            });
+            document.body.appendChild(pastilleReseau);
+        }
+        var n = NB_ATTENTE;
+        pastilleReseau.innerHTML = '<span class="JUM-HR-PT"></span><b>Hors réseau' + (n ? ' · ' + n + ' en attente' : '') + '</b>' +
+            '<small>Tout est gardé sur cet appareil : horodatages, comptes-rendus et demandes' + (n ? ' (' + n + ' envoi' + (n > 1 ? 's' : '') + ' en attente)' : '') + '. Ils partiront tout seuls au retour du réseau.</small>';
+    }
+    window.JUMELAGE_MAJ_RESEAU = majPastilleReseau;
+    window.addEventListener('offline', majPastilleReseau);
+    window.addEventListener('online', function() {
+        var etait = !!pastilleReseau; majPastilleReseau();
+        if (etait) bandeau('Réseau revenu' + (NB_ATTENTE ? ' : ' + NB_ATTENTE + ' envoi' + (NB_ATTENTE > 1 ? 's partent' : ' part') + ' maintenant.' : '.'));
+    });
+    if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', majPastilleReseau); else setTimeout(majPastilleReseau, 0);
     setTimeout(function() {
         window.JUMELAGE_ENVOIS_ATTENTE().then(function(l) {
             if (!l.length) return;
@@ -3365,7 +3402,7 @@
     function registreEcrire(l) { ecrireTxt(CLE_REGISTRE, JSON.stringify(l)); try { window.dispatchEvent(new Event('trigone-registre')); } catch (e) {} }
     // Partage entre les assistants Chorus DT de l'unité : chaque ligne nouvelle ou modifiée (et chaque suppression) part
     // au serveur, qui renvoie ce que les autres assistants ont changé. Sans réseau, la file attend la prochaine relève.
-    var CLE_REG_FILE = 'trigone_registre_a_envoyer', CLE_REG_DEPUIS = 'trigone_registre_depuis', registreSynchroEnCours = null;
+    var CLE_REG_FILE = 'trigone_registre_a_envoyer', CLE_REG_DEPUIS = 'trigone_registre_depuis', CLE_REG_UNITE = 'trigone_registre_unite', registreSynchroEnCours = null;
     function registreFile() { var f = lireJSON(CLE_REG_FILE); return f && typeof f === 'object' && f.lignes ? f : { lignes: {}, supprimer: {} }; }
     function registreAEnvoyer(refs, supprimer) {
         var f = registreFile(), t = Date.now();
@@ -3378,6 +3415,11 @@
     window.JUMELAGE_REGISTRE_SYNCHRO = function() {
         if (!registrePartage() || !navigator.onLine) return Promise.resolve(false);
         if (registreSynchroEnCours) return registreSynchroEnCours;
+        // Unité du profil changée : le registre de l'appareil était celui de l'ancien régiment, on repart du registre
+        // du nouveau (rien n'est envoyé de l'ancien).
+        var uReg = normeUnite(lireReglages().unite) || '-', uAvant = lireTxt(CLE_REG_UNITE);
+        if (uAvant && uAvant !== uReg) { registreEcrire([]); ecrireTxt(CLE_REG_FILE, ''); ecrireTxt(CLE_REG_DEPUIS, ''); }
+        if (uAvant !== uReg) ecrireTxt(CLE_REG_UNITE, uReg);
         var f = registreFile(), l = registreLire(), premiere = !lireTxt(CLE_REG_DEPUIS);
         // Première fois : tout le registre de l'appareil rejoint le registre commun.
         if (premiere) l.forEach(function(y) { if (!f.lignes[y.ref]) f.lignes[y.ref] = 1; });

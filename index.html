@@ -136,6 +136,7 @@ body.dark-mode .MER-QUESTION { background: rgba(169,195,214,0.08); border-color:
 .MER-EQUIPE-LIGNE.attente { border-left-color: #b45309; } .MER-EQUIPE-LIGNE.attente span { color: #b45309; }
 body.dark-mode .MER-EQUIPE-LIGNE { border-color: #404040; } body.dark-mode .MER-EQUIPE-LIGNE.ok span { color: #4ade80; } body.dark-mode .MER-EQUIPE-LIGNE.attente span { color: #fbbf24; }
 .MER-RECU-TRAITES summary { cursor: pointer; font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tg-accent); padding: 8px 0; }
+.MER-SECTION-TITRE { font-size: 0.78rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: var(--tg-accent); padding: 2px 0 8px; }
 .MER-RECU-TRAITES .MER-RECU { opacity: 0.75; }
 /* Espace Assistant Chorus DT */
 .MER-CHORUS-TETE { text-align: left; }
@@ -522,6 +523,9 @@ body.dark-mode .MER-SUIVI-TRAIT { background: #525252; } body.dark-mode .MER-SUI
 /* Registre unique : filtres par étape, frise de la mission ligne par ligne */
 .MER-REG-FILTRES { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
 .MER-REG-BARRE { display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; margin: 0 0 10px; font-size: 0.78rem; }
+.MER-REG-RELANCE { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 0 0 10px; padding: 9px 12px; border-radius: 12px; border: 1.5px solid rgba(220,38,38,0.35); background: rgba(220,38,38,0.06); font-size: 0.8rem; font-weight: 700; color: #b91c1c; }
+.MER-REG-RELANCE .BTN { margin: 0; width: auto; }
+body.dark-mode .MER-REG-RELANCE { background: rgba(248,113,113,0.08); border-color: rgba(248,113,113,0.35); color: #fca5a5; }
 .MER-REG-BARRE input, .MER-REG-BARRE select { font: inherit; padding: 8px 10px; border-radius: 10px; border: 1.5px solid var(--tg-border); background: #fff; color: #1a1a1a; min-width: 0; }
 .MER-REG-BARRE input[type=search] { flex: 1 1 260px; } .MER-REG-BARRE select { flex: 0 1 220px; }
 .MER-REG-BARRE label { display: flex; align-items: center; gap: 4px; font-weight: 700; color: #444; } .MER-REG-BARRE input[type=date] { padding: 6px 8px; }

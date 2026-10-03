@@ -12479,7 +12479,8 @@ function UPDATE_NETWORK_UI() {
     var banner = document.getElementById('NETWORK-BANNER');
     var text = document.getElementById('NETWORK-BANNER-TEXT');
     if (!banner) return;
-    if (!navigator.onLine) {
+    // Hors réseau : la pastille commune « Hors réseau » (jumelage.js) remplace ce bandeau, dans les deux applis.
+    if (!navigator.onLine && !window.JUMELAGE_MAJ_RESEAU) {
         banner.classList.remove('HIDDEN');
         banner.className = 'NETWORK-BANNER offline';
         text.textContent = '📴 Hors ligne — saisie mission et PDF OK · envois à la reconnexion';
