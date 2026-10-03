@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 158;
+    var VERSION = 161;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i></button>'; }
     function r(n) { return '<span class="n-r">' + n + '</span>'; }
@@ -66,7 +66,7 @@
 
     // ---------- 3. Compte ----------
     ajouter(chapitre(3, 'Créer son compte TRIGONE', 'Le compte TRIGONE, à votre adresse mail professionnelle, permet d\'envoyer et de recevoir demandes et comptes-rendus directement dans TRIGONE. Pas de mot de passe : un code à 6 chiffres reçu par mail.',
-        ['Créer son compte (mail puis code)', 'Activer les notifications', 'Ajouter un autre appareil (PC, 2e téléphone)'], 'compte'));
+        ['Créer son compte (mail puis code)', 'Activer les notifications', 'Ajouter un autre appareil (PC, 2e téléphone)', 'Un compte, plusieurs appareils'], 'compte'));
     ajouter(page('Créer son compte — 1/2', duo('03-connexion-mail', et(['Touchez <b>Se connecter</b> en haut de l\'écran d\'accueil, puis <b>Créer mon compte</b>.', r(1) + ' Saisissez votre <b>adresse mail professionnelle</b>.', r(2) + ' Touchez <b>Recevoir le code par mail</b>.', 'Ouvrez votre messagerie : un mail <b>« Votre code TRIGONE »</b> arrive de <b>noreply@trigone-app.com</b>.'])) +
         savoir('Pas de réseau pour l\'instant ? « Remplir mon profil sans compte » permet de commencer ; le compte s\'active plus tard.'), 'compte'));
     ajouter(page('Créer son compte — 2/2', duo('04-connexion-code', et([r(1) + ' Saisissez le <b>code à 6 chiffres</b> reçu par mail.', r(2) + ' Touchez <b>Valider</b>.', 'Le message vert <b>« Compte TRIGONE actif »</b> confirme l\'activation.'])) +
@@ -75,6 +75,9 @@
         savoir('Sur Android, pour des notifications sans retard : Paramètres du téléphone › Applications › <b>Chrome</b> › Batterie › <b>« Non restreinte »</b>.'), 'compte'));
     ajouter(page('Ajouter un autre appareil', duo('81-ajouter-appareil', et(['Sur l\'appareil <b>déjà connecté</b> : Paramètres › Compte › <b>Ajouter un appareil</b>.', 'Un <b>code de liaison</b> s\'affiche (ex. QDCF-XNYM), valable 15 minutes, une seule fois.', 'Sur le <b>nouvel appareil</b> : écran d\'accueil de TRIGONE › <b>« J\'ai déjà TRIGONE sur un autre appareil »</b>, puis saisissez le code.', 'Le nouvel appareil est relié à votre compte, <b>avec vos données</b> (profil, demandes, missions).'])) +
         astuce('Le code de liaison ne passe pas par le mail : c\'est la solution si le mail du code tarde à arriver.'), 'compte'));
+    ajouter(page('Un compte, plusieurs appareils', '<h5>Chaque appareil reçoit les envois</h5>' + et(['Demandes, comptes-rendus et questions arrivent sur <b>chacun de vos appareils</b> reliés au compte (PC, téléphone).', 'Vous pouvez commencer sur l\'un et finir sur l\'autre.']) +
+        '<h5>Traité ici, traité partout</h5>' + et(['Une demande <b>signée sur le PC</b> passe en <b>« traité »</b> sur le téléphone : elle quitte « À signer » et l\'Espace valideur du téléphone.', 'Même chose pour un envoi <b>rouvert</b> ou <b>supprimé</b>, et pour l\'assistant Chorus DT (demande ou compte-rendu marqué « Traité »).', 'Délai : <b>quelques secondes</b>, dès que l\'autre appareil est ouvert (relevé toutes les 20 s).']) +
+        savoir('Une décision déjà prise sur le téléphone mais <b>pas encore transmise</b> n\'est jamais effacée : elle reste à transmettre.'), 'compte'));
 
     // ---------- 4. Profil, rôles, sécurité ----------
     ajouter(chapitre(4, 'Mon profil, mes rôles, ma sécurité', 'Votre identité est saisie une seule fois : elle pré-remplit Mise en route, Compte-rendu et votre carte TRIGONE. Les valideurs et l\'assistant Chorus DT y déclarent leur rôle.',
@@ -147,12 +150,14 @@
 
     // ---------- 10. Assistant Chorus DT ----------
     ajouter(chapitre(10, 'Assistant Chorus DT', 'L\'assistant Chorus DT reçoit les demandes validées par les deux valideurs et les comptes-rendus de mission. Il tient le registre des OMR, commun à tous les assistants de l\'unité.',
-        ['Mon espace', 'Demandes validées : contrôle et PDF', 'Comptes-rendus reçus', 'Registre des OMR'], 'chorus'));
+        ['Mon espace', 'Demandes validées : contrôle et PDF', 'Comptes-rendus reçus', 'Registre des OMR', 'Registre : collectif, international, montants'], 'chorus'));
     ajouter(page('Mon espace', duo('40-chorus-choix', et(['Avec le rôle ASSIST CHORUS DT, l\'écran d\'accueil montre un 3<sup>e</sup> espace : ' + r(1) + ' <b>ASSIST CHORUS-DT</b>.', '<b>Mon espace</b> indique le nombre de demandes validées à traiter et de comptes-rendus reçus.', 'Touchez le logo pour ouvrir l\'espace.'])), 'chorus'));
     ajouter(page('L\'espace Chorus DT', duo('41-chorus-espace', et(['<b>Registre des OMR</b> : toutes les missions de l\'unité et où elles en sont.', r(1) + ' <b>Demandes de mise en route</b> : validées par les deux valideurs.', '<b>Comptes-rendus de mission</b> : envoyés au retour de mission.', '<b>Relever maintenant</b> : chercher tout de suite les nouveaux envois.'])), 'chorus'));
     ajouter(page('Traiter une demande', duo('42-chorus-dossier', et(['<b>Aperçu</b> : relire la demande.', '<b>Télécharger le PDF</b> : TRIGONE vérifie d\'abord les signatures et les pièces jointes, puis produit le PDF final (demande signée + NDS / DAF).', '<b>Contrôle détaillé</b> : le détail de la vérification.', '<b>Question</b> : demander une précision au missionnaire.', 'Créez l\'ordre de mission dans Chorus DT, puis marquez la demande <b>Traitée</b> : le missionnaire est prévenu.'])), 'chorus'));
-    ajouter(page('Registre des OMR', duo('43-registre', et(['Un seul tableau : <b>toutes les missions</b>, dans l\'ordre des n° OMR. ' + r(1) + ' Filtres d\'étape, <b>recherche</b>, codes FD et période. Code FD <b style="color:#15803d">vert</b> : votre unité ; <b style="color:#a16207">jaune</b> : une autre.', r(2) + ' La <b>frise</b> de chaque ligne montre où en est la mission : demande validée → départ → retour → <b>CR rendu</b> (point bleu : en cours, rouge : en retard, vert : validé).', r(3) + ' <b>Relancer pour le CR</b> (mission terminée) : un rappel dans la boîte du missionnaire. <b>Supprimer</b> : mission annulée.', 'Mis à jour <b>tout seul toutes les 30 s</b>. <b>⛶ Plein écran</b> : le tableau sur tout l\'écran. <b>✏ Corriger les montants</b> : pour tous les assistants, totaux et PDF compris. En bas : total par rubrique, <b>PDF de cette liste</b>.'])) +
-        savoir('Le registre est <b>commun à tous les assistants Chorus DT de l\'unité</b> : chacun voit tout, avec « reçu par ».'), 'chorus'));
+    ajouter(page('Registre des OMR', duo('43-registre', et(['Un seul tableau : <b>toutes les missions</b> de l\'unité, dans l\'ordre des n° OMR, avec des filtres d\'étape (À venir, En cours, CR attendu, En retard, CR rendus).', r(1) + ' <b>⛶ Plein écran</b> : le tableau sur tout l\'écran.', r(2) + ' <b>Rechercher</b> (n° OMR, objet, nom, code FD), codes FD <b>de votre unité</b> ou non, <b>période</b>. Code FD <b style="color:#15803d">vert</b> : votre unité ; <b style="color:#a16207">jaune</b> : une autre.', r(3) + ' La <b>frise</b> : demande validée → départ → retour → <b>CR rendu</b>. Départ et retour suivent les <b>dates de la demande</b> ; CR rendu, l\'arrivée du compte-rendu.', r(4) + ' <b>Relancer pour le CR</b> : un rappel dans la boîte du missionnaire.'])) +
+        savoir('Le registre est <b>commun à tous les assistants Chorus DT de l\'unité</b> et se met à jour <b>tout seul toutes les 30 s</b> : chacun voit la même chose, avec « reçu par ».'), 'chorus'));
+    ajouter(page('Registre : collectif, international, montants', duo('44-registre-collectif', et(['À côté du n° OMR : <b>INDIVIDUEL</b>, <b>COLLECTIF · n</b> (nombre de personnes) et ' + r(1) + ' <b>🌍 INTERNATIONAL</b> avec le pays, si la mission part à l\'étranger.', r(2) + ' Mission collective : le <b>personnel</b>, un nom par ligne.', 'Montants repris du compte-rendu. ' + r(3) + ' <b>✏ Corriger les montants</b> : la correction vaut pour tous les assistants ; montant corrigé en doré, total recalculé.', 'En bas : <b>total par rubrique</b> (repas, hébergement, transports, IK…) et <b>PDF de cette liste</b> (filtres compris).'])) +
+        astuce('« Revenir aux montants du CR » annule une correction. Le compte-rendu reçu, lui, n\'est jamais modifié.'), 'chorus'));
     ajouter(page('Comptes-rendus reçus', duo('77-registre-cr', et(['Le compte-rendu arrive dans <b>Comptes-rendus de mission</b>, avec ses justificatifs.', '<b>PDF complet</b> : le compte-rendu et tous ses justificatifs à la suite, en un seul PDF.', 'Dans le registre, la ligne passe à <b>« Validé — CR rendu »</b> (frise en vert), avec repas, hébergement, transports, IK et total.', 'Marquez-le <b>Traité</b> : le missionnaire est prévenu.'])), 'chorus'));
 
     // ---------- 11. Compte-rendu ----------

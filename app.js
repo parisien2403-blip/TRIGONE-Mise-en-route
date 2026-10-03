@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 208;
+var APP_CODE_VERSION = 209;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -4592,6 +4592,17 @@ window.addEventListener('trigone-boite', function() {
     if (typeof PAGE_ACTUELLE === 'undefined' || (typeof DEMO_ACTIF !== 'undefined' && DEMO_ACTIF)) return;
     if (PAGE_ACTUELLE === 'RECEPTION' || PAGE_ACTUELLE === 'ACCUEIL' || (PAGE_ACTUELLE === 'CHORUS' && !MER_RESULTATS_VERIF)) { var y = window.scrollY; SHOW_PAGE(PAGE_ACTUELLE); window.scrollTo(0, y); }
     else RENDRE_MENU_PC();
+});
+// Demandes signées sur un autre de mes appareils (PC ↔ téléphone) : retirées de l'Espace valideur d'ici, sauf si une
+// décision y a déjà été prise (elle reste à transmettre).
+window.addEventListener('trigone-traite-ailleurs', function(ev) {
+    var suffixe = { niveau1: '#0', renvoi: '#0', niveau2: '#1' }, retirer = {};
+    (ev.detail || []).forEach(function(t) { if (suffixe[t.nature]) (t.ids || []).forEach(function(i) { retirer[i + suffixe[t.nature]] = 1; }); });
+    if (!Object.keys(retirer).length) return;
+    var avant = GET_A_VALIDER(), apres = avant.filter(function(e) { return e.decision || !retirer[e.id]; });
+    if (apres.length === avant.length) return;
+    SAVE_A_VALIDER(apres);
+    if (typeof PAGE_ACTUELLE !== 'undefined' && PAGE_ACTUELLE === 'VALIDATION' && typeof RENDER_VALIDATION_INPLACE === 'function') RENDER_VALIDATION_INPLACE();
 });
 function MER_RELEVER_BOITE() { if (window.JUMELAGE_RELEVER) JUMELAGE_RELEVER(); }
 function MER_BANDEAU_RECU(titre, texte, surClic) {
