@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 196;
+var APP_CODE_VERSION = 197;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -214,7 +214,7 @@ function TPL_MENU_PC() {
         item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
         item('PANIER', MER_ICONES.PANIER, 'Documents', n || '') +
         (MER_EST_VALIDEUR() ? '<div class="PC-SEP"></div>' + item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur', MER_NB_A_SIGNER() || '') : '') +
-        '<div class="PC-BAS">' +
+        '<div class="PC-BAS">' + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';
@@ -2017,9 +2017,9 @@ function TPL_NOTICE() {
     if (n) {
         return '<div class="CARD"><h2>' + n.titre + '</h2><p class="MER-HINT" style="margin:4px 0 16px;">' + n.sous + '</p>' +
             '<ol class="notice-steps">' + n.etapes.map(function(e) { return '<li>' + e + '</li>'; }).join('') + '</ol>' +
-            '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_NOTICE()">← Notice</button></div>';
+            '<button type="button" class="BTN BTN-SECONDARY" onclick="OUVRIR_NOTICE()">← Aide rapide</button></div>';
     }
-    return '<div class="CARD"><h2>Notice</h2>' + (window.JUMELAGE_NOTICE_BOUTON ? window.JUMELAGE_NOTICE_BOUTON() : '') + '<p class="MER-HINT" style="margin:4px 0 16px;">Ou le guide rapide selon votre rôle.</p>' +
+    return '<div class="CARD"><h2>Aide rapide</h2>' + (window.JUMELAGE_NOTICE_BOUTON ? window.JUMELAGE_NOTICE_BOUTON() : '') + '<p class="MER-HINT" style="margin:4px 0 16px;">Ou le guide rapide selon votre rôle.</p>' +
         Object.keys(MER_NOTICES).map(function(k) {
             var c = MER_NOTICES[k];
             return '<button type="button" class="NOTICE-CARD" onclick="OUVRIR_NOTICE(\'' + k + '\')"><span class="NOTICE-CARD-ICON">' + c.icone + '</span>' +
@@ -3436,7 +3436,7 @@ function APPLIQUER_MISE_A_JOUR() {
     Promise.all(etapes).catch(function() {}).then(function() { setTimeout(function() { location.reload(); }, 400); });
 }
 // Signaler un problème : mail prérempli (appli, version, écran), commun aux deux applis.
-var MER_LIBELLES_ECRANS = { ACCUEIL: 'Accueil', FORMULAIRE: 'Nouvelle demande', PANIER: 'Documents', BIBLIOTHEQUE: 'Bibliothèque', NOTICE: 'Notice',
+var MER_LIBELLES_ECRANS = { ACCUEIL: 'Accueil', FORMULAIRE: 'Nouvelle demande', PANIER: 'Documents', BIBLIOTHEQUE: 'Bibliothèque', NOTICE: 'Aide rapide',
     ESPACE: 'Mon espace', REFERENCES: 'Références', VALIDATION: 'Espace valideur', VERIFIER: 'Assistant Chorus DT', REPRISE: 'Reprise' };
 function MER_SIGNALER() {
     var e = MER_LIBELLES_ECRANS[PAGE_ACTUELLE] || PAGE_ACTUELLE;
@@ -3542,7 +3542,7 @@ window.addEventListener('DOMContentLoaded', function() {
 window.JUMELAGE_MENU_APPLI = function() {
     var aller = function(page) { return function() { if (PAGE_ACTUELLE === 'FORMULAIRE') SAVE_BROUILLON(); SHOW_PAGE(page); }; };
     return [
-        { icone: 'info', titre: 'Notice', sous: 'Faire une demande, valider, notifications', action: aller('NOTICE') },
+        { icone: 'info', titre: 'Aide rapide', sous: 'Faire une demande, valider, notifications', action: aller('NOTICE') },
         { icone: 'document', titre: 'Références', sous: 'Textes et référentiels utilisés', action: aller('REFERENCES') },
         { icone: 'maj', titre: 'Mise à jour', sous: 'Vérifier la version de TRIGONE', action: VERIFIER_MISE_A_JOUR_MANUELLE },
         { icone: 'bouee', titre: 'Signaler un problème', sous: 'Écrire à l\'équipe TRIGONE', action: MER_SIGNALER }

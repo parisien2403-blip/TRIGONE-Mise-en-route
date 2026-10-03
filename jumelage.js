@@ -301,6 +301,16 @@
         '.JUM-CARTE-ACCES i { width: 24px; height: 16px; border-radius: 3px; background: linear-gradient(135deg, #f1d08a, #b8862e); position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25); }' +
         '.JUM-CARTE-ACCES i::after { content: ""; position: absolute; left: 3px; top: 4px; width: 7px; height: 6px; border-radius: 1.5px; background: #1a1a1a; opacity: 0.55; }' +
         '.JUM-CHOIX.choisi .JUM-CARTE-ACCES { opacity: 0; pointer-events: none; }' +
+        // Notice TRIGONE (livre en cuir) et Paramètres (roue) : à côté de « Ma carte », sur l'écran d'accueil et dans les applis.
+        '.JUM-NOTICE-ACCES, .JUM-PARAM-ACCES { position: absolute; z-index: 3; height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 13px 0 10px; border-radius: 999px; cursor: pointer; font: 800 0.72rem Montserrat, system-ui, sans-serif; letter-spacing: 0.06em; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }' +
+        '.JUM-NOTICE-ACCES { border: 1.5px solid #d6a756; background: radial-gradient(120% 140% at 25% 0%, #74482a, #4a2c17 60%, #321c0e); color: #f1dcae; }' +
+        '.JUM-NOTICE-ACCES svg, .JUM-PARAM-ACCES svg { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }' +
+        '.JUM-NOTICE-ACCES svg { color: #e2b866; }' +
+        '.JUM-PARAM-ACCES { width: 38px; padding: 0; justify-content: center; border: 1.5px solid rgba(26,26,26,0.14); background: #fff; color: #1a1a1a; }' +
+        'html body.dark-mode .JUM-PARAM-ACCES, .JUM-V2 .JUM-PARAM-ACCES { background: #1a1a1a; color: #f5f5f5; border-color: rgba(255,255,255,0.18); }' +
+        '.JUM-CHOIX.choisi .JUM-NOTICE-ACCES, .JUM-CHOIX.choisi .JUM-PARAM-ACCES { opacity: 0; pointer-events: none; }' +
+        '.JUM-CPT-ZONE .JUM-NOTICE-ACCES { position: static; padding: 0 10px; } .JUM-CPT-ZONE .JUM-NOTICE-ACCES span { display: none; }' +
+        '@media (max-width: 520px) { .JUM-NOTICE-ACCES span { display: none; } .JUM-NOTICE-ACCES { padding: 0 10px; } }' +
         '.JUM-CPT-ZONE .JUM-CARTE-ACCES { position: static; height: 38px; padding: 0 9px; } .JUM-CPT-ZONE .JUM-CARTE-ACCES span { display: none; }' +
         '@media (max-width: 520px) { .JUM-CARTE-ACCES span { display: none; } .JUM-CARTE-ACCES { padding: 0 10px; } }' +
         '.JUM-CHOIX > .JUM-CPT { position: absolute; top: max(14px, env(safe-area-inset-top, 0px)); right: max(16px, env(safe-area-inset-right, 0px)); z-index: 3; }' +
@@ -858,6 +868,8 @@
         '.JUM-NOTICE-LIVRET img { width: 42px; height: 42px; flex-shrink: 0; filter: brightness(0) saturate(100%) invert(76%) sepia(43%) saturate(560%) hue-rotate(352deg) brightness(95%); }' +
         '.JUM-NOTICE-LIVRET b { display: block; font: 400 19px Georgia, serif; letter-spacing: .08em; } .JUM-NOTICE-LIVRET small { display: block; font-size: 11.5px; color: #cdb488; margin-top: 2px; line-height: 1.35; }' +
         '.JUM-NOTICE-LIVRET i { margin-left: auto; font-style: normal; font-size: 24px; color: #e2b866; }' +
+        '.PC-BAS .JUM-NOTICE-LIVRET { margin: 0 0 10px; padding: 10px 12px; gap: 10px; border-radius: 10px; } .PC-BAS .JUM-NOTICE-LIVRET img { width: 30px; height: 30px; }' +
+        '.PC-BAS .JUM-NOTICE-LIVRET b { font-size: 15px; } .PC-BAS .JUM-NOTICE-LIVRET small { display: none; } .PC-BAS .JUM-NOTICE-LIVRET i { font-size: 18px; }' +
         '.JUM-CARTE-PLEIN { background: #000; padding: 0; animation: none; z-index: 99997; }' +
         '.JUM-CARTE-PLEIN .JUM-CARTE-ZONE { position: absolute; left: 50%; top: 50%; width: 350px; height: 221px; perspective: 1400px; }' +
         '.JUM-CARTE-PLEIN .JUM-CARTE-TOURNE { left: 0; margin-left: 0; }' +
@@ -993,7 +1005,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 149, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 150, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3616,6 +3628,21 @@
         slot.appendChild(creerBoutonCompte('JUM-CPT-PC')); slot.appendChild(creerBoutonModePc());
         majBoutonsCompte();
     };
+    var LIVRE_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 1 6.5 18H20v3H6.5"/><path d="M9 7.5h7M9 11h5"/></svg>';
+    function creerBoutonNotice() {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'JUM-NOTICE-ACCES'; b.title = 'Notice TRIGONE'; b.setAttribute('aria-label', 'Notice TRIGONE');
+        b.innerHTML = LIVRE_SVG + '<span>Notice</span>';
+        ['pointerdown', 'pointerup'].forEach(function(t) { b.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        b.addEventListener('click', function(e) { e.stopPropagation(); fermerMenuCompte(); window.JUMELAGE_NOTICE(); });
+        return b;
+    }
+    function creerBoutonParam() {
+        var b = document.createElement('button'); b.type = 'button'; b.className = 'JUM-PARAM-ACCES'; b.title = 'Paramètres'; b.setAttribute('aria-label', 'Paramètres');
+        b.innerHTML = ROUE_SVG;
+        ['pointerdown', 'pointerup'].forEach(function(t) { b.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        b.addEventListener('click', function(e) { e.stopPropagation(); fermerMenuCompte(); window.JUMELAGE_PARAMETRES(); });
+        return b;
+    }
     // Dans Mise en route et Compte-rendu : le même bouton, sur la page d'accueil de l'appli (appelé à chaque changement de page).
     var boutonAppli = null;
     window.JUMELAGE_BOUTON_APPLI = function(visible) {
@@ -3629,6 +3656,7 @@
             ['pointerdown', 'pointerup'].forEach(function(t) { bc.addEventListener(t, function(e) { e.stopPropagation(); }); });
             bc.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_CARTE(); });
             boutonAppli.appendChild(bc);
+            boutonAppli.appendChild(creerBoutonNotice());
             document.body.appendChild(boutonAppli);
         }
         boutonAppli.style.display = visible ? '' : 'none';
@@ -3647,7 +3675,7 @@
         m.className = 'JUM-CPT-MENU'; m.setAttribute('role', 'menu');
         // Menu court : le reste (rôles, notifications, appareils, réglages de l'appli, données, aide) est dans Paramètres.
         var lignesCourtes = '<button type="button" data-action="carte">' + ic('carte') + '<span><b>Ma carte TRIGONE</b><small>Photo, QR code, afficher en grand</small></span></button>' +
-            '<button type="button" data-action="parametres">' + ROUE_SVG + '<span><b>Paramètres</b><small>Profil, rôles, notifications, ' + (appli.length ? (DANS_CR ? 'compte-rendu' : 'mise en route') + ', ' : '') + 'données, aide</small></span></button>';
+            '<button type="button" data-action="parametres">' + ROUE_SVG + '<span><b>Paramètres</b><small>Profil, rôles, notifications, ' + (appli.some(function(x) { return !/^(Aide rapide|Notice|Références|Mise à jour|Signaler)/.test(x.titre); }) ? (DANS_CR ? 'compte-rendu' : 'mise en route') + ', ' : '') + 'données, aide</small></span></button>';
         if (!c) m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">?</span><div><b>Pas connecté</b><small>Connectez-vous pour envoyer et recevoir vos demandes et comptes-rendus.</small></div></div>' +
             '<button type="button" data-action="connexion">' + ic('personne') + '<span><b>Se connecter</b><small>Première connexion, ou autre appareil</small></span></button>' +
             '<div class="JUM-CPT-SEP"></div>' + lignesCourtes;
@@ -3693,7 +3721,9 @@
 
     // ---------- Paramètres : une page rangée en rubriques (menu du compte, roue crantée de l'écran de choix) ----------
     // Chaque ligne lance l'action existante (fenêtres de profil, de rôles, de notifications, sauvegarde…).
-    var AIDE_APPLI = /^(Notice|Références|Signaler)/;
+    // Entrées des applis : Références et Mise à jour vont dans Aide ; l'ancienne aide rapide (remplacée par la Notice TRIGONE)
+    // et Signaler (déjà dans Aide) ne sont pas reprises dans les Paramètres.
+    var AIDE_APPLI = /^(Références|Mise à jour)/, HORS_PARAM = /^(Aide rapide|Notice|Signaler)/;
     function rubriquesParametres() {
         var c = monCompte(), ic = function(n) { return window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE(n) : ''; };
         var roles = rolesLocaux(), aRole = Object.keys(roles).length > 0, e = notifEtat();
@@ -3714,7 +3744,7 @@
                 surTelephone() && L('montre', ic('montre') + '<i class="JUM-MONTRE-PT' + (montrePrete() ? ' ok' : '') + '"></i>', 'Montre connectée', montrePrete() ? 'Prête : horodatage depuis le poignet · essai' : 'Notifications à activer pour la montre', function() { window.JUMELAGE_MONTRE(); })
             ] : [], vide: 'Connectez-vous d\'abord (rubrique Compte) pour recevoir les notifications.' }
         ];
-        var propres = appli.filter(function(x) { return !AIDE_APPLI.test(x.titre); });
+        var propres = appli.filter(function(x) { return !AIDE_APPLI.test(x.titre) && !HORS_PARAM.test(x.titre); });
         if (propres.length) r.push({ id: 'appli', titre: DANS_CR ? 'Compte-rendu' : 'Mise en route', icone: ic('document'), aide: 'Réglages propres à ' + (DANS_CR ? 'l\'appli Compte-rendu de mission' : 'l\'appli Mise en route') + '.',
             lignes: propres.map(function(x, i) { return L('appli' + i, ic(x.icone), x.titre, x.sous, x.action); }) });
         r.push({ id: 'donnees', titre: 'Données', icone: ic('disquette'), aide: c ? 'Tout TRIGONE est rangé sur cet appareil : la sauvegarde automatique le garde aussi, chiffré, dans votre compte.' : 'Tout TRIGONE est rangé sur cet appareil : sauvegardez-le dans un fichier, ou connectez-vous pour la sauvegarde automatique.', lignes: [
@@ -3727,7 +3757,7 @@
             L('reinitialiser', CORBEILLE_SVG, 'Réinitialiser TRIGONE', 'Tout effacer sur cet appareil', function() { window.JUMELAGE_REINITIALISER(); }, true)
         ] });
         r.push({ id: 'aide', titre: 'Aide', icone: ic('bouee'), aide: 'Pour prendre en main TRIGONE, ou nous signaler un souci.', lignes: [L('notice', ic('livre'), 'Notice TRIGONE', 'Le livret complet, avec les écrans expliqués pas à pas', function() { window.JUMELAGE_NOTICE(); })]
-            .concat(appli.filter(function(x) { return AIDE_APPLI.test(x.titre) && !/^Signaler/.test(x.titre); })
+            .concat(appli.filter(function(x) { return AIDE_APPLI.test(x.titre); })
             .map(function(x, i) { return L('aide' + i, ic(x.icone), x.titre, x.sous, x.action); })).concat([
             L('presentation', '<img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="" style="width:20px;height:20px;">', 'Découvrir TRIGONE', 'Revoir la présentation', function() { window.JUMELAGE_PRESENTATION(); }),
             L('partager', ic('partage'), 'Partager TRIGONE', 'QR code et lien de l\'application', function() { window.JUMELAGE_PARTAGER_APPLI(); }),
@@ -5029,13 +5059,20 @@
         ['pointerdown', 'pointerup'].forEach(function(t) { btnCarte.addEventListener(t, function(e) { e.stopPropagation(); }); });
         btnCarte.addEventListener('click', function(e) { e.stopPropagation(); window.JUMELAGE_CARTE(); });
         ecran.appendChild(btnCarte);
+        // Paramètres et Notice TRIGONE : à gauche de « Ma carte », sans passer par le menu du compte.
+        var btnParam = creerBoutonParam(), btnNotice = creerBoutonNotice();
+        ecran.appendChild(btnParam); ecran.appendChild(btnNotice);
         var placerCarte = function() {
             var cpt = ecran && ecran.querySelector(':scope > .JUM-CPT'); if (!cpt || !btnCarte.isConnected) return;
             var r = cpt.getBoundingClientRect(); if (!r.width) return;
-            btnCarte.style.right = Math.round(window.innerWidth - r.left + 10) + 'px'; btnCarte.style.top = Math.round(r.top + (r.height - btnCarte.offsetHeight) / 2) + 'px';
+            var rangee = [btnCarte, btnParam, btnNotice];
+            var poser = function(droite, haut) {
+                rangee.forEach(function(b) { b.style.right = Math.round(droite) + 'px'; b.style.top = Math.round(haut + (r.height - b.offsetHeight) / 2) + 'px'; droite += b.offsetWidth + 8; });
+            };
+            poser(window.innerWidth - r.left + 10, r.top);
             // Petit écran (nom long, texte agrandi) : pas la place à gauche du compte sans toucher le n° de version → juste dessous.
-            var v = ecran.querySelector('.JUM-VERSION'), rv = v && v.getBoundingClientRect(), rc = btnCarte.getBoundingClientRect();
-            if (rv && rv.width && rc.left < rv.right + 8) { btnCarte.style.right = Math.round(window.innerWidth - r.right) + 'px'; btnCarte.style.top = Math.round(r.bottom + 8) + 'px'; }
+            var v = ecran.querySelector('.JUM-VERSION'), rv = v && v.getBoundingClientRect(), rc = btnNotice.getBoundingClientRect();
+            if (rv && rv.width && rc.left < rv.right + 8) poser(window.innerWidth - r.right, r.bottom + 8 - (r.height - btnCarte.offsetHeight) / 2);
         };
         requestAnimationFrame(placerCarte); setTimeout(placerCarte, 400); setTimeout(placerCarte, 1500);
         window.addEventListener('resize', placerCarte);
