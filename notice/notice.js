@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 167;
+    var VERSION = 168;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i></button>'; }
     function r(n) { return '<span class="n-r">' + n + '</span>'; }

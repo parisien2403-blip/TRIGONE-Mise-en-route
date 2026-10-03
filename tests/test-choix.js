@@ -30,6 +30,18 @@ module.exports = async function(srv) {
     verifier(dk && dk.bas && dk.vis === 'notice,param,carte,maj' && dk.vieux, 'téléphone : barre du bas Notice / Paramètres / Ma carte / Mise à jour (sans Affichage PC sur petit écran)');
     await t.click('.JUM-PAN-CR .JUM-SOUS'); await attendre(1500);
     verifier(/\/cr\/$/.test(t.url()), 'un toucher sur l\'espace Compte-rendu ouvre Compte-rendu');
+    // Barre du bas des applis (téléphone) : onglets de l'appli, puis Ma carte et Notice ; plus de pastilles en haut.
+    const barre = () => t.evaluate(() => ({
+        ong: [...document.querySelectorAll('.JUM-DOCK-APPLI .P0-TAB')].filter(x => x.offsetWidth).map(x => x.innerText.trim().toUpperCase()).join(','),
+        haut: [...document.querySelectorAll('.JUM-CPT-ZONE > *')].filter(x => getComputedStyle(x).display !== 'none').length }));
+    await t.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1')); await t.goto(srv.url); await attendre(3000);
+    const bMer = await barre();
+    verifier(bMer.ong === 'BIBLIO,DOCS,MA CARTE,NOTICE' && bMer.haut === 1, 'Mise en route (téléphone) : barre du bas ' + bMer.ong + ', en haut seulement le compte');
+    await t.click('.JUM-ONG-CARTE'); await attendre(800);
+    verifier(await t.evaluate(() => !!document.querySelector('.JUM-CARTE-FOND, .JUM-CARTE')), 'Mise en route : l\'onglet Ma carte ouvre la carte');
+    await t.evaluate(() => localStorage.removeItem('mission_data')); await t.goto(srv.url + 'cr/'); await attendre(3000);
+    const bCr = await barre();
+    verifier(bCr.ong === 'BIBLIO,REMBOURS.,MA CARTE,NOTICE' && bCr.haut === 1, 'Compte-rendu (téléphone) : barre du bas ' + bCr.ong + ', en haut seulement le compte');
     // Assistant Chorus DT sur PC : trois colonnes, ses compteurs.
     const c = await ouvrir({ width: 1440, height: 900 }, () => {
         localStorage.setItem('trigone_role_chorus', '1');

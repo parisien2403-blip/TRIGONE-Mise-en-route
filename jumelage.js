@@ -79,6 +79,11 @@
     function modePcActif() { return modePcVoulu() && grandTactile(); }
     var SVG_ECRAN = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="2.5" y="4" width="19" height="12.5" rx="2"/><path d="M8 20.5h8M12 16.5v4"/></svg>';
     var SVG_TEL = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
+    var ICONES_DOCK = {
+        notice: '<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5Z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/></svg>',
+        carte: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5.5 16c.6-1.6 1.7-2.4 3-2.4s2.4.8 3 2.4M14 10h4.5M14 13.5h3"/></svg>',
+        maj: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>'
+    };
     function majBoutonsModePc() {
         var actif = modePcActif(), visible = grandTactile();
         Array.prototype.forEach.call(document.querySelectorAll('.JUM-MODE'), function(b) {
@@ -93,7 +98,46 @@
             b.innerHTML = (actif ? SVG_TEL : SVG_ECRAN) + (actif ? 'Affichage tél.' : 'Affichage PC');
             b.title = actif ? 'Revenir à l\'affichage téléphone' : 'Affichage PC (tablette, écran pliable ouvert)';
         });
+        Array.prototype.forEach.call(document.querySelectorAll('.JUM-ONG-PC'), function(b) {
+            b.style.display = visible ? '' : 'none';
+            b.querySelector('.P0-TAB-ICON').innerHTML = actif ? SVG_TEL : SVG_ECRAN;
+            b.querySelector('.P0-LBL-LONG').textContent = actif ? 'Affichage tél.' : 'Affichage PC';
+            b.querySelector('.P0-LBL-COURT').textContent = actif ? 'Tél.' : 'PC';
+            b.setAttribute('aria-label', actif ? 'Revenir à l\'affichage téléphone' : 'Affichage PC');
+        });
     }
+    // Applis Mise en route et Compte-rendu (téléphone) : la barre du bas de l'accueil reçoit Ma carte, Notice et
+    // Affichage PC (grands écrans tactiles seulement), dans le style de la barre de la page de garde.
+    function ongletDock(classe, icone, libelle, court) {
+        return '<button type="button" class="P0-TAB ' + classe + '" aria-label="' + libelle + '"><span class="P0-TAB-ICON" aria-hidden="true">' + icone +
+            '</span><span class="P0-TAB-LBL"><span class="P0-LBL-LONG">' + libelle + '</span><span class="P0-LBL-COURT">' + court + '</span></span></button>';
+    }
+    function completerDocksApplis() {
+        var docks = document.querySelectorAll('.P0-TAB-BAR .P0-DOCK-INNER'), ajout = false;
+        Array.prototype.forEach.call(docks, function(d) {
+            if (d.querySelector('.JUM-ONG-CARTE')) return;
+            d.classList.add('JUM-DOCK-APPLI'); ajout = true;
+            d.insertAdjacentHTML('beforeend', ongletDock('JUM-ONG-CARTE', ICONES_DOCK.carte, 'Ma carte', 'Ma carte') +
+                ongletDock('JUM-ONG-NOTICE', ICONES_DOCK.notice, 'Notice', 'Notice') + ongletDock('JUM-ONG-PC', SVG_ECRAN, 'Affichage PC', 'PC'));
+            ['pointerdown', 'pointerup'].forEach(function(t) { d.addEventListener(t, function(e) { if (e.target.closest('.JUM-ONG-CARTE, .JUM-ONG-NOTICE, .JUM-ONG-PC')) e.stopPropagation(); }); });
+            d.addEventListener('click', function(e) {
+                var b = e.target.closest('.JUM-ONG-CARTE, .JUM-ONG-NOTICE, .JUM-ONG-PC'); if (!b) return;
+                e.stopPropagation(); fermerMenuCompte();
+                if (b.classList.contains('JUM-ONG-CARTE')) window.JUMELAGE_CARTE();
+                else if (b.classList.contains('JUM-ONG-NOTICE')) window.JUMELAGE_NOTICE();
+                else window.JUMELAGE_MODE_PC();
+            });
+        });
+        document.documentElement.classList.toggle('jum-dock-appli', docks.length > 0);
+        if (ajout) { majBoutonsModePc(); if (typeof window.AJUSTER_DOCKS === 'function') requestAnimationFrame(window.AJUSTER_DOCKS); }
+    }
+    window.JUMELAGE_COMPLETER_DOCKS = completerDocksApplis;
+    if (window.MutationObserver) {
+        var attenteDock = 0;
+        new MutationObserver(function() { if (!attenteDock) attenteDock = requestAnimationFrame(function() { attenteDock = 0; completerDocksApplis(); }); })
+            .observe(document.documentElement, { childList: true, subtree: true });
+    }
+    document.addEventListener('DOMContentLoaded', completerDocksApplis);
     function appliquerVue() {
         var actif = modePcActif();
         if (metaVue) {
@@ -545,6 +589,18 @@
         '.JUM-V2 .JUM-TRAIT { display: none; }' +
         // Téléphone (Android, iPhone) : barre d'outils en bas de la page de garde (Notice, Paramètres, Ma carte, Mise à jour,
         // Affichage PC), dernière rangée de la grille ; les boutons ronds dispersés disparaissent. PC : inchangé.
+        /* Barre du bas des applis (téléphone) : même allure que celle de la page de garde. */
+        '@media (max-width: 1099px) {' +
+            'html.jum-dock-appli .JUM-CPT-ZONE .JUM-CARTE-ACCES, html.jum-dock-appli .JUM-CPT-ZONE .JUM-NOTICE-ACCES, html.jum-dock-appli .JUM-CPT-ZONE .JUM-MODE { display: none !important; }' +
+            'html body .P0-TAB-BAR .P0-DOCK-INNER.JUM-DOCK-APPLI { gap: 0 !important; padding: 7px 4px 6px !important; border-radius: 20px !important; background: linear-gradient(180deg, #1c1c1c, #121212) !important; border: 1px solid rgba(214,167,86,0.35) !important; border-top: 1px solid rgba(214,167,86,0.35) !important; box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 6px 18px rgba(0,0,0,0.25) !important; }' +
+            'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB { flex: 1 1 0 !important; min-width: 0 !important; min-height: 0 !important; flex-direction: column !important; gap: 4px !important; padding: 5px 2px !important; border: 0 !important; border-radius: 14px !important; background: none !important; box-shadow: none !important; color: #e9d9b4 !important; font: 700 0.6rem Montserrat, system-ui, sans-serif !important; letter-spacing: 0.04em !important; text-transform: uppercase !important; }' +
+            'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB:active { transform: none !important; background: rgba(214,167,86,0.14) !important; box-shadow: none !important; }' +
+            'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB-ICON { width: auto !important; height: auto !important; background: none !important; border: 0 !important; border-radius: 0 !important; }' +
+            'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB-ICON svg { width: 23px !important; height: 23px !important; fill: none !important; stroke: #d6a756 !important; stroke-width: 1.7 !important; stroke-linecap: round !important; stroke-linejoin: round !important; }' +
+            'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB-LBL { color: #e9d9b4 !important; white-space: nowrap !important; overflow: visible !important; line-height: 1.15 !important; }' +
+            'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB.has-badge::after { top: 2px !important; right: calc(50% - 20px) !important; border-color: #121212 !important; }' +
+        '}' +
+        '@media (min-width: 1100px) { .JUM-ONG-CARTE, .JUM-ONG-NOTICE, .JUM-ONG-PC { display: none !important; } }' +
         '.JUM-DOCK { display: none; }' +
         '@media (max-width: 1099px) {' +
             '.JUM-CHOIX.JUM-V2 { grid-template: "mer" 1fr "cr" 1fr "dock" auto / 1fr; }' +
@@ -1058,7 +1114,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 168, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 169, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -5594,11 +5650,7 @@
         ecran.appendChild(creerBoutonModePc());
         // Téléphone : la même chose dans une barre d'outils en bas (CSS : visible seulement sous 1 100 px de large).
         var dock = document.createElement('nav'); dock.className = 'JUM-DOCK'; dock.setAttribute('aria-label', 'Outils TRIGONE');
-        var icDock = {
-            notice: '<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5Z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/></svg>',
-            carte: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5.5 16c.6-1.6 1.7-2.4 3-2.4s2.4.8 3 2.4M14 10h4.5M14 13.5h3"/></svg>',
-            maj: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>'
-        };
+        var icDock = ICONES_DOCK;
         dock.innerHTML = '<div class="JUM-DOCK-BARRE">' +
             '<button type="button" data-d="notice">' + icDock.notice + 'Notice</button>' +
             '<button type="button" data-d="param">' + ROUE_SVG + 'Paramètres</button>' +
