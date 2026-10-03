@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=169"></script>
+<script src="../jumelage.js?v=170"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -8362,6 +8362,45 @@ function REINITIALISER_MEDAILLES() {
     );
 }
 
+// Paramètres › Compte-rendu › Mes médailles : état, recomptage depuis la Bibliothèque, remise à zéro.
+function NB_CR_BIBLIOTHEQUE() {
+    var vus = {};
+    GET_BIBLIOTHEQUE().forEach(function(e) { vus[(e.debut || '') + '|' + (e.user || '') + '|' + (e.role || '')] = 1; });
+    return Object.keys(vus).length;
+}
+function MEDAILLES_POUR(n) {
+    return Object.keys(PALIERS_MEDAILLES).filter(function(k) { return n >= +k; }).map(function(k) { return PALIERS_MEDAILLES[k]; });
+}
+function RECOMPTER_MEDAILLES() {
+    var n = NB_CR_BIBLIOTHEQUE(), avant = GET_CR_COUNT();
+    MSG_CONFIRM('Recompter mes médailles ?',
+        'Votre Bibliothèque contient ' + n + ' compte' + (n > 1 ? 's' : '') + '-rendu' + (n > 1 ? 's' : '') + ' envoyé' + (n > 1 ? 's' : '') + ' (compteur actuel : ' + avant + ').\n\nLe compteur passera à ' + n + ' et les médailles seront recalculées (Bronze dès 1, Argent à 10, Or à 20).',
+        'Recompter',
+        function() {
+            var obtenues = MEDAILLES_POUR(n);
+            try { localStorage.setItem(CR_COUNT_KEY, String(n)); localStorage.setItem(MEDAILLES_OBTENUES_KEY, JSON.stringify(obtenues)); } catch (e) {}
+            UPDATE_MEDAILLE_BADGE();
+            var m = GET_MEILLEURE_MEDAILLE(), noms = { BRONZE: 'TRIGONE de Bronze', ARGENT: "TRIGONE d'Argent", OR: "TRIGONE d'Or" };
+            MSG_INFO('C\'est fait', 'Compteur : ' + n + '. ' + (m ? 'Médaille : ' + noms[m] + '.' : 'Pas encore de médaille.'), '✓');
+        }, '🏅');
+}
+function GERER_MEDAILLES() {
+    var count = GET_CR_COUNT(), m = GET_MEILLEURE_MEDAILLE(), n = NB_CR_BIBLIOTHEQUE();
+    var noms = { BRONZE: 'TRIGONE de Bronze', ARGENT: "TRIGONE d'Argent", OR: "TRIGONE d'Or" };
+    var images = { BRONZE: 'medaille-bronze-icone.webp', ARGENT: 'medaille-argent-icone.webp', OR: 'medaille-or-icone.webp' };
+    AFFICHER_MSG_CENTRE({
+        titre: 'Mes médailles',
+        texte: (m ? noms[m] : 'Pas encore de médaille') + ' — ' + count + (count > 1 ? ' comptes-rendus envoyés.' : ' compte-rendu envoyé.') +
+            '\n\nBronze au 1er envoi, Argent à 10, Or à 20. La Bibliothèque contient ' + n + ' compte' + (n > 1 ? 's' : '') + '-rendu' + (n > 1 ? 's' : '') + ' : « Recompter » remet le compteur d\'accord avec elle.',
+        icone: '🏅', iconeImage: m ? images[m] : undefined, mascotte: false,
+        boutons: [
+            { label: 'Recompter depuis ma Bibliothèque', style: 'BTN BTN-START', action: RECOMPTER_MEDAILLES },
+            { label: '↺ Repartir à zéro', style: 'BTN-ADMIN-CLOSE', action: REINITIALISER_MEDAILLES },
+            { label: 'Fermer', style: 'BTN-ADMIN-CLOSE' }
+        ]
+    });
+}
+
 function GET_MEILLEURE_MEDAILLE() {
     var obtenues = GET_MEDAILLES_OBTENUES();
     if (obtenues.indexOf('OR') !== -1) return 'OR';
@@ -8407,11 +8446,14 @@ function FERMER_ECRAN_MEDAILLE() {
 }
 
 // ===================== DIALOGUE CENTRÉ GÉNÉRIQUE (remplace alert/confirm) =====================
+var MSG_MINUTERIE_FERMETURE = null;
 function FERMER_MSG() {
     var overlay = document.getElementById('MSG-OVERLAY');
     if (!overlay) return;
     overlay.classList.remove('medaille-in');
-    setTimeout(function() { overlay.classList.add('HIDDEN'); }, 350);
+    // Minuterie gardée : un message ouvert juste après (bouton qui enchaîne sur un autre message) l'annule.
+    clearTimeout(MSG_MINUTERIE_FERMETURE);
+    MSG_MINUTERIE_FERMETURE = setTimeout(function() { overlay.classList.add('HIDDEN'); }, 350);
 }
 
 // Si un libellé de bouton dépasse (mot long + carte étroite), on compacte le texte de CE message uniquement.
@@ -8455,6 +8497,7 @@ function AFFICHER_MSG_CENTRE(opts) {
     if (DEMO_MODE_ACTIF) return;
     var overlay = document.getElementById('MSG-OVERLAY');
     if (!overlay) return;
+    clearTimeout(MSG_MINUTERIE_FERMETURE);
     var mascotte = document.getElementById('MSG-MASCOTTE');
     var icone = document.getElementById('MSG-ICONE');
     var iconeImg = document.getElementById('MSG-ICONE-IMG');
@@ -8550,7 +8593,7 @@ function AFFICHER_INFO_MEDAILLE_BADGE() {
         texte: texte,
         iconeImage: images[meilleure],
         mascotteImage: 'mascotte-pouce.webp',
-        boutons: [{ label: 'Continuer', style: 'BTN BTN-START' }]
+        boutons: [{ label: 'Continuer', style: 'BTN BTN-START' }, { label: 'Recompter ou repartir à zéro', style: 'BTN-ADMIN-CLOSE', action: GERER_MEDAILLES }]
     });
 }
 
@@ -11522,7 +11565,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 266;
+var APP_CODE_VERSION = 267;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13617,6 +13660,7 @@ function RENDRE_MENU_PC_CR(page) {
 window.JUMELAGE_MENU_APPLI = function() {
     return [
         { icone: 'info', titre: 'Aide rapide', sous: 'Compte-rendu, pièces exigées, rappels', action: OUVRIR_NOTICE_MENU },
+        { icone: 'medaille', titre: 'Mes médailles', sous: 'Bronze, Argent, Or : recompter ou repartir à zéro', action: GERER_MEDAILLES },
         { icone: 'personne', titre: 'Réglages du compte-rendu', sous: 'Rappels, envoi, calculs et barèmes, étranger', action: OUVRIR_PARAMETRES },
         { icone: 'document', titre: 'Références', sous: 'Textes et taux de référence', action: OUVRIR_REFERENCES },
         { icone: 'maj', titre: 'Mise à jour', sous: 'Vérifier la version de TRIGONE', action: VERIFIER_MISE_A_JOUR_MANUELLE },
