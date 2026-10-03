@@ -89,10 +89,14 @@ module.exports = async function() {
         const a = [MER_CODE_UNITE('FDYDDR4FCT'), MER_CODE_UNITE('FDYDDR4INT'), MER_CODE_UNITE('FD1ADNK11F'), MER_CODE_UNITE('FDYDDR1FCT')];
         window.JUMELAGE_REGLAGES_LIRE = () => Object.assign({}, lire(), { unite: '1ER RIISC' });
         const b = [MER_CODE_UNITE('FDYDDR1FCT'), MER_CODE_UNITE('FDYDDR4FCT')];
+        window.JUMELAGE_REGLAGES_LIRE = () => Object.assign({}, lire(), { unite: '92 RI' });
+        b.push(MER_CODE_UNITE('FD1ADGN21C'), MER_CODE_UNITE('FDYDDR4FCT'));
+        window.JUMELAGE_REGLAGES_LIRE = () => Object.assign({}, lire(), { unite: 'BA 118' });
+        b.push(MER_CODE_UNITE('FD3AD11801'), MER_CODE_UNITE('FD1ADGN21C'));
         window.JUMELAGE_REGLAGES_LIRE = lire;
         return a.concat(b).join(',');
     });
-    verifier(codes === 'unite,unite,hors,hors,unite,hors', 'codes FD : 4°RIISC en vert, autres unités en jaune ; profil 1ER RIISC : l\'inverse (' + codes + ')');
+    verifier(codes === 'unite,unite,hors,hors,unite,hors,unite,hors,unite,hors', 'codes FD : 4°RIISC en vert, autres unités en jaune ; profils 1ER RIISC, 92°RI, BA 118 : leurs codes en vert (' + codes + ')');
     const carte = await c.evaluate(() => { const av = D.codeFD; D.codeFD = 'FDYDDR4FCT'; const a = TPL_INFO_FD(); D.codeFD = 'FD1ADNK11F'; const b = TPL_INFO_FD(); D.codeFD = av; return /MER-FD-UNITE unite/.test(a) && /Code du 4°RIISC/.test(a) && /MER-FD-CARTE hors/.test(b) && /Hors 4°RIISC/.test(b); });
     verifier(carte, 'demande : code FD du 4°RIISC en vert, code d\'une autre unité en jaune');
     // Champ « Unité » du profil : liste filtrée dès les premières lettres ; une unité hors liste est refusée.
@@ -104,7 +108,8 @@ module.exports = async function() {
     await c.fill('#JUM-R-UNITE', 'REGIMENT INCONNU'); await c.evaluate(() => JUMELAGE_ENREGISTRER_REGLAGES(false)); await attendre(300);
     const refus = await c.evaluate(() => (document.getElementById('JUM-R-ERREUR') || {}).textContent || '');
     await c.evaluate(() => JUMELAGE_FERMER_REGLAGES()); await attendre(300);
-    verifier(choix === '5°RIISC' && pris === '5°RIISC' && /dans la liste/.test(refus) && JSON.stringify(await c.evaluate(() => JUMELAGE_REGLAGES_LIRE().unite)) === '"4°RIISC"', 'profil : unité choisie dans une liste filtrée (« 5 » → 5°RIISC), unité hors liste refusée (' + choix + ')');
+    const plus = await c.evaluate(() => JUMELAGE_UNITES().length);
+    verifier(plus > 100 && choix.split(',')[0] === '5°RIISC' && pris === '5°RIISC' && /dans la liste/.test(refus) && JSON.stringify(await c.evaluate(() => JUMELAGE_REGLAGES_LIRE().unite)) === '"4°RIISC"', 'profil : unité choisie dans une liste filtrée (« 5 » → 5°RIISC), unité hors liste refusée (' + plus + ' unités ; ' + choix.slice(0, 60) + ')');
     await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(600);
     verifier(await c.evaluate(() => !!document.querySelector('.MER-REG-LIGNE .MER-REG-CODE.hors')), 'registre : code FD hors unité marqué en jaune');
     // Filtres libres : recherche, codes de l'unité / hors unité, période.

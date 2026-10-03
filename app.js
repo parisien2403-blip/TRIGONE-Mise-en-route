@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 206;
+var APP_CODE_VERSION = 207;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1308,7 +1308,7 @@ function MER_UNITE() {
     if (!nom || !MER_CODIER) return null;
     if (MER_UNITE_CACHE && MER_UNITE_CACHE.nom === nom && MER_UNITE_CACHE.codier === MER_CODIER) return MER_UNITE_CACHE.u;
     var connue = window.JUMELAGE_UNITE_INFO && JUMELAGE_UNITE_INFO(nom);
-    if (connue) { var cc0 = {}; cc0[connue.cc] = 1; MER_UNITE_CACHE = { nom: nom, codier: MER_CODIER, u: { nom: connue.nom, cc: cc0 } }; return MER_UNITE_CACHE.u; }
+    if (connue) { var cc0 = {}; [].concat(connue.cc).forEach(function(c) { cc0[c] = 1; }); MER_UNITE_CACHE = { nom: nom, codier: MER_CODIER, u: { nom: connue.nom, cc: cc0 } }; return MER_UNITE_CACHE.u; }
     var norme = function(t) { return String(t || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]/g, ''); };
     var m = /(\d+)\s*(?:°|E|EME|ER|ERE)?\s*[RU]IISC/i.exec(nom), cle = m ? 'UIISCN' + m[1] : norme(nom), cc = {};
     Object.keys(MER_CODIER).forEach(function(k) {

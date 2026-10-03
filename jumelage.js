@@ -1018,7 +1018,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 159, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 160, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1233,14 +1233,149 @@
     // Option « Demande de réservation » : { active, libelle } (libellé choisi par l'unité, sinon « Demande de réservation »).
     window.JUMELAGE_RESA = function() { var r = lireReglages(); return { active: r.resaActive !== false, libelle: r.resaLibelle || RESA_DEFAUT, defaut: !r.resaLibelle }; };
     window.JUMELAGE_REGLAGES_LIRE = function() { return lireReglages(); };
-    // Unités reconnues par TRIGONE, avec leur centre de coût dans le codier FD (codes de l'unité en vert, les autres en jaune).
-    // Une unité qui adopte TRIGONE s'ajoute ici. Le champ « Unité » du profil se choisit dans cette liste.
+    // Unités reconnues par TRIGONE, avec leur(s) centre(s) de coût dans le codier FD (codes de l'unité en vert, les autres en jaune).
+    // Tirée du codier (juillet 2026) : sécurité civile, régiments et états-majors de l'armée de terre (« … PR UO PRÉPA OPS »),
+    // bases aériennes, bases navales. Le champ « Unité » du profil se choisit dans cette liste.
     var UNITES = [
-        { nom: '1°RIISC', cc: 'SC5FMU1028', codier: 'UIISC n°1' },
-        { nom: '4°RIISC', cc: 'SC5FMU4033', codier: 'UIISC n°4' },
-        { nom: '5°RIISC', cc: 'SC5FMU502B', codier: 'UIISC n°5' },
-        { nom: '7°RIISC', cc: 'SC5FMU7013', codier: 'UIISC n°7' },
-        { nom: 'COMFORMISC', cc: 'SC0FMSC092', codier: 'COMFORMISC' }
+        {"nom": "COMFORMISC", "arme": "Sécurité civile", "cc": ["SC0FMSC092"]},
+        {"nom": "1°RIISC", "arme": "Sécurité civile", "cc": ["SC5FMU1028"], "codier": "UIISC n°1"},
+        {"nom": "4°RIISC", "arme": "Sécurité civile", "cc": ["SC5FMU4033"], "codier": "UIISC n°4"},
+        {"nom": "5°RIISC", "arme": "Sécurité civile", "cc": ["SC5FMU502B"], "codier": "UIISC n°5"},
+        {"nom": "7°RIISC", "arme": "Sécurité civile", "cc": ["SC5FMU7013"], "codier": "UIISC n°7"},
+        {"nom": "7°BCA", "arme": "Armée de terre", "cc": ["D1710CU038"]},
+        {"nom": "13°BCA", "arme": "Armée de terre", "cc": ["D1710CW073"]},
+        {"nom": "27°BCA", "arme": "Armée de terre", "cc": ["D1710CY074"]},
+        {"nom": "BCS BFA", "arme": "Armée de terre", "cc": ["D1710IM991"]},
+        {"nom": "13°DBLE", "arme": "Armée de terre", "cc": ["D1719X6012"]},
+        {"nom": "EM 11°BP", "arme": "Armée de terre", "cc": ["D01146L031"]},
+        {"nom": "EM 27°BIM", "arme": "Armée de terre", "cc": ["D01146H038"]},
+        {"nom": "EM 2°BB", "arme": "Armée de terre", "cc": ["D01146B067"]},
+        {"nom": "EM 6°BLB", "arme": "Armée de terre", "cc": ["D01146J030"]},
+        {"nom": "EM 7°BB", "arme": "Armée de terre", "cc": ["D01145V025"]},
+        {"nom": "EM 9°BIMA", "arme": "Armée de terre", "cc": ["D011467086"]},
+        {"nom": "EM BFA", "arme": "Armée de terre", "cc": ["D0110IN991"]},
+        {"nom": "EM CRR-FR", "arme": "Armée de terre", "cc": ["D0114W9059"]},
+        {"nom": "28°GGEO", "arme": "Armée de terre", "cc": ["D17118S067"]},
+        {"nom": "GMHM", "arme": "Armée de terre", "cc": ["D1716SP991"]},
+        {"nom": "1°RA", "arme": "Armée de terre", "cc": ["D1710HR090"]},
+        {"nom": "40°RA", "arme": "Armée de terre", "cc": ["D1710BO051"]},
+        {"nom": "54°RA", "arme": "Armée de terre", "cc": ["D1710HP083"]},
+        {"nom": "61°RA", "arme": "Armée de terre", "cc": ["D17140D052"]},
+        {"nom": "68°RAA", "arme": "Armée de terre", "cc": ["D1710FQ001"]},
+        {"nom": "93°RAM", "arme": "Armée de terre", "cc": ["D1710D4038"]},
+        {"nom": "3°RAMA", "arme": "Armée de terre", "cc": ["D1711DK083"]},
+        {"nom": "11°RAMA", "arme": "Armée de terre", "cc": ["D1710G3035"]},
+        {"nom": "35°RAP", "arme": "Armée de terre", "cc": ["D1710GS065"]},
+        {"nom": "5°RC", "arme": "Armée de terre", "cc": ["D1719X7099"]},
+        {"nom": "12°RC", "arme": "Armée de terre", "cc": ["D1710BJ045"]},
+        {"nom": "1°RCA", "arme": "Armée de terre", "cc": ["D1711E6083"]},
+        {"nom": "501°RCC", "arme": "Armée de terre", "cc": ["D1710CO051"]},
+        {"nom": "1°RCH", "arme": "Armée de terre", "cc": ["D1710C9055"]},
+        {"nom": "4°RCH", "arme": "Armée de terre", "cc": ["D1710VF005"]},
+        {"nom": "1°RCP", "arme": "Armée de terre", "cc": ["D17147K009"]},
+        {"nom": "2°RD", "arme": "Armée de terre", "cc": ["D1711DL049"]},
+        {"nom": "5°RD", "arme": "Armée de terre", "cc": ["D1719X8010"]},
+        {"nom": "1°REC", "arme": "Armée de terre", "cc": ["D1710FD084"]},
+        {"nom": "1°REG", "arme": "Armée de terre", "cc": ["D1710FM030"]},
+        {"nom": "2°REG", "arme": "Armée de terre", "cc": ["D1713ZO084"]},
+        {"nom": "2°REI", "arme": "Armée de terre", "cc": ["D1710FH030"]},
+        {"nom": "3°REI", "arme": "Armée de terre", "cc": ["D17115O097"]},
+        {"nom": "2°REP", "arme": "Armée de terre", "cc": ["D1710GD020"]},
+        {"nom": "3°RG", "arme": "Armée de terre", "cc": ["D1710CB008"]},
+        {"nom": "6°RG", "arme": "Armée de terre", "cc": ["D1710FY049"]},
+        {"nom": "13°RG", "arme": "Armée de terre", "cc": ["D17147V025"]},
+        {"nom": "19°RG", "arme": "Armée de terre", "cc": ["D1710C3025"]},
+        {"nom": "31°RG", "arme": "Armée de terre", "cc": ["D1711AU082"]},
+        {"nom": "17°RGP", "arme": "Armée de terre", "cc": ["D1710GQ082"]},
+        {"nom": "2°RH", "arme": "Armée de terre", "cc": ["D1711AE067"]},
+        {"nom": "3°RH", "arme": "Armée de terre", "cc": ["D1710II991"]},
+        {"nom": "1°RHP", "arme": "Armée de terre", "cc": ["D1710G9099"]},
+        {"nom": "1°RI", "arme": "Armée de terre", "cc": ["D1710F0057"]},
+        {"nom": "35°RI", "arme": "Armée de terre", "cc": ["D1710C7090"]},
+        {"nom": "92°RI", "arme": "Armée de terre", "cc": ["D1710D2063"]},
+        {"nom": "126°RI", "arme": "Armée de terre", "cc": ["D1710ZV019"]},
+        {"nom": "152°RI", "arme": "Armée de terre", "cc": ["D1710AZ068"]},
+        {"nom": "5°RIAOM", "arme": "Armée de terre", "cc": ["D17112S993"]},
+        {"nom": "RICM", "arme": "Armée de terre", "cc": ["D1710G5086"]},
+        {"nom": "1°RIMA", "arme": "Armée de terre", "cc": ["D1710FS016"]},
+        {"nom": "2°RIMA", "arme": "Armée de terre", "cc": ["D1710FU072"]},
+        {"nom": "3°RIMA", "arme": "Armée de terre", "cc": ["D1710FW056"]},
+        {"nom": "9°RIMA", "arme": "Armée de terre", "cc": ["D17115Q973"]},
+        {"nom": "21°RIMA", "arme": "Armée de terre", "cc": ["D1710FO083"]},
+        {"nom": "33°RIMA", "arme": "Armée de terre", "cc": ["D171158097"]},
+        {"nom": "RIMAP-NC", "arme": "Armée de terre", "cc": ["D171176098"]},
+        {"nom": "2°RMAT", "arme": "Armée de terre", "cc": ["D17142J035"]},
+        {"nom": "3°RMAT", "arme": "Armée de terre", "cc": ["D17142K031"]},
+        {"nom": "4°RMAT", "arme": "Armée de terre", "cc": ["D17142L030"]},
+        {"nom": "6°RMAT", "arme": "Armée de terre", "cc": ["D17142U025"]},
+        {"nom": "7°RMAT", "arme": "Armée de terre", "cc": ["D17142N069"]},
+        {"nom": "8°RMAT", "arme": "Armée de terre", "cc": ["D17142O051"]},
+        {"nom": "RMED", "arme": "Armée de terre", "cc": ["D17146U001"]},
+        {"nom": "RMT", "arme": "Armée de terre", "cc": ["D1710BQ060"]},
+        {"nom": "2°RPIMA", "arme": "Armée de terre", "cc": ["D171169097"]},
+        {"nom": "3°RPIMA", "arme": "Armée de terre", "cc": ["D1710GF011"]},
+        {"nom": "8°RPIMA", "arme": "Armée de terre", "cc": ["D1710GJ006"]},
+        {"nom": "1°RS", "arme": "Armée de terre", "cc": ["D1710FF026"]},
+        {"nom": "121°RT", "arme": "Armée de terre", "cc": ["D1711BY091"]},
+        {"nom": "503°RT", "arme": "Armée de terre", "cc": ["D171407030"]},
+        {"nom": "511°RT", "arme": "Armée de terre", "cc": ["D1710H7021"]},
+        {"nom": "515°RT", "arme": "Armée de terre", "cc": ["D1711C2016"]},
+        {"nom": "516°RT", "arme": "Armée de terre", "cc": ["D1710B7054"]},
+        {"nom": "519°RT", "arme": "Armée de terre", "cc": ["D17180U083"]},
+        {"nom": "1°RTIR", "arme": "Armée de terre", "cc": ["D1710BW088"]},
+        {"nom": "1°RTP", "arme": "Armée de terre", "cc": ["D1710GU031"]},
+        {"nom": "28°RTRS", "arme": "Armée de terre", "cc": ["D1710ES063"]},
+        {"nom": "40°RTRS", "arme": "Armée de terre", "cc": ["D1710E8057"]},
+        {"nom": "41°RTRS", "arme": "Armée de terre", "cc": ["D1716Z9059"]},
+        {"nom": "44°RTRS", "arme": "Armée de terre", "cc": ["D171194067"]},
+        {"nom": "48°RTRS", "arme": "Armée de terre", "cc": ["D17114C047"]},
+        {"nom": "53°RTRS", "arme": "Armée de terre", "cc": ["D171116054"]},
+        {"nom": "54°RTRS", "arme": "Armée de terre", "cc": ["D171197067"]},
+        {"nom": "BA 101", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FB031"]},
+        {"nom": "BA 104", "arme": "Armée de l'air et de l'espace", "cc": ["D193000247"]},
+        {"nom": "BA 105", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FC027"]},
+        {"nom": "BA 106", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FD033"]},
+        {"nom": "BA 107", "arme": "Armée de l'air et de l'espace", "cc": ["D1932ER078"]},
+        {"nom": "BA 110", "arme": "Armée de l'air et de l'espace", "cc": ["D1932ES060"]},
+        {"nom": "BA 113", "arme": "Armée de l'air et de l'espace", "cc": ["D1932EV052"]},
+        {"nom": "BA 115", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FW084"]},
+        {"nom": "BA 116", "arme": "Armée de l'air et de l'espace", "cc": ["D1932EW070"]},
+        {"nom": "BA 118", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FE040"]},
+        {"nom": "BA 120", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FF009"]},
+        {"nom": "BA 123", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FG045"]},
+        {"nom": "BA 125", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FY013"]},
+        {"nom": "BA 126", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FZ02A"]},
+        {"nom": "BA 133", "arme": "Armée de l'air et de l'espace", "cc": ["D1932F0054"]},
+        {"nom": "BA 168", "arme": "Armée de l'air et de l'espace", "cc": ["D193A6N000"]},
+        {"nom": "BA 186", "arme": "Armée de l'air et de l'espace", "cc": ["D193000988"]},
+        {"nom": "BA 188", "arme": "Armée de l'air et de l'espace", "cc": ["D193505999"]},
+        {"nom": "BA 190", "arme": "Armée de l'air et de l'espace", "cc": ["D193506987"]},
+        {"nom": "BA 204", "arme": "Armée de l'air et de l'espace", "cc": ["D1535N1033"]},
+        {"nom": "BA 273", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FI041"]},
+        {"nom": "BA 278", "arme": "Armée de l'air et de l'espace", "cc": ["D1932G2001"]},
+        {"nom": "BA 367", "arme": "Armée de l'air et de l'espace", "cc": ["D193000973"]},
+        {"nom": "BA 470", "arme": "Armée de l'air et de l'espace", "cc": ["D193000328"]},
+        {"nom": "BA 701", "arme": "Armée de l'air et de l'espace", "cc": ["D1932G3024"]},
+        {"nom": "BA 702", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FM018"]},
+        {"nom": "BA 705", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FO037"]},
+        {"nom": "BA 709", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FP016"]},
+        {"nom": "BA 721", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FQ017"]},
+        {"nom": "BA 722", "arme": "Armée de l'air et de l'espace", "cc": ["D1932FR017"]},
+        {"nom": "BA 749", "arme": "Armée de l'air et de l'espace", "cc": ["D1932G4038"]},
+        {"nom": "BA 901", "arme": "Armée de l'air et de l'espace", "cc": ["D1932F3067"]},
+        {"nom": "BA 921", "arme": "Armée de l'air et de l'espace", "cc": ["D1932F5095"]},
+        {"nom": "BA 928", "arme": "Armée de l'air et de l'espace", "cc": ["D20302F029"]},
+        {"nom": "BA 942", "arme": "Armée de l'air et de l'espace", "cc": ["D1932G5069"]},
+        {"nom": "BASE NAVALE ABU DHABI", "arme": "Marine nationale", "cc": ["D03260E075"]},
+        {"nom": "BASE NAVALE BREST", "arme": "Marine nationale", "cc": ["D04209M029"]},
+        {"nom": "BASE NAVALE CHERBOURG", "arme": "Marine nationale", "cc": ["D04209N050"]},
+        {"nom": "BASE NAVALE DEGRAD DES CANNES", "arme": "Marine nationale", "cc": ["D21251T999"]},
+        {"nom": "BASE NAVALE DJIBOUTI", "arme": "Marine nationale", "cc": ["D0320AQ999"]},
+        {"nom": "BASE NAVALE FORT DE FRANCE", "arme": "Marine nationale", "cc": ["D2122EK097"]},
+        {"nom": "BASE NAVALE NOUMEA", "arme": "Marine nationale", "cc": ["D2122EL098"]},
+        {"nom": "BASE NAVALE PAPEETE", "arme": "Marine nationale", "cc": ["D2122EM999"]},
+        {"nom": "BASE NAVALE PORTS DES GALETS", "arme": "Marine nationale", "cc": ["D21251V097"]},
+        {"nom": "BASE NAVALE TOULON", "arme": "Marine nationale", "cc": ["D04209L083"]}
     ];
     // « 4°RIISC », « 4E RIISC », « 4ème riisc », « UIISC n°4 » → même unité.
     function normeUnite(t) {
@@ -1257,8 +1392,10 @@
         boite.style.position = 'relative'; liste.className = 'JUM-UNITES'; liste.setAttribute('role', 'listbox'); liste.hidden = true;
         boite.appendChild(liste);
         function montrer() {
-            var q = normeUnite(inp.value), l = UNITES.filter(function(u) { return !q || normeUnite(u.nom).indexOf(q) >= 0 || normeUnite(u.codier).indexOf(q) >= 0; });
-            liste.innerHTML = l.length ? l.map(function(u) { return '<button type="button" role="option" data-u="' + esc(u.nom) + '"><b>' + esc(u.nom) + '</b><small>' + esc(u.codier) + ' au codier FD</small></button>'; }).join('')
+            var q = normeUnite(inp.value), l = UNITES.filter(function(u) { return !q || normeUnite(u.nom).indexOf(q) >= 0 || normeUnite(u.codier || '').indexOf(q) >= 0 || normeUnite(u.arme).indexOf(q) >= 0; });
+            // Celles qui commencent par la saisie d'abord (« 5 » : 5°RIISC, 5°RC, 5°RD… avant 35°RI).
+            if (q) l = l.filter(function(u) { return normeUnite(u.nom).indexOf(q) === 0; }).concat(l.filter(function(u) { return normeUnite(u.nom).indexOf(q) !== 0; }));
+            liste.innerHTML = l.length ? l.map(function(u) { return '<button type="button" role="option" data-u="' + esc(u.nom) + '"><b>' + esc(u.nom) + '</b><small>' + esc(u.codier ? u.codier + ' au codier FD' : u.arme) + '</small></button>'; }).join('')
                 : '<p>Aucune unité ne commence ainsi. Unité absente de la liste ? Signalez-la (Paramètres › Aide).</p>';
             liste.hidden = false;
         }
