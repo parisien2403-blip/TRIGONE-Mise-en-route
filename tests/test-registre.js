@@ -83,6 +83,50 @@ module.exports = async function() {
     if (process.env.TRIGONE_CAPTURES) await c.screenshot({ path: process.env.TRIGONE_CAPTURES + '/registre-corrige.png' });
     await c.click('.MER-REG-PLEIN-BTN'); await attendre(400);
     verifier(await c.evaluate(() => !!document.querySelector('.MER-REG-ZONE') && !document.querySelector('.MER-REG-ZONE.plein')), 'sortie du plein écran');
+    // Codes FD de l'unité (profil 4°RIISC → UIISC n°4 du codier) : vert ; autre unité : jaune ; et inversement pour un autre régiment.
+    const codes = await c.evaluate(async () => {
+        await CHARGER_CODIER(); const lire = window.JUMELAGE_REGLAGES_LIRE;
+        const a = [MER_CODE_UNITE('FDYDDR4FCT'), MER_CODE_UNITE('FDYDDR4INT'), MER_CODE_UNITE('FD1ADNK11F'), MER_CODE_UNITE('FDYDDR1FCT')];
+        window.JUMELAGE_REGLAGES_LIRE = () => Object.assign({}, lire(), { unite: '1ER RIISC' });
+        const b = [MER_CODE_UNITE('FDYDDR1FCT'), MER_CODE_UNITE('FDYDDR4FCT')];
+        window.JUMELAGE_REGLAGES_LIRE = lire;
+        return a.concat(b).join(',');
+    });
+    verifier(codes === 'unite,unite,hors,hors,unite,hors', 'codes FD : 4°RIISC en vert, autres unités en jaune ; profil 1ER RIISC : l\'inverse (' + codes + ')');
+    const carte = await c.evaluate(() => { const av = D.codeFD; D.codeFD = 'FDYDDR4FCT'; const a = TPL_INFO_FD(); D.codeFD = 'FD1ADNK11F'; const b = TPL_INFO_FD(); D.codeFD = av; return /MER-FD-UNITE unite/.test(a) && /Code du 4°RIISC/.test(a) && /MER-FD-CARTE hors/.test(b) && /Hors 4°RIISC/.test(b); });
+    verifier(carte, 'demande : code FD du 4°RIISC en vert, code d\'une autre unité en jaune');
+    // Champ « Unité » du profil : liste filtrée dès les premières lettres ; une unité hors liste est refusée.
+    await c.evaluate(() => JUMELAGE_REGLAGES({ vue: 'profil' })); await attendre(500);
+    await c.click('#JUM-R-UNITE'); await c.fill('#JUM-R-UNITE', '5'); await attendre(200);
+    const choix = await c.evaluate(() => [...document.querySelectorAll('.JUM-UNITES button')].map(b => b.getAttribute('data-u')).join(','));
+    await c.click('.JUM-UNITES button'); await attendre(200);
+    const pris = await c.inputValue('#JUM-R-UNITE');
+    await c.fill('#JUM-R-UNITE', 'REGIMENT INCONNU'); await c.evaluate(() => JUMELAGE_ENREGISTRER_REGLAGES(false)); await attendre(300);
+    const refus = await c.evaluate(() => (document.getElementById('JUM-R-ERREUR') || {}).textContent || '');
+    await c.evaluate(() => JUMELAGE_FERMER_REGLAGES()); await attendre(300);
+    verifier(choix === '5°RIISC' && pris === '5°RIISC' && /dans la liste/.test(refus) && JSON.stringify(await c.evaluate(() => JUMELAGE_REGLAGES_LIRE().unite)) === '"4°RIISC"', 'profil : unité choisie dans une liste filtrée (« 5 » → 5°RIISC), unité hors liste refusée (' + choix + ')');
+    await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(600);
+    verifier(await c.evaluate(() => !!document.querySelector('.MER-REG-LIGNE .MER-REG-CODE.hors')), 'registre : code FD hors unité marqué en jaune');
+    // Filtres libres : recherche, codes de l'unité / hors unité, période.
+    const nb = () => c.evaluate(() => document.querySelectorAll('.MER-REG-LIGNE').length);
+    const tous = await nb();
+    await c.fill('#MER-REG-CHERCHE', pref + '0007'); await attendre(700);
+    const n1 = await nb(), focus = await c.evaluate(() => document.activeElement && document.activeElement.id);
+    await c.fill('#MER-REG-CHERCHE', 'zzzz introuvable'); await attendre(700);
+    const n0 = await nb(), msg0 = await c.evaluate(() => /ne correspond/.test(document.querySelector('.CARD').textContent));
+    verifier(tous >= 2 && n1 === 1 && n0 === 0 && msg0 && focus === 'MER-REG-CHERCHE', 'registre : recherche libre (n° OMR), le curseur reste dans la case (' + tous + '/' + n1 + '/' + n0 + ')');
+    await c.fill('#MER-REG-CHERCHE', pref); await attendre(700);
+    const ns = await nb();
+    await c.selectOption('#MER-REG-CODE-F', 'unite'); await attendre(400);
+    const nu = await nb();
+    await c.selectOption('#MER-REG-CODE-F', 'hors'); await attendre(400);
+    const nh = await nb();
+    verifier(ns === 2 && nu === 0 && nh === 2, 'registre : filtre « codes du 4°RIISC » / « hors 4°RIISC » (' + nu + '/' + nh + ')');
+    await c.evaluate(() => MER_REG_CRIT()); await attendre(300);
+    await c.fill('#MER-REG-DU', '2099-01-01'); await c.dispatchEvent('#MER-REG-DU', 'change'); await attendre(400);
+    verifier(await nb() === 0, 'registre : filtre par période (début de mission)');
+    await c.evaluate(() => MER_REG_CRIT()); await attendre(300);
+    verifier(await nb() === tous && !(await c.$('.MER-REG-BARRE .BTN-DANGER-TEXT')), 'registre : « Effacer les filtres »');
     await c.evaluate(() => OUVRIR_REGISTRE('retard')); await attendre(400);
     verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') < 0, 'filtre « En retard » : la ligne rendue n\'y est plus');
     await c.evaluate(() => OUVRIR_REGISTRE('ok')); await attendre(400);
