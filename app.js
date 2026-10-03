@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 204;
+var APP_CODE_VERSION = 205;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -4055,19 +4055,23 @@ function REGISTRE_PDF() {
     doc.text('Édité le ' + new Date().toLocaleString('fr-FR'), W - M, 18 + dy, { align: 'right' });
     doc.setFillColor(214, 167, 86); doc.rect(0, 22 + dy, W, 0.8, 'F');
     var head = [['N° OMR', 'Envoyée le', 'Objet', 'Code FD', 'Début', 'Fin', 'Personnel', 'Étape', 'Repas', 'Hébergement', 'Transports', 'IK', 'Transp. commun', 'Total']];
-    var vide = function(x, v) { return (x.crs || []).length ? MER_EUROS(v) : '—'; };
+    // Police du PDF sans espace fine insécable (séparateur des milliers en français) : simple espace.
+    var eur = function(v) { return MER_EUROS(v).replace(/[\u202F\u00A0]/g, ' '); };
+    var vide = function(x, v) { return (x.crs || []).length ? eur(v) : '—'; };
     var body = l.map(function(x) {
         var e = MER_REG_ETAT(x), m = MER_REG_MONTANTS(x);
         return [x.omr || '—', MER_REG_JOUR(x.omrLe || x.recuLe), x.objet || '', x.codeFD || '—', MER_REG_JOUR(x.debut), MER_REG_JOUR(x.fin), MER_REG_PERSONNEL(x), e.txt.replace(/[✔⚠]\s?/g, ''),
             vide(x, m.repas), vide(x, m.hebergement), vide(x, m.transports), vide(x, m.ik), vide(x, m.tc), vide(x, m.total)];
     });
     var t = l.reduce(function(a, x) { var m = MER_REG_MONTANTS(x); Object.keys(a).forEach(function(k) { a[k] += m[k]; }); return a; }, { repas: 0, hebergement: 0, transports: 0, ik: 0, tc: 0, total: 0 });
-    var foot = [['', '', '', '', '', '', '', 'TOTAL', MER_EUROS(t.repas), MER_EUROS(t.hebergement), MER_EUROS(t.transports), MER_EUROS(t.ik), MER_EUROS(t.tc), MER_EUROS(t.total)]];
+    var foot = [['', '', '', '', '', '', '', 'TOTAL', eur(t.repas), eur(t.hebergement), eur(t.transports), eur(t.ik), eur(t.tc), eur(t.total)]];
     doc.autoTable({ startY: 27 + dy, margin: { left: M, right: M }, head: head, body: body, foot: foot, showFoot: 'lastPage',
         theme: 'plain', styles: { fontSize: 7, cellPadding: 1.4, textColor: [26, 26, 26], lineColor: [230, 230, 230], lineWidth: 0.1 },
         headStyles: { fillColor: false, textColor: [26, 26, 26], fontStyle: 'bold' }, footStyles: { fillColor: false, textColor: [26, 26, 26], fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [250, 248, 243] },
-        columnStyles: { 0: { fontStyle: 'bold' }, 8: { halign: 'right' }, 9: { halign: 'right' }, 10: { halign: 'right' }, 11: { halign: 'right' }, 12: { halign: 'right' }, 13: { fontStyle: 'bold', halign: 'right' } } });
+        columnStyles: { 0: { fontStyle: 'bold' }, 8: { halign: 'right', minCellWidth: 16 }, 9: { halign: 'right', minCellWidth: 19 }, 10: { halign: 'right', minCellWidth: 17 }, 11: { halign: 'right', minCellWidth: 16 }, 12: { halign: 'right', minCellWidth: 17 }, 13: { fontStyle: 'bold', halign: 'right', minCellWidth: 19 } },
+        // Montants jamais coupés sur deux lignes.
+        didParseCell: function(d) { if (d.column.index < 8) return; d.cell.styles.halign = 'right'; if (d.section !== 'head') d.cell.styles.overflow = 'visible'; } });
     try { doc.save('Registre OMR - ' + nomFiltre.toLowerCase() + ' - ' + new Date().toISOString().slice(0, 10) + '.pdf'); }
     catch (e) { MSG_ERREUR('PDF impossible', e.message || String(e)); }
 }
