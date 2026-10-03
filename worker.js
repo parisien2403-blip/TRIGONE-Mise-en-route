@@ -83,7 +83,9 @@ async function baseBoite(env) {
             // État des envois de la boîte, commun aux appareils d'un même compte (traité sur le PC → traité sur le téléphone).
             // Rien du contenu : identifiant de l'envoi, statut, date.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS boite_etat (mail TEXT NOT NULL, id TEXT NOT NULL, statut TEXT, le INTEGER, maj INTEGER, PRIMARY KEY (mail, id))'),
-            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_etat_maj ON boite_etat (mail, maj)')
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_etat_maj ON boite_etat (mail, maj)'),
+            // Comptes qui ont un rôle (VALIDEUR 1 / 2, ASSIST CHORUS DT) : à qui remettre la clé des photos de carte partagées.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS porteur_role (mail TEXT PRIMARY KEY, roles TEXT, maj INTEGER)')
         ]);
         TABLES_PRETES = true;
     }
@@ -111,6 +113,14 @@ function registreFusion(a, b) {
     if (a.jalons || b.jalons) r.jalons = Object.assign({}, b.jalons || {}, a.jalons || {});
     if (a.omr) r.omr = a.omr;
     return r;
+}
+// Index des comptes qui ont un rôle (photos de carte : à qui en remettre la clé). Tenu à jour quand les rôles changent,
+// et vérifié une fois par jour au relevé de la boîte (comptes qui avaient déjà leur rôle).
+async function indexerRoles(env, mail, roles) {
+    const db = await baseBoite(env), rs = ROLES.filter(r => (roles || {})[r]);
+    if (rs.length) await db.prepare('INSERT INTO porteur_role (mail, roles, maj) VALUES (?, ?, ?) ON CONFLICT (mail) DO UPDATE SET roles = excluded.roles, maj = excluded.maj').bind(mail, rs.join(','), Date.now()).run();
+    else await db.prepare('DELETE FROM porteur_role WHERE mail = ?').bind(mail).run();
+    await env.TRIGONE_KV.put('idx-roles:' + mail, rs.join(','), { expirationTtl: 86400 });
 }
 async function registreEcrireLigne(db, u, ligne, le, par) {
     await db.prepare('INSERT INTO registre (unite, ref, omr, mref, donnees, maj, supprime, par) VALUES (?, ?, ?, ?, ?, ?, 0, ?) ' +
@@ -1043,6 +1053,7 @@ async function api(requete, env, url, ctx) {
         ajouter.forEach(r => { frais.roles[r] = true; });
         retirer.forEach(r => { delete frais.roles[r]; });
         await kv.put('compte:' + moi.mail, JSON.stringify(frais));
+        await indexerRoles(env, moi.mail, frais.roles);
         return json({ ok: true, roles: frais.roles });
     }
     if (chemin === 'role' && methode === 'POST') {
@@ -1051,6 +1062,7 @@ async function api(requete, env, url, ctx) {
         moi.compte.roles = moi.compte.roles || {};
         if (actif) moi.compte.roles[role] = true; else delete moi.compte.roles[role];
         await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
+        await indexerRoles(env, moi.mail, moi.compte.roles);
         return json({ ok: true, roles: moi.compte.roles });
     }
 
@@ -1137,6 +1149,64 @@ async function api(requete, env, url, ctx) {
     }
 
     // Relève : liste des envois en attente pour cet appareil.
+    // ---------- Photo de carte partagée, chiffrée de bout en bout ----------
+    // Appareils à qui remettre la clé de ma photo : ceux des comptes VALIDEUR 1 / 2 et ASSIST CHORUS DT, et des chefs des
+    // missions collectives où je suis participant. Seulement des clés publiques (aucun mail).
+    if (chemin === 'photo/destinataires' && methode === 'GET') {
+        const db = await baseBoite(env);
+        const mails = new Set(((await db.prepare('SELECT mail FROM porteur_role').all()).results || []).map(x => x.mail));
+        ((await db.prepare('SELECT DISTINCT chef FROM equipe WHERE mail = ?').bind(moi.mail).all()).results || []).forEach(x => mails.add(x.chef));
+        mails.delete(moi.mail);
+        const appareils = [];
+        for (const m of [...mails].slice(0, 300)) {
+            const c = await kv.get('compte:' + m, 'json');
+            (c && c.appareils || []).forEach(a => { if (a.cle) appareils.push({ id: a.id, cle: a.cle }); });
+        }
+        return json({ ok: true, appareils });
+    }
+    // Ma photo chiffrée : { donnees: { iv, ct }, enveloppes: [{ appareil, epk, iv, ct }] } ; DELETE : je ne la partage plus.
+    if (chemin === 'photo' && (methode === 'POST' || methode === 'DELETE')) {
+        if (methode === 'DELETE') { await kv.delete('photo:' + moi.mail); return json({ ok: true }); }
+        const c = await requete.json().catch(() => ({}));
+        const d = c.donnees || {}, env2 = Array.isArray(c.enveloppes) ? c.enveloppes.slice(0, 600) : [];
+        if (typeof d.ct !== 'string' || typeof d.iv !== 'string' || d.ct.length > 400000) return erreur(400, 'Photo trop lourde ou illisible.');
+        const enveloppes = {};
+        env2.forEach(e => { if (e && /^[\w-]{1,64}$/.test(String(e.appareil || '')) && typeof e.ct === 'string' && e.ct.length < 400) enveloppes[e.appareil] = { epk: e.epk, iv: e.iv, ct: e.ct }; });
+        await kv.put('photo:' + moi.mail, JSON.stringify({ donnees: { iv: d.iv, ct: d.ct }, enveloppes, maj: Date.now() }));
+        return json({ ok: true, n: Object.keys(enveloppes).length });
+    }
+    // Cartes des personnes d'une mission : { personnes: [{ nid, mail }] } (30 au plus). Pour chacune : carte vérifiée
+    // (grade, nom, unité, depuis) et photo chiffrée pour CET appareil s'il en a la clé. Réservé aux VALIDEUR 1 / 2,
+    // ASSIST CHORUS DT, au chef de la mission collective et à la personne elle-même.
+    if (chemin === 'participants' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({}));
+        const roles = moi.compte.roles || {}, aRole = ROLES.some(r => roles[r]);
+        const db = await baseBoite(env);
+        const quota = 'quota-part:' + moi.mail + ':' + new Date().toISOString().slice(0, 13), n = +(await kv.get(quota)) || 0;
+        if (n >= 400) return erreur(429, 'Trop de cartes consultées en peu de temps : réessayez plus tard.');
+        const liste = (Array.isArray(c.personnes) ? c.personnes : []).slice(0, 30);
+        await kv.put(quota, String(n + liste.length), { expirationTtl: 2 * 3600 });
+        const resultat = [];
+        for (const p of liste) {
+            const nid = chiffresNid(p && p.nid);
+            let mail = nid ? await kv.get('nid:' + await empreinteNid(env, nid)) : null;
+            if (!mail && p && p.mail) mail = normaliser(p.mail);
+            const r = { nid: (p && p.nid) || '', compte: false, carte: null, photo: null };
+            if (mail && await kv.get('compte:' + mail)) {
+                const chef = !aRole && mail !== moi.mail ? await db.prepare('SELECT 1 FROM equipe WHERE chef = ? AND mail = ? LIMIT 1').bind(moi.mail, mail).first() : null;
+                r.compte = true;
+                const id = await kv.get('carte-de:' + mail), ca = id ? await kv.get('carte:' + id, 'json') : null;
+                if (aRole || chef || mail === moi.mail) {
+                    if (ca) r.carte = { grade: ca.grade || '', nom: ca.nom || '', prenom: ca.prenom || '', unite: ca.unite || '', cie: ca.cie || '', nid: ca.nid || '', depuis: ca.depuis || 0 };
+                    const ph = await kv.get('photo:' + mail, 'json');
+                    if (ph) r.photo = ph.enveloppes && ph.enveloppes[moi.appareil.id] ? { donnees: ph.donnees, enveloppe: ph.enveloppes[moi.appareil.id] } : { partagee: true };
+                } else if (ca) r.carte = { depuis: ca.depuis || 0 };   // chef d'une demande pas encore partie : « vérifiée », rien de plus
+                // (il connaît déjà matricule et identité par sa demande ; ni les données du serveur ni la photo)
+            }
+            resultat.push(r);
+        }
+        return json({ ok: true, personnes: resultat });
+    }
     // États des envois (traité, rouvert, supprimé) partagés entre mes appareils : { etats: [{ id, statut, le }], depuis }.
     // Le plus récent (le) l'emporte ; réponse : états changés depuis « depuis » (horloge du serveur).
     if (chemin === 'boite/etats' && methode === 'POST') {
@@ -1156,6 +1226,8 @@ async function api(requete, env, url, ctx) {
     }
     if (chemin === 'boite' && methode === 'GET') {
         const db = await baseBoite(env);
+        const sigRoles = ROLES.filter(r => (moi.compte.roles || {})[r]).join(',');
+        if ((await kv.get('idx-roles:' + moi.mail)) !== sigRoles) await indexerRoles(env, moi.mail, moi.compte.roles);
         const r = await db.prepare('SELECT id, de, type, le FROM boite WHERE dest = ? AND appareil = ? AND le > ? ORDER BY le')
             .bind(moi.mail, moi.appareil.id, Date.now() - DUREE_MESSAGE * 1000).all();
         return json({ ok: true, envois: r.results || [] });

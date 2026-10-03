@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 162;
+    var VERSION = 163;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i></button>'; }
     function r(n) { return '<span class="n-r">' + n + '</span>'; }
@@ -102,13 +102,18 @@
 
     // ---------- 6. Carte TRIGONE ----------
     ajouter(chapitre(6, 'Ma carte TRIGONE', 'Votre carte d\'identité TRIGONE, au format carte bancaire, remplie avec Mon profil. Son QR code permet aux autres comptes TRIGONE de vous ajouter en un geste.',
-        ['Ouvrir, retourner, afficher en grand', 'La photo', 'Le QR code et ses usages', 'Carte perdue ou volée'], 'carte'));
+        ['Ouvrir, retourner, afficher en grand', 'La photo', 'Le QR code et ses usages', 'Carte perdue ou volée', 'Partager sa photo, onglet Participants'], 'carte'));
     ajouter(page('La carte', duo('c1-carte-recto', et(['Ouvrez la carte : bouton doré <b>« Ma carte »</b> de l\'écran d\'accueil, <b>appui long</b> sur l\'icône TRIGONE › Ma carte, ou Paramètres › Compte.', '<b>Recto</b> : photo, nom, grade, NID, unité, nombre de missions, hologramme qui bouge avec le téléphone.', '<b>Touchez la carte</b> pour la retourner.', '<b>Changer la photo</b> : appareil photo ou galerie, puis cadrez au doigt. La photo reste sur le téléphone.'])) +
         savoir('Le liseré évolue avec vos comptes-rendus envoyés : <b>bronze</b> (1), <b>argent</b> (10), <b>or</b> (20).'), 'carte'));
     ajouter(page('Le verso et le QR code', duo('c2-carte-verso', et(['<b>Verso</b> : QR code, rôles, « Compte vérifié depuis le… », signature.', '<b>Afficher en grand</b> : le téléphone passe à l\'horizontale et devient la carte (écran maintenu allumé). Touchez pour retourner, ✕ pour fermer.', '<b>Partager</b> : la carte (recto + verso) en image.'])) +
         attention('Le QR code ne contient qu\'un <b>identifiant</b> : ni photo, ni NID, ni adresse. Il ne donne accès à rien.'), 'carte'));
     ajouter(page('À quoi sert le QR code', duo('c5-carte-scan', et(['<b>Demande collective</b> : « Scanner des cartes TRIGONE » ajoute chaque personne (unité, grade, nom, matricule).', '<b>Mails</b> : le bouton QR des champs de mail (valideur, Chorus DT, remplaçant) remplit l\'adresse.', '<b>Mission collective</b> : le chef pointe les présents au départ, ou ajoute des participants.', '<b>Personnel d\'une autre unité</b> : signalé « extérieur ».', 'La caméra se lance ; visez le QR code. Sans caméra (PC), collez le lien de la carte.'])), 'carte'));
     ajouter(page('Vérifier une carte, carte perdue', duo('c6-carte-verif', et(['Scanné avec l\'<b>appareil photo</b> de n\'importe quel téléphone, le QR code ouvre la page <b>« Carte TRIGONE authentique »</b> : grade, nom, unité, heure de vérification (sans mail ni NID).', 'Une carte inventée ou un compte supprimé affiche <b>« Carte non reconnue »</b>.', 'Carte perdue, volée ou photographiée : sous la carte, <b>« Révoquer le QR code »</b>. L\'ancien ne marche plus, un nouveau est créé.'])), 'carte'));
+    ajouter(page('Partager sa photo', '<h5>Pour qui ?</h5>' + et(['Ma carte › case <b>« Partager ma photo avec les valideurs et l\'assistant Chorus DT »</b>.', 'Votre photo apparaît alors sur votre carte, dans l\'onglet <b>Participants</b> de vos demandes : chez les <b>VALIDEUR 1 et 2</b>, les <b>assistants Chorus DT</b> et le <b>chef</b> d\'une mission collective où vous êtes.']) +
+        '<h5>Chiffrée de bout en bout</h5>' + et(['La photo est <b>chiffrée sur votre téléphone</b> avant de partir : le serveur ne garde qu\'un bloc illisible.', 'Seuls les appareils autorisés ont la clé. Un nouveau valideur la reçoit à votre prochaine ouverture de TRIGONE.', 'Décochez la case : la photo est <b>retirée</b> aussitôt.']) +
+        savoir('Sans partage, votre carte s\'affiche avec vos <b>initiales</b> à la place de la photo. Elle reste « vérifiée ».'), 'carte'));
+    ajouter(page('L\'onglet Participants', '<h5>Où ?</h5>' + et(['Bouton <b>👥 Participants</b> : Espace valideur (VALIDEUR 1 et 2), contrôle des demandes et <b>registre des OMR</b> (assistant Chorus DT), <b>Bibliothèque</b> (chef de mission).']) +
+        '<h5>Ce qu\'on voit</h5>' + et(['Une <b>carte TRIGONE par personne</b> : chef de mission (ou missionnaire), puis les participants.', '<b>✔ Carte TRIGONE vérifiée</b> (depuis le…) : le serveur confirme la carte. <b>✖ Pas de carte vérifiée</b> : identité à contrôler.', 'Photo si la personne la partage, sinon ses initiales. Touchez une carte pour l\'afficher en grand.', 'Onglet <b>Demande</b> : objet, dates, destination, code FD.']), 'carte'));
 
     // ---------- 7. Demande de mise en route ----------
     ajouter(chapitre(7, 'Faire une demande de mise en route', 'La demande d\'ordre de mise en route (DOMR) se remplit en 5 onglets. Chaque onglet est vérifié avant de passer au suivant : une demande complète est une demande validée plus vite.',
