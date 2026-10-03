@@ -1018,7 +1018,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 161, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 162, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3334,10 +3334,55 @@
             return r.blob();
         }).then(function(b) { return new File([b], (x && x.nom) || 'demande.json', { type: 'application/json' }); });
     };
-    window.JUMELAGE_BOITE_MARQUER = function(id, statut) {
-        var l = boiteLire(), cr = false;
-        l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') { x.statut = statut; if (statut === 'traite' && x.nature === 'cr') cr = true; } });
+    // ---- État des envois commun à mes appareils (traité sur le PC → traité aussi sur le téléphone) ----
+    // File des changements à envoyer, et états connus du serveur (appliqués aussi aux envois relevés plus tard).
+    var CLE_ETATS_FILE = 'trigone_boite_etats_file', CLE_ETATS_CONNUS = 'trigone_boite_etats', CLE_ETATS_DEPUIS = 'trigone_boite_etats_depuis', etatsEnCours = null;
+    function etatPartager(id, statut) {
+        var f = lireJSON(CLE_ETATS_FILE) || {}; f[id] = { statut: statut, le: Date.now() };
+        ecrireTxt(CLE_ETATS_FILE, JSON.stringify(f));
+        var k = lireJSON(CLE_ETATS_CONNUS) || {}; k[id] = f[id]; ecrireTxt(CLE_ETATS_CONNUS, JSON.stringify(k));
+        setTimeout(function() { window.JUMELAGE_BOITE_ETATS(); }, 0);
+    }
+    // Applique les états connus aux envois de cet appareil. Renvoie vrai si la boîte a changé.
+    function etatsAppliquer() {
+        var k = lireJSON(CLE_ETATS_CONNUS) || {}, l = boiteLire(), change = false, traites = [], suppr = [];
+        l = l.filter(function(x) {
+            var e = k[x.id]; if (!e) return true;
+            if (e.statut === 'supprime') { suppr.push(x.id); change = true; return false; }
+            if (e.statut === 'traite' && x.statut !== 'traite') { x.statut = 'traite'; x.traiteLe = e.le; traites.push(x); change = true; }
+            else if (e.statut === 'ouvert' && x.statut === 'traite' && (x.traiteLe || 0) < e.le) { x.statut = 'ouvert'; delete x.traiteLe; change = true; }
+            return true;
+        });
+        if (!change) return false;
         boiteEcrire(l);
+        if (suppr.length) caches.open(CACHE_BOITE).then(function(c) { suppr.forEach(function(id) { c.delete(cleFichierBoite(id)); c.delete(cleFichierBoite(id, true)); }); }).catch(function() {});
+        // L'appli retire de l'Espace valideur les demandes déjà signées sur un autre appareil.
+        if (traites.length) try { window.dispatchEvent(new CustomEvent('trigone-traite-ailleurs', { detail: traites.map(function(x) { return { ids: x.ids || [], nature: x.nature }; }) })); } catch (e) {}
+        return true;
+    }
+    window.JUMELAGE_BOITE_ETATS = function() {
+        if (!monCompte() || !navigator.onLine) { etatsAppliquer(); return Promise.resolve(false); }
+        if (etatsEnCours) return etatsEnCours;
+        var f = lireJSON(CLE_ETATS_FILE) || {}, ids = Object.keys(f).slice(0, 200);
+        etatsEnCours = appelApi('boite/etats', { methode: 'POST', corps: { etats: ids.map(function(id) { return { id: id, statut: f[id].statut, le: f[id].le }; }), depuis: +lireTxt(CLE_ETATS_DEPUIS) || 0 } }).then(function(r) {
+            var f2 = lireJSON(CLE_ETATS_FILE) || {};
+            ids.forEach(function(id) { if (f2[id] && f2[id].le === f[id].le) delete f2[id]; });
+            ecrireTxt(CLE_ETATS_FILE, JSON.stringify(f2));
+            var k = lireJSON(CLE_ETATS_CONNUS) || {}, vieux = Date.now() - 120 * 86400000;
+            (r.etats || []).forEach(function(e) { if (!k[e.id] || k[e.id].le <= e.le) k[e.id] = { statut: e.statut, le: e.le }; });
+            Object.keys(k).forEach(function(id) { if (k[id].le < vieux) delete k[id]; });
+            ecrireTxt(CLE_ETATS_CONNUS, JSON.stringify(k));
+            ecrireTxt(CLE_ETATS_DEPUIS, String(Math.max(0, (r.maintenant || 0) - 2000)));   // léger recouvrement : rien n'est manqué
+            etatsEnCours = null;
+            return etatsAppliquer();
+        }, function() { etatsEnCours = null; return etatsAppliquer(); });
+        return etatsEnCours;
+    };
+    window.JUMELAGE_BOITE_MARQUER = function(id, statut) {
+        var l = boiteLire(), cr = false, traite = false;
+        l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') { x.statut = statut; if (statut === 'traite') { traite = true; x.traiteLe = Date.now(); if (x.nature === 'cr') cr = true; } } });
+        boiteEcrire(l);
+        if (traite) etatPartager(id, 'traite');
         // Compte-rendu traité par l'assistant Chorus DT : le missionnaire est prévenu.
         if (cr) suiviTraite({ envois: [id] });
     };
@@ -3353,12 +3398,13 @@
         if (!ids || !ids.length) return;
         // Demandes traitées par l'assistant Chorus DT (PDF produit) : le demandeur est prévenu.
         if (natures && natures.indexOf('chorus') >= 0) suiviTraite({ refs: ids });
-        var l = boiteLire(), change = false;
+        var l = boiteLire(), change = false, partages = [];
         l.forEach(function(x) {
             if (natures && natures.indexOf(x.nature) < 0) return;
-            if (x.statut !== 'traite' && (x.ids || []).length && x.ids.every(function(i) { return ids.indexOf(i) >= 0; })) { x.statut = 'traite'; x.traiteLe = Date.now(); change = true; }
+            if (x.statut !== 'traite' && (x.ids || []).length && x.ids.every(function(i) { return ids.indexOf(i) >= 0; })) { x.statut = 'traite'; x.traiteLe = Date.now(); change = true; partages.push(x.id); }
         });
         if (change) boiteEcrire(l);
+        partages.forEach(function(id) { etatPartager(id, 'traite'); });
     };
     // Assistant Chorus DT : PDF final téléchargé, l'envoi attend son « ✔ Traité » (l'ordre de mission créé dans Chorus DT).
     window.JUMELAGE_BOITE_PDF_FAIT = function(id) {
@@ -3367,9 +3413,11 @@
     // Envoi classé « traité » trop tôt : il repasse « à traiter ».
     window.JUMELAGE_BOITE_ROUVRIR = function(id) {
         var l = boiteLire(); l.forEach(function(x) { if (x.id === id) { x.statut = 'ouvert'; delete x.traiteLe; } }); boiteEcrire(l);
+        etatPartager(id, 'ouvert');
     };
     window.JUMELAGE_BOITE_SUPPRIMER = function(id) {
         boiteEcrire(boiteLire().filter(function(x) { return x.id !== id; }));
+        etatPartager(id, 'supprime');
         return caches.open(CACHE_BOITE).then(function(c) { return Promise.all([c.delete(cleFichierBoite(id)), c.delete(cleFichierBoite(id, true))]); }).catch(function() {});
     };
     // Pastille sur l'écran de choix (côté Mise en route) : envois reçus pas encore traités.
@@ -3398,6 +3446,7 @@
         releveEnCours = releverUneFois().then(function(n) {
             releveEnCours = null;
             window.JUMELAGE_REGISTRE_SYNCHRO();   // registre OMR commun aux assistants Chorus DT
+            window.JUMELAGE_BOITE_ETATS();        // envois déjà traités sur un autre de mes appareils
             if (releveARefaire) { releveARefaire = false; return window.JUMELAGE_RELEVER().then(function(m) { return n + m; }); }
             return n;
         });

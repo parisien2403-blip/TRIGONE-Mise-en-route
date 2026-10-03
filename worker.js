@@ -79,7 +79,11 @@ async function baseBoite(env) {
             // Registre OMR partagé par les assistants Chorus DT d'une unité : une ligne par demande (donnees = JSON),
             // supprime = 1 pour une ligne retirée (mission annulée), gardée pour que les autres appareils la retirent aussi.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS registre (unite TEXT NOT NULL, ref TEXT NOT NULL, omr TEXT, mref TEXT, donnees TEXT, maj INTEGER, supprime INTEGER DEFAULT 0, par TEXT, PRIMARY KEY (unite, ref))'),
-            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS registre_maj ON registre (unite, maj)')
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS registre_maj ON registre (unite, maj)'),
+            // État des envois de la boîte, commun aux appareils d'un même compte (traité sur le PC → traité sur le téléphone).
+            // Rien du contenu : identifiant de l'envoi, statut, date.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS boite_etat (mail TEXT NOT NULL, id TEXT NOT NULL, statut TEXT, le INTEGER, maj INTEGER, PRIMARY KEY (mail, id))'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_etat_maj ON boite_etat (mail, maj)')
         ]);
         TABLES_PRETES = true;
     }
@@ -1104,6 +1108,23 @@ async function api(requete, env, url, ctx) {
     }
 
     // Relève : liste des envois en attente pour cet appareil.
+    // États des envois (traité, rouvert, supprimé) partagés entre mes appareils : { etats: [{ id, statut, le }], depuis }.
+    // Le plus récent (le) l'emporte ; réponse : états changés depuis « depuis » (horloge du serveur).
+    if (chemin === 'boite/etats' && methode === 'POST') {
+        const corps = await requete.json().catch(() => ({}));
+        const db = await baseBoite(env), maint = Date.now();
+        const etats = (Array.isArray(corps.etats) ? corps.etats : []).slice(0, 200)
+            .filter(e => e && /^[\w.-]{1,64}$/.test(String(e.id || '')) && ['traite', 'ouvert', 'supprime'].includes(e.statut));
+        for (const e of etats) {
+            const le = Math.min(+e.le || maint, maint);
+            await db.prepare('INSERT INTO boite_etat (mail, id, statut, le, maj) VALUES (?, ?, ?, ?, ?) ON CONFLICT (mail, id) DO UPDATE SET statut = excluded.statut, le = excluded.le, maj = excluded.maj WHERE excluded.le >= boite_etat.le')
+                .bind(moi.mail, String(e.id), e.statut, le, maint).run();
+        }
+        if (Math.random() < 0.02) await db.prepare('DELETE FROM boite_etat WHERE maj < ?').bind(maint - 120 * 86400000).run();
+        const depuis = Math.max(0, +corps.depuis || 0);
+        const r = (await db.prepare('SELECT id, statut, le FROM boite_etat WHERE mail = ? AND maj > ? ORDER BY maj LIMIT 1000').bind(moi.mail, depuis).all()).results || [];
+        return json({ ok: true, etats: r, maintenant: maint });
+    }
     if (chemin === 'boite' && methode === 'GET') {
         const db = await baseBoite(env);
         const r = await db.prepare('SELECT id, de, type, le FROM boite WHERE dest = ? AND appareil = ? AND le > ? ORDER BY le')
