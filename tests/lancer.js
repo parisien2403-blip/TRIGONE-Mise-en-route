@@ -30,6 +30,7 @@ const TESTS = {
     'distance': ['Distance automatique des indemnités kilométriques', require('./test-distance')],
     'pdf-complet': ['Compte-rendu et justificatifs en un seul PDF (assistant Chorus DT)', require('./test-pdf-complet')],
     'choix': ['Écran de choix et logo des PDF', require('./test-choix')],
+    'medailles': ['Médailles : recompter depuis la Bibliothèque, repartir à zéro', require('./test-medailles')],
     'scenarios': ['Matrice de scénarios de bout en bout (demandes, refus, erreurs, comptes-rendus)', require('./test-scenarios')],
     'raccourcis': ['Raccourcis de l\'icône et validation groupée', require('./test-raccourcis')],
     'attente': ['Envois sans réseau (boîte d\'envoi) et agenda', require('./test-attente')],
