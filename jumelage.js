@@ -301,6 +301,12 @@
         '.JUM-CARTE-ACCES i { width: 24px; height: 16px; border-radius: 3px; background: linear-gradient(135deg, #f1d08a, #b8862e); position: relative; box-shadow: inset 0 0 0 1px rgba(0,0,0,0.25); }' +
         '.JUM-CARTE-ACCES i::after { content: ""; position: absolute; left: 3px; top: 4px; width: 7px; height: 6px; border-radius: 1.5px; background: #1a1a1a; opacity: 0.55; }' +
         '.JUM-CHOIX.choisi .JUM-CARTE-ACCES { opacity: 0; pointer-events: none; }' +
+        '.JUM-RETOUR-PARAM { position: fixed; z-index: 2; top: max(12px, env(safe-area-inset-top, 0px)); left: max(12px, env(safe-area-inset-left, 0px)); height: 38px; display: inline-flex; align-items: center; gap: 4px; padding: 0 14px 0 8px; border-radius: 999px; border: 1.5px solid rgba(26,26,26,0.12); background: #fff; color: #1a1a1a; font: 800 0.78rem Montserrat, system-ui, sans-serif; cursor: pointer; box-shadow: 0 4px 14px rgba(0,0,0,0.22); }' +
+        '.JUM-RETOUR-PARAM svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }' +
+        // Fenêtre ouverte depuis Paramètres : descendue sous la flèche « ‹ Paramètres ».
+        '.avec-retour { padding-top: calc(max(12px, env(safe-area-inset-top, 0px)) + 50px) !important; }' +
+                '.JUM-RETOUR-PARAM.flottant { z-index: 99990; top: auto; left: 50%; transform: translateX(-50%); bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 8px); background: #1a1a1a; color: #f5f5f5; border-color: #d6a756; }' +
+                'html body.dark-mode .JUM-RETOUR-PARAM { background: #262626; color: #f5f5f5; border-color: rgba(255,255,255,0.16); }' +
         // Notice TRIGONE (livre en cuir) et Paramètres (roue) : à côté de « Ma carte », sur l'écran d'accueil et dans les applis.
         '.JUM-NOTICE-ACCES, .JUM-PARAM-ACCES { position: absolute; z-index: 3; height: 38px; display: flex; align-items: center; gap: 7px; padding: 0 13px 0 10px; border-radius: 999px; cursor: pointer; font: 800 0.72rem Montserrat, system-ui, sans-serif; letter-spacing: 0.06em; box-shadow: 0 4px 14px rgba(0,0,0,0.25); }' +
         '.JUM-NOTICE-ACCES { border: 1.5px solid #d6a756; background: radial-gradient(120% 140% at 25% 0%, #74482a, #4a2c17 60%, #321c0e); color: #f1dcae; }' +
@@ -1005,7 +1011,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 151, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 152, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3660,6 +3666,7 @@
             document.body.appendChild(boutonAppli);
         }
         boutonAppli.style.display = visible ? '' : 'none';
+        if (visible) retirerRetourFlottant();
         if (!visible) fermerMenuCompte(); else majBoutonsCompte();
     };
     function fermerMenuCompte() { var m = document.querySelector('.JUM-CPT-MENU'); if (m) { m.remove(); return true; } return false; }
@@ -3770,7 +3777,7 @@
     var fenParam = null;
     window.JUMELAGE_FERMER_PARAMETRES = function() { if (fenParam) { fenParam.remove(); fenParam = null; } }; fermeurs.push([function() { return fenParam; }, window.JUMELAGE_FERMER_PARAMETRES]);
     window.JUMELAGE_PARAMETRES = function(section) {
-        window.JUMELAGE_FERMER_PARAMETRES();
+        window.JUMELAGE_FERMER_PARAMETRES(); retirerRetourFlottant();
         fermerMenuCompte(); var mr = document.querySelector('.JUM-ROUE-MENU'); if (mr) mr.remove();
         var rubs = rubriquesParametres(), c = monCompte();
         var actuelle = rubs.filter(function(x) { return x.id === section; })[0] || rubs[0];
@@ -3797,8 +3804,15 @@
             var b = ev.target.closest('[data-action]'); if (!b) return;
             var l = actuelle.lignes.filter(function(x) { return x.id === b.getAttribute('data-action'); })[0];
             if (!l) return;
+            var rubDepart = actuelle.id, nbAvant = pileRetour.length;
             window.JUMELAGE_FERMER_PARAMETRES();
             l.action();
+            // Pas de fenêtre ouverte (la ligne mène à une page de l'appli : Références, Réglages du compte-rendu…) :
+            // flèche « ‹ Paramètres » flottante, jusqu'au retour à l'accueil de l'appli.
+            setTimeout(function() {
+                if (pileRetour.length > nbAvant || fenParam || document.querySelector('.JUM-SIG, .JUM-REGLAGES, .JUM-PARTAGE, .JUM-PRES')) return;
+                if (!document.getElementById('MSG-OVERLAY') || document.getElementById('MSG-OVERLAY').classList.contains('HIDDEN') || document.getElementById('MSG-OVERLAY').style.display === 'none') retourFlottant(rubDepart);
+            }, 400);
         });
         ['pointerdown', 'pointerup'].forEach(function(t) { fenParam.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
         document.body.appendChild(fenParam);
@@ -4863,6 +4877,36 @@
             try { history.pushState({ trigone: 1 }, ''); } catch (e) { return; }
         }
         pileRetour.push(etape);
+        // Ouverte depuis Paramètres : flèche « ‹ Paramètres » en haut à gauche, pour y revenir (même rubrique) sans repartir du début.
+        if (etape.rubrique && !el.classList.contains('JUM-NOTICE') && !el.classList.contains('JUM-CARTE-PLEIN') && !el.classList.contains('JUM-CPT-MENU') && !el.querySelector(':scope > .JUM-RETOUR-PARAM')) {
+            var r = document.createElement('button'); r.type = 'button'; r.className = 'JUM-RETOUR-PARAM'; r.setAttribute('aria-label', 'Revenir aux Paramètres');
+            r.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Paramètres</span>';
+            ['pointerdown', 'pointerup', 'click'].forEach(function(t) { r.addEventListener(t, function(e) { e.stopPropagation(); }); });
+            r.addEventListener('click', function() { revenirParametres(el); });
+            el.appendChild(r); el.classList.add('avec-retour');
+        }
+    }
+    var flecheFlottante = null;
+    function retirerRetourFlottant() { if (flecheFlottante) { flecheFlottante.remove(); flecheFlottante = null; } }
+    function retourFlottant(rub) {
+        retirerRetourFlottant();
+        var r = document.createElement('button'); r.type = 'button'; r.className = 'JUM-RETOUR-PARAM flottant'; r.setAttribute('aria-label', 'Revenir aux Paramètres');
+        r.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Paramètres</span>';
+        r.addEventListener('click', function(e) {
+            e.stopPropagation(); retirerRetourFlottant();
+            // Fenêtre de l'appli ouverte depuis Paramètres (ex. Réglages du compte-rendu) : refermée en revenant.
+            var mp = document.getElementById('PARAMS-MODAL');
+            if (mp && typeof window.FERMER_PARAMETRES === 'function' && getComputedStyle(mp).display !== 'none' && !mp.classList.contains('HIDDEN')) window.FERMER_PARAMETRES();
+            window.JUMELAGE_PARAMETRES(rub);
+        });
+        document.body.appendChild(r); flecheFlottante = r;
+    }
+    window.JUMELAGE_RETIRER_RETOUR_PARAM = retirerRetourFlottant;
+    // Flèche « ‹ Paramètres » : comme le bouton retour du téléphone (ferme la fenêtre, rouvre Paramètres sur sa rubrique).
+    function revenirParametres(el) {
+        if (pileRetour.length && pileRetour[pileRetour.length - 1].el === el) { history.back(); return; }
+        var rub = null; pileRetour.forEach(function(x) { if (x.el === el) rub = x.rubrique; });
+        fermerFenetre(el); if (window.JUMELAGE_PARAMETRES) window.JUMELAGE_PARAMETRES(rub || undefined);
     }
     function fenetreRetiree(el) {
         for (var i = pileRetour.length - 1; i >= 0; i--) if (pileRetour[i].el === el) break;
