@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=160"></script>
+<script src="jumelage.js?v=161"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -553,6 +553,13 @@ body.dark-mode .MER-REG-FRISE i { background: #1f1f1f; border-color: #4a4a4a; } 
 .MER-REG-LIGNE.retard { border-left-color: #b91c1c; } .MER-REG-LIGNE.ok { border-left-color: #15803d; } .MER-REG-LIGNE.avenir { border-left-color: #9ca3af; }
 .MER-REG-TETE { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .MER-REG-OMR { font-size: 1.02rem; letter-spacing: 0.02em; }
+.MER-REG-TETE-G { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
+.MER-REG-NAT { font: 800 0.64rem Montserrat, system-ui, sans-serif; letter-spacing: 0.06em; padding: 4px 9px; border-radius: 999px; border: 1.5px solid; }
+.MER-REG-NAT.indiv { color: #475569; border-color: #cbd5e1; background: #f8fafc; }
+.MER-REG-NAT.coll { color: #1d4ed8; border-color: rgba(29,78,216,0.35); background: rgba(29,78,216,0.07); }
+.MER-REG-NAT.inter { color: #7c3aed; border-color: rgba(124,58,237,0.35); background: rgba(124,58,237,0.07); }
+body.dark-mode .MER-REG-NAT.indiv { color: #cbd5e1; border-color: #475569; background: transparent; } body.dark-mode .MER-REG-NAT.coll { color: #93c5fd; } body.dark-mode .MER-REG-NAT.inter { color: #c4b5fd; }
+.MER-REG-PERS { margin: 0; padding-left: 18px; } .MER-REG-PERS li { margin: 0 0 1px; } .MER-REG-PERS li::marker { color: #b0802a; font-weight: 800; font-size: 0.85em; }
 .MER-REG-MARQ { font: 700 0.7rem Montserrat, system-ui, sans-serif; padding: 4px 10px; border-radius: 999px; background: rgba(214,167,86,0.16); color: #8a5f12; }
 .MER-REG-MARQ.retard { background: rgba(185,28,28,0.1); color: #b91c1c; } .MER-REG-MARQ.ok { background: rgba(21,128,61,0.12); color: #15803d; } .MER-REG-MARQ.avenir { background: rgba(0,0,0,0.06); color: #555; }
 .MER-REG-GRILLE { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; font-size: 0.82rem; }
@@ -1016,6 +1023,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=160"></script>
+<script src="app.js?v=161"></script>
 </body>
 </html>
