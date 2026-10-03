@@ -66,6 +66,23 @@ module.exports = async function() {
     const sommes = await c.evaluate(() => { const g = document.querySelector('.MER-REG-TOTAL .MER-REG-SOMMES'); return g ? g.textContent : ''; });
     verifier(/Repas/.test(sommes) && /IK/.test(sommes) && /Hébergement/.test(sommes) && /82,30/.test(sommes) && /247,80/.test(sommes), 'registre : en bas, le total de chaque rubrique (repas, hébergement, transports, IK, transp. commun, total)');
     verifier(await c.evaluate(() => getComputedStyle(document.querySelector('.MER-REG-LIGNE .MER-REG-GRILLE small')).color === 'rgb(26, 26, 26)'), 'registre : libellés (Code FD, Début…) en noir');
+    // Plein écran : le registre couvre tout l'écran, au-dessus du menu ; on en sort par le même bouton.
+    await c.click('.MER-REG-PLEIN-BTN'); await attendre(600);
+    const plein = await c.evaluate(() => { const z = document.querySelector('.MER-REG-ZONE.plein'); if (!z) return null; const r = z.getBoundingClientRect(); return { x: r.left, y: r.top, l: r.width, h: r.height, fixe: getComputedStyle(z).position }; });
+    verifier(!!plein && plein.fixe === 'fixed' && plein.x === 0 && plein.y === 0 && plein.l >= 1400 && plein.h >= 990, 'registre en plein écran (tout l\'écran)');
+    if (process.env.TRIGONE_CAPTURES) await c.screenshot({ path: process.env.TRIGONE_CAPTURES + '/registre-plein.png' });
+    // Correction d'un montant (repas 45,50 → 50) : total de la ligne et total du bas recalculés.
+    await c.evaluate(r => REGISTRE_CORRIGER(r), d.id); await attendre(400);
+    await c.fill('#MER-CORR-repas', '50'); await attendre(200);
+    verifier(/252,30/.test(await c.textContent('#MER-CORR-TOTAL')), 'correction : total recalculé pendant la saisie');
+    if (process.env.TRIGONE_CAPTURES) await c.screenshot({ path: process.env.TRIGONE_CAPTURES + '/registre-corriger.png' });
+    await c.click('#MER-CORR-GO'); await attendre(600);
+    const apres = await c.evaluate(r => { const x = JUMELAGE_REGISTRE().find(y => y.ref === r), m = MER_REG_MONTANTS(x); return { repas: m.repas, total: m.total, bas: (document.querySelector('.MER-REG-TOTAL') || {}).textContent || '', plein: !!document.querySelector('.MER-REG-ZONE.plein'), note: !!document.querySelector('.MER-REG-CORR') }; }, d.id);
+    verifier(apres.repas === 50 && apres.total === 252.3 && /252,30/.test(apres.bas) && /50,00/.test(apres.bas) && apres.note, 'correction : montant et totaux (ligne, bas du registre) mis à jour, mention « Montants corrigés »');
+    verifier(apres.plein, 'correction : le registre reste en plein écran');
+    if (process.env.TRIGONE_CAPTURES) await c.screenshot({ path: process.env.TRIGONE_CAPTURES + '/registre-corrige.png' });
+    await c.click('.MER-REG-PLEIN-BTN'); await attendre(400);
+    verifier(await c.evaluate(() => !!document.querySelector('.MER-REG-ZONE') && !document.querySelector('.MER-REG-ZONE.plein')), 'sortie du plein écran');
     await c.evaluate(() => OUVRIR_REGISTRE('retard')); await attendre(400);
     verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') < 0, 'filtre « En retard » : la ligne rendue n\'y est plus');
     await c.evaluate(() => OUVRIR_REGISTRE('ok')); await attendre(400);
@@ -86,6 +103,11 @@ module.exports = async function() {
     await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1500);
     const reg2 = await c2.evaluate(p => JUMELAGE_REGISTRE().filter(x => String(x.omr).indexOf(p) === 0), pref);
     verifier(reg2.length === 1 && reg2[0].ref === d.id && (reg2[0].crs || []).length === 1 && !!reg2[0].recuPar, '2e assistant : même registre (ligne et CR reçus par le 1er ; ligne supprimée absente)');
+    verifier(await c2.evaluate(r => { const x = JUMELAGE_REGISTRE().find(y => y.ref === r); return MER_REG_MONTANTS(x).total === 252.3 && MER_REG_MONTANTS(x, true).total === 247.8; }, d.id), '2e assistant : voit la correction des montants du 1er (total corrigé)');
+    await c2.evaluate(r => REGISTRE_CORRIGER_OK(r, true), d.id); await attendre(300);
+    await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(800);
+    await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(800);
+    verifier(await c.evaluate(r => { const x = JUMELAGE_REGISTRE().find(y => y.ref === r); return MER_REG_MONTANTS(x).total === 247.8 && !MER_REG_CORRIGES(x).length; }, d.id), '« Revenir aux montants du CR » (2e assistant) : retour aux montants d\'origine chez le 1er aussi');
     await c2.evaluate(() => OUVRIR_REGISTRE('cr')); await attendre(600);
     verifier(/Demande reçue par/.test(await c2.evaluate(() => document.querySelector('.CARD').textContent)), '2e assistant : « Demande reçue par… » affiché');
     // Demande reçue par le 1er, compte-rendu reçu par le 2e : une seule ligne, validée chez les deux.
