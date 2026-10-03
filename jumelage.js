@@ -1013,7 +1013,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 157, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 158, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3673,6 +3673,14 @@
     };
     function fermerMenuCompte() { var m = document.querySelector('.JUM-CPT-MENU'); if (m) { m.remove(); return true; } return false; }
     window.JUMELAGE_FERMER_MENU_COMPTE = fermerMenuCompte;
+    // Menu toujours entier à l'écran (téléphone étroit, ex. Galaxy Z Flip, zoom d'affichage) : décalé ou rétréci au besoin.
+    function placerDansEcran(m) {
+        var W = document.documentElement.clientWidth || window.innerWidth, H = window.innerHeight, marge = 12;
+        m.style.maxWidth = (W - 2 * marge) + 'px';
+        var r = m.getBoundingClientRect();
+        if (r.right > W - marge || r.left < marge) { m.style.right = 'auto'; m.style.left = Math.max(marge, Math.min(r.left, W - marge - r.width)) + 'px'; }
+        m.style.maxHeight = Math.max(160, H - Math.max(marge, r.top) - marge) + 'px';
+    }
     function ouvrirMenuCompte(bouton) {
         if (fermerMenuCompte()) return;
         var c = monCompte();
@@ -3719,6 +3727,7 @@
         document.body.appendChild(m);
         // Menu sous un bouton placé à gauche (menu PC) : il s'aligne à gauche du bouton.
         if (rect.left < window.innerWidth / 2) { m.style.right = 'auto'; m.style.left = Math.max(12, Math.round(rect.left)) + 'px'; }
+        placerDansEcran(m);
         setTimeout(function() {
             document.addEventListener('click', function fermer(ev) {
                 if (!document.body.contains(m)) { document.removeEventListener('click', fermer, true); return; }
