@@ -10,6 +10,15 @@ module.exports = async function(srv) {
     await p.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1'));
     await p.reload(); await attendre(2500);
     await p.evaluate(() => { const m = document.getElementById('MSG-OVERLAY'); if (m) m.style.display = 'none'; });
+    // Accueil de l'appli : bouton « Notice » visible, sans passer par les Paramètres.
+    verifier(await p.evaluate(() => !!document.querySelector('.JUM-CPT-ZONE .JUM-NOTICE-ACCES')), 'accueil de l\'appli : bouton « Notice » visible');
+    await p.evaluate(() => document.querySelector('.JUM-CPT-ZONE .JUM-NOTICE-ACCES').click()); await attendre(2000);
+    verifier(await p.evaluate(() => !!document.querySelector('.JUM-NOTICE .stf__parent')), 'bouton « Notice » de l\'accueil : le livret s\'ouvre');
+    await p.evaluate(() => document.querySelector('.JUM-NOTICE')._fermer()); await attendre(300);
+    // Paramètres : plus d'ancienne notice ni d'onglet « Mise en route » vide ; Mise à jour dans Aide.
+    await p.evaluate(() => JUMELAGE_PARAMETRES('aide')); await attendre(300);
+    const aide = await p.evaluate(() => ({ rubs: [...document.querySelectorAll('.JUM-PARAM-NAV [data-rub]')].map(b => b.getAttribute('data-rub')), lignes: [...document.querySelectorAll('.JUM-PARAM-LIGNE b')].map(b => b.textContent) }));
+    verifier(aide.rubs.indexOf('appli') < 0 && aide.lignes.indexOf('Mise à jour') >= 0 && aide.lignes.indexOf('Aide rapide') < 0 && aide.lignes.indexOf('Notice') < 0, 'Paramètres de Mise en route : sans onglet « Mise en route » ; Aide avec Mise à jour, sans l\'ancienne notice');
     // Paramètres › Aide › Notice TRIGONE
     await p.evaluate(() => JUMELAGE_PARAMETRES('aide')); await attendre(300);
     verifier(await p.evaluate(() => !!document.querySelector('.JUM-PARAM [data-action="notice"]')), 'Paramètres › Aide : ligne « Notice TRIGONE »');
@@ -67,6 +76,14 @@ module.exports = async function(srv) {
     verifier(await p.evaluate(() => !!document.querySelector('#NOTICE-LIVRET .JUM-NOTICE-LIVRET')), 'Compte-rendu › Notice : bouton « Notice TRIGONE »');
     await p.click('#NOTICE-LIVRET .JUM-NOTICE-LIVRET'); await attendre(2500);
     verifier(await p.evaluate(() => /\.\.\/notice\/img\//.test(document.querySelector('.JUM-NOTICE [data-zoom]').getAttribute('data-zoom'))), 'Compte-rendu : captures chargées depuis ../notice/img');
+    // PC : écran d'accueil avec Notice et roue des Paramètres ; menu de l'appli avec « Notice TRIGONE ».
+    const q0 = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); q0.on('pageerror', e => erreurs.push(e.message));
+    await q0.goto(srv.url); await q0.evaluate(preparer, APP_CODE); await q0.reload(); await attendre(2500);
+    verifier(await q0.evaluate(() => !!document.querySelector('.JUM-CHOIX .JUM-NOTICE-ACCES') && !!document.querySelector('.JUM-CHOIX .JUM-PARAM-ACCES')), 'écran d\'accueil : boutons « Notice » et Paramètres visibles');
+    await q0.evaluate(() => document.querySelector('.JUM-CHOIX .JUM-PARAM-ACCES').click()); await attendre(400);
+    verifier(await q0.evaluate(() => !!document.querySelector('.JUM-PARAM')), 'roue de l\'écran d\'accueil : Paramètres ouverts');
+    await q0.evaluate(() => { JUMELAGE_FERMER_PARAMETRES(); document.querySelectorAll('.JUM-CHOIX').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); SHOW_PAGE('ACCUEIL'); }); await attendre(600);
+    verifier(await q0.evaluate(() => !!document.querySelector('.PC-BAS .JUM-NOTICE-LIVRET')), 'PC : « Notice TRIGONE » dans le menu de gauche');
     // PC : livre ouvert, deux pages
     const q = await (await b.newContext({ viewport: { width: 1440, height: 900 } })).newPage(); q.on('pageerror', e => erreurs.push(e.message));
     await q.goto(srv.url); await attendre(2000);
