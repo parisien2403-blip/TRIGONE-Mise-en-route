@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=155"></script>
+<script src="jumelage.js?v=156"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -545,12 +545,17 @@ body.dark-mode .MER-REG-FRISE i { background: #1f1f1f; border-color: #4a4a4a; } 
 .MER-REG-MARQ.retard { background: rgba(185,28,28,0.1); color: #b91c1c; } .MER-REG-MARQ.ok { background: rgba(21,128,61,0.12); color: #15803d; } .MER-REG-MARQ.avenir { background: rgba(0,0,0,0.06); color: #555; }
 .MER-REG-GRILLE { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px 12px; font-size: 0.82rem; }
 .MER-REG-GRILLE span { min-width: 0; overflow-wrap: anywhere; } .MER-REG-GRILLE span.large { grid-column: 1 / -1; }
-.MER-REG-GRILLE small { display: block; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: #8a8a8a; font-weight: 700; }
+.MER-REG-GRILLE small { display: block; font-size: 0.66rem; text-transform: uppercase; letter-spacing: 0.06em; color: #1a1a1a; font-weight: 800; }
+body.dark-mode .MER-REG-GRILLE small { color: #f5f5f5; }
 .MER-REG-GRILLE span.total { font-weight: 800; color: #1a1a1a; }
 .MER-REG-ACTIONS { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-top: 10px; }
 .MER-REG-ACTIONS .BTN { width: auto; margin: 0; }
 .MER-REG-TOTAL { display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; border-radius: 14px; background: #1a1a1a; color: #fff; margin: 4px 0 12px; font-size: 0.86rem; }
+.MER-REG-TOTAL { flex-wrap: wrap; gap: 4px 12px; }
 .MER-REG-TOTAL b { color: #d6a756; font-size: 1.1rem; }
+.MER-REG-TOTAL .MER-REG-SOMMES { flex: 1 0 100%; border-top-color: rgba(255,255,255,0.25); }
+.MER-REG-TOTAL .MER-REG-GRILLE.MER-REG-SOMMES small { color: #d6a756; }
+.MER-REG-TOTAL .MER-REG-GRILLE.MER-REG-SOMMES span.total { color: #d6a756; }
 .MER-REG-PIED { display: flex; flex-direction: column; gap: 6px; }
 @media (min-width: 1100px) {
   .MER-REG-GRILLE.mer { grid-template-columns: 96px minmax(0, 2fr) 104px 92px 92px minmax(0, 2.2fr) 110px; }
@@ -991,6 +996,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=155"></script>
+<script src="app.js?v=156"></script>
 </body>
 </html>

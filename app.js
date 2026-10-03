@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 202;
+var APP_CODE_VERSION = 203;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3867,13 +3867,15 @@ function TPL_REGISTRE() {
         return '<div class="MER-REG-LIGNE ' + e.cls + '">' + tete + MER_REG_FRISE(x, e) + corps + '</div>';
     }).join('');
     var avecMontants = l.filter(function(x) { return (x.crs || []).length; });
-    var total = avecMontants.reduce(function(t, x) { return t + MER_REG_MONTANTS(x).total; }, 0);
+    var tot = avecMontants.reduce(function(a, x) { var m = MER_REG_MONTANTS(x); Object.keys(a).forEach(function(k) { a[k] += m[k]; }); return a; }, { repas: 0, hebergement: 0, transports: 0, ik: 0, tc: 0, total: 0 });
     var vide = { tout: 'Aucune mission dans le registre pour l\'instant.', avenir: 'Aucune mission à venir.', encours: 'Aucune mission en cours.', attente: 'Aucun compte-rendu attendu.', retard: 'Aucun compte-rendu en retard.', ok: 'Aucun compte-rendu rendu pour l\'instant.' }[filtre];
     return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="OUVRIR_DOSSIER(\'CHORUS\', null)">‹ Dossiers</button><span class="MER-REG-ENTREE-IC petit">📋</span><b>Registre des OMR</b></div>' +
         '<div class="MER-REG-FILTRES">' + MER_REG_FILTRES.map(puce).join('') + '</div>' +
         '<p class="MER-HINT" style="margin:0 0 10px;">Registre commun à tous les assistants Chorus DT de l\'unité : chaque mission, dans l\'ordre des n° OMR, avec son étape (à venir, en cours, compte-rendu attendu au plus tard ' + MER_REGISTRE_DELAI + ' jours après la fin, en retard, validé). Il se met à jour avec « Relever maintenant ».</p>' +
         (lignes || '<div class="MER-EMPTY">' + vide + '</div>') +
-        (avecMontants.length ? '<div class="MER-REG-TOTAL"><span>Total des ' + avecMontants.length + ' compte' + (avecMontants.length > 1 ? 's' : '') + '-rendu' + (avecMontants.length > 1 ? 's' : '') + ' de cette liste</span><b>' + MER_EUROS(total) + '</b></div>' : '') +
+        (avecMontants.length ? '<div class="MER-REG-TOTAL"><span>Total des ' + avecMontants.length + ' compte' + (avecMontants.length > 1 ? 's' : '') + '-rendu' + (avecMontants.length > 1 ? 's' : '') + ' de cette liste</span><b>' + MER_EUROS(tot.total) + '</b>' +
+            '<div class="MER-REG-GRILLE montants MER-REG-SOMMES">' + [['Repas', 'repas'], ['Hébergement', 'hebergement'], ['Transports', 'transports'], ['IK', 'ik'], ['Transp. commun', 'tc'], ['Total', 'total']].map(function(c) {
+                return '<span' + (c[1] === 'total' ? ' class="total"' : '') + '><small>' + c[0] + '</small>' + MER_EUROS(Math.round(tot[c[1]] * 100) / 100) + '</span>'; }).join('') + '</div></div>' : '') +
         '<div class="MER-REG-PIED"><button type="button" class="BTN BTN-PRIMARY" onclick="REGISTRE_PDF()"' + (l.length ? '' : ' disabled') + '>📄 PDF de cette liste</button>' +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_SERIE()">🔢 Numérotation OMR (nouvelle série)</button>' +
         '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_VIDER()">🗑 Tout effacer et repartir à 0001</button></div>';
