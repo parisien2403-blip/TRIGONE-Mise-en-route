@@ -34,6 +34,20 @@ module.exports = async function(srv) {
     p.goBack().catch(() => {}); await attendre(600);
     e = await etat();
     verifier(await p.evaluate(() => !document.querySelector('.JUM-SIG')) && e.param && e.rub === 'aide', 'retour : retour à Paramètres › Aide');
+    // Flèche « ‹ Paramètres » à l'écran : fenêtre ouverte depuis Paramètres → retour sur la même rubrique.
+    await p.evaluate(() => { document.querySelectorAll('.JUM-SIG').forEach(e => e._fermer ? e._fermer() : e.remove()); JUMELAGE_FERMER_PARAMETRES(); JUMELAGE_PARAMETRES('compte'); }); await attendre(400);
+    await p.click('.JUM-PARAM [data-action="profil"]'); await attendre(700);
+    verifier(await p.evaluate(() => !!document.querySelector('.JUM-REGLAGES .JUM-RETOUR-PARAM')), 'Paramètres › Mon profil : flèche « ‹ Paramètres » affichée');
+    await p.click('.JUM-REGLAGES .JUM-RETOUR-PARAM'); await attendre(800);
+    e = await etat();
+    verifier(!e.profil && e.param && e.rub === 'compte', 'flèche « ‹ Paramètres » : retour sur la rubrique « Compte »');
+    // Ligne qui mène à une page de l'appli (Références) : flèche flottante, retour sur « Aide ».
+    await p.evaluate(() => JUMELAGE_PARAMETRES('aide')); await attendre(300);
+    await p.evaluate(() => [...document.querySelectorAll('.JUM-PARAM-LIGNE')].find(b => /Références/.test(b.textContent)).click()); await attendre(800);
+    verifier(await p.evaluate(() => !!document.querySelector('.JUM-RETOUR-PARAM.flottant')), 'Aide › Références : flèche « ‹ Paramètres » flottante');
+    await p.click('.JUM-RETOUR-PARAM.flottant'); await attendre(600);
+    e = await etat();
+    verifier(e.param && e.rub === 'aide' && await p.evaluate(() => !document.querySelector('.JUM-RETOUR-PARAM')), 'flèche flottante : retour sur « Aide », flèche retirée');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
     await b.close();
 };
