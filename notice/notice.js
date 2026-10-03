@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 150;
+    var VERSION = 153;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i></button>'; }
     function r(n) { return '<span class="n-r">' + n + '</span>'; }
@@ -212,28 +212,40 @@
         '<b>Je ne reçois pas les notifications.</b><p>Paramètres › Notifications › Activer, puis « tester ». Sur Android : Chrome › Batterie › « Non restreinte ». Sur iPhone : TRIGONE installé sur l\'écran d\'accueil.</p>' +
         '<b>Un souci, une idée ?</b><p>Paramètres › Aide › <b>Signaler un problème</b> : votre messagerie s\'ouvre avec la version et l\'appareil déjà indiqués.</p></div>', 'faq'));
 
-    // ---------- 16. Protection des données ----------
-    ajouter(chapitre(16, 'Protection des données et hébergement', 'Comment TRIGONE protège vos informations : ce qui reste sur votre appareil, ce qui passe par le serveur, comment c\'est chiffré, et où c\'est hébergé.',
-        ['Vos données restent sur votre appareil', 'Des envois chiffrés de bout en bout', 'Signatures, codes et empreinte', 'Le serveur et l\'hébergement', 'Ce que le serveur conserve'], 'secu'));
+    // ---------- 16. Protection des données (en langage courant ; le détail technique est en annexe) ----------
+    ajouter(chapitre(16, 'Protection de vos données', 'Ce que TRIGONE fait de vos informations, en quelques mots : ce qui reste chez vous, qui peut lire vos envois, et ce que le serveur garde.',
+        ['Vos données restent chez vous', 'Vos envois : seul le destinataire peut les lire', 'Ce que le serveur garde', 'En résumé'], 'secu'));
     ajouter(page('Vos données restent chez vous', '<div class="n-secu">' +
+        '<b>Sur votre appareil</b><p>Vos demandes, comptes-rendus, justificatifs, votre profil, votre carte et sa photo sont rangés <b>dans TRIGONE, sur votre téléphone ou votre PC</b>. Il n\'existe pas de grand fichier central de vos missions.</p>' +
+        '<b>Pas de mot de passe</b><p>Pour vous connecter, TRIGONE vous envoie un <b>code à 6 chiffres</b> par mail, valable 15 minutes. Rien à retenir, rien à se faire voler.</p>' +
+        '<b>Code d\'accès et empreinte</b><p>Le code à 4 chiffres protège l\'ouverture de TRIGONE. Votre <b>empreinte</b> est vérifiée <b>par le téléphone lui-même</b> : TRIGONE ne la voit jamais.</p>' +
+        '<b>Sauvegarde automatique</b><p>Elle est <b>verrouillée sur votre téléphone</b> avec votre code de récupération, que vous seul connaissez. Personne d\'autre ne peut l\'ouvrir, pas même le serveur.</p></div>', 'secu'));
+    ajouter(page('Vos envois et le serveur', '<div class="n-secu">' +
+        '<b>Seul le destinataire peut lire</b><p>Une demande ou un compte-rendu est <b>verrouillé dans votre appli avant de partir</b>. Seul l\'appareil du destinataire peut l\'ouvrir. En route, le serveur ne voit qu\'un contenu <b>illisible</b>, effacé dès qu\'il est reçu.</p>' +
+        '<b>Validations signées</b><p>Chaque validation est <b>signée électroniquement</b> par le valideur. Si une demande était modifiée en route, l\'assistant Chorus DT le verrait aussitôt.</p>' +
+        '<b>Ce que le serveur garde</b><p>Votre adresse mail et vos rôles ; l\'<b>étape</b> où en est votre demande (pas son contenu) ; votre <b>carte</b> (grade, nom, unité) ; le <b>registre des OMR</b>, réservé aux assistants Chorus DT.</p>' +
+        '<b>Où est-ce hébergé ?</b><p>Chez <b>Cloudflare</b>, avec des connexions toujours sécurisées. En cas de bug, l\'erreur est remontée <b>sans votre nom ni vos missions</b>.</p></div>', 'secu'));
+    ajouter(page('En résumé', '<div class="n-resume">' +
+        ['🔒 Vos missions restent <b>sur votre appareil</b>.', '✉ Vos envois sont <b>verrouillés</b> : seul le destinataire peut les lire.', '✍ Les validations sont <b>signées</b> et vérifiées.', '☁ La sauvegarde est <b>verrouillée sur le téléphone</b> : le serveur ne peut pas l\'ouvrir.', '👆 L\'empreinte <b>ne quitte jamais</b> le téléphone.', '🗑 Un compte supprimé efface son adresse, ses rôles et sa carte du serveur.'].map(function(x) { return '<div>' + x + '</div>'; }).join('') + '</div>' +
+        attention('Protégez votre téléphone (code de verrouillage), activez le <b>code d\'accès</b> de TRIGONE et gardez votre <b>code de récupération</b> en lieu sûr.'), 'secu'));
+
+
+    // ---------- Annexe technique (officier sécurité, CIMOB) ----------
+    ajouter(Object.assign(page('Annexe technique — pour l\'officier sécurité', '<p class="n-chap-res" style="margin:0 0 6px">Le détail technique de la protection des données de TRIGONE, pour l\'officier sécurité ou le CIMOB. Le missionnaire n\'en a pas besoin : le chapitre 16 suffit.</p><div class="n-secu">' +
         '<b>Sur votre appareil</b><p>Demandes, comptes-rendus, justificatifs, profil, carte et photo sont rangés <b>dans TRIGONE, sur votre téléphone ou votre PC</b>. Il n\'y a pas de base de données centrale de vos missions.</p>' +
         '<b>Un compte sans mot de passe</b><p>Le compte est votre adresse mail, vérifiée par un code à 6 chiffres (valable 15 min, 5 essais). Chaque appareil reçoit son <b>jeton d\'accès</b> ; le serveur n\'en garde qu\'une empreinte.</p>' +
         '<b>Code d\'accès et empreinte</b><p>Le code à 4 chiffres protège l\'ouverture de TRIGONE sur l\'appareil. L\'empreinte (ou le visage) est vérifiée <b>par le téléphone lui-même</b> : TRIGONE ne la reçoit jamais.</p>' +
-        '<b>Mises à jour</b><p>L\'appli se met à jour depuis la source officielle à chaque ouverture : tout le monde a la même version.</p></div>', 'secu'));
+        '<b>Mises à jour</b><p>L\'appli se met à jour depuis la source officielle à chaque ouverture : tout le monde a la même version.</p></div>', 'annexe'), { chapitre: { n: 'A', titre: 'Annexe technique (officier sécurité)' } }));
     ajouter(page('Des envois chiffrés de bout en bout', '<div class="n-secu">' +
         '<b>Une clé par appareil</b><p>Chaque appareil possède sa <b>clé de chiffrement</b> (ECDH P-256). La clé privée <b>ne quitte jamais l\'appareil</b> ; le serveur ne connaît que la clé publique.</p>' +
         '<b>Chiffré avant de partir</b><p>Une demande ou un compte-rendu est chiffré <b>dans l\'appli de l\'expéditeur</b> (AES-GCM 256 bits), pour chacun des appareils du destinataire. Le serveur ne voit que des données <b>illisibles</b>, et les efface à la réception (au plus tard après 30 jours).</p>' +
         '<b>Signatures des valideurs</b><p>Chaque validation est <b>signée électroniquement</b> (ECDSA P-256) avec la clé du rôle, débloquée par le code du rôle. L\'assistant Chorus DT <b>vérifie</b> les signatures et les pièces jointes avant le PDF final : une demande modifiée en route est détectée.</p>' +
-        '<b>Sauvegarde automatique</b><p>Chiffrée <b>sur votre téléphone</b> (AES-GCM 256) avec une clé tirée de votre code de récupération (PBKDF2, 310 000 tours). Le code n\'est jamais transmis : le serveur ne peut pas la lire.</p></div>', 'secu'));
+        '<b>Sauvegarde automatique</b><p>Chiffrée <b>sur votre téléphone</b> (AES-GCM 256) avec une clé tirée de votre code de récupération (PBKDF2, 310 000 tours). Le code n\'est jamais transmis : le serveur ne peut pas la lire.</p></div>', 'annexe'));
     ajouter(page('Le serveur et l\'hébergement', '<div class="n-secu">' +
         '<b>Hébergement</b><p>L\'appli et son serveur sont hébergés chez <b>Cloudflare</b> (Workers) : la page de TRIGONE, la boîte aux lettres chiffrée (stockage KV et base D1). Les connexions sont toujours en <b>HTTPS</b>.</p>' +
         '<b>Envoi des codes</b><p>Le mail du code de connexion part par <b>Brevo</b>, depuis noreply@trigone-app.com, domaine authentifié (SPF, DKIM, DMARC).</p>' +
         '<b>Ce que le serveur conserve, en clair</b><p>Pour fonctionner, il garde : votre adresse et vos rôles ; l\'<b>étape</b> de suivi de vos demandes (sans leur contenu) ; votre <b>carte</b> (grade, nom, unité, NID, lisibles seulement par un compte connecté, sauf grade, nom et unité sur la page de vérification) ; le <b>registre OMR</b> de l\'unité (objet, dates, personnel, montants, réservé aux assistants Chorus DT) ; le compteur des n° OMR.</p>' +
-        '<b>Erreurs de l\'appli</b><p>Une erreur technique est remontée de façon <b>anonyme</b> : jamais de nom, de mail ni de donnée de mission.</p></div>', 'secu'));
-    ajouter(page('En résumé', '<div class="n-resume">' +
-        ['🔒 Vos missions restent <b>sur votre appareil</b>.', '✉ Les envois sont <b>chiffrés de bout en bout</b> : seul le destinataire peut les lire.', '✍ Les validations sont <b>signées</b> et vérifiées.', '☁ La sauvegarde est <b>chiffrée sur le téléphone</b> : le serveur ne peut pas l\'ouvrir.', '👆 L\'empreinte <b>ne quitte jamais</b> le téléphone.', '🗑 Un compte supprimé efface son adresse, ses rôles et sa carte du serveur.'].map(function(x) { return '<div>' + x + '</div>'; }).join('') + '</div>' +
-        attention('Protégez votre téléphone (code de verrouillage), activez le <b>code d\'accès</b> de TRIGONE et gardez votre <b>code de récupération</b> en lieu sûr.'), 'secu'));
-
+        '<b>Erreurs de l\'appli</b><p>Une erreur technique est remontée de façon <b>anonyme</b> : jamais de nom, de mail ni de donnée de mission.</p></div>', 'annexe'));
     // ---------- Fin ----------
     ajouter(page('', '<div class="n-fin"><img src="{B}phoenix-icon.png" alt=""><div class="n-garde-t">TRIGONE</div><p>Conçu par Germain-Pierre BOUQUET<br>4°RIISC</p>' +
         '<p>Un souci, une question, une idée ?<br><b>Paramètres › Aide › Signaler un problème</b></p><p class="n-garde-note">Notice de la version ' + VERSION + '.</p></div>'));
