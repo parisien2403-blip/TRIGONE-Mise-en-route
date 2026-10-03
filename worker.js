@@ -247,7 +247,8 @@ function textePush(type, n) {
         CR: ['Compte-rendu de mission', 'Un compte-rendu de fin de mission vous est parvenu.', 'chorus'],
         COLLECTIVE: ['Mission collective', 'Votre compte-rendu de mission collective est prêt : joignez vos justificatifs, puis envoyez-le à l\'assistant Chorus DT.', 'boite'],
         QUESTION: ['Question sur votre demande', 'On vous pose une question avant de valider : répondez dans TRIGONE (Boîte de réception) pour que votre dossier avance.', 'boite'],
-        REPONSE: ['Réponse à votre question', 'Le missionnaire vous a répondu : ouvrez votre Boîte de réception.', 'boite']
+        REPONSE: ['Réponse à votre question', 'Le missionnaire vous a répondu : ouvrez votre Boîte de réception.', 'boite'],
+        JUSTIF: [p ? n + ' justificatifs reçus' : 'Justificatif reçu', (p ? x + 'pièces jointes' : 'Une pièce jointe') + ' (facture, billet) reçue' + (p ? 's' : '') + ' par mail, rangée' + (p ? 's' : '') + ' dans Boîte de réception › Justificatifs.', 'boite']
     }[type];
     return t || ['TRIGONE', 'Nouvel envoi dans votre boîte TRIGONE.', 'boite'];
 }
@@ -1149,6 +1150,12 @@ async function api(requete, env, url, ctx) {
     }
 
     // Relève : liste des envois en attente pour cet appareil.
+    // Mon adresse de réception des justificatifs (prénom.nom@trigone-app.com), créée ou suivie avec Mon profil.
+    if (chemin === 'adresse' && (methode === 'GET' || methode === 'POST')) {
+        const c = methode === 'POST' ? await requete.json().catch(() => ({})) : {};
+        const local = methode === 'POST' ? await adresseDe(env, moi.mail, c.prenom, c.nom) : await kv.get('adresse-de:' + moi.mail);
+        return json({ ok: true, adresse: local ? local + '@' + DOMAINE_RECEPTION : '' });
+    }
     // ---------- Photo de carte partagée, chiffrée de bout en bout ----------
     // Appareils à qui remettre la clé de ma photo : ceux des comptes VALIDEUR 1 / 2 et ASSIST CHORUS DT, et des chefs des
     // missions collectives où je suis participant. Seulement des clés publiques (aucun mail).
@@ -1371,7 +1378,133 @@ async function notifierMiseAJour(env, origine) {
     }
 }
 
+// ---------- Justificatifs reçus par mail (factures d'hôtel, billets SNCF…) ----------
+// Chaque missionnaire a une adresse prénom.nom@trigone-app.com (Cloudflare Email Routing : « Tout intercepter » →
+// ce Worker). Seules les pièces jointes PDF et images sont gardées ; elles sont aussitôt chiffrées pour les appareils
+// du missionnaire (même enveloppe que les envois entre comptes TRIGONE) et déposées dans sa boîte (type JUSTIF).
+// Transféré par le missionnaire lui-même ou venant d'un expéditeur connu : « Justificatifs » ; sinon « À vérifier ».
+const DOMAINE_RECEPTION = 'trigone-app.com';
+const ADRESSES_RESERVEES = ['noreply', 'no-reply', 'admin', 'administrateur', 'postmaster', 'abuse', 'contact', 'support', 'trigone', 'webmaster', 'dmarc', 'securite'];
+const EXPEDITEURS_CONNUS = ['sncf-connect.com', 'sncf.com', 'sncf.fr', 'oui.sncf', 'ouigo.com', 'voyages-sncf.com', 'airfrance.fr', 'airfrance.com', 'hop.fr', 'trainline.fr', 'trainline.com', 'booking.com', 'accor.com', 'all.accor.com', 'bestwestern.fr', 'ibis.com', 'b-and-b-hotels.com'];
+const TAILLE_MAX_MAIL = 12 * 1024 * 1024, TAILLE_MAX_PJ = 6 * 1024 * 1024, NB_MAX_PJ = 10;
+function slugAdresse(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 40); }
+async function adresseDe(env, mail, prenom, nom) {
+    const kv = env.TRIGONE_KV, base = [slugAdresse(prenom), slugAdresse(nom)].filter(Boolean).join('.');
+    const actuelle = await kv.get('adresse-de:' + mail);
+    if (!base) return actuelle;
+    if (actuelle && new RegExp('^' + base.replace(/[.]/g, '\\.') + '\\d*$').test(actuelle)) return actuelle;
+    for (let i = 1; i < 200; i++) {
+        const local = base + (i > 1 ? i : '');
+        if (ADRESSES_RESERVEES.includes(local)) continue;
+        const tenant = await kv.get('adresse:' + local);
+        if (tenant && tenant !== mail && await kv.get('compte:' + tenant)) continue;
+        if (actuelle && actuelle !== local && await kv.get('adresse:' + actuelle) === mail) await kv.delete('adresse:' + actuelle);
+        await kv.put('adresse:' + local, mail); await kv.put('adresse-de:' + mail, local);
+        return local;
+    }
+    return actuelle;
+}
+// MIME : en-têtes, parties (multipart, message transféré en pièce jointe), base64 / quoted-printable.
+function binaire(u8) { let s = ''; for (let i = 0; i < u8.length; i += 0x8000) s += String.fromCharCode.apply(null, u8.subarray(i, i + 0x8000)); return s; }
+function octetsDe(bin) { const o = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) o[i] = bin.charCodeAt(i) & 255; return o; }
+function utf8(bin) { try { return new TextDecoder().decode(octetsDe(bin)); } catch (e) { return bin; } }
+function decoderMot(t) {
+    return String(t || '').replace(/=\?([^?]+)\?([bqBQ])\?([^?]*)\?=/g, (m, cs, enc, txt) => {
+        try {
+            const bin = /b/i.test(enc) ? atob(txt.replace(/\s/g, '')) : txt.replace(/_/g, ' ').replace(/=([0-9A-Fa-f]{2})/g, (x, h) => String.fromCharCode(parseInt(h, 16)));
+            return /utf-?8/i.test(cs) ? utf8(bin) : bin;
+        } catch (e) { return txt; }
+    }).replace(/\?=\s+=\?/g, '');
+}
+function entetes(bloc) {
+    const h = {};
+    bloc.replace(/\r?\n[ \t]+/g, ' ').split(/\r?\n/).forEach(l => { const i = l.indexOf(':'); if (i > 0) { const k = l.slice(0, i).trim().toLowerCase(); if (!(k in h)) h[k] = l.slice(i + 1).trim(); } });
+    return h;
+}
+function parametre(v, nom) {
+    const etoile = new RegExp(nom + '\\*(?:0\\*?)?=(?:[^\']*\'[^\']*\')?"?([^";]+)', 'i').exec(v || '');
+    if (etoile) { try { return decodeURIComponent(etoile[1]); } catch (e) { return etoile[1]; } }
+    const m = new RegExp(nom + '\\s*=\\s*"([^"]*)"|' + nom + '\\s*=\\s*([^;\\s]+)', 'i').exec(v || '');
+    return m ? decoderMot(m[1] !== undefined ? m[1] : m[2]) : '';
+}
+function partiesMail(bin, sortie, profondeur) {
+    if (profondeur > 6 || sortie.length >= NB_MAX_PJ) return;
+    const sep = bin.search(/\r?\n\r?\n/); if (sep < 0) return;
+    const h = entetes(bin.slice(0, sep)), corps = bin.slice(sep).replace(/^\r?\n\r?\n/, '');
+    const ct = h['content-type'] || 'text/plain', type = ct.split(';')[0].trim().toLowerCase();
+    if (/^multipart\//.test(type)) {
+        const b = parametre(ct, 'boundary'); if (!b) return;
+        corps.split('--' + b).slice(1).forEach(p => { if (!/^--/.test(p)) partiesMail(p.replace(/^\r?\n/, ''), sortie, profondeur + 1); });
+        return;
+    }
+    if (type === 'message/rfc822') { partiesMail(corps, sortie, profondeur + 1); return; }
+    const nom = parametre(h['content-disposition'], 'filename') || parametre(ct, 'name');
+    const ext = (/\.([a-z0-9]{2,5})$/i.exec(nom) || [])[1] || '';
+    const estPdf = type === 'application/pdf' || /^pdf$/i.test(ext), estImage = /^image\/(jpeg|png|gif|webp|heic|heif)$/.test(type) || /^(jpe?g|png|gif|webp|heic)$/i.test(ext);
+    if (!estPdf && !estImage) return;
+    const enc = String(h['content-transfer-encoding'] || '').toLowerCase();
+    let donnees;
+    try {
+        donnees = enc === 'base64' ? atob(corps.replace(/[^A-Za-z0-9+/=]/g, ''))
+            : enc === 'quoted-printable' ? corps.replace(/=\r?\n/g, '').replace(/=([0-9A-Fa-f]{2})/g, (x, k) => String.fromCharCode(parseInt(k, 16))) : corps;
+    } catch (e) { return; }
+    if (!donnees.length || donnees.length > TAILLE_MAX_PJ) return;
+    sortie.push({ nom: nom || (estPdf ? 'justificatif.pdf' : 'photo.jpg'), type: estPdf ? 'application/pdf' : (/^image\//.test(type) ? type : 'image/' + (ext.toLowerCase() === 'jpg' ? 'jpeg' : ext.toLowerCase())), b64: btoa(donnees) });
+}
+function adresseMail(v) { const m = /<([^>]+)>/.exec(v || '') || /([^\s<>"]+@[^\s<>"]+)/.exec(v || ''); return m ? normaliser(m[1]) : ''; }
+// Chiffrement pour les appareils d'un compte : même enveloppe que l'appli (AES-GCM, clé remise à chaque appareil par ECDH P-256 + HKDF).
+function b64(buf) { return btoa(binaire(new Uint8Array(buf))); }
+async function chiffrerPourAppareils(appareils, texte) {
+    const iv = hasard(12), k = await crypto.subtle.generateKey({ name: 'AES-GCM', length: 256 }, true, ['encrypt']);
+    const ct = await crypto.subtle.encrypt({ name: 'AES-GCM', iv }, k, new TextEncoder().encode(texte)), brute = await crypto.subtle.exportKey('raw', k);
+    const enveloppes = [];
+    for (const a of appareils) {
+        try {
+            const pub = await crypto.subtle.importKey('jwk', a.cle, { name: 'ECDH', namedCurve: 'P-256' }, false, []);
+            const eph = await crypto.subtle.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, true, ['deriveBits']);
+            const bits = await crypto.subtle.deriveBits({ name: 'ECDH', public: pub }, eph.privateKey, 256);
+            const hk = await crypto.subtle.importKey('raw', bits, 'HKDF', false, ['deriveKey']);
+            const ke = await crypto.subtle.deriveKey({ name: 'HKDF', hash: 'SHA-256', salt: new Uint8Array(32), info: new TextEncoder().encode('TRIGONE boite v1') }, hk, { name: 'AES-GCM', length: 256 }, false, ['encrypt']);
+            const iv2 = hasard(12), cle = await crypto.subtle.encrypt({ name: 'AES-GCM', iv: iv2 }, ke, brute), j = await crypto.subtle.exportKey('jwk', eph.publicKey);
+            enveloppes.push({ appareil: a.id, epk: { kty: 'EC', crv: 'P-256', x: j.x, y: j.y }, iv: b64(iv2), ct: b64(cle) });
+        } catch (e) {}
+    }
+    return { enveloppes, donnees: { iv: b64(iv), ct: b64(ct) } };
+}
+// Réception d'un mail (Email Routing). Renvoie le motif du refus, ou '' si déposé.
+async function recevoirMail(message, env, ctx) {
+    const kv = env.TRIGONE_KV;
+    const a = normaliser(message.to), local = a.split('@')[0], domaine = a.split('@')[1] || '';
+    if (domaine !== DOMAINE_RECEPTION) return 'Adresse inconnue.';
+    const dest = await kv.get('adresse:' + local), compte = dest ? await kv.get('compte:' + dest, 'json') : null;
+    if (!compte || !(compte.appareils || []).length) return 'Adresse TRIGONE inconnue.';
+    if ((message.rawSize || 0) > TAILLE_MAX_MAIL) return 'Mail trop volumineux pour TRIGONE (12 Mo au plus).';
+    const bin = binaire(new Uint8Array(await new Response(message.raw).arrayBuffer()));
+    const h = entetes(bin.slice(0, Math.max(0, bin.search(/\r?\n\r?\n/))));
+    const pj = []; partiesMail(bin, pj, 0);
+    if (!pj.length) return 'Aucune pièce jointe PDF ou photo : TRIGONE ne garde que les justificatifs (factures, billets).';
+    const deEntete = adresseMail(h.from), deEnveloppe = normaliser(message.from), domaineDe = deEntete.split('@')[1] || '';
+    const memeDomaine = domaineDe && (deEnveloppe.split('@')[1] || '').endsWith(domaineDe.split('.').slice(-2).join('.'));
+    const connu = (deEntete === dest && memeDomaine) || (memeDomaine && EXPEDITEURS_CONNUS.some(d => domaineDe === d || domaineDe.endsWith('.' + d)));
+    const contenu = JSON.stringify({ app: 'TRIGONE-JUSTIF', version: 1, de: deEntete || deEnveloppe, nomDe: decoderMot((h.from || '').replace(/<[^>]*>/, '').replace(/"/g, '').trim()).slice(0, 80),
+        sujet: decoderMot(h.subject || '').slice(0, 200), recuLe: new Date().toISOString(), verifie: !!connu, transfere: deEntete === dest, fichiers: pj });
+    const c = await chiffrerPourAppareils(compte.appareils.filter(x => x.cle), JSON.stringify({ nom: 'justificatifs.json', contenu }));
+    if (!c.enveloppes.length) return 'Adresse TRIGONE indisponible.';
+    const id = Date.now().toString(36) + b64url(hasard(6)), le = Date.now(), db = await baseBoite(env);
+    await kv.put('msg:' + id, JSON.stringify(c.donnees), { expirationTtl: DUREE_MESSAGE });
+    await db.batch(c.enveloppes.map(e => db.prepare('INSERT INTO boite (id, dest, appareil, de, type, le, enveloppe) VALUES (?, ?, ?, ?, ?, ?, ?)')
+        .bind(id, dest, e.appareil, deEntete || deEnveloppe, 'JUSTIF', le, JSON.stringify({ epk: e.epk, iv: e.iv, ct: e.ct }))));
+    const p = origineConnue(env).then(o => notifier(env, dest, compte, c.enveloppes.map(e => e.appareil), 'JUSTIF', domaineDe || deEnveloppe, o, pj.length)).catch(() => {});
+    if (ctx && ctx.waitUntil) ctx.waitUntil(p); else await p;
+    return '';
+}
+
 export default {
+    async email(message, env, ctx) {
+        let motif = '';
+        try { motif = await recevoirMail(message, env, ctx); } catch (e) { motif = 'TRIGONE n\'a pas pu lire ce mail.'; }
+        if (motif) message.setReject(motif);
+    },
     async fetch(requete, env, ctx) {
         const url = new URL(requete.url);
         // Publication récente : contrôlée au plus toutes les 5 minutes, sans retarder la réponse.

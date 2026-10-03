@@ -782,6 +782,9 @@
         '.JUM-UNITES button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-family: inherit; color: #1a1a1a; }' +
         '.JUM-UNITES button:hover, .JUM-UNITES button:focus { background: #fbf4e6; } .JUM-UNITES b { display: block; font-size: 0.86rem; } .JUM-UNITES small { display: block; font-size: 0.66rem; color: #64748b; }' +
         '.JUM-UNITES p { margin: 0; padding: 9px 10px; font-size: 0.74rem; color: #64748b; }' +
+        '.JUM-ADRESSE { margin: 12px 0 4px; padding: 12px; border-radius: 12px; border: 1.5px dashed rgba(214,167,86,0.6); text-align: left; font-size: 0.78rem; } .JUM-ADRESSE span { display: block; color: #64748b; } .JUM-ADRESSE b { display: block; font-size: 0.92rem; margin: 4px 0 8px; word-break: break-all; } .JUM-ADRESSE small { display: block; margin-top: 8px; color: #64748b; font-size: 0.7rem; } .JUM-ADRESSE .JUM-R-SECOND { width: auto; padding: 7px 14px; }' +
+        '.JUM-CR-BOITE { border: 1.5px solid #e2e8f0; border-radius: 12px; padding: 8px; margin: 6px 0 10px; } .JUM-CR-BOITE label { display: flex; gap: 10px; align-items: flex-start; padding: 8px; border-radius: 10px; cursor: pointer; } .JUM-CR-BOITE label:hover { background: #fbf4e6; } .JUM-CR-BOITE input { width: 18px; height: 18px; flex-shrink: 0; margin-top: 2px; } .JUM-CR-BOITE b { display: block; font-size: 0.82rem; word-break: break-all; } .JUM-CR-BOITE small { display: block; font-size: 0.7rem; color: #64748b; } .JUM-CR-BOITE em { color: #b45309; font-style: normal; font-weight: 700; }' +
+        'html body.dark-mode .JUM-CR-BOITE { border-color: #3a3a3a; } html body.dark-mode .JUM-CR-BOITE label:hover { background: #2a2a2a; }' +
         '.JUM-PART-FOND { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 99985; display: flex; align-items: center; justify-content: center; padding: 14px; }' +
         '.JUM-PART-FEN { background: #fff; color: #1a1a1a; border-radius: 22px; width: min(1180px, 100%); max-height: 94vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4); font-family: Montserrat, system-ui, sans-serif; }' +
         '.JUM-PART-TETE { padding: 16px 18px 0; display: flex; align-items: flex-start; gap: 10px; } .JUM-PART-TETE .ic { font-size: 1.4rem; } .JUM-PART-TETE > div { flex: 1; min-width: 0; }' +
@@ -3000,6 +3003,7 @@
             (pieces.length ? '<p class="JUM-R-AIDE">Joignez les pièces déclarées : ' + pieces.map(esc).join(', ') + '.</p>' : '<p class="JUM-R-AIDE">Aucun justificatif déclaré pour ce compte-rendu.</p>') +
             '<div id="JUM-CR-LISTE"></div>' +
             '<label class="JUM-R-SECOND JUM-CR-AJOUT">📎 Ajouter des justificatifs (PDF ou photos)<input type="file" id="JUM-CR-FICHIERS" multiple accept="application/pdf,.pdf,image/*" style="display:none;"></label>' +
+            (window.JUMELAGE_JUSTIFICATIFS().length ? '<button type="button" class="JUM-R-SECOND JUM-CR-AJOUT" id="JUM-CR-BOITE">📥 Depuis ma boîte TRIGONE (' + window.JUMELAGE_JUSTIFICATIFS().length + ')</button><div id="JUM-CR-BOITE-LISTE"></div>' : '') +
             '<p class="JUM-R-AIDE" id="JUM-CR-TAILLE" style="margin-top:6px;"></p>' +
             '<p class="JUM-R-ERREUR" id="JUM-CR-ERR"></p></div>' +
             '<div class="JUM-R-PIED"><button type="button" class="JUM-R-SECOND" onclick="JUMELAGE_FERMER_ENVOI_CR()">Annuler</button>' +
@@ -3032,6 +3036,24 @@
                 if (total() > TAILLE_MAX_CR) err.textContent = '⛔ Trop volumineux : retirez un fichier (' + tailleLisible(TAILLE_MAX_CR) + ' au plus).';
             });
         });
+        // Justificatifs reçus par mail (factures, billets) : cochés, ils rejoignent la liste comme un fichier choisi.
+        var boiteBtn = f.querySelector('#JUM-CR-BOITE'), depuisBoite = {};
+        if (boiteBtn) boiteBtn.addEventListener('click', function() {
+            var z = f.querySelector('#JUM-CR-BOITE-LISTE');
+            if (z.innerHTML) { z.innerHTML = ''; return; }
+            z.innerHTML = '<div class="JUM-CR-BOITE">' + window.JUMELAGE_JUSTIFICATIFS().map(function(j, k) {
+                return '<label><input type="checkbox" data-k="' + k + '"><span><b>' + esc(j.nom) + '</b><small>' + esc([j.de, j.sujet, j.le ? new Date(j.le).toLocaleDateString('fr-FR') : ''].filter(Boolean).join(' · ')) +
+                    (j.verifie ? '' : ' · <em>à vérifier</em>') + '</small></span></label>';
+            }).join('') + '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-CR-BOITE-OK">Joindre la sélection</button></div>';
+            z.querySelector('#JUM-CR-BOITE-OK').addEventListener('click', function() {
+                var l = window.JUMELAGE_JUSTIFICATIFS(), coches = Array.prototype.filter.call(z.querySelectorAll('input:checked'), function() { return true; }).map(function(c) { return l[+c.getAttribute('data-k')]; });
+                Promise.all(coches.map(function(j) { return window.JUMELAGE_JUSTIF_FICHIER(j.id, j.i).then(function(fi) { depuisBoite[j.id] = 1; return fi; }); })).then(function(fs) {
+                    fs.forEach(function(x) { if (!choisis.some(function(y) { return y.name === x.name && y.size === x.size; })) choisis.push(x); });
+                    z.innerHTML = ''; dessiner();
+                    if (total() > TAILLE_MAX_CR) err.textContent = '⛔ Trop volumineux : retirez un fichier (' + tailleLisible(TAILLE_MAX_CR) + ' au plus).';
+                }, function(e) { err.textContent = '⛔ ' + (e.message || e); });
+            });
+        });
         btn.addEventListener('click', function() {
             if (total() > TAILLE_MAX_CR) { err.textContent = '⛔ Trop volumineux : retirez un fichier (' + tailleLisible(TAILLE_MAX_CR) + ' au plus).'; return; }
             btn.disabled = true; btn.textContent = 'Envoi en cours…'; err.textContent = '';
@@ -3049,6 +3071,8 @@
                 });
             }).then(function(r) {
                 window.JUMELAGE_FERMER_ENVOI_CR();
+                // Justificatifs repris de la boîte : rangés (« traités »), sur tous mes appareils.
+                Object.keys(depuisBoite).forEach(function(id) { window.JUMELAGE_BOITE_MARQUER(id, 'traite'); });
                 // r.id : identifiant de l'envoi, qui sert aussi au suivi (récupéré, traité par l'assistant Chorus DT).
                 if (o.succes) o.succes(r || {});
             }).catch(function(e) {
@@ -3205,6 +3229,10 @@
             if (d.app === 'TRIGONE-COLLECTIVE') return { nature: 'collective', n: 1, ids: [], noms: d.chef || '', objet: d.libelle || 'Mission collective',
                 dates: d.dates || '', lieu: '', donnees: String(d.donnees || '') };
             // Question d'un valideur / de l'assistant Chorus DT, et réponse du missionnaire.
+            // Justificatifs reçus par mail à l'adresse TRIGONE du missionnaire (factures, billets).
+            if (d.app === 'TRIGONE-JUSTIF') return { nature: 'justif', n: 1, ids: [], noms: d.nomDe || d.de || 'Expéditeur inconnu', objet: d.sujet || 'Justificatif reçu par mail',
+                dates: '', lieu: '', verifie: !!d.verifie, transfere: !!d.transfere, pieces: (d.fichiers || []).length,
+                fichiers: (d.fichiers || []).map(function(f) { return { nom: String(f.nom || 'justificatif').slice(0, 120), type: f.type || '' }; }) };
             if (d.app === 'TRIGONE-QUESTION' || d.app === 'TRIGONE-REPONSE') return { nature: d.app === 'TRIGONE-QUESTION' ? 'question' : 'reponse', n: 1, ids: [],
                 noms: d.qui || '', objet: d.objet || '', dates: '', lieu: '', ref: d.ref || '', genre: d.genre || '', question: String(d.question || '').slice(0, 2000), reponse: String(d.reponse || '').slice(0, 2000) };
             if (d.app === 'TRIGONE-CR') return { nature: 'cr', n: 1, ids: [], noms: d.missionnaire || '', objet: d.libelle || 'Compte-rendu de mission',
@@ -3362,6 +3390,42 @@
         return boiteLire().filter(function(x) { var c = x.nature === 'chorus' || x.nature === 'cr'; return x.statut !== 'traite' && (filtre === 'chorus' ? c : filtre === 'autres' ? !c : true); })
             .reduce(function(t, x) { return t + (x.n > 1 ? x.n : 1); }, 0);
     };
+    // ---------- Justificatifs reçus par mail ----------
+    // Mon adresse prénom.nom@trigone-app.com (créée avec Mon profil ; suit un changement de nom).
+    var CLE_ADRESSE = 'trigone_adresse';
+    window.JUMELAGE_ADRESSE = function(forcer) {
+        var c = monCompte(), r = lireReglages(), memo = lireJSON(CLE_ADRESSE) || {}, sig = c ? c.mail + '|' + (r.prenom || '') + '|' + (r.nom || '') : '';
+        if (!c) return Promise.resolve('');
+        if (memo.sig === sig && memo.adresse && !forcer) return Promise.resolve(memo.adresse);
+        if (!navigator.onLine || !(r.nom || r.prenom)) return Promise.resolve(memo.mail === c.mail ? memo.adresse || '' : '');
+        return appelApi('adresse', { methode: 'POST', corps: { prenom: r.prenom || '', nom: r.nom || '' } }).then(function(x) {
+            ecrireTxt(CLE_ADRESSE, JSON.stringify({ sig: sig, mail: c.mail, adresse: x.adresse || '' })); return x.adresse || '';
+        }, function() { return memo.mail === c.mail ? memo.adresse || '' : ''; });
+    };
+    window.JUMELAGE_ADRESSE_CONNUE = function() { var c = monCompte(), m = lireJSON(CLE_ADRESSE) || {}; return c && m.mail === c.mail ? m.adresse || '' : ''; };
+    window.JUMELAGE_COPIER_ADRESSE = function(btn) {
+        var a = window.JUMELAGE_ADRESSE_CONNUE(); if (!a) return;
+        var fini = function() { bandeau('Adresse copiée : ' + a); if (btn) { var t = btn.textContent; btn.textContent = '✔ Copiée'; setTimeout(function() { btn.textContent = t; }, 1600); } };
+        try { navigator.clipboard.writeText(a).then(fini, function() { prompt('Votre adresse TRIGONE :', a); }); } catch (e) { prompt('Votre adresse TRIGONE :', a); }
+    };
+    // Fichiers des justificatifs reçus (tous, ou ceux d'un envoi) : [{ id, i, nom, type, de, sujet, le, verifie }].
+    function lireJustif(id) {
+        return caches.open(CACHE_BOITE).then(function(c) { return c.match(cleFichierBoite(id)); }).then(function(r) { return r ? r.text() : null; })
+            .then(function(t) { try { return JSON.parse(t); } catch (e) { return null; } });
+    }
+    window.JUMELAGE_JUSTIFICATIFS = function() {
+        return boiteLire().filter(function(x) { return x.nature === 'justif'; }).map(function(x) {
+            return (x.fichiers || []).map(function(f, i) { return { id: x.id, i: i, nom: f.nom, type: f.type, de: x.noms, sujet: x.objet, le: x.le, verifie: x.verifie, statut: x.statut }; });
+        }).reduce(function(a, b) { return a.concat(b); }, []);
+    };
+    window.JUMELAGE_JUSTIF_FICHIER = function(id, i) {
+        return lireJustif(id).then(function(d) {
+            var f = d && (d.fichiers || [])[i]; if (!f) throw new Error('Justificatif introuvable sur cet appareil.');
+            var o = depuisB64(f.b64);
+            return new File([o], f.nom || 'justificatif', { type: f.type || 'application/octet-stream' });
+        });
+    };
+    window.JUMELAGE_JUSTIF_VERIFIE = function(id) { var l = boiteLire(); l.forEach(function(x) { if (x.id === id) x.verifie = true; }); boiteEcrire(l); };
     window.JUMELAGE_BOITE_FICHIER = function(id) {
         var x = boiteLire().filter(function(e) { return e.id === id; })[0];
         return caches.open(CACHE_BOITE).then(function(c) {
@@ -3487,6 +3551,7 @@
             window.JUMELAGE_BOITE_ETATS();        // envois déjà traités sur un autre de mes appareils
             if (lireTxt(CLE_JALONS).length > 2) window.JUMELAGE_JALONS();   // heures de mission en attente d'envoi
             window.JUMELAGE_PHOTO_SYNCHRO();       // photo de carte partagée : rechiffrée si de nouveaux appareils y ont droit
+            window.JUMELAGE_ADRESSE();             // adresse des justificatifs (créée une fois, suit Mon profil)
             if (releveARefaire) { releveARefaire = false; return window.JUMELAGE_RELEVER().then(function(m) { return n + m; }); }
             return n;
         });
@@ -3503,7 +3568,7 @@
                             var o = JSON.parse(clair), info = resumeEnvoi(o.contenu);
                             // Contenu conforme au type annoncé (demande → non signée, 1er valideur → 1 signature,
                             // Chorus → 2 signatures, refus → refus, CR → compte-rendu) ; sinon l'envoi est écarté.
-                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus', CR: 'cr', RENVOI: 'renvoi', COLLECTIVE: 'collective', QUESTION: 'question', REPONSE: 'reponse' }[x.type];
+                            var attendu = { DEMANDE: 'niveau1', VALIDATION_1: 'niveau2', CHORUS: 'chorus', REFUS: 'refus', CR: 'cr', RENVOI: 'renvoi', COLLECTIVE: 'collective', QUESTION: 'question', REPONSE: 'reponse', JUSTIF: 'justif' }[x.type];
                             if (attendu && info.nature !== attendu) { ecartes++; return appelApi('boite/' + e.id, { methode: 'DELETE' }); }
                             return caches.open(CACHE_BOITE).then(function(c) {
                                 return c.put(cleFichierBoite(e.id), new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));
@@ -4753,6 +4818,8 @@
                     '<small>Chiffrée de bout en bout : seuls leurs appareils (et le chef d\'une mission collective où vous êtes) peuvent la voir, sur votre carte, dans l\'onglet Participants de vos demandes.</small></span></label>' +
                 '<p class="JUM-CARTE-NOTE">Remplie toute seule avec <b>Mon profil</b> (grade, nom, NID, unité). La photo reste <b>sur cet appareil</b>' + (photoPartagee() ? ' et ne part que chiffrée' : '') + '. ' +
                     'Le QR code ne contient qu\'un identifiant : il ne donne accès à rien, il permet seulement à un compte TRIGONE de vous retrouver.</p>' +
+                (window.JUMELAGE_ADRESSE_CONNUE() ? '<div class="JUM-ADRESSE"><span>📥 Vos factures et billets : envoyez-les ou transférez-les à</span><b>' + esc(window.JUMELAGE_ADRESSE_CONNUE()) + '</b>' +
+                    '<button type="button" class="JUM-R-SECOND JUM-ADRESSE-COPIER" onclick="JUMELAGE_COPIER_ADRESSE(this)">Copier</button><small>Ils arrivent chiffrés dans Boîte de réception › Justificatifs, prêts à joindre au compte-rendu.</small></div>' : '') +
                 '<button type="button" class="JUM-R-LIEN JUM-CARTE-PROFIL">Modifier Mon profil</button>' +
                 (memo && memo.id ? '<button type="button" class="JUM-R-LIEN JUM-CARTE-REVOQUER">Carte perdue ou volée ? Révoquer le QR code</button>' : '') + '</div>';
             if (memo && memo.id) dessinerQR(fenCarte.querySelector('.JUM-CARTE-QR'), memo.id);

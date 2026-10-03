@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 163;
+    var VERSION = 164;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i></button>'; }
     function r(n) { return '<span class="n-r">' + n + '</span>'; }
@@ -167,7 +167,7 @@
 
     // ---------- 11. Compte-rendu ----------
     ajouter(chapitre(11, 'Le compte-rendu de mission', 'TRIGONE Compte-rendu accompagne la mission : vous appuyez au départ, à l\'arrivée sur site, au départ du site et au retour. Les frais sont calculés, le compte-rendu part avec ses justificatifs en un seul envoi.',
-        ['Partir d\'une mise en route', 'Départ mission', 'Horodatages pendant la mission', 'Frais, récapitulatif et envoi'], 'cr'));
+        ['Partir d\'une mise en route', 'Départ mission', 'Horodatages pendant la mission', 'Frais, récapitulatif et envoi', 'Justificatifs par mail'], 'cr'));
     ajouter(page('Commencer', duo('60-cr-accueil', et([r(1) + ' <b>La mission commence ici</b> : mission sans mise en route.', r(2) + ' <b>À partir d\'une mise en route</b> : tout est repris de votre demande (conseillé).', r(3) + ' <b>Simuler une mission à venir</b> : estimer les frais.', r(4) + ' <b>Bibliothèque</b> : vos comptes-rendus. ' + r(5) + ' <b>Remboursement</b> : vos montants par mois.'])) +
         savoir('Le jour du départ, une notification « Départ en mission aujourd\'hui » ouvre directement le compte-rendu pré-rempli.'), 'cr'));
     ajouter(page('À partir d\'une mise en route', duo('61-cr-liste-mer', et(['Touchez <b>À partir d\'une mise en route</b>.', r(1) + ' Choisissez votre demande (envoyée le…, objet, dates).', '<b>« Mission pré-remplie »</b> : identité, libellé, lieux, transports, gares et horaires sont repris. Vérifiez, puis « Départ en mission » le jour J.', 'Le n° OMR suit dans le compte-rendu.'])), 'cr'));
@@ -182,6 +182,11 @@
     ajouter(page('Récapitulatif final', duo('68-cr-recap', et(['Le compte-rendu complet, tel qu\'il sera envoyé (identité, mission, horodatages, frais).', '<b>À envoyer avant le…</b> : 30 jours après la fin de mission.', '<b>Mission clôturée</b> : les horaires sont figés.', '<b>PJ</b> : rappel des justificatifs à joindre (facture d\'hôtel…).', 'Observations éventuelles, puis <b>Envoyer</b>.'])) +
         savoir('Avant l\'envoi, TRIGONE contrôle le compte-rendu (horaires dans le désordre, billet incohérent, IK sans kilométrage…) : <b>Corriger</b> ou <b>Envoyer quand même</b>.'), 'cr'));
     ajouter(page('Envoyer le compte-rendu', duo('71-cr-envoi-justif', et(['Fenêtre <b>Envoyer le compte-rendu</b> : le PDF du compte-rendu est joint automatiquement.', '<b>Ajouter des justificatifs</b> : PDF ou <b>photos</b> (une facture photographiée est recadrée et allégée toute seule).', r(1) + ' Touchez <b>Envoyer</b> : le compte-rendu arrive, chiffré, chez l\'assistant Chorus DT.', '<b>« Compte-rendu envoyé »</b> : la mission est archivée dans la Bibliothèque.'])), 'cr'));
+    ajouter(page('Justificatifs par mail', '<h5>Votre adresse TRIGONE</h5>' + et(['Ma carte affiche votre adresse : <b>prénom.nom@trigone-app.com</b> (bouton <b>Copier</b>).', 'Donnez-la à <b>SNCF Connect</b>, à l\'hôtel, à la compagnie aérienne, ou <b>transférez-y</b> le mail reçu.']) +
+        '<h5>À l\'arrivée</h5>' + et(['Seules les <b>pièces jointes PDF et photos</b> sont gardées, <b>chiffrées</b> pour vos appareils.', 'Elles arrivent dans <b>Boîte de réception › Justificatifs</b>, avec une notification.', 'Mail transféré par vous, SNCF, Air France… : rangé directement. Autre expéditeur (hôtel…) : <b>« à vérifier »</b>, puis <b>« C\'est bien à moi »</b> ou Supprimer.']) +
+        savoir('Un mail sans pièce jointe, ou à une adresse inconnue, est refusé : l\'expéditeur en est averti.'), 'cr'));
+    ajouter(page('Les joindre au compte-rendu', et(['Fenêtre <b>Envoyer le compte-rendu</b> › <b>📥 Depuis ma boîte TRIGONE</b>.', 'Cochez les factures et billets de la mission, puis <b>Joindre la sélection</b> : ils rejoignent la liste des justificatifs, comme une photo ou un PDF choisi.', 'Après l\'envoi, ils passent en <b>« Rangé »</b> dans la boîte (sur tous vos appareils).', 'Besoin d\'un justificatif déjà rangé ? <b>↺ Remettre à joindre</b>.']) +
+        astuce('Réservez le train sur SNCF Connect avec votre adresse TRIGONE : le billet « Mon Billet » arrive tout seul, prêt à joindre.'), 'cr'));
     ajouter(page('Les distinctions', duo('78-medaille', et(['Chaque compte-rendu envoyé compte pour vos <b>distinctions TRIGONE</b> :', '<b>Bronze</b> au 1<sup>er</sup> compte-rendu, <b>Argent</b> au 10<sup>e</sup>, <b>Or</b> au 20<sup>e</sup>.', 'La médaille s\'affiche au-dessus du « Bonjour » sur l\'accueil, et le liseré de votre carte TRIGONE prend sa couleur.'])), 'cr'));
 
     // ---------- 12. Mission collective ----------
