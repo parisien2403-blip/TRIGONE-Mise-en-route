@@ -63,6 +63,8 @@ module.exports = async function() {
     await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(600);
     const t2 = await c.evaluate(() => document.querySelector('.CARD').textContent);
     verifier(/Validé/.test(t2) && t2.indexOf(pref + '0007') >= 0 && /247,80/.test(t2) && /82,30/.test(t2), 'registre : la ligne passe à « Validé — CR rendu », avec ses montants (repas, hébergement, IK…) et le total');
+    // Registre commun : d'autres essais peuvent y avoir laissé des lignes ; les totaux se vérifient sur la série du test.
+    await c.evaluate(p => { MER_REGISTRE_CRIT.texte = p; MER_REG_REAFFICHER(); }, pref); await attendre(300);
     const sommes = await c.evaluate(() => { const g = document.querySelector('.MER-REG-TOTAL .MER-REG-SOMMES'); return g ? g.textContent : ''; });
     verifier(/Repas/.test(sommes) && /IK/.test(sommes) && /Hébergement/.test(sommes) && /82,30/.test(sommes) && /247,80/.test(sommes), 'registre : en bas, le total de chaque rubrique (repas, hébergement, transports, IK, transp. commun, total)');
     verifier(await c.evaluate(() => getComputedStyle(document.querySelector('.MER-REG-LIGNE .MER-REG-GRILLE small')).color === 'rgb(26, 26, 26)'), 'registre : libellés (Code FD, Début…) en noir');
@@ -80,6 +82,7 @@ module.exports = async function() {
     const apres = await c.evaluate(r => { const x = JUMELAGE_REGISTRE().find(y => y.ref === r), m = MER_REG_MONTANTS(x); return { repas: m.repas, total: m.total, bas: (document.querySelector('.MER-REG-TOTAL') || {}).textContent || '', plein: !!document.querySelector('.MER-REG-ZONE.plein'), note: !!document.querySelector('.MER-REG-CORR') }; }, d.id);
     verifier(apres.repas === 50 && apres.total === 252.3 && /252,30/.test(apres.bas) && /50,00/.test(apres.bas) && apres.note, 'correction : montant et totaux (ligne, bas du registre) mis à jour, mention « Montants corrigés »');
     verifier(apres.plein, 'correction : le registre reste en plein écran');
+    await c.evaluate(() => { MER_REGISTRE_CRIT.texte = ''; MER_REG_REAFFICHER(); }); await attendre(200);
     if (process.env.TRIGONE_CAPTURES) await c.screenshot({ path: process.env.TRIGONE_CAPTURES + '/registre-corrige.png' });
     await c.click('.MER-REG-PLEIN-BTN'); await attendre(400);
     verifier(await c.evaluate(() => !!document.querySelector('.MER-REG-ZONE') && !document.querySelector('.MER-REG-ZONE.plein')), 'sortie du plein écran');
