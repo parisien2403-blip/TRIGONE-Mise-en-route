@@ -88,6 +88,11 @@
             b.title = actif ? 'Revenir à l\'affichage téléphone' : 'Affichage PC (tablette, écran pliable ouvert)';
             b.setAttribute('aria-label', b.title);
         });
+        Array.prototype.forEach.call(document.querySelectorAll('.JUM-DOCK-PC'), function(b) {
+            b.style.display = visible ? '' : 'none';
+            b.innerHTML = (actif ? SVG_TEL : SVG_ECRAN) + (actif ? 'Affichage tél.' : 'Affichage PC');
+            b.title = actif ? 'Revenir à l\'affichage téléphone' : 'Affichage PC (tablette, écran pliable ouvert)';
+        });
     }
     function appliquerVue() {
         var actif = modePcActif();
@@ -538,6 +543,21 @@
         '.JUM-CHOIX.JUM-V2 { display: grid; grid-template: "mer" 1fr "cr" 1fr / 1fr; }' +
         '.JUM-CHOIX.JUM-V2.avec-chorus { grid-template: "mer cr" 1.15fr "chorus chorus" 1fr / 1fr 1fr; }' +
         '.JUM-V2 .JUM-TRAIT { display: none; }' +
+        // Téléphone (Android, iPhone) : barre d'outils en bas de la page de garde (Notice, Paramètres, Ma carte, Mise à jour,
+        // Affichage PC), dernière rangée de la grille ; les boutons ronds dispersés disparaissent. PC : inchangé.
+        '.JUM-DOCK { display: none; }' +
+        '@media (max-width: 1099px) {' +
+            '.JUM-CHOIX.JUM-V2 { grid-template: "mer" 1fr "cr" 1fr "dock" auto / 1fr; }' +
+            '.JUM-CHOIX.JUM-V2.avec-chorus { grid-template: "mer cr" 1.15fr "chorus chorus" 1fr "dock dock" auto / 1fr 1fr; }' +
+            '.JUM-V2 .JUM-DOCK { display: block; grid-area: dock; position: relative; z-index: 3; padding: 8px 10px calc(8px + env(safe-area-inset-bottom, 0px)); background: #0f0f0f; border-top: 3px solid #d6a756; transition: opacity 0.3s ease; }' +
+            '.JUM-V2.choisi .JUM-DOCK { opacity: 0; pointer-events: none; }' +
+            '.JUM-V2 > .JUM-MAJ-BTN, .JUM-V2 > .JUM-CARTE-ACCES, .JUM-V2 > .JUM-PARAM-ACCES, .JUM-V2 > .JUM-NOTICE-ACCES, .JUM-V2 > .JUM-MODE { display: none !important; }' +
+        '}' +
+        '.JUM-DOCK-BARRE { display: flex; justify-content: space-around; align-items: stretch; padding: 7px 4px 6px; border-radius: 20px; background: linear-gradient(180deg, #1c1c1c, #121212); border: 1px solid rgba(214,167,86,0.35); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }' +
+        '.JUM-DOCK button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: none; color: #e9d9b4; font: 700 0.6rem Montserrat, system-ui, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 2px; border-radius: 14px; cursor: pointer; text-align: center; line-height: 1.15; -webkit-tap-highlight-color: transparent; }' +
+        '.JUM-DOCK button:active { background: rgba(214,167,86,0.14); }' +
+        '.JUM-DOCK button svg { width: 23px; height: 23px; fill: none; stroke: #d6a756; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }' +
+        '.JUM-DOCK button.tourne svg { animation: jum-tourne 0.9s linear infinite; }' +
         '.JUM-V2 .JUM-PAN { position: relative; inset: auto; clip-path: none; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; overflow: hidden; transition: filter 0.2s ease, opacity 0.3s ease; }' +
         '.JUM-V2 .JUM-PAN-MER { grid-area: mer; } .JUM-V2 .JUM-PAN-CR { grid-area: cr; border-top: 3px solid #d6a756; } .JUM-V2 .JUM-PAN-CHORUS { grid-area: chorus; }' +
         '.JUM-V2.avec-chorus .JUM-PAN-CR { border-top: 0; border-left: 3px solid #d6a756; }' +
@@ -1038,7 +1058,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 167, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 168, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -5572,6 +5592,30 @@
         window.addEventListener('resize', placerCarte);
         // Affichage PC (tablette, pliable ouvert), en bas à gauche à côté de la mise à jour.
         ecran.appendChild(creerBoutonModePc());
+        // Téléphone : la même chose dans une barre d'outils en bas (CSS : visible seulement sous 1 100 px de large).
+        var dock = document.createElement('nav'); dock.className = 'JUM-DOCK'; dock.setAttribute('aria-label', 'Outils TRIGONE');
+        var icDock = {
+            notice: '<svg viewBox="0 0 24 24"><path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5Z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/><path d="M8 7h8M8 11h6"/></svg>',
+            carte: '<svg viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><circle cx="8.5" cy="11" r="2.2"/><path d="M5.5 16c.6-1.6 1.7-2.4 3-2.4s2.4.8 3 2.4M14 10h4.5M14 13.5h3"/></svg>',
+            maj: '<svg viewBox="0 0 24 24"><path d="M3 12a9 9 0 0 1 15-6.7L21 8M21 3v5h-5M21 12a9 9 0 0 1-15 6.7L3 16M3 21v-5h5"/></svg>'
+        };
+        dock.innerHTML = '<div class="JUM-DOCK-BARRE">' +
+            '<button type="button" data-d="notice">' + icDock.notice + 'Notice</button>' +
+            '<button type="button" data-d="param">' + ROUE_SVG + 'Paramètres</button>' +
+            '<button type="button" data-d="carte">' + icDock.carte + 'Ma carte</button>' +
+            '<button type="button" data-d="maj" class="JUM-DOCK-MAJ">' + icDock.maj + 'Mise à jour</button>' +
+            '<button type="button" data-d="pc" class="JUM-DOCK-PC"></button></div>';
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { dock.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        dock.addEventListener('click', function(e) {
+            var b = e.target.closest('button'); if (!b) return;
+            var d = b.getAttribute('data-d');
+            if (d === 'notice') btnNotice.click();
+            else if (d === 'param') btnParam.click();
+            else if (d === 'carte') window.JUMELAGE_CARTE();
+            else if (d === 'maj') verifierMajManuelle();
+            else if (d === 'pc') window.JUMELAGE_MODE_PC();
+        });
+        ecran.appendChild(dock); majBoutonsModePc();
         var badge = ecran.querySelector('.JUM-VERSION');
         if (badge) {
             ['pointerdown', 'pointerup'].forEach(function(t) { badge.addEventListener(t, function(e) { e.stopPropagation(); }); });
@@ -5656,7 +5700,9 @@
     }
     function verifierMajManuelle() {
         if (!navigator.onLine) { carteChoix('Pas de connexion', 'Impossible de vérifier les mises à jour sans internet. Réessayez une fois connecté.', 'horsLigne'); return; }
-        var btn = ecran && ecran.querySelector('.JUM-MAJ-BTN'); if (btn) btn.classList.add('tourne');
+        var btns = ecran ? Array.prototype.slice.call(ecran.querySelectorAll('.JUM-MAJ-BTN, .JUM-DOCK-MAJ')) : [];
+        var btn = { classList: { remove: function(c) { btns.forEach(function(x) { x.classList.remove(c); }); } } };
+        btns.forEach(function(x) { x.classList.add('tourne'); });
         fetch((DANS_CR ? '../' : '') + 'build.json?t=' + Date.now(), { cache: 'no-store' }).then(function(r) { return r.ok ? r.json() : null; }).then(function(d) {
             if (d && d.build > BUILD) { try { sessionStorage.removeItem(CLE_RECHARGE); } catch (e) {} window.JUMELAGE_MAJ_DISPONIBLE(); return; }
             return manifesteMaj().then(function(m) {
