@@ -305,6 +305,8 @@
         '.JUM-RETOUR-PARAM svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }' +
         // Fenêtre ouverte depuis Paramètres : descendue sous la flèche « ‹ Paramètres ».
         '.avec-retour { padding-top: calc(max(12px, env(safe-area-inset-top, 0px)) + 50px) !important; }' +
+                '.JUM-RETOUR-PARAM.dans-carte { position: relative; top: auto; left: auto; z-index: 3; flex-shrink: 0; align-self: flex-start; height: 32px; margin: 10px 0 4px 12px; padding: 0 12px 0 6px; font-size: 0.74rem; box-shadow: none; background: #f4f1ea; border-color: rgba(26,26,26,0.10); }' +
+        'html body.dark-mode .JUM-RETOUR-PARAM.dans-carte { background: #2e2e2e; }' +
                 '.JUM-RETOUR-PARAM.flottant { z-index: 99990; top: auto; left: 50%; transform: translateX(-50%); bottom: calc(max(16px, env(safe-area-inset-bottom, 0px)) + 8px); background: #1a1a1a; color: #f5f5f5; border-color: #d6a756; }' +
                 'html body.dark-mode .JUM-RETOUR-PARAM { background: #262626; color: #f5f5f5; border-color: rgba(255,255,255,0.16); }' +
         // Notice TRIGONE (livre en cuir) et Paramètres (roue) : à côté de « Ma carte », sur l'écran d'accueil et dans les applis.
@@ -1011,7 +1013,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 152, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 153, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -4398,7 +4400,8 @@
                 tourne.addEventListener('click', function() { tourne.classList.toggle('verso'); });
                 fenCarte.querySelector('.JUM-CARTE-GRAND').addEventListener('click', function() { window.JUMELAGE_CARTE_GRAND(tourne.classList.contains('verso')); });
             }
-            fenCarte.querySelector('.JUM-CARTE-RET').addEventListener('click', window.JUMELAGE_FERMER_CARTE);
+            // Sa flèche ‹ : ramène aux Paramètres quand la carte en a été ouverte (sinon, ferme la carte).
+            fenCarte.querySelector('.JUM-CARTE-RET').addEventListener('click', function() { if (fenCarte && fenCarte._depuisParam) revenirParametres(fenCarte); else window.JUMELAGE_FERMER_CARTE(); });
             fenCarte.querySelector('.JUM-CARTE-PHOTO-BTN').addEventListener('click', function() { choisirPhoto(dessiner); });
             fenCarte.querySelector('.JUM-CARTE-PARTAGER').addEventListener('click', function() { partagerCarte(d, memo); });
             fenCarte.querySelector('.JUM-CARTE-PROFIL').addEventListener('click', function() { window.JUMELAGE_FERMER_CARTE(); window.JUMELAGE_REGLAGES({ vue: 'profil' }); });
@@ -4878,12 +4881,15 @@
         }
         pileRetour.push(etape);
         // Ouverte depuis Paramètres : flèche « ‹ Paramètres » en haut à gauche, pour y revenir (même rubrique) sans repartir du début.
-        if (etape.rubrique && !el.classList.contains('JUM-NOTICE') && !el.classList.contains('JUM-CARTE-PLEIN') && !el.classList.contains('JUM-CPT-MENU') && !el.querySelector(':scope > .JUM-RETOUR-PARAM')) {
+        if (etape.rubrique && el.classList.contains('JUM-CARTE-FEN')) el._depuisParam = true;
+        if (etape.rubrique && !el.classList.contains('JUM-CARTE-FEN') && !el.classList.contains('JUM-NOTICE') && !el.classList.contains('JUM-CARTE-PLEIN') && !el.classList.contains('JUM-CPT-MENU') && !el.querySelector(':scope > .JUM-RETOUR-PARAM')) {
             var r = document.createElement('button'); r.type = 'button'; r.className = 'JUM-RETOUR-PARAM'; r.setAttribute('aria-label', 'Revenir aux Paramètres');
             r.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg><span>Paramètres</span>';
             ['pointerdown', 'pointerup', 'click'].forEach(function(t) { r.addEventListener(t, function(e) { e.stopPropagation(); }); });
             r.addEventListener('click', function() { revenirParametres(el); });
-            el.appendChild(r); el.classList.add('avec-retour');
+            // Dans la fenêtre elle-même, tout en haut, juste au-dessus de son titre.
+            var carte = el.firstElementChild && el.firstElementChild !== r ? el.firstElementChild : null;
+            if (carte) { r.classList.add('dans-carte'); carte.insertBefore(r, carte.firstChild); } else { el.appendChild(r); el.classList.add('avec-retour'); }
         }
     }
     var flecheFlottante = null;

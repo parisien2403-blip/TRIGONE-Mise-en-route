@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 152,
+  "build": 153,
   "notifier": false,
-  "message": "Flèche « ‹ Paramètres » : depuis une fenêtre ou une page ouverte par les Paramètres, on revient à la même rubrique."
+  "message": "Flèche « ‹ Paramètres » dans chaque fenêtre, juste au-dessus de son titre."
 }

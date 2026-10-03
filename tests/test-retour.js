@@ -37,10 +37,16 @@ module.exports = async function(srv) {
     // Flèche « ‹ Paramètres » à l'écran : fenêtre ouverte depuis Paramètres → retour sur la même rubrique.
     await p.evaluate(() => { document.querySelectorAll('.JUM-SIG').forEach(e => e._fermer ? e._fermer() : e.remove()); JUMELAGE_FERMER_PARAMETRES(); JUMELAGE_PARAMETRES('compte'); }); await attendre(400);
     await p.click('.JUM-PARAM [data-action="profil"]'); await attendre(700);
-    verifier(await p.evaluate(() => !!document.querySelector('.JUM-REGLAGES .JUM-RETOUR-PARAM')), 'Paramètres › Mon profil : flèche « ‹ Paramètres » affichée');
+    verifier(await p.evaluate(() => !!document.querySelector('.JUM-REGLAGES .JUM-RETOUR-PARAM.dans-carte')), 'Paramètres › Mon profil : flèche « ‹ Paramètres » dans la fenêtre, au-dessus du titre');
     await p.click('.JUM-REGLAGES .JUM-RETOUR-PARAM'); await attendre(800);
     e = await etat();
     verifier(!e.profil && e.param && e.rub === 'compte', 'flèche « ‹ Paramètres » : retour sur la rubrique « Compte »');
+    // Ma carte : sa propre flèche ‹ ramène aux Paramètres (pas de seconde flèche).
+    await p.click('.JUM-PARAM [data-action="carte"]'); await attendre(900);
+    verifier(await p.evaluate(() => !!document.querySelector('.JUM-CARTE-FEN') && !document.querySelector('.JUM-CARTE-FEN .JUM-RETOUR-PARAM')), 'Ma carte : une seule flèche (la sienne)');
+    await p.click('.JUM-CARTE-RET'); await attendre(800);
+    e = await etat();
+    verifier(e.param && e.rub === 'compte' && await p.evaluate(() => !document.querySelector('.JUM-CARTE-FEN')), 'flèche de Ma carte : retour sur Paramètres › Compte');
     // Ligne qui mène à une page de l'appli (Références) : flèche flottante, retour sur « Aide ».
     await p.evaluate(() => JUMELAGE_PARAMETRES('aide')); await attendre(300);
     await p.evaluate(() => [...document.querySelectorAll('.JUM-PARAM-LIGNE')].find(b => /Références/.test(b.textContent)).click()); await attendre(800);
