@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 203;
+var APP_CODE_VERSION = 204;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3769,7 +3769,7 @@ function TPL_CHORUS() {
 // dates de mission, personnel, échéance du compte-rendu = fin de mission + 30 jours, marquant d'état) ; relance ou
 // message au(x) missionnaire(s) ; suppression (mission annulée). Onglet « Comptes-rendus » : les lignes dont le
 // compte-rendu est rendu, avec les montants déclarés et le total. PDF de chaque onglet. Nouvelle série de numéros.
-var MER_REGISTRE_ONGLET = 'tout', MER_REGISTRE_DELAI = 30, MER_REGISTRE_MINUTEUR = null;
+var MER_REGISTRE_ONGLET = 'tout', MER_REGISTRE_DELAI = 30, MER_REGISTRE_MINUTEUR = null, MER_REGISTRE_PLEIN = false;
 function MER_OMR_COMPARER(a, b) {
     if (!a.omr !== !b.omr) return a.omr ? -1 : 1;
     return String(a.omr || '').localeCompare(String(b.omr || ''), 'fr', { numeric: true }) || (a.recuLe || 0) - (b.recuLe || 0);
@@ -3799,11 +3799,21 @@ function MER_REG_FRISE(x, e) {
     var courante = -1; etapes.forEach(function(t, i) { if (t[1]) courante = i; });
     return '<div class="MER-REG-FRISE ' + e.cls + '">' + etapes.map(function(t, i) { return '<span class="' + (t[1] ? 'fait' : '') + (i === courante ? ' ici' : '') + '"><i></i>' + t[0] + '</span>'; }).join('') + '</div>';
 }
-function MER_REG_MONTANTS(x) {
+// Montants d'une ligne : somme de ses comptes-rendus, puis corrections de l'assistant Chorus DT (x.corriges, communes à
+// tous les assistants ; le total est alors recalculé). brut : montants des comptes-rendus, sans les corrections.
+var MER_REG_RUBRIQUES = [['repas', 'Repas'], ['hebergement', 'Hébergement'], ['transports', 'Transports'], ['ik', 'IK'], ['tc', 'Transp. commun']];
+function MER_REG_MONTANTS(x, brut) {
     var t = { repas: 0, hebergement: 0, transports: 0, ik: 0, tc: 0, total: 0 };
     (x.crs || []).forEach(function(c) { var m = c.montants || {}; Object.keys(t).forEach(function(k) { t[k] += parseFloat(m[k]) || 0; }); });
+    var corr = brut ? [] : MER_REG_CORRIGES(x);
+    corr.forEach(function(k) { t[k] = parseFloat(x.corriges[k]) || 0; });
+    if (corr.length) t.total = MER_REG_RUBRIQUES.reduce(function(a, r) { return a + t[r[0]]; }, 0);
     Object.keys(t).forEach(function(k) { t[k] = Math.round(t[k] * 100) / 100; });
     return t;
+}
+function MER_REG_CORRIGES(x) {
+    var c = x.corriges || {};
+    return MER_REG_RUBRIQUES.map(function(r) { return r[0]; }).filter(function(k) { return c[k] != null && c[k] !== '' && !isNaN(parseFloat(c[k])); });
 }
 // Registre commun aux assistants Chorus DT : qui a reçu la demande et le(s) compte(s)-rendu(s).
 function MER_REG_RECU_PAR(x) {
@@ -3849,19 +3859,23 @@ function TPL_REGISTRE() {
     var f = MER_REGISTRE_FILTRES(), filtre = MER_REGISTRE_ONGLET in f ? MER_REGISTRE_ONGLET : 'tout', l = f[filtre];
     var puce = function(c) { return '<button type="button" class="MER-REG-FILTRE ' + c[0] + (filtre === c[0] ? ' actif' : '') + '" onclick="OUVRIR_REGISTRE(\'' + c[0] + '\')">' + c[1] + ' <span>' + f[c[0]].length + '</span></button>'; };
     var lignes = l.map(function(x) {
-        var e = MER_REG_ETAT(x), m = MER_REG_MONTANTS(x), ref = ESC(x.ref).replace(/'/g, ''), rendu = e.cls === 'ok', ech = MER_REG_ECHEANCE(x);
+        var e = MER_REG_ETAT(x), m = MER_REG_MONTANTS(x), brut = MER_REG_MONTANTS(x, true), corr = MER_REG_CORRIGES(x), ref = ESC(x.ref).replace(/'/g, ''), rendu = e.cls === 'ok', ech = MER_REG_ECHEANCE(x);
         var tete = '<div class="MER-REG-TETE"><b class="MER-REG-OMR">' + (x.omr ? 'N°' + ESC(x.omr) : 'Sans n°') + '</b><span class="MER-REG-MARQ ' + e.cls + '">' + e.txt + '</span></div>';
         var corps = '<div class="MER-REG-GRILLE mer"><span><small>Envoyée le</small>' + MER_REG_JOUR(x.omrLe || x.recuLe) + '</span><span class="large"><small>Objet</small>' + ESC(x.objet || '—') + '</span>' +
                 '<span><small>Code FD</small>' + ESC(x.codeFD || '—') + '</span><span><small>Début</small>' + MER_REG_JOUR(x.debut) + '</span><span><small>Fin</small>' + MER_REG_JOUR(x.fin) + '</span>' +
                 '<span class="large"><small>Personnel</small>' + ESC(MER_REG_PERSONNEL(x)) + '</span>' +
                 (rendu ? '<span><small>CR rendu le</small>' + MER_REG_JOUR((x.crs || []).map(function(c) { return c.recuLe; }).sort().slice(-1)[0]) + '</span>'
                     : '<span><small>CR attendu le</small>' + (ech ? ech.toLocaleDateString('fr-FR') : '—') + '</span>') + '</div>' +
-            ((x.crs || []).length ? '<div class="MER-REG-GRILLE montants"><span><small>Repas</small>' + MER_EUROS(m.repas) + '</span><span><small>Hébergement</small>' + MER_EUROS(m.hebergement) + '</span>' +
-                '<span><small>Transports</small>' + MER_EUROS(m.transports) + '</span><span><small>IK</small>' + MER_EUROS(m.ik) + '</span>' +
-                '<span><small>Transp. commun</small>' + MER_EUROS(m.tc) + '</span><span class="total"><small>Total</small>' + MER_EUROS(m.total) + '</span></div>' : '') +
+            ((x.crs || []).length ? '<div class="MER-REG-GRILLE montants">' + MER_REG_RUBRIQUES.map(function(r) {
+                    var c = corr.indexOf(r[0]) >= 0;
+                    return '<span' + (c ? ' class="corrige" title="Corrigé — montant du compte-rendu : ' + MER_EUROS(brut[r[0]]) + '"' : '') + '><small>' + r[1] + (c ? ' ✏' : '') + '</small>' + MER_EUROS(m[r[0]]) + '</span>';
+                }).join('') + '<span class="total' + (corr.length ? ' corrige' : '') + '"><small>Total' + (corr.length ? ' ✏' : '') + '</small>' + MER_EUROS(m.total) + '</span></div>' : '') +
+            (corr.length ? '<p class="MER-HINT MER-REG-CORR" style="margin:4px 0 0;">✏ Montants corrigés' + (x.corrigesPar ? ' par ' + ESC(x.corrigesPar) : '') + (x.corrigesLe ? ' le ' + MER_REG_JOUR(x.corrigesLe) : '') +
+                ' (compte-rendu : ' + corr.map(function(k) { return MER_REG_RUBRIQUES.filter(function(r) { return r[0] === k; })[0][1].toLowerCase() + ' ' + MER_EUROS(brut[k]); }).join(', ') + ')</p>' : '') +
             MER_REG_RECU_PAR(x) +
             ((x.relances || []).length && !rendu ? '<p class="MER-HINT" style="margin:4px 0 0;">🔔 Relancé le ' + x.relances.map(function(t) { var q = (x.relancesQui || {})[t]; return MER_REG_JOUR(t) + (q ? ' (par ' + ESC(q) + ')' : ''); }).join(', ') + '</p>' : '') +
-            (rendu ? '' : '<div class="MER-REG-ACTIONS">' + (e.cls === 'attente' || e.cls === 'retard' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', true)">🔔 Relancer pour le CR</button>' : '') +
+            (rendu ? ((x.crs || []).length ? '<div class="MER-REG-ACTIONS"><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button></div>' : '') :
+                '<div class="MER-REG-ACTIONS">' + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + (e.cls === 'attente' || e.cls === 'retard' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', true)">🔔 Relancer pour le CR</button>' : '') +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', false)">✉ Message</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_SUPPRIMER(\'' + ref + '\')">Supprimer</button></div>');
         return '<div class="MER-REG-LIGNE ' + e.cls + '">' + tete + MER_REG_FRISE(x, e) + corps + '</div>';
@@ -3869,16 +3883,77 @@ function TPL_REGISTRE() {
     var avecMontants = l.filter(function(x) { return (x.crs || []).length; });
     var tot = avecMontants.reduce(function(a, x) { var m = MER_REG_MONTANTS(x); Object.keys(a).forEach(function(k) { a[k] += m[k]; }); return a; }, { repas: 0, hebergement: 0, transports: 0, ik: 0, tc: 0, total: 0 });
     var vide = { tout: 'Aucune mission dans le registre pour l\'instant.', avenir: 'Aucune mission à venir.', encours: 'Aucune mission en cours.', attente: 'Aucun compte-rendu attendu.', retard: 'Aucun compte-rendu en retard.', ok: 'Aucun compte-rendu rendu pour l\'instant.' }[filtre];
-    return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="OUVRIR_DOSSIER(\'CHORUS\', null)">‹ Dossiers</button><span class="MER-REG-ENTREE-IC petit">📋</span><b>Registre des OMR</b></div>' +
+    return '<div class="MER-REG-ZONE' + (MER_REGISTRE_PLEIN ? ' plein' : '') + '"><div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="' + (MER_REGISTRE_PLEIN ? 'REGISTRE_PLEIN(false); ' : '') + 'OUVRIR_DOSSIER(\'CHORUS\', null)">‹ Dossiers</button><span class="MER-REG-ENTREE-IC petit">📋</span><b>Registre des OMR</b>' +
+        '<button type="button" class="MER-REG-PLEIN-BTN" onclick="REGISTRE_PLEIN(' + !MER_REGISTRE_PLEIN + ')">' + (MER_REGISTRE_PLEIN ? '✕ Quitter le plein écran' : '⛶ Plein écran') + '</button></div>' +
         '<div class="MER-REG-FILTRES">' + MER_REG_FILTRES.map(puce).join('') + '</div>' +
-        '<p class="MER-HINT" style="margin:0 0 10px;">Registre commun à tous les assistants Chorus DT de l\'unité : chaque mission, dans l\'ordre des n° OMR, avec son étape (à venir, en cours, compte-rendu attendu au plus tard ' + MER_REGISTRE_DELAI + ' jours après la fin, en retard, validé). Il se met à jour avec « Relever maintenant ».</p>' +
+        '<p class="MER-HINT" style="margin:0 0 10px;">Registre commun à tous les assistants Chorus DT de l\'unité : chaque mission, dans l\'ordre des n° OMR, avec son étape (à venir, en cours, compte-rendu attendu au plus tard ' + MER_REGISTRE_DELAI + ' jours après la fin, en retard, validé). Il se met à jour tout seul toutes les 30 secondes ; « ✏ Corriger les montants » si un montant est faux.</p>' +
         (lignes || '<div class="MER-EMPTY">' + vide + '</div>') +
         (avecMontants.length ? '<div class="MER-REG-TOTAL"><span>Total des ' + avecMontants.length + ' compte' + (avecMontants.length > 1 ? 's' : '') + '-rendu' + (avecMontants.length > 1 ? 's' : '') + ' de cette liste</span><b>' + MER_EUROS(tot.total) + '</b>' +
             '<div class="MER-REG-GRILLE montants MER-REG-SOMMES">' + [['Repas', 'repas'], ['Hébergement', 'hebergement'], ['Transports', 'transports'], ['IK', 'ik'], ['Transp. commun', 'tc'], ['Total', 'total']].map(function(c) {
                 return '<span' + (c[1] === 'total' ? ' class="total"' : '') + '><small>' + c[0] + '</small>' + MER_EUROS(Math.round(tot[c[1]] * 100) / 100) + '</span>'; }).join('') + '</div></div>' : '') +
         '<div class="MER-REG-PIED"><button type="button" class="BTN BTN-PRIMARY" onclick="REGISTRE_PDF()"' + (l.length ? '' : ' disabled') + '>📄 PDF de cette liste</button>' +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_SERIE()">🔢 Numérotation OMR (nouvelle série)</button>' +
-        '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_VIDER()">🗑 Tout effacer et repartir à 0001</button></div>';
+        '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_VIDER()">🗑 Tout effacer et repartir à 0001</button></div></div>';
+}
+// Page Chorus DT réaffichée sans perdre l'endroit où l'on était (page, ou registre en plein écran).
+function MER_REG_REAFFICHER() {
+    var y = window.scrollY, z = document.querySelector('.MER-REG-ZONE.plein'), zy = z ? z.scrollTop : 0;
+    SHOW_PAGE('CHORUS'); window.scrollTo(0, y);
+    var z2 = document.querySelector('.MER-REG-ZONE.plein'); if (z2) z2.scrollTop = zy;
+}
+// Registre en plein écran (tableau seul, sur tout l'écran ; vrai plein écran quand l'appareil le permet).
+function REGISTRE_PLEIN(oui) {
+    MER_REGISTRE_PLEIN = !!oui;
+    var d = document, el = d.documentElement;
+    try {
+        if (oui && !d.fullscreenElement && el.requestFullscreen) el.requestFullscreen().catch(function() {});
+        if (!oui && d.fullscreenElement && d.exitFullscreen) d.exitFullscreen().catch(function() {});
+    } catch (e) {}
+    if (PAGE_ACTUELLE === 'CHORUS' && MER_DOSSIER.CHORUS === 'registre') SHOW_PAGE('CHORUS');
+}
+document.addEventListener('fullscreenchange', function() {
+    // Sortie du plein écran par la touche Échap ou le geste du téléphone : le registre reprend sa place.
+    if (!document.fullscreenElement && MER_REGISTRE_PLEIN) REGISTRE_PLEIN(false);
+});
+// Correction des montants d'une ligne par l'assistant Chorus DT (erreur de saisie, justificatif manquant…) :
+// enregistrée dans le registre commun, visible par tous les assistants ; le total et le PDF en tiennent compte.
+function REGISTRE_CORRIGER(ref) {
+    var x = REGISTRE_LIGNE(ref); if (!x) return;
+    var m = MER_REG_MONTANTS(x), brut = MER_REG_MONTANTS(x, true), corr = MER_REG_CORRIGES(x);
+    AFFICHER_MODALE('Corriger les montants',
+        '<p style="font-size:0.86em; line-height:1.5;">' + (x.omr ? '<b>OMR N°' + ESC(x.omr) + '</b> — ' : '') + ESC(x.objet || '') + '</p>' +
+        '<div class="MER-REG-CORR-GRILLE">' + MER_REG_RUBRIQUES.map(function(r) {
+            return '<div class="MER-FIELD"><label for="MER-CORR-' + r[0] + '">' + r[1] + '</label><input type="text" inputmode="decimal" id="MER-CORR-' + r[0] + '" data-k="' + r[0] + '" value="' + String(m[r[0]].toFixed(2)).replace('.', ',') + '" oninput="REGISTRE_CORRIGER_TOTAL()">' +
+                '<small class="MER-HINT">Compte-rendu : ' + MER_EUROS(brut[r[0]]) + '</small></div>';
+        }).join('') + '</div>' +
+        '<div class="MER-REG-TOTAL" style="margin-top:10px;"><span>Total corrigé</span><b id="MER-CORR-TOTAL">' + MER_EUROS(m.total) + '</b></div>' +
+        '<p class="MER-HINT">La correction est faite pour tous les assistants Chorus DT de l\'unité. Le total de la ligne, celui du bas du registre et le PDF en tiennent compte. Le compte-rendu reçu n\'est pas modifié.</p>',
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Annuler</button>' +
+        (corr.length ? '<button type="button" class="BTN BTN-GHOST" onclick="REGISTRE_CORRIGER_OK(\'' + ESC(ref).replace(/'/g, '') + '\', true)">Revenir aux montants du CR</button>' : '') +
+        '<button type="button" class="BTN BTN-PRIMARY" id="MER-CORR-GO" onclick="REGISTRE_CORRIGER_OK(\'' + ESC(ref).replace(/'/g, '') + '\')">Enregistrer</button>');
+}
+function REGISTRE_CORRIGER_VAL(k) {
+    var el = document.getElementById('MER-CORR-' + k); if (!el) return NaN;
+    var v = el.value.replace(/\s|€/g, '').replace(',', '.');
+    return v === '' ? 0 : parseFloat(v);
+}
+function REGISTRE_CORRIGER_TOTAL() {
+    var t = 0, ok = true;
+    MER_REG_RUBRIQUES.forEach(function(r) { var v = REGISTRE_CORRIGER_VAL(r[0]); if (isNaN(v) || v < 0) ok = false; else t += v; });
+    var z = document.getElementById('MER-CORR-TOTAL'); if (z) z.textContent = ok ? MER_EUROS(Math.round(t * 100) / 100) : 'montant à vérifier';
+    var b = document.getElementById('MER-CORR-GO'); if (b) b.disabled = !ok;
+}
+function REGISTRE_CORRIGER_OK(ref, annuler) {
+    var x = REGISTRE_LIGNE(ref); if (!x) return;
+    var brut = MER_REG_MONTANTS(x, true), c = {};
+    if (!annuler) {
+        var mauvais = MER_REG_RUBRIQUES.filter(function(r) { var v = REGISTRE_CORRIGER_VAL(r[0]); return isNaN(v) || v < 0; });
+        if (mauvais.length) { MSG_ERREUR('Montant à vérifier', mauvais.map(function(r) { return r[1]; }).join(', ') + ' : indiquez un montant en euros (ex. 45,50).'); return; }
+        MER_REG_RUBRIQUES.forEach(function(r) { var v = Math.round(REGISTRE_CORRIGER_VAL(r[0]) * 100) / 100; if (Math.abs(v - brut[r[0]]) > 0.004) c[r[0]] = v; });
+    }
+    // Objet vide (et non retiré) : le serveur garde sinon l'ancienne correction en fusionnant les versions.
+    JUMELAGE_REGISTRE_MAJ(ref, { corriges: c, corrigesPar: Object.keys(c).length ? (window.JUMELAGE_QUI ? JUMELAGE_QUI() : '') || 'ASSIST CHORUS DT' : '', corrigesLe: Object.keys(c).length ? Date.now() : 0 });
+    FERMER_MODALE(); MER_REG_REAFFICHER();
 }
 function REGISTRE_LIGNE(ref) { return (window.JUMELAGE_REGISTRE ? JUMELAGE_REGISTRE() : []).filter(function(x) { return x.ref === ref; })[0]; }
 function REGISTRE_SUPPRIMER(ref) {
@@ -3996,7 +4071,7 @@ function REGISTRE_PDF() {
     try { doc.save('Registre OMR - ' + nomFiltre.toLowerCase() + ' - ' + new Date().toISOString().slice(0, 10) + '.pdf'); }
     catch (e) { MSG_ERREUR('PDF impossible', e.message || String(e)); }
 }
-window.addEventListener('trigone-registre', function() { if (typeof PAGE_ACTUELLE !== 'undefined' && PAGE_ACTUELLE === 'CHORUS' && !MER_RESULTATS_VERIF) { var y = window.scrollY; SHOW_PAGE('CHORUS'); window.scrollTo(0, y); } });
+window.addEventListener('trigone-registre', function() { if (typeof PAGE_ACTUELLE !== 'undefined' && PAGE_ACTUELLE === 'CHORUS' && !MER_RESULTATS_VERIF) MER_REG_REAFFICHER(); });
 // Compte-rendu de mission reçu : ses fichiers (PDF du compte-rendu, justificatifs) à télécharger.
 var MER_CR_OUVERT = null;
 function OUVRIR_CR_RECU(id) {
