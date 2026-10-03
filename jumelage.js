@@ -3312,6 +3312,27 @@
         }, Promise.resolve());
     }
     window.JUMELAGE_REGISTRE = function() { return registreLire(); };
+    // Heures réelles d'une mission (Compte-rendu : départ, arrivée sur site, départ du site, retour) envoyées au registre
+    // des assistants Chorus DT. Sans réseau ou demande pas encore au registre : gardées et renvoyées au prochain relevé.
+    var CLE_JALONS = 'trigone_jalons_file', jalonsEnCours = null;
+    window.JUMELAGE_JALONS = function(omr, mref, jalons) {
+        if (omr || mref) { var f = lireJSON(CLE_JALONS) || {}; f[omr || mref] = { omr: omr || '', mref: mref || '', jalons: jalons || {}, le: Date.now() }; ecrireTxt(CLE_JALONS, JSON.stringify(f)); }
+        if (!monCompte() || !navigator.onLine) return Promise.resolve(false);
+        if (jalonsEnCours) return jalonsEnCours.then(function() { return window.JUMELAGE_JALONS(); });
+        var f0 = lireJSON(CLE_JALONS) || {}, cles = Object.keys(f0);
+        jalonsEnCours = cles.reduce(function(suite, k) {
+            return suite.then(function() {
+                var x = f0[k];
+                return appelApi('registre/jalons', { methode: 'POST', corps: { omr: x.omr, mref: x.mref, jalons: x.jalons } }).then(function(r) {
+                    // Envoyé (ou mission plus au registre depuis 60 jours) : retiré de la file, s'il n'a pas changé entre-temps.
+                    if (r.ok || Date.now() - x.le > 60 * 86400000) { var f = lireJSON(CLE_JALONS) || {}; if (f[k] && f[k].le === x.le) { delete f[k]; ecrireTxt(CLE_JALONS, JSON.stringify(f)); } }
+                }, function(e) {
+                    if (e && e.statut === 403) { var f = lireJSON(CLE_JALONS) || {}; delete f[k]; ecrireTxt(CLE_JALONS, JSON.stringify(f)); }
+                });
+            });
+        }, Promise.resolve()).then(function() { jalonsEnCours = null; return true; });
+        return jalonsEnCours;
+    };
     window.JUMELAGE_REGISTRE_MAJ = function(ref, maj) {
         var l = registreLire();
         if (maj === null) l = l.filter(function(y) { return y.ref !== ref; });
@@ -3447,6 +3468,7 @@
             releveEnCours = null;
             window.JUMELAGE_REGISTRE_SYNCHRO();   // registre OMR commun aux assistants Chorus DT
             window.JUMELAGE_BOITE_ETATS();        // envois déjà traités sur un autre de mes appareils
+            if (lireTxt(CLE_JALONS).length > 2) window.JUMELAGE_JALONS();   // heures de mission en attente d'envoi
             if (releveARefaire) { releveARefaire = false; return window.JUMELAGE_RELEVER().then(function(m) { return n + m; }); }
             return n;
         });

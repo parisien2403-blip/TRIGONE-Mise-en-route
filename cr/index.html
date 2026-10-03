@@ -7279,6 +7279,16 @@ window.JUMELAGE_PEUT_RECHARGER = function() {
     var visible = function(id) { var el = document.getElementById(id); return el && !el.classList.contains('HIDDEN'); };
     return visible('P0') && ECRAN_LIBRE() && !visible('PIN-OVERLAY') && !visible('MER-LISTE-OVERLAY') && !DEMO_MODE_ACTIF;
 };
+// Heures réelles de la mission (départ, arrivée sur site, départ du site, retour) → registre des assistants Chorus DT,
+// pour une mission partie d'une mise en route (n° OMR ou référence de la demande). Envoyées à chaque changement.
+function JALONS_REGISTRE() {
+    if (DEMO_MODE_ACTIF || M.IS_PAX || !window.JUMELAGE_JALONS || !(M.OMR || M.MER_REF)) return;
+    var j = { depart: M.DEBUT || '', surSite: M.ARR_SITE || '', departSite: M.DEP_SITE || '', retour: M.FIN_RETOUR_HORODATE || '' };
+    if (!j.depart) return;
+    var sig = (M.OMR || M.MER_REF) + '|' + [j.depart, j.surSite, j.departSite, j.retour].join('|');
+    try { if (localStorage.getItem('trigone_jalons_sig') === sig) return; localStorage.setItem('trigone_jalons_sig', sig); } catch (e) {}
+    window.JUMELAGE_JALONS(M.OMR || '', M.MER_REF || '', j);
+}
 function SAVE_STATE() {
     // Filet de sécurité absolu : pendant la démonstration, M contient des données d'exemple, jamais
     // les vraies. Tant que ce drapeau est actif, aucune écriture ne doit atteindre le stockage réel.
@@ -7289,6 +7299,7 @@ function SAVE_STATE() {
     // visibilitychange au moment du rechargement qui suit. Sans ce garde-fou, la mission tout juste
     // effacée réapparaissait après le rechargement, ramenant le missionnaire sur l'écran d'envoi.
     if (MISSION_FERMETURE_EN_COURS) return;
+    try { JALONS_REGISTRE(); } catch (e) {}
     try {
         if (HAS_ACTIVE_MISSION_DATA(M)) {
             localStorage.setItem('mission_data', JSON.stringify(CLONE_M_FOR_STORAGE(M)));

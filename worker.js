@@ -106,6 +106,9 @@ function registreFusion(a, b) {
     r.crs = registreUnirCrs(a.crs, b.crs);
     r.relances = Array.from(new Set((a.relances || []).concat(b.relances || []))).sort((x, y) => x - y);
     r.relancesQui = Object.assign({}, a.relancesQui || {}, b.relancesQui || {});
+    // Heures réelles de la mission (départ, sur site, départ du site, retour) : envoyées par le missionnaire lui-même ;
+    // la version du serveur l'emporte sur la copie d'un assistant.
+    if (a.jalons || b.jalons) r.jalons = Object.assign({}, b.jalons || {}, a.jalons || {});
     if (a.omr) r.omr = a.omr;
     return r;
 }
@@ -956,6 +959,32 @@ async function api(requete, env, url, ctx) {
         const r = (await db.prepare('SELECT ref, donnees, maj, supprime, par FROM registre WHERE unite = ? AND maj >= ? ORDER BY maj LIMIT 2000').bind(u, depuis).all()).results || [];
         return json({ ok: true, lignes: r.map(x => ({ ref: x.ref, supprime: !!x.supprime, par: x.par, maj: x.maj, ligne: x.supprime ? null : JSON.parse(x.donnees || '{}') })),
             dernier: r.reduce((m, x) => Math.max(m, x.maj), depuis) });
+    }
+    // Heures réelles de sa mission, envoyées par le missionnaire depuis Compte-rendu (appuis Départ, Arrivée sur site,
+    // Départ du site, Retour) : { omr, mref, jalons: { depart, surSite, departSite, retour } }. Seuls le demandeur et
+    // les personnes de la demande (matricule rattaché à leur compte) peuvent les donner.
+    if (chemin === 'registre/jalons' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({}));
+        const omr = String(c.omr || '').slice(0, 30), mref = String(c.mref || '').slice(0, 64);
+        if (!omr && !mref) return erreur(400, 'Mission inconnue.');
+        const db = await baseBoite(env), u = UNITE_REGISTRE;
+        const ligne = await db.prepare("SELECT * FROM registre WHERE unite = ? AND supprime = 0 AND ((? <> '' AND omr = ?) OR (? <> '' AND (ref = ? OR mref = ?))) ORDER BY maj DESC LIMIT 1")
+            .bind(u, omr, omr, mref, mref, mref).first();
+        if (!ligne) return json({ ok: false, attente: true });   // demande pas encore au registre : l'appli réessaiera
+        const d = JSON.parse(ligne.donnees || '{}');
+        let autorise = d.mailDemandeur === moi.mail;
+        for (const p of (d.personnes || [])) {
+            if (autorise) break;
+            const nid = chiffresNid(p.nid);
+            if (nid && await kv.get('nid:' + await empreinteNid(env, nid)) === moi.mail) autorise = true;
+        }
+        if (!autorise) return erreur(403, 'Cette mission n\'est pas la vôtre.');
+        const j = {};
+        ['depart', 'surSite', 'departSite', 'retour'].forEach(k => { const v = String((c.jalons || {})[k] || '').slice(0, 30); if (/^[\d\/: ,.-]+$/.test(v)) j[k] = v; });
+        d.jalons = Object.assign({}, d.jalons || {}, j);
+        const le = Date.now();
+        await registreEcrireLigne(db, u, d, le, moi.mail);
+        return json({ ok: true });
     }
     // Remise à zéro du registre (assistant Chorus DT) : toutes les lignes marquées supprimées (les autres assistants les
     // retirent à leur prochaine relève), et la numérotation OMR repart à 0001 sans préfixe.

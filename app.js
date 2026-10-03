@@ -3830,22 +3830,42 @@ function MER_REG_ATTENDUS(x) { return Math.max(1, (x.personnes || []).length); }
 function MER_REG_RENDU(x) { return x.sansDemande || (x.crs || []).length >= MER_REG_ATTENDUS(x); }
 // Étape de la mission, ligne par ligne : à venir → en cours → CR attendu (ou en retard) → validé, CR rendu.
 function MER_REG_DATE(v, finJour) { if (!v) return null; var d = new Date(v); if (isNaN(d)) return null; if (finJour && !d.getHours() && !d.getMinutes()) d.setHours(23, 59, 59); return d; }
+// Heures réelles envoyées par le missionnaire depuis Compte-rendu (« 10/10/2026 07:42:00 ») : x.jalons.depart, surSite,
+// departSite, retour. Date, ou null.
+function MER_REG_JALON(x, k) {
+    var v = (x.jalons || {})[k], m = /^(\d{2})\/(\d{2})\/(\d{4})[ ,]+(\d{1,2}):(\d{2})/.exec(String(v || ''));
+    return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) : null;
+}
+function MER_REG_QUAND(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + ' à ' + ('0' + d.getHours()).slice(-2) + 'h' + ('0' + d.getMinutes()).slice(-2); }
 function MER_REG_ETAT(x) {
     var n = (x.crs || []).length, att = MER_REG_ATTENDUS(x);
     if (MER_REG_RENDU(x)) return { cls: 'ok', txt: '✔ Validé — CR rendu' + (n > 1 ? 's' : '') };
     var ech = MER_REG_ECHEANCE(x), maint = new Date(), deb = MER_REG_DATE(x.debut), fin = MER_REG_DATE(x.fin, true);
     var part = n ? ' · ' + n + '/' + att + ' CR' : '';
+    // Heures réelles d'abord : parti mais pas rentré = en cours, quelles que soient les dates prévues.
+    var dr = MER_REG_JALON(x, 'depart'), rr = MER_REG_JALON(x, 'retour'), sr = MER_REG_JALON(x, 'surSite'), qr = MER_REG_JALON(x, 'departSite');
+    if (dr && !rr) return { cls: 'encours', txt: (qr ? 'Retour en route · parti du site le ' + MER_REG_QUAND(qr) : sr ? 'Sur site depuis le ' + MER_REG_QUAND(sr) : 'Mission en cours · parti le ' + MER_REG_QUAND(dr)) + part };
+    if (rr) {
+        if (ech && maint > ech) return { cls: 'retard', txt: '⚠ En retard (depuis le ' + ech.toLocaleDateString('fr-FR') + ')' + part };
+        return { cls: 'attente', txt: 'Rentré le ' + MER_REG_QUAND(rr) + ' · CR attendu' + (ech ? ' avant le ' + ech.toLocaleDateString('fr-FR') : '') + part };
+    }
     if (deb && maint < deb) return { cls: 'avenir', txt: 'Mission à venir · départ le ' + deb.toLocaleDateString('fr-FR') + part };
     if (fin && maint <= fin) return { cls: 'encours', txt: 'Mission en cours · retour le ' + fin.toLocaleDateString('fr-FR') + part };
     if (ech && maint > ech) return { cls: 'retard', txt: '⚠ En retard (depuis le ' + ech.toLocaleDateString('fr-FR') + ')' + part };
     return { cls: 'attente', txt: 'Mission terminée · CR attendu' + (ech ? ' avant le ' + ech.toLocaleDateString('fr-FR') : '') + part };
 }
 // Frise de la ligne : demande validée, départ, retour, compte-rendu rendu.
+// Avec les heures réelles du missionnaire (Compte-rendu) : départ, sur site, retour suivent ses appuis, heure affichée.
+// Sans elles : départ et retour suivent les dates prévues de la demande.
 function MER_REG_FRISE(x, e) {
-    var maint = new Date(), deb = MER_REG_DATE(x.debut), fin = MER_REG_DATE(x.fin, true);
-    var etapes = [['Demande validée', true], ['Départ', e.cls === 'ok' || (deb && maint >= deb)], ['Retour', e.cls === 'ok' || (fin && maint > fin)], ['CR rendu', e.cls === 'ok']];
+    var maint = new Date(), deb = MER_REG_DATE(x.debut), fin = MER_REG_DATE(x.fin, true), ok = e.cls === 'ok';
+    var J = { depart: MER_REG_JALON(x, 'depart'), surSite: MER_REG_JALON(x, 'surSite'), departSite: MER_REG_JALON(x, 'departSite'), retour: MER_REG_JALON(x, 'retour') }, reel = !!J.depart;
+    var etapes = reel ? [['Demande validée', true], ['Départ', true, J.depart], ['Sur site', !!(J.surSite || J.departSite || J.retour) || ok, J.surSite], ['Retour', !!J.retour || ok, J.retour], ['CR rendu', ok]]
+        : [['Demande validée', true], ['Départ', ok || (deb && maint >= deb)], ['Sur site', ok || (deb && maint >= deb)], ['Retour', ok || (fin && maint > fin)], ['CR rendu', ok]];
     var courante = -1; etapes.forEach(function(t, i) { if (t[1]) courante = i; });
-    return '<div class="MER-REG-FRISE ' + e.cls + '">' + etapes.map(function(t, i) { return '<span class="' + (t[1] ? 'fait' : '') + (i === courante ? ' ici' : '') + '"><i></i>' + t[0] + '</span>'; }).join('') + '</div>';
+    return '<div class="MER-REG-FRISE ' + e.cls + (reel ? ' reel' : '') + '"' + (reel ? '' : ' title="Départ et retour d\'après les dates prévues de la demande"') + '>' + etapes.map(function(t, i) {
+        return '<span class="' + (t[1] ? 'fait' : '') + (i === courante ? ' ici' : '') + '"><i></i>' + t[0] + (t[2] ? '<em>' + MER_REG_QUAND(t[2]).replace(' à ', '<br>') + '</em>' : '') + '</span>';
+    }).join('') + '</div>' + (reel ? '' : (e.cls === 'encours' ? '<p class="MER-HINT MER-REG-PREVU">Étapes d\'après les dates prévues : le missionnaire n\'a pas encore horodaté sa mission dans Compte-rendu.</p>' : ''));
 }
 // Montants d'une ligne : somme de ses comptes-rendus, puis corrections de l'assistant Chorus DT (x.corriges, communes à
 // tous les assistants ; le total est alors recalculé). brut : montants des comptes-rendus, sans les corrections.

@@ -160,6 +160,17 @@ module.exports = async function() {
     await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1500);
     const reg2 = await c2.evaluate(p => JUMELAGE_REGISTRE().filter(x => String(x.omr).indexOf(p) === 0), pref);
     verifier(reg2.length === 1 && reg2[0].ref === d.id && (reg2[0].crs || []).length === 1 && !!reg2[0].recuPar, '2e assistant : même registre (ligne et CR reçus par le 1er ; ligne supprimée absente)');
+    // Heures réelles de la mission, envoyées par le missionnaire depuis Compte-rendu → registre des assistants, en direct.
+    const jal = { depart: '10/09/2026 07:42:00', surSite: '10/09/2026 11:05:00', departSite: '', retour: '' };
+    await m.evaluate(([o, r, j]) => JUMELAGE_JALONS(o, r, j), [d.omr, d.id, jal]); await attendre(800);
+    verifier(await m.evaluate(() => !JSON.parse(localStorage.getItem('trigone_jalons_file') || '{}') || !Object.keys(JSON.parse(localStorage.getItem('trigone_jalons_file') || '{}')).length), 'missionnaire : heures de départ et d\'arrivée sur site envoyées au registre');
+    await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1200);
+    const live = await c2.evaluate(r => { const x = JUMELAGE_REGISTRE().find(y => y.ref === r); const f = MER_REG_FRISE(x, MER_REG_ETAT(x)); return { j: (x.jalons || {}).surSite, f: f }; }, d.id);
+    verifier(live.j === jal.surSite && /Sur site/.test(live.f) && /10\/09<br>07h42/.test(live.f) && /10\/09<br>11h05/.test(live.f), 'assistant : la frise montre l\'heure réelle du départ et de l\'arrivée sur site');
+    verifier(await c2.evaluate(() => { const e = MER_REG_ETAT({ personnes: [{}], jalons: { depart: '10/10/2026 07:42:00', surSite: '10/10/2026 11:05:00' } }); return e.cls === 'encours' && /Sur site depuis le 10\/10 à 11h05/.test(e.txt); }), 'assistant : « Sur site depuis le … » tant que le missionnaire n\'est pas reparti');
+    const refusJ = await c2.evaluate(([o, r]) => { localStorage.removeItem('trigone_jalons_file'); return JUMELAGE_JALONS(o, r, { depart: '01/01/2026 00:00:00' }).then(() => JSON.parse(localStorage.getItem('trigone_jalons_file') || '{}')); }, [d.omr, d.id]);
+    await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1000);
+    verifier(!Object.keys(refusJ).length && await c2.evaluate(r => (JUMELAGE_REGISTRE().find(y => y.ref === r).jalons || {}).depart, d.id) === jal.depart, 'heures refusées à un compte qui n\'est pas sur la demande');
     verifier(await c2.evaluate(r => { const x = JUMELAGE_REGISTRE().find(y => y.ref === r); return MER_REG_MONTANTS(x).total === 252.3 && MER_REG_MONTANTS(x, true).total === 247.8; }, d.id), '2e assistant : voit la correction des montants du 1er (total corrigé)');
     await c2.evaluate(r => REGISTRE_CORRIGER_OK(r, true), d.id); await attendre(300);
     await c2.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(800);
@@ -207,6 +218,11 @@ module.exports = async function() {
     await m.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); });
     verifier(await m.evaluate(x => { APPLIQUER_MISE_EN_ROUTE(x); return M.OMR === x.omr && M.MER_REF === x.id; }, d), 'Compte-rendu « À partir d\'une mise en route » : n° OMR et demande repris');
     verifier(await m.evaluate(() => { const o = MONTANTS_CR(M); return typeof o.total === 'number' && 'ik' in o && 'repas' in o; }), 'Compte-rendu : montants envoyés avec le CR (repas, hébergement, transports, IK, total)');
+    // Appui « Départ » dans Compte-rendu : l'heure part vers le registre (file d'envoi, renvoyée au prochain relevé).
+    const fileJ = await m.evaluate(() => { localStorage.removeItem('trigone_jalons_sig'); const av = window.JUMELAGE_JALONS; let vu = null; window.JUMELAGE_JALONS = (o, r, j) => { vu = { o, r, j }; return Promise.resolve(); };
+        const m0 = { OMR: M.OMR, MER_REF: M.MER_REF, DEBUT: M.DEBUT }; M.OMR = 'T-0001'; M.MER_REF = 'ref-test'; M.DEBUT = '10/10/2026 07:42:00'; JALONS_REGISTRE(); const deux = vu; vu = null; JALONS_REGISTRE();
+        Object.assign(M, m0); window.JUMELAGE_JALONS = av; return { deux, encore: vu }; });
+    verifier(fileJ.deux && fileJ.deux.o === 'T-0001' && fileJ.deux.j.depart === '10/10/2026 07:42:00' && fileJ.encore === null, 'Compte-rendu : l\'heure de départ est envoyée au registre, une seule fois tant qu\'elle ne change pas');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
     await b.close();
 };
