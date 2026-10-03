@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 154,
-  "notifier": false,
-  "message": "Notice TRIGONE : chapitre « Protection de vos données » en langage courant, détail technique en annexe ; captures à jour."
+  "build": 155,
+  "notifier": true,
+  "message": "Registre des OMR : un seul tableau, l'étape de chaque mission (à venir, en cours, CR attendu, en retard, validé), mis à jour tout seul."
 }

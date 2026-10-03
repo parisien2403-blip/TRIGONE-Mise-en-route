@@ -42,12 +42,12 @@ module.exports = async function() {
     }, [dem, MAILS.C, debut.toISOString().slice(0, 16), fin.toISOString().slice(0, 16)]);
     await envoyer(d); await envoyer(d2);
     await c.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
-    await c.evaluate(() => OUVRIR_REGISTRE('mer')); await attendre(600);
+    await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(600);
     // Registre commun : il peut contenir les lignes d'autres essais ; on ne regarde que celles de cette série.
     const reg = await c.evaluate(p => JUMELAGE_REGISTRE().filter(x => String(x.omr).indexOf(p) === 0), pref);
     verifier(reg.length === 2 && reg.every(x => x.omr && x.codeFD && x.personnes.length), 'registre : une ligne par demande validée reçue (n° OMR, code FD, personnel)');
     const texte = await c.evaluate(() => document.querySelector('.CARD').textContent);
-    verifier(texte.indexOf('N°' + pref + '0007') < texte.indexOf('N°' + pref + '0008') && /En retard/.test(texte), 'onglet Mises en route : ordre des n° OMR, « En retard » (fin de mission + 30 jours dépassée)');
+    verifier(texte.indexOf('N°' + pref + '0007') < texte.indexOf('N°' + pref + '0008') && /En retard/.test(texte) && await c.evaluate(() => document.querySelectorAll('.MER-REG-FRISE').length > 0 && document.querySelectorAll('.MER-REG-FILTRE').length === 6), 'registre unique : ordre des n° OMR, frise par ligne, filtres, « En retard » (fin de mission + 30 jours dépassée)');
     // Relance du missionnaire : message dans sa boîte TRIGONE (Questions).
     await c.evaluate(r => REGISTRE_MESSAGE(r, true), d.id); await attendre(1500);
     verifier(/Rappel : votre compte-rendu/.test(await c.inputValue('#MER-REG-TXT')), 'relance : texte de rappel prérempli (modifiable)');
@@ -60,14 +60,17 @@ module.exports = async function() {
     await m.evaluate(([dest, omr, ref]) => JUMELAGE_ENVOYER_DIRECT(dest, 'CR', 'cr.pdf', JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: 'SGT DUPONT Jean', libelle: 'Formation', dates: '', corps: '', fichiers: [],
         omr: omr, mref: ref, montants: { repas: 45.5, hebergement: 120, transports: 0, ik: 82.3, tc: 0, total: 247.8 } })), [MAILS.C, d.omr, d.id]);
     await c.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
-    await c.evaluate(() => OUVRIR_REGISTRE('cr')); await attendre(600);
+    await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(600);
     const t2 = await c.evaluate(() => document.querySelector('.CARD').textContent);
-    verifier(/Validé/.test(t2) && t2.indexOf(pref + '0007') >= 0 && /247,80/.test(t2) && /82,30/.test(t2), 'onglet Comptes-rendus rendus : ligne validée, montants (repas, hébergement, IK…) et total');
-    await c.evaluate(() => OUVRIR_REGISTRE('mer')); await attendre(400);
-    verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') < 0, 'la ligne rendue a quitté l\'onglet Mises en route');
+    verifier(/Validé/.test(t2) && t2.indexOf(pref + '0007') >= 0 && /247,80/.test(t2) && /82,30/.test(t2), 'registre : la ligne passe à « Validé — CR rendu », avec ses montants (repas, hébergement, IK…) et le total');
+    await c.evaluate(() => OUVRIR_REGISTRE('retard')); await attendre(400);
+    verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') < 0, 'filtre « En retard » : la ligne rendue n\'y est plus');
+    await c.evaluate(() => OUVRIR_REGISTRE('ok')); await attendre(400);
+    verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') >= 0, 'filtre « CR rendus » : la ligne rendue y est');
+    await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(400);
     // PDF de l'onglet, et suppression d'une ligne (mission annulée).
     const dl = c.waitForEvent('download', { timeout: 15000 }); await c.evaluate(() => REGISTRE_PDF());
-    verifier(/Registre OMR - mises en route/.test((await dl).suggestedFilename()), 'PDF du registre (onglet affiché)');
+    verifier(/Registre OMR - toutes/.test((await dl).suggestedFilename()), 'PDF du registre (liste affichée)');
     await c.evaluate(r => REGISTRE_SUPPRIMER(r), d2.id); await attendre(400);
     await c.click('#MSG-OVERLAY .BTN-PRIMARY, #MSG-OVERLAY .MSG-BTN-CONFIRM').catch(() => c.evaluate(() => { const b = [...document.querySelectorAll('#MSG-OVERLAY button')].find(x => /Supprimer/.test(x.textContent)); b && b.click(); }));
     await attendre(400);
@@ -94,12 +97,15 @@ module.exports = async function() {
     const l1 = await c.evaluate(o => JUMELAGE_REGISTRE().filter(x => x.omr === o), d3.omr), l2 = await c2.evaluate(o => JUMELAGE_REGISTRE().filter(x => x.omr === o), d3.omr);
     verifier(l1.length === 1 && l2.length === 1 && l1[0].ref === d3.id && l2[0].ref === d3.id && (l1[0].crs || []).length === 1 && (l2[0].crs || []).length === 1,
         'demande chez le 1er, CR chez le 2e : réunis sur une seule ligne, chez les deux');
-    // Relance par le 2e, suppression par le 2e : visibles chez le 1er.
+    // Relance par le 2e, suppression par le 2e : visibles chez le 1er. Registre ouvert chez le 1er : mis à jour tout seul (30 s).
+    await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(1500);
     await c2.evaluate(r => JUMELAGE_REGISTRE_MAJ(r, { relances: [Date.now()], relancesQui: { 1: 'ADJ TEST' } }), d3.id); await attendre(1200);
     await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1000);
     verifier(await c.evaluate(r => (JUMELAGE_REGISTRE().filter(x => x.ref === r)[0].relances || []).length === 1, d3.id), 'relance faite par le 2e : visible chez le 1er');
+    verifier(await c.evaluate(o => [...document.querySelectorAll('.MER-REG-LIGNE')].some(e => e.textContent.indexOf('N°' + o) >= 0), d3.omr), 'registre ouvert chez le 1er : la ligne y est');
     await c2.evaluate(r => JUMELAGE_REGISTRE_MAJ(r, null), d3.id); await attendre(1200);
-    await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(1000);
+    await attendre(32000);   // sans rien toucher chez le 1er
+    verifier(await c.evaluate(o => ![...document.querySelectorAll('.MER-REG-LIGNE')].some(e => e.textContent.indexOf('N°' + o) >= 0), d3.omr), 'registre ouvert chez le 1er : la suppression du 2e s\'affiche toute seule (relevé toutes les 30 s)');
     verifier(await c.evaluate(r => !JUMELAGE_REGISTRE().some(x => x.ref === r), d3.id), 'suppression faite par le 2e : la ligne disparaît chez le 1er');
     // Tout effacer et repartir à 0001 : registre vidé chez les deux assistants, numérotation remise à 0001.
     await c.evaluate(() => JUMELAGE_REGISTRE_SYNCHRO()); await attendre(800);

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 201;
+var APP_CODE_VERSION = 202;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3769,7 +3769,7 @@ function TPL_CHORUS() {
 // dates de mission, personnel, échéance du compte-rendu = fin de mission + 30 jours, marquant d'état) ; relance ou
 // message au(x) missionnaire(s) ; suppression (mission annulée). Onglet « Comptes-rendus » : les lignes dont le
 // compte-rendu est rendu, avec les montants déclarés et le total. PDF de chaque onglet. Nouvelle série de numéros.
-var MER_REGISTRE_ONGLET = 'tout', MER_REGISTRE_DELAI = 30;
+var MER_REGISTRE_ONGLET = 'tout', MER_REGISTRE_DELAI = 30, MER_REGISTRE_MINUTEUR = null;
 function MER_OMR_COMPARER(a, b) {
     if (!a.omr !== !b.omr) return a.omr ? -1 : 1;
     return String(a.omr || '').localeCompare(String(b.omr || ''), 'fr', { numeric: true }) || (a.recuLe || 0) - (b.recuLe || 0);
@@ -3830,6 +3830,11 @@ function OUVRIR_REGISTRE(filtre) {
     MER_REGISTRE_ONGLET = filtre && MER_REG_FILTRES.some(function(f) { return f[0] === filtre; }) ? filtre : (MER_REGISTRE_ONGLET === 'mer' ? 'tout' : MER_REGISTRE_ONGLET);
     MER_DOSSIER.CHORUS = 'registre'; SHOW_PAGE('CHORUS'); window.scrollTo(0, 0);
     if (window.JUMELAGE_REGISTRE_SYNCHRO) JUMELAGE_REGISTRE_SYNCHRO();   // changements faits par les autres assistants
+    // Tant que le registre est à l'écran : relevé toutes les 30 s (une ligne ou un CR reçu par un autre assistant apparaît tout seul).
+    if (!MER_REGISTRE_MINUTEUR) MER_REGISTRE_MINUTEUR = setInterval(function() {
+        if (PAGE_ACTUELLE !== 'CHORUS' || MER_DOSSIER.CHORUS !== 'registre') { clearInterval(MER_REGISTRE_MINUTEUR); MER_REGISTRE_MINUTEUR = null; return; }
+        if (document.visibilityState === 'visible' && window.JUMELAGE_REGISTRE_SYNCHRO) JUMELAGE_REGISTRE_SYNCHRO();
+    }, 30000);
 }
 function TPL_BOUTON_REGISTRE() {
     var f = MER_REGISTRE_FILTRES(), n = f.tout.length;
