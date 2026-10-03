@@ -33,7 +33,7 @@ module.exports = async function(srv) {
     });
     verifier(info.ouvert && info.flip, 'la notice s\'ouvre en livre (pages qui tournent)');
     verifier(info.couv && info.titre === 'Notice' && info.num === 'Couverture', 'couverture cuir « TRIGONE · Notice »');
-    verifier(info.pages > 80 && info.pages % 2 === 0 && info.chap === 16 && info.secu, 'contenu : ' + info.pages + ' pages, 16 chapitres dont « Protection des données et hébergement »');
+    verifier(info.pages > 80 && info.pages % 2 === 0 && info.chap === 17 && info.secu, 'contenu : ' + info.pages + ' pages, 16 chapitres et l\'annexe technique, dont « Protection de vos données »');
     // Aucune page ne déborde (format PC 566 et format téléphone allongé).
     const trop = await p.evaluate(() => {
         const N = window.NOTICE_TRIGONE, z = document.createElement('div'), r = []; z.style.cssText = 'position:fixed;left:-5000px;top:0'; document.body.appendChild(z);
@@ -71,7 +71,7 @@ module.exports = async function(srv) {
     verifier(await p.evaluate(() => document.querySelector('.N-NUM').textContent) === secu + ' / ' + info.pages, 'JUMELAGE_NOTICE(\'secu\') : ouverte sur « Protection des données »');
     await p.evaluate(() => document.querySelector('.JUM-NOTICE')._fermer()); await attendre(300);
     // Compte-rendu : bouton « Notice TRIGONE » dans la page Notice, chemins des images corrects
-    await p.goto(srv.url + 'cr/'); await attendre(2500);
+    await p.goto(srv.url + 'cr/'); await p.waitForFunction(() => typeof OUVRIR_NOTICE_MENU === 'function', null, { timeout: 15000 }); await attendre(1000);
     await p.evaluate(() => { const m = document.getElementById('MSG-OVERLAY'); if (m) m.style.display = 'none'; document.querySelectorAll('.JUM-CHOIX').forEach(e => e.remove()); OUVRIR_NOTICE_MENU(); }); await attendre(500);
     verifier(await p.evaluate(() => !!document.querySelector('#NOTICE-LIVRET .JUM-NOTICE-LIVRET')), 'Compte-rendu › Notice : bouton « Notice TRIGONE »');
     await p.click('#NOTICE-LIVRET .JUM-NOTICE-LIVRET'); await attendre(2500);
