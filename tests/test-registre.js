@@ -110,7 +110,15 @@ module.exports = async function() {
     await c.evaluate(() => JUMELAGE_FERMER_REGLAGES()); await attendre(300);
     const plus = await c.evaluate(() => JUMELAGE_UNITES().length);
     verifier(plus > 100 && choix.split(',')[0] === '5°RIISC' && pris === '5°RIISC' && /dans la liste/.test(refus) && JSON.stringify(await c.evaluate(() => JUMELAGE_REGLAGES_LIRE().unite)) === '"4°RIISC"', 'profil : unité choisie dans une liste filtrée (« 5 » → 5°RIISC), unité hors liste refusée (' + plus + ' unités ; ' + choix.slice(0, 60) + ')');
+    // Nature de l'OMR : individuel / collectif / international ; personnel d'une mission collective un nom par ligne.
+    const nat = await c.evaluate(() => {
+        const x = { personnes: [{ grade: 'ADJ', nom: 'A', prenom: 'Un' }, { grade: 'SGT', nom: 'B', prenom: 'Deux' }], pays: 'ALLEMAGNE' };
+        const h = MER_REG_NATURE_HTML(x), p = MER_REG_PERSONNEL_HTML(x), i = MER_REG_NATURE_HTML({ personnes: [{ nom: 'A' }], pays: '' });
+        return /COLLECTIF · 2/.test(h) && /INTERNATIONAL · ALLEMAGNE/.test(h) && (p.match(/<li>/g) || []).length === 2 && /INDIVIDUEL/.test(i) && !/INTERNATIONAL/.test(i);
+    });
+    verifier(nat, 'registre : OMR INDIVIDUEL / COLLECTIF / INTERNATIONAL, personnel collectif un nom par ligne');
     await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(600);
+    verifier(await c.evaluate(p => !!document.querySelector('.MER-REG-LIGNE .MER-REG-NAT.indiv') && JUMELAGE_REGISTRE().filter(x => String(x.omr).indexOf(p) === 0).every(x => 'pays' in x), pref), 'registre : badge INDIVIDUEL affiché, pays de destination gardé dans la ligne');
     verifier(await c.evaluate(() => !!document.querySelector('.MER-REG-LIGNE .MER-REG-CODE.hors')), 'registre : code FD hors unité marqué en jaune');
     // Filtres libres : recherche, codes de l'unité / hors unité, période.
     const nb = () => c.evaluate(() => document.querySelectorAll('.MER-REG-LIGNE').length);

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 207;
+var APP_CODE_VERSION = 208;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3807,6 +3807,23 @@ function MER_OMR_COMPARER(a, b) {
 }
 function MER_REG_JOUR(v) { if (!v) return '—'; var d = new Date(v); return isNaN(d) ? '—' : d.toLocaleDateString('fr-FR'); }
 function MER_REG_ECHEANCE(x) { if (!x.fin) return null; var d = new Date(x.fin); if (isNaN(d)) return null; d.setDate(d.getDate() + MER_REGISTRE_DELAI); return d; }
+// Nature de l'OMR : individuel (une personne) ou collectif (plusieurs), et international (pays étranger à l'arrivée).
+function MER_REG_NATURE(x) {
+    var n = (x.personnes || []).length;
+    return { collectif: n > 1, n: n, pays: x.pays && !/^FRANCE$/i.test(x.pays) ? x.pays : '' };
+}
+function MER_REG_NATURE_HTML(x) {
+    var t = MER_REG_NATURE(x);
+    return '<span class="MER-REG-NAT ' + (t.collectif ? 'coll' : 'indiv') + '">' + (t.collectif ? 'COLLECTIF · ' + t.n : 'INDIVIDUEL') + '</span>' +
+        (t.pays ? '<span class="MER-REG-NAT inter">🌍 INTERNATIONAL · ' + ESC(t.pays.toUpperCase()) + '</span>' : '');
+}
+function MER_REG_NATURE_TXT(x) { var t = MER_REG_NATURE(x); return (t.collectif ? 'COLLECTIF (' + t.n + ')' : 'INDIVIDUEL') + (t.pays ? ' · INTERNATIONAL (' + t.pays.toUpperCase() + ')' : ''); }
+// Personnel d'une mission collective : un nom par ligne (plus lisible qu'une suite séparée par des virgules).
+function MER_REG_PERSONNEL_HTML(x) {
+    var l = (x.personnes || []).map(function(p) { return [p.grade, (p.nom || '').toUpperCase(), p.prenom].filter(Boolean).join(' '); });
+    if (l.length < 2) return ESC(MER_REG_PERSONNEL(x));
+    return '<ol class="MER-REG-PERS">' + l.map(function(n) { return '<li>' + ESC(n) + '</li>'; }).join('') + '</ol>';
+}
 function MER_REG_PERSONNEL(x) { return (x.personnes || []).map(function(p) { return [p.grade, (p.nom || '').toUpperCase(), p.prenom].filter(Boolean).join(' '); }).join(', ') || (x.crs && x.crs[0] ? x.crs[0].noms : '—'); }
 // Comptes-rendus attendus : un par personne de la demande (mission collective : le chef et chaque participant).
 function MER_REG_ATTENDUS(x) { return Math.max(1, (x.personnes || []).length); }
@@ -3866,7 +3883,7 @@ function MER_REG_CRIT_OK(x) {
     var c = MER_REGISTRE_CRIT, mots = c.texte.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(Boolean);
     if (mots.length) {
         var e = MER_CODIER && MER_CODIER[String(x.codeFD || '').toUpperCase()];
-        var tas = [x.omr, x.objet, x.codeFD, e && e.lib, MER_REG_PERSONNEL(x), MER_REG_ETAT(x).txt, x.recuPar].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        var tas = [x.omr, x.objet, x.codeFD, e && e.lib, MER_REG_PERSONNEL(x), MER_REG_ETAT(x).txt, x.recuPar, x.sansDemande ? '' : MER_REG_NATURE_TXT(x)].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         if (!mots.every(function(w) { return tas.indexOf(w) >= 0; })) return false;
     }
     if (c.code && MER_CODE_UNITE(x.codeFD) !== c.code) return false;
@@ -3909,10 +3926,10 @@ function TPL_REGISTRE() {
     var puce = function(c) { return '<button type="button" class="MER-REG-FILTRE ' + c[0] + (filtre === c[0] ? ' actif' : '') + '" onclick="OUVRIR_REGISTRE(\'' + c[0] + '\')">' + c[1] + ' <span>' + f[c[0]].length + '</span></button>'; };
     var lignes = l.map(function(x) {
         var e = MER_REG_ETAT(x), m = MER_REG_MONTANTS(x), brut = MER_REG_MONTANTS(x, true), corr = MER_REG_CORRIGES(x), ref = ESC(x.ref).replace(/'/g, ''), rendu = e.cls === 'ok', ech = MER_REG_ECHEANCE(x);
-        var tete = '<div class="MER-REG-TETE"><b class="MER-REG-OMR">' + (x.omr ? 'N°' + ESC(x.omr) : 'Sans n°') + '</b><span class="MER-REG-MARQ ' + e.cls + '">' + e.txt + '</span></div>';
+        var tete = '<div class="MER-REG-TETE"><span class="MER-REG-TETE-G"><b class="MER-REG-OMR">' + (x.omr ? 'N°' + ESC(x.omr) : 'Sans n°') + '</b>' + (x.sansDemande ? '' : MER_REG_NATURE_HTML(x)) + '</span><span class="MER-REG-MARQ ' + e.cls + '">' + e.txt + '</span></div>';
         var corps = '<div class="MER-REG-GRILLE mer"><span><small>Envoyée le</small>' + MER_REG_JOUR(x.omrLe || x.recuLe) + '</span><span class="large"><small>Objet</small>' + ESC(x.objet || '—') + '</span>' +
                 '<span><small>Code FD</small>' + (function() { var u = MER_CODE_UNITE(x.codeFD); return u ? '<em class="MER-REG-CODE ' + u + '" title="' + (u === 'unite' ? 'Code du ' : 'Hors ') + ESC(MER_UNITE().nom) + '">' + ESC(x.codeFD) + '</em>' : ESC(x.codeFD || '—'); })() + '</span><span><small>Début</small>' + MER_REG_JOUR(x.debut) + '</span><span><small>Fin</small>' + MER_REG_JOUR(x.fin) + '</span>' +
-                '<span class="large"><small>Personnel</small>' + ESC(MER_REG_PERSONNEL(x)) + '</span>' +
+                '<span class="large"><small>Personnel' + ((x.personnes || []).length > 1 ? ' (' + x.personnes.length + ')' : '') + '</small>' + MER_REG_PERSONNEL_HTML(x) + '</span>' +
                 (rendu ? '<span><small>CR rendu le</small>' + MER_REG_JOUR((x.crs || []).map(function(c) { return c.recuLe; }).sort().slice(-1)[0]) + '</span>'
                     : '<span><small>CR attendu le</small>' + (ech ? ech.toLocaleDateString('fr-FR') : '—') + '</span>') + '</div>' +
             ((x.crs || []).length ? '<div class="MER-REG-GRILLE montants">' + MER_REG_RUBRIQUES.map(function(r) {
@@ -4133,7 +4150,9 @@ function REGISTRE_PDF() {
     var vide = function(x, v) { return (x.crs || []).length ? eur(v) : '—'; };
     var body = l.map(function(x) {
         var e = MER_REG_ETAT(x), m = MER_REG_MONTANTS(x);
-        return [x.omr || '—', MER_REG_JOUR(x.omrLe || x.recuLe), x.objet || '', x.codeFD || '—', MER_REG_JOUR(x.debut), MER_REG_JOUR(x.fin), MER_REG_PERSONNEL(x), e.txt.replace(/[✔⚠]\s?/g, ''),
+        var nat = x.sansDemande ? '' : MER_REG_NATURE(x);
+        return [(x.omr || '—') + (nat ? '\n' + (nat.collectif ? 'COLLECTIF' : 'INDIVIDUEL') + (nat.pays ? '\nINTERNATIONAL' : '') : ''), MER_REG_JOUR(x.omrLe || x.recuLe), (x.objet || '') + (nat && nat.pays ? '\n(' + nat.pays.toUpperCase() + ')' : ''), x.codeFD || '—', MER_REG_JOUR(x.debut), MER_REG_JOUR(x.fin),
+            (x.personnes || []).length > 1 ? x.personnes.map(function(p) { return '- ' + [p.grade, (p.nom || '').toUpperCase(), p.prenom].filter(Boolean).join(' '); }).join('\n') : MER_REG_PERSONNEL(x), e.txt.replace(/[✔⚠]\s?/g, ''),
             vide(x, m.repas), vide(x, m.hebergement), vide(x, m.transports), vide(x, m.ik), vide(x, m.tc), vide(x, m.total)];
     });
     var t = l.reduce(function(a, x) { var m = MER_REG_MONTANTS(x); Object.keys(a).forEach(function(k) { a[k] += m[k]; }); return a; }, { repas: 0, hebergement: 0, transports: 0, ik: 0, tc: 0, total: 0 });
@@ -4142,7 +4161,7 @@ function REGISTRE_PDF() {
         theme: 'plain', styles: { fontSize: 7, cellPadding: 1.4, textColor: [26, 26, 26], lineColor: [230, 230, 230], lineWidth: 0.1 },
         headStyles: { fillColor: false, textColor: [26, 26, 26], fontStyle: 'bold' }, footStyles: { fillColor: false, textColor: [26, 26, 26], fontStyle: 'bold' },
         alternateRowStyles: { fillColor: [250, 248, 243] },
-        columnStyles: { 0: { fontStyle: 'bold' }, 8: { halign: 'right', minCellWidth: 16 }, 9: { halign: 'right', minCellWidth: 19 }, 10: { halign: 'right', minCellWidth: 17 }, 11: { halign: 'right', minCellWidth: 16 }, 12: { halign: 'right', minCellWidth: 17 }, 13: { fontStyle: 'bold', halign: 'right', minCellWidth: 19 } },
+        columnStyles: { 0: { fontStyle: 'bold', minCellWidth: 20 }, 8: { halign: 'right', minCellWidth: 16 }, 9: { halign: 'right', minCellWidth: 19 }, 10: { halign: 'right', minCellWidth: 17 }, 11: { halign: 'right', minCellWidth: 16 }, 12: { halign: 'right', minCellWidth: 17 }, 13: { fontStyle: 'bold', halign: 'right', minCellWidth: 19 } },
         // Montants jamais coupés sur deux lignes.
         didParseCell: function(d) {
             // Code FD : vert si code de l'unité, jaune sinon (comme à l'écran).

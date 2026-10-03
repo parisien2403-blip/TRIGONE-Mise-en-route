@@ -1018,7 +1018,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 160, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 161, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3204,7 +3204,7 @@
             var registre = nature !== 'chorus' ? undefined : ds.map(function(x) {
                 var ax = (x.trajets || {}).aller || {}, rx = (x.trajets || {}).retour || {};
                 return { ref: x.id || '', omr: x.omr || '', omrLe: x.omrLe || '', objet: x.objet || '', type: x.type || '', codeFD: x.codeFD || '',
-                    debut: ax.dateDep || '', fin: rx.dateArr || '', mailDemandeur: x.mailDemandeur || '',
+                    debut: ax.dateDep || '', fin: rx.dateArr || '', mailDemandeur: x.mailDemandeur || '', pays: ax.paysArr || rx.paysDep || '',
                     personnes: (x.personnes || []).map(function(p) { return { grade: p.grade || '', nom: p.nom || '', prenom: p.prenom || '', nid: p.matricule || '' }; }) };
             });
             return { nature: nature, n: ds.length, ids: ds.map(function(x) { return x.id; }), registre: registre,
