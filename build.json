@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 159,
-  "notifier": true,
-  "message": "Registre des OMR : recherche et filtres ; codes FD de votre unité en vert, des autres unités en jaune (aussi dans la demande). Profil : unité choisie dans une liste."
+  "build": 160,
+  "notifier": false,
+  "message": "Profil : 139 unités au choix (sécurité civile, régiments, bases aériennes et navales), chacune avec ses codes FD en vert."
 }
