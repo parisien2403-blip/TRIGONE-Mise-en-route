@@ -53,6 +53,15 @@ module.exports = async function() {
     await m.evaluate(() => { localStorage.removeItem('trigone_photo_sig'); return JUMELAGE_PHOTO_SYNCHRO(); });
     const apres = await c2.evaluate(([p, mail]) => JUMELAGE_PARTICIPANTS(p, mail), [pers, mailM]);
     verifier(apres && apres[0].photoUrl === PHOTO, 'après réouverture de TRIGONE par le missionnaire : la photo arrive au nouvel assistant');
+    // Mon autre appareil (même compte) : la photo prise sur le téléphone y est lisible.
+    const m2 = await (async () => { const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }), p = await ctx.newPage(); p.on('pageerror', e => erreurs.push('m2 : ' + e.message));
+        await p.goto(URL); await p.evaluate(preparer, APP_CODE); await p.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1')); await p.reload(); await attendre(2500);
+        await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500); await p.fill('#JUM-C-MAIL', 'martin.' + suffixe + '@interieur.gouv.fr'); await p.click('#JUM-C-ENVOI'); await attendre(1500);
+        await p.click('#JUM-C-VALIDER'); await attendre(1500); await p.evaluate(() => JUMELAGE_FERMER_COMPTE()); return p; })();
+    await m.evaluate(() => { localStorage.removeItem('trigone_photo_sig'); return JUMELAGE_PHOTO_SYNCHRO(); });
+    const moiAilleurs = await m2.evaluate(([p, mail]) => JUMELAGE_PARTICIPANTS(p, mail), [pers, mailM]);
+    verifier(moiAilleurs && moiAilleurs[0].moi && moiAilleurs[0].photoUrl === PHOTO, 'ma propre carte sur mon autre appareil (PC) : ma photo s\'affiche');
+    verifier(await m.evaluate(([p, mail]) => JUMELAGE_PARTICIPANTS(p, mail).then(r => r[0].photoUrl), [pers, mailM]) === PHOTO, 'ma propre carte sur l\'appareil de la photo : affichée directement');
     // Partage décoché : photo retirée du serveur.
     await m.evaluate(() => { localStorage.setItem('trigone_photo_partage', ''); return JUMELAGE_PHOTO_SYNCHRO(true); });
     const retire = await c.evaluate(([p, mail]) => JUMELAGE_PARTICIPANTS(p, mail), [pers, mailM]);

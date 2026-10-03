@@ -1163,7 +1163,8 @@ async function api(requete, env, url, ctx) {
         const db = await baseBoite(env);
         const mails = new Set(((await db.prepare('SELECT mail FROM porteur_role').all()).results || []).map(x => x.mail));
         ((await db.prepare('SELECT DISTINCT chef FROM equipe WHERE mail = ?').bind(moi.mail).all()).results || []).forEach(x => mails.add(x.chef));
-        mails.delete(moi.mail);
+        // Mes autres appareils aussi (assistant ou valideur sur le PC, photo prise sur le téléphone).
+        mails.add(moi.mail);
         const appareils = [];
         for (const m of [...mails].slice(0, 300)) {
             const c = await kv.get('compte:' + m, 'json');
@@ -1198,7 +1199,7 @@ async function api(requete, env, url, ctx) {
             const nid = chiffresNid(p && p.nid);
             let mail = nid ? await kv.get('nid:' + await empreinteNid(env, nid)) : null;
             if (!mail && p && p.mail) mail = normaliser(p.mail);
-            const r = { nid: (p && p.nid) || '', compte: false, carte: null, photo: null };
+            const r = { nid: (p && p.nid) || '', compte: false, carte: null, photo: null, moi: !!mail && mail === moi.mail };
             if (mail && await kv.get('compte:' + mail)) {
                 const chef = !aRole && mail !== moi.mail ? await db.prepare('SELECT 1 FROM equipe WHERE chef = ? AND mail = ? LIMIT 1').bind(moi.mail, mail).first() : null;
                 r.compte = true;

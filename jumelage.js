@@ -1038,7 +1038,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 164, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 165, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -4691,20 +4691,22 @@
         if (!monCompte() || !navigator.onLine || !SUBTLE) return Promise.resolve('');
         if (photoEnCours) return photoEnCours;
         var memo = lireJSON(CLE_PHOTO_SIG) || {}, photo = lireTxt(CLE_CARTE_PHOTO);
+        // v2 : photo aussi chiffrée pour mes autres appareils ; rechiffrée tout de suite après la mise à jour.
+        if (memo.v !== 2) { force = true; memo = {}; }
         if (!force && memo.le && Date.now() - memo.le < 6 * 3600000) return Promise.resolve('');
         if (!photoPartagee() || !photo) {
             if (!memo.sig && !force) return Promise.resolve('');
-            photoEnCours = appelApi('photo', { methode: 'DELETE' }).then(function() { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ le: Date.now() })); photoEnCours = null; return 'retiree'; }, function() { photoEnCours = null; return ''; });
+            photoEnCours = appelApi('photo', { methode: 'DELETE' }).then(function() { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ v: 2, le: Date.now() })); photoEnCours = null; return 'retiree'; }, function() { photoEnCours = null; return ''; });
             return photoEnCours;
         }
         photoEnCours = appelApi('photo/destinataires').then(function(r) {
             var ap = r.appareils || [];
             return SUBTLE.digest('SHA-256', new TextEncoder().encode(photo + '|' + ap.map(function(a) { return a.id; }).sort().join(','))).then(function(h) {
                 var sig = versB64(h);
-                if (sig === memo.sig && !force) { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ sig: sig, le: Date.now() })); return ''; }
+                if (sig === memo.sig && !force) { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ v: 2, sig: sig, le: Date.now() })); return ''; }
                 return chiffrerPour(ap, photo).then(function(c) {
                     return appelApi('photo', { methode: 'POST', corps: { donnees: c.donnees, enveloppes: c.enveloppes } });
-                }).then(function() { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ sig: sig, le: Date.now() })); return 'ok'; });
+                }).then(function() { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ v: 2, sig: sig, le: Date.now() })); return 'ok'; });
             });
         }).then(function(x) { photoEnCours = null; return x; }, function() { photoEnCours = null; return ''; });
         return photoEnCours;
@@ -4715,6 +4717,9 @@
         if (!monCompte() || !navigator.onLine) return Promise.resolve(null);
         return appelApi('participants', { methode: 'POST', corps: { personnes: liste } }).then(function(r) {
             return Promise.all((r.personnes || []).map(function(x) {
+                // Ma propre carte : la photo de cet appareil, si elle y est (et que je la partage, ou que je me regarde).
+                var locale = x.moi ? lireTxt(CLE_CARTE_PHOTO) : '';
+                if (locale) { x.photoUrl = locale; return Promise.resolve(x); }
                 if (!x.photo || !x.photo.donnees) return Promise.resolve(x);
                 return dechiffrer(x.photo.enveloppe, x.photo.donnees).then(function(url) { x.photoUrl = /^data:image\//.test(url) ? url : ''; return x; }, function() { return x; });
             }));
