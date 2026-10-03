@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=162"></script>
+<script src="../jumelage.js?v=163"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -7279,6 +7279,16 @@ window.JUMELAGE_PEUT_RECHARGER = function() {
     var visible = function(id) { var el = document.getElementById(id); return el && !el.classList.contains('HIDDEN'); };
     return visible('P0') && ECRAN_LIBRE() && !visible('PIN-OVERLAY') && !visible('MER-LISTE-OVERLAY') && !DEMO_MODE_ACTIF;
 };
+// Heures réelles de la mission (départ, arrivée sur site, départ du site, retour) → registre des assistants Chorus DT,
+// pour une mission partie d'une mise en route (n° OMR ou référence de la demande). Envoyées à chaque changement.
+function JALONS_REGISTRE() {
+    if (DEMO_MODE_ACTIF || M.IS_PAX || !window.JUMELAGE_JALONS || !(M.OMR || M.MER_REF)) return;
+    var j = { depart: M.DEBUT || '', surSite: M.ARR_SITE || '', departSite: M.DEP_SITE || '', retour: M.FIN_RETOUR_HORODATE || '' };
+    if (!j.depart) return;
+    var sig = (M.OMR || M.MER_REF) + '|' + [j.depart, j.surSite, j.departSite, j.retour].join('|');
+    try { if (localStorage.getItem('trigone_jalons_sig') === sig) return; localStorage.setItem('trigone_jalons_sig', sig); } catch (e) {}
+    window.JUMELAGE_JALONS(M.OMR || '', M.MER_REF || '', j);
+}
 function SAVE_STATE() {
     // Filet de sécurité absolu : pendant la démonstration, M contient des données d'exemple, jamais
     // les vraies. Tant que ce drapeau est actif, aucune écriture ne doit atteindre le stockage réel.
@@ -7289,6 +7299,7 @@ function SAVE_STATE() {
     // visibilitychange au moment du rechargement qui suit. Sans ce garde-fou, la mission tout juste
     // effacée réapparaissait après le rechargement, ramenant le missionnaire sur l'écran d'envoi.
     if (MISSION_FERMETURE_EN_COURS) return;
+    try { JALONS_REGISTRE(); } catch (e) {}
     try {
         if (HAS_ACTIVE_MISSION_DATA(M)) {
             localStorage.setItem('mission_data', JSON.stringify(CLONE_M_FOR_STORAGE(M)));
@@ -11511,7 +11522,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 259;
+var APP_CODE_VERSION = 260;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
