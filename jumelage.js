@@ -782,6 +782,23 @@
         '.JUM-UNITES button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-family: inherit; color: #1a1a1a; }' +
         '.JUM-UNITES button:hover, .JUM-UNITES button:focus { background: #fbf4e6; } .JUM-UNITES b { display: block; font-size: 0.86rem; } .JUM-UNITES small { display: block; font-size: 0.66rem; color: #64748b; }' +
         '.JUM-UNITES p { margin: 0; padding: 9px 10px; font-size: 0.74rem; color: #64748b; }' +
+        '.JUM-PART-FOND { position: fixed; inset: 0; background: rgba(0,0,0,0.55); z-index: 99985; display: flex; align-items: center; justify-content: center; padding: 14px; }' +
+        '.JUM-PART-FEN { background: #fff; color: #1a1a1a; border-radius: 22px; width: min(1180px, 100%); max-height: 94vh; overflow: auto; box-shadow: 0 20px 60px rgba(0,0,0,0.4); font-family: Montserrat, system-ui, sans-serif; }' +
+        '.JUM-PART-TETE { padding: 16px 18px 0; display: flex; align-items: flex-start; gap: 10px; } .JUM-PART-TETE .ic { font-size: 1.4rem; } .JUM-PART-TETE > div { flex: 1; min-width: 0; }' +
+        '.JUM-PART-TETE b { font-size: 1rem; display: block; } .JUM-PART-TETE small { display: block; color: #64748b; font-size: 0.72rem; margin-top: 3px; line-height: 1.6; }' +
+        '.JUM-PART-X { border: 0; background: #f1f5f9; width: 34px; height: 34px; border-radius: 50%; cursor: pointer; font-size: 0.9rem; color: #334155; flex-shrink: 0; }' +
+        '.JUM-PART-ONG { display: flex; gap: 4px; padding: 10px 18px 0; border-bottom: 1px solid #eee; } .JUM-PART-ONG button { border: 0; background: none; padding: 9px 14px; font: 700 0.8rem Montserrat, system-ui, sans-serif; color: #64748b; border-bottom: 3px solid transparent; cursor: pointer; } .JUM-PART-ONG button.on { color: #1a1a1a; border-color: #d6a756; }' +
+        '.JUM-PART-GRILLE { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 18px; padding: 18px; }' +
+        '.JUM-PART-CARTE { display: block; width: 100%; border: 0; padding: 0; background: none; cursor: zoom-in; text-align: left; }' +
+        '.JUM-PART-CARTE .JUM-CARTE, .JUM-PART-GRAND .JUM-CARTE { width: 100% !important; max-width: none !important; transform: none !important; position: relative !important; }' +
+        '.JUM-CARTE-PHOTO .JUM-CARTE-INIT { font: 800 2.4em Montserrat, system-ui, sans-serif !important; color: #d6a756 !important; letter-spacing: 0.02em; }' +
+        '.JUM-PART-ROLE { font: 800 0.66rem Montserrat, system-ui, sans-serif; letter-spacing: 0.06em; color: #8a5f12; margin: 0 0 6px; }' +
+        '.JUM-PART-ETAT { margin-top: 8px; font: 700 0.7rem Montserrat, system-ui, sans-serif; padding: 6px 10px; border-radius: 10px; line-height: 1.4; } .JUM-PART-ETAT.ok { background: rgba(21,128,61,0.1); color: #15803d; } .JUM-PART-ETAT.att { background: #f1f5f9; color: #475569; } .JUM-PART-ETAT.ko { background: rgba(185,28,28,0.08); color: #b91c1c; }' +
+        '.JUM-PART-PIED { padding: 0 18px 16px; margin: 0; font-size: 0.72rem; color: #64748b; line-height: 1.45; }' +
+        '.JUM-PART-DEM { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px 18px; padding: 18px; font-size: 0.86rem; } .JUM-PART-DEM small { display: block; font-size: 0.64rem; font-weight: 800; letter-spacing: 0.06em; text-transform: uppercase; color: #1a1a1a; margin-bottom: 2px; }' +
+        '.JUM-PART-GRAND { position: fixed; inset: 0; z-index: 99986; background: rgba(0,0,0,0.85); display: flex; flex-direction: column; align-items: center; justify-content: center; padding: 16px; cursor: zoom-out; } .JUM-PART-GRAND > .JUM-CARTE { width: min(640px, 94vw) !important; } .JUM-PART-GRAND p { color: #cbd5e1; font-size: 0.74rem; margin-top: 14px; }' +
+        '.JUM-CARTE-PARTPHOTO { display: flex; gap: 10px; align-items: flex-start; margin: 12px 0 4px; padding: 12px; border-radius: 12px; background: rgba(214,167,86,0.1); cursor: pointer; text-align: left; } .JUM-CARTE-PARTPHOTO input { width: 20px; height: 20px; flex-shrink: 0; margin-top: 1px; accent-color: #b0802a; } .JUM-CARTE-PARTPHOTO b { display: block; font-size: 0.8rem; } .JUM-CARTE-PARTPHOTO small { display: block; font-size: 0.7rem; color: #64748b; margin-top: 3px; line-height: 1.4; }' +
+        'html body.dark-mode .JUM-PART-FEN { background: #1f1f1f; color: #ececec; } html body.dark-mode .JUM-PART-ONG { border-color: #333; } html body.dark-mode .JUM-PART-ONG button.on, html body.dark-mode .JUM-PART-DEM small { color: #f5f5f5; } html body.dark-mode .JUM-PART-X { background: #2a2a2a; color: #e5e5e5; } html body.dark-mode .JUM-PART-ETAT.att { background: #2a2a2a; color: #cbd5e1; }' +
         'html body.dark-mode .JUM-UNITES { background: #1f1f1f; border-color: #3a3a3a; } html body.dark-mode .JUM-UNITES button { color: #ececec; } html body.dark-mode .JUM-UNITES button:hover { background: #2a2a2a; }' +
         '.JUM-R-AIDE { font-size: 0.76rem; color: #64748b; margin: 0 0 10px; line-height: 1.45; }' +
         '.JUM-R-ETAPES { padding-left: 20px; } .JUM-R-ETAPES li { margin: 2px 0; }' +
@@ -3469,6 +3486,7 @@
             window.JUMELAGE_REGISTRE_SYNCHRO();   // registre OMR commun aux assistants Chorus DT
             window.JUMELAGE_BOITE_ETATS();        // envois déjà traités sur un autre de mes appareils
             if (lireTxt(CLE_JALONS).length > 2) window.JUMELAGE_JALONS();   // heures de mission en attente d'envoi
+            window.JUMELAGE_PHOTO_SYNCHRO();       // photo de carte partagée : rechiffrée si de nouveaux appareils y ont droit
             if (releveARefaire) { releveARefaire = false; return window.JUMELAGE_RELEVER().then(function(m) { return n + m; }); }
             return n;
         });
@@ -4583,18 +4601,101 @@
     }
     // Carte qui évolue : liseré bronze (1 compte-rendu envoyé), argent (10), or (20), comme les médailles.
     function niveauCarte(n) { return n >= 20 ? ['or', 'OR'] : n >= 10 ? ['argent', 'ARGENT'] : n >= 1 ? ['bronze', 'BRONZE'] : ['', '']; }
-    function carteRecto(d) {
-        var photo = lireTxt(CLE_CARTE_PHOTO), m = mrz(d), base = DANS_CR ? '../' : '', niv = niveauCarte(d.missions);
+    // photo : la sienne si absente ; '' = pas de photo (initiales de la personne à la place, carte d'un participant).
+    function carteRecto(d, photo) {
+        var autre = arguments.length > 1; if (!autre) photo = lireTxt(CLE_CARTE_PHOTO);
+        var m = mrz(d), base = DANS_CR ? '../' : '', niv = niveauCarte(d.missions || 0);
         return '<div class="JUM-CARTE recto' + (niv[0] ? ' niv-' + niv[0] : '') + '"><i class="JUM-CARTE-GUIL"></i><img class="JUM-CARTE-FILI" src="' + base + 'phoenix-icon.png" alt=""><i class="JUM-CARTE-HOLO"></i>' +
             '<div class="JUM-CARTE-HAUT"><img src="' + base + 'phoenix-icon.png" alt=""><div class="t">TRIGONE<small>CARTE D\'IDENTITÉ · MISSIONS</small></div>' +
                 '<div class="drap"><i></i>' + esc(d.unite || 'TRIGONE') + '</div></div>' +
-            '<div class="JUM-CARTE-PHOTO">' + (photo ? '<img src="' + photo + '" alt="Photo">' : '<span>' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : '') + '<b>Ajouter<br>ma photo</b></span>') + '</div>' +
+            '<div class="JUM-CARTE-PHOTO">' + (photo ? '<img src="' + photo + '" alt="Photo">' : autre ? '<span class="JUM-CARTE-INIT">' + esc(((d.nom || '?').charAt(0) + (d.prenom || '').charAt(0)).toUpperCase()) + '</span>'
+                : '<span>' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : '') + '<b>Ajouter<br>ma photo</b></span>') + '</div>' +
             '<i class="JUM-CARTE-PUCE"></i>' +
             '<div class="JUM-CARTE-CHAMPS"><div class="l"><small>NOM · PRÉNOM</small>' + esc((d.nom + ' ' + d.prenom).trim() || '—') + '</div>' +
                 '<div><small>GRADE</small>' + esc(d.grade || '—') + '</div><div><small>NID</small>' + esc(d.nid || '—') + '</div>' +
-                '<div><small>UNITÉ</small>' + esc([d.unite, d.cie].filter(Boolean).join(' · ') || '—') + '</div><div><small>MISSIONS</small>' + d.missions + (niv[1] ? ' <em class="niv">' + niv[1] + '</em>' : '') + '</div></div>' +
+                '<div><small>UNITÉ</small>' + esc([d.unite, d.cie].filter(Boolean).join(' · ') || '—') + '</div><div><small>MISSIONS</small>' + (d.missions == null ? '—' : d.missions) + (niv[1] ? ' <em class="niv">' + niv[1] + '</em>' : '') + '</div></div>' +
             '<div class="JUM-CARTE-MRZ">' + esc(m[0]) + '<br>' + esc(m[1]) + '</div></div>';
     }
+    // ---------- Photo de carte partagée, chiffrée de bout en bout ----------
+    // Chiffrée ici pour les appareils des VALIDEUR 1 / 2, ASSIST CHORUS DT et chefs de mission collective où je suis
+    // participant (clés publiques données par le serveur) ; le serveur ne garde qu'un bloc illisible. Rechiffrée quand
+    // la photo ou la liste des appareils change (nouveau valideur, rôle retiré), vérifié au plus toutes les 6 h.
+    var CLE_PHOTO_PARTAGE = 'trigone_photo_partage', CLE_PHOTO_SIG = 'trigone_photo_sig', photoEnCours = null;
+    function photoPartagee() { return lireTxt(CLE_PHOTO_PARTAGE) === '1'; }
+    window.JUMELAGE_PHOTO_SYNCHRO = function(force) {
+        if (!monCompte() || !navigator.onLine || !SUBTLE) return Promise.resolve('');
+        if (photoEnCours) return photoEnCours;
+        var memo = lireJSON(CLE_PHOTO_SIG) || {}, photo = lireTxt(CLE_CARTE_PHOTO);
+        if (!force && memo.le && Date.now() - memo.le < 6 * 3600000) return Promise.resolve('');
+        if (!photoPartagee() || !photo) {
+            if (!memo.sig && !force) return Promise.resolve('');
+            photoEnCours = appelApi('photo', { methode: 'DELETE' }).then(function() { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ le: Date.now() })); photoEnCours = null; return 'retiree'; }, function() { photoEnCours = null; return ''; });
+            return photoEnCours;
+        }
+        photoEnCours = appelApi('photo/destinataires').then(function(r) {
+            var ap = r.appareils || [];
+            return SUBTLE.digest('SHA-256', new TextEncoder().encode(photo + '|' + ap.map(function(a) { return a.id; }).sort().join(','))).then(function(h) {
+                var sig = versB64(h);
+                if (sig === memo.sig && !force) { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ sig: sig, le: Date.now() })); return ''; }
+                return chiffrerPour(ap, photo).then(function(c) {
+                    return appelApi('photo', { methode: 'POST', corps: { donnees: c.donnees, enveloppes: c.enveloppes } });
+                }).then(function() { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ sig: sig, le: Date.now() })); return 'ok'; });
+            });
+        }).then(function(x) { photoEnCours = null; return x; }, function() { photoEnCours = null; return ''; });
+        return photoEnCours;
+    };
+    // Cartes des personnes d'une demande : carte vérifiée par le serveur (ou non) et photo déchiffrée si cet appareil en a la clé.
+    window.JUMELAGE_PARTICIPANTS = function(personnes, mailDemandeur) {
+        var liste = (personnes || []).map(function(p, i) { return { nid: p.matricule || p.nid || '', mail: i === 0 ? (mailDemandeur || '') : '' }; });
+        if (!monCompte() || !navigator.onLine) return Promise.resolve(null);
+        return appelApi('participants', { methode: 'POST', corps: { personnes: liste } }).then(function(r) {
+            return Promise.all((r.personnes || []).map(function(x) {
+                if (!x.photo || !x.photo.donnees) return Promise.resolve(x);
+                return dechiffrer(x.photo.enveloppe, x.photo.donnees).then(function(url) { x.photoUrl = /^data:image\//.test(url) ? url : ''; return x; }, function() { return x; });
+            }));
+        });
+    };
+    // Fenêtre « Participants » : onglets Demande / Participants, une carte TRIGONE par personne.
+    // info : { titre, sous, badges (HTML), lignes: [[libellé, valeur]], personnes, mailDemandeur, collectif }
+    window.JUMELAGE_PARTICIPANTS_OUVRIR = function(info) {
+        var vieux = document.querySelector('.JUM-PART-FOND'); if (vieux) vieux.remove();
+        var f = document.createElement('div'); f.className = 'JUM-PART-FOND'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Participants');
+        var pers = info.personnes || [];
+        var carteDe = function(p, x, i) {
+            var c = x && x.carte, d = { grade: (c && c.grade) || p.grade || '', nom: ((c && c.nom) || p.nom || '').toUpperCase(), prenom: (c && c.prenom) || p.prenom || '',
+                unite: (c && c.unite) || p.unite || '', cie: (c && c.cie) || p.cie || '', nid: (c && c.nid) || p.matricule || p.nid || '', missions: null };
+            var etat = !x ? ['att', navigator.onLine ? 'Vérification…' : 'Hors ligne : carte non vérifiée']
+                : x.erreur ? ['att', 'Vérification impossible pour l\'instant']
+                : !x.compte ? ['ko', '✖ Pas de compte TRIGONE à ce matricule']
+                : !c ? ['ko', '✖ Pas de carte TRIGONE vérifiée']
+                : ['ok', '✔ Carte TRIGONE vérifiée' + (c.depuis ? ' · depuis le ' + new Date(c.depuis).toLocaleDateString('fr-FR') : '') +
+                    (x.photoUrl ? ' · 🔒 photo chiffrée' : x.photo && x.photo.partagee ? ' · photo pas encore disponible sur cet appareil' : ' · photo non partagée')];
+            return '<div class="JUM-PART-UN"><p class="JUM-PART-ROLE">' + (i === 0 ? (info.collectif ? 'CHEF DE MISSION' : 'MISSIONNAIRE') : 'PARTICIPANT') + '</p>' +
+                '<button type="button" class="JUM-PART-CARTE" data-i="' + i + '" aria-label="Afficher la carte en grand">' + carteRecto(d, (x && x.photoUrl) || '') + '</button>' +
+                '<div class="JUM-PART-ETAT ' + etat[0] + '">' + etat[1] + '</div></div>';
+        };
+        var resultats = null, onglet = 'part';
+        var dessiner = function() {
+            f.innerHTML = '<div class="JUM-PART-FEN"><div class="JUM-PART-TETE"><span class="ic">📋</span><div><b>' + esc(info.titre || 'Demande de mise en route') + '</b><small>' + (info.sous ? esc(info.sous) : '') + (info.badges ? ' ' + info.badges : '') + '</small></div>' +
+                    '<button type="button" class="JUM-PART-X" aria-label="Fermer">✕</button></div>' +
+                '<div class="JUM-PART-ONG"><button type="button" data-o="dem"' + (onglet === 'dem' ? ' class="on"' : '') + '>Demande</button><button type="button" data-o="part"' + (onglet === 'part' ? ' class="on"' : '') + '>👥 Participants (' + pers.length + ')</button></div>' +
+                (onglet === 'dem' ? '<div class="JUM-PART-DEM">' + (info.lignes || []).map(function(l) { return '<div><small>' + esc(l[0]) + '</small>' + esc(l[1] || '—') + '</div>'; }).join('') + '</div>'
+                    : '<div class="JUM-PART-GRILLE">' + pers.map(function(p, i) { return carteDe(p, resultats && resultats[i], i); }).join('') + '</div>' +
+                      '<p class="JUM-PART-PIED">Photos chiffrées de bout en bout : visibles seulement sur les appareils des valideurs, des assistants Chorus DT et du chef de mission, si la personne a choisi de la partager (Ma carte). Touchez une carte pour l\'afficher en grand.</p>') + '</div>';
+            f.querySelector('.JUM-PART-X').addEventListener('click', function() { f.remove(); });
+            Array.prototype.forEach.call(f.querySelectorAll('.JUM-PART-ONG button'), function(b) { b.addEventListener('click', function() { onglet = b.getAttribute('data-o'); dessiner(); }); });
+            Array.prototype.forEach.call(f.querySelectorAll('.JUM-PART-CARTE'), function(b) {
+                b.addEventListener('click', function() {
+                    var g = document.createElement('div'); g.className = 'JUM-PART-GRAND'; g.innerHTML = b.innerHTML + '<p>Touchez pour fermer</p>';
+                    g.addEventListener('click', function() { g.remove(); }); document.body.appendChild(g);
+                });
+            });
+        };
+        f.addEventListener('click', function(e) { if (e.target === f) f.remove(); });
+        dessiner(); document.body.appendChild(f);
+        window.JUMELAGE_PARTICIPANTS(pers, info.mailDemandeur).then(function(r) { resultats = r || pers.map(function() { return null; }); if (document.body.contains(f)) dessiner(); },
+            function() { resultats = pers.map(function() { return { erreur: true }; }); if (document.body.contains(f)) dessiner(); });
+    };
     function carteVerso(d, memo) {
         var depuis = memo && memo.depuis ? new Date(memo.depuis).toLocaleDateString('fr-FR') : '', niv = niveauCarte(d.missions);
         return '<div class="JUM-CARTE verso' + (niv[0] ? ' niv-' + niv[0] : '') + '"><i class="JUM-CARTE-GUIL"></i><i class="JUM-CARTE-HOLO"></i><i class="JUM-CARTE-BANDE"></i>' +
@@ -4648,7 +4749,9 @@
                 : '<div class="JUM-CARTE-DUO"><div class="face avant">' + carteRecto(d) + '</div><div class="face arriere">' + carteVerso(d, memo) + '</div></div>') +
                 '<div class="JUM-CARTE-BTNS"><button type="button" class="JUM-R-SECOND JUM-CARTE-PHOTO-BTN">' + (lireTxt(CLE_CARTE_PHOTO) ? 'Changer la photo' : 'Ajouter ma photo') + '</button>' +
                     '<button type="button" class="JUM-R-SECOND JUM-CARTE-PARTAGER">Partager</button></div>' +
-                '<p class="JUM-CARTE-NOTE">Remplie toute seule avec <b>Mon profil</b> (grade, nom, NID, unité). La photo reste <b>sur cet appareil</b>. ' +
+                '<label class="JUM-CARTE-PARTPHOTO"><input type="checkbox" id="JUM-PHOTO-PARTAGE"' + (photoPartagee() ? ' checked' : '') + '><span><b>Partager ma photo avec les valideurs et l\'assistant Chorus DT</b>' +
+                    '<small>Chiffrée de bout en bout : seuls leurs appareils (et le chef d\'une mission collective où vous êtes) peuvent la voir, sur votre carte, dans l\'onglet Participants de vos demandes.</small></span></label>' +
+                '<p class="JUM-CARTE-NOTE">Remplie toute seule avec <b>Mon profil</b> (grade, nom, NID, unité). La photo reste <b>sur cet appareil</b>' + (photoPartagee() ? ' et ne part que chiffrée' : '') + '. ' +
                     'Le QR code ne contient qu\'un identifiant : il ne donne accès à rien, il permet seulement à un compte TRIGONE de vous retrouver.</p>' +
                 '<button type="button" class="JUM-R-LIEN JUM-CARTE-PROFIL">Modifier Mon profil</button>' +
                 (memo && memo.id ? '<button type="button" class="JUM-R-LIEN JUM-CARTE-REVOQUER">Carte perdue ou volée ? Révoquer le QR code</button>' : '') + '</div>';
@@ -4661,7 +4764,12 @@
             }
             // Sa flèche ‹ : ramène aux Paramètres quand la carte en a été ouverte (sinon, ferme la carte).
             fenCarte.querySelector('.JUM-CARTE-RET').addEventListener('click', function() { if (fenCarte && fenCarte._depuisParam) revenirParametres(fenCarte); else window.JUMELAGE_FERMER_CARTE(); });
-            fenCarte.querySelector('.JUM-CARTE-PHOTO-BTN').addEventListener('click', function() { choisirPhoto(dessiner); });
+            fenCarte.querySelector('.JUM-CARTE-PHOTO-BTN').addEventListener('click', function() { choisirPhoto(function() { dessiner(); window.JUMELAGE_PHOTO_SYNCHRO(true); }); });
+            fenCarte.querySelector('#JUM-PHOTO-PARTAGE').addEventListener('change', function() {
+                ecrireTxt(CLE_PHOTO_PARTAGE, this.checked ? '1' : '');
+                window.JUMELAGE_PHOTO_SYNCHRO(true).then(function(r) { if (r === 'ok') bandeau('Photo partagée, chiffrée : visible seulement par les valideurs et l\'assistant Chorus DT.'); else if (r === 'retiree') bandeau('Photo retirée : elle n\'est plus partagée.'); });
+                dessiner();
+            });
             fenCarte.querySelector('.JUM-CARTE-PARTAGER').addEventListener('click', function() { partagerCarte(d, memo); });
             fenCarte.querySelector('.JUM-CARTE-PROFIL').addEventListener('click', function() { window.JUMELAGE_FERMER_CARTE(); window.JUMELAGE_REGLAGES({ vue: 'profil' }); });
             var rev = fenCarte.querySelector('.JUM-CARTE-REVOQUER');

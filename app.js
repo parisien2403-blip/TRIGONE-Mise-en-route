@@ -534,6 +534,7 @@ function TPL_BIBLIOTHEQUE() {
             (DEMO_ACTIF ? '' : e.demandes.map(function(d) { return TPL_SUIVI_DEMANDE(d.id, e.demandes.length > 1 ? RESUME_DEMANDE(d).noms : ''); }).join('')) +
             (sel ? '' : '<div class="MER-VAL-ACTIONS">' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_PDF(\'' + e.id + '\')">PDF</button>' +
+                e.demandes.map(function(d, k) { return '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_BIB(\'' + e.id + '\', ' + k + ')">👥 ' + (e.demandes.length > 1 ? ESC(RESUME_DEMANDE(d).noms) : 'Participants' + ((d.personnes || []).length > 1 ? ' (' + d.personnes.length + ')' : '')) + '</button>'; }).join('') +
                 (e.demandes.some(function(d) { return d.trajets && d.trajets.aller && d.trajets.aller.dateDep; }) ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_AGENDA(\'' + e.id + '\')">📅 Agenda</button>' : '') +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">Refaire une demande</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_SUPPRIMER(\'' + e.id + '\')">Supprimer</button>' +
@@ -2917,7 +2918,8 @@ function TPL_ENTREE_VALIDATION(e, h, sansCoche) {
             ((e.pjAlterees || []).length ? '<div class="MER-HINT" style="color:#b91c1c; font-weight:800;">✖ Pièce jointe modifiée après l\'envoi : elle ne correspond plus à celle de la demande.</div>' : '') +
             controle + etat +
             '<div class="MER-VAL-ACTIONS">' +
-                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_PDF_VALIDATION(\'' + e.id + '\')">Aperçu</button>' + actions +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_PDF_VALIDATION(\'' + e.id + '\')">Aperçu</button>' +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_VAL(\'' + e.id + '\')">👥 Participants' + ((d.personnes || []).length > 1 ? ' (' + d.personnes.length + ')' : '') + '</button>' + actions +
             '</div>' +
         '</div></div>';
 }
@@ -3262,6 +3264,7 @@ function TPL_VERIFIER() {
                     }).join('') +
                     (x.renvoyee ? '<div class="MER-HINT" style="color:#b45309; font-weight:800;">↩ Renvoyée au demandeur : ' + ESC(x.renvoyee) + '</div>' : '') +
                     (x.source === 'json' ? '<div class="MER-VAL-ACTIONS">' +
+                        '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_VERIF(' + i + ')">👥 Participants' + ((x.d.personnes || []).length > 1 ? ' (' + x.d.personnes.length + ')' : '') + '</button>' +
                         (conforme ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="TELECHARGER_PDF_VERIFIE([' + i + '])">📄 PDF avec NDS / DAF</button>' : '') +
                         (x.renvoyee ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_RENVOYER(' + i + ')">↩ Renvoyer au demandeur</button>') + '</div>' : '') +
                 '</div></div>';
@@ -3960,8 +3963,8 @@ function TPL_REGISTRE() {
                 ' (compte-rendu : ' + corr.map(function(k) { return MER_REG_RUBRIQUES.filter(function(r) { return r[0] === k; })[0][1].toLowerCase() + ' ' + MER_EUROS(brut[k]); }).join(', ') + ')</p>' : '') +
             MER_REG_RECU_PAR(x) +
             ((x.relances || []).length && !rendu ? '<p class="MER-HINT" style="margin:4px 0 0;">🔔 Relancé le ' + x.relances.map(function(t) { var q = (x.relancesQui || {})[t]; return MER_REG_JOUR(t) + (q ? ' (par ' + ESC(q) + ')' : ''); }).join(', ') + '</p>' : '') +
-            (rendu ? ((x.crs || []).length ? '<div class="MER-REG-ACTIONS"><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button></div>' : '') :
-                '<div class="MER-REG-ACTIONS">' + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + (e.cls === 'attente' || e.cls === 'retard' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', true)">🔔 Relancer pour le CR</button>' : '') +
+            (rendu ? '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + '</div>' :
+                '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + (e.cls === 'attente' || e.cls === 'retard' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', true)">🔔 Relancer pour le CR</button>' : '') +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', false)">✉ Message</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_SUPPRIMER(\'' + ref + '\')">Supprimer</button></div>');
         return '<div class="MER-REG-LIGNE ' + e.cls + '">' + tete + MER_REG_FRISE(x, e) + corps + '</div>';
@@ -4062,6 +4065,33 @@ function REGISTRE_CORRIGER_OK(ref, annuler) {
     // Objet vide (et non retiré) : le serveur garde sinon l'ancienne correction en fusionnant les versions.
     JUMELAGE_REGISTRE_MAJ(ref, { corriges: c, corrigesPar: Object.keys(c).length ? (window.JUMELAGE_QUI ? JUMELAGE_QUI() : '') || 'ASSIST CHORUS DT' : '', corrigesLe: Object.keys(c).length ? Date.now() : 0 });
     FERMER_MODALE(); MER_REG_REAFFICHER();
+}
+// ---- Fenêtre « Participants » : la carte TRIGONE de chaque personne de la demande (photo chiffrée si partagée) ----
+function MER_PARTICIPANTS_DEMANDE(d, mailDemandeur) {
+    if (!d || !window.JUMELAGE_PARTICIPANTS_OUVRIR) return;
+    var a = (d.trajets || {}).aller || {}, r = (d.trajets || {}).retour || {}, jour = function(v) { return v ? new Date(v).toLocaleDateString('fr-FR') : ''; };
+    var x = { personnes: d.personnes || [], pays: a.paysArr || '' };
+    JUMELAGE_PARTICIPANTS_OUVRIR({
+        titre: (d.omr ? 'OMR N°' + d.omr + ' — ' : '') + (d.objet || 'Demande de mise en route'),
+        sous: [jour(a.dateDep) && jour(r.dateArr) ? 'Du ' + jour(a.dateDep) + ' au ' + jour(r.dateArr) : ''].filter(Boolean).join(''),
+        badges: MER_REG_NATURE_HTML(x), collectif: (d.personnes || []).length > 1, mailDemandeur: mailDemandeur || d.mailDemandeur || '',
+        personnes: d.personnes || [],
+        lignes: [['Objet', d.objet], ['Type', d.type === 'FORMATION' ? 'Formation / stage' : 'Mission'], ['N° OMR', d.omr], ['Départ', [a.lieuDep, jour(a.dateDep)].filter(Boolean).join(' · ')],
+            ['Destination', [a.lieuArr, a.paysArr].filter(Boolean).join(', ')], ['Retour', jour(r.dateArr)], ['Code FD', d.codeFD], ['Nature', MER_REG_NATURE_TXT(x)]]
+    });
+}
+function MER_PARTICIPANTS_VAL(id) { var e = GET_A_VALIDER().filter(function(x) { return x.id === id; })[0]; if (e) MER_PARTICIPANTS_DEMANDE(e.d); }
+function MER_PARTICIPANTS_VERIF(i) { var x = (MER_RESULTATS_VERIF || [])[i]; if (x) MER_PARTICIPANTS_DEMANDE(x.d); }
+function MER_PARTICIPANTS_BIB(id, k) { var e = GET_BIBLIOTHEQUE().filter(function(x) { return x.id === id; })[0]; if (e) MER_PARTICIPANTS_DEMANDE(e.demandes[k || 0], window.JUMELAGE_COMPTE_MAIL ? JUMELAGE_COMPTE_MAIL() : ''); }
+function MER_PARTICIPANTS_REG(ref) {
+    var x = REGISTRE_LIGNE(ref); if (!x || !window.JUMELAGE_PARTICIPANTS_OUVRIR) return;
+    var t = MER_REG_NATURE(x);
+    JUMELAGE_PARTICIPANTS_OUVRIR({
+        titre: (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || ''), sous: 'Du ' + MER_REG_JOUR(x.debut) + ' au ' + MER_REG_JOUR(x.fin),
+        badges: MER_REG_NATURE_HTML(x), collectif: t.collectif, mailDemandeur: x.mailDemandeur || '',
+        personnes: (x.personnes || []).map(function(p) { return { grade: p.grade, nom: p.nom, prenom: p.prenom, matricule: p.nid }; }),
+        lignes: [['Objet', x.objet], ['N° OMR', x.omr], ['Début', MER_REG_JOUR(x.debut)], ['Fin', MER_REG_JOUR(x.fin)], ['Code FD', x.codeFD], ['Nature', MER_REG_NATURE_TXT(x)], ['Étape', MER_REG_ETAT(x).txt]]
+    });
 }
 function REGISTRE_LIGNE(ref) { return (window.JUMELAGE_REGISTRE ? JUMELAGE_REGISTRE() : []).filter(function(x) { return x.ref === ref; })[0]; }
 function REGISTRE_SUPPRIMER(ref) {
