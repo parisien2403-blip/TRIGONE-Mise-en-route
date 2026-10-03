@@ -94,6 +94,14 @@ async function baseBoite(env) {
 
 // ---------- Registre OMR partagé ----------
 const UNITE_REGISTRE = 'principale';
+// Un registre et une numérotation OMR par régiment : l'unité du profil arrive dans l'en-tête X-Trigone-Unite (forme
+// normalisée, ex. « 4RIISC », « 1RIISC », « 3RPIMA »). Le registre d'origine (« principale ») reste celui du 4°RIISC,
+// et des comptes qui n'ont pas encore transmis leur unité.
+function uniteRegistre(requete) {
+    const n = String(requete.headers.get('X-Trigone-Unite') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 40);
+    return !n || n === '4RIISC' ? UNITE_REGISTRE : n;
+}
+function cleOmr(u, cle) { return u === UNITE_REGISTRE ? cle : cle + ':' + u; }
 // Comptes-rendus d'une ligne : réunis sans doublon (un par envoi).
 function registreUnirCrs(a, b) {
     const vus = {}, r = [];
@@ -930,36 +938,36 @@ async function api(requete, env, url, ctx) {
     // de sa demande (ou, à défaut, par l'assistant Chorus DT à son arrivée). Incrément atomique (D1). L'assistant
     // Chorus DT peut repartir sur une nouvelle série (préfixe libre, ex. « 2027- », et premier numéro).
     if (chemin === 'omr' && methode === 'POST') {
-        const db = await tableReglage(env);
-        await db.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prochain', '1') ON CONFLICT (cle) DO NOTHING").run();
-        const r = await db.prepare("UPDATE reglage SET valeur = CAST(CAST(valeur AS INTEGER) + 1 AS TEXT) WHERE cle = 'omr-prochain' RETURNING valeur").first();
+        const db = await tableReglage(env), u = uniteRegistre(requete), kp = cleOmr(u, 'omr-prochain');
+        await db.prepare("INSERT INTO reglage (cle, valeur) VALUES (?, '1') ON CONFLICT (cle) DO NOTHING").bind(kp).run();
+        const r = await db.prepare("UPDATE reglage SET valeur = CAST(CAST(valeur AS INTEGER) + 1 AS TEXT) WHERE cle = ? RETURNING valeur").bind(kp).first();
         const n = parseInt(r && r.valeur, 10) - 1;
-        const p = await db.prepare("SELECT valeur FROM reglage WHERE cle = 'omr-prefixe'").first();
+        const p = await db.prepare("SELECT valeur FROM reglage WHERE cle = ?").bind(cleOmr(u, 'omr-prefixe')).first();
         return json({ ok: true, numero: ((p && p.valeur) || '') + String(n).padStart(4, '0'), le: new Date().toISOString() });
     }
     if (chemin === 'omr/serie' && (methode === 'GET' || methode === 'POST')) {
         if (!(moi.compte.roles || {}).chorus) return erreur(403, 'Réservé à l\'assistant Chorus DT.');
-        const db = await tableReglage(env);
+        const db = await tableReglage(env), u = uniteRegistre(requete);
         if (methode === 'POST') {
             const c = await requete.json().catch(() => ({}));
             const prefixe = String(c.prefixe || '').replace(/[^0-9A-Za-z\-\/]/g, '').slice(0, 12), prochain = parseInt(c.prochain, 10);
             if (!(prochain >= 1 && prochain < 1000000)) return erreur(400, 'Premier numéro invalide.');
             await db.batch([
-                db.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prefixe', ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur").bind(prefixe),
-                db.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prochain', ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur").bind(String(prochain))
+                db.prepare("INSERT INTO reglage (cle, valeur) VALUES (?, ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur").bind(cleOmr(u, 'omr-prefixe'), prefixe),
+                db.prepare("INSERT INTO reglage (cle, valeur) VALUES (?, ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur").bind(cleOmr(u, 'omr-prochain'), String(prochain))
             ]);
         }
-        const p = await db.prepare("SELECT valeur FROM reglage WHERE cle = 'omr-prefixe'").first();
-        const n = await db.prepare("SELECT valeur FROM reglage WHERE cle = 'omr-prochain'").first();
+        const p = await db.prepare("SELECT valeur FROM reglage WHERE cle = ?").bind(cleOmr(u, 'omr-prefixe')).first();
+        const n = await db.prepare("SELECT valeur FROM reglage WHERE cle = ?").bind(cleOmr(u, 'omr-prochain')).first();
         return json({ ok: true, prefixe: (p && p.valeur) || '', prochain: parseInt(n && n.valeur, 10) || 1 });
     }
     // Registre OMR partagé : tous les assistants Chorus DT de l'unité voient la même liste, quel que soit celui qui a
     // reçu la demande ou le compte-rendu. Envoi des lignes nouvelles ou modifiées et des suppressions, réponse : tout ce
-    // qui a changé depuis « depuis » (maj). Aujourd'hui une seule unité ; chaque régiment aura la sienne.
+    // qui a changé depuis « depuis » (maj). Un registre par régiment (unité du profil, voir uniteRegistre).
     if (chemin === 'registre' && methode === 'POST') {
         if (!(moi.compte.roles || {}).chorus) return erreur(403, 'Réservé à l\'assistant Chorus DT.');
         const c = await requete.json().catch(() => ({}));
-        const db = await baseBoite(env), u = UNITE_REGISTRE, le = Date.now();
+        const db = await baseBoite(env), u = uniteRegistre(requete), le = Date.now();
         const refOk = r => typeof r === 'string' && r.length > 0 && r.length <= 120;
         const supprimer = (Array.isArray(c.supprimer) ? c.supprimer : []).filter(refOk).slice(0, 200);
         const lignes = (Array.isArray(c.lignes) ? c.lignes : []).filter(x => x && typeof x === 'object' && refOk(x.ref) && JSON.stringify(x).length <= 20000).slice(0, 200);
@@ -978,7 +986,7 @@ async function api(requete, env, url, ctx) {
         const c = await requete.json().catch(() => ({}));
         const omr = String(c.omr || '').slice(0, 30), mref = String(c.mref || '').slice(0, 64);
         if (!omr && !mref) return erreur(400, 'Mission inconnue.');
-        const db = await baseBoite(env), u = UNITE_REGISTRE;
+        const db = await baseBoite(env), u = uniteRegistre(requete);
         const ligne = await db.prepare("SELECT * FROM registre WHERE unite = ? AND supprime = 0 AND ((? <> '' AND omr = ?) OR (? <> '' AND (ref = ? OR mref = ?))) ORDER BY maj DESC LIMIT 1")
             .bind(u, omr, omr, mref, mref, mref).first();
         if (!ligne) return json({ ok: false, attente: true });   // demande pas encore au registre : l'appli réessaiera
@@ -1001,12 +1009,12 @@ async function api(requete, env, url, ctx) {
     // retirent à leur prochaine relève), et la numérotation OMR repart à 0001 sans préfixe.
     if (chemin === 'registre/vider' && methode === 'POST') {
         if (!(moi.compte.roles || {}).chorus) return erreur(403, 'Réservé à l\'assistant Chorus DT.');
-        const db = await baseBoite(env), u = UNITE_REGISTRE, le = Date.now();
+        const db = await baseBoite(env), u = uniteRegistre(requete), le = Date.now();
         const r = await db.prepare("UPDATE registre SET supprime = 1, donnees = '{}', maj = ?, par = ? WHERE unite = ? AND supprime = 0").bind(le, moi.mail, u).run();
         const reg = await tableReglage(env);
         await reg.batch([
-            reg.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prefixe', '') ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur"),
-            reg.prepare("INSERT INTO reglage (cle, valeur) VALUES ('omr-prochain', '1') ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur")
+            reg.prepare("INSERT INTO reglage (cle, valeur) VALUES (?, '') ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur").bind(cleOmr(u, 'omr-prefixe')),
+            reg.prepare("INSERT INTO reglage (cle, valeur) VALUES (?, '1') ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur").bind(cleOmr(u, 'omr-prochain'))
         ]);
         return json({ ok: true, effacees: (r.meta && r.meta.changes) || 0, dernier: le });
     }

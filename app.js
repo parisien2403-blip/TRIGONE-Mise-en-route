@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 217;
+var APP_CODE_VERSION = 218;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2220,16 +2220,20 @@ window.addEventListener('resize', function() {
 // ===================== MESSAGE CENTRÉ (comme TRIGONE compte-rendu) =====================
 // Remplace alert / confirm : carte centrée, icône, titre, texte et mascotte à droite.
 function TYPO_FR(t) { return String(t).replace(/ ([?!:;»])/g, '\u00A0$1').replace(/(«) /g, '$1\u00A0'); }
+var MSG_MINUTERIE_FERMETURE = null;
 function FERMER_MSG() {
     var o = document.getElementById('MSG-OVERLAY');
     if (!o) return;
     o.classList.remove('msg-in');
-    setTimeout(function() { o.classList.add('HIDDEN'); }, 300);
+    // Minuterie gardée : un message ouvert juste après (bouton qui enchaîne sur un autre message) l'annule.
+    clearTimeout(MSG_MINUTERIE_FERMETURE);
+    MSG_MINUTERIE_FERMETURE = setTimeout(function() { o.classList.add('HIDDEN'); }, 300);
 }
 // opts : titre, texte, icone, mascotte (nom d'image, false = sans), mascotteDroit, gauche (texte aligné à gauche), boutons [{label, style, action}]
 function AFFICHER_MSG_CENTRE(opts) {
     var o = document.getElementById('MSG-OVERLAY');
     if (!o) { alert((opts.titre ? opts.titre + '\n\n' : '') + (opts.texte || '')); return; }
+    clearTimeout(MSG_MINUTERIE_FERMETURE);
     var mascotte = document.getElementById('MSG-MASCOTTE');
     var erreur = opts.icone === '⛔';
     var src = opts.mascotte === false ? null : (opts.mascotte || (erreur ? 'mascotte-erreur.webp' : 'mascotte.webp'));
@@ -3769,8 +3773,10 @@ function TPL_DOSSIERS(page, l) {
     if (!ouvert) {
         MER_DOSSIER[page] = null;
         ds.forEach(function(d) {
-            d.det = (d.aTraiter.length ? '<span class="MER-DOSSIER-ATT">' + d.aTraiter.length + ' à traiter</span>' : 'Rien à traiter') +
-                (d.traites.length ? ' · ' + d.traites.length + ' traité' + (d.traites.length > 1 ? 's' : '') : '');
+            // Justificatifs : « à joindre » (pas encore joints à un compte-rendu) et « rangés ».
+            var j = d.id === 'justif', p = function(n) { return n > 1 ? 's' : ''; };
+            d.det = (d.aTraiter.length ? '<span class="MER-DOSSIER-ATT">' + d.aTraiter.length + (j ? ' à joindre' : ' à traiter') + '</span>' : j ? 'Rien à joindre' : 'Rien à traiter') +
+                (d.traites.length ? ' · ' + d.traites.length + (j ? ' rangé' : ' traité') + p(d.traites.length) : '');
         });
         return TPL_GRILLE_DOSSIERS(page, ds);
     }
@@ -3781,8 +3787,9 @@ function TPL_DOSSIERS(page, l) {
     }).join('') : '';
     return TPL_TETE_DOSSIER(page, ouvert) +
         (ouvert.aide ? '<p class="MER-HINT" style="margin:0 0 10px;">' + ouvert.aide + '</p>' : '') + groupe +
-        (ouvert.aTraiter.length ? ouvert.aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">Rien à traiter dans ce dossier.</div>') +
-        TPL_RECU_TRAITES(page + '-' + ouvert.id, 'Traités', ouvert.traites);
+        (ouvert.id === 'justif' ? '<div class="MER-SECTION-TITRE">À joindre</div>' : '') +
+        (ouvert.aTraiter.length ? ouvert.aTraiter.map(TPL_ENVOI_RECU).join('') : '<div class="MER-EMPTY">' + (ouvert.id === 'justif' ? 'Rien à joindre : les factures et billets reçus par mail arrivent ici.' : 'Rien à traiter dans ce dossier.') + '</div>') +
+        TPL_RECU_TRAITES(page + '-' + ouvert.id, ouvert.id === 'justif' ? 'Rangés' : 'Traités', ouvert.traites);
 }
 
 function TPL_RECEPTION() {
@@ -3997,6 +4004,8 @@ function TPL_REGISTRE() {
     return '<div class="MER-REG-ZONE' + (MER_REGISTRE_PLEIN ? ' plein' : '') + '"><div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="' + (MER_REGISTRE_PLEIN ? 'REGISTRE_PLEIN(false); ' : '') + 'OUVRIR_DOSSIER(\'CHORUS\', null)">‹ Dossiers</button><span class="MER-REG-ENTREE-IC petit">📋</span><b>Registre des OMR</b>' +
         '<button type="button" class="MER-REG-PLEIN-BTN" onclick="REGISTRE_PLEIN(' + !MER_REGISTRE_PLEIN + ')">' + (MER_REGISTRE_PLEIN ? '✕ Quitter le plein écran' : '⛶ Plein écran') + '</button></div>' +
         '<div class="MER-REG-FILTRES">' + MER_REG_FILTRES.map(puce).join('') + '</div>' + MER_REG_BARRE() +
+        (f.retard.length ? (function(n) { return '<div class="MER-REG-RELANCE"><span>⚠ ' + f.retard.length + ' compte' + (f.retard.length > 1 ? 's' : '') + '-rendu' + (f.retard.length > 1 ? 's' : '') + ' en retard' + (n < f.retard.length ? ' (' + (f.retard.length - n) + ' déjà relancé' + (f.retard.length - n > 1 ? 's' : '') + ' aujourd\'hui)' : '') + '</span>' +
+            '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="REGISTRE_RELANCER_RETARDS()"' + (n ? '' : ' disabled') + '>🔔 ' + (n ? 'Relancer les ' + n + ' en retard' : 'Tous relancés') + '</button></div>'; })(REGISTRE_A_RELANCER(f.retard).length) : '') +
         '<p class="MER-HINT" style="margin:0 0 10px;">Registre commun à tous les assistants Chorus DT de l\'unité : chaque mission, dans l\'ordre des n° OMR, avec son étape (à venir, en cours, compte-rendu attendu au plus tard ' + MER_REGISTRE_DELAI + ' jours après la fin, en retard, validé). Il se met à jour tout seul toutes les 30 secondes ; « ✏ Corriger les montants » si un montant est faux.</p>' +
         (lignes || '<div class="MER-EMPTY">' + (vide0 || vide) + '</div>') +
         (avecMontants.length ? '<div class="MER-REG-TOTAL"><span>Total des ' + avecMontants.length + ' compte' + (avecMontants.length > 1 ? 's' : '') + '-rendu' + (avecMontants.length > 1 ? 's' : '') + ' de cette liste</span><b>' + MER_EUROS(tot.total) + '</b>' +
@@ -4120,24 +4129,63 @@ function REGISTRE_SUPPRIMER(ref) {
     MSG_CONFIRM('Supprimer cette ligne ?', (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || '') + '\n\nÀ faire par exemple pour une mission annulée. La ligne disparaît du registre, chez tous les assistants Chorus DT de l\'unité ; le n° OMR n\'est pas réattribué.', 'Supprimer',
         function() { JUMELAGE_REGISTRE_MAJ(ref, null); SHOW_PAGE('CHORUS'); }, '🗑', 'mascotte-poubelle.webp', true);
 }
+function REGISTRE_TEXTE_RELANCE(x) {
+    var ech = MER_REG_ECHEANCE(x);
+    return 'Rappel : votre compte-rendu de mission « ' + (x.objet || '') + ' »' + (x.omr ? ' (OMR N°' + x.omr + ')' : '') + ' est attendu' +
+        (ech ? ' au plus tard le ' + ech.toLocaleDateString('fr-FR') : '') + '. Envoyez-le depuis TRIGONE Compte-rendu (« À partir d\'une mise en route »).';
+}
+// Destinataires : le demandeur, et les autres personnes de la demande qui ont un compte TRIGONE (par leur matricule).
+function REGISTRE_DESTINATAIRES(x) {
+    var autres = (x.personnes || []).slice(1).map(function(p) { return p.nid; }).filter(Boolean);
+    return (autres.length && window.JUMELAGE_COMPTES_PAR_NID ? JUMELAGE_COMPTES_PAR_NID(autres) : Promise.resolve({})).catch(function() { return {}; }).then(function(c) {
+        return [x.mailDemandeur].concat(Object.keys(c || {}).map(function(k) { return c[k]; })).filter(Boolean)
+            .filter(function(m, i, t) { return t.indexOf(m) === i; });
+    });
+}
+function REGISTRE_ENVOYER_MESSAGE(x, dests, q, relance) {
+    var qui = [window.JUMELAGE_QUI ? JUMELAGE_QUI() : '', 'ASSIST CHORUS DT'].filter(Boolean).join(' — ');
+    return Promise.all(dests.map(function(d) {
+        return JUMELAGE_ENVOYER_DIRECT(d, 'QUESTION', 'Question.json', JSON.stringify({ app: 'TRIGONE-QUESTION', ref: x.ref, genre: 'registre', objet: (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || ''), question: q, qui: qui }), { differable: true, libelle: 'Votre message' });
+    })).then(function() {
+        if (relance) { var t = Date.now(), rq = {}; rq[t] = window.JUMELAGE_QUI ? JUMELAGE_QUI() : ''; JUMELAGE_REGISTRE_MAJ(x.ref, { relances: (x.relances || []).concat([t]), relancesQui: Object.assign({}, x.relancesQui || {}, rq) }); }
+    });
+}
+// Relance groupée : tous les comptes-rendus en retard de la liste affichée, sauf ceux déjà relancés depuis moins de 24 h.
+function REGISTRE_A_RELANCER(l) {
+    var hier = Date.now() - 24 * 3600 * 1000;
+    return l.filter(function(x) { return MER_REG_ETAT(x).cls === 'retard' && x.mailDemandeur && !(x.relances || []).some(function(t) { return t > hier; }); });
+}
+function REGISTRE_RELANCER_RETARDS() {
+    var f = MER_REGISTRE_FILTRES(true), l = REGISTRE_A_RELANCER(f.retard);
+    if (!l.length) { MSG_INFO('Rien à relancer', 'Les comptes-rendus en retard ont tous été relancés depuis moins de 24 h.', '🔔'); return; }
+    MSG_CONFIRM('Relancer ' + l.length + ' missionnaire' + (l.length > 1 ? 's' : '') + ' ?',
+        'Chacun reçoit dans sa boîte TRIGONE, avec une notification, le rappel de son compte-rendu en retard :\n\n' +
+        l.slice(0, 8).map(function(x) { return '• ' + (x.omr ? 'N°' + x.omr + ' — ' : '') + MER_REG_PERSONNEL(x); }).join('\n') + (l.length > 8 ? '\n• … et ' + (l.length - 8) + ' autre(s)' : ''),
+        'Relancer', function() {
+            var ok = 0, ko = 0;
+            l.reduce(function(p, x) {
+                return p.then(function() { return REGISTRE_DESTINATAIRES(x); }).then(function(d) {
+                    if (!d.length) { ko++; return; }
+                    return REGISTRE_ENVOYER_MESSAGE(x, d, REGISTRE_TEXTE_RELANCE(x), true).then(function() { ok++; }, function() { ko++; });
+                });
+            }, Promise.resolve()).then(function() {
+                if (PAGE_ACTUELLE === 'CHORUS') MER_REG_REAFFICHER();
+                MSG_INFO('Relances envoyées', ok + ' relance' + (ok > 1 ? 's envoyées' : ' envoyée') + (ko ? ', ' + ko + ' impossible' + (ko > 1 ? 's' : '') + ' (adresse inconnue ou envoi refusé)' : '') + '. Les réponses arriveront dans votre Boîte de réception (Questions).', '🔔');
+            });
+        }, '🔔');
+}
 // Relance (texte prérempli, modifiable) ou message libre au(x) missionnaire(s) : arrive dans sa boîte TRIGONE avec une
 // notification (dossier Questions), il peut répondre. Destinataires : le demandeur, et les autres personnes de la demande
 // qui ont un compte TRIGONE (retrouvées par leur matricule).
 function REGISTRE_MESSAGE(ref, relance) {
     var x = REGISTRE_LIGNE(ref); if (!x) return;
-    var ech = MER_REG_ECHEANCE(x);
-    var txt = relance ? 'Rappel : votre compte-rendu de mission « ' + (x.objet || '') + ' »' + (x.omr ? ' (OMR N°' + x.omr + ')' : '') + ' est attendu' +
-        (ech ? ' au plus tard le ' + ech.toLocaleDateString('fr-FR') : '') + '. Envoyez-le depuis TRIGONE Compte-rendu (« À partir d\'une mise en route »).' : '';
+    var txt = relance ? REGISTRE_TEXTE_RELANCE(x) : '';
     AFFICHER_MODALE(relance ? 'Relancer pour le compte-rendu' : 'Message au missionnaire',
         '<p style="font-size:0.86em; line-height:1.5;">' + (x.omr ? '<b>OMR N°' + ESC(x.omr) + '</b> — ' : '') + ESC(x.objet || '') + '<br>À : ' + ESC(MER_REG_PERSONNEL(x)) + '</p>' +
         '<textarea id="MER-REG-TXT" rows="5" style="width:100%; box-sizing:border-box; padding:10px; border-radius:10px; border:1.5px solid var(--tg-border); font:inherit;" placeholder="Votre message">' + ESC(txt) + '</textarea>' +
         '<p class="MER-HINT" id="MER-REG-DEST">Recherche des comptes TRIGONE…</p>',
         '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Annuler</button><button type="button" class="BTN BTN-PRIMARY" id="MER-REG-GO" disabled>Envoyer</button>');
-    var dests = [];
-    var autres = (x.personnes || []).slice(1).map(function(p) { return p.nid; }).filter(Boolean);
-    (autres.length && window.JUMELAGE_COMPTES_PAR_NID ? JUMELAGE_COMPTES_PAR_NID(autres) : Promise.resolve({})).then(function(c) {
-        dests = [x.mailDemandeur].concat(Object.keys(c || {}).map(function(k) { return c[k]; })).filter(Boolean)
-            .filter(function(m, i, t) { return t.indexOf(m) === i; });
+    REGISTRE_DESTINATAIRES(x).then(function(dests) {
         var z = document.getElementById('MER-REG-DEST'), b = document.getElementById('MER-REG-GO'); if (!z || !b) return;
         z.textContent = dests.length ? 'Envoyé dans la boîte TRIGONE de : ' + dests.join(', ') + ' (avec une notification ; réponse possible).' : 'Adresse du missionnaire inconnue pour cette demande.';
         b.disabled = !dests.length;
@@ -4145,11 +4193,7 @@ function REGISTRE_MESSAGE(ref, relance) {
             var q = (document.getElementById('MER-REG-TXT').value || '').trim();
             if (q.length < 3) return;
             b.disabled = true; b.textContent = 'Envoi…';
-            var qui = [window.JUMELAGE_QUI ? JUMELAGE_QUI() : '', 'ASSIST CHORUS DT'].filter(Boolean).join(' — ');
-            Promise.all(dests.map(function(d) {
-                return JUMELAGE_ENVOYER_DIRECT(d, 'QUESTION', 'Question.json', JSON.stringify({ app: 'TRIGONE-QUESTION', ref: x.ref, genre: 'registre', objet: (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || ''), question: q, qui: qui }), { differable: true, libelle: 'Votre message' });
-            })).then(function() {
-                if (relance) { var t = Date.now(), rq = {}; rq[t] = window.JUMELAGE_QUI ? JUMELAGE_QUI() : ''; JUMELAGE_REGISTRE_MAJ(x.ref, { relances: (x.relances || []).concat([t]), relancesQui: Object.assign({}, x.relancesQui || {}, rq) }); }
+            REGISTRE_ENVOYER_MESSAGE(x, dests, q, relance).then(function() {
                 FERMER_MODALE(); SHOW_PAGE('CHORUS');
                 MSG_INFO(relance ? 'Relance envoyée' : 'Message envoyé', 'Il arrive dans la boîte TRIGONE du missionnaire, avec une notification. Sa réponse arrivera dans votre Boîte de réception (Questions).', relance ? '🔔' : '✉');
             }).catch(function(e) { b.disabled = false; b.textContent = 'Envoyer'; MSG_ERREUR('Envoi impossible', e.message || String(e)); });

@@ -16,7 +16,11 @@ module.exports = async function(srv) {
             police: [...document.fonts].some(f => f.family.replace(/"/g, '') === 'Montserrat' && f.status === 'loaded') }; }).catch(() => ({}));
         verifier(!!r.texte, (u ? 'Compte-rendu' : 'Mise en route') + ' s\'ouvre sans réseau' + (u ? ' (jamais ouvert avant)' : ''));
         verifier(!!r.police, (u ? 'Compte-rendu' : 'Mise en route') + ' garde la police Montserrat sans réseau');
+        verifier(await p.evaluate(() => /Hors réseau/i.test((document.querySelector('.JUM-HORS-RESEAU') || {}).textContent || '') && !document.querySelector('.NETWORK-BANNER:not(.HIDDEN)')),
+            (u ? 'Compte-rendu' : 'Mise en route') + ' : pastille « Hors réseau » (une seule, pas de bandeau rouge)');
     }
+    await ctx.setOffline(false); await attendre(800);
+    verifier(await p.evaluate(() => !document.querySelector('.JUM-HORS-RESEAU') && /Réseau revenu/.test((document.querySelector('.JUM-BANDEAU') || {}).textContent || '')), 'retour du réseau : la pastille disparaît, « Réseau revenu »');
     await b.close();
     await parcours(srv, { horsLigne: true });
 };
