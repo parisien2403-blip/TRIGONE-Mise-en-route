@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 205;
+var APP_CODE_VERSION = 206;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1291,11 +1291,40 @@ function TPL_INFO_FD() {
             (e.dev ? ' Code de remplacement : <button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:auto; display:inline-block; margin-left:4px;" onclick="UTILISER_CODE_FD(\'' + ESC(e.dev) + '\')">' + ESC(e.dev) + '</button>' : '') + '</p>';
     }
     function ligne(l, v) { return '<div class="MER-FD-LIGNE"><span>' + l + '</span><b>' + ESC(v || '—') + '</b></div>'; }
-    return '<div class="MER-FD-CARTE">' +
-        '<div class="MER-FD-TITRE">✔ ' + ESC(e.lib) + '</div>' +
+    var u = MER_CODE_UNITE(code), nomU = u ? ESC(MER_UNITE().nom) : '';
+    return '<div class="MER-FD-CARTE' + (u === 'hors' ? ' hors' : '') + '">' +
+        (u ? '<div class="MER-FD-UNITE ' + u + '">' + (u === 'unite' ? '● Code du ' + nomU : '● Hors ' + nomU + ' : code d\'une autre unité') + '</div>' : '') +
+        '<div class="MER-FD-TITRE">' + (u === 'hors' ? '⚠ ' : '✔ ') + ESC(e.lib) + '</div>' +
         ligne('Code engagement', code) + ligne('Centre financier', e.cf) + ligne('Centre de coût', e.cc) + ligne('Code activité', e.act) +
         (e.fin ? '<p class="MER-HINT">Valable jusqu\'au ' + ESC(new Date(e.fin).toLocaleDateString('fr-FR')) + '.</p>' : '') +
     '</div>';
+}
+// Unité de l'utilisateur (profil « Unité / entité ») et ses codes FD : ceux qui partagent son centre de coût dans le codier.
+// 4°RIISC → « UIISC n°4 » du codier ; une autre unité est reconnue par le début du libellé de ses codes (« RIMAP NOUCAL… »).
+// Code de l'unité : vert ; code d'une autre unité : jaune (dans la demande et dans le registre de l'assistant Chorus DT).
+var MER_UNITE_CACHE = null;
+function MER_UNITE() {
+    var r = window.JUMELAGE_REGLAGES_LIRE ? JUMELAGE_REGLAGES_LIRE() || {} : {}, nom = (r.unite || '').trim();
+    if (!nom || !MER_CODIER) return null;
+    if (MER_UNITE_CACHE && MER_UNITE_CACHE.nom === nom && MER_UNITE_CACHE.codier === MER_CODIER) return MER_UNITE_CACHE.u;
+    var connue = window.JUMELAGE_UNITE_INFO && JUMELAGE_UNITE_INFO(nom);
+    if (connue) { var cc0 = {}; cc0[connue.cc] = 1; MER_UNITE_CACHE = { nom: nom, codier: MER_CODIER, u: { nom: connue.nom, cc: cc0 } }; return MER_UNITE_CACHE.u; }
+    var norme = function(t) { return String(t || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]/g, ''); };
+    var m = /(\d+)\s*(?:°|E|EME|ER|ERE)?\s*[RU]IISC/i.exec(nom), cle = m ? 'UIISCN' + m[1] : norme(nom), cc = {};
+    Object.keys(MER_CODIER).forEach(function(k) {
+        var e = MER_CODIER[k]; if (!e || !e.cc || !e.lib) return;
+        var debut = norme(e.lib.split(' - ')[0]);
+        if (debut === cle || (!m && cle.length >= 4 && debut.indexOf(cle) === 0)) cc[e.cc] = 1;
+    });
+    var u = Object.keys(cc).length ? { nom: nom, cc: cc } : null;
+    MER_UNITE_CACHE = { nom: nom, codier: MER_CODIER, u: u };
+    return u;
+}
+// 'unite' (code de mon unité), 'hors' (code actif d'une autre unité) ou '' (inconnu, clôturé, unité non reconnue).
+function MER_CODE_UNITE(code) {
+    var e = MER_CODIER && MER_CODIER[String(code || '').toUpperCase()], u = MER_UNITE();
+    if (!e || !e.cc || !u) return '';
+    return u.cc[e.cc] ? 'unite' : 'hors';
 }
 // Recopie dans la demande les imputations du codier, pour le PDF et les valideurs.
 function AFFICHER_CODE_FD() {
@@ -3770,6 +3799,8 @@ function TPL_CHORUS() {
 // message au(x) missionnaire(s) ; suppression (mission annulée). Onglet « Comptes-rendus » : les lignes dont le
 // compte-rendu est rendu, avec les montants déclarés et le total. PDF de chaque onglet. Nouvelle série de numéros.
 var MER_REGISTRE_ONGLET = 'tout', MER_REGISTRE_DELAI = 30, MER_REGISTRE_MINUTEUR = null, MER_REGISTRE_PLEIN = false;
+// Filtres libres du registre : texte (n° OMR, objet, personnel, code FD, libellé), code de l'unité ou non, période (début de mission).
+var MER_REGISTRE_CRIT = { texte: '', code: '', du: '', au: '' }, MER_REGISTRE_CRIT_MINUTEUR = null;
 function MER_OMR_COMPARER(a, b) {
     if (!a.omr !== !b.omr) return a.omr ? -1 : 1;
     return String(a.omr || '').localeCompare(String(b.omr || ''), 'fr', { numeric: true }) || (a.recuLe || 0) - (b.recuLe || 0);
@@ -3830,8 +3861,25 @@ function MER_REGISTRE_LIGNES() {
     var l = (window.JUMELAGE_REGISTRE ? JUMELAGE_REGISTRE() : []).slice().sort(MER_OMR_COMPARER);
     return { tout: l, mer: l.filter(function(x) { return !MER_REG_RENDU(x); }), cr: l.filter(MER_REG_RENDU) };
 }
-function MER_REGISTRE_FILTRES() {
-    var l = MER_REGISTRE_LIGNES().tout, r = { tout: l };
+function MER_REG_CRIT_ACTIF() { var c = MER_REGISTRE_CRIT; return !!(c.texte.trim() || c.code || c.du || c.au); }
+function MER_REG_CRIT_OK(x) {
+    var c = MER_REGISTRE_CRIT, mots = c.texte.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').split(/\s+/).filter(Boolean);
+    if (mots.length) {
+        var e = MER_CODIER && MER_CODIER[String(x.codeFD || '').toUpperCase()];
+        var tas = [x.omr, x.objet, x.codeFD, e && e.lib, MER_REG_PERSONNEL(x), MER_REG_ETAT(x).txt, x.recuPar].join(' ').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        if (!mots.every(function(w) { return tas.indexOf(w) >= 0; })) return false;
+    }
+    if (c.code && MER_CODE_UNITE(x.codeFD) !== c.code) return false;
+    var d = String(x.debut || '').slice(0, 10);
+    if (c.du && (!d || d < c.du)) return false;
+    if (c.au && (!d || d > c.au)) return false;
+    return true;
+}
+// avecCrit : filtres libres appliqués (tableau affiché, PDF) ; sans : toutes les lignes (bouton d'entrée du registre).
+function MER_REGISTRE_FILTRES(avecCrit) {
+    var l = MER_REGISTRE_LIGNES().tout;
+    if (avecCrit && MER_REG_CRIT_ACTIF()) l = l.filter(MER_REG_CRIT_OK);
+    var r = { tout: l };
     MER_REG_FILTRES.slice(1).forEach(function(f) { r[f[0]] = l.filter(function(x) { return MER_REG_ETAT(x).cls === f[0]; }); });
     return r;
 }
@@ -3856,13 +3904,14 @@ function TPL_BOUTON_REGISTRE() {
         '<small>' + morceaux.join(' · ') + (f.retard.length ? ' · <span class="MER-DOSSIER-ATT">' + f.retard.length + ' en retard</span>' : '') + '</small></span><span class="MER-DOSSIER-CHEV">›</span></button>';
 }
 function TPL_REGISTRE() {
-    var f = MER_REGISTRE_FILTRES(), filtre = MER_REGISTRE_ONGLET in f ? MER_REGISTRE_ONGLET : 'tout', l = f[filtre];
+    if (!MER_CODIER) CHARGER_CODIER().then(function(c) { if (c && PAGE_ACTUELLE === 'CHORUS' && MER_DOSSIER.CHORUS === 'registre') MER_REG_REAFFICHER(); });
+    var f = MER_REGISTRE_FILTRES(true), filtre = MER_REGISTRE_ONGLET in f ? MER_REGISTRE_ONGLET : 'tout', l = f[filtre];
     var puce = function(c) { return '<button type="button" class="MER-REG-FILTRE ' + c[0] + (filtre === c[0] ? ' actif' : '') + '" onclick="OUVRIR_REGISTRE(\'' + c[0] + '\')">' + c[1] + ' <span>' + f[c[0]].length + '</span></button>'; };
     var lignes = l.map(function(x) {
         var e = MER_REG_ETAT(x), m = MER_REG_MONTANTS(x), brut = MER_REG_MONTANTS(x, true), corr = MER_REG_CORRIGES(x), ref = ESC(x.ref).replace(/'/g, ''), rendu = e.cls === 'ok', ech = MER_REG_ECHEANCE(x);
         var tete = '<div class="MER-REG-TETE"><b class="MER-REG-OMR">' + (x.omr ? 'N°' + ESC(x.omr) : 'Sans n°') + '</b><span class="MER-REG-MARQ ' + e.cls + '">' + e.txt + '</span></div>';
         var corps = '<div class="MER-REG-GRILLE mer"><span><small>Envoyée le</small>' + MER_REG_JOUR(x.omrLe || x.recuLe) + '</span><span class="large"><small>Objet</small>' + ESC(x.objet || '—') + '</span>' +
-                '<span><small>Code FD</small>' + ESC(x.codeFD || '—') + '</span><span><small>Début</small>' + MER_REG_JOUR(x.debut) + '</span><span><small>Fin</small>' + MER_REG_JOUR(x.fin) + '</span>' +
+                '<span><small>Code FD</small>' + (function() { var u = MER_CODE_UNITE(x.codeFD); return u ? '<em class="MER-REG-CODE ' + u + '" title="' + (u === 'unite' ? 'Code du ' : 'Hors ') + ESC(MER_UNITE().nom) + '">' + ESC(x.codeFD) + '</em>' : ESC(x.codeFD || '—'); })() + '</span><span><small>Début</small>' + MER_REG_JOUR(x.debut) + '</span><span><small>Fin</small>' + MER_REG_JOUR(x.fin) + '</span>' +
                 '<span class="large"><small>Personnel</small>' + ESC(MER_REG_PERSONNEL(x)) + '</span>' +
                 (rendu ? '<span><small>CR rendu le</small>' + MER_REG_JOUR((x.crs || []).map(function(c) { return c.recuLe; }).sort().slice(-1)[0]) + '</span>'
                     : '<span><small>CR attendu le</small>' + (ech ? ech.toLocaleDateString('fr-FR') : '—') + '</span>') + '</div>' +
@@ -3880,20 +3929,42 @@ function TPL_REGISTRE() {
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_SUPPRIMER(\'' + ref + '\')">Supprimer</button></div>');
         return '<div class="MER-REG-LIGNE ' + e.cls + '">' + tete + MER_REG_FRISE(x, e) + corps + '</div>';
     }).join('');
-    var avecMontants = l.filter(function(x) { return (x.crs || []).length; });
+    var avecMontants = l.filter(function(x) { return (x.crs || []).length; }), vide0 = '';
     var tot = avecMontants.reduce(function(a, x) { var m = MER_REG_MONTANTS(x); Object.keys(a).forEach(function(k) { a[k] += m[k]; }); return a; }, { repas: 0, hebergement: 0, transports: 0, ik: 0, tc: 0, total: 0 });
+    if (MER_REG_CRIT_ACTIF() && !l.length) vide0 = 'Aucune mission ne correspond aux filtres.';
     var vide = { tout: 'Aucune mission dans le registre pour l\'instant.', avenir: 'Aucune mission à venir.', encours: 'Aucune mission en cours.', attente: 'Aucun compte-rendu attendu.', retard: 'Aucun compte-rendu en retard.', ok: 'Aucun compte-rendu rendu pour l\'instant.' }[filtre];
     return '<div class="MER-REG-ZONE' + (MER_REGISTRE_PLEIN ? ' plein' : '') + '"><div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="' + (MER_REGISTRE_PLEIN ? 'REGISTRE_PLEIN(false); ' : '') + 'OUVRIR_DOSSIER(\'CHORUS\', null)">‹ Dossiers</button><span class="MER-REG-ENTREE-IC petit">📋</span><b>Registre des OMR</b>' +
         '<button type="button" class="MER-REG-PLEIN-BTN" onclick="REGISTRE_PLEIN(' + !MER_REGISTRE_PLEIN + ')">' + (MER_REGISTRE_PLEIN ? '✕ Quitter le plein écran' : '⛶ Plein écran') + '</button></div>' +
-        '<div class="MER-REG-FILTRES">' + MER_REG_FILTRES.map(puce).join('') + '</div>' +
+        '<div class="MER-REG-FILTRES">' + MER_REG_FILTRES.map(puce).join('') + '</div>' + MER_REG_BARRE() +
         '<p class="MER-HINT" style="margin:0 0 10px;">Registre commun à tous les assistants Chorus DT de l\'unité : chaque mission, dans l\'ordre des n° OMR, avec son étape (à venir, en cours, compte-rendu attendu au plus tard ' + MER_REGISTRE_DELAI + ' jours après la fin, en retard, validé). Il se met à jour tout seul toutes les 30 secondes ; « ✏ Corriger les montants » si un montant est faux.</p>' +
-        (lignes || '<div class="MER-EMPTY">' + vide + '</div>') +
+        (lignes || '<div class="MER-EMPTY">' + (vide0 || vide) + '</div>') +
         (avecMontants.length ? '<div class="MER-REG-TOTAL"><span>Total des ' + avecMontants.length + ' compte' + (avecMontants.length > 1 ? 's' : '') + '-rendu' + (avecMontants.length > 1 ? 's' : '') + ' de cette liste</span><b>' + MER_EUROS(tot.total) + '</b>' +
             '<div class="MER-REG-GRILLE montants MER-REG-SOMMES">' + [['Repas', 'repas'], ['Hébergement', 'hebergement'], ['Transports', 'transports'], ['IK', 'ik'], ['Transp. commun', 'tc'], ['Total', 'total']].map(function(c) {
                 return '<span' + (c[1] === 'total' ? ' class="total"' : '') + '><small>' + c[0] + '</small>' + MER_EUROS(Math.round(tot[c[1]] * 100) / 100) + '</span>'; }).join('') + '</div></div>' : '') +
         '<div class="MER-REG-PIED"><button type="button" class="BTN BTN-PRIMARY" onclick="REGISTRE_PDF()"' + (l.length ? '' : ' disabled') + '>📄 PDF de cette liste</button>' +
         '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_SERIE()">🔢 Numérotation OMR (nouvelle série)</button>' +
         '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_VIDER()">🗑 Tout effacer et repartir à 0001</button></div></div>';
+}
+function MER_REG_BARRE() {
+    var c = MER_REGISTRE_CRIT, u = MER_UNITE(), nomU = u ? ESC(u.nom) : 'mon unité';
+    return '<div class="MER-REG-BARRE">' +
+        '<input type="search" id="MER-REG-CHERCHE" placeholder="🔍 Rechercher : n° OMR, objet, nom, code FD…" value="' + ESC(c.texte) + '" oninput="MER_REG_CRIT(\'texte\', this.value, true)" autocomplete="off">' +
+        '<select id="MER-REG-CODE-F" onchange="MER_REG_CRIT(\'code\', this.value)"' + (u ? '' : ' disabled title="Indiquez votre unité dans Paramètres › Profil"') + '>' +
+            '<option value="">Tous les codes FD</option><option value="unite"' + (c.code === 'unite' ? ' selected' : '') + '>● Codes du ' + nomU + '</option><option value="hors"' + (c.code === 'hors' ? ' selected' : '') + '>● Hors ' + nomU + '</option></select>' +
+        '<label>Du <input type="date" id="MER-REG-DU" value="' + ESC(c.du) + '" onchange="MER_REG_CRIT(\'du\', this.value)"></label>' +
+        '<label>au <input type="date" id="MER-REG-AU" value="' + ESC(c.au) + '" onchange="MER_REG_CRIT(\'au\', this.value)"></label>' +
+        (MER_REG_CRIT_ACTIF() ? '<button type="button" class="BTN-DANGER-TEXT" onclick="MER_REG_CRIT()">✕ Effacer les filtres</button>' : '') + '</div>';
+}
+// Filtre changé : tableau réaffiché (après une courte pause pendant la frappe), la recherche garde le curseur.
+function MER_REG_CRIT(k, v, frappe) {
+    if (!k) MER_REGISTRE_CRIT = { texte: '', code: '', du: '', au: '' }; else MER_REGISTRE_CRIT[k] = v || '';
+    clearTimeout(MER_REGISTRE_CRIT_MINUTEUR);
+    MER_REGISTRE_CRIT_MINUTEUR = setTimeout(function() {
+        var a = document.activeElement, id = a && a.id, pos = a && a.selectionStart;
+        MER_REG_REAFFICHER();
+        var b = id && document.getElementById(id);
+        if (b && id === 'MER-REG-CHERCHE') { b.focus(); try { b.setSelectionRange(pos, pos); } catch (e) {} }
+    }, frappe ? 300 : 0);
 }
 // Page Chorus DT réaffichée sans perdre l'endroit où l'on était (page, ou registre en plein écran).
 function MER_REG_REAFFICHER() {
@@ -4039,7 +4110,7 @@ function REGISTRE_VIDER_OK() {
 function REGISTRE_PDF() {
     var jsPDFCtor = window.jspdf && window.jspdf.jsPDF ? window.jspdf.jsPDF : window.jsPDF;
     if (!jsPDFCtor) { MSG_ERREUR('PDF impossible', 'Le module PDF n\'est pas chargé : rouvrez TRIGONE.'); return; }
-    var f = MER_REGISTRE_FILTRES(), filtre = MER_REGISTRE_ONGLET in f ? MER_REGISTRE_ONGLET : 'tout', l = f[filtre];
+    var f = MER_REGISTRE_FILTRES(true), filtre = MER_REGISTRE_ONGLET in f ? MER_REGISTRE_ONGLET : 'tout', l = f[filtre];
     var nomFiltre = (MER_REG_FILTRES.filter(function(c) { return c[0] === filtre; })[0] || ['', 'Toutes'])[1];
     var doc = new jsPDFCtor({ orientation: 'landscape', unit: 'mm', format: 'a4' }), W = 297, M = 12;
     if (window.JUMELAGE_PDF_STYLE) JUMELAGE_PDF_STYLE(doc);
@@ -4048,7 +4119,9 @@ function REGISTRE_PDF() {
     if (logo) window.JUMELAGE_LOGO_PDF(doc, M + doc.getTextWidth('TRIGONE') / 2, 4, 21);
     doc.text('TRIGONE', M, 12 + dy);
     doc.setFont('helvetica', 'normal'); doc.setFontSize(9); doc.setTextColor(82, 82, 82);
-    doc.text('Registre des OMR — ' + (filtre === 'tout' ? 'toutes les missions' : nomFiltre.toLowerCase()), M, 18 + dy);
+    var c = MER_REGISTRE_CRIT, u = MER_UNITE(), crit = [c.texte.trim() ? '« ' + c.texte.trim() + ' »' : '', c.code && u ? (c.code === 'unite' ? 'codes du ' : 'hors ') + u.nom : '',
+        c.du ? 'du ' + new Date(c.du).toLocaleDateString('fr-FR') : '', c.au ? 'au ' + new Date(c.au).toLocaleDateString('fr-FR') : ''].filter(Boolean).join(' · ');
+    doc.text('Registre des OMR — ' + (filtre === 'tout' ? 'toutes les missions' : nomFiltre.toLowerCase()) + (crit ? ' — filtres : ' + crit : ''), M, 18 + dy);
     doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(176, 128, 42);
     doc.text(l.length + ' ligne' + (l.length > 1 ? 's' : ''), W - M, 12 + dy, { align: 'right' });
     doc.setFont('helvetica', 'normal'); doc.setFontSize(7.5); doc.setTextColor(120, 120, 120);
@@ -4071,7 +4144,14 @@ function REGISTRE_PDF() {
         alternateRowStyles: { fillColor: [250, 248, 243] },
         columnStyles: { 0: { fontStyle: 'bold' }, 8: { halign: 'right', minCellWidth: 16 }, 9: { halign: 'right', minCellWidth: 19 }, 10: { halign: 'right', minCellWidth: 17 }, 11: { halign: 'right', minCellWidth: 16 }, 12: { halign: 'right', minCellWidth: 17 }, 13: { fontStyle: 'bold', halign: 'right', minCellWidth: 19 } },
         // Montants jamais coupés sur deux lignes.
-        didParseCell: function(d) { if (d.column.index < 8) return; d.cell.styles.halign = 'right'; if (d.section !== 'head') d.cell.styles.overflow = 'visible'; } });
+        didParseCell: function(d) {
+            // Code FD : vert si code de l'unité, jaune sinon (comme à l'écran).
+            if (d.section === 'body' && d.column.index === 3 && l[d.row.index]) {
+                var cu = MER_CODE_UNITE(l[d.row.index].codeFD);
+                if (cu === 'unite') { d.cell.styles.textColor = [21, 128, 61]; d.cell.styles.fillColor = [226, 242, 231]; d.cell.styles.fontStyle = 'bold'; }
+                if (cu === 'hors') { d.cell.styles.textColor = [133, 77, 14]; d.cell.styles.fillColor = [253, 243, 199]; d.cell.styles.fontStyle = 'bold'; }
+            }
+            if (d.column.index < 8) return; d.cell.styles.halign = 'right'; if (d.section !== 'head') d.cell.styles.overflow = 'visible'; } });
     try { doc.save('Registre OMR - ' + nomFiltre.toLowerCase() + ' - ' + new Date().toISOString().slice(0, 10) + '.pdf'); }
     catch (e) { MSG_ERREUR('PDF impossible', e.message || String(e)); }
 }

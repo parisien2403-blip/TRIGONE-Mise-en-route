@@ -778,6 +778,11 @@
         '.JUM-R-CHAMP label { display: block; font-size: 0.66rem; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; margin-bottom: 5px; color: #334155; }' +
         '.JUM-R-CHAMP input { width: 100%; box-sizing: border-box; padding: 11px 12px; border: 1.5px solid #e2e8f0; border-radius: 10px; font: 500 0.9rem Montserrat, system-ui, sans-serif; color: #1a1a1a; background: #fff; }' +
         '.JUM-R-CHAMP input:focus { outline: none; border-color: #9a6f22; }' +
+        '.JUM-UNITES { position: absolute; left: 0; right: 0; top: 100%; z-index: 30; margin-top: 4px; background: #fff; border: 1.5px solid #e2e8f0; border-radius: 12px; box-shadow: 0 12px 28px rgba(0,0,0,0.18); padding: 4px; max-height: 230px; overflow-y: auto; }' +
+        '.JUM-UNITES button { display: block; width: 100%; text-align: left; border: 0; background: none; padding: 9px 10px; border-radius: 9px; cursor: pointer; font-family: inherit; color: #1a1a1a; }' +
+        '.JUM-UNITES button:hover, .JUM-UNITES button:focus { background: #fbf4e6; } .JUM-UNITES b { display: block; font-size: 0.86rem; } .JUM-UNITES small { display: block; font-size: 0.66rem; color: #64748b; }' +
+        '.JUM-UNITES p { margin: 0; padding: 9px 10px; font-size: 0.74rem; color: #64748b; }' +
+        'html body.dark-mode .JUM-UNITES { background: #1f1f1f; border-color: #3a3a3a; } html body.dark-mode .JUM-UNITES button { color: #ececec; } html body.dark-mode .JUM-UNITES button:hover { background: #2a2a2a; }' +
         '.JUM-R-AIDE { font-size: 0.76rem; color: #64748b; margin: 0 0 10px; line-height: 1.45; }' +
         '.JUM-R-ETAPES { padding-left: 20px; } .JUM-R-ETAPES li { margin: 2px 0; }' +
         '.JUM-LIAISON-BLOC { margin: 0 0 14px; padding: 10px 12px; border-radius: 12px; background: #EEF2F6; border: 1px solid #cfdbe6; font-size: 0.8rem; }' +
@@ -1013,7 +1018,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 158, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 159, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1228,6 +1233,42 @@
     // Option « Demande de réservation » : { active, libelle } (libellé choisi par l'unité, sinon « Demande de réservation »).
     window.JUMELAGE_RESA = function() { var r = lireReglages(); return { active: r.resaActive !== false, libelle: r.resaLibelle || RESA_DEFAUT, defaut: !r.resaLibelle }; };
     window.JUMELAGE_REGLAGES_LIRE = function() { return lireReglages(); };
+    // Unités reconnues par TRIGONE, avec leur centre de coût dans le codier FD (codes de l'unité en vert, les autres en jaune).
+    // Une unité qui adopte TRIGONE s'ajoute ici. Le champ « Unité » du profil se choisit dans cette liste.
+    var UNITES = [
+        { nom: '1°RIISC', cc: 'SC5FMU1028', codier: 'UIISC n°1' },
+        { nom: '4°RIISC', cc: 'SC5FMU4033', codier: 'UIISC n°4' },
+        { nom: '5°RIISC', cc: 'SC5FMU502B', codier: 'UIISC n°5' },
+        { nom: '7°RIISC', cc: 'SC5FMU7013', codier: 'UIISC n°7' },
+        { nom: 'COMFORMISC', cc: 'SC0FMSC092', codier: 'COMFORMISC' }
+    ];
+    // « 4°RIISC », « 4E RIISC », « 4ème riisc », « UIISC n°4 » → même unité.
+    function normeUnite(t) {
+        var n = String(t || '').toUpperCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Z0-9]/g, '');
+        return n.replace(/^UIISCN?(\d+)$/, '$1RIISC').replace(/^(\d+)(?:ERE|ER|EME|E)?[RU]IISC$/, '$1RIISC');
+    }
+    function uniteConnue(t) { var n = normeUnite(t); return n ? UNITES.filter(function(u) { return normeUnite(u.nom) === n; })[0] || null : null; }
+    window.JUMELAGE_UNITES = function() { return UNITES.slice(); };
+    window.JUMELAGE_UNITE_INFO = function(t) { return uniteConnue(t); };
+    // Champ « Unité » : liste qui se filtre dès les premières lettres (on choisit, on ne se trompe pas).
+    function brancherListeUnites(inp) {
+        if (inp._unites) return; inp._unites = true;
+        var boite = inp.parentNode, liste = document.createElement('div');
+        boite.style.position = 'relative'; liste.className = 'JUM-UNITES'; liste.setAttribute('role', 'listbox'); liste.hidden = true;
+        boite.appendChild(liste);
+        function montrer() {
+            var q = normeUnite(inp.value), l = UNITES.filter(function(u) { return !q || normeUnite(u.nom).indexOf(q) >= 0 || normeUnite(u.codier).indexOf(q) >= 0; });
+            liste.innerHTML = l.length ? l.map(function(u) { return '<button type="button" role="option" data-u="' + esc(u.nom) + '"><b>' + esc(u.nom) + '</b><small>' + esc(u.codier) + ' au codier FD</small></button>'; }).join('')
+                : '<p>Aucune unité ne commence ainsi. Unité absente de la liste ? Signalez-la (Paramètres › Aide).</p>';
+            liste.hidden = false;
+        }
+        inp.addEventListener('input', montrer); inp.addEventListener('focus', montrer);
+        inp.addEventListener('blur', function() { setTimeout(function() { liste.hidden = true; var u = uniteConnue(inp.value); if (u) inp.value = u.nom; }, 150); });
+        liste.addEventListener('pointerdown', function(e) { e.preventDefault(); });
+        liste.addEventListener('click', function(e) { var b = e.target.closest('button'); if (!b) return; inp.value = b.getAttribute('data-u'); liste.hidden = true; inp.dispatchEvent(new Event('change', { bubbles: true })); });
+        inp.setAttribute('autocomplete', 'off');
+    }
+    document.addEventListener('focusin', function(e) { if (e.target && e.target.id === 'JUM-R-UNITE') brancherListeUnites(e.target); });
     window.JUMELAGE_QUI = function() { var r = lireReglages(); return [r.grade, r.nom, r.prenom].filter(Boolean).join(' '); };
     function chiffres(v) { return String(v || '').replace(/\D/g, ''); }
     function formatMatricule(v) { var c = chiffres(v).slice(0, 10); return [c.slice(0, 3), c.slice(3, 5), c.slice(5, 7), c.slice(7)].filter(Boolean).join(' '); }
@@ -1431,7 +1472,7 @@
                         champ('CIE', 'Compagnie', r.cie, 'type="text" autocomplete="off" placeholder="EX : 4CIE"') +
                         champ('NOM', 'Nom', r.nom, 'type="text" autocomplete="off" placeholder="EX : BOUQUET"') +
                         champ('PRENOM', 'Prénom', r.prenom, 'type="text" autocomplete="off" data-no-uppercase="1" placeholder="EX : Germain-Pierre"') +
-                        champ('UNITE', 'Unité / entité', r.unite, 'type="text" autocomplete="off" placeholder="EX : 4°RIISC"') +
+                        champ('UNITE', 'Unité (choisir dans la liste)', r.unite, 'type="text" autocomplete="off" placeholder="Tapez : 4°R…"') +
                         champ('MATRICULE', 'Matricule / NID', formatMatricule(r.matricule), 'type="text" inputmode="numeric" autocomplete="off" placeholder="067 50 10 191"') + '</div></div>' +
                 '<div data-etape="2" style="display:none;">' +
                     '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;">' + champ('MONMAIL', 'Mon mail', r.monMail, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
@@ -1468,7 +1509,7 @@
                     '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte TRIGONE, demandes et bibliothèque sont recopiés.</p>' +
                     htmlSaisieLiaison() + '</details>' : '') +
                 '<div data-vue="profil"><div class="JUM-R-TITRE">Mon identité</div>' +
-                '<div class="JUM-R-GRILLE">' + champ('UNITE', 'Unité / entité', r.unite, 'type="text" autocomplete="off" placeholder="EX : 4°RIISC"') +
+                '<div class="JUM-R-GRILLE">' + champ('UNITE', 'Unité (choisir dans la liste)', r.unite, 'type="text" autocomplete="off" placeholder="Tapez : 4°R…"') +
                     champ('CIE', 'CIE', r.cie, 'type="text" autocomplete="off" placeholder="EX : 4CIE"') +
                     champ('GRADE', 'Grade', r.grade, 'type="text" autocomplete="off" placeholder="EX : ADJUDANT"') +
                     champ('MATRICULE', 'Matricule / NID', formatMatricule(r.matricule), 'type="text" inputmode="numeric" autocomplete="off" placeholder="EX : 067 50 10 191"') +
@@ -1702,6 +1743,7 @@
         var c1 = v('CODE1'), c2 = v('CODE2');
         if (premiere && (!r.unite || !r.cie || !r.grade || !r.nom || !r.prenom || !r.matricule || !r.mailVal1 || !r.monMail || !r.mailChorus))
             return refuser('Merci de remplir tous les champs avant de continuer.');
+        if (r.unite) { var uc = uniteConnue(r.unite); if (!uc) return refuser('Choisissez votre unité dans la liste : tapez les premières lettres (ex : 4°RIISC).'); r.unite = uc.nom; }
         if (r.matricule && chiffres(r.matricule).length !== 10) return refuser('Le matricule doit comporter 10 chiffres (ex : 067 50 10 191).');
         var mails = [r.mailVal1, r.monMail, r.mailChorus].filter(Boolean);
         if (mails.some(function(m) { return !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m); })) return refuser('Une adresse mail n\'est pas valide.');
