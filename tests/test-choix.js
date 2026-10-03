@@ -21,6 +21,13 @@ module.exports = async function(srv) {
         empile: document.querySelector('.JUM-PAN-CR').getBoundingClientRect().top >= document.querySelector('.JUM-PAN-MER').getBoundingClientRect().bottom - 1 }));
     verifier(e.v2 && e.pans === 2 && e.empile, 'écran de choix (téléphone) : Mise en route en haut, Compte-rendu en bas');
     verifier(e.mer === 'Demande chez le VALIDEUR 2' && /^Mission en cours depuis le 29\/09\/2026$/.test(e.cr), 'état sous chaque logo : « ' + e.mer + ' », « ' + e.cr + ' »');
+    const dk = await t.evaluate(() => {
+        const d = document.querySelector('.JUM-DOCK'); if (!d || getComputedStyle(d).display === 'none') return null;
+        const vis = [...d.querySelectorAll('button')].filter(b => getComputedStyle(b).display !== 'none').map(b => b.dataset.d);
+        const vieux = ['.JUM-MAJ-BTN', '.JUM-CARTE-ACCES', '.JUM-PARAM-ACCES', '.JUM-NOTICE-ACCES'].every(s => { const x = document.querySelector('.JUM-V2 > ' + s); return !x || getComputedStyle(x).display === 'none'; });
+        return { bas: Math.abs(d.getBoundingClientRect().bottom - innerHeight) < 2, vis: vis.join(','), vieux };
+    });
+    verifier(dk && dk.bas && dk.vis === 'notice,param,carte,maj' && dk.vieux, 'téléphone : barre du bas Notice / Paramètres / Ma carte / Mise à jour (sans Affichage PC sur petit écran)');
     await t.click('.JUM-PAN-CR .JUM-SOUS'); await attendre(1500);
     verifier(/\/cr\/$/.test(t.url()), 'un toucher sur l\'espace Compte-rendu ouvre Compte-rendu');
     // Assistant Chorus DT sur PC : trois colonnes, ses compteurs.
@@ -33,6 +40,7 @@ module.exports = async function(srv) {
         return { cols: r('.JUM-PAN-MER').right <= r('.JUM-PAN-CR').left + 4 && r('.JUM-PAN-CR').right <= r('.JUM-PAN-CHORUS').left + 4,
             dem: document.querySelector('.JUM-CPT-L[data-cpt="chorus"] b').textContent, cr: document.querySelector('.JUM-CPT-L[data-cpt="cr"] b').textContent };
     });
+    verifier(await c.evaluate(() => { const d = document.querySelector('.JUM-DOCK'); return !d || getComputedStyle(d).display === 'none'; }), 'PC : pas de barre du bas sur l\'écran de choix');
     verifier(k.cols && k.dem === '3' && k.cr === '1', 'assistant Chorus DT (PC) : trois colonnes, 3 demandes validées et 1 compte-rendu à traiter');
     // Logo tricolore dans le bandeau du PDF de demande.
     await c.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1')); await c.reload(); await attendre(2500);
