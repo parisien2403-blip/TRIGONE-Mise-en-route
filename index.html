@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=154"></script>
+<script src="jumelage.js?v=155"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -517,6 +517,26 @@ body.dark-mode .MER-SUIVI-TRAIT { background: #525252; } body.dark-mode .MER-SUI
 .MER-REG-ONGLET { flex: 1; border: 0; border-radius: 10px; padding: 10px 8px; background: transparent; font: 700 0.8rem Montserrat, system-ui, sans-serif; color: #555; cursor: pointer; }
 .MER-REG-ONGLET span { display: inline-block; min-width: 20px; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,0.08); font-size: 0.72rem; }
 .MER-REG-ONGLET.actif { background: #1a1a1a; color: #fff; } .MER-REG-ONGLET.actif span { background: #d6a756; color: #1a1a1a; }
+/* Registre unique : filtres par étape, frise de la mission ligne par ligne */
+.MER-REG-FILTRES { display: flex; flex-wrap: wrap; gap: 6px; margin: 4px 0 12px; }
+.MER-REG-FILTRE { border: 1.5px solid var(--tg-border); border-radius: 999px; padding: 7px 12px; background: #fff; font: 700 0.76rem Montserrat, system-ui, sans-serif; color: #444; cursor: pointer; }
+.MER-REG-FILTRE span { display: inline-block; min-width: 18px; margin-left: 2px; padding: 1px 6px; border-radius: 999px; background: rgba(0,0,0,0.07); font-size: 0.7rem; text-align: center; }
+.MER-REG-FILTRE.actif { background: #1a1a1a; border-color: #1a1a1a; color: #fff; } .MER-REG-FILTRE.actif span { background: #d6a756; color: #1a1a1a; }
+.MER-REG-FILTRE.retard span { background: rgba(185,28,28,0.12); color: #b91c1c; } .MER-REG-FILTRE.ok span { background: rgba(21,128,61,0.12); color: #15803d; } .MER-REG-FILTRE.encours span { background: rgba(37,99,235,0.12); color: #1d4ed8; }
+.MER-REG-FRISE { display: flex; margin: 2px 0 12px; }
+.MER-REG-FRISE span { flex: 1; position: relative; padding-top: 18px; text-align: center; font: 700 0.64rem Montserrat, system-ui, sans-serif; color: #a3a3a3; letter-spacing: 0.02em; }
+.MER-REG-FRISE span::before { content: ""; position: absolute; top: 6px; left: -50%; right: 50%; height: 3px; background: #e5e5e5; }
+.MER-REG-FRISE span:first-child::before { display: none; }
+.MER-REG-FRISE i { position: absolute; top: 1px; left: 50%; width: 13px; height: 13px; margin-left: -6.5px; border-radius: 50%; background: #fff; border: 2.5px solid #d4d4d4; z-index: 1; box-sizing: border-box; }
+.MER-REG-FRISE span.fait { color: #8a5f12; } .MER-REG-FRISE span.fait::before { background: #d6a756; } .MER-REG-FRISE span.fait i { background: #d6a756; border-color: #d6a756; }
+.MER-REG-FRISE span.ici i { box-shadow: 0 0 0 4px rgba(214,167,86,0.25); }
+.MER-REG-FRISE.ok span.fait { color: #15803d; } .MER-REG-FRISE.ok span.fait::before, .MER-REG-FRISE.ok span.fait i { background: #15803d; border-color: #15803d; }
+.MER-REG-FRISE.retard span.ici i { background: #b91c1c; border-color: #b91c1c; box-shadow: 0 0 0 4px rgba(185,28,28,0.2); } .MER-REG-FRISE.retard span.ici { color: #b91c1c; }
+.MER-REG-FRISE.encours span.ici i { background: #2563eb; border-color: #2563eb; box-shadow: 0 0 0 4px rgba(37,99,235,0.2); } .MER-REG-FRISE.encours span.ici { color: #1d4ed8; }
+.MER-REG-LIGNE.encours { border-left-color: #2563eb; } .MER-REG-MARQ.encours { background: rgba(37,99,235,0.1); color: #1d4ed8; }
+.MER-REG-GRILLE.montants { margin-top: 8px; padding-top: 8px; border-top: 1px dashed var(--tg-border); grid-template-columns: repeat(3, minmax(0, 1fr)); }
+body.dark-mode .MER-REG-FILTRE { background: #1f1f1f; border-color: #3a3a3a; color: #d4d4d4; } body.dark-mode .MER-REG-FILTRE.actif { background: #d6a756; color: #1a1a1a; border-color: #d6a756; } body.dark-mode .MER-REG-FILTRE.actif span { background: #1a1a1a; color: #d6a756; }
+body.dark-mode .MER-REG-FRISE i { background: #1f1f1f; border-color: #4a4a4a; } body.dark-mode .MER-REG-FRISE span::before { background: #3a3a3a; }
 .MER-REG-LIGNE { border: 1.5px solid var(--tg-border); border-left: 5px solid #d6a756; border-radius: 14px; padding: 12px 14px; margin: 0 0 10px; background: #fff; }
 .MER-REG-LIGNE.retard { border-left-color: #b91c1c; } .MER-REG-LIGNE.ok { border-left-color: #15803d; } .MER-REG-LIGNE.avenir { border-left-color: #9ca3af; }
 .MER-REG-TETE { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
@@ -535,6 +555,7 @@ body.dark-mode .MER-SUIVI-TRAIT { background: #525252; } body.dark-mode .MER-SUI
 @media (min-width: 1100px) {
   .MER-REG-GRILLE.mer { grid-template-columns: 96px minmax(0, 2fr) 104px 92px 92px minmax(0, 2.2fr) 110px; }
   .MER-REG-GRILLE.cr { grid-template-columns: 110px minmax(0, 2fr) 120px 110px 110px minmax(0, 2fr); }
+  .MER-REG-GRILLE.montants { grid-template-columns: repeat(6, minmax(0, 1fr)); }
   .MER-REG-GRILLE.cr span:nth-child(n+7) { padding-top: 8px; border-top: 1px dashed var(--tg-border); }
   .MER-REG-GRILLE span.large { grid-column: auto; } .MER-REG-GRILLE small { white-space: nowrap; }
  .MER-REG-PIED { flex-direction: row; align-items: center; } .MER-REG-PIED .BTN { width: auto; } }
@@ -970,6 +991,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=154"></script>
+<script src="app.js?v=155"></script>
 </body>
 </html>
