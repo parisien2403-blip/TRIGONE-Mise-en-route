@@ -1778,7 +1778,7 @@
             var notifs = (/Android/i.test(navigator.userAgent || '') ? '<p class="JUM-R-AIDE JUM-PF-ENCART"><b>Android</b> : pour les recevoir sans retard, même appli fermée : Paramètres du téléphone › Applications › Chrome › Batterie › « Non restreinte ».</p>' : '') +
                 (estIOS() ? '<p class="JUM-R-AIDE JUM-PF-ENCART"><b>iPhone / iPad</b> : installez TRIGONE sur l\'écran d\'accueil (Safari › Partager › « Sur l\'écran d\'accueil ») et ouvrez-la depuis cette icône pour activer les notifications.</p>' : '');
             var dest = function(id, label, valeur, role) {
-                return '<div class="JUM-PF-DEST" data-dest="' + id + '"><div class="JUM-R-CHAMP"><label for="JUM-R-' + id + '">' + label + '</label><input id="JUM-R-' + id + '" type="email" autocomplete="off" data-scan-carte value="' + esc(valeur || '') + '" placeholder="Choisir ci-dessous, ou prenom.nom@trigone-app.com"></div>' +
+                return '<div class="JUM-PF-DEST" data-dest="' + id + '"><div class="JUM-R-CHAMP"><label for="JUM-R-' + id + '">' + label + '</label><input id="JUM-R-' + id + '" type="email" autocomplete="off" data-scan-carte value="' + esc(valeur || '') + '" placeholder="Tapez un nom, ou choisissez ci-dessous"></div>' +
                     '<div class="JUM-PF-LISTE" data-pour="' + id + '" data-role="' + role + '"></div></div>';
             };
             return '<div class="JUM-R-CARTE JUM-PF-CARTE">' +
@@ -1955,13 +1955,16 @@
             if (!monCompte() || !navigator.onLine) return;
             Array.prototype.forEach.call(racine.querySelectorAll('.JUM-PF-LISTE'), function(z) {
                 var role = z.getAttribute('data-role'), champ = document.getElementById('JUM-R-' + z.getAttribute('data-pour'));
-                var dessiner = function(l) {
-                    z.innerHTML = l.length ? l.map(function(x) {
+                var dessiner = function(tous) {
+                    // Le champ sert aussi de recherche : un nom tapé filtre la liste (une adresse choisie la garde entière).
+                    var q = champ.value.trim().toLowerCase(), l = tous;
+                    if (q && !tous.some(function(x) { return x.mail === q; })) l = tous.filter(function(x) { return ([x.grade, x.nom, x.prenom].join(' ') + ' ' + x.mail).toLowerCase().indexOf(q) >= 0; });
+                    z.innerHTML = l.length ? l.slice(0, 8).map(function(x) {
                         var qui = [x.grade, x.nom, x.prenom].filter(Boolean).join(' ') || x.mail;
                         return '<button type="button" class="JUM-PF-PERS' + (champ.value.trim().toLowerCase() === x.mail ? ' choisi' : '') + '" data-mail="' + esc(x.mail) + '"><b>' + esc(qui) + '</b><small>' + esc(x.mail) + '</small></button>';
-                    }).join('') : '<p class="JUM-PF-VIDE">Personne de votre unité n\'a encore ce rôle dans TRIGONE : saisissez son adresse, ou scannez sa carte.</p>';
+                    }).join('') + (l.length > 8 ? '<p class="JUM-PF-VIDE">… tapez un nom pour affiner.</p>' : '') : tous.length ? '' : '<p class="JUM-PF-VIDE">Personne de votre unité n\'a encore ce rôle dans TRIGONE : saisissez son adresse, ou scannez sa carte.</p>';
                     Array.prototype.forEach.call(z.querySelectorAll('.JUM-PF-PERS'), function(b) {
-                        b.addEventListener('click', function() { champ.value = b.getAttribute('data-mail'); dessiner(l); err.textContent = ''; garderBrouillon(); });
+                        b.addEventListener('click', function() { champ.value = b.getAttribute('data-mail'); dessiner(tous); err.textContent = ''; garderBrouillon(); });
                     });
                 };
                 champ.addEventListener('input', function() { if (annuaires[role]) dessiner(annuaires[role]); });
