@@ -1146,7 +1146,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 176, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 177, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -5621,9 +5621,45 @@
         var unite = null, filtre = '';
         var charger = function() {
             appelApi('compte/demandes').then(function(r) { donnees = r; NB_DEMANDES_COMPTE = (r.demandes || []).length; dessiner(); }, function(e) { erreurTxt = e.message; dessiner(); });
-            appelApi('compte/unite').then(function(r) { unite = r; dessiner(); }, function() { unite = { comptes: [], role: '' }; dessiner(); });
+            appelApi('compte/unite').then(function(r) { unite = r; majInscriptions(r); dessiner(); }, function() { unite = { comptes: [], role: '' }; dessiner(); });
         };
         dessiner(); charger();
+    };
+    // Inscriptions en attente (dossier « Demandes de création de compte » de l'espace Assist Chorus DT) : relevées au
+    // plus toutes les 30 s, et après chaque décision.
+    var INSCRIPTIONS = null, INSCR_LE = 0, INSCR_EN_COURS = null;
+    function majInscriptions(r) {
+        var l = ((r && r.comptes) || []).filter(function(x) { return x.statut === 'attente' && !x.moi; }), avant = JSON.stringify(INSCRIPTIONS);
+        INSCRIPTIONS = l; INSCR_LE = Date.now();
+        if (avant !== JSON.stringify(l)) try { window.dispatchEvent(new Event('trigone-inscriptions')); } catch (e) {}
+    }
+    window.JUMELAGE_INSCRIPTIONS = function() { return (INSCRIPTIONS || []).slice(); };
+    window.JUMELAGE_INSCRIPTIONS_ACTUALISER = function(forcer) {
+        if (!monCompte() || !navigator.onLine || !(rolesLocaux().chorus || lireTxt(CLE_ROLE_ADMIN))) return Promise.resolve([]);
+        if (INSCR_EN_COURS) return INSCR_EN_COURS;
+        if (!forcer && Date.now() - INSCR_LE < 30000) return Promise.resolve(window.JUMELAGE_INSCRIPTIONS());
+        INSCR_LE = Date.now();
+        INSCR_EN_COURS = appelApi('compte/unite').then(function(r) { INSCR_EN_COURS = null; majInscriptions(r); return window.JUMELAGE_INSCRIPTIONS(); },
+            function() { INSCR_EN_COURS = null; return window.JUMELAGE_INSCRIPTIONS(); });
+        return INSCR_EN_COURS;
+    };
+    window.JUMELAGE_INSCRIPTION_DECIDER = function(mail, accepte) {
+        var x = (INSCRIPTIONS || []).filter(function(y) { return y.mail === mail; })[0] || {}, qui = [x.grade, x.nom, x.prenom].filter(Boolean).join(' ') || x.adresse || mail;
+        var go = function() {
+            appelApi('compte/valider', { methode: 'POST', corps: { mail: mail, accepte: accepte } }).then(function() {
+                bandeau(accepte ? '✔ ' + qui + ' : compte validé.' : 'Inscription de ' + qui + ' refusée.'); window.JUMELAGE_INSCRIPTIONS_ACTUALISER(true);
+            }, function(e) { bandeau(e.message); window.JUMELAGE_INSCRIPTIONS_ACTUALISER(true); });
+        };
+        if (accepte) { go(); return; }
+        if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Refuser l\'inscription de ' + qui + ' ?', 'Le compte et son adresse TRIGONE sont effacés.', 'Refuser', go, '⚠️', null, true);
+        else if (window.confirm('Refuser l\'inscription de ' + qui + ' ?')) go();
+    };
+    window.JUMELAGE_INSCRIPTION_SCANNER = function() {
+        window.JUMELAGE_SCANNER_CARTE({ titre: 'Valider une inscription', sous: 'Scannez le QR code de sa carte TRIGONE (verso).' }).then(function(c) {
+            if (!c) return;
+            if (!c.attente) { bandeau(window.JUMELAGE_CARTE_NOM(c) + ' : compte déjà validé.'); return; }
+            appelApi('compte/valider-carte', { methode: 'POST', corps: { carte: c.id } }).then(function(x) { bandeau('✔ ' + x.qui + ' : compte validé.'); window.JUMELAGE_INSCRIPTIONS_ACTUALISER(true); }, function(e) { bandeau(e.message); });
+        });
     };
     window.JUMELAGE_MES_APPAREILS = function() {
         if (window.JUMELAGE_FERMER_PARAMETRES) window.JUMELAGE_FERMER_PARAMETRES();

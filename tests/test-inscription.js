@@ -46,6 +46,14 @@ module.exports = async function() {
     // Validation en personne : un 2e inscrit, sa carte scannée par l'administrateur.
     const n2 = await page();
     const mail2 = await inscrire(n2, 'Hugo');
+    // Espace Assist Chorus DT : dossier jaune « Demandes de création de compte ».
+    await a.evaluate(() => { document.querySelectorAll('.JUM-GC-FOND').forEach(x => x.remove()); localStorage.setItem('trigone_role_admin', '4RIISC'); MER_OUVRIR_CHORUS(); }); await attendre(2500);
+    const dos = await a.evaluate(() => { const d = document.querySelector('.MER-DOSSIER[data-dossier="inscriptions"]'); return d ? d.innerText : ''; });
+    verifier(/demandes de création de compte/i.test(dos) && /à valider/i.test(dos), 'Assist Chorus DT : dossier « Demandes de création de compte » avec les inscriptions à valider');
+    await a.click('.MER-DOSSIER[data-dossier="inscriptions"]'); await attendre(2000);
+    if (process.env.TRIGONE_CAPTURE) await a.screenshot({ path: process.env.TRIGONE_CAPTURE });
+    verifier(await a.evaluate(m => !!document.querySelector('.MER-INSCR[data-m="' + m + '"]'), mail2) && (await a.evaluate(() => document.getElementById('PAGE-STAGE').innerText)).includes('CAPORAL ' + nom + ' Hugo'),
+        'dossier ouvert : l\'inscription (grade, nom, prénom) avec Valider / Refuser');
     const carte = await api(n2, 'carte', { grade: 'CAPORAL', nom, prenom: 'Hugo', unite: '4°RIISC', cie: '', nid: '' });
     const lu = await api(a, 'carte?id=' + encodeURIComponent(carte.id || ''));
     verifier(lu.carte && lu.carte.attente === true, 'carte d\'un compte en attente : signalée au responsable qui la scanne');

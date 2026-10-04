@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=176"></script>
+<script src="jumelage.js?v=177"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -140,6 +140,12 @@ body.dark-mode .MER-EQUIPE-LIGNE { border-color: #404040; } body.dark-mode .MER-
 .MER-RECU-TRAITES .MER-RECU { opacity: 0.75; }
 /* Espace Assistant Chorus DT */
 .MER-CHORUS-TETE { text-align: left; }
+.MER-INSCR { display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 12px 14px; border: 1px solid var(--tg-border); border-radius: 14px; margin-bottom: 8px; background: var(--sm2-surface, #fff); }
+.MER-INSCR-TXT b { display: block; font-size: 0.9rem; }
+.MER-INSCR-TXT small { display: block; color: #64748b; font-size: 0.74rem; margin-top: 2px; word-break: break-all; }
+.MER-INSCR-ACT { display: flex; gap: 8px; flex-shrink: 0; }
+.MER-INSCR-ACT .BTN { width: auto; margin: 0; }
+@media (max-width: 520px) { .MER-INSCR { flex-direction: column; align-items: stretch; } .MER-INSCR-ACT .BTN { flex: 1; } }
 .MER-CHORUS-LOGO { display: block; width: min(220px, 60%); margin: 4px auto 18px; }
 .MER-CHORUS-ADMIN { text-align: center; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.3em; color: #a87a1f; margin: -12px 0 16px; padding-left: 0.3em; }
 body.dark-mode .MER-CHORUS-ADMIN { color: #d6a756; }
@@ -1051,6 +1057,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=176"></script>
+<script src="app.js?v=177"></script>
 </body>
 </html>
