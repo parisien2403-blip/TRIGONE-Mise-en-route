@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 171,
-  "notifier": true,
-  "message": "Pastille « Hors réseau », relance groupée des comptes-rendus en retard, un registre OMR par régiment, justificatifs « À joindre / Rangés »."
+  "build": 172,
+  "notifier": false,
+  "message": "Votre photo de Ma carte apparaît dans la pastille du compte."
 }
