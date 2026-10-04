@@ -676,6 +676,7 @@
         /* Espace Assistant Chorus DT */
         '.JUM-BLOC-CHORUS { display: flex; align-items: center; gap: 18px; padding: 0 20px calc(max(18px, env(safe-area-inset-bottom, 0px)) + 36px); max-width: 520px; width: 100%; box-sizing: border-box; }' +
         '.JUM-CHORUS-LOGO { position: relative; flex-shrink: 0; }' +
+        '.JUM-CHORUS-ADMIN { display: block; text-align: center; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.22em; margin-top: 2px; color: #a87a1f; }' +
         '.JUM-V2 .JUM-CHORUS, .JUM-V2 .JUM-CHORUS:hover, .JUM-V2.choix-chorus .JUM-CHORUS { position: static; transform: none; width: min(32vw, 15vh, 150px); mix-blend-mode: normal; }' +
         '.JUM-V2 .JUM-CHORUS img { filter: none; }' +
         '.JUM-V2 .JUM-CHORUS-NB { display: none; }' +
@@ -1296,6 +1297,8 @@
     var LOGO_CHORUS = (DANS_CR ? '../' : '') + 'logo_chorus.webp';
     function roleChorus() { try { return localStorage.getItem(CLE_ROLE_CHORUS) === '1'; } catch (e) { return false; } }
     window.JUMELAGE_ROLE_CHORUS = roleChorus;
+    // Administrateur de l'unité (toujours assistant Chorus DT) : « ADMINISTRATEUR » sous le logo Assist Chorus-DT.
+    window.JUMELAGE_ROLE_ADMIN = function() { return !!lireTxt(CLE_ROLE_ADMIN); };
     function empreinteCodeChorus(code) {
         return crypto.subtle.digest('SHA-256', new TextEncoder().encode('TRIGONE-CHORUS:' + String(code || '').trim().toUpperCase())).then(function(b) {
             return Array.prototype.map.call(new Uint8Array(b), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
@@ -5871,7 +5874,7 @@
     // Espace Assistant Chorus DT : son logo et ce qui l'attend (demandes validées, comptes-rendus reçus).
     function panneauChorus() {
         return '<div class="JUM-PAN JUM-PAN-CHORUS" data-app="chorus" role="button" tabindex="0" aria-label="Ouvrir l\'espace Assistant Chorus DT">' +
-            '<div class="JUM-BLOC-CHORUS"><div class="JUM-CHORUS-LOGO"><button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button></div>' +
+            '<div class="JUM-BLOC-CHORUS"><div class="JUM-CHORUS-LOGO"><button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button>' + (lireTxt(CLE_ROLE_ADMIN) ? '<span class="JUM-CHORUS-ADMIN">ADMINISTRATEUR</span>' : '') + '</div>' +
             '<div class="JUM-CPTS"><span class="JUM-SOUS">Mon espace</span>' +
                 '<div class="JUM-CPT-L" data-cpt="chorus"><b>0</b><span>Demandes validées à traiter</span></div>' +
                 '<div class="JUM-CPT-L" data-cpt="cr"><b>0</b><span>Comptes-rendus reçus</span></div></div></div>' + FLECHE_GO + '</div>';

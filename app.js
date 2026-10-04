@@ -216,7 +216,7 @@ function TPL_MENU_PC() {
             return '<button type="button" class="PC-NAV' + (actifC ? ' actif' : '') + '" onclick="' + onclick + '">' + icone +
                 '<span>' + libelle + '</span>' + (pastille ? '<span class="PC-PASTILLE">' + pastille + '</span>' : '') + '</button>';
         };
-        return '<button type="button" class="PC-MARQUE PC-MARQUE-CHORUS" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()" title="Revenir à l\'écran de choix"><img src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT"></button>' +
+        return '<button type="button" class="PC-MARQUE PC-MARQUE-CHORUS" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()" title="Revenir à l\'écran de choix"><img src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT">' + (MER_ADMIN() ? '<span class="PC-MARQUE-ADMIN">ADMINISTRATEUR</span>' : '') + '</button>' +
             '<div class="PC-COMPTE-SLOT"></div>' +
             itemC(!dos, 'MER_RESULTATS_VERIF = null; MER_DOSSIER.CHORUS = null; SHOW_PAGE(\'CHORUS\')', MER_ICONES.ACCUEIL, 'Accueil Chorus DT', MER_NB_CHORUS() || '') +
             (MER_COMPTE_ACTIF() ? itemC(dos === 'registre', 'MER_RESULTATS_VERIF = null; OUVRIR_REGISTRE(\'tout\')', MER_ICONES.REGISTRE, 'Registre des OMR') : '') +
@@ -3830,6 +3830,7 @@ function TPL_RECEPTION() {
 // Ouvert depuis le logo central de l'écran de choix (rôle activé dans les Réglages avec son code) : sa boîte de
 // réception (demandes validées des 2e valideurs, comptes-rendus des missionnaires), sans passer par l'Espace valideur.
 var MER_ESPACE_CHORUS = false;
+function MER_ADMIN() { return !!(window.JUMELAGE_ROLE_ADMIN && JUMELAGE_ROLE_ADMIN()); }
 window.MER_OUVRIR_CHORUS = function() { SHOW_PAGE('CHORUS'); };
 function TPL_CHORUS() {
     var compte = MER_COMPTE_ACTIF();
@@ -3838,6 +3839,7 @@ function TPL_CHORUS() {
     // Résultat d'un « Contrôle détaillé » : en tête de page, bien visible (fermé par « Fermer le contrôle »).
     return (MER_RESULTATS_VERIF ? TPL_VERIFIER() : '') +
         '<div class="CARD MER-CHORUS-TETE' + (MER_DOSSIER.CHORUS === 'registre' ? ' PC-LARGE' : '') + '"><img class="MER-CHORUS-LOGO JUM-LOGO-CHOIX" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT" title="Revenir à l\'écran de choix" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">' +
+        (MER_ADMIN() ? '<div class="MER-CHORUS-ADMIN">ADMINISTRATEUR</div>' : '') +
         (compte ? '<p class="MER-HINT" style="margin:0 0 10px;">Envois reçus à <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>, chiffrés, directement dans TRIGONE.</p>' +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:12px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>' +
             (MER_DOSSIER.CHORUS === 'registre' ? TPL_REGISTRE() : (MER_DOSSIER.CHORUS ? '' : TPL_BOUTON_REGISTRE()) + TPL_DOSSIERS('CHORUS', l))
