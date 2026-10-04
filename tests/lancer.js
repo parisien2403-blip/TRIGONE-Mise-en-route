@@ -31,6 +31,7 @@ const TESTS = {
     'pdf-complet': ['Compte-rendu et justificatifs en un seul PDF (assistant Chorus DT)', require('./test-pdf-complet')],
     'choix': ['Écran de choix et logo des PDF', require('./test-choix')],
     'inscription': ['Inscription sans adresse mail, validation, blocage, code de réactivation', require('./test-inscription')],
+    'premiere': ['Première connexion guidée (7 étapes, destinataires selon les rôles, bienvenue)', require('./test-premiere')],
     'comptes': ['Comptes : administrateur, réinitialisation et suppression sur demande', require('./test-comptes')],
     'medailles': ['Médailles : recompter depuis la Bibliothèque, repartir à zéro', require('./test-medailles')],
     'scenarios': ['Matrice de scénarios de bout en bout (demandes, refus, erreurs, comptes-rendus)', require('./test-scenarios')],

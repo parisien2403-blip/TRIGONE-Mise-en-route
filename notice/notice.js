@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 175;
+    var VERSION = 176;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i><span class="n-leg">' + TEL_SVG + (n === 'c3-carte-grand' ? 'Téléphone à l\'horizontale · Android / iPhone' : 'Téléphone · Android / iPhone') + '</span></button>'; }
@@ -75,7 +75,7 @@
         ['Créer son compte (identité, puis validation)', 'Activer les notifications', 'Ajouter un autre appareil (PC, 2e téléphone)', 'Un compte, plusieurs appareils'], 'compte'));
     ajouter(page('Créer son compte — 1/2', duo('f1-inscription', et(['Écran d\'accueil de TRIGONE › <b>Créer mon compte</b>.', r(1) + ' Votre <b>grade</b> et votre <b>unité</b> (choisie dans la liste).', r(2) + ' Votre <b>nom</b> et votre <b>prénom</b>.', r(3) + ' TRIGONE affiche <b>votre adresse TRIGONE</b> (homonyme : prénom.nom2…).', r(4) + ' <b>Créer mon compte</b>.'])) +
         savoir('Aucune adresse mail personnelle n\'est demandée. Compte créé avant octobre 2026 avec une adresse mail : onglet <b>Se connecter</b>, adresse puis code reçu par mail.'), 'compte'));
-    ajouter(page('Créer son compte — 2/2', duo('f2-attente', et(['Le compte est créé, <b>en attente de validation</b> : l\'administrateur et l\'assistant Chorus DT de votre unité sont prévenus.', '<b>Plus rapide</b> : montrez votre <b>carte TRIGONE</b> (Ma carte) à votre chef, un valideur ou l\'assistant Chorus DT : il la scanne, c\'est validé.', 'En attendant, vous pouvez préparer vos demandes ; elles partiront une fois le compte validé (une notification vous prévient).'])) +
+    ajouter(page('Créer son compte — 2/2', duo('f2-parcours', et(['TRIGONE vous guide ensuite, <b>une étape par écran</b> : <b>profil</b> (compagnie, matricule), <b>code d\'accès</b>, <b>carte TRIGONE</b> (photo), <b>rôles</b>, <b>destinataires</b>, <b>notifications</b>.', '<b>À qui j\'envoie ?</b> : votre VALIDEUR 1 et l\'assistant Chorus DT se <b>choisissent dans la liste de votre unité</b> (ou en scannant leur carte). Un VALIDEUR 1 choisit aussi son VALIDEUR 2.', 'Un écran <b>Bienvenue dans TRIGONE</b> termine l\'inscription. Fermé en route, TRIGONE reprend à la même étape.', 'Le compte reste <b>en attente de validation</b> : montrez votre <b>carte TRIGONE</b> à votre chef, un valideur ou l\'assistant Chorus DT, qui la scanne.'])) +
         attention('Tant que le compte n\'est pas validé, il ne peut <b>ni envoyer ni recevoir</b> (demandes, factures par mail).'), 'compte'));
     ajouter(page('Notifications', duo('83-compte-notifications', et(['Ouvrez <b>Mon compte</b> (pastille en haut) › Paramètres › Notifications, ou la fenêtre Compte TRIGONE.', r(1) + ' Touchez <b>Activer les notifications</b>, puis <b>Autoriser</b> dans la fenêtre du téléphone.', 'Vous êtes prévenu de chaque demande reçue, refus, question, compte-rendu reçu et étape de votre suivi, <b>même appli fermée</b>.'])) +
         savoir('Sur Android, pour des notifications sans retard : Paramètres du téléphone › Applications › <b>Chrome</b> › Batterie › <b>« Non restreinte »</b>.'), 'compte'));
