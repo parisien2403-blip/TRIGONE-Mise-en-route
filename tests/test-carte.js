@@ -44,6 +44,7 @@ module.exports = async function() {
     verifier(await a.evaluate(() => !!document.querySelector('.JUM-CARTE-CADRE canvas')), 'photo : fenêtre de cadrage (glisser, zoom)');
     await a.click('.JUM-CARTE-CADRE .JUM-R-PRINCIPAL'); await attendre(800);
     verifier(await a.evaluate(() => /^data:image\/jpeg/.test(localStorage.getItem('trigone_carte_photo') || '') && !!document.querySelector('.JUM-CARTE.recto .JUM-CARTE-PHOTO img')), 'photo cadrée : sur la carte, gardée sur l\'appareil');
+    verifier(await a.evaluate(() => [...document.querySelectorAll('.JUM-CPT .JUM-AV')].some(x => x.classList.contains('photo') && x.querySelector('img'))), 'pastille du compte : la photo de Ma carte à la place des initiales');
     // Plein écran
     await a.click('.JUM-CARTE-GRAND'); await attendre(800);
     verifier(await a.evaluate(() => !!document.querySelector('.JUM-CARTE-PLEIN .JUM-CARTE')), '« Afficher en grand » : la carte occupe l\'écran');

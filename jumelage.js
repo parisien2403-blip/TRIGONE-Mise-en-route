@@ -394,6 +394,7 @@
             ' font-family: Montserrat, system-ui, sans-serif; animation: jum-menu 0.18s ease both; max-height: calc(100vh - 90px); overflow-y: auto; }' +
         '.JUM-CPT-TETE { display: flex; gap: 12px; align-items: center; padding: 12px 12px 10px; }' +
         '.JUM-CPT-TETE .JUM-AV { width: 44px; height: 44px; font-size: 0.95rem; }' +
+        '.JUM-AV.photo { overflow: hidden; background: #1a1a1a; box-shadow: 0 0 0 2px #d6a756; } .JUM-AV.photo img { width: 100%; height: 100%; object-fit: cover; object-position: 50% 28%; display: block; }' +
         '.JUM-CPT-TETE b { display: block; font-size: 0.9rem; } .JUM-CPT-TETE small { display: block; font-size: 0.72rem; color: #64748b; margin-top: 2px; word-break: break-all; }' +
         '.JUM-CPT-ROLES { display: flex; flex-wrap: wrap; gap: 5px; padding: 0 12px 10px; }' +
         '.JUM-CPT-ROLES span { font-size: 0.62rem; font-weight: 800; letter-spacing: 0.05em; padding: 4px 8px; border-radius: 999px; background: #eef2f6; color: #9a6f22; }' +
@@ -1120,7 +1121,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 171, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 172, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -4019,9 +4020,14 @@
         return [r.grade, r.nom].filter(Boolean).join(' ') || (c ? c.mail.split('@')[0] : '');
     }
     function etatPoint() { return notifEtat() !== 'active' ? 'off' : notifMuet() ? 'muet' : 'ok'; }
+    // Pastille ronde du compte : la photo de Ma carte (gardée sur l'appareil) si elle existe, sinon les initiales.
+    function avatarHtml() {
+        var ph = lireTxt('trigone_carte_photo');
+        return ph && /^data:image\//.test(ph) ? '<span class="JUM-AV photo"><img src="' + ph + '" alt=""></span>' : '<span class="JUM-AV">' + esc(initiales()) + '</span>';
+    }
     function htmlBoutonCompte() {
         if (!monCompte()) return (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : '') + '<span class="JUM-CPT-NOM">Se connecter</span>';
-        return '<span class="JUM-AV">' + esc(initiales()) + '</span><span class="JUM-CPT-NOM">' + esc(nomCompte()) + '</span><i class="JUM-CPT-PT ' + etatPoint() + '"></i>';
+        return avatarHtml() + '<span class="JUM-CPT-NOM">' + esc(nomCompte()) + '</span><i class="JUM-CPT-PT ' + etatPoint() + '"></i>';
     }
     function titreBoutonCompte() {
         if (!monCompte()) return 'Se connecter à TRIGONE';
@@ -4077,6 +4083,7 @@
         });
     }
     window.JUMELAGE_MAJ_COMPTE = majBoutonsCompte;
+    window.addEventListener('storage', function(ev) { if (ev.key === 'trigone_carte_photo') majBoutonsCompte(); });
     function creerBoutonCompte(classe) {
         var b = document.createElement('button');
         b.type = 'button'; b.className = 'JUM-CPT' + (classe ? ' ' + classe : '') + (monCompte() ? '' : ' deconnecte');
@@ -4152,7 +4159,7 @@
         if (!c) m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">?</span><div><b>Pas connecté</b><small>Connectez-vous pour envoyer et recevoir vos demandes et comptes-rendus.</small></div></div>' +
             '<button type="button" data-action="connexion">' + ic('personne') + '<span><b>Se connecter</b><small>Première connexion, ou autre appareil</small></span></button>' +
             '<div class="JUM-CPT-SEP"></div>' + lignesCourtes;
-        else m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">' + esc(initiales()) + '</span><div><b>' + esc([lireReglages().grade, lireReglages().nom, lireReglages().prenom].filter(Boolean).join(' ') || nomCompte()) + '</b><small>' + esc(c.mail) + '</small></div></div>' +
+        else m.innerHTML = '<div class="JUM-CPT-TETE">' + avatarHtml() + '<div><b>' + esc([lireReglages().grade, lireReglages().nom, lireReglages().prenom].filter(Boolean).join(' ') || nomCompte()) + '</b><small>' + esc(c.mail) + '</small></div></div>' +
             '<div class="JUM-CPT-ROLES"><span>MISSIONNAIRE</span>' + Object.keys(LIBELLES_ROLES).filter(function(k) { return roles[k]; }).map(function(k) { return '<span class="' + (k === 'chorus' ? 'or' : '') + '">' + LIBELLES_ROLES[k] + '</span>'; }).join('') + '</div>' +
             '<div class="JUM-CPT-SEP"></div>' + lignesCourtes +
             '<div class="JUM-CPT-SEP"></div>' +
@@ -4253,7 +4260,7 @@
         var dessiner = function() {
             fenParam.setAttribute('data-rubrique', actuelle.id);
             fenParam.innerHTML = '<div class="JUM-PARAM-CARTE" role="dialog" aria-label="Paramètres">' +
-                '<div class="JUM-PARAM-TETE">' + (c ? '<span class="JUM-AV">' + esc(initiales()) + '</span>' : '') + '<h2>Paramètres</h2><button type="button" class="JUM-PARAM-FERMER" aria-label="Fermer">✕</button></div>' +
+                '<div class="JUM-PARAM-TETE">' + (c ? avatarHtml() : '') + '<h2>Paramètres</h2><button type="button" class="JUM-PARAM-FERMER" aria-label="Fermer">✕</button></div>' +
                 '<div class="JUM-PARAM-CORPS"><nav class="JUM-PARAM-NAV">' + rubs.map(function(x) {
                     return '<button type="button" data-rub="' + x.id + '" class="' + (x === actuelle ? 'actif' : '') + '">' + x.icone + x.titre + '</button>'; }).join('') + '</nav>' +
                 '<div class="JUM-PARAM-CONTENU">' + (actuelle === rubs[0] ? window.JUMELAGE_NOTICE_BOUTON().replace(' onclick="JUMELAGE_NOTICE()"', ' data-notice="1"') : '') +
@@ -5033,7 +5040,7 @@
         entree.addEventListener('change', function() {
             var fich = entree.files && entree.files[0]; if (!fich) return;
             var url = URL.createObjectURL(fich), img = new Image();
-            img.onload = function() { cadrerPhoto(img, function(donnee) { URL.revokeObjectURL(url); if (donnee) { ecrireTxt(CLE_CARTE_PHOTO, donnee); bandeau('Photo de la carte enregistrée sur cet appareil.'); } apres(); }); };
+            img.onload = function() { cadrerPhoto(img, function(donnee) { URL.revokeObjectURL(url); if (donnee) { ecrireTxt(CLE_CARTE_PHOTO, donnee); bandeau('Photo de la carte enregistrée sur cet appareil.'); } majBoutonsCompte(); apres(); }); };
             img.onerror = function() { URL.revokeObjectURL(url); bandeau('Image illisible : choisissez une autre photo.'); };
             img.src = url;
         });
@@ -5073,7 +5080,7 @@
             f.remove(); fin(out.toDataURL('image/jpeg', 0.85));
         });
         var suppr = f.querySelector('.JUM-CADRE-SUPPR');
-        if (suppr) suppr.addEventListener('click', function() { try { localStorage.removeItem(CLE_CARTE_PHOTO); } catch (e) {} f.remove(); fin(null); });
+        if (suppr) suppr.addEventListener('click', function() { try { localStorage.removeItem(CLE_CARTE_PHOTO); } catch (e) {} f.remove(); majBoutonsCompte(); fin(null); });
         document.body.appendChild(f);
     }
     // Image de la carte (recto et verso l'un sous l'autre) dessinée en PNG, puis partagée ou enregistrée.
