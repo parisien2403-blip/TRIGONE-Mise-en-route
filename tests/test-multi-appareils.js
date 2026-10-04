@@ -14,7 +14,7 @@ module.exports = async function() {
         await p.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1'));
         await p.reload(); await attendre(2500);
         await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
-        await p.fill('#JUM-C-MAIL', mail); await p.click('#JUM-C-ENVOI'); await attendre(1500);
+        await p.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await p.fill('#JUM-C-MAIL', mail); await p.click('#JUM-C-ENVOI'); await attendre(1500);
         await p.click('#JUM-C-VALIDER'); await attendre(1500);
         await p.evaluate(() => JUMELAGE_FERMER_COMPTE());
         return p;

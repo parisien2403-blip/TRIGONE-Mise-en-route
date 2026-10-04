@@ -15,7 +15,7 @@ module.exports = async function() {
         if (avant) await p.evaluate(avant);
         await p.reload(); await attendre(2500);
         await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
-        await p.fill('#JUM-C-MAIL', MAIL); await p.click('#JUM-C-ENVOI'); await attendre(1500);
+        await p.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await p.fill('#JUM-C-MAIL', MAIL); await p.click('#JUM-C-ENVOI'); await attendre(1500);
         await p.click('#JUM-C-VALIDER'); await attendre(2500);
         return p;
     }
