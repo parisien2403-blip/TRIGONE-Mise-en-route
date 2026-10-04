@@ -635,6 +635,12 @@
         // Téléphone (Android, iPhone) : barre d'outils en bas de la page de garde (Notice, Paramètres, Ma carte, Mise à jour,
         // Affichage PC), dernière rangée de la grille ; les boutons ronds dispersés disparaissent. PC : inchangé.
         '.JUM-CR-ABSENCE { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; font-size: 0.8rem; line-height: 1.45; }' +
+        '.JUM-QRCO .JUM-SIG-CARTE { padding-top: 22px; max-width: 400px; } html body.dark-mode .JUM-QRCO-ETAPES { color: #d4d4d4; }' +
+        '.JUM-L-SCAN { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 2px; } .JUM-L-SCAN > * { flex: 1 1 180px; margin: 0 !important; display: inline-flex; align-items: center; justify-content: center; gap: 6px; cursor: pointer; text-align: center; } .JUM-L-SCAN svg { width: 18px; height: 18px; }' +
+        '.JUM-CARTE-QRCO { width: 100%; margin: 10px 0 0 !important; display: flex; align-items: center; justify-content: center; gap: 8px; background: #1c1c1c !important; color: #e9d9b4 !important; border-color: #6b5426 !important; } .JUM-CARTE-QRCO svg { width: 18px; height: 18px; stroke: #d6a756; }' +
+        '.JUM-QRCO-BOITE { width: 280px; height: 280px; max-width: 100%; margin: 12px auto 8px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 12px; padding: 10px; box-sizing: content-box; } .JUM-QRCO-BOITE img, .JUM-QRCO-BOITE canvas { width: 100% !important; height: auto !important; } .JUM-QRCO-BOITE.expire { opacity: 0.15; }' +
+        '.JUM-QRCO-CODE { text-align: center; font-size: 0.82rem; margin-bottom: 8px; } .JUM-QRCO-CODE b { letter-spacing: 0.12em; }' +
+        '.JUM-QRCO-ETAPES { font-size: 0.8rem; line-height: 1.5; padding-left: 20px; margin: 6px 0; text-align: left; } .JUM-QRCO-ALERTE { font-size: 0.78rem; color: #b45309; }' +
         /* Pastille rouge de mouvement : dossier, entrée de menu ou onglet où un envoi vient d'arriver. */
         'html body [data-mvt].mvt { position: relative; }' +
         'html body [data-mvt].mvt::after { content: "" !important; display: block !important; position: absolute !important; top: 7px !important; left: 27px !important; right: auto !important; width: 10px !important; height: 10px !important; border-radius: 50% !important; background: #dc2626 !important; border: 2px solid #fff !important; box-shadow: 0 0 0 0 rgba(220,38,38,0.55) !important; pointer-events: none !important; z-index: 2 !important; animation: jumMvt 1.4s ease-out 4 !important; }' +
@@ -1198,7 +1204,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 189, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 190, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1802,7 +1808,7 @@
                 '<div data-etape="1">' +
                     (c ? '<p class="JUM-PF-OK">✓ Compte TRIGONE : <b>' + esc(c.mail) + '</b>' + (lireTxt(CLE_ATTENTE) ? ' · en attente de validation par votre unité' : '') + '</p>' :
                         '<details class="JUM-LIAISON-BLOC"><summary>📲 Déjà TRIGONE sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
-                        '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : tout est recopié.</p>' +
+                        '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b> (ou <b>Ma carte › QR de connexion</b>). Saisissez ici le code affiché, ou scannez le QR : tout est recopié.</p>' +
                         htmlSaisieLiaison() + '</details>') +
                     '<div class="JUM-PF-AVATAR"><span id="JUM-PF-INIT">?</span></div>' +
                     '<div class="JUM-R-GRILLE">' + champ('GRADE', 'Grade', r.grade, 'type="text" autocomplete="off" placeholder="EX : ADJUDANT"') +
@@ -1861,7 +1867,7 @@
             '<div class="JUM-R-CORPS">' +
                 // Déjà configuré sur un autre appareil : un code de liaison suffit (rien à ressaisir).
                 (premiere && !monCompte() ? '<details class="JUM-LIAISON-BLOC"><summary>📲 Déjà TRIGONE sur votre téléphone ou votre PC ? <b>Utiliser un code de liaison</b></summary>' +
-                    '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte TRIGONE, demandes et bibliothèque sont recopiés.</p>' +
+                    '<p class="JUM-R-AIDE" style="margin-top:8px;">Sur l\'autre appareil : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b> (ou <b>Ma carte › QR de connexion</b>). Saisissez ici le code affiché, ou scannez le QR : identité, mails, rôles, code d\'accès, compte TRIGONE, demandes et bibliothèque sont recopiés.</p>' +
                     htmlSaisieLiaison() + '</details>' : '') +
                 '<div data-vue="profil"><div class="JUM-R-TITRE">Mon identité</div>' +
                 '<div class="JUM-R-GRILLE">' + champ('UNITE', 'Unité (choisir dans la liste)', r.unite, 'type="text" autocomplete="off" placeholder="Tapez : 4°R…"') +
@@ -3000,9 +3006,29 @@
         });
     };
     // Zone de saisie du code (nouvel appareil) : champ + bouton + message ; après réussite, TRIGONE redémarre.
+    // QR de connexion : lien …?liaison=K7P29XQM (ouvre TRIGONE avec le code si on le scanne avec l'appareil photo).
+    function lienLiaison(code) { return location.origin + racineAppli + '?liaison=' + codeLiaisonNormal(code); }
+    function codeDuQr(t) { var m = /[?&]liaison=([A-Za-z0-9-]{8,9})/.exec(String(t || '')); var c = codeLiaisonNormal(m ? m[1] : /^[A-Z0-9]{4}-?[A-Z0-9]{4}$/i.test(String(t || '').trim()) ? t : ''); return c.length === 8 ? c : ''; }
+    // QR code d'une image (capture d'écran, photo) : lecteur du navigateur ou jsQR.
+    function lireQrImage(fichier) {
+        return createImageBitmap(fichier).then(function(bm) {
+            var essai = ('BarcodeDetector' in window) ? new window.BarcodeDetector({ formats: ['qr_code'] }).detect(bm).then(function(l) { return l[0] && l[0].rawValue; }).catch(function() { return null; }) : Promise.resolve(null);
+            return essai.then(function(t) {
+                if (t) return t;
+                return chargerScript('jsqr.min.js', function() { return !!window.jsQR; }).then(function() {
+                    var e = Math.min(1, 1600 / Math.max(bm.width, bm.height)), cv = document.createElement('canvas'); cv.width = Math.round(bm.width * e); cv.height = Math.round(bm.height * e);
+                    var ctx = cv.getContext('2d'); ctx.drawImage(bm, 0, 0, cv.width, cv.height);
+                    var q = window.jsQR(ctx.getImageData(0, 0, cv.width, cv.height).data, cv.width, cv.height, { inversionAttempts: 'attemptBoth' });
+                    return q && q.data;
+                });
+            });
+        }).then(function(t) { if (!t) throw new Error('Aucun QR code trouvé dans cette image.'); return t; });
+    }
     function htmlSaisieLiaison() {
         return '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;"><div class="JUM-R-CHAMP"><label for="JUM-L-CODE">Code de liaison ou de réactivation</label>' +
             '<input id="JUM-L-CODE" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="EX : K7P2-9XQM" style="letter-spacing:0.12em; font-weight:800; text-transform:uppercase;"></div></div>' +
+            '<div class="JUM-L-SCAN"><button type="button" class="JUM-R-SECOND" id="JUM-L-CAM">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('qr') : '') + 'Scanner le QR de connexion</button>' +
+                '<label class="JUM-R-SECOND" id="JUM-L-IMG">Depuis une image (capture)<input type="file" accept="image/*" style="display:none;"></label></div>' +
             '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-L-OK" style="width:100%; margin:6px 0 0;">Récupérer mon compte et mes données</button>' +
             '<p class="JUM-R-ERREUR" id="JUM-L-ERR" style="min-height:0;"></p>';
     }
@@ -3010,6 +3036,20 @@
         var btn = racine.querySelector('#JUM-L-OK'), champ = racine.querySelector('#JUM-L-CODE'), err = racine.querySelector('#JUM-L-ERR');
         if (!btn) return;
         champ.addEventListener('input', function() { var c = codeLiaisonNormal(champ.value).slice(0, 8); champ.value = c.length > 4 ? c.slice(0, 4) + '-' + c.slice(4) : c; });
+        // QR de connexion (affiché sur l'autre appareil, Ma carte › QR de connexion) : caméra ou image (capture d'écran).
+        var poser = function(texte) {
+            var c = codeDuQr(texte);
+            if (!c) { err.style.color = ''; err.textContent = '⛔ Ce QR code n\'est pas un QR de connexion TRIGONE (Ma carte › « QR de connexion » sur votre autre appareil).'; return; }
+            champ.value = c.slice(0, 4) + '-' + c.slice(4); err.style.color = '#15803d'; err.textContent = '✓ QR de connexion lu.'; btn.click();
+        };
+        var cam = racine.querySelector('#JUM-L-CAM'), img = racine.querySelector('#JUM-L-IMG input');
+        if (cam) cam.addEventListener('click', function() {
+            window.JUMELAGE_SCANNER_CARTE({ titre: 'QR de connexion', sous: 'Visez le QR affiché par votre autre appareil (Ma carte › QR de connexion).', sansCompte: true, lire: function(t) { return codeDuQr(t) ? Promise.resolve(t) : Promise.reject(new Error('Ce n\'est pas un QR de connexion TRIGONE.')); } })
+                .then(function(t) { if (t) poser(t); });
+        });
+        if (img) img.addEventListener('change', function() { var f = img.files && img.files[0]; img.value = ''; if (!f) return; lireQrImage(f).then(poser, function(e) { err.style.color = ''; err.textContent = '⛔ ' + e.message; }); });
+        var pre = ''; try { pre = sessionStorage.getItem('trigone_liaison_qr') || ''; sessionStorage.removeItem('trigone_liaison_qr'); } catch (e) {}
+        if (pre) { champ.value = pre.slice(0, 4) + '-' + pre.slice(4); err.style.color = '#15803d'; err.textContent = '✓ QR de connexion lu : touchez « Récupérer mon compte et mes données ».'; }
         btn.addEventListener('click', function() {
             err.style.color = ''; err.textContent = '';
             if (avertir && !window.confirm('Les données TRIGONE de cet appareil vont être remplacées par celles de votre autre appareil. Continuer ?')) return;
@@ -4239,7 +4279,7 @@
                 '</div>' +
                 '<div data-volet="liaison" style="display:none;">' +
                     '<h2>Relier cet appareil</h2>' +
-                    '<p class="JUM-ACC-AIDE">Sur l\'appareil où TRIGONE est déjà installé : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b>. Saisissez ici le code affiché : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés. Pas de mail à attendre.</p>' +
+                    '<p class="JUM-ACC-AIDE">Sur l\'appareil où TRIGONE est déjà installé : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b> (ou <b>Ma carte › QR de connexion</b>). Saisissez ici le code affiché, ou scannez le QR : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés. Pas de mail à attendre.</p>' +
                     htmlSaisieLiaison() +
                     '<button type="button" class="JUM-R-LIEN" data-aller="connecter" style="margin-top:10px;">← Avec mon adresse mail</button>' +
                 '</div>' +
@@ -5364,6 +5404,7 @@
                 : '<div class="JUM-CARTE-DUO"><div class="face avant">' + carteRecto(d) + '</div><div class="face arriere">' + carteVerso(d, memo) + '</div></div>') +
                 '<div class="JUM-CARTE-BTNS"><button type="button" class="JUM-R-SECOND JUM-CARTE-PHOTO-BTN">' + (lireTxt(CLE_CARTE_PHOTO) ? 'Changer la photo' : 'Ajouter ma photo') + '</button>' +
                     '<button type="button" class="JUM-R-SECOND JUM-CARTE-PARTAGER">Partager</button></div>' +
+                '<button type="button" class="JUM-R-SECOND JUM-CARTE-QRCO">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('qr') : '') + 'QR de connexion (autre appareil)</button>' +
                 '<label class="JUM-CARTE-PARTPHOTO"><input type="checkbox" id="JUM-PHOTO-PARTAGE"' + (photoPartagee() ? ' checked' : '') + '><span><b>Partager ma photo avec les valideurs et l\'assistant Chorus DT</b>' +
                     '<small>Chiffrée de bout en bout : seuls leurs appareils (et le chef d\'une mission collective où vous êtes) peuvent la voir, sur votre carte, dans l\'onglet Participants de vos demandes.</small></span></label>' +
                 '<p class="JUM-CARTE-NOTE">Remplie toute seule avec <b>Mon profil</b> (grade, nom, NID, unité). La photo reste <b>sur cet appareil</b>' + (photoPartagee() ? ' et ne part que chiffrée' : '') + '. ' +
@@ -5388,6 +5429,7 @@
                 dessiner();
             });
             fenCarte.querySelector('.JUM-CARTE-PARTAGER').addEventListener('click', function() { partagerCarte(d, memo); });
+            fenCarte.querySelector('.JUM-CARTE-QRCO').addEventListener('click', qrConnexion);
             fenCarte.querySelector('.JUM-CARTE-PROFIL').addEventListener('click', function() { window.JUMELAGE_FERMER_CARTE(); window.JUMELAGE_REGLAGES({ vue: 'profil' }); });
             var rev = fenCarte.querySelector('.JUM-CARTE-REVOQUER');
             if (rev) rev.addEventListener('click', function() { revoquerCarte(function(m) { memo = m; dessiner(); }); });
@@ -5401,6 +5443,36 @@
             memo = m; var v = fenCarte.querySelector('.face.arriere'); if (v) { v.innerHTML = carteVerso(d, memo); dessinerQR(v.querySelector('.JUM-CARTE-QR'), m.id); }
         });
     };
+    // QR de connexion : connecter un autre appareil (PC, nouveau téléphone) à ce compte, avec toutes les données.
+    // C'est un code de liaison en QR : 15 minutes, une seule fois. Le QR imprimé sur la carte, lui, ne connecte jamais
+    // (il est fait pour être montré et scanné par les autres).
+    function qrConnexion() {
+        var f = document.createElement('div'); f.className = 'JUM-SIG JUM-QRCO'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'QR de connexion');
+        f.innerHTML = '<div class="JUM-SIG-CARTE"><h2>QR de connexion</h2><p>Pour vous connecter sur un autre appareil (PC, nouveau téléphone), avec toutes vos données.</p>' +
+            '<div class="JUM-QRCO-BOITE"><span class="JUM-QRCO-ETAT">Préparation…</span></div><div class="JUM-QRCO-CODE"></div>' +
+            '<ol class="JUM-QRCO-ETAPES"><li>Sur l\'autre appareil : TRIGONE › <b>J\'ai déjà TRIGONE sur un autre appareil</b>.</li><li><b>Scanner le QR de connexion</b> (caméra), ou <b>Depuis une image</b> : faites une capture d\'écran de ce QR et choisissez-la.</li></ol>' +
+            '<p class="JUM-QRCO-ALERTE">Valable <b>15 minutes</b>, une seule fois. Ne l\'envoyez à personne : il ouvre votre compte.</p>' +
+            '<div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND JUM-QRCO-IMG" disabled>Enregistrer l\'image</button><button type="button" class="JUM-R-PRINCIPAL JUM-QRCO-FERMER">Fermer</button></div></div>';
+        ['pointerdown', 'pointerup', 'click'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        var minuteur = null, fermer = function() { clearInterval(minuteur); f.remove(); };
+        f.querySelector('.JUM-QRCO-FERMER').addEventListener('click', fermer);
+        document.body.appendChild(f);
+        var boite = f.querySelector('.JUM-QRCO-BOITE'), etat = f.querySelector('.JUM-QRCO-ETAT');
+        window.JUMELAGE_LIAISON_CREER().then(function(r) {
+            return chargerScript('qrcode.min.js', function() { return !!window.QRCode; }).then(function() {
+                boite.innerHTML = ''; new window.QRCode(boite, { text: lienLiaison(r.code), width: 280, height: 280, colorDark: '#111111', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M }); boite.removeAttribute('title');
+                var fin = r.expire || Date.now() + 15 * 60000, code = f.querySelector('.JUM-QRCO-CODE');
+                var maj = function() { var s2 = Math.max(0, Math.round((fin - Date.now()) / 1000)); code.innerHTML = 'Ou le code <b>' + esc(r.code) + '</b> · encore ' + Math.floor(s2 / 60) + ' min ' + ('0' + s2 % 60).slice(-2); if (!s2) { clearInterval(minuteur); boite.classList.add('expire'); code.textContent = 'Expiré : fermez et recréez un QR.'; } };
+                maj(); minuteur = setInterval(maj, 1000);
+                if (r.sansPieces) f.querySelector('.JUM-QRCO-ALERTE').insertAdjacentHTML('beforeend', '<br>Pièces jointes trop lourdes : elles restent sur cet appareil.');
+                var bimg = f.querySelector('.JUM-QRCO-IMG'); bimg.disabled = false;
+                bimg.addEventListener('click', function() {
+                    var c = boite.querySelector('canvas'), src = c ? c.toDataURL('image/png') : (boite.querySelector('img') || {}).src; if (!src) return;
+                    var a = document.createElement('a'); a.href = src; a.download = 'TRIGONE - QR de connexion.png'; document.body.appendChild(a); a.click(); a.remove();
+                });
+            });
+        }).catch(function(e) { etat.textContent = (e && e.message) || 'QR impossible : vérifiez la connexion.'; });
+    }
     // Carte perdue, volée ou photographiée : l'ancien QR code devient « Carte non reconnue », un nouveau est créé.
     function revoquerCarte(apres) {
         var f = document.createElement('div'); f.className = 'JUM-SIG JUM-BIOC'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Révoquer le QR code');
@@ -5561,7 +5633,7 @@
     window.JUMELAGE_SCANNER_CARTE = function(opts) {
         opts = opts || {};
         if (scanEnCours) scanEnCours.fermer();
-        if (!monCompte()) { bandeau('Connectez-vous à votre compte TRIGONE pour lire une carte.'); return Promise.resolve(null); }
+        if (!monCompte() && !opts.sansCompte) { bandeau('Connectez-vous à votre compte TRIGONE pour lire une carte.'); return Promise.resolve(null); }
         return new Promise(function(resoudre) {
             var f = document.createElement('div'), flux = null, fini = false, dernier = '', dernierLe = 0, minuteur = null, lues = 0;
             f.className = 'JUM-SIG JUM-SCAN'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', opts.titre || 'Scanner une carte TRIGONE');
@@ -5583,8 +5655,8 @@
                 var maintenant = Date.now();
                 if (texte === dernier && maintenant - dernierLe < 4000) return Promise.resolve();
                 dernier = texte; dernierLe = maintenant;
-                etat.textContent = 'Lecture de la carte…';
-                return lireCarteTexte(texte).then(function(c) {
+                etat.textContent = opts.lire ? 'Lecture…' : 'Lecture de la carte…';
+                return (opts.lire || lireCarteTexte)(texte).then(function(c) {
                     if (navigator.vibrate) try { navigator.vibrate(60); } catch (e) {}
                     if (!opts.continu) { fermer(c); return; }
                     lues++;
@@ -6506,6 +6578,18 @@
     try { dejaChoisi = sessionStorage.getItem(CLE_CHOIX) === '1'; } catch (e) {}
     // Ouverture depuis une notification (boîte de réception ou espace Assistant Chorus DT) : droit à l'espace visé.
     // Aussi : raccourcis de l'icône de l'appli (appui long) et notification « Départ en mission aujourd'hui » (Compte-rendu).
+    // Lien du QR de connexion (…?liaison=CODE), scanné avec l'appareil photo : l'écran de liaison s'ouvre, code déjà saisi.
+    (function() {
+        var m = /[?&]liaison=([A-Za-z0-9-]{8,9})/.exec(location.search); if (!m) return;
+        var c = codeLiaisonNormal(m[1]); if (c.length !== 8) return;
+        try { sessionStorage.setItem('trigone_liaison_qr', c); history.replaceState(null, '', location.pathname); } catch (e) {}
+        dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {}
+        setTimeout(function() {
+            if (monCompte()) { bandeau('Cet appareil est déjà connecté à un compte TRIGONE : le QR de connexion sert sur un appareil pas encore connecté.'); return; }
+            window.JUMELAGE_COMPTE();
+            setTimeout(function() { var b = document.querySelector('.JUM-ACC [data-aller="liaison"], [data-aller="liaison"]'); if (b) b.click(); }, 300);
+        }, 1500);
+    })();
     if (DANS_CR ? /[?&](espace|depart)=/.test(location.search) : /[?&]espace=(boite|chorus|suivi|documents|nouvelle|carte)/.test(location.search)) { dejaChoisi = true; try { sessionStorage.setItem(CLE_CHOIX, '1'); } catch (e) {} }
     if (CARTE_AU_DEMARRAGE) {
         var ouvrirCarte = function() { setTimeout(function() { window.JUMELAGE_CARTE(); try { history.replaceState(null, document.title, location.pathname); } catch (e) {} }, 400); };

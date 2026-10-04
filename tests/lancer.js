@@ -32,6 +32,7 @@ const TESTS = {
     'choix': ['Écran de choix et logo des PDF', require('./test-choix')],
     'inscription': ['Inscription sans adresse mail, validation, blocage, code de réactivation', require('./test-inscription')],
     'migration': ['Passage des anciens comptes à leur adresse TRIGONE (compte, rôles, carte, boîte ; ancienne adresse retrouvée)', require('./test-migration')],
+    'qrconnexion': ['QR de connexion (autre appareil, caméra ou capture d\'écran)', require('./test-qrconnexion')],
     'groupe': ['Envoi au groupe (tous les assistants Chorus DT de l\'unité), traité par le premier', require('./test-groupe')],
     'premiere': ['Première connexion guidée (7 étapes, destinataires selon les rôles, bienvenue)', require('./test-premiere')],
     'comptes': ['Comptes : administrateur, réinitialisation et suppression sur demande', require('./test-comptes')],
