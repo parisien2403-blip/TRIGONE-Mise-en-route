@@ -197,7 +197,7 @@ async function membresGroupe(env, g) {
         if (!String(x.roles || '').split(',').includes(g.role)) continue;
         if ((x.unite || (await kv.get('unite-de:' + x.mail)) || UNITE_REGISTRE) !== g.unite) continue;
         const c = await kv.get('compte:' + x.mail, 'json');
-        if (!c || c.attente || c.bloque || !(c.roles || {})[g.role] || !(c.appareils || []).length) continue;
+        if (!c || c.attente || c.bloque || !(c.appareils || []).length) continue;   // rôle : celui de la base (x.roles), à jour
         l.push({ mail: x.mail, compte: c });
     }
     // Absents (remplaçant déclaré) : laissés de côté tant qu'il reste quelqu'un.
@@ -283,6 +283,16 @@ function registreFusion(a, b) {
 }
 // Index des comptes qui ont un rôle (photos de carte : à qui en remettre la clé). Tenu à jour quand les rôles changent,
 // et vérifié une fois par jour au relevé de la boîte (comptes qui avaient déjà leur rôle).
+// Rôles à jour d'un compte : la base D1 (porteur_role) est lue telle qu'écrite à l'instant, alors que le KV peut garder
+// l'ancienne valeur jusqu'à une minute après un changement (un rôle ajouté ne serait pas encore vu par l'envoi).
+// Sans ligne en base (compte sans rôle indexé), on garde les rôles du compte.
+async function rolesActuels(env, mail, compte) {
+    try {
+        const r = await (await baseBoite(env)).prepare('SELECT roles FROM porteur_role WHERE mail = ?').bind(mail).first();
+        if (r) { const o = {}; String(r.roles || '').split(',').filter(x => ROLES.indexOf(x) >= 0).forEach(x => { o[x] = true; }); return o; }
+    } catch (e) {}
+    return (compte && compte.roles) || {};
+}
 async function indexerRoles(env, mail, roles) {
     const db = await baseBoite(env), rs = ROLES.filter(r => (roles || {})[r]);
     if (rs.length) await db.prepare('INSERT INTO porteur_role (mail, roles, maj) VALUES (?, ?, ?) ON CONFLICT (mail) DO UPDATE SET roles = excluded.roles, maj = excluded.maj').bind(mail, rs.join(','), Date.now()).run();
@@ -1387,7 +1397,7 @@ async function api(requete, env, url, ctx) {
         const ajouter = (Array.isArray(c.ajouter) ? c.ajouter : []).filter(r => ROLES.indexOf(r) >= 0);
         const retirer = (Array.isArray(c.retirer) ? c.retirer : []).filter(r => ROLES.indexOf(r) >= 0);
         const frais = (await kv.get('compte:' + moi.mail, 'json')) || moi.compte;
-        frais.roles = frais.roles || {};
+        frais.roles = Object.assign({}, await rolesActuels(env, moi.mail, frais));
         ajouter.forEach(r => { frais.roles[r] = true; });
         retirer.forEach(r => { delete frais.roles[r]; });
         await kv.put('compte:' + moi.mail, JSON.stringify(frais));
@@ -1397,7 +1407,7 @@ async function api(requete, env, url, ctx) {
     if (chemin === 'role' && methode === 'POST') {
         const { role, actif } = await requete.json().catch(() => ({}));
         if (ROLES.indexOf(role) < 0) return erreur(400, 'Rôle inconnu.');
-        moi.compte.roles = moi.compte.roles || {};
+        moi.compte.roles = Object.assign({}, await rolesActuels(env, moi.mail, moi.compte));
         if (actif) moi.compte.roles[role] = true; else delete moi.compte.roles[role];
         await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
         await indexerRoles(env, moi.mail, moi.compte.roles);
@@ -1455,7 +1465,7 @@ async function api(requete, env, url, ctx) {
         if (!compte || !compte.appareils.length || compte.attente || compte.bloque) return json({ ok: true, compte: false, attente: !!(compte && compte.attente), bloque: !!(compte && compte.bloque) });
         // Absence déclarée (valideur, assistant Chorus DT) : l'appli de l'expéditeur envoie à son remplaçant.
         const rp = compte.remplacant && compte.remplacant.jusqu > Date.now() ? compte.remplacant : null;
-        return json({ ok: true, compte: true, mail, roles: compte.roles || {}, remplacant: rp, appareils: compte.appareils.map(a => ({ id: a.id, cle: a.cle })) });
+        return json({ ok: true, compte: true, mail, roles: await rolesActuels(env, mail, compte), remplacant: rp, appareils: compte.appareils.map(a => ({ id: a.id, cle: a.cle })) });
     }
 
     // Dépôt d'un envoi chiffré : le contenu une fois, une enveloppe (clé du contenu chiffrée) par appareil destinataire.
@@ -1498,7 +1508,7 @@ async function api(requete, env, url, ctx) {
         const type = String(corps.type || '');
         if (!(type in ROLE_REQUIS)) return erreur(400, 'Type d\'envoi inconnu.');
         const requis = ROLE_REQUIS[type];
-        if (requis && !(compte.roles || {})[requis]) return erreur(403, dest + ' ' + MESSAGE_ROLE[requis]);
+        if (requis && !(compte.roles || {})[requis] && !(await rolesActuels(env, dest, compte))[requis]) return erreur(403, dest + ' ' + MESSAGE_ROLE[requis]);
         const ids = new Set(compte.appareils.map(a => a.id));
         const enveloppes = (corps.enveloppes || []).filter(e => ids.has(e.appareil));
         if (!enveloppes.length || !corps.donnees || !corps.donnees.ct) return erreur(400, 'Envoi incomplet.');
@@ -1661,7 +1671,7 @@ async function api(requete, env, url, ctx) {
             if (!m || !mailValide(m) || m === moi.mail) return erreur(400, 'Adresse du remplaçant ' + NOMS[r] + ' invalide.');
             const cr = await kv.get('compte:' + m, 'json');
             if (!cr || !cr.appareils.length) return erreur(404, m + ' n\'a pas encore de compte TRIGONE : demandez-lui de l\'activer.');
-            if (!(cr.roles || {})[r] && !corps.mail) return erreur(400, m + ' n\'a pas le rôle ' + NOMS[r] + ' : choisissez quelqu\'un qui l\'a, ou laissez ce rôle vide.');
+            if (!(cr.roles || {})[r] && !(await rolesActuels(env, m, cr))[r] && !corps.mail) return erreur(400, m + ' n\'a pas le rôle ' + NOMS[r] + ' : choisissez quelqu\'un qui l\'a, ou laissez ce rôle vide.');
             roles[r] = m;
         }
         if (!Object.keys(roles).length) { delete moi.compte.remplacant; await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte)); return json({ ok: true, remplacant: null }); }
