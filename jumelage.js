@@ -1190,7 +1190,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 178, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 179, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1970,7 +1970,13 @@
                 champ.addEventListener('input', function() { if (annuaires[role]) dessiner(annuaires[role]); });
                 if (annuaires[role]) { dessiner(annuaires[role]); return; }
                 z.innerHTML = '<p class="JUM-PF-VIDE">Recherche dans votre unité…</p>';
-                appelApi('annuaire?role=' + role).then(function(rep) { annuaires[role] = rep.personnes || []; dessiner(annuaires[role]); }, function() { z.innerHTML = ''; });
+                appelApi('annuaire?role=' + role).then(function(rep) {
+                    var l = rep.personnes || [];
+                    // VALIDEUR 2 et assistant Chorus DT : tout le groupe de l'unité, en tête (recommandé) ; le premier qui traite prend la main.
+                    if (rep.groupe && l.length) l = [{ mail: rep.groupe, grade: '👥', nom: 'Tous les ' + (role === 'chorus' ? 'assistants Chorus DT' : 'VALIDEUR 2') + ' du ' + rep.unite, prenom: '(recommandé)', groupe: true }].concat(l);
+                    annuaires[role] = l; dessiner(l);
+                    if (rep.groupe && l.length && !champ.value.trim()) { champ.value = rep.groupe; dessiner(l); }
+                }, function() { z.innerHTML = ''; });
             });
         }
         function majDestinataires() {
@@ -3853,6 +3859,12 @@
             (r.etats || []).forEach(function(e) { if (!k[e.id] || k[e.id].le <= e.le) k[e.id] = { statut: e.statut, le: e.le }; });
             Object.keys(k).forEach(function(id) { if (k[id].le < vieux) delete k[id]; });
             ecrireTxt(CLE_ETATS_CONNUS, JSON.stringify(k));
+            // Envois au groupe : qui l'a traité (« Traitée par ADJ DUPONT »).
+            if ((r.groupes || []).length) {
+                var lg = boiteLire(), chg = false;
+                r.groupes.forEach(function(g) { lg.forEach(function(x) { if (x.id === g.id && x.traitePar !== (g.moi ? 'vous' : g.qui)) { x.traitePar = g.moi ? 'vous' : g.qui; chg = true; } }); });
+                if (chg) boiteEcrire(lg);
+            }
             ecrireTxt(CLE_ETATS_DEPUIS, String(Math.max(0, (r.maintenant || 0) - 2000)));   // léger recouvrement : rien n'est manqué
             etatsEnCours = null;
             return etatsAppliquer();
@@ -3953,6 +3965,7 @@
                                 return c.put(cleFichierBoite(e.id), new Response(o.contenu, { headers: { 'Content-Type': 'application/json' } }));
                             }).then(function() {
                                 var el = Object.assign({ id: e.id, nom: o.nom || 'demande.json', de: x.de, le: x.le, type: x.type, statut: 'nouveau' }, info);
+                                if (e.groupe) el.groupe = e.groupe;   // envoi au groupe (tous les assistants Chorus DT / VALIDEUR 2 de l'unité)
                                 var l = boiteLire(); l.unshift(el); boiteEcrire(l); nouveaux.push(el);
                                 registreNouvel(el);
                                 return appelApi('boite/' + e.id, { methode: 'DELETE' });

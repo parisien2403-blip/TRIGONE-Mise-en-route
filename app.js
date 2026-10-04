@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 225;
+var APP_CODE_VERSION = 226;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3635,6 +3635,7 @@ function MER_ROLE_CHORUS() { return !!(window.JUMELAGE_ROLE_CHORUS && JUMELAGE_R
 function MER_NB_BOITE() { return window.JUMELAGE_BOITE_NB ? JUMELAGE_BOITE_NB(MER_ROLE_CHORUS() ? 'autres' : '') : 0; }
 function MER_NB_CHORUS() { return window.JUMELAGE_BOITE_NB ? JUMELAGE_BOITE_NB('chorus') : 0; }
 function MER_COMPTE_ACTIF() { return !!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF()); }
+function MER_LIBELLE_GROUPE(g) { var m = /^([a-z0-9-]+)\.([a-z0-9]+)@/.exec(g || ''); return m ? (m[1] === 'assist-dt' ? 'assistants Chorus DT' : 'VALIDEUR 2') + ' du ' + m[2].toUpperCase() : 'membres du groupe'; }
 function TPL_ENVOI_RECU(x) {
     var nat = MER_NATURES_BOITE[x.nature] || MER_NATURES_BOITE.inconnu, traite = x.statut === 'traite';
     var le = x.le ? new Date(x.le).toLocaleString('fr-FR', { day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit' }) : '';
@@ -3652,7 +3653,8 @@ function TPL_ENVOI_RECU(x) {
             '<div class="MER-JUSTIF-PJ">' + (x.fichiers || []).map(function(f, i) { return '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_JUSTIF(\'' + x.id + '\', ' + i + ')">' + (/pdf/.test(f.type) ? '📄 ' : '🖼️ ') + ESC(f.nom) + '</button>'; }).join('') + '</div>' : '') +
         (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
         (x.nature === 'cr' && x.equipe ? '<div class="MER-HINT" style="margin-top:4px;">👥 Mission collective (' + (x.roleEquipe === 'participant' ? 'participant' : 'chef de mission') + ') : suivi de l\'équipe dans le détail</div>' : '') +
-        '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' : '') + '</div>' +
+        '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' + (x.traitePar ? ' par <b>' + ESC(x.traitePar) + '</b>' : '') : '') + '</div>' +
+        (x.groupe ? '<div class="MER-HINT MER-RECU-GROUPE">👥 Envoyée à tous les ' + ESC(MER_LIBELLE_GROUPE(x.groupe)) + ' : le premier qui la traite la range chez les autres.</div>' : '') +
         // Demande traitée par ce valideur : la suite de son circuit (VALIDEUR 2, assistant Chorus DT).
         (traite && x.nature !== 'cr' && x.nature !== 'refus' && x.nature !== 'collective' ? (x.ids || []).map(function(id, i) { return TPL_SUIVI_DEMANDE(id, x.ids.length > 1 ? 'Demande ' + (i + 1) : ''); }).join('') : '') +
         (cocher ? '' : '<div class="MER-VAL-ACTIONS">' +
