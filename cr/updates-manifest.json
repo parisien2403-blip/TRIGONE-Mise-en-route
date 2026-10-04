@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 279,
-  "appCodeMessage": "Nouvelle boîte façon messagerie, dans Mise en route, Compte-rendu et Assist Chorus DT : dossiers à gauche avec leur pastille rouge, liste au milieu, lecture à droite sur PC (dossiers → liste → lecture sur téléphone). Icônes au trait noir et or. À chaque envoi qui change de dossier, un message vous dit où il est parti (ex. « Demande signée — partie dans Traités, maintenant chez le VALIDEUR 2 »).",
+  "appCodeVersion": 280,
+  "appCodeMessage": "Plus de dossiers jaunes : Bibliothèque, Documents et Remboursement passent eux aussi en style messagerie (lignes avec icône et pastille). Compte-rendu › Bibliothèque : dossiers à gauche, liste au milieu, compte-rendu à droite sur PC ; dossiers → liste → compte-rendu sur téléphone.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

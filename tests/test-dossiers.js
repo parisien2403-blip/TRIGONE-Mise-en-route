@@ -25,11 +25,11 @@ module.exports = async function(srv) {
     await p.goto(srv.url + 'cr/'); await attendre(3000);
     await p.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); document.documentElement.classList.remove('jum-choix'); OUVRIR_BIBLIOTHEQUE(); }); await attendre(600);
     verifier(await p.evaluate(() => ['aenvoyer', 'envoyes', 'traites'].every(id => !!document.querySelector('#BIB-LIST .MER-DOSSIER[data-dossier="' + id + '"]'))
-        && document.querySelector('.MER-DOSSIER[data-dossier="envoyes"] .MER-DOSSIER-NB').textContent === '3' && !document.querySelector('#BIB-LIST .BIB-CARD')),
+        && document.querySelector('.MER-DOSSIER[data-dossier="envoyes"] .MER-DOSSIER-NB').textContent === '3' && !document.querySelector('#BIB-LIST .MER-BX-LIGNE')),
         'Bibliothèque : dossiers « À envoyer », « Envoyés » (3), « Traités », sans liste à plat');
     await p.click('.MER-DOSSIER[data-dossier="envoyes"]'); await attendre(400);
-    verifier(await p.evaluate(() => document.querySelectorAll('#BIB-LIST .BIB-CARD').length === 3 && !!document.querySelector('#BIB-LIST .MER-DOSSIER-TETE')), 'Bibliothèque : le dossier « Envoyés » liste ses 3 comptes-rendus');
-    await p.locator('#BIB-LIST .BIB-CARD').first().click(); await attendre(400);
+    verifier(await p.evaluate(() => document.querySelectorAll('#BIB-LIST .MER-BX-LIGNE').length === 3 && !!document.querySelector('#BIB-LIST .MER-BX-RETOUR')), 'Bibliothèque : le dossier « Envoyés » liste ses 3 comptes-rendus');
+    await p.locator('#BIB-LIST .MER-BX-LIGNE').first().click(); await attendre(400);
     verifier(await p.evaluate(() => !document.getElementById('BIB-DETAIL-VIEW').classList.contains('HIDDEN') && /22\/09\/2026/.test(document.getElementById('BIB-DETAIL-DATE').textContent)), 'Bibliothèque : un compte-rendu s\'ouvre depuis son dossier');
     await p.evaluate(() => OUVRIR_STAT_FORFAIT()); await attendre(600);
     // Le mois en cours a toujours son dossier (vide s'il n'a pas de mission) : écarté de la comparaison.
