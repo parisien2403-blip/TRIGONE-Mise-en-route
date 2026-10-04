@@ -1190,7 +1190,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 183, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 184, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1848,7 +1848,7 @@
         reglages.setAttribute('role', 'dialog');
         reglages.innerHTML = premiere ? htmlProfilEtapes() : '<div class="JUM-R-CARTE">' +
             '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('personne') : ROUE_SVG) + '</span><div><h2>' + (premiere ? 'Compléter mon profil' : vue === 'roles' ? 'Mes rôles' : vue === 'absence' ? 'Absence' : 'Mon profil') + '</h2>' +
-                '<p>' + (premiere ? 'Une seule fois : ces informations pré-rempliront Mise en route et Compte-rendu de mission.' : vue === 'roles' ? 'VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT : chacun avec son code.' : vue === 'absence' ? 'Un remplaçant reçoit vos envois jusqu\'à la date choisie.' : 'Commun à Mise en route et Compte-rendu de mission.') + ' Enregistré sur cet appareil uniquement.</p></div>' +
+                '<p>' + (premiere ? 'Une seule fois : ces informations pré-rempliront Mise en route et Compte-rendu de mission.' : vue === 'roles' ? 'VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT : chacun avec son code.' : vue === 'absence' ? 'Un remplaçant par rôle reçoit vos envois jusqu\'à la date choisie.' : 'Commun à Mise en route et Compte-rendu de mission.') + (vue === 'absence' ? '' : ' Enregistré sur cet appareil uniquement.') + '</p></div>' +
                 (premiere ? '' : '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_REGLAGES()">✕</button>') + '</div>' +
             '<div class="JUM-R-CORPS">' +
                 // Déjà configuré sur un autre appareil : un code de liaison suffit (rien à ressaisir).
@@ -1884,10 +1884,12 @@
                 // Absence (valideur, assistant Chorus DT déjà actifs, compte TRIGONE actif) : remplaçant jusqu'à une date.
                 '</div><div data-vue="absence">' +
                 (!premiere && monCompte() && ['valideur1', 'valideur2', 'chorus'].some(roleActif) ? '<div class="JUM-R-TITRE" id="JUM-R-SECTION-ABSENCE">Absence</div>' +
-                    '<p class="JUM-R-AIDE">En permission ou en mission ? Indiquez votre <b>remplaçant</b> (il doit avoir un compte TRIGONE et le même rôle) : jusqu\'à la date choisie, tout ce qui vous est envoyé part directement chez lui, et l\'expéditeur en est informé.</p>' +
+                    '<p class="JUM-R-AIDE">En permission ou en mission ? Indiquez un <b>remplaçant pour chacun de vos rôles</b> (compte TRIGONE avec ce rôle) : jusqu\'à la date choisie, ce qui vous est envoyé pour ce rôle part directement chez lui, et l\'expéditeur en est informé.</p>' +
                     '<div id="JUM-R-ABS-ETAT" class="JUM-R-AIDE"></div>' +
-                    '<div class="JUM-R-GRILLE">' + champ('ABSMAIL', 'Mail du remplaçant', '', 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
-                        champ('ABSFIN', 'Absent jusqu\'au (inclus)', '', 'type="date"') + '</div>' +
+                    '<div class="JUM-R-GRILLE" id="JUM-R-ABS-CHAMPS">' + [['valideur1', 'VALIDEUR 1'], ['valideur2', 'VALIDEUR 2'], ['chorus', 'ASSIST CHORUS DT']].filter(function(x) { return roleActif(x[0]); }).map(function(x) {
+                            return champ('ABS-' + x[0], 'Remplaçant ' + x[1], '', 'type="email" data-scan-carte data-role-abs="' + x[0] + '" autocomplete="off" placeholder="Vide : reste chez vous"');
+                        }).join('') + champ('ABSFIN', 'Absent jusqu\'au (inclus)', '', 'type="date"') + '</div>' +
+                    '<p class="JUM-R-AIDE" style="margin-top:0;">Un remplaçant par rôle, qui a ce rôle. Un rôle laissé vide continue d\'arriver chez vous (VALIDEUR 2 et ASSIST CHORUS DT : aussi chez les autres de l\'unité).</p>' +
                     '<button type="button" class="JUM-R-SECOND" id="JUM-R-ABS-OK" style="width:100%; margin:4px 0 0;">Déclarer mon absence</button>' +
                     '<p class="JUM-R-ERREUR" id="JUM-R-ABS-ERR" style="min-height:0;"></p>' : '<p class="JUM-R-AIDE" data-vue="absence">L\'absence concerne les valideurs et l\'assistant Chorus DT : cochez d\'abord votre rôle dans « Mes rôles ».</p>') + '</div>' +
                 // Android, première ouverture : réglage batterie, sans lequel les notifications arrivent en retard appli fermée.
@@ -2099,32 +2101,34 @@
         f.querySelector('.JUM-BIENV-BTN').addEventListener('click', function() { f.remove(); });
     }
     // Absence : état actuel (lu sur le serveur), déclaration et fin.
+    var NOMS_ROLES_ABS = { valideur1: 'VALIDEUR 1', valideur2: 'VALIDEUR 2', chorus: 'ASSIST CHORUS DT' };
     function initAbsence() {
         var etat = document.getElementById('JUM-R-ABS-ETAT'), err = document.getElementById('JUM-R-ABS-ERR'), btn = document.getElementById('JUM-R-ABS-OK');
-        var champMail = document.getElementById('JUM-R-ABSMAIL'), champFin = document.getElementById('JUM-R-ABSFIN');
+        var champs = Array.prototype.slice.call(document.querySelectorAll('[data-role-abs]')), champFin = document.getElementById('JUM-R-ABSFIN'), bloc = document.getElementById('JUM-R-ABS-CHAMPS');
         var jour = function(ms) { return new Date(ms).toLocaleDateString('fr-FR'); }, actuel = null;
         function afficher(rp) {
             actuel = rp;
-            etat.innerHTML = rp ? '🟠 <b>Absent jusqu\'au ' + jour(rp.jusqu) + '</b> : remplacé par <b>' + esc(rp.mail) + '</b>.' : '';
+            var parRole = rp ? rp.roles || Object.fromEntries(Object.keys(NOMS_ROLES_ABS).filter(roleActif).map(function(r) { return [r, rp.mail]; })) : {};
+            etat.innerHTML = rp ? '<b>Absent jusqu\'au ' + jour(rp.jusqu) + '</b> :<br>' + Object.keys(NOMS_ROLES_ABS).filter(function(r) { return parRole[r] || roleActif(r); }).map(function(r) {
+                return NOMS_ROLES_ABS[r] + ' → ' + (parRole[r] ? '<b>' + esc(parRole[r]) + '</b>' : 'reste chez vous');
+            }).join('<br>') : '';
             btn.textContent = rp ? 'Fin de l\'absence (je suis de retour)' : 'Déclarer mon absence';
-            champMail.parentNode.parentNode.style.display = rp ? 'none' : '';
+            bloc.style.display = rp ? 'none' : '';
         }
         var d = new Date(); d.setDate(d.getDate() + 1); champFin.min = d.toISOString().slice(0, 10);
         appelApi('cles?mail=' + encodeURIComponent(monCompte().mail)).then(function(r) { afficher(r.remplacant || null); }).catch(function() {});
         btn.addEventListener('click', function() {
             err.textContent = '';
-            var corps = { mail: '' };
+            var corps = { roles: {} };
             if (!actuel) {
-                var mail = champMail.value.trim().toLowerCase(), fin = champFin.value;
-                if (!mail || !fin) { err.textContent = 'Indiquez le mail du remplaçant et la date de fin.'; return; }
-                corps = { mail: mail, jusqu: new Date(fin + 'T23:59:59').getTime() };
+                champs.forEach(function(c) { var v = c.value.trim().toLowerCase(); if (v) corps.roles[c.getAttribute('data-role-abs')] = v; });
+                if (!Object.keys(corps.roles).length || !champFin.value) { err.textContent = 'Indiquez au moins un remplaçant et la date de fin.'; return; }
+                corps.jusqu = new Date(champFin.value + 'T23:59:59').getTime();
             }
             btn.disabled = true;
             appelApi('remplacant', { methode: 'POST', corps: corps }).then(function(r) {
                 afficher(r.remplacant);
-                if (r.remplacant && r.rolesManquants && r.rolesManquants.length) err.textContent = 'Attention : ' + r.remplacant.mail + ' n\'a pas le rôle ' +
-                    r.rolesManquants.map(function(x) { return { valideur1: 'VALIDEUR 1', valideur2: 'VALIDEUR 2', chorus: 'ASSIST CHORUS DT' }[x]; }).join(', ') + ' : les envois de ce type lui seront refusés tant qu\'il ne l\'a pas.';
-                bandeau(r.remplacant ? 'Absence enregistrée : vos envois partent chez ' + r.remplacant.mail + '.' : 'Fin de l\'absence : vos envois vous reviennent.');
+                bandeau(r.remplacant ? 'Absence enregistrée jusqu\'au ' + jour(r.remplacant.jusqu) + '.' : 'Fin de l\'absence : vos envois vous reviennent.');
             }).catch(function(e) { err.textContent = e.message; }).then(function() { btn.disabled = false; });
         });
     }
@@ -3053,7 +3057,10 @@
     window.JUMELAGE_COMPTE_MAIL = function() { var c = monCompte(); return c ? c.mail : ''; };
     // Absence d'un destinataire (avant l'envoi) : { mail du remplaçant, jusqu } ou null. Mémorisée 5 minutes.
     var absences = {};
-    window.JUMELAGE_ABSENCE = function(mail) {
+    window.JUMELAGE_ABSENCE = function(mail, type) {
+        return absenceBrute(mail).then(function(rp) { var c = remplacantPour(rp, type || 'DEMANDE'); return c ? { mail: c, jusqu: rp.jusqu } : null; });
+    };
+    function absenceBrute(mail) {
         mail = String(mail || '').trim().toLowerCase();
         if (!monCompte() || !navigator.onLine || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return Promise.resolve(null);
         var a = absences[mail];
@@ -3062,7 +3069,14 @@
             var rp = r.compte && r.remplacant ? r.remplacant : null;
             absences[mail] = { le: Date.now(), r: rp }; return rp;
         }).catch(function() { return null; });
-    };
+    }
+    // Remplaçant à qui va un envoi selon son type (un remplaçant par rôle) ; null : l'envoi reste au destinataire.
+    function remplacantPour(rp, type) {
+        if (!rp || !rp.mail) return null;
+        if (!rp.roles) return rp.mail;
+        var role = { DEMANDE: 'valideur1', RENVOI: 'valideur1', VALIDATION_1: 'valideur2', CHORUS: 'chorus', CR: 'chorus' }[type];
+        return role ? rp.roles[role] || null : rp.mail;
+    }
     // Envoi direct : chiffré pour tous les appareils du destinataire. Rejette avec e.pasDeCompte si le destinataire
     // n'a pas encore de compte TRIGONE (l'envoi est alors bloqué : il doit d'abord activer son compte).
     // opts.differable : sans réseau, l'envoi est mis en attente sur l'appareil et part tout seul au retour du réseau
@@ -3084,9 +3098,10 @@
         return appelApi('cles?mail=' + encodeURIComponent(dest)).then(function(r) {
             // Destinataire absent (valideur, assistant Chorus DT) : l'envoi part chez son remplaçant (un refus, lui, va
             // toujours au demandeur).
-            if (r.compte && r.remplacant && r.remplacant.mail && type !== 'REFUS') {
+            var cible = remplacantPour(r.remplacant, type);
+            if (r.compte && cible && type !== 'REFUS') {
                 absent = { mail: dest, jusqu: r.remplacant.jusqu };
-                dest = r.remplacant.mail;
+                dest = cible;
                 return appelApi('cles?mail=' + encodeURIComponent(dest));
             }
             return r;

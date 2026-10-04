@@ -428,11 +428,13 @@ module.exports = async function() {
     const api = (p, chemin, corps) => p.evaluate(async ([chemin, corps]) => { const x = JSON.parse(localStorage.getItem('trigone_compte'));
         const r = await fetch((location.pathname.includes('/cr/') ? '../' : '') + 'api/' + chemin, { method: corps ? 'POST' : 'GET', headers: { 'Content-Type': 'application/json', Authorization: 'TRIGONE ' + encodeURIComponent(x.mail) + ' ' + x.appareil + ' ' + x.jeton }, body: corps ? JSON.stringify(corps) : undefined });
         return r.json(); }, [chemin, corps]);
-    const abs = await api(v2, 'remplacant', { mail: MAILS.V1, jusqu: Date.now() + 2 * 864e5 });
-    verifier(abs.ok && abs.remplacant.mail === MAILS.V1 && abs.rolesManquants.length === 0, 'absence : remplaçant enregistré (compte et rôle vérifiés)');
+    const sansRole = await api(v2, 'remplacant', { roles: { valideur2: MAILS.M }, jusqu: Date.now() + 2 * 864e5 });
+    verifier(sansRole.ok === false && /n'a pas le rôle VALIDEUR 2/.test(sansRole.erreur || sansRole.message || JSON.stringify(sansRole)), 'absence : un remplaçant qui n\'a pas le rôle est refusé pour ce rôle');
+    const abs = await api(v2, 'remplacant', { roles: { valideur2: MAILS.V1 }, jusqu: Date.now() + 2 * 864e5 });
+    verifier(abs.ok && abs.remplacant.mail === MAILS.V1 && abs.remplacant.roles.valideur2 === MAILS.V1, 'absence : remplaçant VALIDEUR 2 enregistré (compte et rôle vérifiés)');
     verifier((await api(v2, 'remplacant', { mail: 'inconnu@interieur.gouv.fr', jusqu: Date.now() + 864e5 })).ok === false, 'absence : un remplaçant sans compte TRIGONE est refusé');
     await v2.evaluate(() => JUMELAGE_REGLAGES({ vue: 'absence' })); await attendre(1500);
-    verifier((await v2.textContent('#JUM-R-ABS-ETAT')).includes('remplacé par'), 'Réglages › Absence : « Absent jusqu\'au …, remplacé par … » affiché');
+    verifier((await v2.textContent('#JUM-R-ABS-ETAT')).includes('VALIDEUR 2 → ' + MAILS.V1), 'Réglages › Absence : « Absent jusqu\'au … » avec le remplaçant de chaque rôle');
     verifier(await v2.evaluate(() => !document.getElementById('JUM-R-VAL1').offsetParent && !document.getElementById('JUM-R-NOM').offsetParent && document.querySelector('.JUM-R-TETE h2').textContent === 'Absence'),
         'Paramètres › Absence : une page à part, sans les rôles ni le profil');
     await v2.evaluate(() => JUMELAGE_FERMER_REGLAGES());
@@ -440,11 +442,13 @@ module.exports = async function() {
     await m.goto(URL); await attendre(2500);
     // L'envoi est dans le dossier « Prêtes à envoyer » : une demande prête le temps de la vérification.
     const panierAvant = await m.evaluate(() => { const p = GET_PANIER(); SAVE_PANIER(p.concat([VIDE_DEMANDE()])); MER_DOSSIER.PANIER = 'prets'; SHOW_PAGE('PANIER'); return p; });
-    await m.evaluate(v => MER_AFFICHER_ABSENCE('MER-ABS-DEST', v), MAILS.V2); await attendre(1200);
+    await m.evaluate(v => MER_AFFICHER_ABSENCE('MER-ABS-DEST', v, 'VALIDATION_1'), MAILS.V2); await attendre(1200);
     verifier((await m.textContent('#MER-ABS-DEST')).includes('partira chez son remplaçant'), 'absence : l\'expéditeur est prévenu avant l\'envoi (« absent jusqu\'au … : votre envoi partira chez son remplaçant »)');
     await m.evaluate(p => SAVE_PANIER(p), panierAvant);
     const envoiAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'VALIDATION_1', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
     verifier(envoiAbs.remplacant === MAILS.V1 && envoiAbs.absent === MAILS.V2, 'absence : l\'envoi destiné au VALIDEUR 2 part chez son remplaçant');
+    const demAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'DEMANDE', 'test.json', JSON.stringify({ demandes: [] })).catch(e => ({ err: e.message })), MAILS.V2);
+    verifier(!demAbs.remplacant, 'absence : un envoi pour un rôle sans remplaçant reste au destinataire');
     const refusAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'REFUS', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
     verifier(!refusAbs.remplacant, 'absence : un refus (retour au demandeur) n\'est jamais redirigé');
     await api(v2, 'remplacant', { mail: '' });

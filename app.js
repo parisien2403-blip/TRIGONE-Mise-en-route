@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 230;
+var APP_CODE_VERSION = 231;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1483,10 +1483,10 @@ function FORMAT_DATE_COURT(v) {
 }
 
 // Destinataire absent (valideur, assistant Chorus DT) : prévenir avant l'envoi, dans l'élément « id ».
-function MER_AFFICHER_ABSENCE(id, mail) {
+function MER_AFFICHER_ABSENCE(id, mail, type) {
     if (!window.JUMELAGE_ABSENCE) return;
     var cible = document.getElementById(id); if (cible) cible.setAttribute('data-mail', String(mail || ''));
-    JUMELAGE_ABSENCE(mail).then(function(rp) {
+    JUMELAGE_ABSENCE(mail, type).then(function(rp) {
         var el = document.getElementById(id); if (!el) return;
         // Une réponse pour une adresse qui n'est plus celle affichée (saisie changée entre-temps) est ignorée.
         if (el.getAttribute('data-mail') !== String(mail || '')) return;
@@ -3215,7 +3215,7 @@ function AFFICHER_TRANSMISSION() {
             : '<div class="MER-HINT" style="width:100%; margin-top:8px;">Adresse du demandeur inconnue : prévenez-le directement du refus et de son motif.</div>' +
               '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="width:100%; margin:6px 0 0;" onclick="MER_ENVOIS[' + i + '].fait = true; AFFICHER_TRANSMISSION()">C\'est fait</button>') + '</div>';
     }).join('');
-    MER_ENVOIS.forEach(function(env, i) { if (env.mail && env.type !== 'REFUS' && !env.fait) setTimeout(function() { MER_AFFICHER_ABSENCE('MER-ABS-ENV-' + i, env.mail); }, 0); });
+    MER_ENVOIS.forEach(function(env, i) { if (env.mail && env.type !== 'REFUS' && !env.fait) setTimeout(function() { MER_AFFICHER_ABSENCE('MER-ABS-ENV-' + i, env.mail, env.type); }, 0); });
     var tousFaits = MER_ENVOIS.every(function(env) { return env.fait; });
     AFFICHER_MODALE('Transmettre',
         '<p style="font-size:0.86em; line-height:1.5;">Pour chaque envoi : <b>« Envoyer »</b>. Il arrive, chiffré, directement dans le TRIGONE du destinataire.</p>' + lignes,

@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 230,
-  "appCodeMessage": "Plus de dossiers jaunes : Bibliothèque, Documents et Remboursement passent eux aussi en style messagerie (lignes avec icône et pastille). Compte-rendu › Bibliothèque : dossiers à gauche, liste au milieu, compte-rendu à droite sur PC ; dossiers → liste → compte-rendu sur téléphone.",
+  "appCodeVersion": 231,
+  "appCodeMessage": "Absence : un remplaçant par rôle. Chacun voit un champ pour chacun de ses rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT) ; un rôle laissé vide continue d'arriver chez vous.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
