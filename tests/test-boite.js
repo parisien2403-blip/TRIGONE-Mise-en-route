@@ -481,10 +481,10 @@ module.exports = async function() {
     verifier(!!(await n.evaluate(c => JUMELAGE_LIAISON_UTILISER(c).then(() => '', e => e.message), codeLiaison)), 'liaison : le code ne sert qu\'une fois');
     // « Me déconnecter et effacer cet appareil »
     await n.evaluate(() => { document.querySelectorAll('.JUM-PRES,.JUM-NOUV,.JUM-VERROU,.JUM-PAVE').forEach(x => x.remove()); JUMELAGE_COMPTE(); }); await attendre(600);
+    // Compte connecté : l'effacement passe par une demande à l'assistant Chorus DT (rien n'est effacé tout de suite).
     await n.click('#JUM-C-EFFACER'); await attendre(500);
-    await n.click('button:has-text("Oui, déconnecter et effacer")'); await attendre(3500);
-    verifier(await n.evaluate(() => !localStorage.getItem('trigone_compte') && !localStorage.getItem('mer_bibliotheque')) && await nbAppareils() === avant,
-        'déconnexion et effacement : compte retiré de l\'appareil, données effacées');
+    verifier(await n.evaluate(() => /Demander la réinitialisation/.test((document.querySelector('.JUM-GC-FEN') || {}).innerText || '') && !!localStorage.getItem('trigone_compte')),
+        'déconnexion et effacement : remplacés par une demande à l\'assistant Chorus DT, rien n\'est effacé');
     await ctxN.close();
 
     // Boîtes vides après relève

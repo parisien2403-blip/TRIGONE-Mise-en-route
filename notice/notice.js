@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 172;
+    var VERSION = 173;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i><span class="n-leg">' + TEL_SVG + (n === 'c3-carte-grand' ? 'Téléphone à l\'horizontale · Android / iPhone' : 'Téléphone · Android / iPhone') + '</span></button>'; }
