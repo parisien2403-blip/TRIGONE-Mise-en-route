@@ -14,7 +14,9 @@ module.exports = async function() {
     await a.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
     await a.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await a.fill('#JUM-C-MAIL', MAIL); await a.click('#JUM-C-ENVOI'); await attendre(1500);
     await a.click('#JUM-C-VALIDER'); await attendre(2000);
-    await a.evaluate(() => { JUMELAGE_FERMER_COMPTE(); document.querySelectorAll('.JUM-REGLAGES,.JUM-PARAM').forEach(e => e.remove()); localStorage.setItem('trigone_qr_temoin', 'donnée de A'); });
+    await a.evaluate(() => { JUMELAGE_FERMER_COMPTE(); document.querySelectorAll('.JUM-REGLAGES,.JUM-PARAM').forEach(e => e.remove()); localStorage.setItem('trigone_qr_temoin', 'donnée de A');
+        localStorage.setItem('trigone_boite', JSON.stringify([{ id: 'qrb1', nature: 'question', statut: 'nouveau', le: Date.now(), de: 'x@test.fr', objet: 'Envoi de A', question: 'Reçu ?' }])); });
+    await a.evaluate(() => caches.open('trigone-boite-reception').then(c => c.put(new URL('__boite__/qrb1', location.href).href, new Response('{"contenu":"fichier de A"}'))));
     await a.evaluate(() => JUMELAGE_CARTE()); await attendre(1200);
     verifier(await a.isVisible('.JUM-CARTE-QRCO'), 'Ma carte : bouton « QR de connexion (autre appareil) »');
     await a.click('.JUM-CARTE-QRCO'); await attendre(4000);
@@ -34,6 +36,8 @@ module.exports = async function() {
     verifier(await n.isVisible('#JUM-L-CAM') && await n.isVisible('#JUM-L-IMG'), 'appareil neuf : « Scanner le QR de connexion » et « Depuis une image »');
     await n.setInputFiles('#JUM-L-IMG input', fichier); await attendre(9000);
     const apres = await n.evaluate(() => ({ c: JSON.parse(localStorage.getItem('trigone_compte') || '{}').mail, t: localStorage.getItem('trigone_qr_temoin') }));
+    const boiteB = await n.evaluate(() => caches.open('trigone-boite-reception').then(c => c.match(new URL('__boite__/qrb1', location.href).href)).then(r => r ? r.text() : '').then(t => ({ l: JSON.parse(localStorage.getItem('trigone_boite') || '[]').map(x => x.id), t })));
+    verifier(boiteB.l.indexOf('qrb1') >= 0 && /fichier de A/.test(boiteB.t), 'la boîte de réception suit aussi (envois reçus et leur contenu)');
     verifier(apres.c === MAIL && apres.t === 'donnée de A', 'depuis une capture d\'écran du QR : appareil connecté au même compte, données reprises');
     // Lien du QR scanné avec l'appareil photo : …?liaison=CODE ouvre l'écran de liaison, code saisi.
     await a.click('.JUM-QRCO-FERMER'); await a.click('.JUM-CARTE-QRCO'); await attendre(4000);

@@ -1204,7 +1204,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 190, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 191, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2965,9 +2965,19 @@
         if (!navigator.onLine) return Promise.reject(new Error('Pas de connexion.'));
         var code = codeLiaisonNouveau(), sansPieces = false, sel = crypto.getRandomValues(new Uint8Array(16)), iv = crypto.getRandomValues(new Uint8Array(12));
         return collecterSauvegarde().then(function(sv) {
+            // Boîte de réception aussi : la liste des envois reçus et leur contenu (gardé déchiffré sur cet appareil).
+            var liste = boiteLire(), fichiers = {};
+            return caches.open(CACHE_BOITE).then(function(c) {
+                return Promise.all(liste.map(function(x) {
+                    return c.match(cleFichierBoite(x.id)).then(function(r) { return r || c.match(cleFichierBoite(x.id, true)); })
+                        .then(function(r) { return r ? r.text() : null; }).then(function(t) { if (t != null) fichiers[x.id] = t; });
+                }));
+            }).catch(function() {}).then(function() { sv.boite = { liste: liste, fichiers: fichiers }; return sv; });
+        }).then(function(sv) {
             var txt = JSON.stringify(sv);
-            // Trop lourd avec les pièces jointes : on transmet tout sauf elles (elles restent sur cet appareil).
+            // Trop lourd : d'abord sans les pièces jointes des demandes, puis sans la boîte (elles restent sur cet appareil).
             if (txt.length > TAILLE_MAX_LIAISON) { sv.pieces = {}; sansPieces = true; txt = JSON.stringify(sv); }
+            if (txt.length > TAILLE_MAX_LIAISON) { delete sv.boite; txt = JSON.stringify(sv); }
             return cleLiaison(code, sel).then(function(k) { return SUBTLE.encrypt({ name: 'AES-GCM', iv: iv }, k, new TextEncoder().encode(txt)); });
         }).then(function(ct) {
             return idLiaison(code).then(function(id) {
@@ -2996,7 +3006,16 @@
             var sv = JSON.parse(new TextDecoder().decode(clair));
             // Propre à chaque appareil : abonnement aux notifications, sourdine, suivi (relu sur le serveur).
             ['trigone_notif', 'trigone_notif_muet', 'trigone_suivi', 'trigone_boite'].forEach(function(k) { delete sv.donnees[k]; });
-            return appliquerSauvegarde(sv, true);
+            var boite = sv.boite;
+            return appliquerSauvegarde(sv, true).then(function() {
+                if (!boite || !Array.isArray(boite.liste)) return;
+                // Boîte de réception de l'autre appareil : envois reçus et leur contenu.
+                return caches.open(CACHE_BOITE).then(function(c) {
+                    return Promise.all(Object.keys(boite.fichiers || {}).map(function(id) {
+                        return c.put(cleFichierBoite(id), new Response(boite.fichiers[id], { headers: { 'Content-Type': 'application/json' } }));
+                    }));
+                }).catch(function() {}).then(function() { ecrireTxt(CLE_BOITE, JSON.stringify(boite.liste.filter(function(x) { return boite.fichiers && boite.fichiers[x.id] != null || x.nature === 'question' || x.nature === 'reponse'; }))); });
+            });
         }).then(function() {
             return cleIdb('ecrire', { prive: paire.privateKey });
         }).then(function() {
