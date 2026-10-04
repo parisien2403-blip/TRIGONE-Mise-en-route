@@ -196,6 +196,8 @@ MER_ICONES.ACCUEIL = '<svg viewBox="0 0 24 24"><path d="M3 11l9-7 9 7v9a1 1 0 0 
 MER_ICONES.REFERENCES = '<svg viewBox="0 0 24 24"><path d="M6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5v-13A2.5 2.5 0 0 1 6.5 3z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H19"/><path d="M8.5 7.5h6M8.5 11h4"/></svg>';
 MER_ICONES.MAJ = '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>';
 MER_ICONES.RECEPTION = '<svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg>';
+MER_ICONES.REGISTRE = '<svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 9.5h7M8.5 13h7M8.5 16.5h4.5"/></svg>';
+MER_ICONES.PDF = '<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/><path d="M9 14.5l2 2 4-4.5"/></svg>';
 MER_ICONES.VALIDEUR = '<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>';
 
 function TPL_MENU_PC() {
@@ -207,6 +209,24 @@ function TPL_MENU_PC() {
     }
     // Menu de travail seulement : profil, notice, références, mise à jour, signalement et sauvegarde sont dans le
     // menu du compte (en haut du menu, jumelage.js).
+    // Espace Assist Chorus DT (choisi sur l'écran de choix) : son logo et ses entrées, pas celles de Mise en route.
+    if (MER_ESPACE_CHORUS) {
+        var dos = MER_DOSSIER.CHORUS;
+        var itemC = function(actifC, onclick, icone, libelle, pastille) {
+            return '<button type="button" class="PC-NAV' + (actifC ? ' actif' : '') + '" onclick="' + onclick + '">' + icone +
+                '<span>' + libelle + '</span>' + (pastille ? '<span class="PC-PASTILLE">' + pastille + '</span>' : '') + '</button>';
+        };
+        return '<button type="button" class="PC-MARQUE PC-MARQUE-CHORUS" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()" title="Revenir à l\'écran de choix"><img src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT"></button>' +
+            '<div class="PC-COMPTE-SLOT"></div>' +
+            itemC(!dos, 'MER_RESULTATS_VERIF = null; MER_DOSSIER.CHORUS = null; SHOW_PAGE(\'CHORUS\')', MER_ICONES.ACCUEIL, 'Accueil Chorus DT', MER_NB_CHORUS() || '') +
+            (MER_COMPTE_ACTIF() ? itemC(dos === 'registre', 'MER_RESULTATS_VERIF = null; OUVRIR_REGISTRE(\'tout\')', MER_ICONES.REGISTRE, 'Registre des OMR') : '') +
+            itemC(false, 'MER_RESULTATS_VERIF = null; MER_DOSSIER.CHORUS = null; SHOW_PAGE(\'CHORUS\'); setTimeout(function() { var b = document.querySelector(\'#PAGE-STAGE input[type=file]\'); if (b) b.click(); }, 50)', MER_ICONES.PDF, 'Contrôler un PDF') +
+            '<div class="PC-BAS">' + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
+                '<button type="button" class="PC-BASCULE" onclick="SHOW_PAGE(\'ACCUEIL\')"><img src="logo_mer.webp" alt=""><span>Passer à Mise en route</span></button>' +
+                '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
+                '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
+            '</div>';
+    }
     return '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_mer.webp" alt="TRIGONE Mise en route"></button>' +
         '<div class="PC-COMPTE-SLOT"></div>' +
         item('ACCUEIL', MER_ICONES.ACCUEIL, 'Accueil') +
