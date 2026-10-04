@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 233;
+var APP_CODE_VERSION = 234;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -1542,6 +1542,13 @@ function FORMAT_DATE_COURT(v) {
     try { var dt = new Date(v); return dt.toLocaleDateString('fr-FR'); } catch (e) { return ''; }
 }
 
+// Destinataire pendant une absence : le remplaçant (nom et adresse) à la place du titulaire. L'adresse enregistrée ne
+// change pas : au retour du titulaire, l'encart disparaît et tout lui revient tout seul.
+function MER_TPL_ABSENCE(mail, rp) {
+    return '<div class="MER-ABSENCE"><div class="MER-ABS-TITRE">' + MER_BX_ICO('refus') + 'Destinataire pendant l\'absence</div>' +
+        '<div class="MER-ABS-QUI"><b>' + ESC(rp.qui || rp.mail) + '</b>' + (rp.qui ? '<small>' + ESC(rp.mail) + '</small>' : '') + '</div>' +
+        '<div class="MER-ABS-TXT">Remplace ' + ESC(rp.titulaire || mail) + ' jusqu\'au <b>' + new Date(rp.jusqu).toLocaleDateString('fr-FR') + '</b> inclus : votre envoi part directement chez ce remplaçant. Au retour, tout revient automatiquement à ' + ESC(rp.titulaire || mail) + '.</div></div>';
+}
 // Destinataire absent (valideur, assistant Chorus DT) : prévenir avant l'envoi, dans l'élément « id ».
 function MER_AFFICHER_ABSENCE(id, mail, type) {
     if (!window.JUMELAGE_ABSENCE) return;
@@ -1550,7 +1557,9 @@ function MER_AFFICHER_ABSENCE(id, mail, type) {
         var el = document.getElementById(id); if (!el) return;
         // Une réponse pour une adresse qui n'est plus celle affichée (saisie changée entre-temps) est ignorée.
         if (el.getAttribute('data-mail') !== String(mail || '')) return;
-        el.innerHTML = rp ? '<div class="MER-ABSENCE">🟠 <b>' + ESC(mail) + '</b> est absent jusqu\'au <b>' + new Date(rp.jusqu).toLocaleDateString('fr-FR') + '</b> : votre envoi partira chez son remplaçant, <b>' + ESC(rp.mail) + '</b>.</div>' : '';
+        el.innerHTML = rp ? MER_TPL_ABSENCE(mail, rp) : '';
+        var champ = el.previousElementSibling && el.previousElementSibling.querySelector ? el.previousElementSibling.querySelector('input') : null;
+        if (champ) champ.classList.toggle('MER-CHAMP-REMPLACE', !!rp);
     });
 }
 // Documents en dossiers : « Prêtes à envoyer » et « Refusées — à corriger » (toujours affichés, même vides).

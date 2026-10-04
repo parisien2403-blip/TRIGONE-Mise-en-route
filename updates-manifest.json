@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 233,
-  "appCodeMessage": "Plus besoin de refaire deux fois : un rôle ajouté, une photo publiée, une carte, un appareil lié ou une absence sont vus tout de suite par les autres (avant : jusqu'à une minute de retard, et jusqu'à 6 heures pour la photo d'un nouveau valideur).",
+  "appCodeVersion": 234,
+  "appCodeMessage": "Absence : le destinataire affiché devient directement le remplaçant (nom et adresse) ; au retour, tout revient seul au titulaire. Assist Chorus DT : après « Traité », la frise passe tout de suite à « traitée » (plus besoin du Contrôle détaillé).",
   "appMessageVersion": 0,
   "appMessage": ""
 }
