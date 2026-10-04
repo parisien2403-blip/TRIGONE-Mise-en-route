@@ -45,12 +45,15 @@ module.exports = async function() {
     verifier((await boite(tel, d2)).statut !== 'traite', 'l\'autre demande reste à signer sur le téléphone');
     // Rouverte sur le PC → de nouveau à traiter sur le téléphone.
     const id1 = (await boite(pc, d1)).id;
-    await pc.evaluate(id => JUMELAGE_BOITE_ROUVRIR(id), id1); await attendre(1500);
+    await pc.evaluate(id => JUMELAGE_BOITE_ROUVRIR(id), id1); await attendre(500);
+    await pc.evaluate(() => JUMELAGE_BOITE_ETATS()); await attendre(300);
     await tel.evaluate(() => JUMELAGE_BOITE_ETATS()); await attendre(800);
     verifier((await boite(tel, d1)).statut === 'ouvert', 'rouverte sur le PC : de nouveau à traiter sur le téléphone');
     // Supprimée sur le téléphone → disparaît du PC.
     const id2 = (await boite(tel, d2)).id;
-    await tel.evaluate(id => JUMELAGE_BOITE_SUPPRIMER(id), id2); await attendre(1500);
+    await tel.evaluate(id => JUMELAGE_BOITE_SUPPRIMER(id), id2); await attendre(500);
+    // La suppression part au serveur (file des états du téléphone), puis le PC relit les états.
+    await tel.evaluate(() => JUMELAGE_BOITE_ETATS()); await attendre(300);
     await pc.evaluate(() => JUMELAGE_BOITE_ETATS()); await attendre(800);
     verifier(!(await boite(pc, d2)).id, 'supprimée sur le téléphone : disparaît aussi du PC');
     // Envoi pas encore relevé par le téléphone quand le PC le traite : il arrive directement « traité ».
