@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 275,
-  "appCodeMessage": "Première connexion guidée : 7 étapes (compte, profil, code, carte, rôles, destinataires choisis dans la liste de l'unité, notifications) et bienvenue.",
+  "appCodeVersion": 276,
+  "appCodeMessage": "Envoi au groupe : tous les assistants Chorus DT ou tous les VALIDEUR 2 de l'unité reçoivent l'envoi, le premier qui le traite le range chez les autres.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
