@@ -85,6 +85,8 @@ async function baseBoite(env) {
             // État des envois de la boîte, commun aux appareils d'un même compte (traité sur le PC → traité sur le téléphone).
             // Rien du contenu : identifiant de l'envoi, statut, date.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS boite_etat (mail TEXT NOT NULL, id TEXT NOT NULL, statut TEXT, le INTEGER, maj INTEGER, PRIMARY KEY (mail, id))'),
+            // Envois au groupe (tous les VALIDEUR 2 ou tous les assistants Chorus DT d'une unité) : qui les a reçus, qui les a traités.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS groupe_envoi (id TEXT PRIMARY KEY, groupe TEXT, membres TEXT, pris_par TEXT, pris_qui TEXT, pris_le INTEGER, maj INTEGER)'),
             env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_etat_maj ON boite_etat (mail, maj)'),
             // Comptes qui ont un rôle (VALIDEUR 1 / 2, ASSIST CHORUS DT) : à qui remettre la clé des photos de carte partagées.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS porteur_role (mail TEXT PRIMARY KEY, roles TEXT, maj INTEGER)'),
@@ -143,6 +145,44 @@ async function cleCompte(kv, mail) {
     mail = normaliser(mail);
     if (mail.endsWith('@' + DOMAINE_RECEPTION)) { const k = await kv.get('adresse:' + mail.split('@')[0]); if (k) return k; }
     return mail;
+}
+// ---------- Envoi au groupe ----------
+// assist-dt.<unité>@trigone-app.com : tous les assistants Chorus DT de l'unité ; valideur2.<unité>@… : tous ses VALIDEUR 2.
+// L'envoi est chiffré pour les appareils de chacun ; le premier qui le traite le range « traité » chez les autres.
+const GROUPES = { 'assist-dt': 'chorus', 'valideur2': 'valideur2' };
+function adresseGroupe(role, unite) {
+    const p = Object.keys(GROUPES).find(k => GROUPES[k] === role);
+    return p ? p + '.' + nomUnite(unite || UNITE_REGISTRE).toLowerCase().replace(/[^a-z0-9]/g, '') + '@' + DOMAINE_RECEPTION : '';
+}
+function lireGroupe(mail) {
+    const m = /^([a-z0-9-]+)\.([a-z0-9]+)@trigone-app\.com$/.exec(normaliser(mail));
+    if (!m || !GROUPES[m[1]]) return null;
+    const U = m[2].toUpperCase();
+    return { role: GROUPES[m[1]], unite: U === '4RIISC' ? UNITE_REGISTRE : U, adresse: m[0], libelle: (m[1] === 'assist-dt' ? 'assistants Chorus DT' : 'VALIDEUR 2') + ' du ' + U };
+}
+async function membresGroupe(env, g) {
+    const db = await baseBoite(env), kv = env.TRIGONE_KV;
+    const r = (await db.prepare('SELECT p.mail, p.roles, c.unite FROM porteur_role p LEFT JOIN compte_unite c ON c.mail = p.mail WHERE p.roles LIKE ? LIMIT 500').bind('%' + g.role + '%').all()).results || [];
+    const l = [];
+    for (const x of r) {
+        if (!String(x.roles || '').split(',').includes(g.role)) continue;
+        if ((x.unite || (await kv.get('unite-de:' + x.mail)) || UNITE_REGISTRE) !== g.unite) continue;
+        const c = await kv.get('compte:' + x.mail, 'json');
+        if (!c || c.attente || c.bloque || !(c.roles || {})[g.role] || !(c.appareils || []).length) continue;
+        l.push({ mail: x.mail, compte: c });
+    }
+    // Absents (remplaçant déclaré) : laissés de côté tant qu'il reste quelqu'un.
+    const presents = l.filter(x => !(x.compte.remplacant && x.compte.remplacant.jusqu > Date.now()));
+    return presents.length ? presents : l;
+}
+async function groupesDe(env, moi) {
+    const u = (await env.TRIGONE_KV.get('unite-de:' + moi.mail)) || UNITE_REGISTRE;
+    return Object.values(GROUPES).filter(r => (moi.compte.roles || {})[r]).map(r => adresseGroupe(r, u));
+}
+async function notifierDetenteur(env, mail, message, origine) {
+    const g = lireGroupe(mail);
+    if (!g) return notifierCompte(env, mail, message, origine);
+    return Promise.all((await membresGroupe(env, g)).map(x => notifierCompte(env, x.mail, message, origine).catch(() => {})));
 }
 // Code de réactivation (nouveau téléphone, compte débloqué) : 8 caractères, comme un code de liaison, valable 48 h.
 async function codeReactivation(kv, mail) {
@@ -466,8 +506,9 @@ async function suiviEnvoi(env, moi, type, dest, id, refs, qui, origine) {
     // [nouvelle étape, étape franchie (trace), notification au demandeur (le refus lui arrive déjà comme envoi)]
     const cible = { VALIDATION_1: ['val2', 'val1', 'val2'], CHORUS: ['chorus', 'val2', 'chorus'], RENVOI: ['val1', 'renvoi', 'renvoi'], REFUS: ['refus', 'refus', null] }[type];
     if (!cible) return;
-    const lignes = (await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur = ? AND ref IN (' + refs.map(() => '?').join(',') + ')')
-        .bind('mer', moi.mail, ...refs).all()).results || [];
+    const dets = [moi.mail].concat(await groupesDe(env, moi));
+    const lignes = (await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur IN (' + dets.map(() => '?').join(',') + ') AND ref IN (' + refs.map(() => '?').join(',') + ')')
+        .bind('mer', ...dets, ...refs).all()).results || [];
     await avancerSuivi(env, lignes, cible[0], { detenteur: dest, envoi: id, auteur: moi.mail, trace: trace(cible[1]) }, origine, cible[2]);
 }
 // Relances : toutes les heures (déclencheur planifié), les demandes et comptes-rendus qui attendent le même détenteur
@@ -501,7 +542,7 @@ async function relancer(env, origine, maintenant, forcer) {
         const txt = [d.signer ? (d.signer > 1 ? d.signer + ' demandes attendent' : '1 demande attend') + ' votre signature' : '',
             d.chorus ? (d.chorus > 1 ? d.chorus + ' demandes validées attendent' : '1 demande validée attend') + ' votre traitement' : '',
             d.cr ? (d.cr > 1 ? d.cr + ' comptes-rendus attendent' : '1 compte-rendu attend') + ' votre traitement' : ''].filter(Boolean).join(', ');
-        return notifierCompte(env, m, { titre: 'Rappel TRIGONE', texte: txt.charAt(0).toUpperCase() + txt.slice(1) + ' depuis plus de 24 h.', type: 'RELANCE',
+        return notifierDetenteur(env, m, { titre: 'Rappel TRIGONE', texte: txt.charAt(0).toUpperCase() + txt.slice(1) + ' depuis plus de 24 h.', type: 'RELANCE',
             url: d.signer ? '/?espace=boite' : '/?espace=chorus' }, origine).catch(() => {});
     }));
     if (lignes.length) await db.batch(lignes.map(l => db.prepare('UPDATE suivi SET relance = ? WHERE ref = ? AND demandeur = ?').bind(maintenant, l.ref, l.demandeur)));
@@ -861,7 +902,7 @@ async function api(requete, env, url, ctx) {
         let local = '';
         for (let i = 1; i < 200 && !local; i++) {
             const l = base + (i > 1 ? i : '');
-            if (ADRESSES_RESERVEES.includes(l) || await kv.get('adresse:' + l) || await kv.get('compte:' + l + '@' + DOMAINE_RECEPTION)) continue;
+            if (ADRESSES_RESERVEES.includes(l) || lireGroupe(l + '@' + DOMAINE_RECEPTION) || await kv.get('adresse:' + l) || await kv.get('compte:' + l + '@' + DOMAINE_RECEPTION)) continue;
             local = l;
         }
         if (!local) return erreur(409, 'Adresse TRIGONE indisponible pour ce nom.');
@@ -1268,7 +1309,7 @@ async function api(requete, env, url, ctx) {
             l.push({ mail: x.mail, grade: x.grade || '', nom: x.nom || '', prenom: x.prenom || '' });
         }
         l.sort((a, b) => (a.nom || a.mail).localeCompare(b.nom || b.mail, 'fr'));
-        return json({ ok: true, role, unite: nomUnite(u), personnes: l.slice(0, 100) });
+        return json({ ok: true, role, unite: nomUnite(u), personnes: l.slice(0, 100), groupe: role === 'valideur1' ? '' : adresseGroupe(role, u) });
     }
     if (chemin === 'compte/unite' && methode === 'GET') {
         const u = await adminUnite(env, moi.mail), sup = estAdmin(env, moi.mail), mu = (await kv.get('unite-de:' + moi.mail)) || UNITE_REGISTRE;
@@ -1448,6 +1489,12 @@ async function api(requete, env, url, ctx) {
 
     // Clés publiques des appareils d'un destinataire (pour chiffrer un envoi).
     if (chemin === 'cles' && methode === 'GET') {
+        const grp = lireGroupe(url.searchParams.get('mail'));
+        if (grp) {
+            const mb = await membresGroupe(env, grp), app = [];
+            mb.forEach(x => x.compte.appareils.forEach(a => app.push({ id: a.id, cle: a.cle })));
+            return json({ ok: true, compte: mb.length > 0, groupe: grp.libelle, membres: mb.length, mail: grp.adresse, roles: { [grp.role]: true }, remplacant: null, appareils: app });
+        }
         const mail = await cleCompte(kv, url.searchParams.get('mail'));
         const compte = await kv.get('compte:' + mail, 'json');
         if (!compte || !compte.appareils.length || compte.attente || compte.bloque) return json({ ok: true, compte: false, attente: !!(compte && compte.attente), bloque: !!(compte && compte.bloque) });
@@ -1461,6 +1508,32 @@ async function api(requete, env, url, ctx) {
         const texte = await requete.text();
         if (texte.length > TAILLE_MAX) return erreur(413, 'Envoi trop volumineux (25 Mo au plus).');
         let corps; try { corps = JSON.parse(texte); } catch (e) { return erreur(400, 'Envoi illisible.'); }
+        const grp = lireGroupe(corps.destinataire);
+        if (grp) {
+            const type = String(corps.type || '');
+            if (!(type in ROLE_REQUIS)) return erreur(400, 'Type d\'envoi inconnu.');
+            if (ROLE_REQUIS[type] && ROLE_REQUIS[type] !== grp.role) return erreur(403, 'Cet envoi ne va pas aux ' + grp.libelle + '.');
+            if (!corps.donnees || !corps.donnees.ct) return erreur(400, 'Envoi incomplet.');
+            const membres = await membresGroupe(env, grp);
+            if (!membres.length) return erreur(404, 'Aucun des ' + grp.libelle + ' n\'a encore de compte TRIGONE actif.');
+            const id = Date.now().toString(36) + b64url(hasard(6)), le = Date.now(), db = await baseBoite(env), lignes = [], recus = [];
+            for (const x of membres) {
+                const ids = new Set(x.compte.appareils.map(a => a.id)), env2 = (corps.enveloppes || []).filter(e => ids.has(e.appareil));
+                if (!env2.length) continue;
+                recus.push({ x, apps: env2.map(e => e.appareil) });
+                env2.forEach(e => lignes.push(db.prepare('INSERT INTO boite (id, dest, appareil, de, type, le, enveloppe) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                    .bind(id, x.mail, e.appareil, moi.mail, type, le, JSON.stringify({ epk: e.epk, iv: e.iv, ct: e.ct }))));
+            }
+            if (!recus.length) return erreur(400, 'Envoi incomplet : relancez l\'envoi.');
+            await kv.put('msg:' + id, JSON.stringify(corps.donnees), { expirationTtl: DUREE_MESSAGE });
+            await db.batch(lignes.concat(db.prepare('INSERT INTO groupe_envoi (id, groupe, membres, maj) VALUES (?, ?, ?, ?)').bind(id, grp.adresse, JSON.stringify(recus.map(r => r.x.mail)), le)));
+            const nombre = Math.min(500, Math.max(1, parseInt(corps.nombre, 10) || 1));
+            const prevenir = Promise.all(recus.map(r => notifier(env, r.x.mail, r.x.compte, r.apps, type, moi.mail, url.origin, nombre).catch(() => {})).concat([
+                suiviEnvoi(env, moi, type, grp.adresse, id, nettoyerRefs(corps.refs), String(corps.qui || '').slice(0, 80), url.origin).catch(() => {}),
+                suiviEquipe(env, moi, type, grp.adresse, nettoyerRefs([corps.equipe])[0], String(corps.qui || '').slice(0, 80), url.origin).catch(() => {})]));
+            if (ctx && ctx.waitUntil) ctx.waitUntil(prevenir); else await prevenir;
+            return json({ ok: true, id, groupe: grp.libelle, membres: recus.length });
+        }
         const dest = await cleCompte(kv, corps.destinataire);
         const compte = await kv.get('compte:' + dest, 'json');
         if (!compte) return erreur(404, 'Ce destinataire n\'a pas de compte TRIGONE.');
@@ -1570,16 +1643,28 @@ async function api(requete, env, url, ctx) {
             await db.prepare('INSERT INTO boite_etat (mail, id, statut, le, maj) VALUES (?, ?, ?, ?, ?) ON CONFLICT (mail, id) DO UPDATE SET statut = excluded.statut, le = excluded.le, maj = excluded.maj WHERE excluded.le >= boite_etat.le')
                 .bind(moi.mail, String(e.id), e.statut, le, maint).run();
         }
-        if (Math.random() < 0.02) await db.prepare('DELETE FROM boite_etat WHERE maj < ?').bind(maint - 120 * 86400000).run();
+        // Envoi au groupe traité par moi le premier : « traité par … » chez les autres membres, rangé dans leur boîte.
+        for (const e of etats.filter(x => x.statut === 'traite')) {
+            const g = await db.prepare('SELECT * FROM groupe_envoi WHERE id = ?').bind(String(e.id)).first();
+            if (!g || g.pris_par) continue;
+            const membres = JSON.parse(g.membres || '[]');
+            if (!membres.includes(moi.mail)) continue;
+            const l = await ligneCompte(env, moi.mail), qui = l ? [l.grade, l.nom, l.prenom].filter(Boolean).join(' ') : '';
+            await db.batch([db.prepare('UPDATE groupe_envoi SET pris_par = ?, pris_qui = ?, pris_le = ?, maj = ? WHERE id = ? AND pris_par IS NULL').bind(moi.mail, qui || moi.mail, maint, maint, g.id)]
+                .concat(membres.filter(m => m !== moi.mail).map(m => db.prepare('INSERT INTO boite_etat (mail, id, statut, le, maj) VALUES (?, ?, ?, ?, ?) ON CONFLICT (mail, id) DO UPDATE SET statut = excluded.statut, le = excluded.le, maj = excluded.maj WHERE boite_etat.statut <> \'supprime\'')
+                    .bind(m, g.id, 'traite', maint, maint))));
+        }
+        if (Math.random() < 0.02) { await db.prepare('DELETE FROM boite_etat WHERE maj < ?').bind(maint - 120 * 86400000).run(); await db.prepare('DELETE FROM groupe_envoi WHERE maj < ?').bind(maint - 120 * 86400000).run(); }
         const depuis = Math.max(0, +corps.depuis || 0);
         const r = (await db.prepare('SELECT id, statut, le FROM boite_etat WHERE mail = ? AND maj > ? ORDER BY maj LIMIT 1000').bind(moi.mail, depuis).all()).results || [];
-        return json({ ok: true, etats: r, maintenant: maint });
+        const g = (await db.prepare('SELECT id, pris_par, pris_qui FROM groupe_envoi WHERE maj > ? AND pris_par IS NOT NULL AND membres LIKE ? LIMIT 500').bind(depuis, '%"' + moi.mail + '"%').all()).results || [];
+        return json({ ok: true, etats: r, maintenant: maint, groupes: g.map(x => ({ id: x.id, par: x.pris_par, qui: x.pris_qui, moi: x.pris_par === moi.mail })) });
     }
     if (chemin === 'boite' && methode === 'GET') {
         const db = await baseBoite(env);
         const sigRoles = ROLES.filter(r => (moi.compte.roles || {})[r]).join(',');
         if ((await kv.get('idx-roles:' + moi.mail)) !== sigRoles) await indexerRoles(env, moi.mail, moi.compte.roles);
-        const r = await db.prepare('SELECT id, de, type, le FROM boite WHERE dest = ? AND appareil = ? AND le > ? ORDER BY le')
+        const r = await db.prepare('SELECT b.id, b.de, b.type, b.le, g.groupe FROM boite b LEFT JOIN groupe_envoi g ON g.id = b.id WHERE b.dest = ? AND b.appareil = ? AND b.le > ? ORDER BY b.le')
             .bind(moi.mail, moi.appareil.id, Date.now() - DUREE_MESSAGE * 1000).all();
         return json({ ok: true, envois: r.results || [] });
     }
@@ -1596,7 +1681,8 @@ async function api(requete, env, url, ctx) {
         if (methode === 'DELETE') {
             await db.prepare('DELETE FROM boite WHERE id = ? AND dest = ? AND appareil = ?').bind(m[1], moi.mail, moi.appareil.id).run();
             // Compte-rendu relevé par l'assistant Chorus DT : le missionnaire est prévenu qu'il a été récupéré.
-            const cr = (await db.prepare('SELECT * FROM suivi WHERE envoi = ? AND genre = ? AND etape = ? AND detenteur = ?').bind(m[1], 'cr', 'chorus', moi.mail).all()).results || [];
+            const dets = [moi.mail].concat(await groupesDe(env, moi));
+            const cr = (await db.prepare('SELECT * FROM suivi WHERE envoi = ? AND genre = ? AND etape = ? AND detenteur IN (' + dets.map(() => '?').join(',') + ')').bind(m[1], 'cr', 'chorus', ...dets).all()).results || [];
             if (cr.length) {
                 const p = avancerSuivi(env, cr, 'recu', { auteur: moi.mail, trace: { e: 'recu', le: Date.now(), qui: '', par: moi.mail } }, url.origin, 'recu').catch(() => {});
                 if (ctx && ctx.waitUntil) ctx.waitUntil(p); else await p;
@@ -1641,11 +1727,11 @@ async function api(requete, env, url, ctx) {
         const corps = await requete.json().catch(() => ({}));
         const refs = nettoyerRefs(corps.refs), envois = nettoyerRefs(corps.envois);
         const db = await baseBoite(env);
-        const lignes = [];
-        if (refs.length) lignes.push(...((await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur = ? AND etape = ? AND ref IN (' + refs.map(() => '?').join(',') + ')')
-            .bind('mer', moi.mail, 'chorus', ...refs).all()).results || []));
-        if (envois.length) lignes.push(...((await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur = ? AND etape IN (\'chorus\', \'recu\') AND envoi IN (' + envois.map(() => '?').join(',') + ')')
-            .bind('cr', moi.mail, ...envois).all()).results || []));
+        const lignes = [], dets = [moi.mail].concat(await groupesDe(env, moi)), qd = dets.map(() => '?').join(',');
+        if (refs.length) lignes.push(...((await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur IN (' + qd + ') AND etape = ? AND ref IN (' + refs.map(() => '?').join(',') + ')')
+            .bind('mer', ...dets, 'chorus', ...refs).all()).results || []));
+        if (envois.length) lignes.push(...((await db.prepare('SELECT * FROM suivi WHERE genre = ? AND detenteur IN (' + qd + ') AND etape IN (\'chorus\', \'recu\') AND envoi IN (' + envois.map(() => '?').join(',') + ')')
+            .bind('cr', ...dets, ...envois).all()).results || []));
         const qui = String(corps.qui || '').slice(0, 80);
         await avancerSuivi(env, lignes, 'traite', { auteur: moi.mail, trace: { e: 'traite', le: Date.now(), qui, par: moi.mail } }, url.origin, 'traite');
         return json({ ok: true, n: lignes.length });
@@ -1739,7 +1825,7 @@ async function adresseDe(env, mail, prenom, nom) {
     if (actuelle && new RegExp('^' + base.replace(/[.]/g, '\\.') + '\\d*$').test(actuelle)) return actuelle;
     for (let i = 1; i < 200; i++) {
         const local = base + (i > 1 ? i : '');
-        if (ADRESSES_RESERVEES.includes(local)) continue;
+        if (ADRESSES_RESERVEES.includes(local) || lireGroupe(local + '@' + DOMAINE_RECEPTION)) continue;
         const tenant = await kv.get('adresse:' + local);
         if (tenant && tenant !== mail && await kv.get('compte:' + tenant)) continue;
         if (actuelle && actuelle !== local && await kv.get('adresse:' + actuelle) === mail) await kv.delete('adresse:' + actuelle);
