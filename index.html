@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=175"></script>
+<script src="jumelage.js?v=176"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -141,6 +141,8 @@ body.dark-mode .MER-EQUIPE-LIGNE { border-color: #404040; } body.dark-mode .MER-
 /* Espace Assistant Chorus DT */
 .MER-CHORUS-TETE { text-align: left; }
 .MER-CHORUS-LOGO { display: block; width: min(220px, 60%); margin: 4px auto 18px; }
+.MER-CHORUS-ADMIN { text-align: center; font-size: 0.68rem; font-weight: 800; letter-spacing: 0.3em; color: #a87a1f; margin: -12px 0 16px; padding-left: 0.3em; }
+body.dark-mode .MER-CHORUS-ADMIN { color: #d6a756; }
 body.dark-mode .MER-CHORUS-LOGO { filter: invert(1) brightness(1.1); }
 .MER-BANDEAU-RECU-IC { width: 36px; height: 36px; flex-shrink: 0; border-radius: 10px; background: rgba(214,167,86,.25); color: #e0b86a; display: flex; align-items: center; justify-content: center; font-size: 1.1rem; }
 .MER-AIDE-RECEPTION { border: 1.5px dashed rgba(214,167,86,0.4); border-radius: 16px; padding: 16px; margin: 4px 0 16px; background: rgba(214,167,86,0.05); }
@@ -842,6 +844,8 @@ body.dark-mode .MER-FIELD .MER-VILLE-CP .MER-CP-IN { background: #1a1a1a; border
 }
 .PC-MARQUE { display: flex; justify-content: center; border: 0; background: none; padding: 4px 0 18px; margin-bottom: 10px; border-bottom: 1px solid var(--tg-border); cursor: pointer; }
 .PC-MARQUE img { width: 104px; height: auto; }
+.PC-MARQUE-CHORUS { flex-direction: column; align-items: center; }
+.PC-MARQUE-ADMIN { font-size: 0.52rem; font-weight: 800; letter-spacing: 0.24em; padding-left: 0.24em; color: #d6a756; margin-top: 4px; }
 body.dark-mode .PC-MARQUE img { filter: brightness(0) invert(0.93); }
 .PC-NAV { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0; border-radius: 12px; background: none; text-align: left;
   font-family: inherit; font-size: 0.84rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; line-height: 1.25; }
@@ -1047,6 +1051,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=175"></script>
+<script src="app.js?v=176"></script>
 </body>
 </html>

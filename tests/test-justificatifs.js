@@ -15,7 +15,7 @@ module.exports = async function() {
         await p.evaluate(n => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.nom = n; r.prenom = 'Essai'; r.matricule = ''; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); sessionStorage.setItem('trigone_choix_fait', '1'); }, nom);
         await p.reload(); await attendre(2500);
         await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
-        await p.fill('#JUM-C-MAIL', mail); await p.click('#JUM-C-ENVOI'); await attendre(1500);
+        await p.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await p.fill('#JUM-C-MAIL', mail); await p.click('#JUM-C-ENVOI'); await attendre(1500);
         await p.click('#JUM-C-VALIDER'); await attendre(1500);
         await p.evaluate(() => JUMELAGE_FERMER_COMPTE());
         return p;

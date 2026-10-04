@@ -608,6 +608,18 @@
         '.JUM-HORS-RESEAU b { padding-left: 9px; }' +
         '.JUM-HORS-RESEAU small { display: none; font: 600 0.72rem/1.35 Montserrat, system-ui, sans-serif; letter-spacing: 0; text-transform: none; color: #fef3c7; text-align: center; }' +
         '.JUM-HORS-RESEAU.ouvert { width: 320px; } .JUM-HORS-RESEAU.ouvert small { display: block; }' +
+        '#JUM-C-IDENT .JUM-ACC-CHAMP input { padding-left: 14px !important; }' +
+        '@media (max-width: 560px) { .JUM-GC-CPT { flex-wrap: wrap; } .JUM-GC-CPT > div:first-child { flex: 1 1 100%; } .JUM-GC-ACT { flex: 1 1 100%; justify-content: flex-end; } }' +
+        '.JUM-C-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 10px; } .JUM-C-APERCU { margin: 4px 0 12px; font-size: 0.8rem; color: #6b5a33; } .JUM-C-APERCU b { color: #9a6f22; word-break: break-all; }' +
+        '.JUM-VERIF-ATT { display: block; margin-top: 8px; color: #b45309; font-weight: 800; } .JUM-VERIF-VALIDER { margin-top: 10px !important; width: 100%; } .JUM-VERIF-OK { display: block; margin-top: 10px; color: #15803d; font-weight: 800; }' +
+        '.JUM-GC-CPT { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 2px; border-bottom: 1px solid #eee5d3; } .JUM-GC-CPT > div:first-child { min-width: 0; }' +
+        '.JUM-GC-CPT b { font-size: 0.84rem; } .JUM-GC-CPT small { display: block; color: #6b7280; font-size: 0.72rem; word-break: break-all; }' +
+        '.JUM-GC-ST { font-style: normal; font-size: 0.66rem; font-weight: 800; margin-left: 6px; padding: 1px 7px; border-radius: 999px; } .JUM-GC-ST.ok { background: #dcfce7; color: #166534; } .JUM-GC-ST.att { background: #fef3c7; color: #92400e; } .JUM-GC-ST.bl { background: #fee2e2; color: #991b1b; }' +
+        '.JUM-GC-ACT { display: flex; gap: 6px; flex-shrink: 0; align-items: center; } .JUM-GC-ACT button { width: auto; margin: 0; padding: 6px 10px; font-size: 0.74rem; }' +
+        '.JUM-GC-SUPPR-MINI { border: 0; background: none; cursor: pointer; font-size: 1rem; padding: 4px; } .JUM-GC-MOI { font-size: 0.72rem; color: #9a6f22; font-weight: 800; }' +
+        '.JUM-GC-SCAN { width: 100%; margin: 8px 0 4px; } .JUM-GC-LISTE { max-height: 46vh; overflow-y: auto; }' +
+        'body.dark-mode .JUM-GC-CPT { border-color: #333; } body.dark-mode .JUM-C-APERCU { color: #c9b98f; }' +
+        '.JUM-CPT-ATT { color: #b45309 !important; font-weight: 800; }' +
         '.JUM-GC-FOND { position: fixed; inset: 0; z-index: 99990; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 16px; }' +
         '.JUM-GC-FEN { position: relative; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; background: #fff; color: #1a1a1a; border-radius: 18px; padding: 20px 18px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); font: 500 0.86rem/1.45 Montserrat, system-ui, sans-serif; }' +
         '.JUM-GC-FEN.large { max-width: 560px; } .JUM-GC-FEN h3 { margin: 0 30px 10px 0; font-size: 1.05rem; } .JUM-GC-FEN h4 { margin: 18px 0 6px; font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; color: #9a6f22; }' +
@@ -664,6 +676,7 @@
         /* Espace Assistant Chorus DT */
         '.JUM-BLOC-CHORUS { display: flex; align-items: center; gap: 18px; padding: 0 20px calc(max(18px, env(safe-area-inset-bottom, 0px)) + 36px); max-width: 520px; width: 100%; box-sizing: border-box; }' +
         '.JUM-CHORUS-LOGO { position: relative; flex-shrink: 0; }' +
+        '.JUM-CHORUS-ADMIN { display: block; text-align: center; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.22em; margin-top: 2px; color: #a87a1f; }' +
         '.JUM-V2 .JUM-CHORUS, .JUM-V2 .JUM-CHORUS:hover, .JUM-V2.choix-chorus .JUM-CHORUS { position: static; transform: none; width: min(32vw, 15vh, 150px); mix-blend-mode: normal; }' +
         '.JUM-V2 .JUM-CHORUS img { filter: none; }' +
         '.JUM-V2 .JUM-CHORUS-NB { display: none; }' +
@@ -1133,7 +1146,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 175, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 176, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1284,6 +1297,8 @@
     var LOGO_CHORUS = (DANS_CR ? '../' : '') + 'logo_chorus.webp';
     function roleChorus() { try { return localStorage.getItem(CLE_ROLE_CHORUS) === '1'; } catch (e) { return false; } }
     window.JUMELAGE_ROLE_CHORUS = roleChorus;
+    // Administrateur de l'unité (toujours assistant Chorus DT) : « ADMINISTRATEUR » sous le logo Assist Chorus-DT.
+    window.JUMELAGE_ROLE_ADMIN = function() { return !!lireTxt(CLE_ROLE_ADMIN); };
     function empreinteCodeChorus(code) {
         return crypto.subtle.digest('SHA-256', new TextEncoder().encode('TRIGONE-CHORUS:' + String(code || '').trim().toUpperCase())).then(function(b) {
             return Array.prototype.map.call(new Uint8Array(b), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
@@ -2729,9 +2744,12 @@
             return appelApi('liaison/utiliser', { methode: 'POST', corps: { id: x[1], nom: nomAppareil(), cle: { kty: pub.kty, crv: pub.crv, x: pub.x, y: pub.y } } });
         }).then(function(r) {
             rep = r;
+            // Code de réactivation (remis par l'administrateur) : pas de données à recopier, seulement le compte.
+            if (!r.paquet) return null;
             return cleLiaison(code, depuisB64(r.paquet.sel)).then(function(k) { return SUBTLE.decrypt({ name: 'AES-GCM', iv: depuisB64(r.paquet.iv) }, k, depuisB64(r.paquet.ct)); })
                 .catch(function() { throw new Error('Code de liaison incorrect.'); });
         }).then(function(clair) {
+            if (!clair) { ecrireTxt('trigone_reactivation', '1'); return; }
             var sv = JSON.parse(new TextDecoder().decode(clair));
             // Propre à chaque appareil : abonnement aux notifications, sourdine, suivi (relu sur le serveur).
             ['trigone_notif', 'trigone_notif_muet', 'trigone_suivi', 'trigone_boite'].forEach(function(k) { delete sv.donnees[k]; });
@@ -2746,7 +2764,7 @@
     };
     // Zone de saisie du code (nouvel appareil) : champ + bouton + message ; après réussite, TRIGONE redémarre.
     function htmlSaisieLiaison() {
-        return '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;"><div class="JUM-R-CHAMP"><label for="JUM-L-CODE">Code de liaison</label>' +
+        return '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;"><div class="JUM-R-CHAMP"><label for="JUM-L-CODE">Code de liaison ou de réactivation</label>' +
             '<input id="JUM-L-CODE" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="EX : K7P2-9XQM" style="letter-spacing:0.12em; font-weight:800; text-transform:uppercase;"></div></div>' +
             '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-L-OK" style="width:100%; margin:6px 0 0;">Récupérer mon compte et mes données</button>' +
             '<p class="JUM-R-ERREUR" id="JUM-L-ERR" style="min-height:0;"></p>';
@@ -3893,7 +3911,7 @@
                     '<button type="button" class="JUM-ACC-BTN or" data-aller="creer">Créer mon compte</button>' +
                     '<button type="button" class="JUM-ACC-BTN ligne" data-aller="connecter">Se connecter</button>' +
                     '<button type="button" class="JUM-ACC-LIEN" data-aller="liaison">J\'ai déjà TRIGONE sur un autre appareil</button>' +
-                    '<div class="JUM-ACC-NOTE">Avec votre adresse mail professionnelle · aucun mot de passe</div>' +
+                    '<div class="JUM-ACC-NOTE">Sans adresse mail personnelle · aucun mot de passe</div>' +
                 '</div>' +
                 '<div class="JUM-ACC-BAS"><span>4<sup>e</sup> RIISC</span><span>Conçu par Germain-Pierre BOUQUET</span></div>' +
             '</div>' +
@@ -3905,7 +3923,17 @@
                     '<div class="JUM-ACC-ONGLETS" role="tablist"><button type="button" role="tab" class="actif" data-mode="creer">Créer mon compte</button><button type="button" role="tab" data-mode="connecter">Se connecter</button></div>' +
                     '<h2 id="JUM-C-TITRE">Bienvenue 👋</h2>' +
                     '<p class="JUM-ACC-AIDE" id="JUM-C-AIDE"></p>' +
-                    '<label class="JUM-ACC-LBL" for="JUM-C-MAIL">Adresse mail professionnelle</label>' +
+                    // Créer mon compte : identité seule (pas d'adresse mail) ; un responsable de l'unité valide ensuite.
+                    '<div id="JUM-C-IDENT">' +
+                        '<div class="JUM-C-2"><div><label class="JUM-ACC-LBL" for="JUM-C-GRADE">Grade</label><div class="JUM-ACC-CHAMP"><input id="JUM-C-GRADE" type="text" autocomplete="off" value="' + esc(r.grade || '') + '" placeholder="EX : CAPORAL"></div></div>' +
+                        '<div><label class="JUM-ACC-LBL" for="JUM-C-UNITE">Unité</label><div class="JUM-ACC-CHAMP"><input id="JUM-C-UNITE" type="text" autocomplete="off" value="' + esc(r.unite || '') + '" placeholder="EX : 4°RIISC"></div></div></div>' +
+                        '<label class="JUM-ACC-LBL" for="JUM-C-NOM">Nom</label><div class="JUM-ACC-CHAMP"><input id="JUM-C-NOM" type="text" autocomplete="family-name" value="' + esc(r.nom || '') + '" placeholder="EX : ROUX"></div>' +
+                        '<label class="JUM-ACC-LBL" for="JUM-C-PRENOM">Prénom</label><div class="JUM-ACC-CHAMP"><input id="JUM-C-PRENOM" type="text" autocomplete="given-name" data-no-uppercase="1" value="' + esc(r.prenom || '') + '" placeholder="EX : Emma"></div>' +
+                        '<p class="JUM-C-APERCU" id="JUM-C-APERCU"></p>' +
+                        '<button type="button" class="JUM-ACC-BTN noir" id="JUM-C-CREER">Créer mon compte</button>' +
+                    '</div>' +
+                    '<div id="JUM-C-MAILBLOC">' +
+                    '<label class="JUM-ACC-LBL" for="JUM-C-MAIL">Adresse mail du compte</label>' +
                     '<div class="JUM-ACC-CHAMP">' + SVG('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>') +
                         '<input id="JUM-C-MAIL" type="email" autocomplete="email" value="' + esc(r.monMail || '') + '" placeholder="prenom.nom@interieur.gouv.fr"></div>' +
                     '<button type="button" class="JUM-ACC-BTN noir" id="JUM-C-ENVOI">Recevoir le code par mail</button>' +
@@ -3916,6 +3944,7 @@
                         '<div class="JUM-ACC-RENVOI-SLOT"></div>' +
                         '<button type="button" class="JUM-ACC-BTN noir" id="JUM-C-VALIDER" disabled>Valider</button>' +
                         '<p class="JUM-R-AIDE" style="margin:10px 0 0;">Pas reçu ? Regardez dans les courriers indésirables, ou renvoyez le code.</p></div>' +
+                    '</div>' +
                     '<p class="JUM-R-ERREUR" id="JUM-C-ERR"></p>' +
                     '<div class="JUM-ACC-OU">ou</div>' +
                     '<button type="button" class="JUM-ACC-AUTRE" data-aller="liaison">' + SVG('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>') + 'J\'ai déjà TRIGONE sur un autre appareil</button>' +
@@ -3936,10 +3965,12 @@
         fenCompte.querySelector('#JUM-C-PLUSTARD').addEventListener('click', fermer);
         fenCompte.querySelector('#JUM-C-SANS').addEventListener('click', function() { window.JUMELAGE_FERMER_COMPTE(); window.JUMELAGE_REGLAGES(); });
         var TEXTES = {
-            creer: ['Bienvenue 👋', 'Indiquez votre adresse professionnelle : vous recevez un code à 6 chiffres par mail. Aucun mot de passe à retenir.'],
-            connecter: ['Bon retour 👋', 'Votre adresse professionnelle, puis le code à 6 chiffres reçu par mail : vous retrouvez votre compte TRIGONE.']
+            creer: ['Bienvenue 👋', 'Votre grade, votre nom, votre unité : TRIGONE vous crée votre adresse prénom.nom@trigone-app.com. Aucune adresse mail personnelle, aucun mot de passe. Un responsable de votre unité valide ensuite votre compte.'],
+            connecter: ['Bon retour 👋', 'Compte créé avec une adresse mail : saisissez-la, puis le code à 6 chiffres reçu par mail. Compte sans adresse mail (nouveau téléphone) : « J\'ai déjà TRIGONE… », avec le code de réactivation remis par votre administrateur.']
         };
         function mode(m) {
+            fenCompte.querySelector('#JUM-C-IDENT').style.display = m === 'creer' ? '' : 'none';
+            fenCompte.querySelector('#JUM-C-MAILBLOC').style.display = m === 'creer' ? 'none' : '';
             Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-ACC-ONGLETS button'), function(x) { x.classList.toggle('actif', x.getAttribute('data-mode') === m); });
             fenCompte.querySelector('#JUM-C-TITRE').textContent = TEXTES[m][0];
             fenCompte.querySelector('#JUM-C-AIDE').textContent = TEXTES[m][1];
@@ -3965,6 +3996,38 @@
         champCode.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !btnValider.disabled) btnValider.click(); });
         var err = fenCompte.querySelector('#JUM-C-ERR'), champMail = fenCompte.querySelector('#JUM-C-MAIL'), mailDemande = '';
         var btnEnvoi = fenCompte.querySelector('#JUM-C-ENVOI'), btnValider = fenCompte.querySelector('#JUM-C-VALIDER');
+        // Créer mon compte (sans adresse mail) : aperçu de l'adresse TRIGONE, puis création ; le compte attend sa validation.
+        var champsId = ['GRADE', 'UNITE', 'NOM', 'PRENOM'].map(function(k) { return fenCompte.querySelector('#JUM-C-' + k); });
+        brancherListeUnites(champsId[1]);
+        var slug = function(t) { return String(t || '').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); };
+        var apercu = function() {
+            var a = [slug(champsId[3].value), slug(champsId[2].value)].filter(Boolean).join('.');
+            fenCompte.querySelector('#JUM-C-APERCU').innerHTML = a ? 'Votre adresse TRIGONE : <b>' + esc(a) + '@trigone-app.com</b>' : '';
+        };
+        champsId.forEach(function(x) { x.addEventListener('input', apercu); }); apercu();
+        fenCompte.querySelector('#JUM-C-CREER').addEventListener('click', function() {
+            var b = this, v = function(i) { return champsId[i].value.trim(); }, u = uniteConnue(v(1));
+            err.style.color = '';
+            if (!v(0) || !v(2) || !v(3)) { err.textContent = '⛔ Grade, nom et prénom sont nécessaires.'; return; }
+            if (!u) { err.textContent = '⛔ Choisissez votre unité dans la liste.'; champsId[1].focus(); return; }
+            b.disabled = true; b.textContent = 'Création du compte…'; err.textContent = '';
+            ecrireReglages(Object.assign(lireReglages(), { grade: v(0).toUpperCase(), unite: u.nom, nom: v(2).toUpperCase(), prenom: v(3) }));
+            var paire;
+            SUBTLE.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']).then(function(p) {
+                paire = p; return SUBTLE.exportKey('jwk', p.publicKey);
+            }).then(function(pub) {
+                return appelApi('inscription/directe', { methode: 'POST', corps: { grade: v(0), nom: v(2), prenom: v(3), appareil: nomAppareil(), cle: { kty: pub.kty, crv: pub.crv, x: pub.x, y: pub.y } } });
+            }).then(function(rep) {
+                return cleIdb('ecrire', { prive: paire.privateKey }).then(function() {
+                    ecrireTxt(CLE_COMPTE, JSON.stringify({ mail: rep.mail, appareil: rep.appareil, jeton: rep.jeton }));
+                    ecrireTxt(CLE_ATTENTE, '1');
+                    ecrireTxt(CLE_ADRESSE, JSON.stringify({ sig: rep.mail + '|' + v(3) + '|' + v(2).toUpperCase(), mail: rep.mail, adresse: rep.adresse }));
+                    window.JUMELAGE_FERMER_COMPTE(); majBoutonsCompte();
+                    var suite = function() { if (!window.JUMELAGE_REGLAGES_FAITS()) setTimeout(function() { window.JUMELAGE_REGLAGES({ premiere: true, profil: true }); }, 400); };
+                    infoCompte('Compte créé — à valider', 'Votre adresse TRIGONE : ' + rep.adresse + '.\n\nUn responsable de votre unité (administrateur ou assistant Chorus DT) doit valider votre compte : il a reçu une notification. Plus rapide : montrez votre carte TRIGONE à votre chef, valideur ou assistant Chorus DT, qui la scanne.\n\nEn attendant, vous pouvez préparer vos demandes ; elles partiront une fois le compte validé.', suite);
+                });
+            }).catch(function(e) { err.textContent = '⛔ ' + (e.message || e); b.disabled = false; b.textContent = 'Créer mon compte'; });
+        });
         serviceDisponible().then(function(ok) {
             if (!ok && fenCompte) { err.textContent = navigator.onLine ? 'Le service de boîte aux lettres TRIGONE n\'est pas encore en service.' : 'Pas de connexion : réessayez une fois connecté.'; btnEnvoi.disabled = true; }
         });
@@ -4025,7 +4088,8 @@
                 bandeau('Déconnecté : vos données restent sur cet appareil. « Se connecter », en haut à droite, pour reprendre.');
             });
         };
-        var texte = 'Cet appareil ne pourra plus envoyer ni recevoir d\'envois TRIGONE. Vos demandes, comptes-rendus et réglages restent sur l\'appareil.';
+        var texte = 'Cet appareil ne pourra plus envoyer ni recevoir d\'envois TRIGONE. Vos demandes, comptes-rendus et réglages restent sur l\'appareil.' +
+            (/@trigone-app\.com$/.test((monCompte() || {}).mail || '') ? '\n\nCompte sans adresse mail : pour vous reconnecter, il faudra un code de liaison depuis un autre de vos appareils, ou un code de réactivation remis par votre administrateur.' : '');
         if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Se déconnecter ?', texte, 'Oui, me déconnecter', go, '⚠️', null, true);
         else if (window.confirm(texte)) go();
     }
@@ -4192,7 +4256,7 @@
         if (!c) m.innerHTML = '<div class="JUM-CPT-TETE"><span class="JUM-AV">?</span><div><b>Pas connecté</b><small>Connectez-vous pour envoyer et recevoir vos demandes et comptes-rendus.</small></div></div>' +
             '<button type="button" data-action="connexion">' + ic('personne') + '<span><b>Se connecter</b><small>Première connexion, ou autre appareil</small></span></button>' +
             '<div class="JUM-CPT-SEP"></div>' + lignesCourtes;
-        else m.innerHTML = '<div class="JUM-CPT-TETE">' + avatarHtml() + '<div><b>' + esc([lireReglages().grade, lireReglages().nom, lireReglages().prenom].filter(Boolean).join(' ') || nomCompte()) + '</b><small>' + esc(c.mail) + '</small></div></div>' +
+        else m.innerHTML = '<div class="JUM-CPT-TETE">' + avatarHtml() + '<div><b>' + esc([lireReglages().grade, lireReglages().nom, lireReglages().prenom].filter(Boolean).join(' ') || nomCompte()) + '</b><small>' + esc(c.mail) + '</small>' + (lireTxt(CLE_ATTENTE) ? '<small class="JUM-CPT-ATT">⏳ En attente de validation par votre unité</small>' : '') + '</div></div>' +
             '<div class="JUM-CPT-ROLES"><span>MISSIONNAIRE</span>' + Object.keys(LIBELLES_ROLES).filter(function(k) { return roles[k]; }).map(function(k) { return '<span class="' + (k === 'chorus' ? 'or' : '') + '">' + LIBELLES_ROLES[k] + '</span>'; }).join('') + '</div>' +
             '<div class="JUM-CPT-SEP"></div>' + lignesCourtes +
             '<div class="JUM-CPT-SEP"></div>' +
@@ -4251,7 +4315,8 @@
                 L('roles', ic('groupe'), 'Mes rôles', aRole ? 'Valideur, assistant Chorus DT : gérer' : 'Valideur, assistant Chorus DT : ajouter un rôle avec son code', function() { window.JUMELAGE_REGLAGES({ vue: 'roles' }); }),
                 aRole && L('absence', ic('sablier'), 'Absence', 'Désigner un remplaçant pendant votre absence', function() { window.JUMELAGE_REGLAGES({ vue: 'absence' }); }),
                 c && L('appareil', ic('telephone'), 'Ajouter un appareil', 'PC ou téléphone, sans rien ressaisir', function() { window.JUMELAGE_COMPTE({ liaison: true }); }),
-                c && (roles.chorus || lireTxt(CLE_ROLE_ADMIN)) && L('gestion', ic('groupe'), 'Demandes sur les comptes' + (NB_DEMANDES_COMPTE ? ' (' + NB_DEMANDES_COMPTE + ')' : ''), lireTxt(CLE_ROLE_ADMIN) ? 'Réinitialiser, supprimer un compte de l\'unité, journal' : 'Réinitialisation ou suppression demandées par vos missionnaires', function() { window.JUMELAGE_GESTION_COMPTES(); })
+                c && L('mesappareils', ic('telephone'), 'Mes appareils', 'Voir vos appareils, retirer un téléphone perdu', function() { window.JUMELAGE_MES_APPAREILS(); }),
+                c && (roles.chorus || lireTxt(CLE_ROLE_ADMIN)) && L('gestion', ic('groupe'), 'Comptes et demandes' + (NB_DEMANDES_COMPTE ? ' (' + NB_DEMANDES_COMPTE + ')' : ''), lireTxt(CLE_ROLE_ADMIN) ? 'Inscriptions, comptes de l\'unité (bloquer, supprimer), demandes, journal' : 'Inscriptions à valider, demandes de vos missionnaires', function() { window.JUMELAGE_GESTION_COMPTES(); })
             ] },
             { id: 'notif', titre: 'Notifications', icone: ic('cloche'), aide: 'Réception d\'une demande, suivi de vos envois, nouvelles versions, et boutons d\'horodatage sur la montre.', lignes: c ? [
                 L('notif', ic('cloche'), 'Notifications', e === 'active' ? (notifMuet() ? 'Coupées sur cet appareil' : 'Actives sur cet appareil') + ' · tester' : 'Les activer sur cet appareil', function() { window.JUMELAGE_COMPTE(); }),
@@ -5193,7 +5258,7 @@
         if (!m) return Promise.reject(new Error('Ce QR code n\'est pas une carte TRIGONE.'));
         return appelApi('carte?id=' + encodeURIComponent(m[1])).then(function(r) {
             if (!r.valide) throw new Error('Carte inconnue ou compte TRIGONE supprimé.');
-            return r.carte;
+            r.carte.id = m[1]; return r.carte;
         });
     }
     window.JUMELAGE_CARTE_NOM = function(c) { return [c.grade, (c.nom || '').toUpperCase(), c.prenom].filter(Boolean).join(' '); };
@@ -5313,7 +5378,14 @@
                     r.innerHTML = '<b>✔ Carte TRIGONE authentique</b><span class="qui">' + esc(window.JUMELAGE_CARTE_NOM(c)) + '</span>' +
                         '<span>' + esc([c.unite, c.cie].filter(Boolean).join(' · ')) + '</span>' +
                         (c.depuis ? '<span>Compte TRIGONE depuis le ' + new Date(c.depuis).toLocaleDateString('fr-FR') + '</span>' : '') +
-                        '<small>Vérifié le ' + quand.toLocaleDateString('fr-FR') + ' à ' + quand.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</small>';
+                        '<small>Vérifié le ' + quand.toLocaleDateString('fr-FR') + ' à ' + quand.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) + '</small>' +
+                        (c.attente ? '<span class="JUM-VERIF-ATT">⏳ Compte en attente de validation</span><button type="button" class="JUM-R-PRINCIPAL JUM-VERIF-VALIDER">✔ Valider son inscription</button>' : '');
+                    var bv = r.querySelector('.JUM-VERIF-VALIDER');
+                    if (bv) bv.addEventListener('click', function() {
+                        bv.disabled = true;
+                        appelApi('compte/valider-carte', { methode: 'POST', corps: { carte: id } }).then(function(x) { bv.outerHTML = '<span class="JUM-VERIF-OK">✔ ' + esc(x.qui) + ' : compte validé</span>'; },
+                            function(e) { bv.disabled = false; bandeau(e.message); });
+                    });
                 }).catch(function() { r.className = 'JUM-VERIF-RES ko'; r.innerHTML = '<b>Vérification impossible</b><span>Pas de connexion internet : réessayez.</span>'; });
         };
         if (document.body) montrer(); else document.addEventListener('DOMContentLoaded', montrer);
@@ -5425,7 +5497,7 @@
             'Oui, tout effacer');
     };
     // ---------- Comptes : demandes de réinitialisation / suppression, gestion par l'assistant Chorus DT et l'administrateur ----------
-    var NB_DEMANDES_COMPTE = 0, CLE_DEM_COMPTE = 'trigone_demande_compte';
+    var NB_DEMANDES_COMPTE = 0, CLE_DEM_COMPTE = 'trigone_demande_compte', CLE_ATTENTE = 'trigone_compte_attente';
     function etatDemandeCompte(type) {
         var d = lireJSON(CLE_DEM_COMPTE); if (!d || d.type !== type) return '';
         return d.statut === 'attente' ? '⏳ Demandée le ' + new Date(d.le).toLocaleDateString('fr-FR') + ' : en attente' : d.statut === 'refusee' ? '✖ Refusée le ' + new Date(d.decideLe || d.le).toLocaleDateString('fr-FR') : '';
@@ -5461,7 +5533,25 @@
         var donnees = null, erreurTxt = '';
         var dessiner = function() {
             var d = donnees || {}, l = d.demandes || [], admin = d.admin || d.superAdmin;
-            f.innerHTML = '<div class="JUM-GC-FEN large"><button type="button" class="JUM-GC-X" aria-label="Fermer">✕</button><h3>👤 Demandes sur les comptes</h3>' +
+            var cs = (unite && unite.comptes) || [], att = cs.filter(function(x) { return x.statut === 'attente'; }), adminU = unite && (unite.role === 'admin' || unite.role === 'super');
+            var nomC = function(x) { return [x.grade, x.nom, x.prenom].filter(Boolean).join(' ') || x.adresse || x.mail; };
+            var badge = { attente: '<i class="JUM-GC-ST att">⏳ à valider</i>', actif: '<i class="JUM-GC-ST ok">✔ actif</i>', bloque: '<i class="JUM-GC-ST bl">⛔ bloqué</i>' };
+            var ligneC = function(x) {
+                return '<div class="JUM-GC-CPT" data-m="' + esc(x.mail) + '"><div><b>' + esc(nomC(x)) + '</b>' + (badge[x.statut] || '') + '<small>' + esc(x.adresse || x.mail) + (unite.role === 'super' ? ' · ' + esc(x.unite) : '') + '</small></div>' +
+                    (x.moi ? '<span class="JUM-GC-MOI">vous</span>' : x.statut === 'attente' ? '<div class="JUM-GC-ACT"><button type="button" class="JUM-R-SECOND" data-c="refuser">Refuser</button><button type="button" class="JUM-R-PRINCIPAL" data-c="valider">Valider</button></div>'
+                    : adminU ? '<div class="JUM-GC-ACT">' + (x.statut === 'bloque' ? '<button type="button" class="JUM-R-PRINCIPAL" data-c="debloquer">Débloquer</button>'
+                        : '<button type="button" class="JUM-R-SECOND" data-c="bloquer">⛔ Bloquer</button><button type="button" class="JUM-R-SECOND" data-c="code">Code</button>') +
+                        '<button type="button" class="JUM-GC-SUPPR-MINI" data-c="supprimer" aria-label="Supprimer">🗑</button></div>' : '') + '</div>';
+            };
+            var visibles = cs.filter(function(x) { return x.statut !== 'attente' && (!filtre || (nomC(x) + ' ' + x.adresse + ' ' + x.mail).toLowerCase().indexOf(filtre) >= 0); });
+            var htmlUnite = !unite ? '' :
+                '<h4>Inscriptions à valider' + (att.length ? ' (' + att.length + ')' : '') + '</h4>' + (att.length ? att.map(ligneC).join('') : '<p class="JUM-GC-VIDE">Aucune inscription en attente.</p>') +
+                '<button type="button" class="JUM-R-SECOND JUM-GC-SCAN" data-scan>📷 Valider en scannant sa carte TRIGONE</button>' +
+                (adminU ? '<h4>Comptes de l\'unité ' + esc(unite.role === 'super' ? '(toutes les unités)' : '· ' + ((uniteConnue(unite.unite) || {}).nom || unite.unite)) + '</h4>' +
+                    '<input type="search" id="JUM-GC-FILTRE" placeholder="🔍 Rechercher un nom, une adresse…" value="' + esc(filtre) + '">' +
+                    (visibles.length ? '<div class="JUM-GC-LISTE">' + visibles.slice(0, 300).map(ligneC).join('') + '</div>' : '<p class="JUM-GC-VIDE">Aucun compte' + (filtre ? ' pour cette recherche' : '') + '. Les comptes d\'avant apparaissent à leur prochaine ouverture de TRIGONE.</p>') : '');
+            f.innerHTML = '<div class="JUM-GC-FEN large"><button type="button" class="JUM-GC-X" aria-label="Fermer">✕</button><h3>👤 Comptes et demandes</h3>' + htmlUnite +
+                '<h4>Demandes de réinitialisation ou de suppression</h4>' +
                 (!donnees ? '<p>' + (erreurTxt ? esc(erreurTxt) : 'Chargement…') + '</p>' :
                 (l.length ? l.map(function(x) {
                     return '<div class="JUM-GC-DEM"><b>' + esc(x.qui || x.mail) + '</b><small>' + esc(x.mail) + ' · ' + quandCompte(x.le) + '</small>' +
@@ -5469,7 +5559,7 @@
                         (x.motif ? '<em>« ' + esc(x.motif) + ' »</em>' : '') +
                         '<div class="JUM-GC-BTNS"><button type="button" class="JUM-R-SECOND" data-refus="' + x.id + '">Refuser</button><button type="button" class="JUM-R-PRINCIPAL" data-ok="' + x.id + '">Accepter</button></div></div>';
                 }).join('') : '<p class="JUM-GC-VIDE">Aucune demande en attente.</p>') +
-                (admin ? '<h4>Supprimer un compte (départ de l\'institution…)</h4><p>Administrateur ' + esc(d.superAdmin ? 'de TRIGONE' : 'du ' + ((uniteConnue(d.admin) || {}).nom || d.admin)) + ' : supprime tout ce que TRIGONE garde au nom de la personne. Irréversible.</p>' +
+                (admin ? '<h4>Supprimer un compte par son adresse (départ de l\'institution…)</h4><p>Administrateur ' + esc(d.superAdmin ? 'de TRIGONE' : 'du ' + ((uniteConnue(d.admin) || {}).nom || d.admin)) + ' : supprime tout ce que TRIGONE garde au nom de la personne. Irréversible.</p>' +
                     '<input id="JUM-GC-MAIL" type="email" placeholder="Adresse du compte" autocomplete="off"><input id="JUM-GC-MAIL2" type="email" placeholder="Retapez l\'adresse" autocomplete="off">' +
                     '<select id="JUM-GC-RAISON"><option>Départ de l\'institution</option><option>Mutation hors de l\'unité</option><option>À sa demande</option><option>Compte en double ou erroné</option><option>Autre</option></select>' +
                     '<input id="JUM-GC-PREC" type="text" placeholder="Précision (facultatif)" autocomplete="off"><p class="JUM-GC-ERR" id="JUM-GC-ERR2"></p>' +
@@ -5477,6 +5567,30 @@
                     '<h4>Journal des suppressions</h4>' + ((d.journal || []).length ? '<div class="JUM-GC-JOURNAL">' + d.journal.map(function(j) {
                         return '<div><b>' + quandCompte(j.le) + '</b> · ' + esc(j.qui || 'compte supprimé') + '<small>par ' + esc(j.par) + ' — ' + esc(j.motif || '') + ' · Brevo : ' + esc(j.brevo || '—') + '</small></div>'; }).join('') + '</div>' : '<p class="JUM-GC-VIDE">Aucune suppression.</p>') : ''));
             f.querySelector('.JUM-GC-X').onclick = function() { f.remove(); };
+            var champF = f.querySelector('#JUM-GC-FILTRE');
+            if (champF) champF.addEventListener('input', function() { filtre = champF.value.trim().toLowerCase(); var pos = champF.selectionStart; dessiner(); var n = f.querySelector('#JUM-GC-FILTRE'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} });
+            var bscan = f.querySelector('[data-scan]');
+            if (bscan) bscan.onclick = function() {
+                window.JUMELAGE_SCANNER_CARTE({ titre: 'Valider une inscription', sous: 'Scannez le QR code de sa carte TRIGONE (verso).' }).then(function(c) {
+                    if (!c) return;
+                    if (!c.attente) { bandeau(window.JUMELAGE_CARTE_NOM(c) + ' : compte déjà validé.'); return; }
+                    appelApi('compte/valider-carte', { methode: 'POST', corps: { carte: c.id } }).then(function(x) { bandeau('✔ ' + x.qui + ' : compte validé.'); charger(); }, function(e) { bandeau(e.message); });
+                });
+            };
+            Array.prototype.forEach.call(f.querySelectorAll('.JUM-GC-CPT [data-c]'), function(b) {
+                b.onclick = function() {
+                    var ligne = b.closest('.JUM-GC-CPT'), m = ligne.getAttribute('data-m'), x = cs.filter(function(y) { return y.mail === m; })[0] || {}, qui = nomC(x), a = b.getAttribute('data-c');
+                    var conf = function(t, txt, lib, go) { if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM(t, txt, lib, go, '⚠️', null, true); else if (window.confirm(t + '\n\n' + txt)) go(); };
+                    var code = function(r, t) { infoCompte(t, 'Code de réactivation de ' + qui + ' : ' + r.code + '\n\nÀ lui remettre (de vive voix, SMS…). Sur son nouveau téléphone : TRIGONE › « J\'ai déjà TRIGONE sur un autre appareil » › ce code. Valable 48 h, une seule fois. Ses données reviennent avec « Restaurer depuis mon compte » (code de récupération).'); charger(); };
+                    var err = function(e) { bandeau(e.message); };
+                    if (a === 'valider') appelApi('compte/valider', { methode: 'POST', corps: { mail: m, accepte: true } }).then(function() { bandeau('✔ ' + qui + ' : compte validé.'); charger(); }, err);
+                    else if (a === 'refuser') conf('Refuser l\'inscription de ' + qui + ' ?', 'Le compte et son adresse TRIGONE sont effacés.', 'Refuser', function() { appelApi('compte/valider', { methode: 'POST', corps: { mail: m, accepte: false } }).then(function() { bandeau('Inscription refusée.'); charger(); }, err); });
+                    else if (a === 'bloquer') conf('Bloquer le compte de ' + qui + ' ?', 'Téléphone perdu ou volé : tous ses appareils sont refusés tout de suite, et s\'effacent s\'ils se reconnectent. Son compte, son adresse, sa carte et sa sauvegarde sont gardés. « Débloquer » lui donnera un code pour son nouveau téléphone.', 'Bloquer', function() { appelApi('compte/bloquer', { methode: 'POST', corps: { mail: m, motif: 'Téléphone perdu ou volé' } }).then(function() { bandeau(qui + ' : compte bloqué.'); charger(); }, err); });
+                    else if (a === 'debloquer') appelApi('compte/debloquer', { methode: 'POST', corps: { mail: m } }).then(function(r) { code(r, 'Compte débloqué'); }, err);
+                    else if (a === 'code') conf('Nouveau code de réactivation pour ' + qui + ' ?', 'Pour un nouveau téléphone, sans bloquer l\'ancien (utilisez « Bloquer » s\'il est perdu).', 'Créer le code', function() { appelApi('compte/reactivation', { methode: 'POST', corps: { mail: m } }).then(function(r) { code(r, 'Code de réactivation'); }, err); });
+                    else if (a === 'supprimer') conf('Supprimer le compte de ' + qui + ' ?', 'Tout ce que TRIGONE garde à son nom est effacé (adresse TRIGONE, carte, photo, sauvegarde, appareils). Irréversible.', 'Supprimer le compte', function() { appelApi('compte/supprimer', { methode: 'POST', corps: { mail: m, motif: 'Départ de l\'institution' } }).then(function() { bandeau('Compte supprimé.'); charger(); }, err); });
+                };
+            });
             Array.prototype.forEach.call(f.querySelectorAll('[data-ok], [data-refus]'), function(b) {
                 b.onclick = function() {
                     var id = b.getAttribute('data-ok') || b.getAttribute('data-refus'), ok = b.hasAttribute('data-ok'), x = (donnees.demandes || []).filter(function(y) { return y.id === id; })[0];
@@ -5504,15 +5618,45 @@
                 else if (window.confirm('Supprimer ' + m1 + ' ?')) go();
             };
         };
-        var charger = function() { appelApi('compte/demandes').then(function(r) { donnees = r; NB_DEMANDES_COMPTE = (r.demandes || []).length; dessiner(); }, function(e) { erreurTxt = e.message; dessiner(); }); };
+        var unite = null, filtre = '';
+        var charger = function() {
+            appelApi('compte/demandes').then(function(r) { donnees = r; NB_DEMANDES_COMPTE = (r.demandes || []).length; dessiner(); }, function(e) { erreurTxt = e.message; dessiner(); });
+            appelApi('compte/unite').then(function(r) { unite = r; dessiner(); }, function() { unite = { comptes: [], role: '' }; dessiner(); });
+        };
         dessiner(); charger();
+    };
+    window.JUMELAGE_MES_APPAREILS = function() {
+        if (window.JUMELAGE_FERMER_PARAMETRES) window.JUMELAGE_FERMER_PARAMETRES();
+        var f = document.createElement('div'); f.className = 'JUM-GC-FOND'; document.body.appendChild(f);
+        f.addEventListener('click', function(e) { if (e.target === f) f.remove(); });
+        var dessiner = function(l, txt) {
+            f.innerHTML = '<div class="JUM-GC-FEN"><button type="button" class="JUM-GC-X" aria-label="Fermer">✕</button><h3>📱 Mes appareils</h3>' + (txt ? '<p>' + esc(txt) + '</p>' :
+                l.map(function(a) { return '<div class="JUM-GC-CPT"><div><b>' + esc(a.nom) + '</b>' + (a.moi ? '<i class="JUM-GC-ST ok">cet appareil</i>' : '') + '<small>Ajouté le ' + (a.cree ? new Date(a.cree).toLocaleDateString('fr-FR') : '—') + '</small></div>' +
+                    (a.moi ? '' : '<div class="JUM-GC-ACT"><button type="button" class="JUM-R-SECOND" data-id="' + esc(a.id) + '">Retirer</button></div>') + '</div>'; }).join('') +
+                '<p class="JUM-GC-VIDE">Un appareil retiré (perdu, volé, vendu) ne reçoit plus rien et s\'efface s\'il se reconnecte.</p>') + '</div>';
+            f.querySelector('.JUM-GC-X').onclick = function() { f.remove(); };
+            Array.prototype.forEach.call(f.querySelectorAll('[data-id]'), function(b) {
+                b.onclick = function() {
+                    var go = function() { appelApi('compte/appareils?id=' + encodeURIComponent(b.getAttribute('data-id')), { methode: 'DELETE' }).then(function(r) { bandeau('Appareil retiré.'); dessiner(r.appareils); }, function(e) { bandeau(e.message); }); };
+                    if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Retirer cet appareil ?', 'Il ne recevra plus rien et s\'effacera s\'il se reconnecte.', 'Retirer', go, '⚠️', null, true); else if (window.confirm('Retirer cet appareil ?')) go();
+                };
+            });
+        };
+        dessiner([], 'Chargement…');
+        appelApi('compte/appareils').then(function(r) { dessiner(r.appareils); }, function(e) { dessiner([], e.message); });
     };
     // À l'ouverture (compte connecté) : unité transmise au serveur, demande en cours, réinitialisation accordée ou compte supprimé.
     function verifierCompteDistant() {
         var c = monCompte(); if (!c || !navigator.onLine) return;
-        var u = normeUnite(lireReglages().unite);
-        if (u && lireTxt('trigone_unite_publiee') !== u) appelApi('unite', { methode: 'POST' }).then(function() { ecrireTxt('trigone_unite_publiee', u); }).catch(function() {});
+        // Unité et identité (liste des comptes de l'unité, pour l'administrateur).
+        var rg = lireReglages(), u = normeUnite(rg.unite), sigU = [u, rg.grade, rg.nom, rg.prenom].join('|');
+        if (u && lireTxt('trigone_unite_publiee') !== sigU) appelApi('unite', { methode: 'POST', corps: { grade: rg.grade, nom: rg.nom, prenom: rg.prenom } }).then(function() { ecrireTxt('trigone_unite_publiee', sigU); }).catch(function() {});
         appelApi('compte/etat').then(function(r) {
+            // Compte en attente de validation : rappel une fois par ouverture ; validé : on le dit une fois.
+            if (r.attente) {
+                ecrireTxt(CLE_ATTENTE, '1');
+                if (!sessionStorage.getItem('trigone_attente_vu')) { try { sessionStorage.setItem('trigone_attente_vu', '1'); } catch (e) {} bandeau('Compte en attente de validation par votre unité : montrez votre carte TRIGONE à un responsable.'); }
+            } else if (lireTxt(CLE_ATTENTE)) { try { localStorage.removeItem(CLE_ATTENTE); } catch (e) {} bandeau('Compte TRIGONE validé : vous pouvez envoyer et recevoir.'); majBoutonsCompte(); }
             if (!r.reinit) return;
             appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() { cleIdb('effacer').catch(function() {}).then(function() { toutEffacer('reinit'); }); });
         }, function() {});
@@ -5526,6 +5670,16 @@
             }
         }, function() {});
     }
+    // Message simple, dans l'appli ouverte (message centré) ou sur l'écran d'accueil ; apres : à la fermeture.
+    function infoCompte(titre, texte, apres) {
+        if (typeof window.AFFICHER_MSG_CENTRE === 'function') window.AFFICHER_MSG_CENTRE({ titre: titre, texte: texte, icone: 'ℹ️', boutons: [{ label: 'Compris', action: apres }] });
+        else if (ecran) { carteChoix(titre, texte, 'info'); if (apres) setTimeout(apres, 300); }
+        else { window.alert(titre + '\n\n' + texte); if (apres) apres(); }
+    }
+    if (lireTxt('trigone_reactivation')) setTimeout(function() {
+        try { localStorage.removeItem('trigone_reactivation'); } catch (e) {}
+        if (monCompte() && window.JUMELAGE_RESTAURER_COMPTE) window.JUMELAGE_RESTAURER_COMPTE({ apresConnexion: true, sinon: function() { if (!window.JUMELAGE_REGLAGES_FAITS()) window.JUMELAGE_REGLAGES({ premiere: true, profil: true }); } });
+    }, 2500);
     window.JUMELAGE_COMPTE_SUPPRIME = function() { cleIdb('effacer').catch(function() {}).then(function() { toutEffacer('supprime'); }); };
     setTimeout(verifierCompteDistant, 2500);
     window.addEventListener('online', function() { setTimeout(verifierCompteDistant, 2000); });
@@ -5720,7 +5874,7 @@
     // Espace Assistant Chorus DT : son logo et ce qui l'attend (demandes validées, comptes-rendus reçus).
     function panneauChorus() {
         return '<div class="JUM-PAN JUM-PAN-CHORUS" data-app="chorus" role="button" tabindex="0" aria-label="Ouvrir l\'espace Assistant Chorus DT">' +
-            '<div class="JUM-BLOC-CHORUS"><div class="JUM-CHORUS-LOGO"><button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button></div>' +
+            '<div class="JUM-BLOC-CHORUS"><div class="JUM-CHORUS-LOGO"><button type="button" class="JUM-CHORUS" aria-label="Ouvrir l\'espace Assistant Chorus DT" title="Assistant Chorus DT"><img src="' + LOGO_CHORUS + '" alt="TRIGONE Assist Chorus-DT"></button>' + (lireTxt(CLE_ROLE_ADMIN) ? '<span class="JUM-CHORUS-ADMIN">ADMINISTRATEUR</span>' : '') + '</div>' +
             '<div class="JUM-CPTS"><span class="JUM-SOUS">Mon espace</span>' +
                 '<div class="JUM-CPT-L" data-cpt="chorus"><b>0</b><span>Demandes validées à traiter</span></div>' +
                 '<div class="JUM-CPT-L" data-cpt="cr"><b>0</b><span>Comptes-rendus reçus</span></div></div></div>' + FLECHE_GO + '</div>';

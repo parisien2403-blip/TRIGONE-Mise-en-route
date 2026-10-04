@@ -14,7 +14,7 @@ module.exports = async function() {
         await q.goto(URL); await q.evaluate(preparer, APP_CODE); await q.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1'));
         await q.reload(); await attendre(2500);
         await q.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
-        await q.fill('#JUM-C-MAIL', MAILS[nom]); await q.click('#JUM-C-ENVOI'); await attendre(1500);
+        await q.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await q.fill('#JUM-C-MAIL', MAILS[nom]); await q.click('#JUM-C-ENVOI'); await attendre(1500);
         await q.click('#JUM-C-VALIDER'); await attendre(2000);
         await q.evaluate(() => { JUMELAGE_FERMER_COMPTE(); document.querySelectorAll('.JUM-REGLAGES,.JUM-PARAM').forEach(e => e.remove()); });
         return q;

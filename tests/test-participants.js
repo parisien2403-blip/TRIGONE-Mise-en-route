@@ -16,7 +16,7 @@ module.exports = async function() {
         await p.evaluate(([n, m]) => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.nom = n; if (m) r.matricule = m; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); sessionStorage.setItem('trigone_choix_fait', '1'); }, [nom.toUpperCase(), matricule]);
         await p.reload(); await attendre(2500);
         await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
-        await p.fill('#JUM-C-MAIL', nom.toLowerCase() + '.' + suffixe + '@interieur.gouv.fr'); await p.click('#JUM-C-ENVOI'); await attendre(1500);
+        await p.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await p.fill('#JUM-C-MAIL', nom.toLowerCase() + '.' + suffixe + '@interieur.gouv.fr'); await p.click('#JUM-C-ENVOI'); await attendre(1500);
         await p.click('#JUM-C-VALIDER'); await attendre(1500);
         await p.evaluate(() => JUMELAGE_FERMER_COMPTE());
         await p.reload(); await attendre(4500);   // à l'ouverture : matricule déclaré au serveur
@@ -56,7 +56,7 @@ module.exports = async function() {
     // Mon autre appareil (même compte) : la photo prise sur le téléphone y est lisible.
     const m2 = await (async () => { const ctx = await b.newContext({ viewport: { width: 1280, height: 900 } }), p = await ctx.newPage(); p.on('pageerror', e => erreurs.push('m2 : ' + e.message));
         await p.goto(URL); await p.evaluate(preparer, APP_CODE); await p.evaluate(() => sessionStorage.setItem('trigone_choix_fait', '1')); await p.reload(); await attendre(2500);
-        await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500); await p.fill('#JUM-C-MAIL', 'martin.' + suffixe + '@interieur.gouv.fr'); await p.click('#JUM-C-ENVOI'); await attendre(1500);
+        await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500); await p.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await p.fill('#JUM-C-MAIL', 'martin.' + suffixe + '@interieur.gouv.fr'); await p.click('#JUM-C-ENVOI'); await attendre(1500);
         await p.click('#JUM-C-VALIDER'); await attendre(1500); await p.evaluate(() => JUMELAGE_FERMER_COMPTE()); return p; })();
     await m.evaluate(() => { localStorage.removeItem('trigone_photo_sig'); return JUMELAGE_PHOTO_SYNCHRO(); });
     const moiAilleurs = await m2.evaluate(([p, mail]) => JUMELAGE_PARTICIPANTS(p, mail), [pers, mailM]);

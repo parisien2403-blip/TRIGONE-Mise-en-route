@@ -24,9 +24,9 @@ module.exports = async function() {
             && !(await f.$('.JUM-PRES')) && !(await f.$('.JUM-REGLAGES:not(.JUM-CONNEXION)')),
             'première ouverture : écran d\'accueil (Créer mon compte, Se connecter, autre appareil), sans réglages imposés');
         await f.click('.JUM-ACC [data-aller="creer"]'); await attendre(300);
-        verifier(await f.isVisible('.JUM-CONNEXION #JUM-C-MAIL') && (await f.textContent('#JUM-C-TITRE')).includes('Bienvenue'), 'accueil : « Créer mon compte » ouvre le formulaire (mail puis code)');
+        verifier(await f.isVisible('.JUM-CONNEXION #JUM-C-NOM') && !(await f.isVisible('#JUM-C-MAIL')) && (await f.textContent('#JUM-C-TITRE')).includes('Bienvenue'), 'accueil : « Créer mon compte » ouvre le formulaire d\'identité (sans adresse mail)');
         await f.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await attendre(200);
-        verifier((await f.textContent('#JUM-C-TITRE')).includes('Bon retour'), 'accueil : onglet « Se connecter »');
+        verifier((await f.textContent('#JUM-C-TITRE')).includes('Bon retour') && await f.isVisible('#JUM-C-MAIL'), 'accueil : onglet « Se connecter » (comptes avec adresse mail)');
         await f.click('.JUM-ACC-AUTRE'); await attendre(200);
         verifier(await f.isVisible('#JUM-L-CODE') && !(await f.isVisible('#JUM-C-MAIL')), 'accueil : « J\'ai déjà TRIGONE sur un autre appareil » → code de liaison');
         await f.click('.JUM-ACC-RETOUR'); await attendre(200);
@@ -49,7 +49,7 @@ module.exports = async function() {
         await p.reload(); await attendre(2500);
         // Activation du compte : mail pro → code (renvoyé par le serveur de test) → Activer
         await p.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
-        await p.fill('#JUM-C-MAIL', MAILS[nom]); await p.click('#JUM-C-ENVOI'); await attendre(1500);
+        await p.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await p.fill('#JUM-C-MAIL', MAILS[nom]); await p.click('#JUM-C-ENVOI'); await attendre(1500);
         await p.click('#JUM-C-VALIDER'); await attendre(1500);
         verifier(await p.evaluate(() => JUMELAGE_COMPTE_ACTIF()), nom + ' : compte TRIGONE actif (' + MAILS[nom].split('@')[0] + ')');
         await attendre(800);
@@ -100,7 +100,7 @@ module.exports = async function() {
     // Adresse non professionnelle refusée
     const x = await b.newPage(); await x.goto(URL); await x.evaluate(preparer, APP_CODE); await x.reload(); await attendre(2000);
     await x.evaluate(() => JUMELAGE_COMPTE()); await attendre(400);
-    await x.fill('#JUM-C-MAIL', 'quelquun@gmail.com'); await x.click('#JUM-C-ENVOI'); await attendre(1200);
+    await x.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await x.fill('#JUM-C-MAIL', 'quelquun@gmail.com'); await x.click('#JUM-C-ENVOI'); await attendre(1200);
     verifier((await x.textContent('#JUM-C-ERR')).includes('professionnelles'), 'adresse non professionnelle refusée');
 
     const m = await appareil('M'), v1 = await appareil('V1'), v2 = await appareil('V2'), c = await appareil('C');
