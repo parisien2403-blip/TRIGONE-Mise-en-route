@@ -1587,7 +1587,7 @@ function TPL_PANIER() {
         intro: '<p class="MER-HINT" style="margin:0 0 10px;">Une demande refusée revient dans votre Boîte de réception : « Corriger dans Documents » la range ici, avec le motif du refus.</p>',
         lignes: function(d) {
             return d.liste.map(function(x) { var r = RESUME_DEMANDE(x);
-                return { id: x.id, b: r.noms, tag: x.refus ? 'REFUSÉE' : 'PRÊTE', l2: r.sous, l3: x.refus ? 'Motif : ' + (x.refus.motif || '') : '', refus: !!x.refus, nl: !!x.refus };
+                return { id: x.id, b: r.noms, tag: x.refus ? 'REFUSÉE' : 'PRÊTE', l2: r.sous, l3: x.refus ? 'Refusée par ' + String(PAR_QUI(x.refus)).replace(/<[^>]+>/g, '') + ' : ' + (x.refus.motif || '') : '', refus: !!x.refus, nl: !!x.refus };
             });
         },
         pied: function(d) {
