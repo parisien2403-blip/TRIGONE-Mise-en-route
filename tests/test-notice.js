@@ -27,32 +27,35 @@ module.exports = async function(srv) {
     await p.evaluate(() => JUMELAGE_PARAMETRES('aide')); await attendre(300);
     await p.click('.JUM-PARAM [data-action="notice"]'); await attendre(2500);
     const info = await p.evaluate(() => {
-        const N = window.NOTICE_TRIGONE, f = document.querySelector('.JUM-NOTICE');
-        return { ouvert: !!f, pages: N && N.pages.length, chap: N && N.chapitres.length, couv: !!document.querySelector('.n-couv h1'), titre: (document.querySelector('.n-couv h2') || {}).textContent,
+        const T = window.NOTICE_TRIGONE, N = T.pour(0), C = T.pour(2), V = T.pour(1), f = document.querySelector('.JUM-NOTICE');
+        return { ouvert: !!f, pages: C.pages.length, chap: C.chapitres.length, couv: !!document.querySelector('.n-couv h1'), titre: (document.querySelector('.n-couv h2') || {}).textContent,
+            role: (document.querySelector('.n-couv-role') || {}).textContent, mis: [N.pages.length, N.chapitres.map(c => c.id).join(' ')], val: [V.pages.length, V.chapitres.map(c => c.id).join(' ')],
             num: (document.querySelector('.N-NUM') || {}).textContent, flip: !!document.querySelector('.stf__parent'), secu: N && N.chapitres.some(c => c.id === 'secu') };
     });
     verifier(info.ouvert && info.flip, 'la notice s\'ouvre en livre (pages qui tournent)');
-    verifier(info.couv && info.titre === 'Notice' && info.num === 'Couverture', 'couverture cuir « TRIGONE · Notice »');
-    verifier(info.pages > 80 && info.pages % 2 === 0 && info.chap === 17 && info.secu, 'contenu : ' + info.pages + ' pages, 16 chapitres et l\'annexe technique, dont « Protection de vos données »');
+    verifier(info.couv && info.titre === 'Notice' && info.role === 'MISSIONNAIRE' && info.num === 'Couverture', 'couverture cuir « TRIGONE · Notice », mention MISSIONNAIRE (compte sans rôle)');
+    verifier(info.pages > 80 && info.pages % 2 === 0 && info.chap === 17 && info.secu, 'notice complète : ' + info.pages + ' pages, 16 chapitres et l\'annexe technique, dont « Protection de vos données »');
+    verifier(info.mis[0] < info.val[0] && info.val[0] < info.pages && info.mis[0] % 2 === 0 && info.val[0] % 2 === 0 && !/\b(val|chorus|annexe)\b/.test(info.mis[1]) && /\bval\b/.test(info.val[1]) && !/\bchorus\b/.test(info.val[1]),
+        'une notice par rôle : missionnaire ' + info.mis[0] + ' pages (sans validation ni Chorus DT), valideur ' + info.val[0] + ', complète ' + info.pages);
     // Aucune page ne déborde (format PC 566 et format téléphone allongé).
     const trop = await p.evaluate(() => {
-        const N = window.NOTICE_TRIGONE, z = document.createElement('div'), r = []; z.style.cssText = 'position:fixed;left:-5000px;top:0'; document.body.appendChild(z);
-        [[566, ''], [660, ' haut']].forEach(([h, c]) => N.pages.forEach((pg, i) => {
+        const T = window.NOTICE_TRIGONE, z = document.createElement('div'), r = []; z.style.cssText = 'position:fixed;left:-5000px;top:0'; document.body.appendChild(z);
+        [0, 1, 2].forEach(niv => [[566, ''], [660, ' haut']].forEach(([h, c]) => T.pour(niv).pages.forEach((pg, i) => {
             z.innerHTML = '<div class="N-PAGE" style="position:relative;width:400px;height:' + h + 'px"><div class="N-ECH' + c + '" style="height:' + h + 'px">' + pg.html.replace(/\{B\}/g, '') + '</div></div>';
-            const n = z.querySelector('.n-p'); if (n && n.scrollHeight > n.clientHeight + 1) r.push(h + ':' + (i + 1));
-        }));
+            const n = z.querySelector('.n-p'); if (n && n.scrollHeight > n.clientHeight + 1) r.push(niv + '/' + h + ':' + (i + 1));
+        })));
         z.remove(); return r;
     });
     verifier(!trop.length, 'aucune page ne déborde' + (trop.length ? ' : ' + trop.join(', ') : ''));
     // Tourner une page, puis le sommaire mène au chapitre
     await p.click('.N-SUIV'); await attendre(1600);
-    verifier(await p.evaluate(() => document.querySelector('.N-NUM').textContent) === '2 / ' + info.pages, 'flèche › : page suivante');
+    verifier(await p.evaluate(() => document.querySelector('.N-NUM').textContent) === '2 / ' + info.mis[0], 'flèche › : page suivante');
     await p.click('.N-SOMMAIRE'); await attendre(1600);
-    const cible = await p.evaluate(() => NOTICE_TRIGONE.chapitres.find(c => c.id === 'carte').page);
-    await p.evaluate(() => document.querySelector('.n-som [data-aller="' + NOTICE_TRIGONE.chapitres.find(c => c.id === 'carte').page + '"]').click()); await attendre(1600);
-    verifier(await p.evaluate(() => document.querySelector('.N-NUM').textContent) === (cible + 1) + ' / ' + info.pages, 'sommaire › « Ma carte TRIGONE » : page ' + (cible + 1));
+    const cible = await p.evaluate(() => NOTICE_TRIGONE.pour(JUMELAGE_NOTICE_NIVEAU()).chapitres.find(c => c.id === 'carte').page);
+    await p.evaluate(() => document.querySelector('.n-som [data-aller="' + NOTICE_TRIGONE.pour(JUMELAGE_NOTICE_NIVEAU()).chapitres.find(c => c.id === 'carte').page + '"]').click()); await attendre(1600);
+    verifier(await p.evaluate(() => document.querySelector('.N-NUM').textContent) === (cible + 1) + ' / ' + info.mis[0], 'sommaire › « Ma carte TRIGONE » : page ' + (cible + 1));
     // Capture agrandie au toucher, retour du téléphone : ferme d'abord la capture, puis la notice
-    await p.evaluate(() => { const i = NOTICE_TRIGONE.pages.findIndex((x, k) => k >= 28 && /data-zoom/.test(typeof x === 'string' ? x : x.html || '')); document.querySelector('.JUM-NOTICE')._aller(i >= 0 ? i : 28); }); await attendre(800);
+    await p.evaluate(() => { const i = NOTICE_TRIGONE.pour(JUMELAGE_NOTICE_NIVEAU()).pages.findIndex((x, k) => k >= 28 && /data-zoom/.test(typeof x === 'string' ? x : x.html || '')); document.querySelector('.JUM-NOTICE')._aller(i >= 0 ? i : 28); }); await attendre(800);
     await p.evaluate(() => [...document.querySelectorAll('.stf__item')].find(e => e.style.display !== 'none' && e.querySelector('[data-zoom]')).querySelector('[data-zoom]').click()); await attendre(300);
     verifier(await p.evaluate(() => !!document.querySelector('.N-ZOOM img')), 'capture touchée : affichée en grand');
     p.goBack().catch(() => {}); await attendre(600);
@@ -67,8 +70,13 @@ module.exports = async function(srv) {
     verifier(await p.evaluate(() => !document.querySelector('.JUM-NOTICE') && !document.fullscreenElement), '✕ : la notice se ferme (et quitte le plein écran)');
     // Ouverture directe sur un chapitre
     await p.evaluate(() => JUMELAGE_NOTICE('secu')); await attendre(1500);
-    const secu = await p.evaluate(() => NOTICE_TRIGONE.chapitres.find(c => c.id === 'secu').page + 1);
-    verifier(await p.evaluate(() => document.querySelector('.N-NUM').textContent) === secu + ' / ' + info.pages, 'JUMELAGE_NOTICE(\'secu\') : ouverte sur « Protection des données »');
+    const secu = await p.evaluate(() => NOTICE_TRIGONE.pour(JUMELAGE_NOTICE_NIVEAU()).chapitres.find(c => c.id === 'secu').page + 1);
+    verifier(await p.evaluate(() => document.querySelector('.N-NUM').textContent) === secu + ' / ' + info.mis[0], 'JUMELAGE_NOTICE(\'secu\') : ouverte sur « Protection des données »');
+    await p.evaluate(() => document.querySelector('.JUM-NOTICE')._fermer()); await attendre(300);
+    // Missionnaire : « Notice complète » dans Paramètres › Aide, pour voir aussi les autres rôles.
+    await p.evaluate(() => JUMELAGE_PARAMETRES('aide')); await attendre(300);
+    await p.click('.JUM-PARAM [data-action="noticecomplete"]'); await attendre(2500);
+    verifier(await p.evaluate(() => document.querySelector('.N-TITRE').textContent === 'Notice complète' && !document.querySelector('.n-couv-role')), 'Paramètres › Aide › « Notice complète » : la notice de tous les rôles');
     await p.evaluate(() => document.querySelector('.JUM-NOTICE')._fermer()); await attendre(300);
     // Compte-rendu : bouton « Notice TRIGONE » dans la page Notice, chemins des images corrects
     await p.goto(srv.url + 'cr/'); await p.waitForFunction(() => typeof OUVRIR_NOTICE_MENU === 'function', null, { timeout: 15000 }); await attendre(1000);
