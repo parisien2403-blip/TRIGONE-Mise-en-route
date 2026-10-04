@@ -272,6 +272,16 @@ async function gestionnaire(env, moi, unite, aussiChorus) {
     if (aussiChorus && (moi.compte.roles || {}).chorus && (await env.TRIGONE_KV.get('unite-de:' + moi.mail)) === unite) return 'chorus';
     return '';
 }
+// « GRADE NOM Prénom » d'un compte (fiche de l'unité, sinon sa carte TRIGONE) ; vide si inconnu.
+async function quiDe(env, mail) {
+    try {
+        const l = await ligneCompte(env, mail);
+        if (l && (l.nom || l.prenom)) return [l.grade, (l.nom || '').toUpperCase(), l.prenom].filter(Boolean).join(' ');
+        const id = await env.TRIGONE_KV.get('carte-de:' + mail), c = id ? await env.TRIGONE_KV.get('carte:' + id, 'json') : null;
+        if (c && (c.nom || c.prenom)) return [c.grade, (c.nom || '').toUpperCase(), c.prenom].filter(Boolean).join(' ');
+    } catch (e) {}
+    return '';
+}
 async function ligneCompte(env, mail) { return await (await baseBoite(env)).prepare('SELECT * FROM compte_unite WHERE mail = ?').bind(mail).first(); }
 async function majLigneCompte(env, mail, champs) {
     const db = await baseBoite(env), l = await ligneCompte(env, mail) || {};
@@ -1510,6 +1520,11 @@ async function api(requete, env, url, ctx) {
         if (!compte || !compte.appareils.length || compte.attente || compte.bloque) return json({ ok: true, compte: false, attente: !!(compte && compte.attente), bloque: !!(compte && compte.bloque) });
         // Absence déclarée (valideur, assistant Chorus DT) : l'appli de l'expéditeur envoie à son remplaçant.
         const rp = compte.remplacant && compte.remplacant.jusqu > Date.now() ? compte.remplacant : null;
+        // Absent : nom des remplaçants (et du titulaire), affiché chez l'expéditeur à la place de l'adresse habituelle.
+        if (rp) {
+            const noms = {}; for (const m of new Set([rp.mail].concat(Object.values(rp.roles || {})))) noms[m] = await quiDe(env, m);
+            Object.assign(rp, { noms, qui: await quiDe(env, mail) });
+        }
         return json({ ok: true, compte: true, mail, roles: await rolesActuels(env, mail, compte), remplacant: rp, appareils: compte.appareils.map(a => ({ id: a.id, cle: a.cle })) });
     }
 

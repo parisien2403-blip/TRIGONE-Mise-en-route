@@ -351,6 +351,9 @@ module.exports = async function() {
     await c.locator('.MER-RECU:has(.MER-RECU-chorus) .MER-CHORUS-TRAITE').click(); await attendre(400);
     await c.click('#MSG-BOUTONS .BTN:has-text("Oui, traitée")'); await attendre(1500);
     verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().find(x => x.nature === 'chorus').statut === 'traite'), 'Chorus DT : « ✔ Traité » passe la demande en « Traités »');
+    await attendre(1500);
+    verifier(await c.evaluate(() => { const x = JUMELAGE_BOITE_LISTE().find(e => e.nature === 'chorus'), s = JUMELAGE_SUIVI(); return (x.ids || []).length && x.ids.every(i => s[i] && s[i].etape === 'traite'); }),
+        'Chorus DT : après « ✔ Traité », sa propre frise passe à « traitée » tout de suite (sans « Contrôle détaillé »)');
     verifier(Object.values(await suivi(m)).some(x => x.etape === 'traite'), 'suivi : demande « traitée par l\'assistant Chorus DT » après « ✔ Traité »');
     // Les valideurs voient aussi la suite des demandes qu'ils ont validées.
     const sv1 = Object.values(await suivi(v1)), sv2 = Object.values(await suivi(v2));
@@ -444,7 +447,7 @@ module.exports = async function() {
     // L'envoi est dans le dossier « Prêtes à envoyer » : une demande prête le temps de la vérification.
     const panierAvant = await m.evaluate(() => { const p = GET_PANIER(); SAVE_PANIER(p.concat([VIDE_DEMANDE()])); MER_DOSSIER.PANIER = 'prets'; SHOW_PAGE('PANIER'); return p; });
     await m.evaluate(v => MER_AFFICHER_ABSENCE('MER-ABS-DEST', v, 'VALIDATION_1'), MAILS.V2); await attendre(1200);
-    verifier((await m.textContent('#MER-ABS-DEST')).includes('partira chez son remplaçant'), 'absence : l\'expéditeur est prévenu avant l\'envoi (« absent jusqu\'au … : votre envoi partira chez son remplaçant »)');
+    verifier((await m.textContent('#MER-ABS-DEST')).includes('Destinataire pendant l\'absence') && (await m.textContent('#MER-ABS-DEST')).includes(MAILS.V1), 'absence : le champ destinataire montre le remplaçant (nom et adresse) à la place du titulaire');
     await m.evaluate(p => SAVE_PANIER(p), panierAvant);
     const envoiAbs = await m.evaluate(d => JUMELAGE_ENVOYER_DIRECT(d, 'VALIDATION_1', 'test.json', JSON.stringify({ demandes: [] })), MAILS.V2);
     verifier(envoiAbs.remplacant === MAILS.V1 && envoiAbs.absent === MAILS.V2, 'absence : l\'envoi destiné au VALIDEUR 2 part chez son remplaçant');

@@ -634,6 +634,7 @@
         '.JUM-V2 .JUM-TRAIT { display: none; }' +
         // Téléphone (Android, iPhone) : barre d'outils en bas de la page de garde (Notice, Paramètres, Ma carte, Mise à jour,
         // Affichage PC), dernière rangée de la grille ; les boutons ronds dispersés disparaissent. PC : inchangé.
+        '.JUM-CR-ABSENCE { margin: 8px 0 0; padding: 8px 10px; border-radius: 10px; background: #fff7ed; border: 1px solid #fdba74; color: #9a3412; font-size: 0.8rem; line-height: 1.45; }' +
         /* Pastille rouge de mouvement : dossier, entrée de menu ou onglet où un envoi vient d'arriver. */
         'html body [data-mvt].mvt { position: relative; }' +
         'html body [data-mvt].mvt::after { content: "" !important; display: block !important; position: absolute !important; top: 7px !important; left: 27px !important; right: auto !important; width: 10px !important; height: 10px !important; border-radius: 50% !important; background: #dc2626 !important; border: 2px solid #fff !important; box-shadow: 0 0 0 0 rgba(220,38,38,0.55) !important; pointer-events: none !important; z-index: 2 !important; animation: jumMvt 1.4s ease-out 4 !important; }' +
@@ -1197,7 +1198,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 187, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 188, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3065,7 +3066,7 @@
     // Absence d'un destinataire (avant l'envoi) : { mail du remplaçant, jusqu } ou null. Mémorisée 30 secondes.
     var absences = {};
     window.JUMELAGE_ABSENCE = function(mail, type) {
-        return absenceBrute(mail).then(function(rp) { var c = remplacantPour(rp, type || 'DEMANDE'); return c ? { mail: c, jusqu: rp.jusqu } : null; });
+        return absenceBrute(mail).then(function(rp) { var c = remplacantPour(rp, type || 'DEMANDE'); return c ? { mail: c, jusqu: rp.jusqu, qui: (rp.noms || {})[c] || '', titulaire: rp.qui || '' } : null; });
     };
     function absenceBrute(mail) {
         mail = String(mail || '').trim().toLowerCase();
@@ -3124,7 +3125,8 @@
             try { var o = JSON.parse(texte); if (o && Array.isArray(o.demandes)) { nombre = o.demandes.length || 1; refs = o.demandes.map(function(d) { return d && d.id; }).filter(Boolean); } } catch (e) {}
             return appelApi('envoyer', { methode: 'POST', corps: { destinataire: dest, type: type, nombre: nombre, refs: refs, qui: window.JUMELAGE_QUI(), equipe: equipe || undefined, enveloppes: ch.enveloppes, donnees: ch.donnees } });
         }).then(function(r) {
-            if (type === 'DEMANDE' || type === 'CR') setTimeout(window.JUMELAGE_SUIVI_ACTUALISER, 800);
+            // Toute étape (demande, validation, transmission, refus, compte-rendu) : la frise de cet appareil se relit aussitôt.
+            setTimeout(window.JUMELAGE_SUIVI_ACTUALISER, 800);
             if (absent) {
                 r.remplacant = dest; r.absent = absent.mail;
                 setTimeout(function() { bandeau(absent.mail + ' est absent jusqu\'au ' + new Date(absent.jusqu).toLocaleDateString('fr-FR') + ' : envoyé à son remplaçant, ' + dest + '.'); }, 400);
@@ -3394,7 +3396,7 @@
         fenCr.className = 'JUM-REGLAGES';
         fenCr.setAttribute('role', 'dialog');
         var tete = '<div class="JUM-R-TETE"><span class="JUM-R-ICONE">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('mail') : '') + '</span><div><h2>Envoyer le compte-rendu</h2>' +
-            '<p>Chiffré, il arrive dans le TRIGONE de l\'assistant Chorus DT' + (o.destinataire ? ' (' + esc(o.destinataire) + ')' : '') + '. Seul lui peut le lire.</p></div>' +
+            '<p>Chiffré, il arrive dans le TRIGONE de l\'assistant Chorus DT' + (o.destinataire ? ' (' + esc(o.destinataire) + ')' : '') + '. Seul lui peut le lire.</p><p id="JUM-CR-ABSENCE" class="JUM-CR-ABSENCE" style="display:none;"></p></div>' +
             '<button type="button" class="JUM-R-X" aria-label="Fermer" onclick="JUMELAGE_FERMER_ENVOI_CR()">✕</button></div>';
         if (!compte || !o.destinataire) {
             fenCr.innerHTML = '<div class="JUM-R-CARTE">' + tete + '<div class="JUM-R-CORPS"><p class="JUM-R-AIDE" style="margin-top:14px;">' +
@@ -3421,6 +3423,12 @@
             '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-CR-ENVOYER">Envoyer</button></div></div>';
         document.body.appendChild(fenCr);
         var f = fenCr, err = f.querySelector('#JUM-CR-ERR'), btn = f.querySelector('#JUM-CR-ENVOYER');
+        // Assistant Chorus DT absent : son remplaçant (nom et adresse) à la place ; au retour, tout lui revient seul.
+        window.JUMELAGE_ABSENCE(o.destinataire, 'CR').then(function(rp) {
+            var z = document.getElementById('JUM-CR-ABSENCE'); if (!z || !rp) return;
+            z.innerHTML = '<b>Destinataire pendant l\'absence : ' + esc(rp.qui || rp.mail) + '</b>' + (rp.qui ? ' (' + esc(rp.mail) + ')' : '') + ', remplaçant de ' + esc(rp.titulaire || o.destinataire) + ' jusqu\'au ' + new Date(rp.jusqu).toLocaleDateString('fr-FR') + ' inclus.';
+            z.style.display = '';
+        });
         function total() { return choisis.reduce(function(t, x) { return t + x.size; }, 0); }
         function dessiner() {
             f.querySelector('#JUM-CR-LISTE').innerHTML = choisis.map(function(x, i) {
@@ -3933,7 +3941,8 @@
     function suiviTraite(corps) {
         if (!monCompte()) return;
         corps.qui = window.JUMELAGE_QUI();
-        appelApi('suivi/traite', { methode: 'POST', corps: corps }).catch(function() {});
+        // Puis la frise de cet appareil se relit tout de suite (sinon elle restait « chez l'assistant Chorus DT » ici).
+        appelApi('suivi/traite', { methode: 'POST', corps: corps }).then(function() { return window.JUMELAGE_SUIVI_ACTUALISER(); }).catch(function() {});
     }
     // Demandes traitées (validées / refusées puis transmises, PDF Chorus produit) : les envois qui les contiennent passent en « traité ».
     // natures : seulement les envois de ces natures (ex. ['niveau1', 'renvoi'] après une transmission du VALIDEUR 1) ;
@@ -3941,7 +3950,13 @@
     window.JUMELAGE_BOITE_TRAITER_DEMANDES = function(ids, natures) {
         if (!ids || !ids.length) return;
         // Demandes traitées par l'assistant Chorus DT (PDF produit) : le demandeur est prévenu.
-        if (natures && natures.indexOf('chorus') >= 0) suiviTraite({ refs: ids });
+        if (natures && natures.indexOf('chorus') >= 0) {
+            // Frise de cet appareil à jour tout de suite (étape « traitée »), sans attendre le serveur ni le réseau.
+            var su = lireJSON(CLE_SUIVI) || {}, qui = window.JUMELAGE_QUI(), maj = false;
+            ids.forEach(function(r) { if (su[r] && su[r].etape !== 'traite') { su[r].etape = 'traite'; su[r].le = Date.now(); (su[r].etapes = su[r].etapes || []).push({ e: 'traite', le: Date.now(), qui: qui }); maj = true; } });
+            if (maj) { ecrireTxt(CLE_SUIVI, JSON.stringify(su)); try { window.dispatchEvent(new Event('trigone-suivi')); } catch (e) {} }
+            suiviTraite({ refs: ids });
+        }
         var l = boiteLire(), change = false, partages = [], ranges = [];
         l.forEach(function(x) {
             if (natures && natures.indexOf(x.nature) < 0) return;
