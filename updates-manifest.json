@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 237,
-  "appCodeMessage": "Relier un autre appareil (QR de connexion ou code) : la boîte de réception suit aussi, avec les envois déjà reçus.",
+  "appCodeVersion": 238,
+  "appCodeMessage": "Nouveau : le tampon « TRAITÉ ». Quand l'assistant Chorus DT traite une demande ou un compte-rendu, un coup de tampon or s'abat (avec un petit « clac ») ; le missionnaire le voit se poser la première fois qu'il ouvre sa demande ou son compte-rendu traité.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

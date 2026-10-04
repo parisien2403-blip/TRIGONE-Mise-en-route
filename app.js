@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 237;
+var APP_CODE_VERSION = 238;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -617,7 +617,9 @@ function TPL_BIBLIOTHEQUE() {
         },
         lecture: function(d, id) {
             var e = BIB_TROUVER(id); if (!e) return '';
-            return '<h2>' + ESC(e.demandes.map(function(x) { return x.objet || ''; }).filter(Boolean).join(' · ') || 'Demande de mise en route') + '</h2>' +
+            var s0 = d.id === 'traitees' && window.JUMELAGE_SUIVI ? (JUMELAGE_SUIVI()[(e.demandes[0] || {}).id] || {}) : null;
+            var tampon = s0 && window.JUMELAGE_TAMPON ? JUMELAGE_TAMPON({ unite: String(((e.demandes[0] || {}).personnes || [{}])[0].unite || '').toUpperCase(), le: s0.le, omr: (e.demandes[0] || {}).omr || '' }, 'bib:' + e.id) : '';
+            return tampon + '<h2>' + ESC(e.demandes.map(function(x) { return x.objet || ''; }).filter(Boolean).join(' · ') || 'Demande de mise en route') + '</h2>' +
                 '<div class="MER-BX-DE">' + ESC(e.demandes.map(function(x) { return RESUME_DEMANDE(x).noms; }).join(' · ')) + (e.envoyeLe ? ' · envoyée le ' + ESC(new Date(e.envoyeLe).toLocaleDateString('fr-FR')) : '') + (e.destinataire ? ' à ' + ESC(e.destinataire) : '') + '</div>' +
                 (e.attente ? '<span class="MER-BADGE" style="background:rgba(180,83,9,0.12);color:#b45309;">En attente de réseau — partira toute seule</span>' : '') +
                 '<div class="MER-PANIER-ITEM-SUB">' + e.demandes.length + ' demande(s) — ' + ESC(e.demandes.map(function(x) { return RESUME_DEMANDE(x).sous; }).join(' · ')) + '</div>' +
@@ -4040,9 +4042,12 @@ function TPL_BX_LECTURE(page, d, pc) {
             (x.bib.demandes || []).map(function(dm, i) { return TPL_SUIVI_DEMANDE(dm.id, x.bib.demandes.length > 1 ? (dm.objet || 'Demande ' + (i + 1)) : ''); }).join('') +
             '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-top:12px;" onclick="SHOW_PAGE(\'BIBLIOTHEQUE\')">Voir dans la Bibliothèque ›</button></div>';
     }
-    return '<div class="MER-BX-LECTURE">' + retour + '<h2>' + ESC(x.objet || x.noms || x.nom || 'Envoi') + '</h2>' +
+    var tampon = x.statut === 'traite' && (x.nature === 'chorus' || x.nature === 'cr') && window.JUMELAGE_TAMPON
+        ? JUMELAGE_TAMPON({ unite: MER_UNITE_TAMPON(), le: x.traiteLe || x.le, omr: x.omr || ((x.registre || [])[0] || {}).omr || '' }, 'chorus:' + x.id) : '';
+    return '<div class="MER-BX-LECTURE">' + retour + tampon + '<h2>' + ESC(x.objet || x.noms || x.nom || 'Envoi') + '</h2>' +
         '<div class="MER-BX-DE">De <b>' + ESC(x.noms || x.expediteur || x.de || '?') + '</b>' + (x.de && x.noms ? ' (' + ESC(x.de) + ')' : '') + (le ? ' · ' + ESC(le) : '') + '</div>' + TPL_ENVOI_RECU(x) + '</div>';
 }
+function MER_UNITE_TAMPON() { var r = window.JUMELAGE_REGLAGES_LIRE ? JUMELAGE_REGLAGES_LIRE() : (GET_REGLAGES ? GET_REGLAGES() : {}); return String((r && r.unite) || '').toUpperCase(); }
 function TPL_BX(page) {
     var pc = EST_PC(), groupes = MER_BX_DOSSIERS(page), tous = groupes[0].concat(groupes[1]);
     var d = tous.filter(function(x) { return x.id === MER_DOSSIER[page] && !x.lien && !x.fichier; })[0] || null;
@@ -4818,6 +4823,7 @@ function TELECHARGER_FICHIER_CR(i) {
     });
 }
 function TRAITER_CR_RECU() {
+    if (MER_CR_OUVERT && window.JUMELAGE_TAMPON_COUP) JUMELAGE_TAMPON_COUP({ unite: MER_UNITE_TAMPON(), le: Date.now(), omr: (MER_CR_OUVERT.cr || {}).omr || '', cle: 'chorus:' + MER_CR_OUVERT.id });
     if (MER_CR_OUVERT) JUMELAGE_BOITE_MARQUER(MER_CR_OUVERT.id, 'traite');
     MER_CR_OUVERT = null;
     FERMER_MODALE();
@@ -5021,6 +5027,7 @@ function CHORUS_TRAITER(id) {
 }
 function CHORUS_MARQUER_TRAITE(id) {
     var x = (JUMELAGE_BOITE_LISTE() || []).filter(function(e) { return e.id === id; })[0]; if (!x) return;
+    if (window.JUMELAGE_TAMPON_COUP) JUMELAGE_TAMPON_COUP({ unite: MER_UNITE_TAMPON(), le: Date.now(), omr: x.omr || ((x.registre || [])[0] || {}).omr || '', cle: 'chorus:' + id });
     if (window.JUMELAGE_BOITE_TRAITER_DEMANDES && (x.ids || []).length) JUMELAGE_BOITE_TRAITER_DEMANDES(x.ids, ['chorus']);
     else JUMELAGE_BOITE_MARQUER(id, 'traite');
     if (PAGE_ACTUELLE === 'CHORUS') RECU_REAFFICHER();

@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=192"></script>
+<script src="../jumelage.js?v=193"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -8935,6 +8935,13 @@ function BIB_REMPLIR_RECAP(idx) {
     if (supBtn) { supBtn.classList.toggle('HIDDEN', !!item.preview); supBtn.onclick = function() { SUPPRIMER_BIB_ENTRY(item.storeIdx); }; }
     var suivi = document.getElementById('BIB-DETAIL-SUIVI');
     if (suivi) suivi.innerHTML = item.preview ? '' : TPL_BIB_SUIVI(entry);
+    // Compte-rendu traité par l'assistant Chorus DT : tampon « TRAITÉ » (coup de tampon la première fois).
+    var dv = document.getElementById('BIB-DETAIL-VIEW'), ancien = dv && dv.querySelector('.JUM-TAMPON'); if (ancien) ancien.remove();
+    if (dv && !item.preview && window.JUMELAGE_TAMPON && BIB_ETAT(item) === 'traites') {
+        var sv = CR_SUIVI_DE(entry) || {}, cleT = 'cr:' + (entry.envoiId || entry.debut + '|' + entry.user);
+        var rec = document.getElementById('BIB-RECAP');
+        if (rec) rec.insertAdjacentHTML('beforebegin', JUMELAGE_TAMPON({ unite: String((window.JUMELAGE_REGLAGES_LIRE && (JUMELAGE_REGLAGES_LIRE() || {}).unite) || '').toUpperCase(), le: sv.le, omr: (entry.snapshot && entry.snapshot.OMR) || '' }, cleT));
+    }
 }
 
 
@@ -11715,7 +11722,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 287;
+var APP_CODE_VERSION = 288;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
