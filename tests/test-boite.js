@@ -424,6 +424,8 @@ module.exports = async function() {
     if (pop) await pop.close();
     await c.click('#MER-MODALE-FOND button:has-text("Traité")'); await attendre(500);
     verifier(await c.evaluate(() => JUMELAGE_BOITE_LISTE().filter(x => x.nature === 'cr').every(x => x.statut === 'traite')), 'Chorus DT : compte-rendu marqué « traité »');
+    await m.evaluate(() => JUMELAGE_RELEVER()); await attendre(2500);
+    verifier(await m.evaluate(() => Object.values(JUMELAGE_SUIVI()).some(x => x.genre === 'cr' && x.etape === 'traite')), 'missionnaire : la relève automatique met la frise du compte-rendu à jour en direct (« traité »)');
     verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'traite'), 'suivi : compte-rendu « traité par l\'assistant Chorus DT »');
     const frise = await m.evaluate(() => TPL_BIB_SUIVI({ envoiId: window.__crId }));
     verifier(/Traité par/.test(frise) && (frise.match(/BIB-SUIVI-PT fait/g) || []).length === 3, 'Compte-rendu › Bibliothèque : frise Envoyé → Récupéré → Traité');
