@@ -641,6 +641,17 @@
         '.JUM-QRCO-BOITE { width: 280px; height: 280px; max-width: 100%; margin: 12px auto 8px; display: flex; align-items: center; justify-content: center; background: #fff; border-radius: 12px; padding: 10px; box-sizing: content-box; } .JUM-QRCO-BOITE img, .JUM-QRCO-BOITE canvas { width: 100% !important; height: auto !important; } .JUM-QRCO-BOITE.expire { opacity: 0.15; }' +
         '.JUM-QRCO-CODE { text-align: center; font-size: 0.82rem; margin-bottom: 8px; } .JUM-QRCO-CODE b { letter-spacing: 0.12em; }' +
         '.JUM-QRCO-ETAPES { font-size: 0.8rem; line-height: 1.5; padding-left: 20px; margin: 6px 0; text-align: left; } .JUM-QRCO-ALERTE { font-size: 0.78rem; color: #b45309; }' +
+        /* Tampon « TRAITÉ » */
+        '.JUM-TAMPON { position: absolute; right: 14px; top: 10px; z-index: 5; padding: 8px 16px; border: 4px double #b8862b; border-radius: 10px; color: #b8862b; text-align: center; letter-spacing: 0.08em; background: transparent; mix-blend-mode: multiply; opacity: 0.88; transform: rotate(-11deg); pointer-events: none; font-family: Montserrat, system-ui, sans-serif; box-shadow: inset 0 0 0 1px rgba(184,134,43,0.25); }' +
+        '.JUM-TAMPON .t1 { font: 900 26px Montserrat, system-ui, sans-serif; letter-spacing: 0.18em; } .JUM-TAMPON .t2 { font: 800 8.5px Montserrat, system-ui, sans-serif; margin-top: 2px; } .JUM-TAMPON .t3 { font: 700 8.5px Montserrat, system-ui, sans-serif; opacity: 0.85; }' +
+        '.JUM-TAMPON::after { content: ""; position: absolute; inset: 0; border-radius: 6px; background: repeating-radial-gradient(circle at 30% 40%, rgba(255,255,255,0.0) 0 2px, rgba(255,255,255,0.35) 2px 3px); mix-blend-mode: screen; }' +
+        '.JUM-TAMPON.coup { animation: jumTampon 0.55s cubic-bezier(.2,.9,.3,1.3) both; }' +
+        '@keyframes jumTampon { 0% { transform: rotate(-16deg) scale(2.2); opacity: 0; filter: blur(2px); } 60% { transform: rotate(-11deg) scale(0.94); opacity: 1; filter: blur(0); } 100% { transform: rotate(-11deg) scale(1); opacity: 1; } }' +
+        'html body.dark-mode .JUM-TAMPON { mix-blend-mode: screen; color: #e0b86a; border-color: #e0b86a; } .JUM-TAMPON-SCENE .JUM-TAMPON { mix-blend-mode: normal !important; opacity: 1; }' +
+        '.JUM-TAMPON-SCENE { position: fixed; inset: 0; z-index: 99980; display: flex; align-items: center; justify-content: center; pointer-events: none; background: rgba(0,0,0,0.15); transition: opacity 0.4s; }' +
+        '.JUM-TAMPON-SCENE .JUM-TAMPON { position: relative; right: auto; top: auto; transform-origin: center; padding: 16px 30px; background: rgba(255,250,235,0.92); } .JUM-TAMPON-SCENE .JUM-TAMPON .t1 { font-size: 46px; } .JUM-TAMPON-SCENE .JUM-TAMPON .t2, .JUM-TAMPON-SCENE .JUM-TAMPON .t3 { font-size: 12px; }' +
+        '.JUM-TAMPON-SCENE.fin { opacity: 0; }' +
+        '.MER-BX-LECTURE, #BIB-DETAIL-VIEW { position: relative; }' +
         /* Pastille rouge de mouvement : dossier, entrée de menu ou onglet où un envoi vient d'arriver. */
         'html body [data-mvt].mvt { position: relative; }' +
         'html body [data-mvt].mvt::after { content: "" !important; display: block !important; position: absolute !important; top: 7px !important; left: 27px !important; right: auto !important; width: 10px !important; height: 10px !important; border-radius: 50% !important; background: #dc2626 !important; border: 2px solid #fff !important; box-shadow: 0 0 0 0 rgba(220,38,38,0.55) !important; pointer-events: none !important; z-index: 2 !important; animation: jumMvt 1.4s ease-out 4 !important; }' +
@@ -1204,7 +1215,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 192, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 193, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2535,7 +2546,7 @@
     // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
     // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
     var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
-    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi|trigone_notif_muet|trigone_admin|trigone_appareil_anonyme|trigone_sauvegarde_auto|trigone_mouvements|trigone_mvt_etat_mer|trigone_mvt_etat_cr)$/;
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi|trigone_notif_muet|trigone_admin|trigone_appareil_anonyme|trigone_sauvegarde_auto|trigone_mouvements|trigone_mvt_etat_mer|trigone_mvt_etat_cr|trigone_tampons_vus)$/;
     function basePieces(creer) {
         return new Promise(function(ok) {
             if (!window.indexedDB) { ok(null); return; }
@@ -3737,6 +3748,40 @@
         } catch (e) { return { nature: 'inconnu', n: 0, ids: [] }; }
     }
     window.JUMELAGE_BOITE_LISTE = function() { return boiteLire(); };
+    // ---------- Tampon « TRAITÉ » ----------
+    // Encre or, en biais, sur une demande ou un compte-rendu traité par l'assistant Chorus DT. Le coup de tampon (animation
+    // et petit « clac ») se joue au moment de « Traité » chez l'assistant, et la première fois que le missionnaire l'ouvre.
+    var CLE_TAMPONS = 'trigone_tampons_vus';
+    function htmlTampon(o, anime) {
+        return '<div class="JUM-TAMPON' + (anime ? ' coup' : '') + '" aria-label="Traité"><div class="t1">' + esc(o.titre || 'TRAITÉ') + '</div>' +
+            '<div class="t2">' + esc([o.unite, 'ASSIST CHORUS DT'].filter(Boolean).join(' · ')) + '</div>' +
+            '<div class="t3">' + esc([o.le ? new Date(o.le).toLocaleDateString('fr-FR') : '', o.omr ? 'OMR N°' + o.omr : ''].filter(Boolean).join(' · ')) + '</div></div>';
+    }
+    function clac() {
+        try {
+            var C = window.AudioContext || window.webkitAudioContext; if (!C) return;
+            var ctx = new C(), n = ctx.sampleRate * 0.09, buf = ctx.createBuffer(1, n, ctx.sampleRate), d = buf.getChannelData(0);
+            for (var i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / n, 6);
+            var src = ctx.createBufferSource(), f = ctx.createBiquadFilter(), g = ctx.createGain();
+            f.type = 'lowpass'; f.frequency.value = 1400; g.gain.value = 0.55;
+            src.buffer = buf; src.connect(f); f.connect(g); g.connect(ctx.destination); src.start();
+            setTimeout(function() { try { ctx.close(); } catch (e) {} }, 400);
+        } catch (e) {}
+        if (navigator.vibrate) try { navigator.vibrate(35); } catch (e) {}
+    }
+    // Tampon posé (html) ; cle : envoi ou demande : animé la première fois seulement (sauf vu === true).
+    window.JUMELAGE_TAMPON = function(o, cle) {
+        var vus = lireJSON(CLE_TAMPONS) || {}, anime = !!cle && !vus[cle];
+        if (anime) { vus[cle] = Date.now(); var k = Object.keys(vus); if (k.length > 400) k.sort(function(a, b) { return vus[a] - vus[b]; }).slice(0, k.length - 400).forEach(function(x) { delete vus[x]; }); ecrireTxt(CLE_TAMPONS, JSON.stringify(vus)); setTimeout(clac, 380); }
+        return htmlTampon(o, anime);
+    };
+    // Coup de tampon au centre de l'écran (assistant Chorus DT : « Traité »).
+    window.JUMELAGE_TAMPON_COUP = function(o) {
+        var f = document.createElement('div'); f.className = 'JUM-TAMPON-SCENE'; f.innerHTML = htmlTampon(o, true);
+        document.body.appendChild(f); setTimeout(clac, 380);
+        setTimeout(function() { f.classList.add('fin'); }, 1300); setTimeout(function() { f.remove(); }, 1700);
+        if (o.cle) { var vus = lireJSON(CLE_TAMPONS) || {}; vus[o.cle] = Date.now(); ecrireTxt(CLE_TAMPONS, JSON.stringify(vus)); }
+    };
     // ---------- Pastilles de mouvement ----------
     // Chaque fois qu'un envoi ou une demande change de dossier, son dossier, l'entrée du menu et l'onglet qui y mènent
     // portent un point rouge jusqu'à ce qu'on ouvre ce dossier. Clés « APPLI:PAGE:DOSSIER » (ex. MER:BIBLIOTHEQUE:chorus) ;
