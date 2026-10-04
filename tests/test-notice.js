@@ -52,7 +52,7 @@ module.exports = async function(srv) {
     await p.evaluate(() => document.querySelector('.n-som [data-aller="' + NOTICE_TRIGONE.chapitres.find(c => c.id === 'carte').page + '"]').click()); await attendre(1600);
     verifier(await p.evaluate(() => document.querySelector('.N-NUM').textContent) === (cible + 1) + ' / ' + info.pages, 'sommaire › « Ma carte TRIGONE » : page ' + (cible + 1));
     // Capture agrandie au toucher, retour du téléphone : ferme d'abord la capture, puis la notice
-    await p.evaluate(() => document.querySelector('.JUM-NOTICE')._aller(28)); await attendre(800);
+    await p.evaluate(() => { const i = NOTICE_TRIGONE.pages.findIndex((x, k) => k >= 28 && /data-zoom/.test(typeof x === 'string' ? x : x.html || '')); document.querySelector('.JUM-NOTICE')._aller(i >= 0 ? i : 28); }); await attendre(800);
     await p.evaluate(() => [...document.querySelectorAll('.stf__item')].find(e => e.style.display !== 'none' && e.querySelector('[data-zoom]')).querySelector('[data-zoom]').click()); await attendre(300);
     verifier(await p.evaluate(() => !!document.querySelector('.N-ZOOM img')), 'capture touchée : affichée en grand');
     p.goBack().catch(() => {}); await attendre(600);
