@@ -2845,9 +2845,10 @@
             });
     }
     // Service disponible ? (boîte aux lettres en place sur le serveur)
+    var ETAT_INFO = null;   // { connexionMail } : la connexion par adresse mail n'existe plus (tests locaux seulement)
     function serviceDisponible() {
         if (ETAT_API) return ETAT_API;
-        ETAT_API = navigator.onLine ? appelApi('etat').then(function() { return true; }, function() { ETAT_API = null; return false; }) : Promise.resolve(false);
+        ETAT_API = navigator.onLine ? appelApi('etat').then(function(r) { ETAT_INFO = r || {}; return true; }, function() { ETAT_API = null; return false; }) : Promise.resolve(false);
         return ETAT_API;
     }
     function baseCles() {
@@ -4159,6 +4160,7 @@
                         '<p class="JUM-C-APERCU" id="JUM-C-APERCU"></p>' +
                         '<button type="button" class="JUM-ACC-BTN noir" id="JUM-C-CREER">Créer mon compte</button>' +
                     '</div>' +
+                    '<div id="JUM-C-SANSMAILBLOC" style="display:none;"><button type="button" class="JUM-ACC-BTN noir" data-aller="liaison">J\'ai un code de liaison ou de réactivation</button></div>' +
                     '<div id="JUM-C-MAILBLOC">' +
                     '<label class="JUM-ACC-LBL" for="JUM-C-MAIL">Adresse mail du compte</label>' +
                     '<div class="JUM-ACC-CHAMP">' + SVG('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>') +
@@ -4193,11 +4195,15 @@
         fenCompte.querySelector('#JUM-C-SANS').addEventListener('click', function() { window.JUMELAGE_FERMER_COMPTE(); window.JUMELAGE_REGLAGES(); });
         var TEXTES = {
             creer: ['Bienvenue 👋', 'Votre grade, votre nom, votre unité : TRIGONE vous crée votre adresse prénom.nom@trigone-app.com. Aucune adresse mail personnelle, aucun mot de passe. Un responsable de votre unité valide ensuite votre compte.'],
-            connecter: ['Bon retour 👋', 'Compte créé avec une adresse mail : saisissez-la, puis le code à 6 chiffres reçu par mail. Compte sans adresse mail (nouveau téléphone) : « J\'ai déjà TRIGONE… », avec le code de réactivation remis par votre administrateur.']
+            connecter: ['Bon retour 👋', 'Votre compte existe déjà : reliez cet appareil avec un code de liaison (sur votre ancien appareil : Paramètres › Compte › « Ajouter un appareil »). Ancien appareil perdu ou bloqué : demandez un code de réactivation à l\'administrateur de votre unité.']
         };
+        var modeCourant = 'creer';
         function mode(m) {
+            modeCourant = m;
             fenCompte.querySelector('#JUM-C-IDENT').style.display = m === 'creer' ? '' : 'none';
-            fenCompte.querySelector('#JUM-C-MAILBLOC').style.display = m === 'creer' ? 'none' : '';
+            var avecMail = !ETAT_INFO || ETAT_INFO.connexionMail;   // plus de connexion par mail (sauf tests locaux)
+            fenCompte.querySelector('#JUM-C-MAILBLOC').style.display = m === 'creer' || !avecMail ? 'none' : '';
+            fenCompte.querySelector('#JUM-C-SANSMAILBLOC').style.display = m === 'connecter' && !avecMail ? '' : 'none';
             Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-ACC-ONGLETS button'), function(x) { x.classList.toggle('actif', x.getAttribute('data-mode') === m); });
             fenCompte.querySelector('#JUM-C-TITRE').textContent = TEXTES[m][0];
             fenCompte.querySelector('#JUM-C-AIDE').textContent = TEXTES[m][1];
@@ -4257,6 +4263,7 @@
             }).catch(function(e) { err.textContent = '⛔ ' + (e.message || e); b.disabled = false; b.textContent = 'Créer mon compte'; });
         });
         serviceDisponible().then(function(ok) {
+            if (ok && fenCompte) mode(modeCourant);
             if (!ok && fenCompte) { err.textContent = navigator.onLine ? 'Le service de boîte aux lettres TRIGONE n\'est pas encore en service.' : 'Pas de connexion : réessayez une fois connecté.'; btnEnvoi.disabled = true; }
         });
         champMail.addEventListener('keydown', function(e) { if (e.key === 'Enter') btnEnvoi.click(); });
@@ -5793,7 +5800,7 @@
                     '<input id="JUM-GC-PREC" type="text" placeholder="Précision (facultatif)" autocomplete="off"><p class="JUM-GC-ERR" id="JUM-GC-ERR2"></p>' +
                     '<button type="button" class="JUM-GC-SUPPR" data-suppr>🗑 Supprimer ce compte</button>' +
                     '<h4>Journal des suppressions</h4>' + ((d.journal || []).length ? '<div class="JUM-GC-JOURNAL">' + d.journal.map(function(j) {
-                        return '<div><b>' + quandCompte(j.le) + '</b> · ' + esc(j.qui || 'compte supprimé') + '<small>par ' + esc(j.par) + ' — ' + esc(j.motif || '') + ' · Brevo : ' + esc(j.brevo || '—') + '</small></div>'; }).join('') + '</div>' : '<p class="JUM-GC-VIDE">Aucune suppression.</p>') : ''));
+                        return '<div><b>' + quandCompte(j.le) + '</b> · ' + esc(j.qui || 'compte supprimé') + '<small>par ' + esc(j.par) + ' — ' + esc(j.motif || '') + '</small></div>'; }).join('') + '</div>' : '<p class="JUM-GC-VIDE">Aucune suppression.</p>') : ''));
             f.querySelector('.JUM-GC-X').onclick = function() { f.remove(); };
             var champF = f.querySelector('#JUM-GC-FILTRE');
             if (champF) champF.addEventListener('input', function() { filtre = champF.value.trim().toLowerCase(); var pos = champF.selectionStart; dessiner(); var n = f.querySelector('#JUM-GC-FILTRE'); n.focus(); try { n.setSelectionRange(pos, pos); } catch (e) {} });
@@ -5915,7 +5922,11 @@
         // Unité et identité (liste des comptes de l'unité, pour l'administrateur).
         var rg = lireReglages(), u = normeUnite(rg.unite), sigU = [u, rg.grade, rg.nom, rg.prenom].join('|');
         if (u && lireTxt('trigone_unite_publiee') !== sigU) appelApi('unite', { methode: 'POST', corps: { grade: rg.grade, nom: rg.nom, prenom: rg.prenom } }).then(function() { ecrireTxt('trigone_unite_publiee', sigU); }).catch(function() {});
+        // Ancien compte (adresse mail personnelle) : il passe une fois pour toutes à son adresse TRIGONE.
+        if (!/@trigone-app\.com$/.test(c.mail)) migrerVersTrigone(false);
         appelApi('compte/etat').then(function(r) {
+            // Autre appareil du compte passé à son adresse TRIGONE : celui-ci suit.
+            if (r.compte && r.compte !== (monCompte() || {}).mail) changerMailCompte((monCompte() || {}).mail, r.compte);
             // Compte en attente de validation : rappel une fois par ouverture ; validé : on le dit une fois.
             if (r.attente) {
                 ecrireTxt(CLE_ATTENTE, '1');
@@ -5933,6 +5944,24 @@
                 bandeau(NB_DEMANDES_COMPTE + ' demande' + (NB_DEMANDES_COMPTE > 1 ? 's' : '') + ' sur les comptes : Paramètres › Compte.');
             }
         }, function() {});
+    }
+    function migrerVersTrigone(forcer) {
+        var c = monCompte(), rg = lireReglages(); if (!c) return Promise.resolve(null);
+        return appelApi('compte/migrer', { methode: 'POST', corps: { prenom: rg.prenom, nom: rg.nom, forcer: !!forcer } }).then(function(m) {
+            if (!m || !m.ok || !m.mail || m.mail === c.mail) return m;
+            changerMailCompte(c.mail, m.mail);
+            infoCompte('Votre compte TRIGONE change d\'adresse', 'Votre compte est désormais ' + m.mail + '.\n\nVos demandes, comptes-rendus, rôles, carte et sauvegarde suivent. Votre ancienne adresse mail n\'est plus enregistrée dans TRIGONE ; ce qui y est encore envoyé vous parvient quand même.\n\nNouvel appareil : Paramètres › Compte › « Ajouter un appareil » (code de liaison).');
+            return m;
+        }).catch(function() { return null; });
+    }
+    window.JUMELAGE_MIGRER = function() { return migrerVersTrigone(true); };   // tests locaux (le serveur de test ne migre que sur demande)
+    function changerMailCompte(ancien, neuf) {
+        var c = monCompte(); if (!c || !neuf) return;
+        c.mail = neuf; ecrireTxt(CLE_COMPTE, JSON.stringify(c));
+        var rg = lireReglages(); if (!rg.monMail || rg.monMail === ancien) { rg.monMail = neuf; ecrireReglages(rg); }
+        var carte = lireJSON(CLE_CARTE); if (carte && carte.mail === ancien) { carte.mail = neuf; ecrireTxt(CLE_CARTE, JSON.stringify(carte)); }
+        try { localStorage.removeItem(CLE_ADRESSE); } catch (e) {}
+        majBoutonsCompte();
     }
     // Message simple, dans l'appli ouverte (message centré) ou sur l'écran d'accueil ; apres : à la fermeture.
     function infoCompte(titre, texte, apres) {

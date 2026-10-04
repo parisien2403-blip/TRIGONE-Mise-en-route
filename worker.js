@@ -1,10 +1,10 @@
 // TRIGONE — serveur Cloudflare : sert l'appli (fichiers statiques) et la boîte aux lettres /api/…
 //
-// Boîte aux lettres : chaque personne a un compte TRIGONE à son adresse mail professionnelle, vérifiée par un code
-// envoyé par mail (Brevo). Chaque appareil du compte a sa propre clé de chiffrement : la clé privée ne quitte
-// jamais l'appareil, le serveur ne garde que la clé publique. Les demandes sont chiffrées dans l'appli de
-// l'expéditeur pour les appareils du destinataire : ce serveur ne voit que des données illisibles, et les
-// supprime à la réception (au plus tard après 30 jours).
+// Boîte aux lettres : chaque personne a un compte TRIGONE à son adresse prenom.nom@trigone-app.com (sans adresse mail
+// personnelle, validé par un responsable de l'unité). Chaque appareil du compte a sa propre clé de chiffrement : la clé
+// privée ne quitte jamais l'appareil, le serveur ne garde que la clé publique. Les demandes sont chiffrées dans l'appli
+// de l'expéditeur pour les appareils du destinataire : ce serveur ne voit que des données illisibles, et les supprime à
+// la réception (au plus tard après 30 jours). Aucun mail n'est envoyé (plus de service d'envoi de mails).
 //
 // Stockage (Workers KV, liaison TRIGONE_KV) :
 //   compte:<mail>              { appareils: [{ id, cle (JWK publique), jeton (empreinte), nom, cree }] }
@@ -16,17 +16,13 @@
 //   D1 (TRIGONE_DB), table boite : une ligne par envoi et par appareil destinataire (clé enveloppée, de, type, date)
 //
 // Réglages (Cloudflare › Workers › trigone-mise-en-route › Paramètres › Variables et secrets) :
-//   BREVO_CLE (secret)          clé API Brevo — ou BREVO_SMTP_UTILISATEUR (texte, « …@smtp-brevo.com ») + BREVO_SMTP_CLE (secret) : SMTP Brevo
-//                               — ou MAILJET_CLE + MAILJET_SECRET (secrets) : clés API Mailjet
-//   EXPEDITEUR_MAIL             adresse d'envoi validée dans Brevo
 //   DOMAINES_AUTORISES          ex. « interieur.gouv.fr » (sous-domaines compris), séparés par des virgules
-//   MODE_TEST = "1"             tests locaux uniquement : le code est renvoyé au lieu d'être envoyé par mail
+//   MODE_TEST = "1"             tests locaux uniquement : connexion d'essai par adresse mail (code renvoyé)
 //   ADMIN_MAILS                 adresse(s) de l'administrateur, séparées par des virgules : seule(s) à voir la page
 //                               « Erreurs de l'appli » (Paramètres › Aide) ; administrateur de toutes les unités
 //   CODE_ADMIN (secret)         code du rôle ADMINISTRATEUR (un par unité : celui qui le saisit devient administrateur
 //                               de l'unité de son profil). Vérifié ici, jamais dans l'appli ni dans le dépôt.
 
-import { connect } from 'cloudflare:sockets';
 
 const JOUR = 86400;
 const ROLES = ['valideur1', 'valideur2', 'chorus'];
@@ -111,7 +107,7 @@ function egal(a, b) { a = String(a); b = String(b); let d = a.length ^ b.length;
 async function adminUnite(env, mail) { const r = await (await baseBoite(env)).prepare('SELECT unite FROM admin_unite WHERE mail = ?').bind(mail).first(); return r ? r.unite : ''; }
 async function adminsDe(env, u) { return ((await (await baseBoite(env)).prepare('SELECT mail FROM admin_unite WHERE unite = ?').bind(u).all()).results || []).map(x => x.mail); }
 // Suppression complète d'un compte : tout ce que le serveur garde à son nom (compte, appareils, adresse TRIGONE,
-// carte, photo, sauvegarde, matricule, notifications, boîte, suivi), et l'historique d'envoi chez Brevo. Restent :
+// carte, photo, sauvegarde, matricule, notifications, boîte, suivi). Restent :
 // les lignes du registre des OMR (historique administratif des missions) et une trace sans l'adresse.
 async function supprimerCompte(env, mail, par, motif, unite, qui) {
     const kv = env.TRIGONE_KV, db = await baseBoite(env), compte = await kv.get('compte:' + mail, 'json');
@@ -127,12 +123,7 @@ async function supprimerCompte(env, mail, par, motif, unite, qui) {
     await db.batch(['DELETE FROM boite WHERE dest = ?', 'DELETE FROM abonnement WHERE mail = ?', 'DELETE FROM muet WHERE mail = ?', 'DELETE FROM rappel WHERE mail = ?',
         'DELETE FROM suivi WHERE demandeur = ?', 'DELETE FROM suivi_acteur WHERE mail = ?', 'DELETE FROM equipe WHERE mail = ?', 'DELETE FROM equipe_lecteur WHERE mail = ?',
         'DELETE FROM boite_etat WHERE mail = ?', 'DELETE FROM porteur_role WHERE mail = ?', 'DELETE FROM admin_unite WHERE mail = ?', 'DELETE FROM compte_demande WHERE mail = ?', 'DELETE FROM compte_unite WHERE mail = ?'].map(q => db.prepare(q).bind(mail)));
-    // Brevo : seuls les mails de code de connexion y passent ; leur historique est effacé.
-    let brevo = 'sans objet';
-    if (env.BREVO_CLE) {
-        try { const r = await fetch('https://api.brevo.com/v3/smtp/log/' + encodeURIComponent(mail), { method: 'DELETE', headers: { 'api-key': env.BREVO_CLE, Accept: 'application/json' } }); brevo = r.ok || r.status === 404 ? 'effacé' : 'erreur ' + r.status; }
-        catch (e) { brevo = 'injoignable'; }
-    }
+    const brevo = 'sans objet';   // plus aucun mail envoyé : rien à effacer ailleurs
     const h = await empreinte('supprime:' + mail);
     await kv.put('efface:' + h, String(Date.now()), { expirationTtl: 180 * JOUR });   // ses appareils s'effacent à la prochaine ouverture
     await db.prepare('INSERT INTO compte_journal (le, unite, par, motif, empreinte, qui, brevo) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(Date.now(), unite || '', par, String(motif || '').slice(0, 300), h.slice(0, 16), String(qui || '').slice(0, 80), brevo).run();
@@ -144,7 +135,45 @@ async function supprimerCompte(env, mail, par, motif, unite, qui) {
 async function cleCompte(kv, mail) {
     mail = normaliser(mail);
     if (mail.endsWith('@' + DOMAINE_RECEPTION)) { const k = await kv.get('adresse:' + mail.split('@')[0]); if (k) return k; }
+    if (!(await kv.get('compte:' + mail))) { const n = await cleMigree(kv, mail); if (n) return n; }
     return mail;
+}
+// ---------- Passage des anciens comptes (adresse mail personnelle) à leur adresse TRIGONE ----------
+// Tout ce qui est rangé sous l'ancienne adresse passe sous prenom.nom@trigone-app.com, puis l'ancienne adresse est
+// effacée. Seule une empreinte reste (« migre: »), pour que les envois encore adressés à l'ancienne adresse et les
+// appareils pas encore prévenus retrouvent le compte : l'adresse elle-même n'est plus nulle part.
+async function cleMigree(kv, mail) { return mail && !mail.endsWith('@' + DOMAINE_RECEPTION) ? await kv.get('migre:' + await empreinte('ancien:' + mail)) : null; }
+async function migrerCompte(env, ancien, prenom, nom) {
+    const kv = env.TRIGONE_KV, db = await baseBoite(env);
+    const compte = await kv.get('compte:' + ancien, 'json');
+    if (!compte) return null;
+    const l = await ligneCompte(env, ancien) || {};
+    const local = (await kv.get('adresse-de:' + ancien)) || await adresseDe(env, ancien, prenom || l.prenom, nom || l.nom);
+    if (!local) return null;
+    const neuf = local + '@' + DOMAINE_RECEPTION;
+    if (await kv.get('compte:' + neuf)) return null;   // adresse déjà prise par un autre compte : on ne touche à rien
+    compte.migreLe = Date.now(); delete compte.sansMail;
+    if (estAdmin(env, ancien)) compte.superAdmin = true;   // administrateur de TRIGONE (ADMIN_MAILS) : il le reste sous sa nouvelle adresse
+    await kv.put('compte:' + neuf, JSON.stringify(compte));
+    await kv.put('adresse:' + local, neuf); await kv.put('adresse-de:' + neuf, local);
+    for (const p of ['unite-de:', 'carte-de:', 'nid-de:', 'photo:', 'reinit:', 'idx-roles:']) {
+        const v = await kv.get(p + ancien);
+        if (v !== null) { await kv.put(p + neuf, v); await kv.delete(p + ancien); }
+    }
+    const sv = await kv.getWithMetadata('sauvegarde:' + ancien, 'arrayBuffer');
+    if (sv && sv.value) { await kv.put('sauvegarde:' + neuf, sv.value, sv.metadata ? { metadata: sv.metadata } : {}); await kv.delete('sauvegarde:' + ancien); }
+    const nid = await kv.get('nid-de:' + neuf); if (nid) await kv.put('nid:' + nid, neuf);
+    const carteId = await kv.get('carte-de:' + neuf), carte = carteId ? await kv.get('carte:' + carteId, 'json') : null;
+    if (carte) { carte.mail = neuf; await kv.put('carte:' + carteId, JSON.stringify(carte)); }
+    const maj = [['boite', 'dest'], ['boite', 'de'], ['abonnement', 'mail'], ['suivi', 'demandeur'], ['suivi', 'detenteur'], ['suivi_acteur', 'mail'], ['suivi_acteur', 'demandeur'],
+        ['muet', 'mail'], ['rappel', 'mail'], ['equipe', 'mail'], ['equipe', 'chef'], ['equipe_lecteur', 'mail'], ['registre', 'par'], ['boite_etat', 'mail'], ['groupe_envoi', 'pris_par'],
+        ['porteur_role', 'mail'], ['admin_unite', 'mail'], ['compte_demande', 'mail'], ['compte_demande', 'par'], ['compte_unite', 'mail'], ['compte_journal', 'par']];
+    await db.batch(maj.map(x => db.prepare('UPDATE OR REPLACE ' + x[0] + ' SET ' + x[1] + ' = ? WHERE ' + x[1] + ' = ?').bind(neuf, ancien))
+        .concat(db.prepare('UPDATE groupe_envoi SET membres = REPLACE(membres, ?, ?) WHERE membres LIKE ?').bind('"' + ancien + '"', '"' + neuf + '"', '%"' + ancien + '"%'),
+            db.prepare('UPDATE compte_unite SET adresse = ? WHERE mail = ?').bind(neuf, neuf)));
+    await kv.put('migre:' + await empreinte('ancien:' + ancien), neuf);
+    for (const k of ['compte:', 'adresse-de:', 'limite:', 'code:']) await kv.delete(k + ancien);
+    return neuf;
 }
 // ---------- Envoi au groupe ----------
 // assist-dt.<unité>@trigone-app.com : tous les assistants Chorus DT de l'unité ; valideur2.<unité>@… : tous ses VALIDEUR 2.
@@ -636,102 +665,16 @@ function domaineAutorise(env, mail) {
 async function appareilConnecte(env, requete) {
     const m = /^TRIGONE (\S+) (\S+) (\S+)$/.exec(requete.headers.get('Authorization') || '');
     if (!m) return null;
-    const mail = normaliser(decodeURIComponent(m[1]));
-    const compte = await env.TRIGONE_KV.get('compte:' + mail, 'json');
+    let mail = normaliser(decodeURIComponent(m[1]));
+    let compte = await env.TRIGONE_KV.get('compte:' + mail, 'json');
+    // Compte passé à son adresse TRIGONE : l'appareil qui envoie encore l'ancienne adresse est reconnu (et prévenu par compte/etat).
+    if (!compte) { const n = await cleMigree(env.TRIGONE_KV, mail); if (n) { mail = n; compte = await env.TRIGONE_KV.get('compte:' + mail, 'json'); } }
     if (!compte) return null;
     const h = await empreinte(m[3]);
     const app = compte.appareils.find(a => a.id === m[2] && a.jeton === h);
     return app ? { mail, appareil: app, compte } : null;
 }
 
-// Envoi SMTP (Brevo : smtp-relay.brevo.com, port 465 chiffré) — quand la clé API n'est pas disponible.
-async function envoyerSmtp(hote, port, utilisateur, motDePasse, de, a, sujet, texte) {
-    const socket = connect({ hostname: hote, port: port }, { secureTransport: 'on', allowHalfOpen: false });
-    const ecrivain = socket.writable.getWriter(), lecteur = socket.readable.getReader();
-    const enc = new TextEncoder(), dec = new TextDecoder();
-    let tampon = '';
-    async function reponse() {
-        // Réponse SMTP complète : dernière ligne « 250 texte » (sans tiret après le code).
-        for (;;) {
-            const lignes = tampon.split('\r\n');
-            for (let i = 0; i < lignes.length - 1; i++) {
-                if (/^\d{3} /.test(lignes[i])) { tampon = lignes.slice(i + 1).join('\r\n'); return lignes[i]; }
-            }
-            const { value, done } = await lecteur.read();
-            if (done) throw new Error('SMTP : connexion fermée');
-            tampon += dec.decode(value, { stream: true });
-        }
-    }
-    async function commande(ligne, attendu) {
-        if (ligne !== null) await ecrivain.write(enc.encode(ligne + '\r\n'));
-        const r = await reponse();
-        if (!r.startsWith(attendu)) throw new Error('SMTP : ' + r);
-        return r;
-    }
-    const b64 = t => btoa(String.fromCharCode.apply(null, enc.encode(t)));
-    try {
-        await commande(null, '220');
-        await commande('EHLO trigone', '250');
-        await commande('AUTH LOGIN', '334');
-        await commande(b64(utilisateur), '334');
-        await commande(b64(motDePasse), '235');
-        await commande('MAIL FROM:<' + de + '>', '250');
-        await commande('RCPT TO:<' + a + '>', '250');
-        await commande('DATA', '354');
-        const message = [
-            'From: TRIGONE <' + de + '>', 'To: <' + a + '>', 'Subject: =?UTF-8?B?' + b64(sujet) + '?=',
-            'Date: ' + new Date().toUTCString(), 'Message-ID: <' + crypto.randomUUID() + '@trigone>',
-            'MIME-Version: 1.0', 'Content-Type: text/plain; charset=UTF-8', 'Content-Transfer-Encoding: base64', '',
-            b64(texte).replace(/.{1,76}/g, '$&\r\n'), '.'
-        ].join('\r\n');
-        await commande(message, '250');
-        await ecrivain.write(enc.encode('QUIT\r\n')).catch(() => {});
-        return true;
-    } finally { try { await socket.close(); } catch (e) {} }
-}
-
-// Envoi du code par mail : Brevo (BREVO_CLE) ou, à défaut, Mailjet (MAILJET_CLE + MAILJET_SECRET).
-// Rend true, ou le motif de l'échec (affiché à l'utilisateur et écrit dans les journaux Cloudflare) : clé refusée,
-// expéditeur non validé, compte Brevo suspendu ou quota atteint… Jamais la clé elle-même.
-async function envoyerCode(env, mail, code) {
-    const r = await envoyerCodeBrut(env, mail, code).catch(e => 'erreur : ' + (e && e.message || e));
-    if (r !== true) console.log('Envoi du code impossible', mail.replace(/^(.{0,3})[^@]*@/, '$1…@'), r);
-    return r;
-}
-async function motifRefus(service, r) {
-    let t = ''; try { t = await r.text(); } catch (e) {}
-    let m = t; try { const j = JSON.parse(t); m = j.message || j.code || (j.Messages && JSON.stringify(j.Messages[0].Errors)) || t; } catch (e) {}
-    return service + ' ' + r.status + (m ? ' : ' + String(m).slice(0, 160) : '');
-}
-async function envoyerCodeBrut(env, mail, code) {
-    if (env.MODE_TEST === '1') return true;
-    if (!env.EXPEDITEUR_MAIL) return 'expéditeur non configuré (EXPEDITEUR_MAIL)';
-    const sujet = 'Votre code TRIGONE : ' + code;
-    const texte = 'Bonjour,\n\nVotre code pour activer votre compte TRIGONE : ' + code + '\n\nIl est valable 15 minutes. Si vous n\'avez rien demandé, ignorez ce message.\n\nTRIGONE';
-    const html = '<div style="font-family:Arial,sans-serif;font-size:15px;color:#1a1a1a">Bonjour,<br><br>Votre code pour activer votre compte TRIGONE :<br>' +
-        '<div style="font-size:30px;font-weight:bold;letter-spacing:8px;margin:18px 0">' + code + '</div>' +
-        'Il est valable 15 minutes. Si vous n\'avez rien demandé, ignorez ce message.<br><br>TRIGONE</div>';
-    if (env.BREVO_CLE) {
-        const r = await fetch('https://api.brevo.com/v3/smtp/email', {
-            method: 'POST',
-            headers: { 'api-key': env.BREVO_CLE, 'Content-Type': 'application/json', Accept: 'application/json' },
-            body: JSON.stringify({ sender: { email: env.EXPEDITEUR_MAIL, name: 'TRIGONE' }, to: [{ email: mail }], subject: sujet, textContent: texte, htmlContent: html })
-        });
-        return r.ok ? true : motifRefus('Brevo', r);
-    }
-    if (env.BREVO_SMTP_UTILISATEUR && env.BREVO_SMTP_CLE) {
-        return envoyerSmtp('smtp-relay.brevo.com', 465, env.BREVO_SMTP_UTILISATEUR, env.BREVO_SMTP_CLE, env.EXPEDITEUR_MAIL, mail, sujet, texte).then(() => true, e => 'Brevo ' + (e && e.message || e));
-    }
-    if (env.MAILJET_CLE && env.MAILJET_SECRET) {
-        const r = await fetch('https://api.mailjet.com/v3.1/send', {
-            method: 'POST',
-            headers: { Authorization: 'Basic ' + btoa(env.MAILJET_CLE + ':' + env.MAILJET_SECRET), 'Content-Type': 'application/json' },
-            body: JSON.stringify({ Messages: [{ From: { Email: env.EXPEDITEUR_MAIL, Name: 'TRIGONE' }, To: [{ Email: mail }], Subject: sujet, TextPart: texte, HTMLPart: html }] })
-        });
-        return r.ok ? true : motifRefus('Mailjet', r);
-    }
-    return 'aucun service d\'envoi configuré (BREVO_CLE ou BREVO_SMTP_*)';
-}
 
 // « NOGENT-LE-ROTROU (28400) » → { nom: 'NOGENT-LE-ROTROU', cp: '28400' } (le code postal départage les homonymes).
 function nettoyerVille(v) {
@@ -784,7 +727,7 @@ async function api(requete, env, url, ctx) {
     const chemin = url.pathname.replace(/^\/api\//, '');
     const methode = requete.method;
 
-    if (chemin === 'etat') return json({ ok: true, version: 1 });
+    if (chemin === 'etat') return json({ ok: true, version: 1, connexionMail: env.MODE_TEST === '1' });   // connexion par mail : tests locaux seulement
     // Taux de change pour les missions à l'étranger (Compte-rendu) : euros pour 1 unité de chaque devise du barème,
     // d'après les taux de référence quotidiens de la Banque centrale européenne (gardés 6 h) ; devises à parité fixe
     // (franc CFA, escudo, franc de Djibouti, dinar jordanien) calculées. Public : aucune donnée personnelle.
@@ -846,7 +789,9 @@ async function api(requete, env, url, ctx) {
     if (chemin === 'push/cle' && methode === 'GET') return json({ ok: true, cle: (await clesVapid(env)).pub });
 
     // 1. Inscription : code à 6 chiffres envoyé à l'adresse professionnelle.
+    // Connexion par code reçu par mail : retirée (plus aucun mail n'est envoyé) ; gardée pour les tests locaux seulement.
     if (chemin === 'inscription/code' && methode === 'POST') {
+        if (env.MODE_TEST !== '1') return erreur(410, 'La connexion par adresse mail n\'existe plus. Nouvel appareil : sur votre ancien appareil, Paramètres › Compte › « Ajouter un appareil », puis « J\'ai déjà TRIGONE sur un autre appareil ». Ancien appareil perdu : demandez un code de réactivation à l\'administrateur de votre unité.');
         const { mail: brut } = await requete.json().catch(() => ({}));
         const mail = normaliser(brut);
         if (!mailValide(mail)) return erreur(400, 'Adresse mail invalide.');
@@ -856,9 +801,7 @@ async function api(requete, env, url, ctx) {
         await kv.put('limite:' + mail, String(n + 1), { expirationTtl: 3600 });
         const code = String(100000 + (crypto.getRandomValues(new Uint32Array(1))[0] % 900000));
         await kv.put('code:' + mail, JSON.stringify({ empreinte: await empreinte(mail + ':' + code), essais: 0 }), { expirationTtl: 900 });
-        const envoi = await envoyerCode(env, mail, code);
-        if (envoi !== true) return erreur(502, 'Le mail n\'a pas pu être envoyé (' + envoi + ').');
-        return json(env.MODE_TEST === '1' ? { ok: true, codeTest: code } : { ok: true });
+        return json({ ok: true, codeTest: code });
     }
 
     // 2. Code saisi : l'appareil est enregistré avec sa clé publique ; il reçoit son jeton d'accès.
@@ -988,12 +931,15 @@ async function api(requete, env, url, ctx) {
     if (!moi) {
         // Compte supprimé par l'assistant Chorus DT ou l'administrateur : l'appareil s'efface.
         const m = /^TRIGONE (\S+) /.exec(requete.headers.get('Authorization') || '');
-        if (m && await kv.get('efface:' + await empreinte('supprime:' + normaliser(decodeURIComponent(m[1]))))) return json({ ok: false, supprime: true, erreur: 'Ce compte TRIGONE a été supprimé.' }, 410);
+        const mEfface = m ? ((await cleMigree(kv, normaliser(decodeURIComponent(m[1])))) || normaliser(decodeURIComponent(m[1]))) : '';
+        if (m && await kv.get('efface:' + await empreinte('supprime:' + mEfface))) return json({ ok: false, supprime: true, erreur: 'Ce compte TRIGONE a été supprimé.' }, 410);
         // Appareil retiré du compte (téléphone perdu bloqué par l'administrateur, ou retiré par son titulaire) : il s'efface.
         const mr = /^TRIGONE (\S+) (\S+) /.exec(requete.headers.get('Authorization') || '');
         if (mr) { const cr = await kv.get('compte:' + normaliser(decodeURIComponent(mr[1])), 'json'); if (cr && (cr.revoques || []).indexOf(mr[2]) >= 0) return json({ ok: false, supprime: true, revoque: true, erreur: 'Cet appareil a été retiré du compte TRIGONE.' }, 410); }
         return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
     }
+    // Administrateur de TRIGONE passé à son adresse TRIGONE (son ancienne adresse figurait dans ADMIN_MAILS).
+    if (moi.compte.superAdmin && !estAdmin(env, moi.mail)) env = Object.assign({}, env, { ADMIN_MAILS: (env.ADMIN_MAILS || '') + ',' + moi.mail });
     if (moi.compte.attente && !LIBRE_EN_ATTENTE.has(chemin)) return erreur(403, 'Votre compte TRIGONE attend sa validation par l\'administrateur ou l\'assistant Chorus DT de votre unité.');
     // Carte perdue ou volée : l'ancien identifiant est effacé (son QR code devient « non reconnu »), un nouveau est tiré.
     if (chemin === 'carte/revoquer' && methode === 'POST') {
@@ -1296,6 +1242,15 @@ async function api(requete, env, url, ctx) {
     // ----- Comptes de l'unité : validation des inscriptions, blocage, code de réactivation, mes appareils -----
     // Annuaire de l'unité : les comptes validés qui ont ce rôle (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT), pour choisir
     // ses destinataires dans une liste (première connexion, Mon profil). Grade, nom, prénom et adresse seulement.
+    // Passage à l'adresse TRIGONE (demandé par l'appli à l'ouverture, une fois) ; tests locaux : sur demande seulement.
+    if (chemin === 'compte/migrer' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({}));
+        if (moi.mail.endsWith('@' + DOMAINE_RECEPTION)) return json({ ok: true, mail: moi.mail, deja: true });
+        if (env.MODE_TEST === '1' && !c.forcer) return json({ ok: false, test: true });
+        const neuf = await migrerCompte(env, moi.mail, String(c.prenom || '').slice(0, 60), String(c.nom || '').slice(0, 60));
+        if (!neuf) return erreur(409, 'Passage à l\'adresse TRIGONE impossible pour l\'instant (adresse indisponible).');
+        return json({ ok: true, mail: neuf, ancien: true });
+    }
     if (chemin === 'annuaire' && methode === 'GET') {
         const role = url.searchParams.get('role') || '';
         if (!ROLES.includes(role)) return erreur(400, 'Rôle inconnu.');
@@ -1392,7 +1347,7 @@ async function api(requete, env, url, ctx) {
     // Réinitialisation acceptée : chaque appareil du compte s'efface à son ouverture, puis se retire du compte.
     if (chemin === 'compte/etat' && methode === 'GET') {
         const l = await kv.get('reinit:' + moi.mail, 'json');
-        return json({ ok: true, reinit: Array.isArray(l) && l.indexOf(moi.appareil.id) >= 0, attente: !!moi.compte.attente, sansMail: !!moi.compte.sansMail });
+        return json({ ok: true, compte: moi.mail, reinit: Array.isArray(l) && l.indexOf(moi.appareil.id) >= 0, attente: !!moi.compte.attente, sansMail: !!moi.compte.sansMail });
     }
     if (chemin === 'erreurs' && methode === 'GET') {
         if (!estAdmin(env, moi.mail)) return erreur(403, 'Réservé à l\'administrateur de TRIGONE.');
