@@ -994,7 +994,7 @@ async function api(requete, env, url, ctx) {
         return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
     }
     // Administrateur de TRIGONE passé à son adresse TRIGONE (son ancienne adresse figurait dans ADMIN_MAILS).
-    if (moi.compte.superAdmin && !estAdmin(env, moi.mail)) env = Object.assign({}, env, { ADMIN_MAILS: (env.ADMIN_MAILS || '') + ',' + moi.mail });
+    if (moi.compte.superAdmin && !estAdmin(env, moi.mail)) { const e2 = Object.create(env); e2.ADMIN_MAILS = (env.ADMIN_MAILS || '') + ',' + moi.mail; env = e2; }
     if (moi.compte.attente && !LIBRE_EN_ATTENTE.has(chemin)) return erreur(403, 'Votre compte TRIGONE attend sa validation par l\'administrateur ou l\'assistant Chorus DT de votre unité.');
     // Carte perdue ou volée : l'ancien identifiant est effacé (son QR code devient « non reconnu »), un nouveau est tiré.
     if (chemin === 'carte/revoquer' && methode === 'POST') {
@@ -1964,7 +1964,7 @@ export default {
         if (Date.now() - dernierControleMaj > 5 * 60 * 1000 && ctx && ctx.waitUntil) ctx.waitUntil(notifierMiseAJour(env, url.origin).catch(() => {}));
         if (url.pathname.startsWith('/api/')) {
             try { return await api(requete, env, url, ctx); }
-            catch (e) { return erreur(500, 'Erreur du serveur.'); }
+            catch (e) { if (env.MODE_TEST) console.log('ERREUR500', e && e.stack); return erreur(500, 'Erreur du serveur.'); }
         }
         return env.ASSETS.fetch(requete);
     },
