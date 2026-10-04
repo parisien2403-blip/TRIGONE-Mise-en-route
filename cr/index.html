@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=181"></script>
+<script src="../jumelage.js?v=182"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -4887,6 +4887,101 @@ body.dark-mode .DEMO-POINT { background: rgba(148,163,184,0.35); }
 .PC-MARQUE { display: flex; justify-content: center; border: 0; background: none; padding: 4px 0 18px; margin-bottom: 10px; border-bottom: 1px solid rgba(15,23,42,0.08); cursor: pointer; }
 .PC-MARQUE img { width: 136px; height: auto; }
 body.dark-mode .PC-MARQUE img { filter: brightness(0) invert(0.93); }
+/* ===== Boîte TRIGONE façon messagerie (mêmes classes que Mise en route) ===== */
+.MER-DOSSIER { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 14px; border: 1px solid var(--sm2-border, #e2e8f0); border-radius: 14px; background: var(--sm2-surface, #fff); color: inherit; font: inherit; text-align: left; cursor: pointer; transition: transform .12s, box-shadow .12s; }
+.MER-DOSSIER:hover { box-shadow: 0 4px 14px rgba(15,23,42,.08); }
+.MER-DOSSIER:active { transform: scale(.985); }
+.MER-DOSSIER-NB { position: absolute; top: -6px; right: -8px; min-width: 22px; height: 22px; padding: 0 6px; box-sizing: border-box; border-radius: 11px; background: #dc2626; color: #fff; font-size: 12px; font-weight: 800; line-height: 22px; text-align: center; box-shadow: 0 0 0 2px var(--sm2-surface, #fff); }
+.MER-DOSSIER-NB.gris { background: #64748b; }
+.MER-DOSSIER-NB.en-ligne { position: static; display: inline-block; margin-left: 8px; box-shadow: none; }
+.MER-BX-CARTE { padding: 18px 18px 10px; }
+.MER-BX-ENTETE { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 0 0 12px; }
+.MER-BX-ENTETE h2 { margin: 0; font-size: 1.25rem; }
+.MER-BX-ENTETE small { display: block; color: #8a8173; font-size: 0.74rem; margin-top: 2px; word-break: break-all; }
+.MER-BX-RELEVER { display: inline-flex; align-items: center; gap: 6px; flex-shrink: 0; border: 1.5px solid var(--sm2-border, #e4ded2); background: none; border-radius: 999px; padding: 7px 12px; font: 700 0.74rem Montserrat, system-ui, sans-serif; color: #9a6f22; cursor: pointer; }
+.MER-BX-ICO { width: 19px; height: 19px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+.MER-BX.pc { display: grid; grid-template-columns: 240px minmax(280px, 380px) 1fr; min-height: 560px; border: 1px solid var(--sm2-border, #ece6da); border-radius: 14px; overflow: hidden; }
+.MER-BX.pc .MER-BX-DOSSIERS { background: #fbfaf7; border-right: 1px solid var(--sm2-border, #ece6da); padding: 12px 8px; }
+.MER-BX-COL2 { border-right: 1px solid var(--sm2-border, #ece6da); min-width: 0; display: flex; flex-direction: column; }
+.MER-BX-COL3 { min-width: 0; padding: 18px 22px; overflow: auto; max-height: 80vh; }
+.MER-BX-DT { font: 800 0.66rem Montserrat, system-ui, sans-serif; letter-spacing: 0.16em; text-transform: uppercase; color: #8a7a5c; margin: 6px 12px 10px; }
+.MER-BX.tel .MER-BX-DT { display: none; }
+.MER-BX-SEP { height: 1px; background: var(--sm2-border, #ece6da); margin: 10px 8px; }
+.MER-BX .MER-DOSSIER.MER-BX-D { gap: 12px; padding: 11px 12px; border: 0; border-radius: 10px; background: none; box-shadow: none; transform: none; font-weight: 700; font-size: 0.86rem; color: var(--sm2-text, #1a1a1a); margin-bottom: 2px; }
+.MER-BX .MER-DOSSIER.MER-BX-D:hover { background: rgba(214,167,86,0.10); }
+.MER-BX .MER-DOSSIER.MER-BX-D.on { background: #1a1a1a; color: #fff; }
+.MER-BX-DIC { color: #9a6f22; display: inline-flex; } .MER-BX-D.on .MER-BX-DIC { color: #d6a756; }
+.MER-BX-DTXT { flex: 1; min-width: 0; }
+.MER-BX .MER-BX-D .MER-DOSSIER-NB { position: static; box-shadow: none; }
+.MER-BX .MER-BX-D .MER-DOSSIER-NB.gris { background: #e4ded2; color: #6b6255; } .MER-BX .MER-BX-D.on .MER-DOSSIER-NB.gris { background: #444; color: #ddd; }
+.MER-BX.pc .MER-BX-CHEV { display: none; } .MER-BX-CHEV { color: #c4b9a6; font-size: 1.1rem; }
+.MER-BX.tel .MER-BX-DOSSIERS { display: flex; flex-direction: column; }
+.MER-BX.tel .MER-BX-D { background: var(--sm2-surface, #fff) !important; border: 1px solid var(--sm2-border, #ece6da) !important; border-radius: 0 !important; margin: 0 !important; border-bottom-width: 0 !important; padding: 14px 14px !important; color: var(--sm2-text, #1a1a1a) !important; }
+.MER-BX.tel .MER-BX-D:first-of-type, .MER-BX.tel .MER-BX-SEP + .MER-BX-D { border-radius: 14px 14px 0 0 !important; }
+.MER-BX.tel .MER-BX-D:last-child, .MER-BX.tel .MER-BX-D:has(+ .MER-BX-SEP) { border-radius: 0 0 14px 14px !important; border-bottom-width: 1px !important; }
+.MER-BX.tel .MER-BX-SEP { background: none; margin: 8px 0; }
+.MER-BX-LT { padding: 14px 16px 10px; border-bottom: 1px solid var(--sm2-border, #ece6da); }
+.MER-BX.tel .MER-BX-LT { padding: 4px 2px 10px; }
+.MER-BX-LTITRE { display: flex; align-items: center; gap: 8px; } .MER-BX-LTITRE b { font-size: 1.12rem; }
+.MER-BX-LTITRE .MER-DOSSIER-NB { position: static; box-shadow: none; }
+.MER-BX-LT small { display: block; color: #8a8173; font-size: 0.74rem; margin-top: 3px; line-height: 1.45; }
+.MER-BX-RETOUR { border: 0; background: none; color: #9a6f22; font: 700 0.86rem Montserrat, system-ui, sans-serif; padding: 2px 0 8px; cursor: pointer; }
+.MER-BX-RECH { display: flex; align-items: center; gap: 8px; margin: 10px 16px 4px; border: 1px solid var(--sm2-border, #e4ded2); border-radius: 10px; padding: 7px 10px; color: #a39a8a; }
+.MER-BX.tel .MER-BX-RECH { margin: 8px 0 6px; }
+.MER-BX-RECH input { border: 0 !important; outline: 0; background: none !important; flex: 1; min-width: 0; padding: 0 !important; margin: 0 !important; font-size: 0.8rem !important; box-shadow: none !important; height: auto !important; }
+.MER-BX-LIGNES { overflow: auto; } .MER-BX.pc .MER-BX-LIGNES { max-height: 70vh; }
+.MER-BX-LIGNE { display: flex; gap: 10px; width: 100%; text-align: left; border: 0; border-bottom: 1px solid var(--sm2-border, #f0ebe1); background: none; padding: 12px 16px; font: inherit; color: inherit; cursor: pointer; }
+.MER-BX.tel .MER-BX-LIGNE { background: var(--sm2-surface, #fff); padding: 13px 12px; }
+.MER-BX-LIGNE:hover { background: rgba(214,167,86,0.06); }
+.MER-BX-LIGNE.on { background: #fbf4e4; box-shadow: inset 3px 0 0 #d6a756; }
+.MER-BX-PT { width: 8px; height: 8px; border-radius: 50%; margin-top: 6px; flex-shrink: 0; } .MER-BX-LIGNE.nl .MER-BX-PT { background: #2563eb; }
+.MER-BX-C { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.MER-BX-C .l1 { display: flex; justify-content: space-between; gap: 8px; font-size: 0.84rem; } .MER-BX-C .l1 b { font-weight: 700; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.MER-BX-C .l1 small { color: #8a8173; font-size: 0.72rem; flex-shrink: 0; }
+.MER-BX-C .l2 { font-size: 0.8rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.MER-BX-C .l3 { font-size: 0.72rem; color: #8a8173; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.MER-BX-LIGNE.nl .l1 b, .MER-BX-LIGNE.nl .l2 { font-weight: 800; }
+.MER-BX-LIGNE.refus .l3 { color: #b91c1c; font-weight: 700; }
+.MER-BX-TAG { display: inline-block; font-style: normal; font-size: 0.6rem; font-weight: 800; letter-spacing: 0.04em; border-radius: 5px; padding: 1px 6px; margin-right: 6px; background: #efe7d6; color: #7a5a1c; vertical-align: 1px; }
+.MER-BX-VIDE { padding: 26px 16px; text-align: center; color: #8a8173; font-size: 0.82rem; }
+.MER-BX-VIDE.grand { display: flex; flex-direction: column; align-items: center; gap: 10px; padding-top: 90px; } .MER-BX-VIDE.grand .MER-BX-ICO { width: 40px; height: 40px; color: #d8cdb9; }
+.MER-BX-LECTURE h2 { margin: 0; font-size: 1.15rem; line-height: 1.3; }
+.MER-BX-DE { color: #6b6255; font-size: 0.78rem; margin: 4px 0 10px; word-break: break-word; }
+.MER-BX-LECTURE .MER-RECU { border: 0 !important; box-shadow: none !important; padding: 0 !important; background: none !important; }
+.MER-BX-LECTURE .MER-RECU .MER-PANIER-ITEM-TITRE { display: none; }
+.MER-BX-INSCR { padding: 12px 14px; } .MER-BX.tel .MER-BX-INSCR { padding: 8px 0; }
+.MER-TOAST { position: fixed; left: 50%; bottom: calc(env(safe-area-inset-bottom, 0px) + 96px); transform: translate(-50%, 20px); opacity: 0; z-index: 99970; width: min(440px, calc(100vw - 24px)); box-sizing: border-box;
+  display: flex; align-items: center; gap: 12px; background: #1a1a1a; color: #fff; border: 1px solid #3a3226; border-radius: 16px; padding: 12px 14px; box-shadow: 0 12px 30px rgba(0,0,0,.35); transition: transform .3s ease, opacity .3s ease; }
+.MER-TOAST.vu { transform: translate(-50%, 0); opacity: 1; }
+@media (min-width: 900px) { .MER-TOAST { left: auto; right: 26px; bottom: 26px; transform: translateY(20px); } .MER-TOAST.vu { transform: none; } }
+.MER-TOAST-IC { width: 30px; height: 30px; border-radius: 50%; background: #d6a756; color: #1a1a1a; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.MER-TOAST-IC svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.MER-TOAST b { display: block; font-size: 0.84rem; } .MER-TOAST div span { display: block; font-size: 0.76rem; color: #cfc6b6; line-height: 1.4; }
+.MER-TOAST button { margin-left: auto; border: 0; background: none; color: #d6a756; font: 800 0.78rem Montserrat, system-ui, sans-serif; cursor: pointer; padding: 6px; flex-shrink: 0; }
+body.dark-mode .MER-BX.pc .MER-BX-DOSSIERS { background: #181818; }
+body.dark-mode .MER-BX .MER-DOSSIER.MER-BX-D.on { background: #f5f5f5; color: #141414; }
+body.dark-mode .MER-BX-LIGNE.on { background: #2a2418; }
+body.dark-mode .MER-BX-TAG { background: #3a3122; color: #e8d6ad; }
+.PC-PASTILLE { margin-left: auto; background: #dc2626; color: #fff; font-size: 0.66rem; font-weight: 800; border-radius: 999px; padding: 2px 7px; }
+.CR-BX { margin-top: 6px; }
+#P-BOITE .BIB-HEADER { display: flex; align-items: center; gap: 10px; } #P-BOITE .BIB-HEADER-TXT { flex: 1; min-width: 0; }
+#P-BOITE.CR-BX-DEDANS .BIB-HEADER { display: none; }
+#P-BOITE .MER-BX.tel { padding-bottom: 110px; }
+.CR-BX .MER-BX-VIDE.grand .BTN { margin-top: 6px; }
+.CR-BX-TXT { font-size: 0.84rem; line-height: 1.5; margin: 10px 0 0; } .CR-BX-ALERTE { color: #b45309; font-weight: 800; }
+.CR-BX-Q { margin: 12px 0 0; padding: 12px 14px; border-radius: 12px; background: #faf6ec; border: 1px solid #ece2cc; font-size: 0.86rem; line-height: 1.5; }
+.CR-BX-Q b { display: block; } .CR-BX-Q span { display: block; margin-top: 8px; padding-top: 8px; border-top: 1px solid #ece2cc; }
+.CR-BX-REPONSE { width: 100%; box-sizing: border-box; margin-top: 10px; padding: 10px; border-radius: 10px; border: 1.5px solid var(--tg-border); font: inherit; }
+.CR-BX-PJ { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+.CR-BX-ACTIONS { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin-top: 16px; } .CR-BX-ACTIONS .CR-BX-SUPPR { margin-left: 4px; }
+.BTN.CR-BX-BTN { width: auto !important; margin: 0 !important; display: inline-flex; align-items: center; gap: 8px; padding: 10px 16px; min-height: 0; font-size: 0.74rem; }
+.BTN.CR-BX-BTN .MER-BX-ICO { width: 16px; height: 16px; }
+.BTN-ADMIN-CLOSE.CR-BX-BTN { border: 1.5px solid #e4d6b8; background: none; color: #7a5618; border-radius: 999px; font-weight: 800; cursor: pointer; }
+.CR-BX-SUPPR { border: 0; background: none; color: #b91c1c; font: 700 0.8rem Montserrat, system-ui, sans-serif; cursor: pointer; padding: 6px; }
+.MER-BX-LECTURE .MER-BX-TAG { margin-top: 2px; }
+.CR-TAB-NB { position: absolute; top: 4px; right: calc(50% - 26px); min-width: 18px; height: 18px; padding: 0 5px; box-sizing: border-box; border-radius: 9px; background: #dc2626; color: #fff; font-size: 10px; font-weight: 800; line-height: 18px; text-align: center; letter-spacing: 0; }
+body.dark-mode .CR-BX-Q { background: #241f16; border-color: #3a3122; } body.dark-mode .CR-BX-Q span { border-color: #3a3122; }
+body.dark-mode .BTN-ADMIN-CLOSE.CR-BX-BTN { border-color: #4a3f2c; color: #e0b86a; }
 .PC-NAV { display: flex; align-items: center; gap: 12px; width: 100%; padding: 11px 12px; border: 0; border-radius: 12px; background: none; text-align: left;
   font-family: inherit; font-size: 0.84rem; font-weight: 700; color: var(--sm2-text); cursor: pointer; line-height: 1.25; text-transform: none; letter-spacing: 0; box-shadow: none; }
 .PC-NAV svg { width: 20px; height: 20px; flex-shrink: 0; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
@@ -5183,6 +5278,10 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation accueil">
 <div class="P0-DOCK-INNER">
+<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
+<span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
+<span class="P0-TAB-LBL">Boîte</span>
+</button>
 <button type="button" id="BTN-BIB-P0" class="P0-TAB" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
@@ -5248,11 +5347,47 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
 <div class="P0-DOCK-INNER">
+<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
+<span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
+<span class="P0-TAB-LBL">Boîte</span>
+</button>
 <button type="button" id="BTN-BIB-PAGE" class="P0-TAB is-active" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
 </button>
 <button type="button" id="BTN-FORFAIT-BIB" class="P0-TAB" onclick="OUVRIR_STAT_FORFAIT()">
+<span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.7 8.7c-.9-.8-2-1.3-3.2-1.3-2.5 0-4.5 2.1-4.5 4.6s2 4.6 4.5 4.6c1.2 0 2.3-.5 3.2-1.3M6.5 10.3h6M6.5 13.7h5.2"/></svg></span>
+<span class="P0-TAB-LBL">Remboursement</span>
+</button>
+</div>
+</nav>
+</div>
+
+<div class="CARD HIDDEN" id="P-BOITE">
+<div class="BIB-SHELL">
+<header class="BIB-HEADER">
+<button type="button" class="BIB-BACK-BTN" onclick="SHOW_PAGE('P0')" aria-label="Retour accueil">
+<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>
+</button>
+<div class="BIB-HEADER-TXT">
+<h2>Boîte</h2>
+<p id="CR-BX-SOUS">Missions collectives, justificatifs, questions</p>
+</div>
+<button type="button" class="MER-BX-RELEVER" onclick="if (window.JUMELAGE_RELEVER) JUMELAGE_RELEVER()"><svg class="MER-BX-ICO" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>Relever</button>
+</header>
+<div id="CR-BX" class="CR-BX"></div>
+</div>
+<nav class="P0-TAB-BAR" aria-label="Navigation">
+<div class="P0-DOCK-INNER">
+<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE is-active" onclick="OUVRIR_BOITE_CR()">
+<span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
+<span class="P0-TAB-LBL">Boîte</span>
+</button>
+<button type="button" class="P0-TAB" onclick="OUVRIR_BIBLIOTHEQUE()">
+<span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
+<span class="P0-TAB-LBL">Bibliothèque</span>
+</button>
+<button type="button" class="P0-TAB" onclick="OUVRIR_STAT_FORFAIT()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.7 8.7c-.9-.8-2-1.3-3.2-1.3-2.5 0-4.5 2.1-4.5 4.6s2 4.6 4.5 4.6c1.2 0 2.3-.5 3.2-1.3M6.5 10.3h6M6.5 13.7h5.2"/></svg></span>
 <span class="P0-TAB-LBL">Remboursement</span>
 </button>
@@ -5295,6 +5430,10 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
 <div class="P0-DOCK-INNER">
+<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
+<span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
+<span class="P0-TAB-LBL">Boîte</span>
+</button>
 <button type="button" id="BTN-BIB-STAT" class="P0-TAB" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
@@ -5432,6 +5571,10 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
 <div class="P0-DOCK-INNER">
+<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
+<span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
+<span class="P0-TAB-LBL">Boîte</span>
+</button>
 <button type="button" class="P0-TAB" id="BTN-BIB-NOTICE" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
@@ -11565,7 +11708,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 278;
+var APP_CODE_VERSION = 279;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -12735,7 +12878,7 @@ function OUVRIR_SUIVI_EQUIPE(S) {
 }
 
 function HIDE_ALL_PAGES() {
-    ['P0','P-MENU','P-CHAIN','P1','P2','P2-FIN','P3','P3-SIG','P-BIB','P-STAT','P-STATS','P-SIMU','P-NOTICE','P-PAX'].forEach(function(id) { document.getElementById(id).classList.add('HIDDEN'); });
+    ['P0','P-MENU','P-CHAIN','P1','P2','P2-FIN','P3','P3-SIG','P-BIB','P-STAT','P-STATS','P-SIMU','P-NOTICE','P-PAX','P-BOITE'].forEach(function(id) { document.getElementById(id).classList.add('HIDDEN'); });
 }
 
 function UPDATE_CR_MODE_UI() {
@@ -12880,6 +13023,7 @@ function ACTIVATE_PAGE(page) {
     else if (page === 'P-CHAIN') { UNHIDE_PAGE('P-CHAIN'); }
     else if (page === 'P-BIB') { UNHIDE_PAGE('P-BIB'); RENDER_BIBLIOTHEQUE(); }
     else if (page === 'P-STAT') { UNHIDE_PAGE('P-STAT'); RENDER_FORFAIT_STAT(); }
+    else if (page === 'P-BOITE') { UNHIDE_PAGE('P-BOITE'); RENDRE_BOITE_CR(); }
     else if (page === 'P-STATS') { UNHIDE_PAGE('P-STATS'); }
     else if (page === 'P-SIMU') { UNHIDE_PAGE('P-SIMU'); }
     else if (page === 'P-NOTICE') { UNHIDE_PAGE('P-NOTICE'); RENDER_NOTICE_PAGE(); }
@@ -12947,6 +13091,8 @@ function AFTER_SHOW_PAGE(page) {
     document.body.classList.toggle('p0-active', page === 'P0');
     document.body.classList.toggle('bib-active', page === 'P-BIB');
     document.body.classList.toggle('stat-active', page === 'P-STAT');
+    document.body.classList.toggle('boite-active', page === 'P-BOITE');
+    MAJ_PASTILLE_BOITE_CR();
     document.body.classList.toggle('notice-active', page === 'P-NOTICE');
     SET_GAUGE_VISIBLE((page === 'P2' || page === 'P2-FIN' || page === 'P3' || page === 'P3-SIG') && !M.IS_PAX);
     if (page === 'P2' || page === 'P2-FIN' || page === 'P3' || page === 'P3-SIG') UPDATE_GAUGE();
@@ -13635,15 +13781,16 @@ var CR_ICONES_PC = {
     NOTICE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 15.7v-5M12 8h.01"/></svg>',
     ESPACE: '<svg viewBox="0 0 24 24"><circle cx="12" cy="8.2" r="3.4"/><path d="M5 20c0-3.6 3.1-6.3 7-6.3s7 2.7 7 6.3"/></svg>',
     REFERENCES: '<svg viewBox="0 0 24 24"><path d="M6.5 3H19v18H6.5A2.5 2.5 0 0 1 4 18.5v-13A2.5 2.5 0 0 1 6.5 3z"/><path d="M4 18.5A2.5 2.5 0 0 1 6.5 16H19"/><path d="M8.5 7.5h6M8.5 11h4"/></svg>',
+    BOITE: '<svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg>',
     MAJ: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/></svg>'
 };
 function RENDRE_MENU_PC_CR(page) {
     var m = document.getElementById('PC-MENU');
     if (!m) return;
     if (!(CR_PC_MQ && CR_PC_MQ.matches)) { m.innerHTML = ''; return; }
-    var actif = { P0: 'P0', 'P-BIB': 'P-BIB', 'P-STAT': 'P-STAT', 'P-NOTICE': 'P-NOTICE' }[page || M.PAGE] || '';
-    function item(cle, icone, libelle, action) {
-        return '<button type="button" class="PC-NAV' + (actif === cle ? ' actif' : '') + '" onclick="' + action + '">' + icone + '<span>' + libelle + '</span></button>';
+    var actif = { P0: 'P0', 'P-BIB': 'P-BIB', 'P-STAT': 'P-STAT', 'P-NOTICE': 'P-NOTICE', 'P-BOITE': 'P-BOITE' }[page || M.PAGE] || '';
+    function item(cle, icone, libelle, action, pastille) {
+        return '<button type="button" class="PC-NAV' + (actif === cle ? ' actif' : '') + '" onclick="' + action + '">' + icone + '<span>' + libelle + '</span>' + (pastille ? '<span class="PC-PASTILLE">' + pastille + '</span>' : '') + '</button>';
     }
     // Menu de travail seulement : notice, réglages, références, mise à jour et signalement sont dans le menu du compte.
     m.innerHTML = '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_cr_accueil.png" alt="TRIGONE Compte-rendu de mission"></button>' +
@@ -13651,12 +13798,213 @@ function RENDRE_MENU_PC_CR(page) {
         item('P0', CR_ICONES_PC.ACCUEIL, 'Accueil', "SHOW_PAGE('P0')") +
         item('P-BIB', CR_ICONES_PC.BIB, 'Bibliothèque', 'OUVRIR_BIBLIOTHEQUE()') +
         item('P-STAT', CR_ICONES_PC.EUR, 'Remboursement', 'OUVRIR_STAT_FORFAIT()') +
+        (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? item('P-BOITE', CR_ICONES_PC.BOITE, 'Boîte', 'OUVRIR_BOITE_CR()', CR_BX_NB()) : '') +
         '<div class="PC-BAS">' + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'mer\')"><img src="../logo_mer.webp" alt=""><span>Passer à Mise en route</span></button>' +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';
     if (window.JUMELAGE_PLACER_COMPTE) JUMELAGE_PLACER_COMPTE(m);
 }
+// ===================== BOÎTE TRIGONE (façon messagerie, comme Mise en route) =====================
+// Ce qui concerne le compte-rendu : missions collectives, justificatifs reçus par mail, questions. Dossiers à gauche
+// avec leur pastille, liste au milieu, lecture à droite (PC) ; téléphone : dossiers → liste → lecture.
+var CR_BX = { dossier: null, sel: null, rep: false };
+var CR_BX_NATURES = ['collective', 'justif', 'question', 'reponse'];
+var CR_BX_ICONES = {
+    coll: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5 5"/>',
+    justif: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>',
+    q: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/>',
+    ok: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/>',
+    cr: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+    boite: '<path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/>',
+    pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
+    photo: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/>',
+    relever: '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>'
+};
+function CR_BX_ICO(n) { return '<svg class="MER-BX-ICO" viewBox="0 0 24 24" aria-hidden="true">' + (CR_BX_ICONES[n] || CR_BX_ICONES.boite) + '</svg>'; }
+var CR_BX_TAGS = { collective: 'COLLECTIVE', question: 'QUESTION', reponse: 'RÉPONSE', justif: 'JUSTIFICATIF' };
+function CR_BX_QUAND(ms) {
+    if (!ms) return '';
+    var d = new Date(ms), auj = new Date(), hier = new Date(); hier.setDate(hier.getDate() - 1);
+    if (d.toDateString() === auj.toDateString()) return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === hier.toDateString()) return 'Hier';
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+}
+function CR_BX_LISTE() { return (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return CR_BX_NATURES.indexOf(x.nature) >= 0; }); }
+function CR_BX_NB() { return CR_BX_LISTE().filter(function(x) { return x.statut !== 'traite'; }).length; }
+function CR_BX_DOSSIERS() {
+    var l = CR_BX_LISTE();
+    var d = [
+        { id: 'collective', titre: 'Missions collectives', ic: 'coll', natures: ['collective'], aide: 'Envoyés par votre chef de mission : « Ouvrir mon compte-rendu », joignez vos justificatifs, puis envoyez.' },
+        { id: 'justif', titre: 'Justificatifs', ic: 'justif', natures: ['justif'], aide: 'Factures d\'hôtel, billets de train ou d\'avion envoyés à votre adresse TRIGONE' + (window.JUMELAGE_ADRESSE_CONNUE && JUMELAGE_ADRESSE_CONNUE() ? ' (' + ESC_HTML(JUMELAGE_ADRESSE_CONNUE()) + ')' : '') + '. Au compte-rendu : « Depuis ma boîte TRIGONE ».' },
+        { id: 'questions', titre: 'Questions', ic: 'q', natures: ['question', 'reponse'], aide: 'Un valideur ou l\'assistant Chorus DT vous pose une question plutôt que de refuser : répondez et votre dossier avance.' }
+    ];
+    d.forEach(function(x) {
+        x.items = l.filter(function(e) { return x.natures.indexOf(e.nature) >= 0 && e.statut !== 'traite'; });
+        x.nb = x.items.length; x.nouveau = x.items.some(function(e) { return e.statut === 'nouveau'; });
+    });
+    var tr = l.filter(function(e) { return e.statut === 'traite'; }).sort(function(a, b) { return (b.traiteLe || b.le || 0) - (a.traiteLe || a.le || 0); });
+    return [d, [
+        { id: 'traites', titre: 'Traités', ic: 'ok', items: tr, nb: tr.length, gris: true, aide: 'Ce qui a été ouvert, rangé ou répondu.' },
+        { id: 'mescr', titre: 'Mes comptes-rendus', ic: 'cr', lien: 'OUVRIR_BIBLIOTHEQUE()' }
+    ]];
+}
+function CR_BX_PC() { return !!(CR_PC_MQ && CR_PC_MQ.matches); }
+function OUVRIR_BOITE_CR(dossier, id) {
+    if (dossier !== undefined) { if (CR_BX.dossier !== dossier) CR_BX.sel = null; CR_BX.dossier = dossier; }
+    if (id !== undefined) CR_BX.sel = id;
+    CR_BX.rep = false;
+    SHOW_PAGE('P-BOITE');
+    window.scrollTo(0, 0);
+}
+function CR_BX_OUVRIR(id) {
+    var x = CR_BX_LISTE().filter(function(y) { return y.id === id; })[0];
+    if (x && x.statut === 'nouveau' && window.JUMELAGE_BOITE_MARQUER) JUMELAGE_BOITE_MARQUER(id, 'ouvert');
+    OUVRIR_BOITE_CR(undefined, id);
+}
+function TPL_CR_BX_DOSSIERS(groupes, dId) {
+    return '<nav class="MER-BX-DOSSIERS" aria-label="Dossiers"><div class="MER-BX-DT">Boîte TRIGONE</div>' + groupes.map(function(g, i) {
+        return (i ? '<div class="MER-BX-SEP"></div>' : '') + g.map(function(d) {
+            var nb = d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '';
+            return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.id === dId ? ' on' : '') + (d.nb ? '' : ' vide') + (d.nouveau ? ' nouveau' : '') + '" data-dossier="' + d.id + '" onclick="' + (d.lien || 'OUVRIR_BOITE_CR(\'' + d.id + '\', null)') + '">' +
+                '<span class="MER-BX-DIC">' + CR_BX_ICO(d.ic) + '</span><span class="MER-BX-DTXT">' + d.titre + '</span>' + nb + '<span class="MER-BX-CHEV" aria-hidden="true">›</span></button>';
+        }).join('');
+    }).join('') + '</nav>';
+}
+function TPL_CR_BX_LISTE(d, pc) {
+    var tete = '<div class="MER-BX-LT">' + (pc ? '' : '<button type="button" class="MER-BX-RETOUR" onclick="OUVRIR_BOITE_CR(null, null)">‹ Boîte</button>') +
+        '<div class="MER-BX-LTITRE"><b>' + d.titre + '</b>' + (d.nb && !d.gris ? '<span class="MER-DOSSIER-NB">' + d.nb + '</span>' : '') + '</div>' + (d.aide ? '<small>' + d.aide + '</small>' : '') + '</div>';
+    var lignes = d.items.length ? d.items.map(function(x) {
+        var l3 = x.statut === 'traite' ? 'Traité' : x.nature === 'justif' ? ((x.fichiers || []).length || 1) + ' pièce(s) jointe(s)' + (x.verifie ? '' : ' · à vérifier') : x.nature === 'question' ? x.question : x.nature === 'reponse' ? x.reponse : [x.dates, x.lieu].filter(Boolean).join(' · ');
+        return '<button type="button" class="MER-BX-LIGNE' + (x.statut === 'nouveau' ? ' nl' : '') + (x.id === CR_BX.sel ? ' on' : '') + '" data-id="' + ESC_HTML(x.id) + '" onclick="CR_BX_OUVRIR(\'' + ESC_HTML(x.id) + '\')">' +
+            '<span class="MER-BX-PT" aria-hidden="true"></span><span class="MER-BX-C"><span class="l1"><b>' + ESC_HTML(x.noms || x.expediteur || x.de || 'Envoi') + '</b><small>' + CR_BX_QUAND(x.le) + '</small></span>' +
+            '<span class="l2"><i class="MER-BX-TAG">' + (CR_BX_TAGS[x.nature] || 'ENVOI') + '</i>' + ESC_HTML(x.objet || x.nom || '') + '</span>' + (l3 ? '<span class="l3">' + ESC_HTML(l3) + '</span>' : '') + '</span></button>';
+    }).join('') : '<div class="MER-BX-VIDE">Rien dans ce dossier.</div>';
+    return '<div class="MER-BX-LISTE">' + tete + '<div class="MER-BX-LIGNES">' + lignes + '</div></div>';
+}
+function CR_BX_BTN(cls, action, ic, txt) { return '<button type="button" class="BTN ' + cls + ' CR-BX-BTN" onclick="' + action + '">' + (ic ? CR_BX_ICO(ic) : '') + '<span>' + txt + '</span></button>'; }
+function TPL_CR_BX_LECTURE(d, pc) {
+    var x = d.items.filter(function(y) { return y.id === CR_BX.sel; })[0];
+    if (!x) return pc ? '<div class="MER-BX-VIDE grand">' + CR_BX_ICO(d.ic) + '<span>Choisissez un envoi dans la liste.</span></div>' : '';
+    var id = ESC_HTML(x.id), traite = x.statut === 'traite';
+    var le = x.le ? new Date(x.le).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+    var corps = '', actions = '';
+    if (x.nature === 'collective') {
+        corps = '<p class="CR-BX-TXT">Mission déjà renseignée par votre chef de mission' + (x.dates ? ' (' + ESC_HTML(x.dates) + ')' : '') + ' : complétez votre identité, joignez vos justificatifs, puis envoyez à l\'assistant Chorus DT.</p>';
+        actions = CR_BX_BTN('BTN-START', 'CR_BX_COLLECTIVE(\'' + id + '\')', 'cr', 'Ouvrir mon compte-rendu');
+    } else if (x.nature === 'justif') {
+        corps = (x.verifie ? '' : '<p class="CR-BX-TXT CR-BX-ALERTE">À vérifier : expéditeur inconnu de TRIGONE. Gardez-le seulement s\'il est bien à vous.</p>') +
+            '<div class="CR-BX-PJ">' + (x.fichiers || []).map(function(f, i) { return CR_BX_BTN('BTN-ADMIN-CLOSE', 'CR_BX_VOIR_JUSTIF(\'' + id + '\', ' + i + ')', /pdf/.test(f.type) ? 'pdf' : 'photo', ESC_HTML(f.nom)); }).join('') + '</div>';
+        actions = (x.verifie ? '' : CR_BX_BTN('BTN-START', 'JUMELAGE_JUSTIF_VERIFIE(\'' + id + '\'); OUVRIR_BOITE_CR()', 'ok', 'C\'est bien à moi')) +
+            (traite ? CR_BX_BTN('BTN-ADMIN-CLOSE', 'JUMELAGE_BOITE_ROUVRIR(\'' + id + '\'); CR_TOAST(\'Remis à joindre\', \'Revenu dans « Justificatifs ».\'); OUVRIR_BOITE_CR()', 'relever', 'Remettre à joindre')
+                : CR_BX_BTN('BTN-ADMIN-CLOSE', 'JUMELAGE_BOITE_MARQUER(\'' + id + '\', \'traite\'); OUVRIR_BOITE_CR()', 'ok', 'Rangé'));
+    } else if (x.nature === 'question' || x.nature === 'reponse') {
+        corps = '<div class="CR-BX-Q"><b>' + ESC_HTML(x.question || '') + '</b>' + (x.nature === 'reponse' ? '<span>' + ESC_HTML(x.reponse || '') + '</span>' : '') + '</div>';
+        if (!traite && x.nature === 'question' && !x.rappel) {
+            corps += CR_BX.rep ? '<textarea id="CR-BX-REPONSE" class="CR-BX-REPONSE" data-no-uppercase="1" rows="4" placeholder="Votre réponse"></textarea>' : '';
+            actions = CR_BX.rep ? CR_BX_BTN('BTN-ADMIN-CLOSE', 'CR_BX.rep = false; OUVRIR_BOITE_CR()', '', 'Plus tard') + CR_BX_BTN('BTN-START', 'CR_BX_REPONDRE(\'' + id + '\', this)', 'q', 'Envoyer la réponse')
+                : CR_BX_BTN('BTN-START', 'CR_BX.rep = true; SHOW_PAGE(\'P-BOITE\'); setTimeout(function() { var t = document.getElementById(\'CR-BX-REPONSE\'); if (t) t.focus(); }, 50)', 'q', 'Répondre');
+        } else if (!traite) actions = CR_BX_BTN('BTN-START', 'JUMELAGE_BOITE_MARQUER(\'' + id + '\', \'traite\'); OUVRIR_BOITE_CR()', 'ok', 'Vu');
+    }
+    return '<div class="MER-BX-LECTURE">' + (pc ? '' : '<button type="button" class="MER-BX-RETOUR" onclick="OUVRIR_BOITE_CR(undefined, null)">‹ ' + d.titre + '</button>') +
+        '<h2>' + ESC_HTML(x.objet || x.noms || x.nom || 'Envoi') + '</h2>' +
+        '<div class="MER-BX-DE">De <b>' + ESC_HTML(x.noms || x.expediteur || x.de || '?') + '</b>' + (x.de && (x.noms || x.expediteur) ? ' (' + ESC_HTML(x.de) + ')' : '') + (le ? ' · ' + ESC_HTML(le) : '') + '</div>' +
+        '<i class="MER-BX-TAG">' + (CR_BX_TAGS[x.nature] || 'ENVOI') + '</i>' + (traite ? '<i class="MER-BX-TAG">TRAITÉ</i>' : '') + corps +
+        '<div class="CR-BX-ACTIONS">' + actions + '<button type="button" class="CR-BX-SUPPR" onclick="CR_BX_SUPPRIMER(\'' + id + '\')">Supprimer</button></div></div>';
+}
+function RENDRE_BOITE_CR() {
+    var z = document.getElementById('CR-BX'); if (!z) return;
+    var compte = window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF();
+    var sous = document.getElementById('CR-BX-SOUS');
+    if (sous) sous.textContent = compte && window.JUMELAGE_COMPTE_MAIL ? JUMELAGE_COMPTE_MAIL() : 'Missions collectives, justificatifs, questions';
+    if (!compte) { z.innerHTML = '<div class="MER-BX-VIDE grand">' + CR_BX_ICO('boite') + '<span>Activez votre compte TRIGONE pour recevoir ici vos missions collectives, justificatifs et questions.</span>' +
+        '<button type="button" class="BTN BTN-START" style="width:auto;" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button></div>'; return; }
+    var pc = CR_BX_PC(), groupes = CR_BX_DOSSIERS(), tous = groupes[0].concat(groupes[1]);
+    var d = tous.filter(function(x) { return x.id === CR_BX.dossier && !x.lien; })[0] || null;
+    if (pc && !d) { d = groupes[0].filter(function(x) { return x.nb; })[0] || groupes[0][0]; CR_BX.dossier = d.id; }
+    if (CR_BX.dossier && !d) CR_BX.dossier = null;
+    if (d && CR_BX.sel && !d.items.some(function(y) { return y.id === CR_BX.sel; })) CR_BX.sel = null;
+    if (pc && d && !CR_BX.sel && d.items.length) CR_BX.sel = d.items[0].id;
+    var colD = TPL_CR_BX_DOSSIERS(groupes, d && d.id);
+    document.getElementById('P-BOITE').classList.toggle('CR-BX-DEDANS', !pc && !!d);
+    if (pc) z.innerHTML = '<div class="MER-BX pc">' + colD + '<div class="MER-BX-COL2">' + TPL_CR_BX_LISTE(d, true) + '</div><div class="MER-BX-COL3">' + TPL_CR_BX_LECTURE(d, true) + '</div></div>';
+    else z.innerHTML = '<div class="MER-BX tel">' + (!d ? colD : CR_BX.sel ? TPL_CR_BX_LECTURE(d, false) : TPL_CR_BX_LISTE(d, false)) + '</div>';
+}
+function CR_BX_COLLECTIVE(id) {
+    var x = CR_BX_LISTE().filter(function(e) { return e.id === id; })[0];
+    if (!x || !/^[A-Za-z0-9+/=]+$/.test(x.donnees || '')) { MSG_INFO('Envoi illisible', 'Demandez à votre chef de mission de vous le renvoyer.', '⛔'); return; }
+    JUMELAGE_BOITE_MARQUER(id, 'traite');
+    location.href = '?data=' + encodeURIComponent(x.donnees);
+}
+function CR_BX_VOIR_JUSTIF(id, i) {
+    JUMELAGE_JUSTIF_FICHIER(id, i).then(function(f) {
+        var u = URL.createObjectURL(f), w = window.open(u, '_blank');
+        if (!w) { var a = document.createElement('a'); a.href = u; a.download = f.name; document.body.appendChild(a); a.click(); a.remove(); }
+        setTimeout(function() { URL.revokeObjectURL(u); }, 60000);
+    }).catch(function(e) { MSG_INFO('Justificatif introuvable', e.message || String(e), '⛔'); });
+}
+function CR_BX_REPONDRE(id, b) {
+    var x = CR_BX_LISTE().filter(function(y) { return y.id === id; })[0], t = document.getElementById('CR-BX-REPONSE');
+    var r = ((t && t.value) || '').trim(); if (!x || r.length < 2) { if (t) t.focus(); return; }
+    b.disabled = true;
+    JUMELAGE_ENVOYER_DIRECT(x.de, 'REPONSE', 'Reponse.json', JSON.stringify({ app: 'TRIGONE-REPONSE', ref: x.ref, genre: x.genre, objet: x.objet, question: x.question, reponse: r,
+        qui: window.JUMELAGE_QUI ? JUMELAGE_QUI() : '' }), { differable: true, libelle: 'Votre réponse' }).then(function() {
+        CR_TOAST_PERSO = ['Réponse envoyée', 'Partie chez ' + (x.noms || x.de) + ' — question rangée dans « Traités ».', 'Voir', function() { OUVRIR_BOITE_CR('traites', id); }];
+        JUMELAGE_BOITE_MARQUER(id, 'traite');
+        CR_BX.rep = false; OUVRIR_BOITE_CR();
+    }).catch(function(e) { b.disabled = false; MSG_INFO('Réponse non envoyée', e.message || String(e), '⛔'); });
+}
+function CR_BX_SUPPRIMER(id) {
+    MSG_CONFIRM('Supprimer de la boîte ?', 'Cet envoi sera retiré de votre boîte sur cet appareil. S\'il n\'a pas été traité, demandez à l\'expéditeur de le renvoyer.', 'Supprimer', function() {
+        JUMELAGE_BOITE_SUPPRIMER(id).then(function() { CR_BX.sel = null; if (M.PAGE === 'P-BOITE') OUVRIR_BOITE_CR(); CR_TOAST('Supprimé', 'Retiré de votre boîte sur cet appareil.'); });
+    });
+}
+// Pastille rouge (à traiter) sur l'onglet Boîte et dans le menu PC.
+function MAJ_PASTILLE_BOITE_CR() {
+    var n = CR_BX_NB(), compte = !!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF());
+    document.querySelectorAll('.CR-TAB-BOITE').forEach(function(b) {
+        b.classList.toggle('HIDDEN', !compte);
+        var p = b.querySelector('.CR-TAB-NB');
+        if (!n) { if (p) p.remove(); return; }
+        if (!p) { p = document.createElement('span'); p.className = 'CR-TAB-NB'; b.appendChild(p); }
+        p.textContent = n;
+    });
+}
+// Message en bas de l'écran quand un envoi change de dossier.
+var CR_TOAST_MIN = null, CR_TOAST_PERSO = null;
+function CR_TOAST(titre, texte, bouton, action) {
+    var t = document.getElementById('MER-TOAST'); if (t) t.remove();
+    clearTimeout(CR_TOAST_MIN);
+    t = document.createElement('div'); t.id = 'MER-TOAST'; t.className = 'MER-TOAST'; t.setAttribute('role', 'status');
+    t.innerHTML = '<span class="MER-TOAST-IC"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><div><b>' + ESC_HTML(titre) + '</b><span>' + ESC_HTML(texte) + '</span></div>' +
+        (bouton ? '<button type="button">' + ESC_HTML(bouton) + '</button>' : '');
+    if (bouton) t.querySelector('button').onclick = function() { t.remove(); if (action) action(); };
+    document.body.appendChild(t);
+    requestAnimationFrame(function() { t.classList.add('vu'); });
+    CR_TOAST_MIN = setTimeout(function() { t.classList.remove('vu'); setTimeout(function() { t.remove(); }, 300); }, bouton ? 6500 : 4500);
+}
+window.addEventListener('trigone-range', function(e) {
+    try {
+        if (CR_TOAST_PERSO) { var p = CR_TOAST_PERSO; CR_TOAST_PERSO = null; CR_TOAST.apply(null, p); return; }
+        var items = (e.detail && e.detail.items) || [], x = items[0]; if (!x) return;
+        var m = { justif: ['Justificatif rangé', 'Parti de « Justificatifs », rangé dans « Traités ».'], question: ['Question traitée', 'Rangée dans « Traités ».'],
+            reponse: ['Réponse lue', 'Rangée dans « Traités ».'], collective: ['Compte-rendu prérempli ouvert', 'Retiré de « Missions collectives », rangé dans « Traités ».'] }[x.nature] || ['Rangé', 'Envoi rangé dans « Traités ».'];
+        CR_TOAST(m[0], m[1], 'Voir', function() { OUVRIR_BOITE_CR('traites', x.id); });
+    } catch (x) {}
+});
+window.addEventListener('trigone-boite', function() {
+    MAJ_PASTILLE_BOITE_CR();
+    if (M.PAGE === 'P-BOITE' && !CR_BX.rep) RENDRE_BOITE_CR();
+    else if (CR_BX_PC()) RENDRE_MENU_PC_CR();
+});
+// Nouveaux envois reçus pendant que Compte-rendu est ouvert : message, et « Voir » ouvre le bon dossier.
+window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
+    var a = nouveaux.filter(function(x) { return CR_BX_NATURES.indexOf(x.nature) >= 0; }), x = a[0];
+    if (!x) { CR_TOAST(nouveaux.length > 1 ? nouveaux.length + ' envois reçus' : 'Envoi reçu', 'Dans Mise en route › Boîte de réception.', 'Ouvrir', function() { JUMELAGE_ALLER('mer'); }); return; }
+    var dos = x.nature === 'collective' ? 'collective' : x.nature === 'justif' ? 'justif' : 'questions';
+    var titre = { collective: 'Mission collective reçue', justif: 'Justificatif reçu par mail', question: 'Question sur votre dossier', reponse: 'Réponse à votre question' }[x.nature];
+    CR_TOAST(a.length > 1 ? a.length + ' nouveaux envois' : titre, 'Arrivé dans « ' + { collective: 'Missions collectives', justif: 'Justificatifs', questions: 'Questions' }[dos] + ' » — de ' + (x.noms || x.expediteur || x.de || '?') + '.', 'Voir', function() { OUVRIR_BOITE_CR(dos, x.id); });
+};
 // Menu du compte (jumelage.js) : ce qui n'est pas du travail quotidien.
 window.JUMELAGE_MENU_APPLI = function() {
     return [

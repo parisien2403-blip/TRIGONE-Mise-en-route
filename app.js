@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 228;
+var APP_CODE_VERSION = 229;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3246,6 +3246,14 @@ function ENVOYER_ENVOI_DIRECT(i) {
 }
 function TERMINER_TRANSMISSION() {
     FERMER_MODALE();
+    // Message de fin : combien de demandes signées (et où elles sont parties), combien renvoyées au demandeur.
+    var dec = GET_A_VALIDER().filter(function(e) { return e.decision; }), refus = dec.filter(function(e) { return e.decision === 'REFUSEE'; }).length;
+    var n1 = dec.filter(function(e) { return e.decision !== 'REFUSEE' && NIVEAU_VALIDATION(e.d) === 1; }).length, n2 = dec.filter(function(e) { return e.decision !== 'REFUSEE' && NIVEAU_VALIDATION(e.d) === 2; }).length;
+    var pl = function(n, m) { return n + ' demande' + (n > 1 ? 's ' + m + 's' : ' ' + m); };
+    if (dec.length) MER_TOAST_PERSO = refus && !n1 && !n2 ? [refus > 1 ? refus + ' demandes refusées' : 'Demande refusée', 'Renvoyée' + (refus > 1 ? 's' : '') + ' au demandeur, rangée' + (refus > 1 ? 's' : '') + ' dans « Traités ».', 'Voir', null]
+        : [(n1 + n2 + refus > 1 ? pl(n1 + n2, 'signée') : n2 ? 'Demande validée' : 'Demande signée') + (refus ? ' · ' + refus + ' refusée' + (refus > 1 ? 's' : '') : ''),
+            'Partie' + (n1 + n2 > 1 ? 's' : '') + ' dans « Traités » — ' + (n1 && n2 ? 'chez le VALIDEUR 2 et l\'assistant Chorus DT.' : n2 ? 'transmise' + (n2 > 1 ? 's' : '') + ' à l\'assistant Chorus DT.' : 'maintenant chez le VALIDEUR 2.'), 'Voir', null];
+    if (MER_TOAST_PERSO) { MER_TOAST_PERSO[3] = function() { MER_DOSSIER.RECEPTION = 'traites'; SHOW_PAGE('RECEPTION'); }; setTimeout(function() { if (MER_TOAST_PERSO) { var p = MER_TOAST_PERSO; MER_TOAST_PERSO = null; MER_TOAST.apply(null, p); } }, 600); }
     // Seuls les envois du niveau traité passent en « traité » (la demande peut déjà être revenue au niveau suivant).
     if (window.JUMELAGE_BOITE_TRAITER_DEMANDES) [1, 2].forEach(function(n) {
         var ids = GET_A_VALIDER().filter(function(e) { return e.decision && NIVEAU_VALIDATION(e.d) === n; }).map(function(e) { return e.d.id; });
@@ -3651,46 +3659,46 @@ function TPL_ENVOI_RECU(x) {
         (x.n > 1 ? ' <span class="MER-RECU-NOUVEAU" style="background:#1a1a1a;">' + x.n + ' demandes</span>' : '') +
         '<div class="MER-PANIER-ITEM-TITRE" style="margin-top:6px;">' + ESC(x.noms || x.nom || 'Demande') + '</div>' +
         '<div class="MER-PANIER-ITEM-SUB">' + ESC([x.objet, x.lieu, x.dates].filter(Boolean).join(' · ')) + '</div>' +
-        (x.nature === 'question' || x.nature === 'reponse' ? '<div class="MER-QUESTION"><b>❓ ' + ESC(x.question) + '</b>' + (x.nature === 'reponse' ? '<span>💬 ' + ESC(x.reponse) + '</span>' : '') + '</div>' : '') +
+        (x.nature === 'question' || x.nature === 'reponse' ? '<div class="MER-QUESTION"><b>' + MER_BX_ICO('q') + '' + ESC(x.question) + '</b>' + (x.nature === 'reponse' ? '<span>' + MER_BX_ICO('rep') + '' + ESC(x.reponse) + '</span>' : '') + '</div>' : '') +
         (x.nature === 'collective' ? '<div class="MER-HINT" style="margin-top:4px;">Mission déjà renseignée par votre chef de mission : complétez votre identité, joignez vos justificatifs, puis envoyez à l\'assistant Chorus DT.</div>' : '') +
-        (x.nature === 'justif' ? (x.verifie ? '' : '<div class="MER-HINT" style="margin-top:4px; color:#b45309; font-weight:800;">⚠ À vérifier : expéditeur inconnu de TRIGONE. Gardez-le seulement s\'il est bien à vous.</div>') +
-            '<div class="MER-JUSTIF-PJ">' + (x.fichiers || []).map(function(f, i) { return '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_JUSTIF(\'' + x.id + '\', ' + i + ')">' + (/pdf/.test(f.type) ? '📄 ' : '🖼️ ') + ESC(f.nom) + '</button>'; }).join('') + '</div>' : '') +
-        (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">📎 ' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
-        (x.nature === 'cr' && x.equipe ? '<div class="MER-HINT" style="margin-top:4px;">👥 Mission collective (' + (x.roleEquipe === 'participant' ? 'participant' : 'chef de mission') + ') : suivi de l\'équipe dans le détail</div>' : '') +
+        (x.nature === 'justif' ? (x.verifie ? '' : '<div class="MER-HINT" style="margin-top:4px; color:#b45309; font-weight:800;">À vérifier : expéditeur inconnu de TRIGONE. Gardez-le seulement s\'il est bien à vous.</div>') +
+            '<div class="MER-JUSTIF-PJ">' + (x.fichiers || []).map(function(f, i) { return '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="VOIR_JUSTIF(\'' + x.id + '\', ' + i + ')">' + (/pdf/.test(f.type) ? '' + MER_BX_ICO('pdf') + '' : '' + MER_BX_ICO('photo') + '') + ESC(f.nom) + '</button>'; }).join('') + '</div>' : '') +
+        (x.nature === 'cr' && x.pieces ? '<div class="MER-HINT" style="margin-top:4px;">' + MER_BX_ICO('clip') + '' + x.pieces + ' fichier(s) : compte-rendu PDF' + (x.pieces > 1 ? ' et justificatifs' : '') + '</div>' : '') +
+        (x.nature === 'cr' && x.equipe ? '<div class="MER-HINT" style="margin-top:4px;">' + MER_BX_ICO('coll') + 'Mission collective (' + (x.roleEquipe === 'participant' ? 'participant' : 'chef de mission') + ') : suivi de l\'équipe dans le détail</div>' : '') +
         '<div class="MER-HINT" style="margin-top:4px;">Reçue de <b>' + ESC(x.de || '?') + '</b>' + (le ? ', le ' + ESC(le) : '') + (traite ? ' — traitée' + (x.traitePar ? ' par <b>' + ESC(x.traitePar) + '</b>' : '') : '') + '</div>' +
-        (x.groupe ? '<div class="MER-HINT MER-RECU-GROUPE">👥 Envoyée à tous les ' + ESC(MER_LIBELLE_GROUPE(x.groupe)) + ' : le premier qui la traite la range chez les autres.</div>' : '') +
+        (x.groupe ? '<div class="MER-HINT MER-RECU-GROUPE">' + MER_BX_ICO('coll') + 'Envoyée à tous les ' + ESC(MER_LIBELLE_GROUPE(x.groupe)) + ' : le premier qui la traite la range chez les autres.</div>' : '') +
         // Demande traitée par ce valideur : la suite de son circuit (VALIDEUR 2, assistant Chorus DT).
         (traite && x.nature !== 'cr' && x.nature !== 'refus' && x.nature !== 'collective' ? (x.ids || []).map(function(id, i) { return TPL_SUIVI_DEMANDE(id, x.ids.length > 1 ? 'Demande ' + (i + 1) : ''); }).join('') : '') +
         (cocher ? '' : '<div class="MER-VAL-ACTIONS">' +
             // Demande validée pour l'ASSIST CHORUS DT : aperçu et PDF directement depuis la ligne (contrôle fait avant).
             (x.nature === 'chorus'
-                ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', true)">👁 Aperçu</button>' +
-                  // PDF téléchargé : « ✔ Traité » apparaît, à toucher une fois l'ordre de mission créé dans Chorus DT.
+                ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', true)">' + MER_BX_ICO('oeil') + 'Aperçu</button>' +
+                  // PDF téléchargé : « Traité » apparaît, à toucher une fois l'ordre de mission créé dans Chorus DT.
                   (!traite && x.pdfFait
-                    ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">📄 Retélécharger</button>' +
-                      '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL MER-CHORUS-TRAITE" onclick="CHORUS_TRAITER(\'' + x.id + '\')">✔ Traité</button>'
-                    : '<button type="button" class="BTN BTN-' + (traite ? 'GHOST' : 'PRIMARY') + ' BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">📄 Télécharger le PDF</button>') +
+                    ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">' + MER_BX_ICO('pdf') + 'Retélécharger</button>' +
+                      '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL MER-CHORUS-TRAITE" onclick="CHORUS_TRAITER(\'' + x.id + '\')">' + MER_BX_ICO('ok') + 'Traité</button>'
+                    : '<button type="button" class="BTN BTN-' + (traite ? 'GHOST' : 'PRIMARY') + ' BTN-SMALL" onclick="CHORUS_PDF_RECU(\'' + x.id + '\', false)">' + MER_BX_ICO('pdf') + 'Télécharger le PDF</button>') +
                   '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="' + (traite ? 'ROUVRIR_RECU' : 'OUVRIR_RECU') + '(\'' + x.id + '\')">Contrôle détaillé</button>' +
-                  (traite ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="POSER_QUESTION(\'chorus\', \'' + x.id + '\')">❓ Question</button>') +
+                  (traite ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="POSER_QUESTION(\'chorus\', \'' + x.id + '\')">' + MER_BX_ICO('q') + 'Question</button>') +
                   ((x.ids || []).map(TPL_ETAT_QUESTION).join(''))
             // Compte-rendu : aperçu du PDF directement depuis la ligne, et détail (justificatifs).
             : x.nature === 'cr'
-                ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="APERCU_CR_RECU(\'' + x.id + '\')">👁 Aperçu</button>' +
-                  '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_CR_RECU(\'' + x.id + '\')">📎 Compte-rendu et justificatifs</button>'
+                ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="APERCU_CR_RECU(\'' + x.id + '\')">' + MER_BX_ICO('oeil') + 'Aperçu</button>' +
+                  '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_CR_RECU(\'' + x.id + '\')">' + MER_BX_ICO('clip') + 'Compte-rendu et justificatifs</button>'
             // Question : réponse en quelques mots ; réponse reçue : « Vu ».
-            : x.nature === 'question' && x.rappel && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">✔ Vu</button>'
-            : x.nature === 'question' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="REPONDRE_QUESTION(\'' + x.id + '\')">💬 Répondre</button>'
-            : x.nature === 'reponse' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">✔ Vu</button>'
+            : x.nature === 'question' && x.rappel && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">' + MER_BX_ICO('ok') + 'Vu</button>'
+            : x.nature === 'question' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="REPONDRE_QUESTION(\'' + x.id + '\')">' + MER_BX_ICO('rep') + 'Répondre</button>'
+            : x.nature === 'reponse' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">' + MER_BX_ICO('ok') + 'Vu</button>'
             : x.nature === 'question' || x.nature === 'reponse' ? ''
             // Justificatif reçu par mail : à garder (expéditeur inconnu), puis rangé une fois joint au compte-rendu.
             : x.nature === 'justif'
-                ? (x.verifie ? '' : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_JUSTIF_VERIFIE(\'' + x.id + '\'); RECU_REAFFICHER();">✔ C\'est bien à moi</button>') +
-                  (traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="JUMELAGE_BOITE_ROUVRIR(\'' + x.id + '\'); RECU_REAFFICHER();">↺ Remettre à joindre</button>'
-                      : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">✔ Rangé</button>')
+                ? (x.verifie ? '' : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_JUSTIF_VERIFIE(\'' + x.id + '\'); RECU_REAFFICHER();">' + MER_BX_ICO('ok') + 'C\'est bien à moi</button>') +
+                  (traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="JUMELAGE_BOITE_ROUVRIR(\'' + x.id + '\'); RECU_REAFFICHER();">' + MER_BX_ICO('maj') + 'Remettre à joindre</button>'
+                      : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">' + MER_BX_ICO('ok') + 'Rangé</button>')
             // Mission collective : le compte-rendu prérempli par le chef de mission s'ouvre dans Compte-rendu.
             : x.nature === 'collective'
-                ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_COLLECTIVE_RECU(\'' + x.id + '\')">📝 ' + nat[1] + '</button>'
-            : traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ROUVRIR_RECU(\'' + x.id + '\')">↺ Rouvrir</button>'
+                ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_COLLECTIVE_RECU(\'' + x.id + '\')">' + MER_BX_ICO('cr') + '' + nat[1] + '</button>'
+            : traite ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="ROUVRIR_RECU(\'' + x.id + '\')">' + MER_BX_ICO('maj') + 'Rouvrir</button>'
                 : '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_RECU(\'' + x.id + '\')">' + nat[1] + '</button>') +
             '<button type="button" class="BTN-DANGER-TEXT" onclick="SUPPRIMER_RECU(\'' + x.id + '\')">Supprimer</button>' +
         '</div>') + '</div></div>';
@@ -3786,7 +3794,7 @@ function MER_DOSSIER_DE(page, x) {
     var d = MER_DOSSIERS(page, [x]).filter(function(e) { return e.liste.length; })[0];
     return d ? d.id : null;
 }
-function OUVRIR_DOSSIER(page, id) { if (id === 'inscriptions' && window.JUMELAGE_INSCRIPTIONS_ACTUALISER) JUMELAGE_INSCRIPTIONS_ACTUALISER(true); MER_DOSSIER[page] = id; MER_RECU_SELECTION = null; MER_BIB_SELECTION = null; SHOW_PAGE(page); window.scrollTo(0, 0); }
+function OUVRIR_DOSSIER(page, id) { if (id === 'inscriptions' && window.JUMELAGE_INSCRIPTIONS_ACTUALISER) JUMELAGE_INSCRIPTIONS_ACTUALISER(true); if (MER_BX_SEL && MER_DOSSIER[page] !== id) { MER_BX_SEL[page] = null; MER_BX_Q[page] = ''; } MER_DOSSIER[page] = id; MER_RECU_SELECTION = null; MER_BIB_SELECTION = null; SHOW_PAGE(page); window.scrollTo(0, 0); }
 // Grille de dossiers : d = { id, titre, sous, nb (compteur), gris (compteur gris au lieu de rouge), det (HTML), nouveau }.
 function TPL_GRILLE_DOSSIERS(page, ds) {
     return '<div class="MER-DOSSIERS">' + ds.map(function(d) {
@@ -3842,18 +3850,188 @@ function TPL_INSCRIPTIONS(l) {
 }
 window.addEventListener('trigone-inscriptions', function() { if (typeof PAGE_ACTUELLE !== 'undefined' && PAGE_ACTUELLE === 'CHORUS' && MER_DOSSIER.CHORUS !== 'registre' && !MER_RESULTATS_VERIF) SHOW_PAGE('CHORUS'); });
 
+// ===================== BOÎTE FAÇON MESSAGERIE (Boîte de réception, espace Assist Chorus DT) =====================
+// Dossiers à gauche avec leur pastille (nombre à traiter), la liste des envois au milieu, la lecture à droite (PC) ;
+// téléphone : un niveau à la fois (dossiers → liste → lecture). La lecture reprend la carte de l'envoi et ses actions.
+var MER_BX_SEL = { RECEPTION: null, CHORUS: null }, MER_BX_Q = { RECEPTION: '', CHORUS: '' };
+var MER_BX_ICONES = {
+    signer: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/>', refus: '<path d="M9 14L4 9l5-5"/><path d="M4 9h11a5 5 0 0 1 0 10h-3"/>',
+    q: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 3.5 2.3c-.6.3-1 .9-1 1.6V14M12 17.5v.01"/>',
+    coll: '<circle cx="9" cy="8" r="3.2"/><path d="M3 19a6 6 0 0 1 12 0"/><circle cx="17" cy="9" r="2.5"/><path d="M16 14a5 5 0 0 1 5 5"/>',
+    justif: '<path d="M6 3h12v18l-3-2-3 2-3-2-3 2z"/><path d="M9 8h6M9 12h6M9 16h3"/>', ok: '<circle cx="12" cy="12" r="9"/><path d="M8 12.5l2.8 2.8L16.5 9.5"/>',
+    env: '<path d="M4 12l16-8-6 16-3-7z"/><path d="M11 13l9-9"/>',
+    boite: '<path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/>',
+    pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 14l2 2 4-4"/>',
+    cr: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/>',
+    compte: '<circle cx="10" cy="8" r="3.5"/><path d="M3.5 20a6.5 6.5 0 0 1 13 0"/><path d="M19 8v6M16 11h6"/>',
+    reg: '<rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M8.5 9.5h7M8.5 13h7M8.5 16.5h4.5"/>', loupe: '<circle cx="11" cy="11" r="6.5"/><path d="M16 16l4.5 4.5"/>',
+    oeil: '<path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/>', photo: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/>',
+    clip: '<path d="M21 11.5l-8.6 8.6a5 5 0 0 1-7.1-7.1l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7l-8.6 8.6a1.7 1.7 0 0 1-2.4-2.4l7.9-7.9"/>', rep: '<path d="M4 5h16v11H8l-4 4z"/>',
+    maj: '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>'
+};
+function MER_BX_ICO(n) { return '<svg class="MER-BX-ICO" viewBox="0 0 24 24" aria-hidden="true">' + (MER_BX_ICONES[n] || MER_BX_ICONES.boite) + '</svg>'; }
+var MER_BX_TAGS = { niveau1: 'À SIGNER', niveau2: 'À SIGNER · 2E NIVEAU', renvoi: 'RENVOYÉE', chorus: 'VALIDÉE', refus: 'REFUSÉE', cr: 'COMPTE-RENDU', collective: 'COLLECTIVE', question: 'QUESTION', reponse: 'RÉPONSE', justif: 'JUSTIFICATIF' };
+function MER_BX_QUAND(ms) {
+    if (!ms) return '';
+    var d = new Date(ms), auj = new Date(), hier = new Date(); hier.setDate(hier.getDate() - 1);
+    if (d.toDateString() === auj.toDateString()) return d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+    if (d.toDateString() === hier.toDateString()) return 'Hier';
+    return d.toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' });
+}
+function MER_BX_BOITE(page) {
+    var l = window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : [];
+    return page === 'CHORUS' ? l.filter(MER_EST_CHORUS) : l.filter(function(x) { return !MER_ROLE_CHORUS() || !MER_EST_CHORUS(x); });
+}
+// Mes demandes envoyées (bibliothèque) avec leur suivi : la plus récente d'abord.
+function MER_BX_MES_DEMANDES() {
+    return GET_BIBLIOTHEQUE().slice().sort(function(a, b) { return new Date(b.envoyeLe || 0) - new Date(a.envoyeLe || 0); }).slice(0, 60).map(function(e) {
+        var d0 = (e.demandes || [])[0] || {}, p0 = (d0.personnes || [])[0] || {}, s = window.JUMELAGE_SUIVI ? JUMELAGE_SUIVI()[d0.id] : null;
+        var etat = !s ? 'Envoyée' : { val1: 'Chez le VALIDEUR 1', val2: 'Chez le VALIDEUR 2', chorus: 'Chez l\'assistant Chorus DT', traite: 'Prise en charge par l\'assistant Chorus DT', refus: 'Refusée', abandon: 'Abandonnée' }[s.etape] || 'En cours';
+        return { id: 'bib-' + e.id, bib: e, suivi: true, nature: 'suivi', statut: s && (s.etape === 'traite' || s.etape === 'abandon') ? 'traite' : 'ouvert', le: e.envoyeLe ? new Date(e.envoyeLe).getTime() : 0,
+            noms: [p0.grade, p0.nom, p0.prenom].filter(Boolean).join(' ') + ((e.demandes || []).length > 1 ? ' (+ ' + (e.demandes.length - 1) + ')' : ''), objet: d0.objet || 'Demande de mise en route', etat: etat, refusee: !!s && s.etape === 'refus' };
+    });
+}
+// Dossiers : [ dossiers à traiter, dossiers de rangement ].
+function MER_BX_DOSSIERS(page) {
+    var l = MER_BX_BOITE(page), ds = MER_DOSSIERS(page, l);
+    var ic = { signer: 'signer', refus: 'refus', collective: 'coll', justif: 'justif', questions: 'q', autres: 'boite', demandes: 'pdf', cr: 'cr', inscriptions: 'compte' };
+    var titres = { demandes: 'Demandes validées', cr: 'Comptes-rendus reçus', inscriptions: 'Créations de compte', collective: 'Missions collectives' };
+    var haut = ds.filter(function(d) { return d.id !== 'signer' || d.nb || MER_EST_VALIDEUR(); }).map(function(d) {
+        return { id: d.id, titre: titres[d.id] || d.titre.replace(' — à corriger', ' à corriger'), ic: ic[d.id] || 'boite', items: d.aTraiter, nb: d.nb, nouveau: d.nouveau, inscriptions: d.inscriptions, aide: d.aide };
+    });
+    var traites = l.filter(function(x) { return x.statut === 'traite'; }).sort(function(a, b) { return (b.traiteLe || b.le || 0) - (a.traiteLe || a.le || 0); });
+    var bas = [{ id: 'traites', titre: 'Traités', ic: 'ok', items: traites, nb: traites.length, gris: true, aide: 'Les envois signés, refusés, téléchargés ou rangés. « ↺ Rouvrir » les remet à traiter.' }];
+    if (page === 'RECEPTION') { var md = MER_BX_MES_DEMANDES(); bas.push({ id: 'suivi', titre: 'Mes demandes (suivi)', ic: 'env', items: md, nb: md.filter(function(x) { return x.statut !== 'traite'; }).length, gris: true, aide: 'Où en sont les demandes que vous avez envoyées.' }); }
+    if (page === 'CHORUS') {
+        bas.unshift({ id: 'registre', titre: 'Registre des OMR', ic: 'reg', lien: 'OUVRIR_REGISTRE(\'tout\')', nb: MER_REGISTRE_FILTRES().tout.length, gris: true });
+        bas.push({ id: 'pdf', titre: 'Contrôler un PDF', ic: 'loupe', fichier: true });
+    }
+    return [haut, bas];
+}
+function TPL_BX_DOSSIERS(page, groupes, dId) {
+    var titre = page === 'CHORUS' ? 'Assist Chorus DT' : 'Boîte de réception';
+    return '<nav class="MER-BX-DOSSIERS" aria-label="Dossiers"><div class="MER-BX-DT">' + titre + '</div>' + groupes.map(function(g, i) {
+        return (i ? '<div class="MER-BX-SEP"></div>' : '') + g.map(function(d) {
+            var nb = d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '';
+            var corps = '<span class="MER-BX-DIC">' + MER_BX_ICO(d.ic) + '</span><span class="MER-BX-DTXT">' + ESC(d.titre) + '</span>' + nb + '<span class="MER-BX-CHEV" aria-hidden="true">›</span>';
+            var cls = 'MER-DOSSIER MER-BX-D' + (d.id === dId ? ' on' : '') + (d.nb ? '' : ' vide') + (d.nouveau ? ' nouveau' : '');
+            if (d.fichier) return '<label class="' + cls + '" data-dossier="' + d.id + '">' + corps + '<input type="file" accept=".pdf,application/pdf" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
+            return '<button type="button" class="' + cls + '" data-dossier="' + d.id + '" onclick="' + (d.lien || 'OUVRIR_DOSSIER(\'' + page + '\', \'' + d.id + '\')') + '">' + corps + '</button>';
+        }).join('');
+    }).join('') + '</nav>';
+}
+function MER_BX_FILTRE(page, items) {
+    var q = (MER_BX_Q[page] || '').trim().toLowerCase();
+    return !q ? items : items.filter(function(x) { return [x.noms, x.nom, x.objet, x.lieu, x.dates, x.de, x.omr, (x.registre || []).map(function(r) { return r.omr; }).join(' ')].join(' ').toLowerCase().indexOf(q) >= 0; });
+}
+function TPL_BX_LIGNE(page, x, sel) {
+    var traite = x.statut === 'traite';
+    var l3 = x.suivi ? x.etat : traite ? 'Traité' + (x.traitePar ? ' par ' + x.traitePar : '') : [x.dates, x.lieu].filter(Boolean).join(' · ') || (x.nature === 'justif' ? ((x.fichiers || []).length || 1) + ' pièce(s) jointe(s)' : '');
+    return '<button type="button" class="MER-BX-LIGNE' + (x.statut === 'nouveau' ? ' nl' : '') + (sel ? ' on' : '') + (x.refusee ? ' refus' : '') + '" data-id="' + ESC(x.id) + '" onclick="MER_BX_OUVRIR(\'' + page + '\', \'' + ESC(x.id) + '\')">' +
+        '<span class="MER-BX-PT" aria-hidden="true"></span><span class="MER-BX-C"><span class="l1"><b>' + ESC(x.noms || x.expediteur || x.de || x.nom || 'Envoi') + '</b><small>' + MER_BX_QUAND(x.le) + '</small></span>' +
+        '<span class="l2">' + (x.suivi ? '' : '<i class="MER-BX-TAG">' + (MER_BX_TAGS[x.nature] || 'ENVOI') + '</i>') + ESC(x.objet || x.nom || '') + (x.n > 1 ? ' · ' + x.n + ' demandes' : '') + '</span>' +
+        (l3 ? '<span class="l3">' + ESC(l3) + '</span>' : '') + '</span></button>';
+}
+function TPL_BX_LISTE(page, d, pc) {
+    var tete = '<div class="MER-BX-LT">' + (pc ? '' : '<button type="button" class="MER-BX-RETOUR" onclick="OUVRIR_DOSSIER(\'' + page + '\', null)">‹ ' + (page === 'CHORUS' ? 'Assist Chorus DT' : 'Boîte') + '</button>') +
+        '<div class="MER-BX-LTITRE"><b>' + ESC(d.titre) + '</b>' + (d.nb && !d.gris ? '<span class="MER-DOSSIER-NB">' + d.nb + '</span>' : '') + '</div>' +
+        (d.aide ? '<small>' + d.aide + '</small>' : '') + '</div>';
+    if (d.inscriptions) return '<div class="MER-BX-LISTE">' + tete + '<div class="MER-BX-INSCR">' + TPL_INSCRIPTIONS(d.items) + '</div></div>';
+    var items = MER_BX_FILTRE(page, d.items);
+    return '<div class="MER-BX-LISTE">' + tete +
+        (d.items.length > 3 || MER_BX_Q[page] ? '<label class="MER-BX-RECH">' + MER_BX_ICO('loupe') + '<input type="search" placeholder="Rechercher un nom, un objet, un n° OMR…" value="' + ESC(MER_BX_Q[page]) + '" oninput="MER_BX_CHERCHER(\'' + page + '\', this.value)"></label>' : '') +
+        '<div class="MER-BX-LIGNES" id="MER-BX-LIGNES-' + page + '">' + TPL_BX_LIGNES(page, items) + '</div></div>';
+}
+function TPL_BX_LIGNES(page, items) {
+    return items.length ? items.map(function(x) { return TPL_BX_LIGNE(page, x, x.id === MER_BX_SEL[page]); }).join('')
+        : '<div class="MER-BX-VIDE">' + (MER_BX_Q[page] ? 'Aucun envoi pour cette recherche.' : 'Rien dans ce dossier.') + '</div>';
+}
+function MER_BX_CHERCHER(page, v) {
+    MER_BX_Q[page] = v;
+    var d = MER_BX_DOSSIER_COURANT(page), z = document.getElementById('MER-BX-LIGNES-' + page);
+    if (d && z) z.innerHTML = TPL_BX_LIGNES(page, MER_BX_FILTRE(page, d.items));
+}
+function MER_BX_DOSSIER_COURANT(page) {
+    var g = MER_BX_DOSSIERS(page);
+    return g[0].concat(g[1]).filter(function(d) { return d.id === MER_DOSSIER[page]; })[0] || null;
+}
+function MER_BX_OUVRIR(page, id) {
+    MER_BX_SEL[page] = id;
+    var x = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(y) { return y.id === id; })[0];
+    if (x && x.statut === 'nouveau' && window.JUMELAGE_BOITE_MARQUER) JUMELAGE_BOITE_MARQUER(id, 'ouvert');
+    SHOW_PAGE(page);
+}
+function MER_BX_FERMER(page) { MER_BX_SEL[page] = null; SHOW_PAGE(page); }
+function TPL_BX_LECTURE(page, d, pc) {
+    var x = d.items.filter(function(y) { return y.id === MER_BX_SEL[page]; })[0];
+    if (!x) return pc ? '<div class="MER-BX-VIDE grand">' + MER_BX_ICO(d.ic) + '<span>Choisissez un envoi dans la liste.</span></div>' : '';
+    var retour = pc ? '' : '<button type="button" class="MER-BX-RETOUR" onclick="MER_BX_FERMER(\'' + page + '\')">‹ ' + ESC(d.titre) + '</button>';
+    var le = x.le ? new Date(x.le).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' }) : '';
+    if (x.suivi) {
+        return '<div class="MER-BX-LECTURE">' + retour + '<h2>' + ESC(x.objet) + '</h2><div class="MER-BX-DE">' + ESC(x.noms) + (le ? ' · envoyée le ' + ESC(le) : '') + '</div>' +
+            (x.bib.demandes || []).map(function(dm, i) { return TPL_SUIVI_DEMANDE(dm.id, x.bib.demandes.length > 1 ? (dm.objet || 'Demande ' + (i + 1)) : ''); }).join('') +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-top:12px;" onclick="SHOW_PAGE(\'BIBLIOTHEQUE\')">Voir dans la Bibliothèque ›</button></div>';
+    }
+    return '<div class="MER-BX-LECTURE">' + retour + '<h2>' + ESC(x.objet || x.noms || x.nom || 'Envoi') + '</h2>' +
+        '<div class="MER-BX-DE">De <b>' + ESC(x.noms || x.expediteur || x.de || '?') + '</b>' + (x.de && x.noms ? ' (' + ESC(x.de) + ')' : '') + (le ? ' · ' + ESC(le) : '') + '</div>' + TPL_ENVOI_RECU(x) + '</div>';
+}
+function TPL_BX(page) {
+    var pc = EST_PC(), groupes = MER_BX_DOSSIERS(page), tous = groupes[0].concat(groupes[1]);
+    var d = tous.filter(function(x) { return x.id === MER_DOSSIER[page] && !x.lien && !x.fichier; })[0] || null;
+    // PC : un dossier toujours ouvert (le premier qui a quelque chose à traiter), et son premier envoi à la lecture.
+    if (pc && !d) { d = groupes[0].filter(function(x) { return x.nb; })[0] || groupes[0][0] || null; if (d) MER_DOSSIER[page] = d.id; }
+    if (MER_DOSSIER[page] && !d) MER_DOSSIER[page] = null;
+    if (d && MER_BX_SEL[page] && !d.items.some(function(y) { return y.id === MER_BX_SEL[page]; })) MER_BX_SEL[page] = null;
+    if (pc && d && !d.inscriptions && !MER_BX_SEL[page] && d.items.length) MER_BX_SEL[page] = MER_BX_FILTRE(page, d.items).concat(d.items)[0].id;
+    var colD = TPL_BX_DOSSIERS(page, groupes, d && d.id);
+    if (pc) return '<div class="MER-BX pc">' + colD + '<div class="MER-BX-COL2">' + (d ? TPL_BX_LISTE(page, d, true) : '') + '</div>' +
+        '<div class="MER-BX-COL3">' + (d && !d.inscriptions ? TPL_BX_LECTURE(page, d, true) : d ? '<div class="MER-BX-VIDE grand">' + MER_BX_ICO('compte') + '<span>Validez ou refusez chaque inscription dans la liste.</span></div>' : '') + '</div></div>';
+    if (!d) return '<div class="MER-BX tel">' + colD + '</div>';
+    if (MER_BX_SEL[page]) return '<div class="MER-BX tel">' + TPL_BX_LECTURE(page, d, false) + '</div>';
+    return '<div class="MER-BX tel">' + TPL_BX_LISTE(page, d, false) + '</div>';
+}
+// Message en bas de l'écran quand un envoi change de dossier : ce qui s'est passé, où il est parti, où il en est.
+var MER_TOAST_MIN = null;
+function MER_TOAST(titre, texte, bouton, action) {
+    var t = document.getElementById('MER-TOAST'); if (t) t.remove();
+    clearTimeout(MER_TOAST_MIN);
+    t = document.createElement('div'); t.id = 'MER-TOAST'; t.className = 'MER-TOAST'; t.setAttribute('role', 'status');
+    t.innerHTML = '<span class="MER-TOAST-IC"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/></svg></span><div><b>' + ESC(titre) + '</b><span>' + ESC(texte) + '</span></div>' +
+        (bouton ? '<button type="button">' + ESC(bouton) + '</button>' : '');
+    if (bouton) t.querySelector('button').onclick = function() { t.remove(); if (action) action(); };
+    document.body.appendChild(t);
+    requestAnimationFrame(function() { t.classList.add('vu'); });
+    MER_TOAST_MIN = setTimeout(function() { t.classList.remove('vu'); setTimeout(function() { t.remove(); }, 300); }, bouton ? 6500 : 4500);
+}
+// Message choisi d'après la nature de l'envoi rangé (les cas particuliers posent leur message eux-mêmes juste avant).
+var MER_TOAST_PERSO = null;
+function MER_TOAST_RANGE(items) {
+    if (MER_TOAST_PERSO) { var p = MER_TOAST_PERSO; MER_TOAST_PERSO = null; MER_TOAST.apply(null, p); return; }
+    var x = items[0]; if (!x) return;
+    var voir = function() { MER_DOSSIER[PAGE_ACTUELLE === 'CHORUS' ? 'CHORUS' : 'RECEPTION'] = 'traites'; MER_BX_SEL[PAGE_ACTUELLE === 'CHORUS' ? 'CHORUS' : 'RECEPTION'] = x.id; SHOW_PAGE(PAGE_ACTUELLE === 'CHORUS' ? 'CHORUS' : 'RECEPTION'); };
+    var m = {
+        niveau1: ['Demande signée', 'Partie dans « Traités » — maintenant chez le VALIDEUR 2.'], renvoi: ['Demande signée', 'Partie dans « Traités » — maintenant chez le VALIDEUR 2.'],
+        niveau2: ['Demande validée', 'Partie dans « Traités » — transmise à l\'assistant Chorus DT.'],
+        chorus: ['Demande traitée', 'Rangée dans « Traités »' + (x.omr ? ' — OMR N°' + x.omr + ' au registre.' : ' — le demandeur est prévenu.')],
+        cr: ['Compte-rendu traité', 'Rangé dans « Traités » — le missionnaire est prévenu.'],
+        justif: ['Justificatif rangé', 'Rangé dans « Traités ».'], question: ['Question traitée', 'Rangée dans « Traités ».'], reponse: ['Réponse lue', 'Rangée dans « Traités ».'],
+        collective: ['Compte-rendu prérempli ouvert', 'Retiré de « Missions collectives », rangé dans « Traités ».'],
+        refus: ['Demande à corriger', 'Retirée de « Refusées » — à corriger dans Documents.']
+    }[x.nature] || ['Rangé', 'Envoi rangé dans « Traités ».'];
+    MER_TOAST(items.length > 1 ? m[0] + ' (' + items.length + ')' : m[0], m[1], 'Voir', voir);
+}
+window.addEventListener('trigone-range', function(e) { try { MER_TOAST_RANGE((e.detail && e.detail.items) || []); } catch (x) {} });
+
 function TPL_RECEPTION() {
-    var compte = MER_COMPTE_ACTIF();
+    var compte = MER_COMPTE_ACTIF(), pc = EST_PC();
     if (compte && window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
-    var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []).filter(function(x) { return !MER_ROLE_CHORUS() || !MER_EST_CHORUS(x); });
-    return '<div class="CARD"><h2>Boîte de réception</h2>' +
-        (compte
-            ? '<p class="MER-HINT" style="margin:4px 0 12px;">Envois reçus directement dans TRIGONE, à l\'adresse <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>, rangés par dossier. Le chiffre rouge : ce qui reste à traiter.</p>' +
-              '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:14px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>'
-            : '<p class="MER-HINT" style="margin:4px 0 12px;">Activez votre compte TRIGONE pour envoyer vos demandes et recevoir ici celles qui vous reviennent.</p>' +
-              '<button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button>') +
-        (compte ? TPL_DOSSIERS('RECEPTION', l) : '') +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+    if (!compte) return '<div class="CARD"><h2>Boîte de réception</h2><p class="MER-HINT" style="margin:4px 0 12px;">Activez votre compte TRIGONE pour envoyer vos demandes et recevoir ici celles qui vous reviennent.</p>' +
+        '<button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button><button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
+    var niveau = !pc && MER_DOSSIER.RECEPTION ? 'dedans' : '';
+    return '<div class="CARD MER-BX-CARTE' + (pc ? ' PC-LARGE' : '') + '">' +
+        (niveau ? '' : '<div class="MER-BX-ENTETE"><div><h2>Boîte de réception</h2><small>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</small></div>' +
+            '<button type="button" class="MER-BX-RELEVER" onclick="ACTUALISER_RECEPTION(this)" title="Relever maintenant">' + MER_BX_ICO('maj') + '<span>Relever</span></button></div>') +
+        TPL_BX('RECEPTION') + '</div>';
 }
 // ===================== ESPACE ASSISTANT CHORUS DT =====================
 // Ouvert depuis le logo central de l'écran de choix (rôle activé dans les Réglages avec son code) : sa boîte de
@@ -3862,20 +4040,19 @@ var MER_ESPACE_CHORUS = false;
 function MER_ADMIN() { return !!(window.JUMELAGE_ROLE_ADMIN && JUMELAGE_ROLE_ADMIN()); }
 window.MER_OUVRIR_CHORUS = function() { SHOW_PAGE('CHORUS'); };
 function TPL_CHORUS() {
-    var compte = MER_COMPTE_ACTIF();
+    var compte = MER_COMPTE_ACTIF(), pc = EST_PC();
     if (compte && window.JUMELAGE_INSCRIPTIONS_ACTUALISER) setTimeout(function() { JUMELAGE_INSCRIPTIONS_ACTUALISER(); }, 0);
-    var l = (window.JUMELAGE_BOITE_LISTE ? JUMELAGE_BOITE_LISTE() : []);
-    l = l.filter(MER_EST_CHORUS);
-    // Résultat d'un « Contrôle détaillé » : en tête de page, bien visible (fermé par « Fermer le contrôle »).
+    var logo = '<img class="MER-CHORUS-LOGO JUM-LOGO-CHOIX" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT" title="Revenir à l\'écran de choix" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">' +
+        (MER_ADMIN() ? '<div class="MER-CHORUS-ADMIN">ADMINISTRATEUR</div>' : '');
+    // Registre des OMR : sa page pleine largeur, comme avant.
+    if (MER_DOSSIER.CHORUS === 'registre') return (MER_RESULTATS_VERIF ? TPL_VERIFIER() : '') + '<div class="CARD MER-CHORUS-TETE PC-LARGE">' + logo + TPL_REGISTRE() + '</div>';
+    var accueil = !MER_DOSSIER.CHORUS;
     return (MER_RESULTATS_VERIF ? TPL_VERIFIER() : '') +
-        '<div class="CARD MER-CHORUS-TETE' + (MER_DOSSIER.CHORUS === 'registre' ? ' PC-LARGE' : '') + '"><img class="MER-CHORUS-LOGO JUM-LOGO-CHOIX" src="logo_chorus.webp" alt="TRIGONE Assist Chorus-DT" title="Revenir à l\'écran de choix" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">' +
-        (MER_ADMIN() ? '<div class="MER-CHORUS-ADMIN">ADMINISTRATEUR</div>' : '') +
-        (compte ? '<p class="MER-HINT" style="margin:0 0 10px;">Envois reçus à <b>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</b>, chiffrés, directement dans TRIGONE.</p>' +
-            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-bottom:12px;" onclick="ACTUALISER_RECEPTION(this)">🔄 Relever maintenant</button>' +
-            (MER_DOSSIER.CHORUS === 'registre' ? TPL_REGISTRE() : (MER_DOSSIER.CHORUS ? '' : TPL_BOUTON_REGISTRE()) + TPL_DOSSIERS('CHORUS', l))
-          : '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes validées et les comptes-rendus de mission.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button>') +
-        '</div>' + (MER_RESULTATS_VERIF || MER_DOSSIER.CHORUS ? '' : TPL_VERIFIER()) +
-        '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">← Écran de choix</button>';
+        '<div class="CARD MER-BX-CARTE MER-CHORUS-TETE' + (pc ? ' PC-LARGE' : '') + '">' + (!pc && accueil ? logo : '') +
+        (compte ? '<div class="MER-BX-ENTETE"' + (!pc && !accueil ? ' style="display:none;"' : '') + '><div>' + (pc ? '<h2>Assist Chorus DT</h2>' : '') + '<small>Envois reçus à ' + ESC(JUMELAGE_COMPTE_MAIL()) + ', chiffrés</small></div>' +
+            '<button type="button" class="MER-BX-RELEVER" onclick="ACTUALISER_RECEPTION(this)" title="Relever maintenant">' + MER_BX_ICO('maj') + '<span>Relever</span></button></div>' + TPL_BX('CHORUS')
+          : logo + '<p class="MER-HINT">Activez votre compte TRIGONE pour recevoir ici les demandes validées et les comptes-rendus de mission.</p><button type="button" class="BTN BTN-PRIMARY" onclick="JUMELAGE_COMPTE()">Se connecter à TRIGONE</button>') +
+        '</div>' + (!pc && accueil ? '<button type="button" class="BTN BTN-SECONDARY" onclick="MER_RESULTATS_VERIF = null; JUMELAGE_CHOIX()">← Écran de choix</button>' : '');
 }
 // ===================== REGISTRE OMR (assistant Chorus DT) =====================
 // Onglet « Mises en route » : une ligne par demande validée reçue, dans l'ordre des n° OMR (date d'envoi, objet, code FD,
@@ -4799,7 +4976,11 @@ function OUVRIR_COLLECTIVE_RECU(id) {
 }
 function SUPPRIMER_RECU(id) {
     MSG_CONFIRM('Supprimer de la boîte ?', 'Cet envoi sera retiré de votre boîte de réception sur cet appareil. S\'il n\'a pas été traité, demandez à l\'expéditeur de le renvoyer.',
-        'Supprimer', function() { JUMELAGE_BOITE_SUPPRIMER(id).then(function() { if (PAGE_ACTUELLE === 'RECEPTION') SHOW_PAGE('RECEPTION'); }); }, '⚠️', 'mascotte-poubelle.webp', true);
+        'Supprimer', function() { JUMELAGE_BOITE_SUPPRIMER(id).then(function() {
+            MER_BX_SEL.RECEPTION = MER_BX_SEL.CHORUS = null;
+            if (PAGE_ACTUELLE === 'RECEPTION' || PAGE_ACTUELLE === 'CHORUS') SHOW_PAGE(PAGE_ACTUELLE);
+            MER_TOAST('Supprimé', 'Retiré de votre boîte de réception sur cet appareil.');
+        }); }, '⚠️', 'mascotte-poubelle.webp', true);
 }
 // Nouveaux envois relevés : bandeau (touchable) et pages à jour.
 window.JUMELAGE_APRES_RELEVE = function(nouveaux) {

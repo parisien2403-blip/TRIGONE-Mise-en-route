@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 181,
+  "build": 182,
   "notifier": true,
-  "message": "Votre compte passe à votre adresse TRIGONE (prénom.nom@trigone-app.com) ; TRIGONE n'envoie plus aucun mail."
+  "message": "TRIGONE V181 : nouvelle boîte façon messagerie (dossiers, pastilles, lecture) dans les 3 applis."
 }
