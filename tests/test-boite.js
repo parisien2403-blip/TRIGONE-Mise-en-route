@@ -94,6 +94,7 @@ module.exports = async function() {
     async function ouvrirBoite(p) {
         await p.evaluate(() => { MER_DOSSIER.RECEPTION = null; SHOW_PAGE('RECEPTION'); }); await attendre(400);
         await p.locator('.MER-DOSSIER:not(.vide)').first().click(); await attendre(400);
+        await p.locator('.MER-BX-LIGNE').first().click(); await attendre(400);
         await p.locator('.MER-RECU .BTN-PRIMARY').first().click(); await attendre(2500);
     }
 
@@ -336,6 +337,7 @@ module.exports = async function() {
     verifier(await c.evaluate(() => { const d = document.querySelector('.MER-DOSSIER[data-dossier="demandes"]'); return !!d && d.querySelector('.MER-DOSSIER-NB').textContent === '1' && !!document.querySelector('.MER-DOSSIER[data-dossier="cr"]'); }),
         'Chorus DT : dossiers jaunes « Demandes de mise en route » (1 à traiter) et « Comptes-rendus de mission »');
     await c.click('.MER-DOSSIER[data-dossier="demandes"]'); await attendre(500);
+    await c.locator('.MER-BX-LIGNE').first().click(); await attendre(500);
     // Sur la ligne de la demande reçue : aperçu et PDF directement (contrôle fait avant).
     verifier(await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Aperçu")').count() === 1, 'Chorus DT : bouton « Aperçu » sur la ligne de la demande reçue');
     const telechargement = c.waitForEvent('download', { timeout: 20000 });
@@ -354,14 +356,17 @@ module.exports = async function() {
     const sv1 = Object.values(await suivi(v1)), sv2 = Object.values(await suivi(v2));
     verifier(sv1.some(x => x.intervenant && x.etape === 'traite') && sv2.some(x => x.intervenant && x.etape === 'traite'),
         'suivi : le VALIDEUR 1 et le VALIDEUR 2 voient la prise en charge par l\'assistant Chorus DT');
-    await v2.evaluate(() => OUVRIR_DOSSIER('RECEPTION', 'signer')); await attendre(1200);
-    await v2.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
-    verifier(await v2.locator('.MER-RECU .MER-SUIVI-TXT:has-text("Traitée par l\'assistant Chorus DT")').count() >= 1,
+    await v2.evaluate(() => OUVRIR_DOSSIER('RECEPTION', 'traites')); await attendre(1200);
+    let friseV2 = 0;
+    const nbT = await v2.locator('.MER-BX-LIGNE').count();
+    for (let i = 0; i < nbT && !friseV2; i++) { await v2.evaluate(() => MER_BX_FERMER('RECEPTION')); await attendre(300); await v2.evaluate(i => { const l = document.querySelectorAll('.MER-BX-LIGNE')[i]; if (l) l.click(); }, i); await attendre(400); friseV2 = await v2.locator('.MER-RECU .MER-SUIVI-TXT:has-text("Traitée par l\'assistant Chorus DT")').count(); }
+    verifier(friseV2 >= 1,
         'Boîte de réception du VALIDEUR 2 : frise de suivi sur la demande traitée');
     await m.evaluate(() => OUVRIR_DOSSIER('BIBLIOTHEQUE', 'traitees')); await attendre(1500);
     verifier(await m.locator('.MER-SUIVI-TXT:has-text("Traitée par l\'assistant Chorus DT")').count() >= 1 && await m.locator('.MER-SUIVI-PT.fait').count() >= 4,
         'Bibliothèque : frise de suivi Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT');
-    await c.evaluate(() => document.querySelectorAll('details.MER-RECU-TRAITES').forEach(d => { d.open = true; }));
+    await c.evaluate(() => OUVRIR_DOSSIER('CHORUS', 'traites')); await attendre(500);
+    await c.evaluate(() => { const x = JUMELAGE_BOITE_LISTE().find(y => y.nature === 'chorus'); document.querySelector('.MER-BX-LIGNE[data-id="' + x.id + '"]').click(); }); await attendre(500);
     await c.locator('.MER-RECU:has(.MER-RECU-chorus) button:has-text("Contrôle détaillé")').first().click(); await attendre(2500);
     verifier(await c.evaluate(() => scrollY) === 0 && (await c.textContent('.CARD h2')) === 'Contrôle détaillé', 'Chorus DT : « Contrôle détaillé » s\'affiche en haut de la page');
     const cartes = await c.locator('.MER-PANIER-ITEM').allInnerTexts();
@@ -399,6 +404,7 @@ module.exports = async function() {
     await c.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-PRES,.JUM-NOUV').forEach(x => x.remove()); document.documentElement.classList.remove('jum-choix'); OUVRIR_DOSSIER('CHORUS', 'cr'); }); await attendre(600);
     verifier((await c.textContent('#PAGE-STAGE')).includes('ADJ BOUQUET GP'), 'Chorus DT : le compte-rendu arrive dans la section « Comptes-rendus de mission »');
     verifier(Object.values(await suivi(m)).some(x => x.genre === 'cr' && x.etape === 'recu'), 'suivi : compte-rendu « récupéré par l\'assistant Chorus DT » (le missionnaire est prévenu)');
+    await c.locator('.MER-BX-LIGNE').first().click(); await attendre(500);
     await c.locator('.MER-RECU:has(.MER-RECU-cr) .BTN-PRIMARY').click(); await attendre(1200);
     // Lignes : « PDF complet » (compte-rendu + justificatifs), puis les fichiers séparés.
     const dlTout = c.waitForEvent('download');

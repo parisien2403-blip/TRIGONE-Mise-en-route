@@ -1190,7 +1190,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 181, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 182, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3880,10 +3880,13 @@
         }, function() { etatsEnCours = null; return etatsAppliquer(); });
         return etatsEnCours;
     };
+    // Envoi rangé dans « Traités » sur cet appareil : l'appli affiche où il est parti (message en bas de l'écran).
+    function signalerRange(items) { if (items.length) try { window.dispatchEvent(new CustomEvent('trigone-range', { detail: { items: items } })); } catch (e) {} }
     window.JUMELAGE_BOITE_MARQUER = function(id, statut) {
-        var l = boiteLire(), cr = false, traite = false;
-        l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') { x.statut = statut; if (statut === 'traite') { traite = true; x.traiteLe = Date.now(); if (x.nature === 'cr') cr = true; } } });
+        var l = boiteLire(), cr = false, traite = false, ranges = [];
+        l.forEach(function(x) { if (x.id === id && x.statut !== 'traite') { x.statut = statut; if (statut === 'traite') { traite = true; x.traiteLe = Date.now(); ranges.push(x); if (x.nature === 'cr') cr = true; } } });
         boiteEcrire(l);
+        signalerRange(ranges);
         if (traite) etatPartager(id, 'traite');
         // Compte-rendu traité par l'assistant Chorus DT : le missionnaire est prévenu.
         if (cr) suiviTraite({ envois: [id] });
@@ -3900,13 +3903,14 @@
         if (!ids || !ids.length) return;
         // Demandes traitées par l'assistant Chorus DT (PDF produit) : le demandeur est prévenu.
         if (natures && natures.indexOf('chorus') >= 0) suiviTraite({ refs: ids });
-        var l = boiteLire(), change = false, partages = [];
+        var l = boiteLire(), change = false, partages = [], ranges = [];
         l.forEach(function(x) {
             if (natures && natures.indexOf(x.nature) < 0) return;
-            if (x.statut !== 'traite' && (x.ids || []).length && x.ids.every(function(i) { return ids.indexOf(i) >= 0; })) { x.statut = 'traite'; x.traiteLe = Date.now(); change = true; partages.push(x.id); }
+            if (x.statut !== 'traite' && (x.ids || []).length && x.ids.every(function(i) { return ids.indexOf(i) >= 0; })) { x.statut = 'traite'; x.traiteLe = Date.now(); change = true; ranges.push(x); partages.push(x.id); }
         });
         if (change) boiteEcrire(l);
         partages.forEach(function(id) { etatPartager(id, 'traite'); });
+        signalerRange(ranges);
     };
     // Assistant Chorus DT : PDF final téléchargé, l'envoi attend son « ✔ Traité » (l'ordre de mission créé dans Chorus DT).
     window.JUMELAGE_BOITE_PDF_FAIT = function(id) {

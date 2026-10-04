@@ -57,8 +57,12 @@ module.exports = async function() {
     verifier(/^%PDF-1\.4/.test(octets), 'pièce jointe déchiffrée intacte sur l\'appareil');
     // Boîte de réception › Justificatifs.
     await m.evaluate(() => { SHOW_PAGE('RECEPTION'); OUVRIR_DOSSIER('RECEPTION', 'justif'); }); await attendre(600);
-    const page = await m.evaluate(() => document.querySelector('.CARD').textContent);
-    verifier(/Justificatifs/.test(page) && page.indexOf(adr) >= 0 && /À vérifier/.test(page) && /Mon_Billet_Paris\.pdf/.test(page), 'dossier Justificatifs : adresse, pièces, « à vérifier »');
+    const liste = await m.evaluate(() => document.querySelector('.CARD').textContent);
+    await m.evaluate(id => MER_BX_OUVRIR('RECEPTION', id), hotel.id); await attendre(600);
+    const lHotel = await m.evaluate(() => document.querySelector('.CARD').textContent);
+    await m.evaluate(id => { MER_BX_SEL.RECEPTION = null; MER_BX_OUVRIR('RECEPTION', id); }, sncf.id); await attendre(600);
+    const lSncf = await m.evaluate(() => document.querySelector('.CARD').textContent);
+    verifier(/Justificatifs/.test(liste) && liste.indexOf(adr) >= 0 && /À vérifier/.test(lHotel) && /Mon_Billet_Paris\.pdf/.test(lSncf), 'dossier Justificatifs : adresse, pièces, « à vérifier »');
     await m.evaluate(id => { JUMELAGE_JUSTIF_VERIFIE(id); }, hotel.id);
     verifier(await m.evaluate(id => JUMELAGE_BOITE_LISTE().find(x => x.id === id).verifie, hotel.id), '« C\'est bien à moi » : justificatif gardé');
     // Envoi du compte-rendu : « Depuis ma boîte TRIGONE ».

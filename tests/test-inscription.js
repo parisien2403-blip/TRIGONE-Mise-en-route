@@ -52,9 +52,9 @@ module.exports = async function() {
     const n2 = await page();
     const mail2 = await inscrire(n2, 'Hugo');
     // Espace Assist Chorus DT : dossier jaune « Demandes de création de compte ».
-    await a.evaluate(() => { document.querySelectorAll('.JUM-GC-FOND').forEach(x => x.remove()); localStorage.setItem('trigone_role_admin', '4RIISC'); MER_OUVRIR_CHORUS(); }); await attendre(2500);
+    await a.evaluate(() => { document.querySelectorAll('.JUM-GC-FOND').forEach(x => x.remove()); localStorage.setItem('trigone_role_admin', '4RIISC'); JUMELAGE_INSCRIPTIONS_ACTUALISER(true); MER_OUVRIR_CHORUS(); }); await attendre(2500);
     const dos = await a.evaluate(() => { const d = document.querySelector('.MER-DOSSIER[data-dossier="inscriptions"]'); return d ? d.innerText : ''; });
-    verifier(/demandes de création de compte/i.test(dos) && /à valider/i.test(dos), 'Assist Chorus DT : dossier « Demandes de création de compte » avec les inscriptions à valider');
+    verifier(/créations de compte/i.test(dos) && /[1-9]/.test(dos), 'Assist Chorus DT : dossier « Créations de compte » avec sa pastille (inscriptions à valider)');
     await a.click('.MER-DOSSIER[data-dossier="inscriptions"]'); await attendre(2000);
     if (process.env.TRIGONE_CAPTURE) await a.screenshot({ path: process.env.TRIGONE_CAPTURE });
     verifier(await a.evaluate(m => !!document.querySelector('.MER-INSCR[data-m="' + m + '"]'), mail2) && (await a.evaluate(() => document.getElementById('PAGE-STAGE').innerText)).includes('CAPORAL ' + nom + ' Hugo'),
