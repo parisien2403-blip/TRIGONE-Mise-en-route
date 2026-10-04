@@ -72,7 +72,19 @@ module.exports = async function() {
     const s1 = await parUnite('1RIISC', 'omr/serie'), s4 = await parUnite('4RIISC', 'omr/serie');
     verifier(s1.prefixe === 'U1-' && s1.prochain === 500 && s4.prefixe !== 'U1-', 'numérotation OMR par régiment : série 1°RIISC « U1-0500 », celle du 4°RIISC inchangée');
     await m.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
-    verifier(await m.evaluate(() => JUMELAGE_BOITE_LISTE().some(x => x.nature === 'question' && /Rappel : votre compte-rendu/.test(x.question))), 'missionnaire : la relance arrive dans sa boîte (Questions)');
+    verifier(await m.evaluate(() => JUMELAGE_BOITE_LISTE().some(x => x.nature === 'question' && x.rappel && /Rappel : votre compte-rendu/.test(x.question))), 'missionnaire : la relance arrive dans sa boîte, comme simple rappel (pas de réponse)');
+    // Observations d'une ligne : ajout, auteur, modification ; noms du personnel : recto de la carte.
+    await c.evaluate(p => { MER_REGISTRE_CRIT.texte = p; OUVRIR_REGISTRE('tout'); }, pref); await attendre(500);
+    verifier(await c.evaluate(() => document.querySelectorAll('.MER-REG-NOM').length > 0 && document.querySelectorAll('.MER-REG-OBS').length > 0), 'registre : noms du personnel cliquables et encadré Observations sur chaque ligne');
+    await c.evaluate(r => REGISTRE_OBS(r), d.id); await attendre(300);
+    await c.fill('#MER-OBS-NOUV', 'Billet SNCF annulé : retour en VL.'); await c.evaluate(r => REGISTRE_OBS_AJOUTER(r), d.id); await attendre(500);
+    const o1 = await c.evaluate(r => (JUMELAGE_REGISTRE().filter(x => x.ref === r)[0].observations || [])[0], d.id);
+    verifier(o1 && o1.texte === 'Billet SNCF annulé : retour en VL.' && !!o1.par && !!o1.le, 'observation ajoutée, avec son auteur et sa date');
+    await c.evaluate(([r, i]) => REGISTRE_OBS(r, i), [d.id, o1.id]); await attendre(300);
+    await c.fill('#MER-OBS-EDIT', 'Billet SNCF annulé : retour en VL de service.'); await c.evaluate(([r, i]) => REGISTRE_OBS_ENREGISTRER(r, i), [d.id, o1.id]); await attendre(500);
+    const o2 = await c.evaluate(r => (JUMELAGE_REGISTRE().filter(x => x.ref === r)[0].observations || [])[0], d.id);
+    verifier(o2 && /de service/.test(o2.texte) && !!o2.modifPar && !!o2.modifLe && /modifiée par/.test(await c.evaluate(() => document.querySelector('.MER-OBS-LISTE').innerText)), 'observation modifiée : « modifiée par … » visible');
+    await c.evaluate(() => { FERMER_MODALE(); MER_REGISTRE_CRIT.texte = ''; });
     // Compte-rendu rendu (même n° OMR, montants) → la ligne passe dans « Comptes-rendus rendus », marquée validée.
     await m.evaluate(([dest, omr, ref]) => JUMELAGE_ENVOYER_DIRECT(dest, 'CR', 'cr.pdf', JSON.stringify({ app: 'TRIGONE-CR', version: 1, missionnaire: 'SGT DUPONT Jean', libelle: 'Formation', dates: '', corps: '', fichiers: [],
         omr: omr, mref: ref, montants: { repas: 45.5, hebergement: 120, transports: 0, ik: 82.3, tc: 0, total: 247.8 } })), [MAILS.C, d.omr, d.id]);

@@ -22,7 +22,9 @@
 //   DOMAINES_AUTORISES          ex. « interieur.gouv.fr » (sous-domaines compris), séparés par des virgules
 //   MODE_TEST = "1"             tests locaux uniquement : le code est renvoyé au lieu d'être envoyé par mail
 //   ADMIN_MAILS                 adresse(s) de l'administrateur, séparées par des virgules : seule(s) à voir la page
-//                               « Erreurs de l'appli » (Paramètres › Aide)
+//                               « Erreurs de l'appli » (Paramètres › Aide) ; administrateur de toutes les unités
+//   CODE_ADMIN (secret)         code du rôle ADMINISTRATEUR (un par unité : celui qui le saisit devient administrateur
+//                               de l'unité de son profil). Vérifié ici, jamais dans l'appli ni dans le dépôt.
 
 import { connect } from 'cloudflare:sockets';
 
@@ -85,11 +87,51 @@ async function baseBoite(env) {
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS boite_etat (mail TEXT NOT NULL, id TEXT NOT NULL, statut TEXT, le INTEGER, maj INTEGER, PRIMARY KEY (mail, id))'),
             env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_etat_maj ON boite_etat (mail, maj)'),
             // Comptes qui ont un rôle (VALIDEUR 1 / 2, ASSIST CHORUS DT) : à qui remettre la clé des photos de carte partagées.
-            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS porteur_role (mail TEXT PRIMARY KEY, roles TEXT, maj INTEGER)')
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS porteur_role (mail TEXT PRIMARY KEY, roles TEXT, maj INTEGER)'),
+            // Administrateurs d'unité (rôle ADMINISTRATEUR, code vérifié par le serveur).
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS admin_unite (mail TEXT PRIMARY KEY, unite TEXT NOT NULL, le INTEGER)'),
+            // Demandes de réinitialisation ou de suppression d'un compte, adressées à l'assistant Chorus DT ou à
+            // l'administrateur de l'unité. dest : adresses (JSON) qui peuvent décider.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS compte_demande (id TEXT PRIMARY KEY, mail TEXT NOT NULL, qui TEXT, type TEXT NOT NULL, motif TEXT, unite TEXT, dest TEXT, le INTEGER, statut TEXT, par TEXT, decideLe INTEGER)'),
+            // Trace des comptes supprimés : jamais l'adresse (seulement son empreinte), qui, quand, pourquoi.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS compte_journal (le INTEGER, unite TEXT, par TEXT, motif TEXT, empreinte TEXT, qui TEXT, brevo TEXT)')
         ]);
         TABLES_PRETES = true;
     }
     return env.TRIGONE_DB;
+}
+
+// ---------- Comptes : administrateurs d'unité, suppression complète ----------
+function egal(a, b) { a = String(a); b = String(b); let d = a.length ^ b.length; for (let i = 0; i < Math.max(a.length, b.length); i++) d |= (a.charCodeAt(i) || 0) ^ (b.charCodeAt(i) || 0); return d === 0; }
+async function adminUnite(env, mail) { const r = await (await baseBoite(env)).prepare('SELECT unite FROM admin_unite WHERE mail = ?').bind(mail).first(); return r ? r.unite : ''; }
+async function adminsDe(env, u) { return ((await (await baseBoite(env)).prepare('SELECT mail FROM admin_unite WHERE unite = ?').bind(u).all()).results || []).map(x => x.mail); }
+// Suppression complète d'un compte : tout ce que le serveur garde à son nom (compte, appareils, adresse TRIGONE,
+// carte, photo, sauvegarde, matricule, notifications, boîte, suivi), et l'historique d'envoi chez Brevo. Restent :
+// les lignes du registre des OMR (historique administratif des missions) et une trace sans l'adresse.
+async function supprimerCompte(env, mail, par, motif, unite, qui) {
+    const kv = env.TRIGONE_KV, db = await baseBoite(env), compte = await kv.get('compte:' + mail, 'json');
+    const cles = ['compte:', 'nid-de:', 'carte-de:', 'adresse-de:', 'photo:', 'sauvegarde:', 'code:', 'unite-de:'].map(k => k + mail);
+    const nid = (await kv.get('nid-de:' + mail)) || (compte && compte.nid) || '';
+    if (nid && await kv.get('nid:' + nid) === mail) cles.push('nid:' + nid);
+    const carte = await kv.get('carte-de:' + mail); if (carte) cles.push('carte:' + carte);
+    // Nom pour le journal (grade, nom, prénom de sa carte), si la demande ne le donne pas.
+    if (!qui && carte) { const ct = await kv.get('carte:' + carte, 'json'); if (ct) qui = [ct.grade, ct.nom, ct.prenom].filter(Boolean).join(' '); }
+    const adr = await kv.get('adresse-de:' + mail); if (adr && await kv.get('adresse:' + adr) === mail) cles.push('adresse:' + adr);
+    const msgs = ((await db.prepare('SELECT DISTINCT id FROM boite WHERE dest = ?').bind(mail).all()).results || []).map(x => 'msg:' + x.id);
+    await Promise.all(cles.concat(msgs).map(k => kv.delete(k)));
+    await db.batch(['DELETE FROM boite WHERE dest = ?', 'DELETE FROM abonnement WHERE mail = ?', 'DELETE FROM muet WHERE mail = ?', 'DELETE FROM rappel WHERE mail = ?',
+        'DELETE FROM suivi WHERE demandeur = ?', 'DELETE FROM suivi_acteur WHERE mail = ?', 'DELETE FROM equipe WHERE mail = ?', 'DELETE FROM equipe_lecteur WHERE mail = ?',
+        'DELETE FROM boite_etat WHERE mail = ?', 'DELETE FROM porteur_role WHERE mail = ?', 'DELETE FROM admin_unite WHERE mail = ?', 'DELETE FROM compte_demande WHERE mail = ?'].map(q => db.prepare(q).bind(mail)));
+    // Brevo : seuls les mails de code de connexion y passent ; leur historique est effacé.
+    let brevo = 'sans objet';
+    if (env.BREVO_CLE) {
+        try { const r = await fetch('https://api.brevo.com/v3/smtp/log/' + encodeURIComponent(mail), { method: 'DELETE', headers: { 'api-key': env.BREVO_CLE, Accept: 'application/json' } }); brevo = r.ok || r.status === 404 ? 'effacé' : 'erreur ' + r.status; }
+        catch (e) { brevo = 'injoignable'; }
+    }
+    const h = await empreinte('supprime:' + mail);
+    await kv.put('efface:' + h, String(Date.now()), { expirationTtl: 180 * JOUR });   // ses appareils s'effacent à la prochaine ouverture
+    await db.prepare('INSERT INTO compte_journal (le, unite, par, motif, empreinte, qui, brevo) VALUES (?, ?, ?, ?, ?, ?, ?)').bind(Date.now(), unite || '', par, String(motif || '').slice(0, 300), h.slice(0, 16), String(qui || '').slice(0, 80), brevo).run();
+    return { brevo };
 }
 
 // ---------- Registre OMR partagé ----------
@@ -101,6 +143,7 @@ function uniteRegistre(requete) {
     const n = String(requete.headers.get('X-Trigone-Unite') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 40);
     return !n || n === '4RIISC' ? UNITE_REGISTRE : n;
 }
+function nomUnite(u) { return u === UNITE_REGISTRE ? '4RIISC' : u; }   // affichage : le registre d'origine est celui du 4°RIISC
 function cleOmr(u, cle) { return u === UNITE_REGISTRE ? cle : cle + ':' + u; }
 // Comptes-rendus d'une ligne : réunis sans doublon (un par envoi).
 function registreUnirCrs(a, b) {
@@ -116,6 +159,12 @@ function registreFusion(a, b) {
     r.crs = registreUnirCrs(a.crs, b.crs);
     r.relances = Array.from(new Set((a.relances || []).concat(b.relances || []))).sort((x, y) => x - y);
     r.relancesQui = Object.assign({}, a.relancesQui || {}, b.relancesQui || {});
+    // Observations des assistants : réunies note par note (identifiant), la version la plus récente de chacune l'emporte.
+    if (a.observations || b.observations) {
+        const obs = {}, t = o => (o && (o.modifLe || o.le)) || 0;
+        (a.observations || []).concat(b.observations || []).forEach(o => { if (o && o.id && (!obs[o.id] || t(o) >= t(obs[o.id]))) obs[o.id] = o; });
+        r.observations = Object.keys(obs).map(k => obs[k]).sort((x, y) => (x.le || 0) - (y.le || 0)).slice(-200);
+    }
     // Heures réelles de la mission (départ, sur site, départ du site, retour) : envoyées par le missionnaire lui-même ;
     // la version du serveur l'emporte sur la copie d'un assistant.
     if (a.jalons || b.jalons) r.jalons = Object.assign({}, b.jalons || {}, a.jalons || {});
@@ -817,7 +866,12 @@ async function api(requete, env, url, ctx) {
     }
 
     const moi = await appareilConnecte(env, requete);
-    if (!moi) return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
+    if (!moi) {
+        // Compte supprimé par l'assistant Chorus DT ou l'administrateur : l'appareil s'efface.
+        const m = /^TRIGONE (\S+) /.exec(requete.headers.get('Authorization') || '');
+        if (m && await kv.get('efface:' + await empreinte('supprime:' + normaliser(decodeURIComponent(m[1]))))) return json({ ok: false, supprime: true, erreur: 'Ce compte TRIGONE a été supprimé.' }, 410);
+        return erreur(401, 'Compte TRIGONE non reconnu sur cet appareil.');
+    }
     // Carte perdue ou volée : l'ancien identifiant est effacé (son QR code devient « non reconnu »), un nouveau est tiré.
     if (chemin === 'carte/revoquer' && methode === 'POST') {
         const ancien = await kv.get('carte-de:' + moi.mail);
@@ -1020,6 +1074,103 @@ async function api(requete, env, url, ctx) {
     }
     // Page « Erreurs de l'appli » : réservée à l'administrateur (ADMIN_MAILS).
     if (chemin === 'admin' && methode === 'GET') return json({ ok: true, admin: estAdmin(env, moi.mail) });
+    // ----- Comptes : unité, rôle ADMINISTRATEUR, demandes de réinitialisation / suppression -----
+    if (chemin === 'unite' && methode === 'POST') {
+        await kv.put('unite-de:' + moi.mail, uniteRegistre(requete));
+        return json({ ok: true });
+    }
+    if (chemin === 'role/admin' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({})), db = await baseBoite(env);
+        if (!c.actif) { await db.prepare('DELETE FROM admin_unite WHERE mail = ?').bind(moi.mail).run(); return json({ ok: true, admin: '' }); }
+        if (!env.CODE_ADMIN) return erreur(503, 'Le code ADMINISTRATEUR n\'est pas encore configuré sur le serveur.');
+        const lim = 'limite-admin:' + moi.mail, n = +(await kv.get(lim)) || 0;
+        if (n >= 5) return erreur(429, 'Trop d\'essais : réessayez dans une heure.');
+        if (!egal(String(c.code || '').trim().toUpperCase(), String(env.CODE_ADMIN).trim().toUpperCase())) { await kv.put(lim, String(n + 1), { expirationTtl: 3600 }); return erreur(403, 'Code ADMINISTRATEUR incorrect.'); }
+        const u = uniteRegistre(requete);
+        await db.prepare('INSERT INTO admin_unite (mail, unite, le) VALUES (?, ?, ?) ON CONFLICT (mail) DO UPDATE SET unite = excluded.unite, le = excluded.le').bind(moi.mail, u, Date.now()).run();
+        await kv.put('unite-de:' + moi.mail, u);
+        return json({ ok: true, admin: nomUnite(u) });
+    }
+    if (chemin === 'compte/role' && methode === 'GET') {
+        const au = await adminUnite(env, moi.mail);
+        return json({ ok: true, admin: au ? nomUnite(au) : '', superAdmin: estAdmin(env, moi.mail) });
+    }
+    // Demande du titulaire du compte (missionnaire, valideur, assistant) : { type: 'reinit' | 'suppression', motif, qui, chorus }.
+    // Missionnaire et valideurs : à leur assistant Chorus DT (celui de leur profil), et aux administrateurs de l'unité ;
+    // assistant Chorus DT : aux administrateurs ; administrateur : aux administrateurs de TRIGONE (ADMIN_MAILS).
+    if (chemin === 'compte/demande' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({})), db = await baseBoite(env), u = uniteRegistre(requete);
+        if (c.type !== 'reinit' && c.type !== 'suppression') return erreur(400, 'Demande inconnue.');
+        await kv.put('unite-de:' + moi.mail, u);
+        const monAdmin = await adminUnite(env, moi.mail), roles = moi.compte.roles || {};
+        let dest = [];
+        if (monAdmin) dest = String(env.ADMIN_MAILS || '').toLowerCase().split(',').map(x => x.trim()).filter(Boolean);
+        else {
+            dest = (await adminsDe(env, u)).filter(m => m !== moi.mail);
+            const ch = normaliser(c.chorus);
+            if (!roles.chorus && ch && ch !== moi.mail) { const cc = await kv.get('compte:' + ch, 'json'); if (cc && (cc.roles || {}).chorus) dest.push(ch); }
+        }
+        dest = Array.from(new Set(dest));
+        if (!dest.length) return erreur(409, roles.chorus || monAdmin ? 'Aucun administrateur TRIGONE pour votre unité : demandez à l\'un de vos responsables de prendre le rôle ADMINISTRATEUR.'
+            : 'Aucun assistant Chorus DT ni administrateur trouvé : vérifiez le mail de l\'assistant Chorus DT dans Mon profil.');
+        const id = 'dc' + b64url(crypto.getRandomValues(new Uint8Array(9)));
+        await db.prepare("DELETE FROM compte_demande WHERE mail = ? AND statut = 'attente'").bind(moi.mail).run();
+        await db.prepare("INSERT INTO compte_demande (id, mail, qui, type, motif, unite, dest, le, statut) VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'attente')")
+            .bind(id, moi.mail, String(c.qui || '').slice(0, 80), c.type, String(c.motif || '').slice(0, 300), u, JSON.stringify(dest), Date.now()).run();
+        const t = c.type === 'reinit' ? 'réinitialiser TRIGONE sur ses appareils' : 'supprimer son compte TRIGONE';
+        await Promise.all(dest.map(m => notifierCompte(env, m, { titre: 'Demande sur un compte', texte: (c.qui || moi.mail) + ' demande à ' + t + '.', type: 'COMPTE', url: '/?espace=comptes' }, url.origin).catch(() => {})));
+        return json({ ok: true, id, dest: dest.length });
+    }
+    if (chemin === 'compte/demandes' && methode === 'GET') {
+        const db = await baseBoite(env), monAdmin = await adminUnite(env, moi.mail), sup = estAdmin(env, moi.mail);
+        const r = ((await db.prepare("SELECT * FROM compte_demande WHERE statut = 'attente' OR (mail = ? ) ORDER BY le DESC LIMIT 200").bind(moi.mail).all()).results || []);
+        const pourMoi = r.filter(x => x.mail !== moi.mail && x.statut === 'attente' && (sup || (monAdmin && x.unite === monAdmin) || JSON.parse(x.dest || '[]').indexOf(moi.mail) >= 0));
+        const mienne = r.filter(x => x.mail === moi.mail)[0] || null;
+        const journal = monAdmin || sup ? ((await db.prepare('SELECT le, unite, par, motif, qui, brevo FROM compte_journal WHERE unite = ? OR ? ORDER BY le DESC LIMIT 30').bind(monAdmin || '-', sup ? 1 : 0).all()).results || []) : [];
+        return json({ ok: true, demandes: pourMoi.map(x => ({ id: x.id, mail: x.mail, qui: x.qui, type: x.type, motif: x.motif, le: x.le })),
+            mienne: mienne && { type: mienne.type, statut: mienne.statut, le: mienne.le, decideLe: mienne.decideLe }, admin: monAdmin ? nomUnite(monAdmin) : '', superAdmin: sup, journal });
+    }
+    if (chemin === 'compte/decision' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({})), db = await baseBoite(env);
+        const d = await db.prepare("SELECT * FROM compte_demande WHERE id = ? AND statut = 'attente'").bind(String(c.id || '')).first();
+        if (!d) return erreur(404, 'Demande introuvable ou déjà traitée.');
+        const monAdmin = await adminUnite(env, moi.mail);
+        if (!(estAdmin(env, moi.mail) || (monAdmin && d.unite === monAdmin) || JSON.parse(d.dest || '[]').indexOf(moi.mail) >= 0)) return erreur(403, 'Cette demande ne vous est pas adressée.');
+        const qui = String(c.qui || moi.mail).slice(0, 80);
+        if (!c.accepte) {
+            await db.prepare("UPDATE compte_demande SET statut = 'refusee', par = ?, decideLe = ? WHERE id = ?").bind(moi.mail, Date.now(), d.id).run();
+            await notifierCompte(env, d.mail, { titre: 'Demande refusée', texte: qui + ' a refusé votre demande (' + (d.type === 'reinit' ? 'réinitialisation' : 'suppression du compte') + ').', type: 'COMPTE', url: '/' }, url.origin).catch(() => {});
+            return json({ ok: true, statut: 'refusee' });
+        }
+        if (d.type === 'reinit') {
+            const cd = await kv.get('compte:' + d.mail, 'json');
+            await kv.put('reinit:' + d.mail, JSON.stringify((cd && cd.appareils || []).map(a => a.id)), { expirationTtl: 30 * JOUR });
+            await db.prepare("UPDATE compte_demande SET statut = 'acceptee', par = ?, decideLe = ? WHERE id = ?").bind(moi.mail, Date.now(), d.id).run();
+            await notifierCompte(env, d.mail, { titre: 'Réinitialisation acceptée', texte: 'Ouvrez TRIGONE : il repartira comme au premier jour sur chacun de vos appareils.', type: 'COMPTE', url: '/' }, url.origin).catch(() => {});
+            return json({ ok: true, statut: 'acceptee' });
+        }
+        const r = await supprimerCompte(env, d.mail, moi.mail, 'À sa demande' + (d.motif ? ' : ' + d.motif : ''), d.unite, d.qui);
+        return json({ ok: true, statut: 'supprime', brevo: r.brevo });
+    }
+    // Suppression directe (départ de l'institution…) : administrateur de l'unité du compte, ou de TRIGONE.
+    if (chemin === 'compte/supprimer' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({})), cible = normaliser(c.mail), monAdmin = await adminUnite(env, moi.mail), sup = estAdmin(env, moi.mail);
+        if (!monAdmin && !sup) return erreur(403, 'Réservé à l\'administrateur de l\'unité.');
+        if (!mailValide(cible) || cible === moi.mail) return erreur(400, 'Adresse invalide.');
+        if (!String(c.motif || '').trim()) return erreur(400, 'Indiquez le motif.');
+        if (!(await kv.get('compte:' + cible))) return erreur(404, 'Aucun compte TRIGONE à cette adresse.');
+        const uc = (await kv.get('unite-de:' + cible)) || '';
+        // Compte d'une autre unité : refusé ; unité jamais transmise (ancienne version) : comptes d'origine (4°RIISC).
+        if (!sup && (uc ? uc !== monAdmin : monAdmin !== UNITE_REGISTRE)) return erreur(403, 'Ce compte n\'appartient pas à votre unité.');
+        if (!sup && await adminUnite(env, cible)) return erreur(403, 'Le compte d\'un administrateur se supprime par l\'administrateur de TRIGONE.');
+        const r = await supprimerCompte(env, cible, moi.mail, String(c.motif).slice(0, 300), uc || monAdmin, '');
+        return json({ ok: true, brevo: r.brevo });
+    }
+    // Réinitialisation acceptée : chaque appareil du compte s'efface à son ouverture, puis se retire du compte.
+    if (chemin === 'compte/etat' && methode === 'GET') {
+        const l = await kv.get('reinit:' + moi.mail, 'json');
+        return json({ ok: true, reinit: Array.isArray(l) && l.indexOf(moi.appareil.id) >= 0 });
+    }
     if (chemin === 'erreurs' && methode === 'GET') {
         if (!estAdmin(env, moi.mail)) return erreur(403, 'Réservé à l\'administrateur de TRIGONE.');
         const db = await baseBoite(env);

@@ -608,6 +608,18 @@
         '.JUM-HORS-RESEAU b { padding-left: 9px; }' +
         '.JUM-HORS-RESEAU small { display: none; font: 600 0.72rem/1.35 Montserrat, system-ui, sans-serif; letter-spacing: 0; text-transform: none; color: #fef3c7; text-align: center; }' +
         '.JUM-HORS-RESEAU.ouvert { width: 320px; } .JUM-HORS-RESEAU.ouvert small { display: block; }' +
+        '.JUM-GC-FOND { position: fixed; inset: 0; z-index: 99990; background: rgba(0,0,0,0.55); display: flex; align-items: center; justify-content: center; padding: 16px; }' +
+        '.JUM-GC-FEN { position: relative; width: 100%; max-width: 440px; max-height: 88vh; overflow-y: auto; background: #fff; color: #1a1a1a; border-radius: 18px; padding: 20px 18px; box-shadow: 0 20px 50px rgba(0,0,0,0.35); font: 500 0.86rem/1.45 Montserrat, system-ui, sans-serif; }' +
+        '.JUM-GC-FEN.large { max-width: 560px; } .JUM-GC-FEN h3 { margin: 0 30px 10px 0; font-size: 1.05rem; } .JUM-GC-FEN h4 { margin: 18px 0 6px; font-size: 0.8rem; letter-spacing: 0.05em; text-transform: uppercase; color: #9a6f22; }' +
+        '.JUM-GC-FEN p { margin: 0 0 8px; } .JUM-GC-FEN textarea, .JUM-GC-FEN input, .JUM-GC-FEN select { width: 100%; box-sizing: border-box; margin: 0 0 8px; padding: 10px; border: 1.5px solid #d9ccb0; border-radius: 10px; font: inherit; }' +
+        '.JUM-GC-X { position: absolute; top: 12px; right: 12px; border: 0; background: #f1ece2; width: 30px; height: 30px; border-radius: 50%; cursor: pointer; }' +
+        '.JUM-GC-BTNS { display: flex; gap: 8px; justify-content: flex-end; margin-top: 8px; } .JUM-GC-BTNS button { width: auto; margin: 0; }' +
+        '.JUM-GC-ERR { color: #b91c1c; font-weight: 700; min-height: 0; } .JUM-GC-VIDE { color: #6b7280; font-style: italic; }' +
+        '.JUM-GC-DEM { display: flex; flex-direction: column; gap: 3px; padding: 11px 12px; margin: 0 0 8px; border-radius: 12px; border: 1px solid #e3d6b8; background: #fbf7ef; }' +
+        '.JUM-GC-DEM small { color: #6b7280; } .JUM-GC-DEM em { color: #374151; } .JUM-GC-TYPE { font-weight: 800; font-size: 0.78rem; } .JUM-GC-TYPE.suppression { color: #b91c1c; } .JUM-GC-TYPE.reinit { color: #9a6f22; }' +
+        '.JUM-GC-SUPPR { width: 100%; padding: 11px; border-radius: 12px; border: 1.5px solid #b91c1c; background: #fff5f5; color: #b91c1c; font: 800 0.82rem Montserrat, sans-serif; cursor: pointer; }' +
+        '.JUM-GC-JOURNAL div { padding: 7px 0; border-bottom: 1px solid #eee; font-size: 0.78rem; } .JUM-GC-JOURNAL small { display: block; color: #6b7280; }' +
+        'body.dark-mode .JUM-GC-FEN { background: #1f1f1f; color: #e5e5e5; } body.dark-mode .JUM-GC-DEM { background: #262626; border-color: #404040; } body.dark-mode .JUM-GC-FEN textarea, body.dark-mode .JUM-GC-FEN input, body.dark-mode .JUM-GC-FEN select { background: #141414; color: #e5e5e5; border-color: #404040; }' +
         '.JUM-DOCK { display: none; }' +
         '@media (max-width: 1099px) {' +
             '.JUM-CHOIX.JUM-V2 { grid-template: "mer" 1fr "cr" 1fr "dock" auto / 1fr; }' +
@@ -1121,7 +1133,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 173, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 174, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1268,7 +1280,7 @@
     window.JUMELAGE_REMONTER_ERREUR = remonterErreur;
     // Rôle « Assistant Chorus DT » : activé dans les Réglages avec le code remis par l'administrateur (seule son
     // empreinte figure ici). Son espace s'ouvre depuis le logo placé au centre de l'écran de choix.
-    var CLE_ROLE_CHORUS = 'trigone_role_chorus', EMPREINTE_CODE_CHORUS = '1873312e8bec44f88043df4b267191cf334946fa92ae71e40c3d3d4867c9e49a';
+    var CLE_ROLE_ADMIN = 'trigone_role_admin', CLE_ROLE_CHORUS = 'trigone_role_chorus', EMPREINTE_CODE_CHORUS = '1873312e8bec44f88043df4b267191cf334946fa92ae71e40c3d3d4867c9e49a';
     var LOGO_CHORUS = (DANS_CR ? '../' : '') + 'logo_chorus.webp';
     function roleChorus() { try { return localStorage.getItem(CLE_ROLE_CHORUS) === '1'; } catch (e) { return false; } }
     window.JUMELAGE_ROLE_CHORUS = roleChorus;
@@ -1692,6 +1704,7 @@
                 caseRole('VAL2', 'valideur2', '<b>VALIDEUR 2</b>', 'Code VALIDEUR 2') +
                 '<div id="JUM-R-FONCTION2-BLOC" style="display:none;">' + champ('FONCTION2', 'Ma fonction de VALIDEUR 2 (sur la signature)', val.fonction2 || (roleActif('valideur2') && !roleActif('valideur1') ? val.fonction : '') || '', 'type="text" autocomplete="off" placeholder="EX : CHEF DE CORPS"') + '</div>' +
                 caseRole('CHORUS', 'chorus', '<b>ASSIST CHORUS DT</b>', 'Code ASSIST CHORUS DT') +
+                caseRole('ADMIN', 'admin', '<b>ADMINISTRATEUR</b> de mon unité (comptes : réinitialisation, suppression)', 'Code ADMINISTRATEUR') +
                 '<p class="JUM-R-AIDE" style="margin-top:6px;">Un rôle coché est déclaré à votre compte TRIGONE : votre boîte ne reçoit que ce qui lui revient (demandes à signer, ou demandes validées et comptes-rendus pour l\'assistant Chorus DT).</p>';
         // Première fois : le profil en 3 étapes (identité, destinataires, sécurité), au style de l'écran d'accueil.
         function htmlProfilEtapes() {
@@ -1804,7 +1817,7 @@
         if (premiere) { brancherSaisieLiaison(reglages, false); brancherEtapesProfil(reglages); }
         var m = document.getElementById('JUM-R-MATRICULE');
         m.addEventListener('input', function() { m.value = formatMatricule(m.value); });
-        ['VAL1', 'VAL2', 'CHORUS'].forEach(function(id) {
+        ['VAL1', 'VAL2', 'CHORUS', 'ADMIN'].forEach(function(id) {
             var c = document.getElementById('JUM-R-' + id);
             c.addEventListener('change', function() { majCasesRoles(c.checked && !roleActif(c.getAttribute('data-role')) ? id : null); });
         });
@@ -1887,7 +1900,7 @@
         });
     }
     // Rôles : case cochée pas encore active → champ du code ; valideur → fonction (reprise dans ses signatures).
-    function roleActif(role) { return role === 'chorus' ? roleChorus() : !!(lireJSON(CLE_ROLES_LOCAUX) || {})[role]; }
+    function roleActif(role) { return role === 'chorus' ? roleChorus() : role === 'admin' ? !!lireTxt(CLE_ROLE_ADMIN) : !!(lireJSON(CLE_ROLES_LOCAUX) || {})[role]; }
     function caseRole(id, role, libelle, libelleCode) {
         var actif = roleActif(role);
         return '<label class="JUM-R-CASE"><input type="checkbox" id="JUM-R-' + id + '" data-role="' + role + '"' + (actif ? ' checked' : '') + '><span>' + libelle +
@@ -1896,7 +1909,7 @@
             '<input id="JUM-R-CODE' + id + '" type="password" autocomplete="off" placeholder="Code remis par l\'administrateur"></div></div>';
     }
     function majCasesRoles(focus) {
-        ['VAL1', 'VAL2', 'CHORUS'].forEach(function(id) {
+        ['VAL1', 'VAL2', 'CHORUS', 'ADMIN'].forEach(function(id) {
             var c = document.getElementById('JUM-R-' + id); if (!c) return;
             document.getElementById('JUM-R-' + id + '-CODE').style.display = c.checked && !roleActif(c.getAttribute('data-role')) ? '' : 'none';
             var f = document.getElementById('JUM-R-FONCTION' + id.slice(3) + '-BLOC'); if (f) f.style.display = c.checked ? '' : 'none';
@@ -1993,14 +2006,14 @@
             if (c1 !== c2) return refuser('Les deux codes ne correspondent pas.');
         }
         // Rôles : chaque rôle nouvellement coché est vérifié avec son code avant tout enregistrement.
-        var roles = ['VAL1', 'VAL2', 'CHORUS'].map(function(id) {
+        var roles = ['VAL1', 'VAL2', 'CHORUS', 'ADMIN'].map(function(id) {
             var c = document.getElementById('JUM-R-' + id), role = c.getAttribute('data-role');
             return { id: id, role: role, niveau: id === 'VAL1' ? 1 : id === 'VAL2' ? 2 : 0, veut: c.checked, actif: roleActif(role), code: v('CODE' + id) };
         });
         var fonctions = { 1: v('FONCTION1').toUpperCase(), 2: v('FONCTION2').toUpperCase() };
         var nouveaux = roles.filter(function(x) { return x.veut && !x.actif; });
         var sansCode = nouveaux.filter(function(x) { return !x.code; })[0];
-        if (sansCode) return refuser('Saisissez le code ' + { VAL1: 'VALIDEUR 1', VAL2: 'VALIDEUR 2', CHORUS: 'ASSIST CHORUS DT' }[sansCode.id] + ', ou décochez la case.');
+        if (sansCode) return refuser('Saisissez le code ' + { VAL1: 'VALIDEUR 1', VAL2: 'VALIDEUR 2', CHORUS: 'ASSIST CHORUS DT', ADMIN: 'ADMINISTRATEUR' }[sansCode.id] + ', ou décochez la case.');
         var sansFonction = roles.filter(function(x) { return x.niveau && x.veut && !fonctions[x.niveau]; })[0];
         if (sansFonction) return refuser('Indiquez votre fonction de VALIDEUR ' + sansFonction.niveau + ' (ex : ' + (sansFonction.niveau === 1 ? 'COMMANDANT D\'UNITÉ' : 'CHEF DE CORPS') + ').');
         if (roles.some(function(x) { return x.niveau && x.veut; }) && (!r.grade || !r.nom || !r.prenom)) return refuser('Un valideur signe avec son grade, son nom et son prénom : renseignez-les.');
@@ -2008,6 +2021,12 @@
         var etapeRole = nouveaux.reduce(function(prec, x) {
             return prec.then(function() {
                 if (x.niveau) return verifierCodeValideur(x.code, x.niveau).then(function(a) { acces[x.niveau] = a; });
+                // ADMINISTRATEUR : code vérifié par le serveur seul (il n'est nulle part dans l'appli).
+                if (x.id === 'ADMIN') {
+                    if (!monCompte()) throw 'Connectez-vous d\'abord à votre compte TRIGONE.';
+                    if (!normeUnite(r.unite)) throw 'Indiquez votre unité dans Mon profil : vous serez administrateur de cette unité.';
+                    return appelApi('role/admin', { methode: 'POST', corps: { code: x.code, actif: true } }).then(function(a) { ecrireTxt(CLE_ROLE_ADMIN, a.admin || '1'); }, function(e) { throw e.message || 'Code ADMINISTRATEUR incorrect.'; });
+                }
                 return empreinteCodeChorus(x.code).then(function(h) { if (h !== EMPREINTE_CODE_CHORUS) throw 'Code ASSIST CHORUS DT incorrect.'; });
             });
         }, Promise.resolve());
@@ -2015,7 +2034,10 @@
         var roleAvant = roleChorus(), veutChorus = roles[2].veut;
         try { if (veutChorus) localStorage.setItem(CLE_ROLE_CHORUS, '1'); else localStorage.removeItem(CLE_ROLE_CHORUS); } catch (e) {}
         var changes = roles.filter(function(x) { return x.veut !== x.actif; });
-        changes.forEach(function(x) { window.JUMELAGE_DECLARER_ROLE(x.role, x.veut); });
+        changes.forEach(function(x) {
+            if (x.role !== 'admin') window.JUMELAGE_DECLARER_ROLE(x.role, x.veut);
+            else if (!x.veut) { try { localStorage.removeItem(CLE_ROLE_ADMIN); } catch (e) {} appelApi('role/admin', { methode: 'POST', corps: { actif: false } }).catch(function() {}); }
+        });
         // Valideur : identité de signature (Espace valideur de Mise en route) et clé déverrouillée.
         if (roles.some(function(x) { return x.niveau && x.veut; })) {
             var val = lireJSON('mer_valideur') || {};
@@ -2568,6 +2590,7 @@
         return fetch(API + chemin, { method: opts.methode || 'GET', headers: entetes, body: opts.corps ? JSON.stringify(opts.corps) : undefined, cache: 'no-store' })
             .then(function(r) {
                 return r.json().catch(function() { return { ok: false, erreur: 'Service indisponible.' }; }).then(function(j) {
+                    if (r.status === 410 && j.supprime && window.JUMELAGE_COMPTE_SUPPRIME) window.JUMELAGE_COMPTE_SUPPRIME();
                     if (!r.ok || !j.ok) { var e = new Error(j.erreur || 'Service indisponible.'); e.statut = r.status; throw e; }
                     return j;
                 });
@@ -3348,7 +3371,7 @@
                 dates: '', lieu: '', verifie: !!d.verifie, transfere: !!d.transfere, pieces: (d.fichiers || []).length,
                 fichiers: (d.fichiers || []).map(function(f) { return { nom: String(f.nom || 'justificatif').slice(0, 120), type: f.type || '' }; }) };
             if (d.app === 'TRIGONE-QUESTION' || d.app === 'TRIGONE-REPONSE') return { nature: d.app === 'TRIGONE-QUESTION' ? 'question' : 'reponse', n: 1, ids: [],
-                noms: d.qui || '', objet: d.objet || '', dates: '', lieu: '', ref: d.ref || '', genre: d.genre || '', question: String(d.question || '').slice(0, 2000), reponse: String(d.reponse || '').slice(0, 2000) };
+                noms: d.qui || '', objet: d.objet || '', dates: '', lieu: '', ref: d.ref || '', genre: d.genre || '', question: String(d.question || '').slice(0, 2000), reponse: String(d.reponse || '').slice(0, 2000), rappel: !!d.rappel };
             if (d.app === 'TRIGONE-CR') return { nature: 'cr', n: 1, ids: [], noms: d.missionnaire || '', objet: d.libelle || 'Compte-rendu de mission',
                 dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length, equipe: d.equipe || '', roleEquipe: d.roleEquipe || '',
                 omr: String(d.omr || '').slice(0, 30), mref: String(d.mref || '').slice(0, 60), montants: d.montants && typeof d.montants === 'object' ? d.montants : null };
@@ -3999,6 +4022,7 @@
     }
     // Se déconnecter et effacer : le compte quitte l'appareil et toutes les données TRIGONE en sont effacées.
     function deconnecterEtEffacer() {
+        if (effacementSurDemande()) return;
         var texte = 'Cet appareil sera déconnecté de votre compte TRIGONE et TOUTES ses données TRIGONE seront effacées (demandes, bibliothèque, comptes-rendus, réglages, code d\'accès).\n\n' +
             'Pour tout retrouver ensuite : un code de liaison depuis votre autre appareil (bouton de compte en haut à droite › « Ajouter un appareil »), ou une sauvegarde. Sans autre appareil ni sauvegarde, les données seront perdues.';
         var go = function() { appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() { cleIdb('effacer').catch(function() {}).then(toutEffacer); }); };
@@ -4217,7 +4241,8 @@
                 L('profil', ic('personne'), 'Mon profil', 'Identité, destinataires, demande de réservation, code d\'accès', function() { window.JUMELAGE_REGLAGES({ vue: 'profil' }); }),
                 L('roles', ic('groupe'), 'Mes rôles', aRole ? 'Valideur, assistant Chorus DT : gérer' : 'Valideur, assistant Chorus DT : ajouter un rôle avec son code', function() { window.JUMELAGE_REGLAGES({ vue: 'roles' }); }),
                 aRole && L('absence', ic('sablier'), 'Absence', 'Désigner un remplaçant pendant votre absence', function() { window.JUMELAGE_REGLAGES({ vue: 'absence' }); }),
-                c && L('appareil', ic('telephone'), 'Ajouter un appareil', 'PC ou téléphone, sans rien ressaisir', function() { window.JUMELAGE_COMPTE({ liaison: true }); })
+                c && L('appareil', ic('telephone'), 'Ajouter un appareil', 'PC ou téléphone, sans rien ressaisir', function() { window.JUMELAGE_COMPTE({ liaison: true }); }),
+                c && (roles.chorus || lireTxt(CLE_ROLE_ADMIN)) && L('gestion', ic('groupe'), 'Demandes sur les comptes' + (NB_DEMANDES_COMPTE ? ' (' + NB_DEMANDES_COMPTE + ')' : ''), lireTxt(CLE_ROLE_ADMIN) ? 'Réinitialiser, supprimer un compte de l\'unité, journal' : 'Réinitialisation ou suppression demandées par vos missionnaires', function() { window.JUMELAGE_GESTION_COMPTES(); })
             ] },
             { id: 'notif', titre: 'Notifications', icone: ic('cloche'), aide: 'Réception d\'une demande, suivi de vos envois, nouvelles versions, et boutons d\'horodatage sur la montre.', lignes: c ? [
                 L('notif', ic('cloche'), 'Notifications', e === 'active' ? (notifMuet() ? 'Coupées sur cet appareil' : 'Actives sur cet appareil') + ' · tester' : 'Les activer sur cet appareil', function() { window.JUMELAGE_COMPTE(); }),
@@ -4234,8 +4259,11 @@
             c && !etatSauvAuto().actif && L('restaurercompte', ic('importer'), 'Restaurer depuis mon compte', 'Nouvel appareil : avec votre code de récupération', function() { window.JUMELAGE_RESTAURER_COMPTE(); }),
             L('sauvegarder', ic('disquette'), 'Sauvegarder dans un fichier', 'Un fichier pour tout TRIGONE, à ranger où vous voulez', function() { window.JUMELAGE_SAUVEGARDER(); }),
             L('restaurer', ic('importer'), 'Restaurer depuis un fichier', 'Sur cet appareil ou un nouveau', function() { window.JUMELAGE_RESTAURER(); }),
-            c && L('effacer', CORBEILLE_SVG, 'Se déconnecter et effacer', 'Retirer le compte et les données de cet appareil', deconnecterEtEffacer, true),
-            L('reinitialiser', CORBEILLE_SVG, 'Réinitialiser TRIGONE', 'Tout effacer sur cet appareil', function() { window.JUMELAGE_REINITIALISER(); }, true)
+            // Réinitialiser ou supprimer son compte : sur demande à l'assistant Chorus DT (ou à l'administrateur de l'unité) ;
+            // l'administrateur garde la réinitialisation de son propre appareil. Sans compte : effacement de l'appareil.
+            c && L('demreinit', CORBEILLE_SVG, 'Demander la réinitialisation', etatDemandeCompte('reinit') || 'Accordée par votre assistant Chorus DT ou l\'administrateur', function() { window.JUMELAGE_DEMANDE_COMPTE('reinit'); }, true),
+            c && L('demsuppr', CORBEILLE_SVG, 'Demander la suppression de mon compte', etatDemandeCompte('suppression') || 'Adresse, carte, photo, sauvegarde : tout est effacé', function() { window.JUMELAGE_DEMANDE_COMPTE('suppression'); }, true),
+            (!c || lireTxt(CLE_ROLE_ADMIN)) && L('reinitialiser', CORBEILLE_SVG, 'Réinitialiser TRIGONE', 'Tout effacer sur cet appareil', function() { window.JUMELAGE_REINITIALISER(); }, true)
         ] });
         r.push({ id: 'aide', titre: 'Aide', icone: ic('bouee'), aide: 'Pour prendre en main TRIGONE, ou nous signaler un souci.', lignes: [L('notice', ic('livre'), 'Notice TRIGONE', 'Le livret complet, avec les écrans expliqués pas à pas', function() { window.JUMELAGE_NOTICE(); })]
             .concat(appli.filter(function(x) { return AIDE_APPLI.test(x.titre); })
@@ -4896,6 +4924,23 @@
         window.JUMELAGE_PARTICIPANTS(pers, info.mailDemandeur).then(function(r) { resultats = r || pers.map(function() { return null; }); if (document.body.contains(f)) dessiner(); },
             function() { resultats = pers.map(function() { return { erreur: true }; }); if (document.body.contains(f)) dessiner(); });
     };
+    // Registre : toucher un nom ouvre le recto seul de sa carte (identité, photo si partagée) ; ni verso ni QR code.
+    window.JUMELAGE_CARTE_RECTO = function(info, i) {
+        var pers = info.personnes || [], p = pers[i]; if (!p) return;
+        var vieux = document.querySelector('.JUM-PART-GRAND'); if (vieux) vieux.remove();
+        var g = document.createElement('div'); g.className = 'JUM-PART-GRAND';
+        var dessiner = function(x) {
+            var c = x && x.carte, d = { grade: (c && c.grade) || p.grade || '', nom: ((c && c.nom) || p.nom || '').toUpperCase(), prenom: (c && c.prenom) || p.prenom || '',
+                unite: (c && c.unite) || '', cie: (c && c.cie) || '', nid: (c && c.nid) || p.matricule || '', missions: null };
+            var etat = !x ? (navigator.onLine ? 'Vérification…' : 'Hors ligne : carte non vérifiée') : x.erreur ? 'Vérification impossible pour l\'instant'
+                : !x.compte ? '✖ Pas de compte TRIGONE à ce matricule' : !c ? '✖ Pas de carte TRIGONE vérifiée' : '✔ Carte TRIGONE vérifiée' + (x.photoUrl ? '' : ' · photo non partagée');
+            g.innerHTML = carteRecto(d, (x && x.photoUrl) || '') + '<p>' + esc(etat) + ' — touchez pour fermer</p>';
+        };
+        dessiner(null);
+        g.addEventListener('click', function() { g.remove(); }); document.body.appendChild(g);
+        window.JUMELAGE_PARTICIPANTS(pers, info.mailDemandeur).then(function(r) { if (document.body.contains(g)) dessiner((r || [])[i] || { erreur: true }); },
+            function() { if (document.body.contains(g)) dessiner({ erreur: true }); });
+    };
     function carteVerso(d, memo) {
         var depuis = memo && memo.depuis ? new Date(memo.depuis).toLocaleDateString('fr-FR') : '', niv = niveauCarte(d.missions);
         return '<div class="JUM-CARTE verso' + (niv[0] ? ' niv-' + niv[0] : '') + '"><i class="JUM-CARTE-GUIL"></i><i class="JUM-CARTE-HOLO"></i><i class="JUM-CARTE-BANDE"></i>' +
@@ -5344,8 +5389,8 @@
         });
     };
     // Efface toutes les données de TRIGONE sur l'appareil puis rouvre l'écran de choix, comme au premier jour.
-    function toutEffacer() {
-        try { localStorage.clear(); sessionStorage.clear(); } catch (e) {}
+    function toutEffacer(motif) {
+        try { localStorage.clear(); sessionStorage.clear(); if (typeof motif === 'string') sessionStorage.setItem('trigone_efface_motif', motif); } catch (e) {}
         var fin = function() { location.replace(DANS_CR ? '../' : './'); };
         var bases = ['trigone-mise-en-route', 'trigone-compte'];
         var supprimer = function(noms) { return Promise.all(noms.map(function(n) { return new Promise(function(ok) {
@@ -5360,11 +5405,127 @@
         if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM(titre, texte, libelle, toutEffacer, '⚠️', 'mascotte-poubelle.webp', true);
         else if (window.confirm(titre + '\n\n' + texte)) toutEffacer();
     }
+    // Compte connecté : réinitialiser ou effacer passe par une demande à l'assistant Chorus DT ou à l'administrateur
+    // (l'administrateur garde la main sur son propre appareil). « Code oublié » reste libre.
+    function effacementSurDemande() { if (monCompte() && !lireTxt(CLE_ROLE_ADMIN)) { window.JUMELAGE_DEMANDE_COMPTE('reinit'); return true; } return false; }
     window.JUMELAGE_REINITIALISER = function() {
+        if (effacementSurDemande()) return;
         confirmerEffacement('Réinitialiser TRIGONE ?',
             'Toutes les données de TRIGONE seront définitivement effacées de cet appareil, pour les deux applis : demandes de mise en route, bibliothèque, comptes-rendus, remboursements, médailles, réglages (identité, mails) et code d\'accès.\n\nTRIGONE redémarrera comme au premier jour. Cette action est irréversible.',
             'Oui, tout effacer');
     };
+    // ---------- Comptes : demandes de réinitialisation / suppression, gestion par l'assistant Chorus DT et l'administrateur ----------
+    var NB_DEMANDES_COMPTE = 0, CLE_DEM_COMPTE = 'trigone_demande_compte';
+    function etatDemandeCompte(type) {
+        var d = lireJSON(CLE_DEM_COMPTE); if (!d || d.type !== type) return '';
+        return d.statut === 'attente' ? '⏳ Demandée le ' + new Date(d.le).toLocaleDateString('fr-FR') + ' : en attente' : d.statut === 'refusee' ? '✖ Refusée le ' + new Date(d.decideLe || d.le).toLocaleDateString('fr-FR') : '';
+    }
+    window.JUMELAGE_DEMANDE_COMPTE = function(type) {
+        if (!monCompte()) return;
+        var reinit = type === 'reinit', admin = !!lireTxt(CLE_ROLE_ADMIN), chorus = !!rolesLocaux().chorus;
+        var a = admin ? 'l\'administrateur de TRIGONE' : chorus ? 'l\'administrateur de votre unité' : 'votre assistant Chorus DT (' + (lireReglages().mailChorus || 'mail à indiquer dans Mon profil') + ') ou l\'administrateur de votre unité';
+        var f = document.createElement('div'); f.className = 'JUM-GC-FOND';
+        f.innerHTML = '<div class="JUM-GC-FEN"><h3>' + (reinit ? 'Demander la réinitialisation' : 'Demander la suppression de mon compte') + '</h3>' +
+            '<p>' + (reinit ? 'Une fois accordée, TRIGONE repart comme au premier jour sur <b>chacun de vos appareils</b> (demandes, comptes-rendus, réglages effacés). Votre compte et votre sauvegarde restent.'
+                : 'Une fois accordée, <b>tout votre compte est effacé</b> : adresse TRIGONE, carte, photo, sauvegarde, appareils, notifications ; vos appareils s\'effacent à leur prochaine ouverture. Les missions déjà au registre des OMR restent (historique de l\'unité).') + '</p>' +
+            '<p>La demande part à ' + esc(a) + ', avec une notification.</p>' +
+            '<textarea id="JUM-GC-MOTIF" rows="3" placeholder="Motif (facultatif) : téléphone changé, départ de l\'unité…"></textarea>' +
+            '<p class="JUM-GC-ERR" id="JUM-GC-ERR"></p><div class="JUM-GC-BTNS"><button type="button" class="JUM-R-SECOND" data-x>Annuler</button><button type="button" class="JUM-R-PRINCIPAL" data-go>Envoyer la demande</button></div></div>';
+        document.body.appendChild(f);
+        f.querySelector('[data-x]').onclick = function() { f.remove(); };
+        f.querySelector('[data-go]').onclick = function() {
+            var b = this; b.disabled = true;
+            appelApi('compte/demande', { methode: 'POST', corps: { type: type, motif: f.querySelector('#JUM-GC-MOTIF').value.trim(), qui: window.JUMELAGE_QUI() || monCompte().mail, chorus: lireReglages().mailChorus || '' } }).then(function() {
+                ecrireTxt(CLE_DEM_COMPTE, JSON.stringify({ type: type, statut: 'attente', le: Date.now() }));
+                f.remove(); if (window.JUMELAGE_FERMER_PARAMETRES) window.JUMELAGE_FERMER_PARAMETRES();
+                bandeau('Demande envoyée : vous serez prévenu de la réponse.');
+            }, function(e) { b.disabled = false; f.querySelector('#JUM-GC-ERR').textContent = e.message; });
+        };
+    };
+    function quandCompte(t) { return t ? new Date(t).toLocaleDateString('fr-FR') + ' ' + new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''; }
+    window.JUMELAGE_GESTION_COMPTES = function() {
+        if (window.JUMELAGE_FERMER_PARAMETRES) window.JUMELAGE_FERMER_PARAMETRES();
+        var vieux = document.querySelector('.JUM-GC-FOND'); if (vieux) vieux.remove();
+        var f = document.createElement('div'); f.className = 'JUM-GC-FOND'; document.body.appendChild(f);
+        f.addEventListener('click', function(e) { if (e.target === f) f.remove(); });
+        var donnees = null, erreurTxt = '';
+        var dessiner = function() {
+            var d = donnees || {}, l = d.demandes || [], admin = d.admin || d.superAdmin;
+            f.innerHTML = '<div class="JUM-GC-FEN large"><button type="button" class="JUM-GC-X" aria-label="Fermer">✕</button><h3>👤 Demandes sur les comptes</h3>' +
+                (!donnees ? '<p>' + (erreurTxt ? esc(erreurTxt) : 'Chargement…') + '</p>' :
+                (l.length ? l.map(function(x) {
+                    return '<div class="JUM-GC-DEM"><b>' + esc(x.qui || x.mail) + '</b><small>' + esc(x.mail) + ' · ' + quandCompte(x.le) + '</small>' +
+                        '<span class="JUM-GC-TYPE ' + x.type + '">' + (x.type === 'reinit' ? '↺ Réinitialisation de ses appareils' : '🗑 Suppression de son compte') + '</span>' +
+                        (x.motif ? '<em>« ' + esc(x.motif) + ' »</em>' : '') +
+                        '<div class="JUM-GC-BTNS"><button type="button" class="JUM-R-SECOND" data-refus="' + x.id + '">Refuser</button><button type="button" class="JUM-R-PRINCIPAL" data-ok="' + x.id + '">Accepter</button></div></div>';
+                }).join('') : '<p class="JUM-GC-VIDE">Aucune demande en attente.</p>') +
+                (admin ? '<h4>Supprimer un compte (départ de l\'institution…)</h4><p>Administrateur ' + esc(d.superAdmin ? 'de TRIGONE' : 'du ' + ((uniteConnue(d.admin) || {}).nom || d.admin)) + ' : supprime tout ce que TRIGONE garde au nom de la personne. Irréversible.</p>' +
+                    '<input id="JUM-GC-MAIL" type="email" placeholder="Adresse du compte" autocomplete="off"><input id="JUM-GC-MAIL2" type="email" placeholder="Retapez l\'adresse" autocomplete="off">' +
+                    '<select id="JUM-GC-RAISON"><option>Départ de l\'institution</option><option>Mutation hors de l\'unité</option><option>À sa demande</option><option>Compte en double ou erroné</option><option>Autre</option></select>' +
+                    '<input id="JUM-GC-PREC" type="text" placeholder="Précision (facultatif)" autocomplete="off"><p class="JUM-GC-ERR" id="JUM-GC-ERR2"></p>' +
+                    '<button type="button" class="JUM-GC-SUPPR" data-suppr>🗑 Supprimer ce compte</button>' +
+                    '<h4>Journal des suppressions</h4>' + ((d.journal || []).length ? '<div class="JUM-GC-JOURNAL">' + d.journal.map(function(j) {
+                        return '<div><b>' + quandCompte(j.le) + '</b> · ' + esc(j.qui || 'compte supprimé') + '<small>par ' + esc(j.par) + ' — ' + esc(j.motif || '') + ' · Brevo : ' + esc(j.brevo || '—') + '</small></div>'; }).join('') + '</div>' : '<p class="JUM-GC-VIDE">Aucune suppression.</p>') : ''));
+            f.querySelector('.JUM-GC-X').onclick = function() { f.remove(); };
+            Array.prototype.forEach.call(f.querySelectorAll('[data-ok], [data-refus]'), function(b) {
+                b.onclick = function() {
+                    var id = b.getAttribute('data-ok') || b.getAttribute('data-refus'), ok = b.hasAttribute('data-ok'), x = (donnees.demandes || []).filter(function(y) { return y.id === id; })[0];
+                    var go = function() {
+                        appelApi('compte/decision', { methode: 'POST', corps: { id: id, accepte: ok, qui: window.JUMELAGE_QUI() } }).then(function(r) {
+                            bandeau(!ok ? 'Demande refusée : la personne est prévenue.' : r.statut === 'supprime' ? 'Compte supprimé.' : 'Réinitialisation accordée : ses appareils s\'effaceront à leur ouverture.'); charger();
+                        }, function(e) { bandeau(e.message); });
+                    };
+                    if (!ok) { go(); return; }
+                    var t = x.type === 'reinit' ? 'Accorder la réinitialisation ?' : 'Supprimer le compte de ' + (x.qui || x.mail) + ' ?';
+                    var txt = x.type === 'reinit' ? 'Chacun de ses appareils effacera TRIGONE à sa prochaine ouverture. Son compte et sa sauvegarde restent.' : 'Tout ce que TRIGONE garde à son nom est effacé (adresse TRIGONE, carte, photo, sauvegarde, appareils). Irréversible.';
+                    if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM(t, txt, x.type === 'reinit' ? 'Accorder' : 'Supprimer le compte', go, '⚠️', 'mascotte-poubelle.webp', true); else if (window.confirm(t)) go();
+                };
+            });
+            var bs = f.querySelector('[data-suppr]');
+            if (bs) bs.onclick = function() {
+                var m1 = f.querySelector('#JUM-GC-MAIL').value.trim().toLowerCase(), m2 = f.querySelector('#JUM-GC-MAIL2').value.trim().toLowerCase(), err = f.querySelector('#JUM-GC-ERR2');
+                if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(m1)) { err.textContent = 'Adresse invalide.'; return; }
+                if (m1 !== m2) { err.textContent = 'Les deux adresses ne correspondent pas.'; return; }
+                var motif = f.querySelector('#JUM-GC-RAISON').value + (f.querySelector('#JUM-GC-PREC').value.trim() ? ' : ' + f.querySelector('#JUM-GC-PREC').value.trim() : '');
+                var go = function() {
+                    appelApi('compte/supprimer', { methode: 'POST', corps: { mail: m1, motif: motif, qui: window.JUMELAGE_QUI() } }).then(function() { bandeau('Compte ' + m1 + ' supprimé.'); charger(); }, function(e) { err.textContent = e.message; });
+                };
+                if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Supprimer ' + m1 + ' ?', 'Motif : ' + motif + '\n\nTout ce que TRIGONE garde au nom de cette personne est effacé, ses appareils s\'effacent à leur ouverture. Irréversible.', 'Supprimer le compte', go, '⚠️', 'mascotte-poubelle.webp', true);
+                else if (window.confirm('Supprimer ' + m1 + ' ?')) go();
+            };
+        };
+        var charger = function() { appelApi('compte/demandes').then(function(r) { donnees = r; NB_DEMANDES_COMPTE = (r.demandes || []).length; dessiner(); }, function(e) { erreurTxt = e.message; dessiner(); }); };
+        dessiner(); charger();
+    };
+    // À l'ouverture (compte connecté) : unité transmise au serveur, demande en cours, réinitialisation accordée ou compte supprimé.
+    function verifierCompteDistant() {
+        var c = monCompte(); if (!c || !navigator.onLine) return;
+        var u = normeUnite(lireReglages().unite);
+        if (u && lireTxt('trigone_unite_publiee') !== u) appelApi('unite', { methode: 'POST' }).then(function() { ecrireTxt('trigone_unite_publiee', u); }).catch(function() {});
+        appelApi('compte/etat').then(function(r) {
+            if (!r.reinit) return;
+            appelApi('appareil', { methode: 'DELETE' }).catch(function() {}).then(function() { cleIdb('effacer').catch(function() {}).then(function() { toutEffacer('reinit'); }); });
+        }, function() {});
+        appelApi('compte/demandes').then(function(r) {
+            NB_DEMANDES_COMPTE = (r.demandes || []).length;
+            if (r.admin) ecrireTxt(CLE_ROLE_ADMIN, r.admin); else if (!r.superAdmin) { try { localStorage.removeItem(CLE_ROLE_ADMIN); } catch (e) {} }
+            if (r.mienne) ecrireTxt(CLE_DEM_COMPTE, JSON.stringify(r.mienne)); else { try { localStorage.removeItem(CLE_DEM_COMPTE); } catch (e) {} }
+            if (NB_DEMANDES_COMPTE && (rolesLocaux().chorus || r.admin || r.superAdmin) && !sessionStorage.getItem('trigone_dem_compte_vu')) {
+                try { sessionStorage.setItem('trigone_dem_compte_vu', '1'); } catch (e) {}
+                bandeau(NB_DEMANDES_COMPTE + ' demande' + (NB_DEMANDES_COMPTE > 1 ? 's' : '') + ' sur les comptes : Paramètres › Compte.');
+            }
+        }, function() {});
+    }
+    window.JUMELAGE_COMPTE_SUPPRIME = function() { cleIdb('effacer').catch(function() {}).then(function() { toutEffacer('supprime'); }); };
+    setTimeout(verifierCompteDistant, 2500);
+    window.addEventListener('online', function() { setTimeout(verifierCompteDistant, 2000); });
+    (function() {
+        var m = ''; try { m = sessionStorage.getItem('trigone_efface_motif') || ''; sessionStorage.removeItem('trigone_efface_motif'); } catch (e) {}
+        if (!m || (m !== 'reinit' && m !== 'supprime')) return;
+        setTimeout(function() { carteChoix(m === 'reinit' ? 'TRIGONE réinitialisé' : 'Compte TRIGONE supprimé', m === 'reinit' ? 'Votre demande a été accordée : TRIGONE repart comme au premier jour sur cet appareil. Reconnectez-vous avec votre adresse ; « Restaurer depuis mon compte » remet votre sauvegarde.'
+            : 'Votre compte TRIGONE a été supprimé par votre assistant Chorus DT ou l\'administrateur de votre unité : toutes les données de TRIGONE ont été effacées de cet appareil.', 'info'); }, 1500);
+    })();
+    if (/[?&]espace=comptes/.test(location.search)) setTimeout(function() { if (monCompte()) window.JUMELAGE_GESTION_COMPTES(); }, 1800);
     window.JUMELAGE_CODE_OUBLIE = function() {
         confirmerEffacement('Code oublié ?',
             'Il n\'existe aucun moyen de récupérer votre code. La seule solution est d\'effacer toutes les données de TRIGONE sur cet appareil (demandes, comptes-rendus, réglages). Cette action est irréversible.',
