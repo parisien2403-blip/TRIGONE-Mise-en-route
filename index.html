@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=184"></script>
+<script src="jumelage.js?v=185"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -680,12 +680,24 @@ body.dark-mode .MER-REG-GRILLE span.total { color: #f5f5f5; } body.dark-mode .ME
 
 /* Dossiers façon messagerie hors boîte (Bibliothèque, Documents, Remboursement) */
 .MER-BX-RANG { margin: 0 0 14px; }
+.MER-BX.tel .MER-BX-DTXT b { display: block; font-weight: 700; } .MER-BX.tel .MER-BX-DTXT small { display: block; font-weight: 500; font-size: 0.72rem; color: #8a8173; margin-top: 2px; line-height: 1.35; }
 .MER-BX-RANG .MER-BX-DTXT b { display: block; font-weight: 700; }
 .MER-BX-RANG .MER-BX-DTXT small { display: block; font-weight: 500; font-size: 0.72rem; color: #8a8173; margin-top: 2px; line-height: 1.35; }
 .MER-BX-RANG .MER-BX-D.nouveau .MER-BX-DTXT b { font-weight: 900; }
 .MER-DOSSIER-TETE { border-bottom: 1px solid var(--sm2-border, #ece6da) !important; }
 .MER-DOSSIER-TETE .MER-DOSSIER-RETOUR { border: 0 !important; padding: 4px 6px 4px 0 !important; color: #9a6f22 !important; background: none !important; }
 .MER-DOSSIER-TETE .MER-BX-DIC { color: #9a6f22; display: inline-flex; }
+/* Pages façon messagerie hors boîte (Bibliothèque, Documents) */
+.MER-BX.pc .MER-MAIL-COLD { background: #fbfaf7; border-right: 1px solid var(--sm2-border, #ece6da); display: flex; flex-direction: column; }
+.MER-BX.pc .MER-MAIL-COLD .MER-BX-DOSSIERS { border-right: 0; background: none; }
+.MER-MAIL-ACTIONS { padding: 6px 14px 14px; } .MER-BX-CARTE > .MER-MAIL-ACTIONS { padding: 12px 0 4px; }
+.MER-MAIL-ACTIONS .BTN { width: 100%; margin: 0; }
+.MER-MAIL-PIED { padding: 0 16px 16px; } .MER-BX.tel .MER-MAIL-PIED { padding: 0 0 10px; }
+.MER-MAIL-BTNS { flex-wrap: wrap; gap: 8px; margin-top: 14px; }
+.MER-MAIL-BTNS .BTN { width: auto; margin: 0; display: inline-flex; align-items: center; gap: 6px; }
+.MER-MAIL-BTNS .MER-BX-ICO, .MER-BX-LECTURE .BTN .MER-BX-ICO { width: 15px; height: 15px; }
+.MER-BX-LECTURE .MER-SUIVI, .MER-BX-LECTURE .MER-SUIVI-BLOC { margin-top: 10px; }
+body.dark-mode .MER-BX.pc .MER-MAIL-COLD { background: #181818; }
 .MER-BX-TOUTS { padding: 10px 16px 0; } .MER-BX.tel .MER-BX-TOUTS { padding: 8px 0 0; }
 .BTN.MER-BX-TOUT { width: 100%; margin: 0 0 6px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.74rem; } .BTN.MER-BX-TOUT .MER-BX-ICO { width: 16px; height: 16px; }
 .MER-BX-LIGNES { overflow: auto; } .MER-BX.pc .MER-BX-LIGNES { max-height: 70vh; }
@@ -1140,6 +1152,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=184"></script>
+<script src="app.js?v=185"></script>
 </body>
 </html>

@@ -634,6 +634,13 @@
         '.JUM-V2 .JUM-TRAIT { display: none; }' +
         // Téléphone (Android, iPhone) : barre d'outils en bas de la page de garde (Notice, Paramètres, Ma carte, Mise à jour,
         // Affichage PC), dernière rangée de la grille ; les boutons ronds dispersés disparaissent. PC : inchangé.
+        /* Pastille rouge de mouvement : dossier, entrée de menu ou onglet où un envoi vient d'arriver. */
+        'html body [data-mvt].mvt { position: relative; }' +
+        'html body [data-mvt].mvt::after { content: "" !important; display: block !important; position: absolute !important; top: 7px !important; left: 27px !important; right: auto !important; width: 10px !important; height: 10px !important; border-radius: 50% !important; background: #dc2626 !important; border: 2px solid #fff !important; box-shadow: 0 0 0 0 rgba(220,38,38,0.55) !important; pointer-events: none !important; z-index: 2 !important; animation: jumMvt 1.4s ease-out 4 !important; }' +
+        'html body .P0-TAB[data-mvt].mvt::after { top: 2px !important; left: calc(50% + 5px) !important; border-color: #121212 !important; }' +
+        'html body .MER-BX-D[data-mvt].mvt::after { top: 6px !important; left: 22px !important; }' +
+        'html body .BTN-ACCUEIL[data-mvt].mvt::after { top: 6px !important; left: auto !important; right: 10px !important; }' +
+        '@keyframes jumMvt { 0% { box-shadow: 0 0 0 0 rgba(220,38,38,0.55); } 100% { box-shadow: 0 0 0 9px rgba(220,38,38,0); } }' +
         /* Barre du bas des applis (téléphone) : même allure que celle de la page de garde. */
         '@media (max-width: 1099px) {' +
             'html.jum-dock-appli .JUM-CPT-ZONE .JUM-CARTE-ACCES, html.jum-dock-appli .JUM-CPT-ZONE .JUM-NOTICE-ACCES, html.jum-dock-appli .JUM-CPT-ZONE .JUM-MODE { display: none !important; }' +
@@ -1190,7 +1197,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 184, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 185, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2521,7 +2528,7 @@
     // Tout vit sur l'appareil : ce fichier unique permet de tout retrouver après un « Code oublié », une
     // réinitialisation ou un changement de téléphone / PC. Les accès valideurs (clé non exportable) n'y sont pas.
     var CLE_DERNIERE_SAUVEGARDE = 'trigone_derniere_sauvegarde', CLE_RAPPEL_SAUVEGARDE = 'trigone_dernier_rappel_sauvegarde';
-    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi|trigone_notif_muet|trigone_admin|trigone_appareil_anonyme|trigone_sauvegarde_auto)$/;
+    var NON_SAUVEGARDE = /^(trigone_build_vu|trigone_recharge_build|trigone_dernier_rappel_sauvegarde|trigone_compte|trigone_boite|trigone_roles_declares|trigone_suivi|trigone_notif_muet|trigone_admin|trigone_appareil_anonyme|trigone_sauvegarde_auto|trigone_mouvements|trigone_mvt_etat_mer|trigone_mvt_etat_cr)$/;
     function basePieces(creer) {
         return new Promise(function(ok) {
             if (!window.indexedDB) { ok(null); return; }
@@ -3663,6 +3670,23 @@
         } catch (e) { return { nature: 'inconnu', n: 0, ids: [] }; }
     }
     window.JUMELAGE_BOITE_LISTE = function() { return boiteLire(); };
+    // ---------- Pastilles de mouvement ----------
+    // Chaque fois qu'un envoi ou une demande change de dossier, son dossier, l'entrée du menu et l'onglet qui y mènent
+    // portent un point rouge jusqu'à ce qu'on ouvre ce dossier. Clés « APPLI:PAGE:DOSSIER » (ex. MER:BIBLIOTHEQUE:chorus) ;
+    // les éléments marqués data-mvt="MER:BIBLIOTHEQUE" (préfixe) s'allument si une clé en dessous est posée.
+    var CLE_MVT = 'trigone_mouvements';
+    function mvtLire() { return lireJSON(CLE_MVT) || {}; }
+    window.JUMELAGE_MVT = function(cle) { var m = mvtLire(); m[cle] = Date.now(); ecrireTxt(CLE_MVT, JSON.stringify(m)); window.JUMELAGE_MVT_MAJ(); };
+    window.JUMELAGE_MVT_VU = function(cle) { var m = mvtLire(); if (!m[cle]) return; delete m[cle]; ecrireTxt(CLE_MVT, JSON.stringify(m)); setTimeout(window.JUMELAGE_MVT_MAJ, 0); };
+    window.JUMELAGE_MVT_A = function(prefixe) { var m = mvtLire(); return Object.keys(m).some(function(k) { return k === prefixe || k.indexOf(prefixe + ':') === 0; }); };
+    window.JUMELAGE_MVT_MAJ = function() {
+        Array.prototype.forEach.call(document.querySelectorAll('[data-mvt]'), function(el) { el.classList.toggle('mvt', window.JUMELAGE_MVT_A(el.getAttribute('data-mvt'))); });
+    };
+    if (typeof MutationObserver === 'function') {
+        var mvtMinuteur = null, mvtObs = new MutationObserver(function() { clearTimeout(mvtMinuteur); mvtMinuteur = setTimeout(window.JUMELAGE_MVT_MAJ, 30); });
+        var mvtGo = function() { mvtObs.observe(document.body, { childList: true, subtree: true }); window.JUMELAGE_MVT_MAJ(); };
+        if (document.body) mvtGo(); else document.addEventListener('DOMContentLoaded', mvtGo);
+    }
     // ---------- Mémoire de TRIGONE sur l'appareil ----------
     // Bibliothèques sans limite de nombre : elles gardent tout, tant que la mémoire de TRIGONE le permet (environ 5 Mo
     // de texte par appareil, partagés par les deux applis ; justificatifs et pièces jointes sont rangés à part).
