@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=184"></script>
+<script src="../jumelage.js?v=185"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -4966,6 +4966,7 @@ body.dark-mode .MER-BX-TAG { background: #3a3122; color: #e8d6ad; }
 
 /* Dossiers façon messagerie hors boîte (Bibliothèque, Documents, Remboursement) */
 .MER-BX-RANG { margin: 0 0 14px; }
+.MER-BX.tel .MER-BX-DTXT b { display: block; font-weight: 700; } .MER-BX.tel .MER-BX-DTXT small { display: block; font-weight: 500; font-size: 0.72rem; color: #8a8173; margin-top: 2px; line-height: 1.35; }
 .MER-BX-RANG .MER-BX-DTXT b { display: block; font-weight: 700; }
 .MER-BX-RANG .MER-BX-DTXT small { display: block; font-weight: 500; font-size: 0.72rem; color: #8a8173; margin-top: 2px; line-height: 1.35; }
 .MER-BX-RANG .MER-BX-D.nouveau .MER-BX-DTXT b { font-weight: 900; }
@@ -4976,6 +4977,10 @@ body.dark-mode .MER-BX-TAG { background: #3a3122; color: #e8d6ad; }
 #P-BIB.BIB-PC .BIB-LIST { display: block !important; } #P-BIB .MER-BX-RANG { grid-column: 1 / -1; } #P-BIB .MER-BX.pc { min-height: 520px; width: 100%; } #P-BIB .MER-BX-COL3 #BIB-DETAIL-VIEW { padding: 0; }
 .BIB-DETAIL-SUIVI:empty { display: none; } .BIB-DETAIL-SUIVI { margin: 10px 0; display: flex; flex-direction: column; gap: 6px; }
 #P-BIB .MER-BX.tel { padding-bottom: 100px; }
+#P-STAT.STAT-PC #FORFAIT-DETAIL-VIEW .BIB-BACK-LINK, #P-STAT.STAT-PC #FORFAIT-YEAR-TOTAL { display: none !important; }
+#P-STAT .MER-BX.pc { min-height: 520px; width: 100%; } #P-STAT .MER-BX.tel { padding-bottom: 100px; }
+.CR-STAT-AN { display: flex; justify-content: space-between; } .CR-STAT-AN span:last-child { color: #9a6f22; letter-spacing: 0.04em; }
+.CR-STAT-TOTAL { margin-left: auto; font-weight: 800; color: #9a6f22; font-size: 0.95rem; }
 .CR-BX { margin-top: 6px; }
 #P-BOITE .BIB-HEADER { display: flex; align-items: center; gap: 10px; } #P-BOITE .BIB-HEADER-TXT { flex: 1; min-width: 0; }
 #P-BOITE.CR-BX-DEDANS .BIB-HEADER { display: none; }
@@ -5291,15 +5296,15 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation accueil">
 <div class="P0-DOCK-INNER">
-<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
+<button type="button" data-mvt="CR:P-BOITE" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
 <span class="P0-TAB-LBL">Boîte</span>
 </button>
-<button type="button" id="BTN-BIB-P0" class="P0-TAB" onclick="OUVRIR_BIBLIOTHEQUE()">
+<button type="button" id="BTN-BIB-P0" class="P0-TAB" data-mvt="CR:P-BIB" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
 </button>
-<button type="button" id="BTN-FORFAIT-P0" class="P0-TAB" onclick="OUVRIR_STAT_FORFAIT()">
+<button type="button" id="BTN-FORFAIT-P0" class="P0-TAB" data-mvt="CR:P-STAT" onclick="OUVRIR_STAT_FORFAIT()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.7 8.7c-.9-.8-2-1.3-3.2-1.3-2.5 0-4.5 2.1-4.5 4.6s2 4.6 4.5 4.6c1.2 0 2.3-.5 3.2-1.3M6.5 10.3h6M6.5 13.7h5.2"/></svg></span>
 <span class="P0-TAB-LBL">Remboursement</span>
 </button>
@@ -5362,15 +5367,15 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
 <div class="P0-DOCK-INNER">
-<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
+<button type="button" data-mvt="CR:P-BOITE" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
 <span class="P0-TAB-LBL">Boîte</span>
 </button>
-<button type="button" id="BTN-BIB-PAGE" class="P0-TAB is-active" onclick="OUVRIR_BIBLIOTHEQUE()">
+<button type="button" id="BTN-BIB-PAGE" class="P0-TAB is-active" data-mvt="CR:P-BIB" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
 </button>
-<button type="button" id="BTN-FORFAIT-BIB" class="P0-TAB" onclick="OUVRIR_STAT_FORFAIT()">
+<button type="button" id="BTN-FORFAIT-BIB" class="P0-TAB" data-mvt="CR:P-STAT" onclick="OUVRIR_STAT_FORFAIT()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.7 8.7c-.9-.8-2-1.3-3.2-1.3-2.5 0-4.5 2.1-4.5 4.6s2 4.6 4.5 4.6c1.2 0 2.3-.5 3.2-1.3M6.5 10.3h6M6.5 13.7h5.2"/></svg></span>
 <span class="P0-TAB-LBL">Remboursement</span>
 </button>
@@ -5394,15 +5399,15 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
 <div class="P0-DOCK-INNER">
-<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE is-active" onclick="OUVRIR_BOITE_CR()">
+<button type="button" data-mvt="CR:P-BOITE" class="P0-TAB HIDDEN CR-TAB-BOITE is-active" onclick="OUVRIR_BOITE_CR()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
 <span class="P0-TAB-LBL">Boîte</span>
 </button>
-<button type="button" class="P0-TAB" onclick="OUVRIR_BIBLIOTHEQUE()">
+<button type="button" class="P0-TAB" data-mvt="CR:P-BIB" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
 </button>
-<button type="button" class="P0-TAB" onclick="OUVRIR_STAT_FORFAIT()">
+<button type="button" class="P0-TAB" data-mvt="CR:P-STAT" onclick="OUVRIR_STAT_FORFAIT()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.7 8.7c-.9-.8-2-1.3-3.2-1.3-2.5 0-4.5 2.1-4.5 4.6s2 4.6 4.5 4.6c1.2 0 2.3-.5 3.2-1.3M6.5 10.3h6M6.5 13.7h5.2"/></svg></span>
 <span class="P0-TAB-LBL">Remboursement</span>
 </button>
@@ -5441,19 +5446,20 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <div id="FORFAIT-DETAIL-VIEW" class="BIB-VIEW HIDDEN">
 <button type="button" class="BIB-BACK-LINK" onclick="FORFAIT_RETOUR_LISTE()">← Liste</button>
 <div id="FORFAIT-MISSION-DETAIL" class="FORFAIT-MISSION-DETAIL"></div>
+<button type="button" id="FORFAIT-BTN-SUPPR" class="CR-BX-SUPPR HIDDEN" style="margin-top:10px;">Supprimer cette mission</button>
 </div>
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
 <div class="P0-DOCK-INNER">
-<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
+<button type="button" data-mvt="CR:P-BOITE" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
 <span class="P0-TAB-LBL">Boîte</span>
 </button>
-<button type="button" id="BTN-BIB-STAT" class="P0-TAB" onclick="OUVRIR_BIBLIOTHEQUE()">
+<button type="button" id="BTN-BIB-STAT" class="P0-TAB" data-mvt="CR:P-BIB" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
 </button>
-<button type="button" id="BTN-FORFAIT-PAGE" class="P0-TAB is-active" onclick="OUVRIR_STAT_FORFAIT()">
+<button type="button" id="BTN-FORFAIT-PAGE" class="P0-TAB is-active" data-mvt="CR:P-STAT" onclick="OUVRIR_STAT_FORFAIT()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.7 8.7c-.9-.8-2-1.3-3.2-1.3-2.5 0-4.5 2.1-4.5 4.6s2 4.6 4.5 4.6c1.2 0 2.3-.5 3.2-1.3M6.5 10.3h6M6.5 13.7h5.2"/></svg></span>
 <span class="P0-TAB-LBL">Remboursement</span>
 </button>
@@ -5586,15 +5592,15 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
 <div class="P0-DOCK-INNER">
-<button type="button" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
+<button type="button" data-mvt="CR:P-BOITE" class="P0-TAB HIDDEN CR-TAB-BOITE" onclick="OUVRIR_BOITE_CR()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/></svg></span>
 <span class="P0-TAB-LBL">Boîte</span>
 </button>
-<button type="button" class="P0-TAB" id="BTN-BIB-NOTICE" onclick="OUVRIR_BIBLIOTHEQUE()">
+<button type="button" class="P0-TAB" id="BTN-BIB-NOTICE" data-mvt="CR:P-BIB" onclick="OUVRIR_BIBLIOTHEQUE()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg></span>
 <span class="P0-TAB-LBL">Bibliothèque</span>
 </button>
-<button type="button" class="P0-TAB" id="BTN-FORFAIT-NOTICE" onclick="OUVRIR_STAT_FORFAIT()">
+<button type="button" class="P0-TAB" id="BTN-FORFAIT-NOTICE" data-mvt="CR:P-STAT" onclick="OUVRIR_STAT_FORFAIT()">
 <span class="P0-TAB-ICON" aria-hidden="true"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M14.7 8.7c-.9-.8-2-1.3-3.2-1.3-2.5 0-4.5 2.1-4.5 4.6s2 4.6 4.5 4.6c1.2 0 2.3-.5 3.2-1.3M6.5 10.3h6M6.5 13.7h5.2"/></svg></span>
 <span class="P0-TAB-LBL">Remboursement</span>
 </button>
@@ -8978,7 +8984,7 @@ var CR_ICONE_DOSSIER = '<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M3 
 var CR_IC_DOSSIER = { aenvoyer: 'env', envoyes: 'boite', traites: 'ok' };
 function CR_GRILLE_DOSSIERS(ds, action) {
     return '<div class="MER-BX tel MER-BX-RANG"><nav class="MER-BX-DOSSIERS">' + ds.map(function(d) {
-        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + ESC_HTML(d.id) + '" onclick="' + action + '(\'' + ESC_HTML(d.id) + '\')">' +
+        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + ESC_HTML(d.id) + '"' + (d.mvt ? ' data-mvt="' + d.mvt + '"' : '') + ' onclick="' + action + '(\'' + ESC_HTML(d.id) + '\')">' +
             '<span class="MER-BX-DIC">' + CR_BX_ICO(d.ic || CR_IC_DOSSIER[d.id] || 'cal') + '</span>' +
             '<span class="MER-BX-DTXT"><b>' + ESC_HTML(d.titre) + '</b><small>' + ESC_HTML(d.sous) + (d.det ? ' · ' + d.det : '') + '</small></span>' +
             (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '<span class="MER-BX-CHEV" aria-hidden="true">›</span></button>';
@@ -9028,7 +9034,8 @@ function RENDER_BIBLIOTHEQUE() {
     var ouvertB = ds.filter(function(d) { return d.id === BIB_UI.dossier; })[0];
     if (pc && !ouvertB) { ouvertB = ds.filter(function(d) { return d.n; })[0] || ds[1]; BIB_UI.dossier = ouvertB.id; }
     if (toolbar) toolbar.classList.toggle('HIDDEN', !!ouvertB || !GET_BIBLIOTHEQUE().length);
-    if (!ouvertB) { BIB_UI.dossier = null; list.innerHTML = CR_GRILLE_DOSSIERS(ds, 'BIB_OUVRIR_DOSSIER'); return; }
+    if (!ouvertB) { BIB_UI.dossier = null; list.innerHTML = CR_GRILLE_DOSSIERS(ds.map(function(d) { d.mvt = 'CR:P-BIB:' + d.id; return d; }), 'BIB_OUVRIR_DOSSIER'); return; }
+    CR_MVT_VU('CR:P-BIB:' + ouvertB.id);
     var dedans = items.map(function(it, i) { return { it: it, i: i }; }).filter(function(x) { return BIB_ETAT(x.it) === ouvertB.id; });
     if (BIB_UI.selectedIdx != null && !dedans.some(function(x) { return x.i === BIB_UI.selectedIdx; })) BIB_UI.selectedIdx = null;
     if (pc && BIB_UI.selectedIdx == null && dedans.length) BIB_UI.selectedIdx = dedans[0].i;
@@ -9046,7 +9053,7 @@ function RENDER_BIBLIOTHEQUE() {
     if (!pc) { list.innerHTML = '<div class="MER-BX tel">' + colL + '</div>'; return; }
     ds.forEach(function(d) { d.ic = CR_IC_DOSSIER[d.id]; });
     var colD = '<nav class="MER-BX-DOSSIERS"><div class="MER-BX-DT">Bibliothèque</div>' + ds.map(function(d) {
-        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.id === ouvertB.id ? ' on' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" onclick="BIB_OUVRIR_DOSSIER(\'' + d.id + '\')">' +
+        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.id === ouvertB.id ? ' on' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" data-mvt="CR:P-BIB:' + d.id + '" onclick="BIB_OUVRIR_DOSSIER(\'' + d.id + '\')">' +
             '<span class="MER-BX-DIC">' + CR_BX_ICO(d.ic) + '</span><span class="MER-BX-DTXT">' + ESC_HTML(d.titre) + '</span>' + (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</button>';
     }).join('') + '</nav>';
     list.innerHTML = '<div class="MER-BX pc">' + colD + '<div class="MER-BX-COL2">' + colL + '</div><div class="MER-BX-COL3" id="BIB-COL3">' +
@@ -10920,6 +10927,8 @@ function RENDER_FORFAIT_MISSION_DETAIL() {
         return;
     }
     var entry = wrap.entry;
+    var supF = document.getElementById('FORFAIT-BTN-SUPPR');
+    if (supF) { supF.classList.toggle('HIDDEN', !!wrap.enCours); supF.onclick = function() { SUPPRIMER_FORFAIT_MISSION(wrap.key); }; }
     var html = '<div class="FORFAIT-DETAIL-HEAD"><h3>Mission du ' + entry.debut + (wrap.enCours ? ' · en cours' : '') + '</h3></div>';
     html += '<div class="FORFAIT-AVANCE-BOX">';
     html += '<label class="FORFAIT-AVANCE-CHECK"><input type="checkbox" id="FORFAIT-AVANCE-CHK"' + (entry.avanceRequise ? ' checked' : '') + ' onchange="TOGGLE_AVANCE_PREVIEW(this.checked)"> Demande d\'avance perçue à la création de l\'OM (75 %)</label>';
@@ -11104,6 +11113,8 @@ function SAVE_FORFAIT_MISSION_DETAIL(andClose) {
 }
 
 function RENDER_FORFAIT_STAT() {
+    var detailStat = document.getElementById('FORFAIT-DETAIL-VIEW'), shellStat = document.getElementById('FORFAIT-LIST-VIEW');
+    if (detailStat && shellStat && detailStat.parentNode !== shellStat.parentNode) shellStat.parentNode.appendChild(detailStat);   // remis à sa place avant de refaire la liste
     var years = GET_FORFAIT_YEARS_AVAILABLE();
     var yearTabs = document.getElementById('FORFAIT-YEAR-TABS');
     var monthList = document.getElementById('FORFAIT-MONTH-LIST');
@@ -11144,7 +11155,13 @@ function RENDER_FORFAIT_STAT() {
         return { id: p.key, titre: lib.charAt(0).toUpperCase() + lib.slice(1), sous: n ? n + ' mission' + (n > 1 ? 's' : '') + (encours ? ' · dont ' + encours + ' en cours' : '') : 'Aucune mission pour l\'instant',
             nb: n, gris: !encours, nouveau: !!encours, det: n ? '<span>' + FORMAT_EURO(p.data.total) + ' €</span>' : 'Aucune mission' };
     };
+    // Façon messagerie : PC = mois | missions | détail ; téléphone = mois → missions → détail.
+    var pc = CR_BX_PC(), detailVue = document.getElementById('FORFAIT-DETAIL-VIEW');
+    document.getElementById('P-STAT').classList.toggle('STAT-PC', pc);
+    if (pc) document.getElementById('FORFAIT-LIST-VIEW').classList.remove('HIDDEN');
     var current = periods.filter(function(p) { return p.key === FORFAIT_STAT_PERIOD; })[0];
+    if (pc && !current) { current = periods.filter(function(p) { return p.data.items.length; })[0] || periods[0]; FORFAIT_STAT_PERIOD = current.key; }
+    if (current && window.JUMELAGE_MVT_VU) JUMELAGE_MVT_VU('CR:P-STAT:' + current.key);
     yearTabs.innerHTML = '';
     yearTabs.classList.add('HIDDEN');
     monthList.innerHTML = '';
@@ -11156,74 +11173,51 @@ function RENDER_FORFAIT_STAT() {
             var dsY = periods.filter(function(p) { return p.year === y; });
             if (!dsY.length) return;
             var totY = dsY.reduce(function(t, p) { return t + (p.data.total || 0); }, 0);
-            html += '<div class="CR-DOSSIERS-AN"><span>' + y + '</span><span>' + FORMAT_EURO(totY) + ' €</span></div>' + CR_GRILLE_DOSSIERS(dsY.map(dossierMois), 'FORFAIT_OUVRIR_MOIS');
+            html += '<div class="CR-DOSSIERS-AN"><span>' + y + '</span><span>' + FORMAT_EURO(totY) + ' €</span></div>' + CR_GRILLE_DOSSIERS(dsY.map(dossierMois).map(function(d) { d.mvt = 'CR:P-STAT:' + d.id; return d; }), 'FORFAIT_OUVRIR_MOIS');
         });
         monthList.innerHTML = html;
         if (detailPanel) detailPanel.innerHTML = '';
         return;
     }
-    monthList.innerHTML = CR_TETE_DOSSIER(dossierMois(current), 'FORFAIT_OUVRIR_MOIS(null)');
     if (clearBtn) clearBtn.classList.add('HIDDEN');
-    if (!current) {
-        yearTotal.classList.add('HIDDEN');
-        if (detailPanel) detailPanel.innerHTML = '';
-        return;
-    }
-    yearTotal.classList.remove('HIDDEN');
-    yearTotal.innerHTML = GET_MONTH_LABEL(current.month, current.year).toUpperCase() + '<strong>' + FORMAT_EURO(current.data.total) + ' €</strong>';
-
-    if (!current.data.items.length) monthList.insertAdjacentHTML('beforeend', '<div class="BIB-EMPTY"><p>Aucune mission ce mois-ci.</p><span>Les missions apparaissent ici dès leur saisie.</span></div>');
-    var list = document.createElement('div');
-    list.className = 'FORFAIT-MISSION-LIST';
-    current.data.items.sort(function(a, b) {
+    var items = current.data.items.slice().sort(function(a, b) {
         var pa = PARSE_DEBUT_PERIOD(a.debut), pb = PARSE_DEBUT_PERIOD(b.debut);
-        if (!pa || !pb) return 0;
-        return pb.day - pa.day;
-    }).forEach(function(item) {
-        var rowWrap = document.createElement('div');
-        rowWrap.className = 'FORFAIT-MISSION-ROW-WRAP';
-        var mRow = document.createElement('button');
-        mRow.type = 'button';
-        mRow.className = 'FORFAIT-MISSION-ROW' + (FORFAIT_UI.selectedKey === item.key ? ' active' : '');
-        var metaM = item.enCours ? 'En cours · non envoyé' : 'Terminée';
-        var roleLabelsStat = { CHEF: '👥 Chef', PARTICIPANT: '👤 Participant' };
-        if (roleLabelsStat[item.entry.role]) metaM += ' · ' + roleLabelsStat[item.entry.role];
-        var avance = CALC_ENTRY_AVANCE(item.entry);
-        var deplacements = CALC_MANUAL_TOTAL(item.entry);
-        var forfaitNet = (item.forfait || 0) - avance;
-        var breakdownTxt = 'Forfait ' + FORMAT_EURO(forfaitNet) + ' € · Déplacements ' + FORMAT_EURO(deplacements) + ' €';
-        if (avance > 0) breakdownTxt += ' · Avance déduite -' + FORMAT_EURO(avance) + ' €';
-        mRow.innerHTML =
-            '<div class="forfait-mission-top"><div>Mission du ' + item.debut + '</div><div class="forfait-mission-amount">' + FORMAT_EURO(item.grandTotal) + ' €</div></div>' +
-            '<div class="forfait-mission-bottom"><span class="forfait-mission-meta' + (item.enCours ? ' is-encours' : '') + '">' + metaM + '</span>' +
-            '<span class="forfait-mission-breakdown">' + breakdownTxt + '</span></div>';
-        mRow.onclick = function(ev) {
-            ev.stopPropagation();
-            if (FORFAIT_UI.selectedKey === item.key) {
-                FERMER_FORFAIT_MISSION_DETAIL();
-            } else {
-                OPEN_FORFAIT_MISSION_DETAIL(item.key);
-                RENDER_FORFAIT_STAT();
-            }
-        };
-        rowWrap.appendChild(mRow);
-        if (!item.enCours) {
-            var delBtn = document.createElement('button');
-            delBtn.type = 'button';
-            delBtn.className = 'LIB-ROW-DEL-BTN';
-            delBtn.setAttribute('aria-label', 'Supprimer cette mission');
-            delBtn.textContent = '×';
-            delBtn.onclick = function(ev) {
-                ev.stopPropagation();
-                SUPPRIMER_FORFAIT_MISSION(item.key);
-            };
-            rowWrap.appendChild(delBtn);
-        }
-        list.appendChild(rowWrap);
+        return pa && pb ? pb.day - pa.day : 0;
     });
-    monthList.appendChild(list);
-
-    if (FORFAIT_UI.selectedKey) RENDER_FORFAIT_MISSION_DETAIL();
+    if (FORFAIT_UI.selectedKey && !items.some(function(it) { return it.key === FORFAIT_UI.selectedKey; })) FORFAIT_UI.selectedKey = null;
+    if (pc && !FORFAIT_UI.selectedKey && items.length) FORFAIT_UI.selectedKey = items[0].key;
+    var dm = dossierMois(current);
+    var lignes = items.length ? items.map(function(item) {
+        var avance = CALC_ENTRY_AVANCE(item.entry), dep = CALC_MANUAL_TOTAL(item.entry);
+        var role = { CHEF: 'Chef de mission', PARTICIPANT: 'Participant' }[item.entry.role];
+        return '<button type="button" class="MER-BX-LIGNE' + (item.enCours ? ' nl' : '') + (pc && item.key === FORFAIT_UI.selectedKey ? ' on' : '') + '" data-key="' + ESC_HTML(item.key) + '" onclick="FORFAIT_CHOISIR(\'' + ESC_HTML(item.key) + '\')">' +
+            '<span class="MER-BX-PT" aria-hidden="true"></span><span class="MER-BX-C"><span class="l1"><b>Mission du ' + ESC_HTML(item.debut) + '</b><small>' + FORMAT_EURO(item.grandTotal) + ' €</small></span>' +
+            '<span class="l2"><i class="MER-BX-TAG">' + (item.enCours ? 'EN COURS' : 'TERMINÉE') + '</i>Forfait ' + FORMAT_EURO((item.forfait || 0) - avance) + ' € · Déplacements ' + FORMAT_EURO(dep) + ' €</span>' +
+            '<span class="l3">' + ESC_HTML([avance > 0 ? 'Avance déduite -' + FORMAT_EURO(avance) + ' €' : '', role, item.enCours ? 'non envoyé' : ''].filter(Boolean).join(' · ') || 'Mission terminée') + '</span></span></button>';
+    }).join('') : '<div class="MER-BX-VIDE">Aucune mission ce mois-ci. Les missions apparaissent ici dès leur saisie.</div>';
+    var colL = '<div class="MER-BX-LISTE"><div class="MER-BX-LT">' + (pc ? '' : '<button type="button" class="MER-BX-RETOUR" onclick="FORFAIT_OUVRIR_MOIS(null)">‹ Remboursement</button>') +
+        '<div class="MER-BX-LTITRE"><b>' + ESC_HTML(dm.titre) + '</b><span class="CR-STAT-TOTAL">' + FORMAT_EURO(current.data.total) + ' €</span></div><small>' + ESC_HTML(dm.sous) + '</small></div>' +
+        '<div class="MER-BX-LIGNES">' + lignes + '</div></div>';
+    yearTotal.classList.add('HIDDEN');
+    yearTotal.innerHTML = GET_MONTH_LABEL(current.month, current.year).toUpperCase() + '<strong>' + FORMAT_EURO(current.data.total) + ' €</strong>';
+    if (!pc) { monthList.innerHTML = '<div class="MER-BX tel">' + colL + '</div>'; if (FORFAIT_UI.selectedKey) RENDER_FORFAIT_MISSION_DETAIL(); return; }
+    var colD = '<nav class="MER-BX-DOSSIERS">' + years.map(function(y) {
+        var dsY = periods.filter(function(p) { return p.year === y; }); if (!dsY.length) return '';
+        var totY = dsY.reduce(function(t, p) { return t + (p.data.total || 0); }, 0);
+        return '<div class="MER-BX-DT CR-STAT-AN"><span>' + y + '</span><span>' + FORMAT_EURO(totY) + ' €</span></div>' + dsY.map(function(p) {
+            var d = dossierMois(p);
+            return '<button type="button" class="MER-DOSSIER MER-BX-D' + (p.key === current.key ? ' on' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" data-mvt="CR:P-STAT:' + d.id + '" onclick="FORFAIT_OUVRIR_MOIS(\'' + d.id + '\')">' +
+                '<span class="MER-BX-DIC">' + CR_BX_ICO('cal') + '</span><span class="MER-BX-DTXT">' + ESC_HTML(d.titre) + '</span>' + (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</button>';
+        }).join('');
+    }).join('') + '</nav>';
+    monthList.innerHTML = '<div class="MER-BX pc">' + colD + '<div class="MER-BX-COL2">' + colL + '</div><div class="MER-BX-COL3" id="STAT-COL3">' +
+        (items.length ? '' : '<div class="MER-BX-VIDE grand">' + CR_BX_ICO('cal') + '<span>Aucune mission ce mois-ci.</span></div>') + '</div></div>';
+    if (FORFAIT_UI.selectedKey && detailVue) { document.getElementById('STAT-COL3').appendChild(detailVue); detailVue.classList.remove('HIDDEN'); RENDER_FORFAIT_MISSION_DETAIL(); }
+}
+// Une mission de la liste : PC = détail à droite ; téléphone = détail plein écran.
+function FORFAIT_CHOISIR(key) {
+    if (CR_BX_PC()) { FORFAIT_UI.selectedKey = key; RENDER_FORFAIT_STAT(); return; }
+    OPEN_FORFAIT_MISSION_DETAIL(key);
 }
 
 
@@ -11719,7 +11713,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 281;
+var APP_CODE_VERSION = 282;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13104,6 +13098,7 @@ function AFTER_SHOW_PAGE(page) {
     document.body.classList.toggle('stat-active', page === 'P-STAT');
     document.body.classList.toggle('boite-active', page === 'P-BOITE');
     MAJ_PASTILLE_BOITE_CR();
+    setTimeout(CR_MVT_SCAN, 0);
     document.body.classList.toggle('notice-active', page === 'P-NOTICE');
     SET_GAUGE_VISIBLE((page === 'P2' || page === 'P2-FIN' || page === 'P3' || page === 'P3-SIG') && !M.IS_PAX);
     if (page === 'P2' || page === 'P2-FIN' || page === 'P3' || page === 'P3-SIG') UPDATE_GAUGE();
@@ -13801,7 +13796,7 @@ function RENDRE_MENU_PC_CR(page) {
     if (!(CR_PC_MQ && CR_PC_MQ.matches)) { m.innerHTML = ''; return; }
     var actif = { P0: 'P0', 'P-BIB': 'P-BIB', 'P-STAT': 'P-STAT', 'P-NOTICE': 'P-NOTICE', 'P-BOITE': 'P-BOITE' }[page || M.PAGE] || '';
     function item(cle, icone, libelle, action, pastille) {
-        return '<button type="button" class="PC-NAV' + (actif === cle ? ' actif' : '') + '" onclick="' + action + '">' + icone + '<span>' + libelle + '</span>' + (pastille ? '<span class="PC-PASTILLE">' + pastille + '</span>' : '') + '</button>';
+        return '<button type="button" class="PC-NAV' + (actif === cle ? ' actif' : '') + '" data-mvt="CR:' + cle + '" onclick="' + action + '">' + icone + '<span>' + libelle + '</span>' + (pastille ? '<span class="PC-PASTILLE">' + pastille + '</span>' : '') + '</button>';
     }
     // Menu de travail seulement : notice, réglages, références, mise à jour et signalement sont dans le menu du compte.
     m.innerHTML = '<button type="button" class="PC-MARQUE" onclick="JUMELAGE_CHOIX()" title="Revenir au choix Mise en route / Compte-rendu"><img src="logo_cr_accueil.png" alt="TRIGONE Compte-rendu de mission"></button>' +
@@ -13864,7 +13859,7 @@ function CR_BX_DOSSIERS() {
 }
 function CR_BX_PC() { return !!(CR_PC_MQ && CR_PC_MQ.matches); }
 function OUVRIR_BOITE_CR(dossier, id) {
-    if (dossier !== undefined) { if (CR_BX.dossier !== dossier) CR_BX.sel = null; CR_BX.dossier = dossier; }
+    if (dossier !== undefined) { if (CR_BX.dossier !== dossier) CR_BX.sel = null; CR_BX.dossier = dossier; if (dossier) CR_MVT_VU('CR:P-BOITE:' + dossier); }
     if (id !== undefined) CR_BX.sel = id;
     CR_BX.rep = false;
     SHOW_PAGE('P-BOITE');
@@ -13879,7 +13874,7 @@ function TPL_CR_BX_DOSSIERS(groupes, dId) {
     return '<nav class="MER-BX-DOSSIERS" aria-label="Dossiers"><div class="MER-BX-DT">Boîte TRIGONE</div>' + groupes.map(function(g, i) {
         return (i ? '<div class="MER-BX-SEP"></div>' : '') + g.map(function(d) {
             var nb = d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '';
-            return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.id === dId ? ' on' : '') + (d.nb ? '' : ' vide') + (d.nouveau ? ' nouveau' : '') + '" data-dossier="' + d.id + '" onclick="' + (d.lien || 'OUVRIR_BOITE_CR(\'' + d.id + '\', null)') + '">' +
+            return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.id === dId ? ' on' : '') + (d.nb ? '' : ' vide') + (d.nouveau ? ' nouveau' : '') + '" data-dossier="' + d.id + '" data-mvt="CR:P-BOITE:' + d.id + '" onclick="' + (d.lien || 'OUVRIR_BOITE_CR(\'' + d.id + '\', null)') + '">' +
                 '<span class="MER-BX-DIC">' + CR_BX_ICO(d.ic) + '</span><span class="MER-BX-DTXT">' + d.titre + '</span>' + nb + '<span class="MER-BX-CHEV" aria-hidden="true">›</span></button>';
         }).join('');
     }).join('') + '</nav>';
@@ -13938,6 +13933,7 @@ function RENDRE_BOITE_CR() {
     if (CR_BX.dossier && !d) CR_BX.dossier = null;
     if (d && CR_BX.sel && !d.items.some(function(y) { return y.id === CR_BX.sel; })) CR_BX.sel = null;
     if (pc && d && !CR_BX.sel && d.items.length) CR_BX.sel = d.items[0].id;
+    if (d) CR_MVT_VU('CR:P-BOITE:' + d.id);
     var colD = TPL_CR_BX_DOSSIERS(groupes, d && d.id);
     document.getElementById('P-BOITE').classList.toggle('CR-BX-DEDANS', !pc && !!d);
     if (pc) z.innerHTML = '<div class="MER-BX pc">' + colD + '<div class="MER-BX-COL2">' + TPL_CR_BX_LISTE(d, true) + '</div><div class="MER-BX-COL3">' + TPL_CR_BX_LECTURE(d, true) + '</div></div>';
@@ -13972,6 +13968,23 @@ function CR_BX_SUPPRIMER(id) {
         JUMELAGE_BOITE_SUPPRIMER(id).then(function() { CR_BX.sel = null; if (M.PAGE === 'P-BOITE') OUVRIR_BOITE_CR(); CR_TOAST('Supprimé', 'Retiré de votre boîte sur cet appareil.'); });
     });
 }
+// Pastilles de mouvement (jumelage.js) : point rouge sur le dossier, le menu et l'onglet où quelque chose vient d'arriver.
+function CR_MVT(cle) { if (window.JUMELAGE_MVT && !DEMO_MODE_ACTIF) JUMELAGE_MVT(cle); }
+function CR_MVT_VU(cle) { if (window.JUMELAGE_MVT_VU) JUMELAGE_MVT_VU(cle); }
+// Bibliothèque : un compte-rendu qui change de dossier (envoyé, traité par l'assistant Chorus DT) depuis le dernier passage.
+function CR_MVT_SCAN() {
+    if (DEMO_MODE_ACTIF) return;
+    var avant = null; try { avant = JSON.parse(localStorage.getItem('trigone_mvt_etat_cr') || 'null'); } catch (e) {}
+    var etat = {}, traites = 0;
+    GET_BIBLIOTHEQUE_DISPLAY_LIST().forEach(function(it) {
+        var e = it.entry, k = e.envoiId || ((e.debut || '') + '|' + (e.user || '') + '|' + (it.preview ? 'p' : 'a')), d = BIB_ETAT(it);
+        etat[k] = d;
+        if (avant && avant[k] !== d) { CR_MVT('CR:P-BIB:' + d); if (avant[k] && d === 'traites') traites++; }
+    });
+    try { localStorage.setItem('trigone_mvt_etat_cr', JSON.stringify(etat)); } catch (e) {}
+    if (traites) CR_TOAST(traites > 1 ? traites + ' comptes-rendus traités' : 'Compte-rendu traité', 'Pris en charge par ' + ASSIST_CHORUS_LABEL + ' — rangé dans Bibliothèque › « Traités ».', 'Voir', function() { BIB_UI.dossier = 'traites'; BIB_UI.selectedIdx = null; SHOW_PAGE('P-BIB'); });
+}
+window.addEventListener('trigone-suivi', function() { setTimeout(CR_MVT_SCAN, 50); });
 // Pastille rouge (à traiter) sur l'onglet Boîte et dans le menu PC.
 function MAJ_PASTILLE_BOITE_CR() {
     var n = CR_BX_NB(), compte = !!(window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF());
@@ -13998,8 +14011,9 @@ function CR_TOAST(titre, texte, bouton, action) {
 }
 window.addEventListener('trigone-range', function(e) {
     try {
-        if (CR_TOAST_PERSO) { var p = CR_TOAST_PERSO; CR_TOAST_PERSO = null; CR_TOAST.apply(null, p); return; }
+        if (CR_TOAST_PERSO) { var p = CR_TOAST_PERSO; CR_TOAST_PERSO = null; CR_TOAST.apply(null, p); CR_MVT('CR:P-BOITE:traites'); return; }
         var items = (e.detail && e.detail.items) || [], x = items[0]; if (!x) return;
+        CR_MVT('CR:P-BOITE:traites');
         var m = { justif: ['Justificatif rangé', 'Parti de « Justificatifs », rangé dans « Traités ».'], question: ['Question traitée', 'Rangée dans « Traités ».'],
             reponse: ['Réponse lue', 'Rangée dans « Traités ».'], collective: ['Compte-rendu prérempli ouvert', 'Retiré de « Missions collectives », rangé dans « Traités ».'] }[x.nature] || ['Rangé', 'Envoi rangé dans « Traités ».'];
         CR_TOAST(m[0], m[1], 'Voir', function() { OUVRIR_BOITE_CR('traites', x.id); });
@@ -14013,6 +14027,7 @@ window.addEventListener('trigone-boite', function() {
 // Nouveaux envois reçus pendant que Compte-rendu est ouvert : message, et « Voir » ouvre le bon dossier.
 window.JUMELAGE_APRES_RELEVE = function(nouveaux) {
     var a = nouveaux.filter(function(x) { return CR_BX_NATURES.indexOf(x.nature) >= 0; }), x = a[0];
+    a.forEach(function(e) { CR_MVT('CR:P-BOITE:' + (e.nature === 'collective' ? 'collective' : e.nature === 'justif' ? 'justif' : 'questions')); });
     if (!x) { CR_TOAST(nouveaux.length > 1 ? nouveaux.length + ' envois reçus' : 'Envoi reçu', 'Dans Mise en route › Boîte de réception.', 'Ouvrir', function() { JUMELAGE_ALLER('mer'); }); return; }
     var dos = x.nature === 'collective' ? 'collective' : x.nature === 'justif' ? 'justif' : 'questions';
     var titre = { collective: 'Mission collective reçue', justif: 'Justificatif reçu par mail', question: 'Question sur votre dossier', reponse: 'Réponse à votre question' }[x.nature];

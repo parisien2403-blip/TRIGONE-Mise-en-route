@@ -39,8 +39,8 @@ module.exports = async function(srv) {
     r.mois = r.mois.filter(m => m !== moisCourant || !enPlus);
     verifier(r.mois.filter(m => m !== 'Septembre 2026').concat(['Septembre 2026']).sort().join('|') === ['Août 2026', 'Octobre 2025', 'Septembre 2026'].sort().join('|') && r.mois[0] !== 'Octobre 2025' && r.ans[0] === '2026647,50 €' && r.ans[1] === '202560,00 €', 'Remboursement : un dossier par mois, regroupés par année avec leur total ' + JSON.stringify(r));
     await p.click('.MER-DOSSIER[data-dossier="2026-9"]'); await attendre(400);
-    verifier(await p.evaluate(() => document.querySelectorAll('.FORFAIT-MISSION-ROW').length === 2 && /307,50/.test(document.getElementById('FORFAIT-YEAR-TOTAL').textContent)), 'Remboursement : « Septembre 2026 » ouvert : 2 missions, 307,50 €');
-    await p.click('#FORFAIT-MONTH-LIST .MER-DOSSIER-RETOUR'); await attendre(400);
+    verifier(await p.evaluate(() => document.querySelectorAll('#FORFAIT-MONTH-LIST .MER-BX-LIGNE').length === 2 && /307,50/.test(document.getElementById('FORFAIT-YEAR-TOTAL').textContent)), 'Remboursement : « Septembre 2026 » ouvert : 2 missions, 307,50 €');
+    await p.click('#FORFAIT-MONTH-LIST .MER-BX-RETOUR'); await attendre(400);
     verifier((await p.evaluate(() => document.querySelectorAll('#FORFAIT-MONTH-LIST .MER-DOSSIER').length)) === 3 + enPlus, '« ‹ Dossiers » ramène à la liste des mois');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs[0] : ''));
     await b.close();

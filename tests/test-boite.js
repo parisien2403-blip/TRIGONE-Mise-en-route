@@ -363,6 +363,7 @@ module.exports = async function() {
     verifier(friseV2 >= 1,
         'Boîte de réception du VALIDEUR 2 : frise de suivi sur la demande traitée');
     await m.evaluate(() => OUVRIR_DOSSIER('BIBLIOTHEQUE', 'traitees')); await attendre(1500);
+    await m.evaluate(() => { const l = document.querySelector('.MER-BX-LIGNE'); if (l) l.click(); }); await attendre(800);
     verifier(await m.locator('.MER-SUIVI-TXT:has-text("Traitée par l\'assistant Chorus DT")').count() >= 1 && await m.locator('.MER-SUIVI-PT.fait').count() >= 4,
         'Bibliothèque : frise de suivi Envoyée → VALIDEUR 1 → VALIDEUR 2 → Chorus DT');
     await c.evaluate(() => OUVRIR_DOSSIER('CHORUS', 'traites')); await attendre(500);
