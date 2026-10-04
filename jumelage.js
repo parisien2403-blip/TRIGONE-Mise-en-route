@@ -3348,7 +3348,7 @@
                 dates: '', lieu: '', verifie: !!d.verifie, transfere: !!d.transfere, pieces: (d.fichiers || []).length,
                 fichiers: (d.fichiers || []).map(function(f) { return { nom: String(f.nom || 'justificatif').slice(0, 120), type: f.type || '' }; }) };
             if (d.app === 'TRIGONE-QUESTION' || d.app === 'TRIGONE-REPONSE') return { nature: d.app === 'TRIGONE-QUESTION' ? 'question' : 'reponse', n: 1, ids: [],
-                noms: d.qui || '', objet: d.objet || '', dates: '', lieu: '', ref: d.ref || '', genre: d.genre || '', question: String(d.question || '').slice(0, 2000), reponse: String(d.reponse || '').slice(0, 2000) };
+                noms: d.qui || '', objet: d.objet || '', dates: '', lieu: '', ref: d.ref || '', genre: d.genre || '', question: String(d.question || '').slice(0, 2000), reponse: String(d.reponse || '').slice(0, 2000), rappel: !!d.rappel };
             if (d.app === 'TRIGONE-CR') return { nature: 'cr', n: 1, ids: [], noms: d.missionnaire || '', objet: d.libelle || 'Compte-rendu de mission',
                 dates: d.dates || '', lieu: '', pieces: (d.fichiers || []).length, equipe: d.equipe || '', roleEquipe: d.roleEquipe || '',
                 omr: String(d.omr || '').slice(0, 30), mref: String(d.mref || '').slice(0, 60), montants: d.montants && typeof d.montants === 'object' ? d.montants : null };
@@ -4895,6 +4895,23 @@
         dessiner(); document.body.appendChild(f);
         window.JUMELAGE_PARTICIPANTS(pers, info.mailDemandeur).then(function(r) { resultats = r || pers.map(function() { return null; }); if (document.body.contains(f)) dessiner(); },
             function() { resultats = pers.map(function() { return { erreur: true }; }); if (document.body.contains(f)) dessiner(); });
+    };
+    // Registre : toucher un nom ouvre le recto seul de sa carte (identité, photo si partagée) ; ni verso ni QR code.
+    window.JUMELAGE_CARTE_RECTO = function(info, i) {
+        var pers = info.personnes || [], p = pers[i]; if (!p) return;
+        var vieux = document.querySelector('.JUM-PART-GRAND'); if (vieux) vieux.remove();
+        var g = document.createElement('div'); g.className = 'JUM-PART-GRAND';
+        var dessiner = function(x) {
+            var c = x && x.carte, d = { grade: (c && c.grade) || p.grade || '', nom: ((c && c.nom) || p.nom || '').toUpperCase(), prenom: (c && c.prenom) || p.prenom || '',
+                unite: (c && c.unite) || '', cie: (c && c.cie) || '', nid: (c && c.nid) || p.matricule || '', missions: null };
+            var etat = !x ? (navigator.onLine ? 'Vérification…' : 'Hors ligne : carte non vérifiée') : x.erreur ? 'Vérification impossible pour l\'instant'
+                : !x.compte ? '✖ Pas de compte TRIGONE à ce matricule' : !c ? '✖ Pas de carte TRIGONE vérifiée' : '✔ Carte TRIGONE vérifiée' + (x.photoUrl ? '' : ' · photo non partagée');
+            g.innerHTML = carteRecto(d, (x && x.photoUrl) || '') + '<p>' + esc(etat) + ' — touchez pour fermer</p>';
+        };
+        dessiner(null);
+        g.addEventListener('click', function() { g.remove(); }); document.body.appendChild(g);
+        window.JUMELAGE_PARTICIPANTS(pers, info.mailDemandeur).then(function(r) { if (document.body.contains(g)) dessiner((r || [])[i] || { erreur: true }); },
+            function() { if (document.body.contains(g)) dessiner({ erreur: true }); });
     };
     function carteVerso(d, memo) {
         var depuis = memo && memo.depuis ? new Date(memo.depuis).toLocaleDateString('fr-FR') : '', niv = niveauCarte(d.missions);

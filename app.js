@@ -3652,6 +3652,7 @@ function TPL_ENVOI_RECU(x) {
                 ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="APERCU_CR_RECU(\'' + x.id + '\')">👁 Aperçu</button>' +
                   '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="OUVRIR_CR_RECU(\'' + x.id + '\')">📎 Compte-rendu et justificatifs</button>'
             // Question : réponse en quelques mots ; réponse reçue : « Vu ».
+            : x.nature === 'question' && x.rappel && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">✔ Vu</button>'
             : x.nature === 'question' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="REPONDRE_QUESTION(\'' + x.id + '\')">💬 Répondre</button>'
             : x.nature === 'reponse' && !traite ? '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="JUMELAGE_BOITE_MARQUER(\'' + x.id + '\', \'traite\'); RECU_REAFFICHER();">✔ Vu</button>'
             : x.nature === 'question' || x.nature === 'reponse' ? ''
@@ -3850,10 +3851,17 @@ function MER_REG_NATURE_HTML(x) {
 }
 function MER_REG_NATURE_TXT(x) { var t = MER_REG_NATURE(x); return (t.collectif ? 'COLLECTIF (' + t.n + ')' : 'INDIVIDUEL') + (t.pays ? ' · INTERNATIONAL (' + t.pays.toUpperCase() + ')' : ''); }
 // Personnel d'une mission collective : un nom par ligne (plus lisible qu'une suite séparée par des virgules).
+// Registre : chaque nom est un bouton qui ouvre le recto de sa carte TRIGONE (pas de verso, pas de QR code).
 function MER_REG_PERSONNEL_HTML(x) {
     var l = (x.personnes || []).map(function(p) { return [p.grade, (p.nom || '').toUpperCase(), p.prenom].filter(Boolean).join(' '); });
-    if (l.length < 2) return ESC(MER_REG_PERSONNEL(x));
-    return '<ol class="MER-REG-PERS">' + l.map(function(n) { return '<li>' + ESC(n) + '</li>'; }).join('') + '</ol>';
+    if (!l.length) return ESC(MER_REG_PERSONNEL(x));
+    var ref = ESC(x.ref).replace(/'/g, ''), nom = function(n, i) { return x.sansDemande ? ESC(n) : '<button type="button" class="MER-REG-NOM" onclick="MER_REG_CARTE(\'' + ref + '\', ' + i + ')" title="Voir sa carte TRIGONE">🪪 ' + ESC(n) + '</button>'; };
+    if (l.length < 2) return nom(l[0], 0);
+    return '<ol class="MER-REG-PERS">' + l.map(function(n, i) { return '<li>' + nom(n, i) + '</li>'; }).join('') + '</ol>';
+}
+function MER_REG_CARTE(ref, i) {
+    var x = REGISTRE_LIGNE(ref); if (!x || !window.JUMELAGE_CARTE_RECTO) return;
+    JUMELAGE_CARTE_RECTO({ mailDemandeur: x.mailDemandeur || '', personnes: (x.personnes || []).map(function(p) { return { grade: p.grade, nom: p.nom, prenom: p.prenom, matricule: p.nid }; }) }, i);
 }
 function MER_REG_PERSONNEL(x) { return (x.personnes || []).map(function(p) { return [p.grade, (p.nom || '').toUpperCase(), p.prenom].filter(Boolean).join(' '); }).join(', ') || (x.crs && x.crs[0] ? x.crs[0].noms : '—'); }
 // Comptes-rendus attendus : un par personne de la demande (mission collective : le chef et chaque participant).
@@ -3989,10 +3997,10 @@ function TPL_REGISTRE() {
                 }).join('') + '<span class="total' + (corr.length ? ' corrige' : '') + '"><small>Total' + (corr.length ? ' ✏' : '') + '</small>' + MER_EUROS(m.total) + '</span></div>' : '') +
             (corr.length ? '<p class="MER-HINT MER-REG-CORR" style="margin:4px 0 0;">✏ Montants corrigés' + (x.corrigesPar ? ' par ' + ESC(x.corrigesPar) : '') + (x.corrigesLe ? ' le ' + MER_REG_JOUR(x.corrigesLe) : '') +
                 ' (compte-rendu : ' + corr.map(function(k) { return MER_REG_RUBRIQUES.filter(function(r) { return r[0] === k; })[0][1].toLowerCase() + ' ' + MER_EUROS(brut[k]); }).join(', ') + ')</p>' : '') +
-            MER_REG_RECU_PAR(x) +
+            MER_REG_RECU_PAR(x) + MER_REG_OBS_HTML(x, ref) +
             ((x.relances || []).length && !rendu ? '<p class="MER-HINT" style="margin:4px 0 0;">🔔 Relancé le ' + x.relances.map(function(t) { var q = (x.relancesQui || {})[t]; return MER_REG_JOUR(t) + (q ? ' (par ' + ESC(q) + ')' : ''); }).join(', ') + '</p>' : '') +
             (rendu ? '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + '</div>' :
-                '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + (e.cls === 'attente' || e.cls === 'retard' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', true)">🔔 Relancer pour le CR</button>' : '') +
+                '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + (e.cls === 'attente' || e.cls === 'retard' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_RELANCER(\'' + ref + '\')">🔔 Relancer pour le CR</button>' : '') +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', false)">✉ Message</button>' +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_SUPPRIMER(\'' + ref + '\')">Supprimer</button></div>');
         return '<div class="MER-REG-LIGNE ' + e.cls + '">' + tete + MER_REG_FRISE(x, e) + corps + '</div>';
@@ -4123,6 +4131,52 @@ function MER_PARTICIPANTS_REG(ref) {
         lignes: [['Objet', x.objet], ['N° OMR', x.omr], ['Début', MER_REG_JOUR(x.debut)], ['Fin', MER_REG_JOUR(x.fin)], ['Code FD', x.codeFD], ['Nature', MER_REG_NATURE_TXT(x)], ['Étape', MER_REG_ETAT(x).txt]]
     });
 }
+// Observations d'une ligne d'OMR : notes des assistants Chorus DT, partagées (qui a écrit, quand, qui a modifié).
+// { id, texte, par, le, modifPar, modifLe, supprime }
+function MER_REG_OBS(x) { return (x.observations || []).filter(function(o) { return o && !o.supprime && o.texte; }).sort(function(a, b) { return (a.le || 0) - (b.le || 0); }); }
+function MER_REG_OBS_HTML(x, ref) {
+    var l = MER_REG_OBS(x), d = l[l.length - 1];
+    return '<button type="button" class="MER-REG-OBS' + (l.length ? ' plein' : '') + '" onclick="REGISTRE_OBS(\'' + ref + '\')"><b>📝 Observations' + (l.length ? ' (' + l.length + ')' : '') + '</b>' +
+        (d ? '<span>' + ESC(d.modifPar || d.par || '') + ' · ' + MER_REG_JOUR(d.modifLe || d.le) + ' : « ' + ESC(d.texte.length > 90 ? d.texte.slice(0, 90) + '…' : d.texte) + ' »</span>' : '<span>Ajouter une observation</span>') + '<i>⤢</i></button>';
+}
+function REGISTRE_OBS(ref, edite) {
+    var x = REGISTRE_LIGNE(ref); if (!x) return;
+    FERMER_MODALE();
+    var l = MER_REG_OBS(x), quand = function(t) { return t ? new Date(t).toLocaleDateString('fr-FR') + ' à ' + new Date(t).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' }) : ''; };
+    var liste = l.map(function(o) {
+        if (o.id === edite) return '<div class="MER-OBS-UNE edite"><textarea id="MER-OBS-EDIT" rows="4">' + ESC(o.texte) + '</textarea><div class="MER-OBS-BTNS">' +
+            '<button type="button" class="BTN BTN-PRIMARY BTN-SMALL" onclick="REGISTRE_OBS_ENREGISTRER(\'' + ref + '\', \'' + o.id + '\')">Enregistrer</button><button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_OBS(\'' + ref + '\')">Annuler</button></div></div>';
+        return '<div class="MER-OBS-UNE"><p>' + ESC(o.texte).replace(/\n/g, '<br>') + '</p><small>✍ ' + ESC(o.par || '—') + ' · ' + quand(o.le) +
+            (o.modifLe ? '<br>✏ modifiée par ' + ESC(o.modifPar || '—') + ' · ' + quand(o.modifLe) : '') + '</small><div class="MER-OBS-BTNS">' +
+            '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_OBS(\'' + ref + '\', \'' + o.id + '\')">✏ Modifier</button><button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_OBS_SUPPRIMER(\'' + ref + '\', \'' + o.id + '\')">Supprimer</button></div></div>';
+    }).join('');
+    AFFICHER_MODALE('📝 Observations',
+        '<p class="MER-HINT" style="margin:0 0 10px;">' + (x.omr ? '<b>OMR N°' + ESC(x.omr) + '</b> — ' : '') + ESC(x.objet || '') + '<br>Visibles par tous les assistants Chorus DT de l\'unité (pas par le missionnaire).</p>' +
+        '<div class="MER-OBS-LISTE">' + (liste || '<div class="MER-EMPTY">Aucune observation pour cet OMR.</div>') + '</div>' +
+        (edite ? '' : '<textarea id="MER-OBS-NOUV" rows="3" placeholder="Nouvelle observation (ex. : billet SNCF annulé, remboursement partiel…)"></textarea>'),
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Fermer</button>' + (edite ? '' : '<button type="button" class="BTN BTN-PRIMARY" onclick="REGISTRE_OBS_AJOUTER(\'' + ref + '\')">Ajouter</button>'));
+    var fond = document.getElementById('MER-MODALE-FOND'); if (fond) { fond.firstChild.classList.add('MER-OBS-FEN'); fond.addEventListener('click', function(e) { if (e.target === fond) FERMER_MODALE(); }); }
+}
+function REGISTRE_OBS_MAJ(ref, modif) {
+    var x = REGISTRE_LIGNE(ref); if (!x) return;
+    var l = (x.observations || []).map(function(o) { return Object.assign({}, o); }); modif(l);
+    JUMELAGE_REGISTRE_MAJ(ref, { observations: l });
+    REGISTRE_OBS(ref); if (PAGE_ACTUELLE === 'CHORUS') MER_REG_REAFFICHER();
+}
+function MER_QUI_CHORUS() { return window.JUMELAGE_QUI ? JUMELAGE_QUI() : 'ASSIST CHORUS DT'; }
+function REGISTRE_OBS_AJOUTER(ref) {
+    var t = ((document.getElementById('MER-OBS-NOUV') || {}).value || '').trim(); if (!t) return;
+    REGISTRE_OBS_MAJ(ref, function(l) { l.push({ id: 'o' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), texte: t.slice(0, 2000), par: MER_QUI_CHORUS(), le: Date.now() }); });
+}
+function REGISTRE_OBS_ENREGISTRER(ref, id) {
+    var t = ((document.getElementById('MER-OBS-EDIT') || {}).value || '').trim(); if (!t) return;
+    REGISTRE_OBS_MAJ(ref, function(l) { l.forEach(function(o) { if (o.id === id && o.texte !== t) { o.texte = t.slice(0, 2000); o.modifPar = MER_QUI_CHORUS(); o.modifLe = Date.now(); } }); });
+}
+function REGISTRE_OBS_SUPPRIMER(ref, id) {
+    MSG_CONFIRM('Supprimer cette observation ?', 'Elle disparaît chez tous les assistants Chorus DT de l\'unité.', 'Supprimer', function() {
+        REGISTRE_OBS_MAJ(ref, function(l) { l.forEach(function(o) { if (o.id === id) { o.supprime = true; o.modifPar = MER_QUI_CHORUS(); o.modifLe = Date.now(); } }); });
+    }, '🗑');
+}
 function REGISTRE_LIGNE(ref) { return (window.JUMELAGE_REGISTRE ? JUMELAGE_REGISTRE() : []).filter(function(x) { return x.ref === ref; })[0]; }
 function REGISTRE_SUPPRIMER(ref) {
     var x = REGISTRE_LIGNE(ref); if (!x) return;
@@ -4145,10 +4199,23 @@ function REGISTRE_DESTINATAIRES(x) {
 function REGISTRE_ENVOYER_MESSAGE(x, dests, q, relance) {
     var qui = [window.JUMELAGE_QUI ? JUMELAGE_QUI() : '', 'ASSIST CHORUS DT'].filter(Boolean).join(' — ');
     return Promise.all(dests.map(function(d) {
-        return JUMELAGE_ENVOYER_DIRECT(d, 'QUESTION', 'Question.json', JSON.stringify({ app: 'TRIGONE-QUESTION', ref: x.ref, genre: 'registre', objet: (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || ''), question: q, qui: qui }), { differable: true, libelle: 'Votre message' });
+        return JUMELAGE_ENVOYER_DIRECT(d, 'QUESTION', 'Question.json', JSON.stringify({ app: 'TRIGONE-QUESTION', ref: x.ref, genre: 'registre', objet: (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || ''), question: q, qui: qui, rappel: !!relance }), { differable: true, libelle: 'Votre message' });
     })).then(function() {
         if (relance) { var t = Date.now(), rq = {}; rq[t] = window.JUMELAGE_QUI ? JUMELAGE_QUI() : ''; JUMELAGE_REGISTRE_MAJ(x.ref, { relances: (x.relances || []).concat([t]), relancesQui: Object.assign({}, x.relancesQui || {}, rq) }); }
     });
+}
+// Relance d'une ligne en un toucher : un simple rappel (pas de réponse attendue) dans la boîte TRIGONE du missionnaire.
+function REGISTRE_RELANCER(ref) {
+    var x = REGISTRE_LIGNE(ref); if (!x) return;
+    MSG_CONFIRM('Relancer pour le compte-rendu ?', MER_REG_PERSONNEL(x) + '\n' + (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || '') + '\n\nUn rappel arrive dans sa boîte TRIGONE, avec une notification :\n« ' + REGISTRE_TEXTE_RELANCE(x) + ' »', 'Relancer', function() {
+        REGISTRE_DESTINATAIRES(x).then(function(d) {
+            if (!d.length) { MSG_ERREUR('Relance impossible', 'Adresse du missionnaire inconnue pour cette demande.'); return; }
+            return REGISTRE_ENVOYER_MESSAGE(x, d, REGISTRE_TEXTE_RELANCE(x), true).then(function() {
+                if (PAGE_ACTUELLE === 'CHORUS') MER_REG_REAFFICHER();
+                MSG_INFO('Relance envoyée', 'Le rappel est dans sa boîte TRIGONE, avec une notification.', '🔔');
+            });
+        }).catch(function(e) { MSG_ERREUR('Envoi impossible', e.message || String(e)); });
+    }, '🔔');
 }
 // Relance groupée : tous les comptes-rendus en retard de la liste affichée, sauf ceux déjà relancés depuis moins de 24 h.
 function REGISTRE_A_RELANCER(l) {

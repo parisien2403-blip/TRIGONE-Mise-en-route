@@ -116,6 +116,12 @@ function registreFusion(a, b) {
     r.crs = registreUnirCrs(a.crs, b.crs);
     r.relances = Array.from(new Set((a.relances || []).concat(b.relances || []))).sort((x, y) => x - y);
     r.relancesQui = Object.assign({}, a.relancesQui || {}, b.relancesQui || {});
+    // Observations des assistants : réunies note par note (identifiant), la version la plus récente de chacune l'emporte.
+    if (a.observations || b.observations) {
+        const obs = {}, t = o => (o && (o.modifLe || o.le)) || 0;
+        (a.observations || []).concat(b.observations || []).forEach(o => { if (o && o.id && (!obs[o.id] || t(o) >= t(obs[o.id]))) obs[o.id] = o; });
+        r.observations = Object.keys(obs).map(k => obs[k]).sort((x, y) => (x.le || 0) - (y.le || 0)).slice(-200);
+    }
     // Heures réelles de la mission (départ, sur site, départ du site, retour) : envoyées par le missionnaire lui-même ;
     // la version du serveur l'emporte sur la copie d'un assistant.
     if (a.jalons || b.jalons) r.jalons = Object.assign({}, b.jalons || {}, a.jalons || {});
