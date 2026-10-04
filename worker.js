@@ -173,7 +173,7 @@ async function journal(env, unite, par, motif, mail, qui) {
         .bind(Date.now(), unite || '', par, String(motif || '').slice(0, 300), (await empreinte('supprime:' + mail)).slice(0, 16), String(qui || '').slice(0, 80), '').run();
 }
 const LIBRE_EN_ATTENTE = new Set(['etat', 'compte/etat', 'compte/role', 'compte/demandes', 'compte/demande', 'compte/appareils', 'unite', 'push', 'push/muet', 'push/test', 'boite', 'boite/etats',
-    'adresse', 'appareil', 'carte', 'carte/revoquer', 'sauvegarde', 'sauvegarde/info', 'admin', 'suivi']);
+    'adresse', 'appareil', 'carte', 'carte/revoquer', 'sauvegarde', 'sauvegarde/info', 'admin', 'suivi', 'annuaire']);
 
 // ---------- Registre OMR partagé ----------
 const UNITE_REGISTRE = 'principale';
@@ -1253,6 +1253,23 @@ async function api(requete, env, url, ctx) {
         return json({ ok: true, brevo: r.brevo });
     }
     // ----- Comptes de l'unité : validation des inscriptions, blocage, code de réactivation, mes appareils -----
+    // Annuaire de l'unité : les comptes validés qui ont ce rôle (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT), pour choisir
+    // ses destinataires dans une liste (première connexion, Mon profil). Grade, nom, prénom et adresse seulement.
+    if (chemin === 'annuaire' && methode === 'GET') {
+        const role = url.searchParams.get('role') || '';
+        if (!ROLES.includes(role)) return erreur(400, 'Rôle inconnu.');
+        const u = (await kv.get('unite-de:' + moi.mail)) || uniteRegistre(requete), db = await baseBoite(env);
+        const r = (await db.prepare('SELECT p.mail, p.roles, c.grade, c.nom, c.prenom, c.adresse, c.unite, c.statut FROM porteur_role p LEFT JOIN compte_unite c ON c.mail = p.mail WHERE p.roles LIKE ? LIMIT 500')
+            .bind('%' + role + '%').all()).results || [];
+        const l = [];
+        for (const x of r) {
+            if (x.mail === moi.mail || !String(x.roles || '').split(',').includes(role) || x.statut === 'attente' || x.statut === 'bloque') continue;
+            if ((x.unite || (await kv.get('unite-de:' + x.mail)) || '') !== u) continue;
+            l.push({ mail: x.mail, grade: x.grade || '', nom: x.nom || '', prenom: x.prenom || '' });
+        }
+        l.sort((a, b) => (a.nom || a.mail).localeCompare(b.nom || b.mail, 'fr'));
+        return json({ ok: true, role, unite: nomUnite(u), personnes: l.slice(0, 100) });
+    }
     if (chemin === 'compte/unite' && methode === 'GET') {
         const u = await adminUnite(env, moi.mail), sup = estAdmin(env, moi.mail), mu = (await kv.get('unite-de:' + moi.mail)) || UNITE_REGISTRE;
         const role = await gestionnaire(env, moi, u || mu, true);

@@ -31,9 +31,14 @@ module.exports = async function() {
     await a.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await a.fill('#JUM-C-MAIL', 'admin.' + s + '@interieur.gouv.fr'); await a.click('#JUM-C-ENVOI'); await attendre(1500); await a.click('#JUM-C-VALIDER'); await attendre(1500);
     await a.evaluate(() => { JUMELAGE_FERMER_COMPTE(); if (window.JUMELAGE_FERMER_REGLAGES) JUMELAGE_FERMER_REGLAGES(); });
     verifier((await api(a, 'role/admin', { code: codeAdmin, actif: true })).admin === '4RIISC', 'administrateur du 4°RIISC (code vérifié par le serveur)');
+    // L'administrateur est aussi VALIDEUR 1 de l'unité (pour l'annuaire des destinataires).
+    await api(a, 'unite', { grade: 'ADC', nom: 'GIRARD' + s.toUpperCase().replace(/[^A-Z]/g, 'X'), prenom: 'Luc' }); await api(a, 'roles', { ajouter: ['valideur1'] });
     // Inscription sans adresse mail.
     const n = await page();
     const mailN = await inscrire(n, 'Emma');
+    const ann = await api(n, 'annuaire?role=valideur1');
+    verifier((ann.personnes || []).some(x => x.mail === 'admin.' + s + '@interieur.gouv.fr' && /^GIRARD/.test(x.nom)), 'annuaire de l\'unité : le VALIDEUR 1 de l\'unité apparaît (grade, nom), même pour un compte en attente');
+    verifier((await api(n, 'annuaire?role=chorus')).ok && (await api(n, 'annuaire?role=autre')).statut === 400, 'annuaire : par rôle (VALIDEUR 1 / 2, assist DT) seulement');
     verifier(mailN === adresseAttendue && await n.evaluate(() => localStorage.getItem('trigone_compte_attente') === '1'), 'inscription sans mail : compte ' + mailN + ', en attente de validation');
     verifier((await api(n, 'compte/etat')).attente === true && (await api(n, 'nids', { personnes: [] })).statut === 403, 'compte en attente : rien d\'autre que l\'essentiel (envois, matricules… refusés)');
     verifier((await api(a, 'cles?mail=' + encodeURIComponent(mailN))).compte === false, 'compte en attente : personne ne peut encore lui envoyer');

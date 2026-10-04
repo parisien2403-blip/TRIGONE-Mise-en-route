@@ -13175,7 +13175,7 @@ function PIN_VALIDER_SUITE(ok) {
 
 function AFFICHER_CONFIG_INITIALE() {
     // Premier lancement : réglages communs à Mise en route et Compte-rendu (jumelage.js).
-    if (window.JUMELAGE_REGLAGES_FAITS && JUMELAGE_REGLAGES_FAITS()) MARQUER_PREMIER_LANCEMENT_FAIT();
+    if (window.JUMELAGE_REGLAGES_FAITS && JUMELAGE_REGLAGES_FAITS() && !(window.JUMELAGE_PARCOURS_EN_COURS && JUMELAGE_PARCOURS_EN_COURS())) MARQUER_PREMIER_LANCEMENT_FAIT();
     else if (window.JUMELAGE_REGLAGES) window.JUMELAGE_REGLAGES({ premiere: true });
 }
 
