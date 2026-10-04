@@ -4204,6 +4204,7 @@
             var avecMail = !ETAT_INFO || ETAT_INFO.connexionMail;   // plus de connexion par mail (sauf tests locaux)
             fenCompte.querySelector('#JUM-C-MAILBLOC').style.display = m === 'creer' || !avecMail ? 'none' : '';
             fenCompte.querySelector('#JUM-C-SANSMAILBLOC').style.display = m === 'connecter' && !avecMail ? '' : 'none';
+            ['.JUM-ACC-OU', '.JUM-ACC-AUTRE'].forEach(function(q) { var e = fenCompte.querySelector('[data-volet="mail"] ' + q); if (e) e.style.display = m === 'connecter' && !avecMail ? 'none' : ''; });
             Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-ACC-ONGLETS button'), function(x) { x.classList.toggle('actif', x.getAttribute('data-mode') === m); });
             fenCompte.querySelector('#JUM-C-TITRE').textContent = TEXTES[m][0];
             fenCompte.querySelector('#JUM-C-AIDE').textContent = TEXTES[m][1];
