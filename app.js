@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 229;
+var APP_CODE_VERSION = 230;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -3796,17 +3796,19 @@ function MER_DOSSIER_DE(page, x) {
 }
 function OUVRIR_DOSSIER(page, id) { if (id === 'inscriptions' && window.JUMELAGE_INSCRIPTIONS_ACTUALISER) JUMELAGE_INSCRIPTIONS_ACTUALISER(true); if (MER_BX_SEL && MER_DOSSIER[page] !== id) { MER_BX_SEL[page] = null; MER_BX_Q[page] = ''; } MER_DOSSIER[page] = id; MER_RECU_SELECTION = null; MER_BIB_SELECTION = null; SHOW_PAGE(page); window.scrollTo(0, 0); }
 // Grille de dossiers : d = { id, titre, sous, nb (compteur), gris (compteur gris au lieu de rouge), det (HTML), nouveau }.
+// Dossiers façon messagerie : une ligne par dossier (icône au trait, pastille rouge = à traiter).
+var MER_IC_DOSSIER = { validation: 'signer', chorus: 'pdf', traitees: 'ok', refus: 'refus', prets: 'env', signer: 'signer', collective: 'coll', justif: 'justif', questions: 'q', demandes: 'pdf', cr: 'cr', inscriptions: 'compte' };
 function TPL_GRILLE_DOSSIERS(page, ds) {
-    return '<div class="MER-DOSSIERS">' + ds.map(function(d) {
-        return '<button type="button" class="MER-DOSSIER' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" onclick="OUVRIR_DOSSIER(\'' + page + '\', \'' + d.id + '\')">' +
-            '<span class="MER-DOSSIER-ICONE">' + MER_ICONE_DOSSIER + (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</span>' +
-            '<span class="MER-DOSSIER-TXT"><b>' + ESC(d.titre) + '</b><small>' + ESC(d.sous) + '</small><small class="MER-DOSSIER-DET">' + d.det + '</small></span>' +
-            '<span class="MER-DOSSIER-CHEV" aria-hidden="true">›</span></button>';
-    }).join('') + '</div>';
+    return '<div class="MER-BX tel MER-BX-RANG"><nav class="MER-BX-DOSSIERS">' + ds.map(function(d) {
+        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" onclick="OUVRIR_DOSSIER(\'' + page + '\', \'' + d.id + '\')">' +
+            '<span class="MER-BX-DIC">' + MER_BX_ICO(d.ic || MER_IC_DOSSIER[d.id] || 'boite') + '</span>' +
+            '<span class="MER-BX-DTXT"><b>' + ESC(d.titre) + '</b><small>' + ESC(d.sous) + (d.det ? ' · ' + d.det : '') + '</small></span>' +
+            (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '<span class="MER-BX-CHEV" aria-hidden="true">›</span></button>';
+    }).join('') + '</nav></div>';
 }
 function TPL_TETE_DOSSIER(page, d) {
     return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="OUVRIR_DOSSIER(\'' + page + '\', null)">‹ Dossiers</button>' +
-        '<span class="MER-DOSSIER-ICONE petit">' + MER_ICONE_DOSSIER + '</span><b>' + ESC(d.titre) + '</b>' + (d.nb ? '<span class="MER-DOSSIER-NB en-ligne' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</div>';
+        '<span class="MER-BX-DIC">' + MER_BX_ICO(d.ic || MER_IC_DOSSIER[d.id] || 'boite') + '</span><b>' + ESC(d.titre) + '</b>' + (d.nb ? '<span class="MER-DOSSIER-NB en-ligne' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</div>';
 }
 function TPL_DOSSIERS(page, l) {
     var ds = MER_DOSSIERS(page, l);

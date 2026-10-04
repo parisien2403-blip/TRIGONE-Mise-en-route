@@ -11,7 +11,7 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=182"></script>
+<script src="../jumelage.js?v=183"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -4963,6 +4963,19 @@ body.dark-mode .MER-BX .MER-DOSSIER.MER-BX-D.on { background: #f5f5f5; color: #1
 body.dark-mode .MER-BX-LIGNE.on { background: #2a2418; }
 body.dark-mode .MER-BX-TAG { background: #3a3122; color: #e8d6ad; }
 .PC-PASTILLE { margin-left: auto; background: #dc2626; color: #fff; font-size: 0.66rem; font-weight: 800; border-radius: 999px; padding: 2px 7px; }
+
+/* Dossiers façon messagerie hors boîte (Bibliothèque, Documents, Remboursement) */
+.MER-BX-RANG { margin: 0 0 14px; }
+.MER-BX-RANG .MER-BX-DTXT b { display: block; font-weight: 700; }
+.MER-BX-RANG .MER-BX-DTXT small { display: block; font-weight: 500; font-size: 0.72rem; color: #8a8173; margin-top: 2px; line-height: 1.35; }
+.MER-BX-RANG .MER-BX-D.nouveau .MER-BX-DTXT b { font-weight: 900; }
+.MER-DOSSIER-TETE { border-bottom: 1px solid var(--sm2-border, #ece6da) !important; }
+.MER-DOSSIER-TETE .MER-DOSSIER-RETOUR { border: 0 !important; padding: 4px 6px 4px 0 !important; color: #9a6f22 !important; background: none !important; }
+.MER-DOSSIER-TETE .MER-BX-DIC { color: #9a6f22; display: inline-flex; }
+#P-BIB.BIB-PC #BIB-DETAIL-VIEW .BIB-BACK-LINK { display: none; }
+#P-BIB.BIB-PC .BIB-LIST { display: block !important; } #P-BIB .MER-BX-RANG { grid-column: 1 / -1; } #P-BIB .MER-BX.pc { min-height: 520px; width: 100%; } #P-BIB .MER-BX-COL3 #BIB-DETAIL-VIEW { padding: 0; }
+.BIB-DETAIL-SUIVI:empty { display: none; } .BIB-DETAIL-SUIVI { margin: 10px 0; display: flex; flex-direction: column; gap: 6px; }
+#P-BIB .MER-BX.tel { padding-bottom: 100px; }
 .CR-BX { margin-top: 6px; }
 #P-BOITE .BIB-HEADER { display: flex; align-items: center; gap: 10px; } #P-BOITE .BIB-HEADER-TXT { flex: 1; min-width: 0; }
 #P-BOITE.CR-BX-DEDANS .BIB-HEADER { display: none; }
@@ -5339,10 +5352,12 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
 <span id="BIB-DETAIL-USER" class="BIB-DETAIL-USER"></span>
 <span id="BIB-DETAIL-FORFAIT" class="BIB-DETAIL-FORFAIT HIDDEN"></span>
 </div>
+<div id="BIB-DETAIL-SUIVI" class="BIB-DETAIL-SUIVI"></div>
 <div id="BIB-RECAP" class="BIB-RECAP-BOX RECAP-BOX"></div>
 <button type="button" id="BIB-BTN-REDOWNLOAD" class="BTN BTN-QR" style="margin-top:12px;" onclick="RETELECHARGER_PDF_BIBLIOTHEQUE(BIB_UI.selectedIdx)">⬇️ Retélécharger le PDF de ce compte-rendu</button>
 <button type="button" id="BIB-BTN-RESHARE-QR" class="BTN BTN-QR HIDDEN" style="margin-top:8px;" onclick="RENVOYER_PAX_BIBLIOTHEQUE(BIB_UI.selectedIdx)">📨 Renvoyer aux participants</button>
 <button type="button" id="BIB-BTN-EQUIPE" class="BTN BTN-CONTINUE HIDDEN" style="margin-top:8px;" onclick="SUIVI_EQUIPE_BIBLIOTHEQUE(BIB_UI.selectedIdx)">👥 Suivi de l'équipe</button>
+<button type="button" id="BIB-BTN-SUPPR" class="CR-BX-SUPPR HIDDEN" style="margin-top:10px;">Supprimer ce compte-rendu</button>
 </div>
 </div>
 <nav class="P0-TAB-BAR" aria-label="Navigation">
@@ -8848,6 +8863,7 @@ function BIB_AFFICHER_DETAIL() {
 function BIB_RETOUR_LISTE() {
     BIB_UI.selectedIdx = null;
     BIB_AFFICHER_LISTE();
+    RENDER_BIBLIOTHEQUE();
 }
 
 function RETELECHARGER_PDF_BIBLIOTHEQUE(idx) {
@@ -8873,6 +8889,15 @@ function RETELECHARGER_PDF_BIBLIOTHEQUE(idx) {
 
 
 function OUVRIR_BIB_RECAP(idx) {
+    // PC : la liste reste affichée, le compte-rendu s'ouvre dans la colonne de droite.
+    if (CR_BX_PC() && document.getElementById('P-BIB') && !document.getElementById('P-BIB').classList.contains('HIDDEN')) {
+        var it = GET_BIBLIOTHEQUE_DISPLAY_LIST()[idx]; if (!it) return;
+        BIB_UI.selectedIdx = idx; BIB_UI.dossier = BIB_ETAT(it); RENDER_BIBLIOTHEQUE(); return;
+    }
+    BIB_REMPLIR_RECAP(idx);
+    BIB_AFFICHER_DETAIL();
+}
+function BIB_REMPLIR_RECAP(idx) {
     var items = GET_BIBLIOTHEQUE_DISPLAY_LIST();
     var item = items[idx];
     if (!item) return;
@@ -8900,7 +8925,10 @@ function OUVRIR_BIB_RECAP(idx) {
     if (reshareBtn) reshareBtn.classList.toggle('HIDDEN', !entry.snapshot || !!item.preview || !(entry.role === 'CHEF' || entry.snapshot.COLLECTIVE === true));
     var equipeBtn = document.getElementById('BIB-BTN-EQUIPE');
     if (equipeBtn) equipeBtn.classList.toggle('HIDDEN', !entry.snapshot || !!item.preview || !entry.snapshot.EQUIPE_REF || entry.snapshot.IS_PAX);
-    BIB_AFFICHER_DETAIL();
+    var supBtn = document.getElementById('BIB-BTN-SUPPR');
+    if (supBtn) { supBtn.classList.toggle('HIDDEN', !!item.preview); supBtn.onclick = function() { SUPPRIMER_BIB_ENTRY(item.storeIdx); }; }
+    var suivi = document.getElementById('BIB-DETAIL-SUIVI');
+    if (suivi) suivi.innerHTML = item.preview ? '' : TPL_BIB_SUIVI(entry);
 }
 
 
@@ -8946,17 +8974,19 @@ window.addEventListener('trigone-suivi', function() {
 // ----- Dossiers (Bibliothèque, Remboursement) : comme une messagerie, des dossiers jaunes avec leur compteur -----
 var CR_ICONE_DOSSIER = '<svg viewBox="0 0 48 40" aria-hidden="true"><path d="M3 7a4 4 0 0 1 4-4h11l5 5h18a4 4 0 0 1 4 4v3H3Z" fill="#E0A800"/><path d="M3 13a3 3 0 0 1 3-3h36a3 3 0 0 1 3 3v21a3 3 0 0 1-3 3H6a3 3 0 0 1-3-3Z" fill="#F6C343"/><path d="M3 15h42" stroke="#FBD970" stroke-width="1.5"/></svg>';
 // d = { id, titre, sous, nb, gris, det (HTML), nouveau } ; action(id) : nom de la fonction appelée au toucher.
+// Dossiers façon messagerie : une ligne par dossier (icône au trait, pastille rouge = à traiter).
+var CR_IC_DOSSIER = { aenvoyer: 'env', envoyes: 'boite', traites: 'ok' };
 function CR_GRILLE_DOSSIERS(ds, action) {
-    return '<div class="MER-DOSSIERS">' + ds.map(function(d) {
-        return '<button type="button" class="MER-DOSSIER' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + ESC_HTML(d.id) + '" onclick="' + action + '(\'' + ESC_HTML(d.id) + '\')">' +
-            '<span class="MER-DOSSIER-ICONE">' + CR_ICONE_DOSSIER + (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</span>' +
-            '<span class="MER-DOSSIER-TXT"><b>' + ESC_HTML(d.titre) + '</b><small>' + ESC_HTML(d.sous) + '</small><small class="MER-DOSSIER-DET">' + d.det + '</small></span>' +
-            '<span class="MER-DOSSIER-CHEV" aria-hidden="true">›</span></button>';
-    }).join('') + '</div>';
+    return '<div class="MER-BX tel MER-BX-RANG"><nav class="MER-BX-DOSSIERS">' + ds.map(function(d) {
+        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.nouveau ? ' nouveau' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + ESC_HTML(d.id) + '" onclick="' + action + '(\'' + ESC_HTML(d.id) + '\')">' +
+            '<span class="MER-BX-DIC">' + CR_BX_ICO(d.ic || CR_IC_DOSSIER[d.id] || 'cal') + '</span>' +
+            '<span class="MER-BX-DTXT"><b>' + ESC_HTML(d.titre) + '</b><small>' + ESC_HTML(d.sous) + (d.det ? ' · ' + d.det : '') + '</small></span>' +
+            (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '<span class="MER-BX-CHEV" aria-hidden="true">›</span></button>';
+    }).join('') + '</nav></div>';
 }
 function CR_TETE_DOSSIER(d, retour) {
     return '<div class="MER-DOSSIER-TETE"><button type="button" class="MER-DOSSIER-RETOUR" onclick="' + retour + '">‹ Dossiers</button>' +
-        '<span class="MER-DOSSIER-ICONE petit">' + CR_ICONE_DOSSIER + '</span><b>' + ESC_HTML(d.titre) + '</b>' + (d.nb ? '<span class="MER-DOSSIER-NB en-ligne' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</div>';
+        '<span class="MER-BX-DIC">' + CR_BX_ICO(d.ic || CR_IC_DOSSIER[d.id] || 'cal') + '</span><b>' + ESC_HTML(d.titre) + '</b>' + (d.nb ? '<span class="MER-DOSSIER-NB en-ligne' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</div>';
 }
 // Bibliothèque : dossier d'un compte-rendu selon son suivi.
 function BIB_ETAT(item) {
@@ -8967,10 +8997,12 @@ function BIB_ETAT(item) {
 function BIB_OUVRIR_DOSSIER(id) { BIB_UI.dossier = id || null; BIB_UI.selectedIdx = null; RENDER_BIBLIOTHEQUE(); window.scrollTo(0, 0); }
 
 function RENDER_BIBLIOTHEQUE() {
+    var detailBib = document.getElementById('BIB-DETAIL-VIEW'), shellBib = document.getElementById('BIB-LIST-VIEW').parentNode;
+    if (detailBib && detailBib.parentNode !== shellBib) shellBib.appendChild(detailBib);   // remis à sa place avant de refaire la liste
     if (window.JUMELAGE_SUIVI_ACTUALISER) setTimeout(JUMELAGE_SUIVI_ACTUALISER, 0);
     var items = GET_BIBLIOTHEQUE_DISPLAY_LIST();
     var sousTitre = document.getElementById('BIB-SOUS-TITRE');
-    if (sousTitre && window.JUMELAGE_MEMOIRE_TEXTE) sousTitre.textContent = JUMELAGE_MEMOIRE_TEXTE(GET_BIBLIOTHEQUE().length, 'compte-rendu gardé', 'comptes-rendus gardés') + ' (× pour en supprimer un)';
+    if (sousTitre && window.JUMELAGE_MEMOIRE_TEXTE) sousTitre.textContent = JUMELAGE_MEMOIRE_TEXTE(GET_BIBLIOTHEQUE().length, 'compte-rendu gardé', 'comptes-rendus gardés');
     var list = document.getElementById('BIB-LIST');
     var empty = document.getElementById('BIB-EMPTY');
     var toolbar = document.getElementById('BIB-LIST-TOOLBAR');
@@ -8989,58 +9021,37 @@ function RENDER_BIBLIOTHEQUE() {
         d.nb = d.n; d.gris = d.id !== 'aenvoyer'; d.nouveau = d.id === 'aenvoyer' && d.n > 0;
         d.det = d.n ? (d.id === 'aenvoyer' ? '<span class="MER-DOSSIER-ATT">' : '<span>') + d.n + ' compte' + (d.n > 1 ? 's' : '') + '-rendu' + (d.n > 1 ? 's' : '') + '</span>' : 'Aucun compte-rendu';
     });
+    // Façon messagerie : PC = dossiers | liste | compte-rendu ; téléphone = dossiers → liste → compte-rendu.
+    var pc = CR_BX_PC(), detail = document.getElementById('BIB-DETAIL-VIEW');
+    document.getElementById('P-BIB').classList.toggle('BIB-PC', pc);
+    if (pc) document.getElementById('BIB-LIST-VIEW').classList.remove('HIDDEN');
     var ouvertB = ds.filter(function(d) { return d.id === BIB_UI.dossier; })[0];
-    if (!ouvertB) {
-        BIB_UI.dossier = null;
-        if (toolbar) toolbar.classList.toggle('HIDDEN', !GET_BIBLIOTHEQUE().length);
-        list.innerHTML = CR_GRILLE_DOSSIERS(ds, 'BIB_OUVRIR_DOSSIER');
-        return;
-    }
-    if (toolbar) toolbar.classList.add('HIDDEN');
-    list.insertAdjacentHTML('beforeend', CR_TETE_DOSSIER(ouvertB, 'BIB_OUVRIR_DOSSIER(null)'));
-    if (!ouvertB.n) list.insertAdjacentHTML('beforeend', '<div class="BIB-EMPTY"><p>Aucun compte-rendu dans ce dossier.</p></div>');
-    items.forEach(function(item, i) {
-        if (BIB_ETAT(item) !== ouvertB.id) return;
-        var entry = item.entry;
-        var wrap = document.createElement('div');
-        wrap.className = 'BIB-CARD-WRAP';
-        var card = document.createElement('button');
-        card.type = 'button';
-        card.className = 'BIB-CARD';
-        var amountHtml = entry.forfaitOfficiel != null
-            ? '<span class="BIB-CARD-AMOUNT">' + FORMAT_EURO(entry.forfaitOfficiel) + ' €<small>forfaitaire</small></span>'
-            : '';
-        var badgeHtml = item.preview ? '<span class="BIB-CARD-BADGE">Non envoyé</span>' : '';
-        var roleLabels = { CHEF: '👥 Chef de mission', PARTICIPANT: '👤 Participant' };
-        var roleBadgeHtml = roleLabels[entry.role] ? '<span class="BIB-CARD-ROLE-BADGE">' + roleLabels[entry.role] + '</span>' : '';
-        card.innerHTML =
-            '<span class="BIB-CARD-ICON" aria-hidden="true">' + BIB_CARD_SVG() + '</span>' +
-            '<span class="BIB-CARD-BODY">' +
-                '<span class="BIB-CARD-DATE">Mission du ' + (entry.debut || '—') + '</span>' +
-                '<span class="BIB-CARD-USER">' + (entry.user || 'Missionnaire') + '</span>' +
-                roleBadgeHtml + badgeHtml +
-            '</span>' +
-            '<span class="BIB-CARD-RIGHT">' + amountHtml + '<span class="BIB-CARD-CHEV" aria-hidden="true">›</span></span>' +
-            (item.preview ? '' : '<span class="BIB-CARD-SUIVI-BLOC">' + TPL_BIB_SUIVI(entry) + '</span>');
-        card.onclick = function() { OUVRIR_BIB_RECAP(i); };
-        wrap.appendChild(card);
-        if (!item.preview) {
-            var delBtn = document.createElement('button');
-            delBtn.type = 'button';
-            delBtn.className = 'LIB-ROW-DEL-BTN';
-            delBtn.setAttribute('aria-label', 'Supprimer ce compte-rendu');
-            delBtn.textContent = '×';
-            delBtn.onclick = function(ev) {
-                ev.stopPropagation();
-                SUPPRIMER_BIB_ENTRY(item.storeIdx);
-            };
-            wrap.appendChild(delBtn);
-        }
-        list.appendChild(wrap);
-    });
-    if (BIB_UI.selectedIdx != null && BIB_UI.selectedIdx < items.length) {
-        OUVRIR_BIB_RECAP(BIB_UI.selectedIdx);
-    }
+    if (pc && !ouvertB) { ouvertB = ds.filter(function(d) { return d.n; })[0] || ds[1]; BIB_UI.dossier = ouvertB.id; }
+    if (toolbar) toolbar.classList.toggle('HIDDEN', !!ouvertB || !GET_BIBLIOTHEQUE().length);
+    if (!ouvertB) { BIB_UI.dossier = null; list.innerHTML = CR_GRILLE_DOSSIERS(ds, 'BIB_OUVRIR_DOSSIER'); return; }
+    var dedans = items.map(function(it, i) { return { it: it, i: i }; }).filter(function(x) { return BIB_ETAT(x.it) === ouvertB.id; });
+    if (BIB_UI.selectedIdx != null && !dedans.some(function(x) { return x.i === BIB_UI.selectedIdx; })) BIB_UI.selectedIdx = null;
+    if (pc && BIB_UI.selectedIdx == null && dedans.length) BIB_UI.selectedIdx = dedans[0].i;
+    var tag = { aenvoyer: 'NON ENVOYÉ', envoyes: 'ENVOYÉ', traites: 'TRAITÉ' }[ouvertB.id];
+    var lignes = dedans.length ? dedans.map(function(x) {
+        var e = x.it.entry, role = { CHEF: 'Chef de mission', PARTICIPANT: 'Participant' }[e.role];
+        var l3 = [e.forfaitOfficiel != null ? FORMAT_EURO(e.forfaitOfficiel) + ' € forfaitaire' : '', role, e.attente ? 'en attente de réseau' : ''].filter(Boolean).join(' · ');
+        return '<button type="button" class="MER-BX-LIGNE' + (x.i === BIB_UI.selectedIdx && pc ? ' on' : '') + (x.it.preview ? ' nl' : '') + '" data-idx="' + x.i + '" onclick="OUVRIR_BIB_RECAP(' + x.i + ')">' +
+            '<span class="MER-BX-PT" aria-hidden="true"></span><span class="MER-BX-C"><span class="l1"><b>' + ESC_HTML(e.user || 'Missionnaire') + '</b><small>' + ESC_HTML(e.debut || '') + '</small></span>' +
+            '<span class="l2"><i class="MER-BX-TAG">' + tag + '</i>Mission du ' + ESC_HTML(e.debut || '—') + '</span>' + (l3 ? '<span class="l3">' + ESC_HTML(l3) + '</span>' : '') + '</span></button>';
+    }).join('') : '<div class="MER-BX-VIDE">Aucun compte-rendu dans ce dossier.</div>';
+    var colL = '<div class="MER-BX-LISTE"><div class="MER-BX-LT">' + (pc ? '' : '<button type="button" class="MER-BX-RETOUR" onclick="BIB_OUVRIR_DOSSIER(null)">‹ Bibliothèque</button>') +
+        '<div class="MER-BX-LTITRE"><b>' + ESC_HTML(ouvertB.titre) + '</b>' + (ouvertB.n && !ouvertB.gris ? '<span class="MER-DOSSIER-NB">' + ouvertB.n + '</span>' : '') + '</div><small>' + ESC_HTML(ouvertB.sous) + '</small></div>' +
+        '<div class="MER-BX-LIGNES">' + lignes + '</div></div>';
+    if (!pc) { list.innerHTML = '<div class="MER-BX tel">' + colL + '</div>'; return; }
+    ds.forEach(function(d) { d.ic = CR_IC_DOSSIER[d.id]; });
+    var colD = '<nav class="MER-BX-DOSSIERS"><div class="MER-BX-DT">Bibliothèque</div>' + ds.map(function(d) {
+        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d.id === ouvertB.id ? ' on' : '') + (d.nb ? '' : ' vide') + '" data-dossier="' + d.id + '" onclick="BIB_OUVRIR_DOSSIER(\'' + d.id + '\')">' +
+            '<span class="MER-BX-DIC">' + CR_BX_ICO(d.ic) + '</span><span class="MER-BX-DTXT">' + ESC_HTML(d.titre) + '</span>' + (d.nb ? '<span class="MER-DOSSIER-NB' + (d.gris ? ' gris' : '') + '">' + d.nb + '</span>' : '') + '</button>';
+    }).join('') + '</nav>';
+    list.innerHTML = '<div class="MER-BX pc">' + colD + '<div class="MER-BX-COL2">' + colL + '</div><div class="MER-BX-COL3" id="BIB-COL3">' +
+        (dedans.length ? '' : '<div class="MER-BX-VIDE grand">' + CR_BX_ICO('cr') + '<span>Aucun compte-rendu dans ce dossier.</span></div>') + '</div></div>';
+    if (BIB_UI.selectedIdx != null && detail) { document.getElementById('BIB-COL3').appendChild(detail); BIB_REMPLIR_RECAP(BIB_UI.selectedIdx); detail.classList.remove('HIDDEN'); }
 }
 
 function OUVRIR_BIBLIOTHEQUE() {
@@ -11708,7 +11719,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 279;
+var APP_CODE_VERSION = 280;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -13819,6 +13830,8 @@ var CR_BX_ICONES = {
     boite: '<path d="M3 13.5l2.6-7.6A2 2 0 0 1 7.5 4.5h9a2 2 0 0 1 1.9 1.4l2.6 7.6"/><path d="M3 13.5v4a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-4h-5.2l-1.3 2.3h-5l-1.3-2.3z"/>',
     pdf: '<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/>',
     photo: '<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M21 16l-5-5-8 8"/>',
+    env: '<path d="M4 12l16-8-6 16-3-7z"/><path d="M11 13l9-9"/>',
+    cal: '<rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/>',
     relever: '<path d="M20 11a8 8 0 0 0-14.3-4.9L4 8"/><path d="M4 3.5V8h4.5"/><path d="M4 13a8 8 0 0 0 14.3 4.9L20 16"/><path d="M20 20.5V16h-4.5"/>'
 };
 function CR_BX_ICO(n) { return '<svg class="MER-BX-ICO" viewBox="0 0 24 24" aria-hidden="true">' + (CR_BX_ICONES[n] || CR_BX_ICONES.boite) + '</svg>'; }

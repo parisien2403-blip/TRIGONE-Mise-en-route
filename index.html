@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=182"></script>
+<script src="jumelage.js?v=183"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -677,6 +677,15 @@ body.dark-mode .MER-REG-GRILLE span.total { color: #f5f5f5; } body.dark-mode .ME
 .MER-BX-RECH { display: flex; align-items: center; gap: 8px; margin: 10px 16px 4px; border: 1px solid var(--sm2-border, #e4ded2); border-radius: 10px; padding: 7px 10px; color: #a39a8a; }
 .MER-BX.tel .MER-BX-RECH { margin: 8px 0 6px; }
 .MER-BX-RECH input { border: 0 !important; outline: 0; background: none !important; flex: 1; min-width: 0; padding: 0 !important; margin: 0 !important; font-size: 0.8rem !important; box-shadow: none !important; height: auto !important; }
+
+/* Dossiers façon messagerie hors boîte (Bibliothèque, Documents, Remboursement) */
+.MER-BX-RANG { margin: 0 0 14px; }
+.MER-BX-RANG .MER-BX-DTXT b { display: block; font-weight: 700; }
+.MER-BX-RANG .MER-BX-DTXT small { display: block; font-weight: 500; font-size: 0.72rem; color: #8a8173; margin-top: 2px; line-height: 1.35; }
+.MER-BX-RANG .MER-BX-D.nouveau .MER-BX-DTXT b { font-weight: 900; }
+.MER-DOSSIER-TETE { border-bottom: 1px solid var(--sm2-border, #ece6da) !important; }
+.MER-DOSSIER-TETE .MER-DOSSIER-RETOUR { border: 0 !important; padding: 4px 6px 4px 0 !important; color: #9a6f22 !important; background: none !important; }
+.MER-DOSSIER-TETE .MER-BX-DIC { color: #9a6f22; display: inline-flex; }
 .MER-BX-TOUTS { padding: 10px 16px 0; } .MER-BX.tel .MER-BX-TOUTS { padding: 8px 0 0; }
 .BTN.MER-BX-TOUT { width: 100%; margin: 0 0 6px; display: flex; align-items: center; justify-content: center; gap: 8px; font-size: 0.74rem; } .BTN.MER-BX-TOUT .MER-BX-ICO { width: 16px; height: 16px; }
 .MER-BX-LIGNES { overflow: auto; } .MER-BX.pc .MER-BX-LIGNES { max-height: 70vh; }
@@ -1131,6 +1140,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=182"></script>
+<script src="app.js?v=183"></script>
 </body>
 </html>
