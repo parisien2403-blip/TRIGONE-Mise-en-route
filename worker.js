@@ -201,7 +201,7 @@ async function membresGroupe(env, g) {
         l.push({ mail: x.mail, compte: c });
     }
     // Absents (remplaçant déclaré) : laissés de côté tant qu'il reste quelqu'un.
-    const presents = l.filter(x => !(x.compte.remplacant && x.compte.remplacant.jusqu > Date.now()));
+    const presents = l.filter(x => { const rp = x.compte.remplacant; return !(rp && rp.jusqu > Date.now() && (!rp.roles || rp.roles[g.role])); });
     return presents.length ? presents : l;
 }
 async function groupesDe(env, moi) {
@@ -1646,20 +1646,30 @@ async function api(requete, env, url, ctx) {
         }
     }
 
-    // Absence : remplaçant (compte TRIGONE existant) jusqu'à une date (90 jours au plus) ; mail vide = fin de l'absence.
+    // Absence : un remplaçant par rôle (compte TRIGONE existant qui a ce rôle), jusqu'à une date (90 jours au plus).
+    // corps.roles = { valideur1, valideur2, chorus } (un rôle laissé vide reste chez moi) ; corps.mail seul = même
+    // remplaçant pour tous mes rôles (anciennes versions) ; rien = fin de l'absence.
     if (chemin === 'remplacant' && methode === 'POST') {
         const corps = await requete.json().catch(() => ({}));
-        const rmail = await cleCompte(kv, corps.mail);
-        if (!rmail) { delete moi.compte.remplacant; await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte)); return json({ ok: true, remplacant: null }); }
-        if (!mailValide(rmail) || rmail === moi.mail) return erreur(400, 'Adresse du remplaçant invalide.');
+        const NOMS = { valideur1: 'VALIDEUR 1', valideur2: 'VALIDEUR 2', chorus: 'ASSIST CHORUS DT' };
+        const mesRoles = Object.keys(NOMS).filter(r => (moi.compte.roles || {})[r]);
+        const demande = corps.roles && typeof corps.roles === 'object' ? corps.roles : corps.mail ? Object.fromEntries(mesRoles.map(r => [r, corps.mail])) : {};
+        const roles = {};
+        for (const r of mesRoles) {
+            if (!String(demande[r] || '').trim()) continue;
+            const m = await cleCompte(kv, demande[r]);
+            if (!m || !mailValide(m) || m === moi.mail) return erreur(400, 'Adresse du remplaçant ' + NOMS[r] + ' invalide.');
+            const cr = await kv.get('compte:' + m, 'json');
+            if (!cr || !cr.appareils.length) return erreur(404, m + ' n\'a pas encore de compte TRIGONE : demandez-lui de l\'activer.');
+            if (!(cr.roles || {})[r] && !corps.mail) return erreur(400, m + ' n\'a pas le rôle ' + NOMS[r] + ' : choisissez quelqu\'un qui l\'a, ou laissez ce rôle vide.');
+            roles[r] = m;
+        }
+        if (!Object.keys(roles).length) { delete moi.compte.remplacant; await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte)); return json({ ok: true, remplacant: null }); }
         const jusqu = +corps.jusqu || 0;
         if (jusqu <= Date.now() || jusqu > Date.now() + 90 * JOUR * 1000) return erreur(400, 'Date de fin d\'absence invalide (dans les 90 jours).');
-        const cr = await kv.get('compte:' + rmail, 'json');
-        if (!cr || !cr.appareils.length) return erreur(404, rmail + ' n\'a pas encore de compte TRIGONE : demandez-lui de l\'activer.');
-        const manque = Object.keys(moi.compte.roles || {}).filter(r => !(cr.roles || {})[r]);
-        moi.compte.remplacant = { mail: rmail, jusqu };
+        moi.compte.remplacant = { mail: roles[mesRoles.find(r => roles[r])], jusqu, roles };
         await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
-        return json({ ok: true, remplacant: moi.compte.remplacant, rolesManquants: manque });
+        return json({ ok: true, remplacant: moi.compte.remplacant, rolesManquants: [] });
     }
     // Demandes abandonnées par leur demandeur (retirées de Documents après un refus) : plus de relance.
     if (chemin === 'suivi/abandon' && methode === 'POST') {
