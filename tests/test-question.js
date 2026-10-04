@@ -45,6 +45,7 @@ module.exports = async function() {
     const recu = await m.evaluate(() => document.body.innerText);
     verifier(await m.evaluate(() => /Question sur votre demande/.test((document.querySelector('.MER-BANDEAU-RECU') || {}).textContent || '')), 'missionnaire : bandeau « Question sur votre demande » avec le texte de la question');
     verifier(/Question sur votre demande/.test(recu) && /Pourquoi un véhicule personnel/.test(recu) && /VALIDEUR 1/.test(recu), 'missionnaire : la question arrive dans Boîte de réception › Questions (avec le nom du valideur)');
+    await m.locator('.MER-BX-LIGNE').first().click(); await attendre(400);
     await m.click('button[onclick^="REPONDRE_QUESTION"]'); await attendre(400);
     await m.fill('#MER-REPONSE-TXT', 'Pas de train avant 9 h : départ à 7 h 30 obligatoire.'); await m.click('#MER-REPONSE-GO'); await attendre(2500);
     verifier(await m.evaluate(() => JUMELAGE_BOITE_LISTE().some(x => x.nature === 'question' && x.statut === 'traite')), 'missionnaire : réponse envoyée, la question est traitée');
