@@ -1133,7 +1133,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 174, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 175, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2111,8 +2111,13 @@
         return '<button type="button" class="JUM-NOTICE-LIVRET" onclick="JUMELAGE_NOTICE()"><img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="">' +
             '<span><b>Notice TRIGONE</b><small>Le livret complet : chaque écran expliqué pas à pas</small></span><i>›</i></button>';
     };
-    window.JUMELAGE_NOTICE = function(chapitre) {
+    // Notice selon les rôles : missionnaire (0), VALIDEUR 1 / 2 (1), assistant Chorus DT ou administrateur (2 : complète).
+    function niveauNotice() { var r = rolesLocaux(); return r.chorus || lireTxt(CLE_ROLE_ADMIN) ? 2 : r.valideur1 || r.valideur2 ? 1 : 0; }
+    window.JUMELAGE_NOTICE_NIVEAU = niveauNotice;
+    window.JUMELAGE_NOTICE_COMPLETE = function(chapitre) { window.JUMELAGE_NOTICE(chapitre, { complete: true }); };
+    window.JUMELAGE_NOTICE = function(chapitre, opts) {
         if (fenNotice) return;
+        opts = opts || {};
         var B = DANS_CR ? '../' : '', f = document.createElement('div'), livre = null, page = 0, N = null;
         f.className = 'JUM-SIG JUM-NOTICE'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Notice TRIGONE');
         f.innerHTML = '<div class="N-HAUT"><button type="button" class="N-FERMER" aria-label="Fermer la notice">✕</button><span class="N-TITRE">Notice TRIGONE</span>' +
@@ -2201,8 +2206,12 @@
         });
         Promise.all([contenu, chargerScript('page-flip.min.js', function() { return !!window.St; })]).then(function() {
             if (!f.isConnected) return;
-            N = window.NOTICE_TRIGONE;
-            if (!document.getElementById('N-CSS')) { var st = document.createElement('style'); st.id = 'N-CSS'; st.textContent = N.css; document.head.appendChild(st); }
+            var NT = window.NOTICE_TRIGONE, niv = opts.complete ? 2 : niveauNotice();
+            N = NT.pour ? NT.pour(niv) : NT;
+            // Chapitre demandé absent de cette notice (ex. écran d'un autre rôle) : la notice complète.
+            if (chapitre && NT.pour && !N.chapitres.some(function(c) { return c.id === chapitre; })) N = NT.pour(2);
+            var tt = f.querySelector('.N-TITRE'); if (tt && N.nom) tt.textContent = N.nom;
+            if (!document.getElementById('N-CSS')) { var st = document.createElement('style'); st.id = 'N-CSS'; st.textContent = NT.css; document.head.appendChild(st); }
             if (chapitre) N.chapitres.forEach(function(c) { if (c.id === chapitre) page = c.page; });
             construire();
             window.addEventListener('resize', auRedim); document.addEventListener('keydown', touche);
@@ -4265,7 +4274,8 @@
             c && L('demsuppr', CORBEILLE_SVG, 'Demander la suppression de mon compte', etatDemandeCompte('suppression') || 'Adresse, carte, photo, sauvegarde : tout est effacé', function() { window.JUMELAGE_DEMANDE_COMPTE('suppression'); }, true),
             (!c || lireTxt(CLE_ROLE_ADMIN)) && L('reinitialiser', CORBEILLE_SVG, 'Réinitialiser TRIGONE', 'Tout effacer sur cet appareil', function() { window.JUMELAGE_REINITIALISER(); }, true)
         ] });
-        r.push({ id: 'aide', titre: 'Aide', icone: ic('bouee'), aide: 'Pour prendre en main TRIGONE, ou nous signaler un souci.', lignes: [L('notice', ic('livre'), 'Notice TRIGONE', 'Le livret complet, avec les écrans expliqués pas à pas', function() { window.JUMELAGE_NOTICE(); })]
+        r.push({ id: 'aide', titre: 'Aide', icone: ic('bouee'), aide: 'Pour prendre en main TRIGONE, ou nous signaler un souci.', lignes: [L('notice', ic('livre'), 'Notice TRIGONE', niveauNotice() === 2 ? 'Le livret complet, avec les écrans expliqués pas à pas' : 'Votre livret : ce qui vous concerne, écrans expliqués pas à pas', function() { window.JUMELAGE_NOTICE(); })]
+            .concat(niveauNotice() < 2 ? [L('noticecomplete', ic('livre'), 'Notice complète', 'Tous les rôles : valideurs, assistant Chorus DT, administrateur', function() { window.JUMELAGE_NOTICE_COMPLETE(); })] : [])
             .concat(appli.filter(function(x) { return AIDE_APPLI.test(x.titre); })
             .map(function(x, i) { return L('aide' + i, ic(x.icone), x.titre, x.sous, x.action); })).concat([
             L('presentation', '<img src="' + (DANS_CR ? '../' : '') + 'phoenix-icon.png" alt="" style="width:20px;height:20px;">', 'Découvrir TRIGONE', 'Revoir la présentation', function() { window.JUMELAGE_PRESENTATION(); }),

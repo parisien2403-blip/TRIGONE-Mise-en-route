@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 173;
+    var VERSION = 174;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i><span class="n-leg">' + TEL_SVG + (n === 'c3-carte-grand' ? 'Téléphone à l\'horizontale · Android / iPhone' : 'Téléphone · Android / iPhone') + '</span></button>'; }
@@ -14,11 +14,16 @@
     function attention(t) { return '<div class="n-enc n-att"><b>ATTENTION</b>' + t + '</div>'; }
     function astuce(t) { return '<div class="n-enc n-astuce"><img src="{B}mascotte-pouce.webp" alt=""><span><b>Astuce :</b> ' + t + '</span></div>'; }
     function duo(capture, corps, cls) { return '<div class="n-duo' + (cls ? ' ' + cls : '') + '">' + img(capture) + '<div class="n-txt">' + corps + '</div></div>'; }
-    function page(titre, corps, ch) { return { ch: ch, html: '<div class="n-p">' + (titre ? '<h4>' + titre + '</h4>' : '') + corps + '</div>' }; }
+    function page(titre, corps, ch) { return { ch: ch, titre: titre, html: '<div class="n-p">' + (titre ? '<h4>' + titre + '</h4>' : '') + corps + '</div>' }; }
+    // Page de chapitre : rendue à l'assemblage (numéro et points selon la notice : missionnaire, valideur ou complète).
+    function htmlChapitre(n, c, points) {
+        return '<div class="n-p n-chap"><div class="n-chap-n">CHAPITRE ' + n + '</div><h3>' + c.titre + '</h3><div class="n-chap-trait"></div>' +
+            '<p class="n-chap-res">' + c.resume + '</p><div class="n-chap-dans">DANS CE CHAPITRE</div><ul>' + points.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
+            '<img class="n-chap-fili" src="{B}phoenix-icon.png" alt=""></div>';
+    }
     function chapitre(n, titre, resume, points, ch) {
-        return { ch: ch, chapitre: { n: n, titre: titre }, html: '<div class="n-p n-chap"><div class="n-chap-n">CHAPITRE ' + n + '</div><h3>' + titre + '</h3><div class="n-chap-trait"></div>' +
-            '<p class="n-chap-res">' + resume + '</p><div class="n-chap-dans">DANS CE CHAPITRE</div><ul>' + points.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' +
-            '<img class="n-chap-fili" src="{B}phoenix-icon.png" alt=""></div>' };
+        var c = { n: n, titre: titre, resume: resume, points: points };
+        return { ch: ch, chapitre: c, html: htmlChapitre(n, c, points) };
     }
     var P = [];
     function ajouter() { for (var i = 0; i < arguments.length; i++) P.push(arguments[i]); }
@@ -58,7 +63,7 @@
         astuce('Paramètres › Aide › <b>Partager TRIGONE</b> affiche un QR code : un collègue le scanne pour installer TRIGONE à son tour.'), 'inst'));
     ajouter(page('L\'écran d\'accueil', duo('01-choix', et([r(1) + ' <b>Mise en route</b> : toucher pour faire une demande avant le départ.', r(2) + ' <b>Compte-rendu de mission</b> : toucher pour démarrer ou reprendre une mission.',
         r(3) + ' <b>Mon compte</b> : votre <b>photo</b> (celle de Ma carte, sinon vos initiales) ; se connecter, Paramètres, se déconnecter.', 'Barre du bas : ' + r(4) + ' <b>Notice</b> (ce livret), ' + r(5) + ' <b>Paramètres</b>, ' + r(6) + ' <b>Ma carte</b>, ' + r(7) + ' <b>Mise à jour</b>.', r(8) + ' <b>Numéro de version</b> de TRIGONE.'])) +
-        savoir('Sur un grand écran tactile (tablette, pliable ouvert), la barre a un 5<sup>e</sup> bouton : <b>Affichage PC</b>. Sur PC, ces boutons sont en haut à droite. Un assistant Chorus DT voit en plus un 3<sup>e</sup> espace, <b>ASSIST CHORUS-DT</b> (chapitre 10).'), 'inst'));
+        savoir('Sur un grand écran tactile (tablette, pliable ouvert), la barre a un 5<sup>e</sup> bouton : <b>Affichage PC</b>. Sur PC, ces boutons sont en haut à droite. <span class="n-niv2">Un assistant Chorus DT voit en plus un 3<sup>e</sup> espace, <b>ASSIST CHORUS-DT</b> (chapitre 10).</span>'), 'inst'));
     ajouter(page('Mises à jour, thème et PC', '<h5>Mises à jour</h5><p>TRIGONE se met à jour <b>tout seul</b> à l\'ouverture. Une notification « Nouveautés » présente les changements. Le bouton ↻ de l\'écran d\'accueil force la vérification.</p>' +
         '<h5>Clair ou sombre</h5><p>Le bouton <b>☾ / ☀</b> en haut à droite des applis passe du thème clair au thème sombre.</p>' +
         '<h5>Sur PC</h5><p>Sur un ordinateur, TRIGONE s\'affiche en grand : menu à gauche, formulaires en colonnes. Sur une tablette ou un téléphone pliant ouvert, le bouton <b>Affichage PC</b> de la barre du bas (page de garde et accueil des applis) bascule l\'affichage PC ; le même bouton ramène l\'affichage téléphone.</p>' +
@@ -280,18 +285,55 @@
         '<p>Un souci, une question, une idée ?<br><b>Paramètres › Aide › Signaler un problème</b></p><p class="n-garde-note">Notice de la version ' + VERSION + '.</p></div>'));
     ajouter({ couverture: true, dos: true, html: '<div class="n-couv dos"><i class="n-couv-cadre"></i><div class="n-couv-in"><img src="{B}phoenix-icon.png" alt="" style="width:70px"></div><div class="n-couv-bas">TRIGONE · MISE EN ROUTE · COMPTE-RENDU · CHORUS DT</div></div>' });
 
-    // Sommaire (2 pages) et numéros de page.
-    var chapitres = [];
-    P.forEach(function(p, i) { if (p.chapitre) chapitres.push({ n: p.chapitre.n, titre: p.chapitre.titre, page: i, id: p.ch }); });
-    var ligne = function(c) { return '<li><button type="button" data-aller="' + c.page + '"><span class="n-som-n">' + c.n + '</span><span class="n-som-t">' + c.titre + '</span><i>p. ' + (c.page + 1) + '</i></button></li>'; };
-    P.forEach(function(p) {
-        if (p.sommaire === 1) p.html = '<div class="n-p"><div class="n-chap-n">SOMMAIRE</div><h3 style="margin-bottom:10px">Notice TRIGONE</h3><ol class="n-som">' + chapitres.slice(0, 9).map(ligne).join('') + '</ol><p class="n-garde-note">Touchez un chapitre pour y aller directement.</p></div>';
-        if (p.sommaire === 2) p.html = '<div class="n-p"><div class="n-chap-n">SOMMAIRE (SUITE)</div><ol class="n-som" style="margin-top:14px">' + chapitres.slice(9).map(ligne).join('') + '</ol>' +
-            '<div class="n-enc n-savoir" style="margin-top:auto"><b>À SAVOIR</b>Depuis l\'appli, le bouton <b>?</b> d\'un écran ouvre directement le bon chapitre.</div></div>';
-    });
-    // Titre courant en haut des pages d'un chapitre.
-    var titres = {}; chapitres.forEach(function(c) { titres[c.id] = c.n + ' · ' + c.titre; });
-    P.forEach(function(p) { if (p.ch && !p.chapitre && titres[p.ch]) p.html = p.html.replace('<div class="n-p">', '<div class="n-p"><div class="n-tete">' + titres[p.ch] + '</div>'); });
+    // ---------- Une notice par rôle ----------
+    // Niveau 0 : missionnaire ; 1 : VALIDEUR 1 / 2 ; 2 : assistant Chorus DT, administrateur (notice complète).
+    // Chapitres, pages et points « Dans ce chapitre » réservés à un niveau ; tout le reste est pour tous.
+    var NIV_CH = { val: 1, chorus: 2, annexe: 2 };
+    var NIV_PAGE = { 'Mes rôles': 1, 'Le rôle ADMINISTRATEUR': 2, 'Absence et remplaçant': 1, 'Demandes sur les comptes': 2 };
+    var NIV_POINT = { 'Mes rôles (VALIDEUR 1, VALIDEUR 2, ASSIST CHORUS DT)': 1, 'Le rôle ADMINISTRATEUR': 2, 'Absence et remplaçant': 1, 'Demandes sur les comptes': 2 };
+    var NOMS_NIV = ['Notice du missionnaire', 'Notice du valideur', 'Notice complète'];
+    var ANCIENS = {}; P.forEach(function(p) { if (p.chapitre && typeof p.chapitre.n === 'number') ANCIENS[p.chapitre.n] = p.ch; });
+    function construire(niv) {
+        var garde = function(p) {
+            if (p.chapitre) return (NIV_CH[p.ch] || 0) <= niv;
+            if (p.ch && (NIV_CH[p.ch] || 0) > niv) return false;
+            return !(p.titre && (NIV_PAGE[p.titre] || 0) > niv);
+        };
+        var pages = P.filter(garde).map(function(p) { return Object.assign({}, p); });
+        // Missionnaire et valideur : une page dit où trouver la notice complète, puis une page de notes si le nombre de
+        // pages est impair (le livret se lit en double page).
+        var fin = pages.length - 2;
+        if (niv < 2) pages.splice(fin, 0, page('Votre notice', '<p>Cette notice ne montre que ce qui vous concerne' + (niv ? ', comme valideur' : '') + '.</p>' +
+            '<p>Les écrans des autres rôles (' + (niv ? '' : 'valideurs, ') + 'assistant Chorus DT, administrateur) sont dans la <b>notice complète</b> : <b>Paramètres › Aide › Notice complète</b>.</p>' +
+            '<p>Un rôle vous est confié ? Cochez-le dans <b>Mon profil › Mes rôles</b> : votre notice s\'enrichit d\'elle-même.</p>'));
+        if (pages.length % 2) pages.splice(pages.length - 2, 0, page('Notes', '<div class="n-notes">' + new Array(15).join('<i></i>') + '</div>'));
+        // Numérotation des chapitres, renvois « chapitre N » mis à jour (retirés si le chapitre n'y est pas).
+        var nouveaux = {}, k = 0;
+        pages.forEach(function(p) { if (p.chapitre && typeof p.chapitre.n === 'number') nouveaux[p.ch] = ++k; });
+        var chapitres = [];
+        pages.forEach(function(p, i) {
+            if (!p.chapitre) return;
+            var n = typeof p.chapitre.n === 'number' ? nouveaux[p.ch] : p.chapitre.n;
+            if (p.chapitre.points) p.html = htmlChapitre(n, p.chapitre, p.chapitre.points.filter(function(x) { return (NIV_POINT[x] || 0) <= niv; }));
+            chapitres.push({ n: n, titre: p.chapitre.titre, page: i, id: p.ch });
+        });
+        var renvoi = function(n) { var id = ANCIENS[+n]; return id && nouveaux[id] ? nouveaux[id] : 0; };
+        pages.forEach(function(p) {
+            if (niv < 2) p.html = p.html.replace(/<span class="n-niv2">[\s\S]*?<\/span>/g, '').replace(/ · Assistant Chorus DT/g, '').replace('<h2>Notice</h2>', '<h2>Notice</h2><div class="n-couv-role">' + NOMS_NIV[niv].replace('Notice du ', '').toUpperCase() + '</div>');
+            p.html = p.html.replace(/ ?\(chapitre (\d+)\)/g, function(m, n) { var x = renvoi(n); return x ? ' (chapitre ' + x + ')' : ''; })
+                .replace(/chapitre (\d+)/g, function(m, n) { var x = renvoi(n); return x ? 'chapitre ' + x : 'notice complète'; });
+        });
+        var ligne = function(c) { return '<li><button type="button" data-aller="' + c.page + '"><span class="n-som-n">' + c.n + '</span><span class="n-som-t">' + c.titre + '</span><i>p. ' + (c.page + 1) + '</i></button></li>'; };
+        pages.forEach(function(p) {
+            if (p.sommaire === 1) p.html = '<div class="n-p"><div class="n-chap-n">SOMMAIRE</div><h3 style="margin-bottom:10px">' + NOMS_NIV[niv] + '</h3><ol class="n-som">' + chapitres.slice(0, 9).map(ligne).join('') + '</ol><p class="n-garde-note">Touchez un chapitre pour y aller directement.</p></div>';
+            if (p.sommaire === 2) p.html = '<div class="n-p"><div class="n-chap-n">SOMMAIRE (SUITE)</div><ol class="n-som" style="margin-top:14px">' + chapitres.slice(9).map(ligne).join('') + '</ol>' +
+                '<div class="n-enc n-savoir" style="margin-top:auto"><b>À SAVOIR</b>Depuis l\'appli, le bouton <b>?</b> d\'un écran ouvre directement le bon chapitre.</div></div>';
+        });
+        // Titre courant en haut des pages d'un chapitre.
+        var titres = {}; chapitres.forEach(function(c) { titres[c.id] = c.n + ' · ' + c.titre; });
+        pages.forEach(function(p) { if (p.ch && !p.chapitre && titres[p.ch]) p.html = p.html.replace('<div class="n-p">', '<div class="n-p"><div class="n-tete">' + titres[p.ch] + '</div>'); });
+        return { niveau: niv, nom: NOMS_NIV[niv], pages: pages, chapitres: chapitres };
+    }
 
     // Mise en forme du livret (page de 400 × 566, agrandie à l'écran par la visionneuse).
     var OR = '#b8862f', ENCRE = '#1d1a14';
@@ -317,6 +359,8 @@
             'linear-gradient(118deg, rgba(255,255,255,0) 22%, rgba(255,255,255,.30) 34%, rgba(255,255,255,.06) 40%, rgba(255,255,255,0) 48%, rgba(255,255,255,0) 66%, rgba(255,255,255,.16) 74%, rgba(255,255,255,0) 82%), ' +
             'radial-gradient(90% 45% at 18% 0%, rgba(255,255,255,.35), rgba(255,255,255,0) 70%), linear-gradient(180deg, rgba(255,255,255,.06), rgba(0,0,0,.035)); }' +
         '.N-ECH:has(.n-couv)::after { display: none; }' +
+        '.n-couv-role { margin-top: 8px; font: 700 11px Montserrat, sans-serif; letter-spacing: .22em; color: #e2b866; }' +
+        '.n-notes { display: flex; flex-direction: column; gap: 26px; margin-top: 14px; } .n-notes i { display: block; border-bottom: 1px solid #d9ccb0; }' +
         '.n-capt::after { content: ""; position: absolute; inset: 0; pointer-events: none; background: linear-gradient(125deg, rgba(255,255,255,.28) 0%, rgba(255,255,255,0) 38%); }' +
         '.N-ECH * { box-sizing: border-box; } .N-ECH button * { pointer-events: none; }' +
         '.N-NUMP { position: absolute; bottom: 12px; left: 0; right: 0; text-align: center; font: 700 9.5px Montserrat, system-ui, sans-serif; letter-spacing: .14em; color: #a08b62; }' +
@@ -401,5 +445,7 @@
         '.n-faq > b { display: block; font-size: 11px; margin-top: 4px; color: #7a5a1c; } .n-faq p { margin: 2px 0 8px; }' +
         '.n-secu > b { display: block; font-size: 11px; margin-top: 2px; padding-left: 8px; border-left: 3px solid ' + OR + '; } .n-secu p { margin: 3px 0 9px; font-size: 10.2px; }' +
         '.n-resume > div { background: #fff; border: 1px solid #d9ccb0; border-radius: 7px; padding: 8px 10px; margin-bottom: 6px; font-size: 11px; }';
-    window.NOTICE_TRIGONE = { version: VERSION, pages: P, chapitres: chapitres, css: css };
+    var NOTICES = [];
+    var pour = function(niv) { niv = Math.max(0, Math.min(2, +niv || 0)); return NOTICES[niv] || (NOTICES[niv] = construire(niv)); };
+    window.NOTICE_TRIGONE = Object.assign({ version: VERSION, css: css, pour: pour }, pour(2));
 })();
