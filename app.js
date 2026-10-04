@@ -3900,7 +3900,7 @@ function MER_BX_DOSSIERS(page) {
         return { id: d.id, titre: titres[d.id] || d.titre.replace(' — à corriger', ' à corriger'), ic: ic[d.id] || 'boite', items: d.aTraiter, nb: d.nb, nouveau: d.nouveau, inscriptions: d.inscriptions, aide: d.aide };
     });
     var traites = l.filter(function(x) { return x.statut === 'traite'; }).sort(function(a, b) { return (b.traiteLe || b.le || 0) - (a.traiteLe || a.le || 0); });
-    var bas = [{ id: 'traites', titre: 'Traités', ic: 'ok', items: traites, nb: traites.length, gris: true, aide: 'Les envois signés, refusés, téléchargés ou rangés. « ↺ Rouvrir » les remet à traiter.' }];
+    var bas = [{ id: 'traites', titre: 'Traités', ic: 'ok', items: traites, nb: traites.length, gris: true, aide: 'Les envois signés, refusés, téléchargés ou rangés. « Rouvrir » les remet à traiter.' }];
     if (page === 'RECEPTION') { var md = MER_BX_MES_DEMANDES(); bas.push({ id: 'suivi', titre: 'Mes demandes (suivi)', ic: 'env', items: md, nb: md.filter(function(x) { return x.statut !== 'traite'; }).length, gris: true, aide: 'Où en sont les demandes que vous avez envoyées.' }); }
     if (page === 'CHORUS') {
         bas.unshift({ id: 'registre', titre: 'Registre des OMR', ic: 'reg', lien: 'OUVRIR_REGISTRE(\'tout\')', nb: MER_REGISTRE_FILTRES().tout.length, gris: true });
@@ -3938,6 +3938,12 @@ function TPL_BX_LISTE(page, d, pc) {
         (d.aide ? '<small>' + d.aide + '</small>' : '') + '</div>';
     if (d.inscriptions) return '<div class="MER-BX-LISTE">' + tete + '<div class="MER-BX-INSCR">' + TPL_INSCRIPTIONS(d.items) + '</div></div>';
     var items = MER_BX_FILTRE(page, d.items);
+    // « À signer » : plusieurs demandes du même niveau → toutes ouvertes d'un coup dans l'Espace valideur, déjà cochées.
+    var att = d.items || [], groupe = d.id === 'signer' ? [1, 2].map(function(n) {
+        var nb = att.filter(function(e) { return e.nature === 'niveau' + n; }).reduce(function(t, e) { return t + (e.n > 1 ? e.n : 1); }, 0);
+        return nb > 1 ? '<button type="button" class="BTN BTN-PRIMARY MER-BX-TOUT" onclick="OUVRIR_TOUT_SIGNER(' + n + ')">' + MER_BX_ICO('signer') + 'Tout ouvrir et signer — ' + nb + ' demandes' + (att.some(function(e) { return e.nature === 'niveau' + (3 - n); }) ? ' (' + n + (n === 1 ? 'er' : 'e') + ' niveau)' : '') + '</button>' : '';
+    }).join('') : '';
+    if (groupe) tete += '<div class="MER-BX-TOUTS">' + groupe + '</div>';
     return '<div class="MER-BX-LISTE">' + tete +
         (d.items.length > 3 || MER_BX_Q[page] ? '<label class="MER-BX-RECH">' + MER_BX_ICO('loupe') + '<input type="search" placeholder="Rechercher un nom, un objet, un n° OMR…" value="' + ESC(MER_BX_Q[page]) + '" oninput="MER_BX_CHERCHER(\'' + page + '\', this.value)"></label>' : '') +
         '<div class="MER-BX-LIGNES" id="MER-BX-LIGNES-' + page + '">' + TPL_BX_LIGNES(page, items) + '</div></div>';
