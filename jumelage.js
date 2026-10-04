@@ -1197,7 +1197,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 186, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 187, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3062,7 +3062,7 @@
         minuteurRoles = setTimeout(function() { declarerRoles(0); }, 200);
     };
     window.JUMELAGE_COMPTE_MAIL = function() { var c = monCompte(); return c ? c.mail : ''; };
-    // Absence d'un destinataire (avant l'envoi) : { mail du remplaçant, jusqu } ou null. Mémorisée 5 minutes.
+    // Absence d'un destinataire (avant l'envoi) : { mail du remplaçant, jusqu } ou null. Mémorisée 30 secondes.
     var absences = {};
     window.JUMELAGE_ABSENCE = function(mail, type) {
         return absenceBrute(mail).then(function(rp) { var c = remplacantPour(rp, type || 'DEMANDE'); return c ? { mail: c, jusqu: rp.jusqu } : null; });
@@ -3071,7 +3071,7 @@
         mail = String(mail || '').trim().toLowerCase();
         if (!monCompte() || !navigator.onLine || !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(mail)) return Promise.resolve(null);
         var a = absences[mail];
-        if (a && Date.now() - a.le < 5 * 60 * 1000) return Promise.resolve(a.r);
+        if (a && Date.now() - a.le < 30 * 1000) return Promise.resolve(a.r);
         return appelApi('cles?mail=' + encodeURIComponent(mail)).then(function(r) {
             var rp = r.compte && r.remplacant ? r.remplacant : null;
             absences[mail] = { le: Date.now(), r: rp }; return rp;
@@ -5196,7 +5196,7 @@
     // ---------- Photo de carte partagée, chiffrée de bout en bout ----------
     // Chiffrée ici pour les appareils des VALIDEUR 1 / 2, ASSIST CHORUS DT et chefs de mission collective où je suis
     // participant (clés publiques données par le serveur) ; le serveur ne garde qu'un bloc illisible. Rechiffrée quand
-    // la photo ou la liste des appareils change (nouveau valideur, rôle retiré), vérifié au plus toutes les 6 h.
+    // la photo ou la liste des appareils change (nouveau valideur, rôle retiré), vérifié toutes les 5 minutes.
     var CLE_PHOTO_PARTAGE = 'trigone_photo_partage', CLE_PHOTO_SIG = 'trigone_photo_sig', photoEnCours = null;
     function photoPartagee() { return lireTxt(CLE_PHOTO_PARTAGE) === '1'; }
     window.JUMELAGE_PHOTO_SYNCHRO = function(force) {
@@ -5205,7 +5205,7 @@
         var memo = lireJSON(CLE_PHOTO_SIG) || {}, photo = lireTxt(CLE_CARTE_PHOTO);
         // v2 : photo aussi chiffrée pour mes autres appareils ; rechiffrée tout de suite après la mise à jour.
         if (memo.v !== 2) { force = true; memo = {}; }
-        if (!force && memo.le && Date.now() - memo.le < 6 * 3600000) return Promise.resolve('');
+        if (!force && memo.le && Date.now() - memo.le < 5 * 60000) return Promise.resolve('');   // nouveau valideur, appareil ajouté : la photo le rejoint en 5 minutes au plus
         if (!photoPartagee() || !photo) {
             if (!memo.sig && !force) return Promise.resolve('');
             photoEnCours = appelApi('photo', { methode: 'DELETE' }).then(function() { ecrireTxt(CLE_PHOTO_SIG, JSON.stringify({ v: 2, le: Date.now() })); photoEnCours = null; return 'retiree'; }, function() { photoEnCours = null; return ''; });
