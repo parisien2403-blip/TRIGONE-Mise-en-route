@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 226;
+var APP_CODE_VERSION = 227;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2982,8 +2982,8 @@ function TPL_TRANSMISSION_VALIDATION(v, h, liste) {
     var decidees = liste.filter(function(e) { return e.decision; }).length;
     return '<div class="MER-SECTION-TITLE">Transmission</div>' +
         (dest.vers1 ? '<div class="MER-FIELD"><label>Mail du VALIDEUR 1 (renvoi)</label><input type="email" data-scan-carte value="' + ESC(v.mailValideur1 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur1\', this.value)"></div>' : '') +
-        (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" data-scan-carte value="' + ESC(v.mailValideur2 || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
-        (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" data-scan-carte value="' + ESC(v.mailChorus || '') + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
+        (champ2 ? '<div class="MER-FIELD"><label>Mail du 2e valideur</label><input type="email" data-scan-carte value="' + ESC(v.mailValideur2 || MER_GROUPE('valideur2')) + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailValideur2\', this.value)"></div>' : '') +
+        (champChorus ? '<div class="MER-FIELD"><label>Mail de l\'assistant Chorus DT</label><input type="email" data-scan-carte value="' + ESC(v.mailChorus || MER_GROUPE('chorus')) + '" placeholder="EX : prenom.nom@interieur.gouv.fr" oninput="SET_MAIL_VALIDEUR(\'mailChorus\', this.value)">' +
               '<p class="MER-HINT">Il reçoit les demandes validées dans son espace Assistant Chorus DT, qui contrôle les signatures et produit le PDF.</p></div>' : '') +
         '<button type="button" class="BTN BTN-PRIMARY"' + (decidees ? '' : ' disabled') + ' onclick="PREPARER_TRANSMISSION()">📨 Transmettre les décisions (' + decidees + ')</button>';
 }
@@ -3017,6 +3017,7 @@ function DESTINATIONS_DECISIONS(liste) {
     });
     return r;
 }
+function MER_GROUPE(role) { return window.JUMELAGE_ADRESSE_GROUPE ? JUMELAGE_ADRESSE_GROUPE(role) : ''; }
 function SET_MAIL_VALIDEUR(cle, valeur) { var v = GET_VALIDEUR(); v[cle] = valeur.trim(); SAVE_VALIDEUR(v); }
 
 function LIRE_FICHIERS(input, lire, traiter) {
@@ -3170,6 +3171,9 @@ function PREPARER_TRANSMISSION() {
         } else if (d.validations.length === 1) vers2.push(d);
         else versChorus.push(d);
     });
+    // Champ jamais rempli : le groupe de l'unité (tous les VALIDEUR 2 / tous les assistants Chorus DT), comme affiché.
+    if (!v.mailValideur2) v.mailValideur2 = MER_GROUPE('valideur2');
+    if (!v.mailChorus) v.mailChorus = MER_GROUPE('chorus');
     if (vers2.length && !/@/.test(v.mailValideur2 || '')) { MSG_ERREUR('Mail manquant', 'Merci de renseigner le mail du 2e valideur.'); return; }
     if (versChorus.length && !/@/.test(v.mailChorus || '')) { MSG_ERREUR('Mail manquant', 'Merci de renseigner le mail de l\'assistant Chorus DT.'); return; }
     if (renvoiParMail[''] && !/@/.test(v.mailValideur1 || '')) { MSG_ERREUR('Mail manquant', 'Merci de renseigner le mail du VALIDEUR 1 à qui renvoyer la demande.'); return; }
