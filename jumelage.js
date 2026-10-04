@@ -1722,6 +1722,12 @@
                 '<button type="button" class="JUM-R-LIEN" onclick="JUMELAGE_BIO_BASCULER()">' + (actif ? 'Désactiver l\'empreinte' : 'Activer l\'empreinte') + '</button>';
         });
     }
+    // Adresses de groupe de l'unité (tous les assistants Chorus DT / tous les VALIDEUR 2) : assist-dt.4riisc@trigone-app.com…
+    function adresseGroupe(role, unite) {
+        var u = normeUnite(unite == null ? lireReglages().unite : unite).toLowerCase();
+        return u ? (role === 'chorus' ? 'assist-dt.' : 'valideur2.') + u + '@trigone-app.com' : '';
+    }
+    window.JUMELAGE_ADRESSE_GROUPE = function(role) { return adresseGroupe(role); };
     // Profil complet (matricule et destinataires) : sinon, après la création du compte, le parcours guidé continue.
     function profilComplet() { var r = lireReglages(); return !!(r.matricule && r.mailVal1 && r.mailChorus); }
     // Parcours de première connexion commencé et pas fini (appli fermée en route) : il reprend à l'ouverture.
@@ -1859,7 +1865,8 @@
                 '<div class="JUM-R-TITRE">Envois</div>' +
                 '<div class="JUM-R-GRILLE">' + champ('MAILVAL1', 'Mail du 1er valideur (chef de service)', r.mailVal1, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
                     champ('MONMAIL', 'Mon mail', r.monMail, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') +
-                    champ('MAILCHORUS', 'Mail de l\'assistant Chorus DT (compte-rendu)', r.mailChorus, 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') + '</div>' +
+                    champ('MAILCHORUS', 'Mail de l\'assistant Chorus DT (compte-rendu)', r.mailChorus || adresseGroupe('chorus'), 'type="email" autocomplete="off" placeholder="EX : prenom.nom@interieur.gouv.fr"') + '</div>' +
+                (adresseGroupe('chorus') ? '<button type="button" class="JUM-R-LIEN" onclick="var c = document.getElementById(\'JUM-R-MAILCHORUS\'); c.value = JUMELAGE_ADRESSE_GROUPE(\'chorus\');">👥 Envoyer à tous les assistants Chorus DT de mon unité (' + esc(adresseGroupe('chorus')) + ')</button>' : '') +
                 '<div class="JUM-R-TITRE">Option Demande de réservation</div>' +
                 '<p class="JUM-R-AIDE">Si votre unité passe par un organisme de réservation pour l\'hébergement et le transport (ex. Amplitude), laissez la case cochée et indiquez son nom : il apparaîtra dans Mise en route et Compte-rendu.</p>' +
                 '<label class="JUM-R-CASE"><input type="checkbox" id="JUM-R-RESA"' + (r.resaActive !== false ? ' checked' : '') + '><span>Utiliser cette option (certains régiments ne l\'utilisent pas)</span></label>' +
@@ -1975,11 +1982,12 @@
                     // VALIDEUR 2 et assistant Chorus DT : tout le groupe de l'unité, en tête (recommandé) ; le premier qui traite prend la main.
                     if (rep.groupe && l.length) l = [{ mail: rep.groupe, grade: '👥', nom: 'Tous les ' + (role === 'chorus' ? 'assistants Chorus DT' : 'VALIDEUR 2') + ' du ' + rep.unite, prenom: '(recommandé)', groupe: true }].concat(l);
                     annuaires[role] = l; dessiner(l);
-                    if (rep.groupe && l.length && !champ.value.trim()) { champ.value = rep.groupe; dessiner(l); }
                 }, function() { z.innerHTML = ''; });
             });
         }
         function majDestinataires() {
+            // Assistant Chorus DT et VALIDEUR 2 : le groupe de l'unité, pré-rempli (le premier disponible traite).
+            [['MAILCHORUS', 'chorus'], ['MAILVAL2', 'valideur2']].forEach(function(x) { var c = document.getElementById('JUM-R-' + x[0]); if (c && !c.value.trim()) c.value = adresseGroupe(x[1], v('UNITE')); });
             racine.querySelector('#JUM-PF-DEST-V1').style.display = coche('VAL1') ? '' : 'none';
             racine.querySelector('#JUM-PF-DEST-V2').style.display = coche('VAL2') ? '' : 'none';
             var r = ['missionnaire'].concat(coche('VAL1') ? ['VALIDEUR 1'] : [], coche('VAL2') ? ['VALIDEUR 2'] : []);
