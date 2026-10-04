@@ -44,9 +44,52 @@ const TAILLE_MAX = 24 * 1024 * 1024;   // limite d'une valeur Workers KV : 25 Mo
 // Index des boîtes aux lettres dans D1 (liaison TRIGONE_DB, base SQLite de Cloudflare) : cohérent et sans limite de
 // « list » ; le contenu chiffré reste dans KV (msg:<id>), une ligne D1 par appareil destinataire.
 let TABLES_PRETES = false;
+// ---------- Lectures à jour ----------
+// Le KV de Cloudflare peut renvoyer l'ancienne valeur jusqu'à une minute après une écriture faite depuis un autre point
+// du réseau (rôle ajouté, photo publiée, carte, appareil lié, absence… pas encore vus des autres). Chaque écriture est donc
+// doublée dans D1 (table kv_frais, lue telle qu'écrite à l'instant) et lue en premier ; le KV reste la référence pour ce
+// qui n'a jamais été écrit depuis, pour les gros fichiers (sauvegardes) et les taux de change.
+const KV_FRAIS_HORS = /^(sauvegarde:|taux:)/;
+function kvFrais(env) {
+    const kv = env.TRIGONE_KV, db = env.TRIGONE_DB;
+    if (!kv || !db || kv.__frais) return kv;
+    const ecrire = async (k, v, exp) => {
+        await baseBoite(env);
+        await db.prepare('INSERT INTO kv_frais (cle, valeur, expire) VALUES (?, ?, ?) ON CONFLICT (cle) DO UPDATE SET valeur = excluded.valeur, expire = excluded.expire').bind(k, v, exp).run();
+    };
+    return {
+        __frais: true,
+        get: async (k, type) => {
+            const t = type && typeof type === 'object' ? type.type : type;
+            if (KV_FRAIS_HORS.test(k) || (t && t !== 'text' && t !== 'json')) return kv.get(k, type);
+            let r;
+            try { await baseBoite(env); r = await db.prepare('SELECT valeur, expire FROM kv_frais WHERE cle = ?').bind(k).first(); } catch (e) { r = undefined; }
+            if (!r) return kv.get(k, type);                                   // jamais écrit depuis : le KV
+            if (r.valeur === null || (r.expire && r.expire < Date.now())) return null;   // effacé ou expiré
+            if (t === 'json') { try { return JSON.parse(r.valeur); } catch (e) { return null; } }
+            return r.valeur;
+        },
+        put: async (k, v, opts) => {
+            await kv.put(k, v, opts);
+            try {
+                if (KV_FRAIS_HORS.test(k) || typeof v !== 'string' || v.length > 900000) await db.prepare('DELETE FROM kv_frais WHERE cle = ?').bind(k).run();
+                else await ecrire(k, v, opts && opts.expirationTtl ? Date.now() + opts.expirationTtl * 1000 : opts && opts.expiration ? opts.expiration * 1000 : null);
+            } catch (e) {}
+        },
+        delete: async (k) => { await kv.delete(k); try { await ecrire(k, null, 1); } catch (e) {} },
+        list: (o) => kv.list(o),
+        getWithMetadata: (k, t) => kv.getWithMetadata(k, t)
+    };
+}
+function avecKvFrais(env) {
+    if (!env || !env.TRIGONE_KV || !env.TRIGONE_DB || env.TRIGONE_KV.__frais) return env;
+    const e = Object.create(env); e.TRIGONE_KV = kvFrais(env); return e;
+}
 async function baseBoite(env) {
     if (!TABLES_PRETES) {
         await env.TRIGONE_DB.batch([
+            // Copie à jour du KV (voir kvFrais) : ce qui vient d'être écrit se relit tout de suite, partout.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS kv_frais (cle TEXT PRIMARY KEY, valeur TEXT, expire INTEGER)'),
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS boite (id TEXT NOT NULL, dest TEXT NOT NULL, appareil TEXT NOT NULL, de TEXT, type TEXT, le INTEGER, enveloppe TEXT, PRIMARY KEY (id, appareil))'),
             env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS boite_dest ON boite (dest, appareil)'),
             // Abonnements aux notifications, un par appareil : table à part (écriture simple et cohérente, jamais
@@ -629,6 +672,8 @@ async function purgerErreurs(env, maintenant) {
     await db.prepare('DELETE FROM erreur WHERE dernier < ?').bind(maintenant - 30 * JOUR * 1000).run();
     await db.prepare('DELETE FROM erreur WHERE sig NOT IN (SELECT sig FROM erreur ORDER BY dernier DESC LIMIT 1000)').run();
     await db.prepare('DELETE FROM erreur_appareil WHERE sig NOT IN (SELECT sig FROM erreur)').run();
+    // Copie à jour du KV : valeurs expirées ou effacées depuis plus d'une heure (le KV, lui, est à jour depuis longtemps).
+    await db.prepare('DELETE FROM kv_frais WHERE expire IS NOT NULL AND expire < ?').bind(maintenant - 3600 * 1000).run();
 }
 function estAdmin(env, mail) {
     if (env.MODE_TEST === '1' && /^admin\./.test(mail)) return true;   // tests locaux uniquement
@@ -1907,11 +1952,13 @@ async function recevoirMail(message, env, ctx) {
 
 export default {
     async email(message, env, ctx) {
+        env = avecKvFrais(env);
         let motif = '';
         try { motif = await recevoirMail(message, env, ctx); } catch (e) { motif = 'TRIGONE n\'a pas pu lire ce mail.'; }
         if (motif) message.setReject(motif);
     },
     async fetch(requete, env, ctx) {
+        env = avecKvFrais(env);
         const url = new URL(requete.url);
         // Publication récente : contrôlée au plus toutes les 5 minutes, sans retarder la réponse.
         if (Date.now() - dernierControleMaj > 5 * 60 * 1000 && ctx && ctx.waitUntil) ctx.waitUntil(notifierMiseAJour(env, url.origin).catch(() => {}));
@@ -1924,6 +1971,7 @@ export default {
     // Déclencheur planifié (wrangler.jsonc › triggers.crons, toutes les 5 minutes) : publication, relances (à l'heure).
     async scheduled(evenement, env, ctx) {
         if (!env.TRIGONE_DB) return;
+        env = avecKvFrais(env);
         // Déclencheur toutes les 5 minutes : nouvelle publication (notification sans attendre) ; relances à l'heure pile.
         if (new Date(evenement.scheduledTime || Date.now()).getUTCMinutes() < 5) {
             ctx.waitUntil(origineConnue(env).then(o => relancer(env, o, Date.now(), false)).catch(() => {}));

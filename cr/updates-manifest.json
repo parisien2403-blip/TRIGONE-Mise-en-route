@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 282,
-  "appCodeMessage": "Tout passe en style messagerie : Bibliothèque et Documents (Mise en route), Bibliothèque et Remboursement (Compte-rendu) ont leurs dossiers à gauche, la liste au milieu et le détail à droite sur PC (dossiers → liste → détail sur téléphone). Nouveau : un point rouge sur le menu, l'onglet et le dossier où une demande vient de bouger, jusqu'à ce que vous l'ouvriez.",
+  "appCodeVersion": 283,
+  "appCodeMessage": "Plus besoin de refaire deux fois : un rôle ajouté, une photo publiée, une carte, un appareil lié ou une absence sont vus tout de suite par les autres (avant : jusqu'à une minute de retard, et jusqu'à 6 heures pour la photo d'un nouveau valideur).",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
