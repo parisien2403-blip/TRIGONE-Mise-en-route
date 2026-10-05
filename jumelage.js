@@ -6164,13 +6164,14 @@
         });
     };
     // Reconnexion adresse + code : état, adresse exacte à utiliser, et activation en saisissant son code d'accès.
-    window.JUMELAGE_RECONNEXION_CODE = function() {
+    window.JUMELAGE_RECONNEXION_CODE = function(opts) {
+        opts = opts || {};
         if (window.JUMELAGE_FERMER_PARAMETRES) window.JUMELAGE_FERMER_PARAMETRES();
         var c = monCompte(); if (!c) return;
         var adr = window.JUMELAGE_ADRESSE_CONNUE() || c.mail, actif = lireTxt('trigone_code_cnx') && lireTxt('trigone_code_cnx') === lireTxt(CLE_CODE);
         var f = document.createElement('div'); f.className = 'JUM-GC-FOND'; document.body.appendChild(f);
         f.addEventListener('click', function(e) { if (e.target === f) f.remove(); });
-        f.innerHTML = '<div class="JUM-GC-FEN"><button type="button" class="JUM-GC-X" aria-label="Fermer">✕</button><h3>🔐 Reconnexion adresse + code</h3>' +
+        f.innerHTML = '<div class="JUM-GC-FEN"><button type="button" class="JUM-GC-X" aria-label="Fermer">✕</button><h3>🔐 Reconnexion adresse + code</h3>' + (opts.auto ? '<p>Saisissez <b>une fois</b> votre code : vous pourrez ensuite vous connecter depuis n\'importe quel appareil avec votre adresse et ce code.</p>' : '') +
             '<p>Sur un autre appareil : <b>Se connecter</b>, puis<br>adresse : <b>' + esc(adr) + '</b><br>code : votre code à 4 chiffres (celui qui ouvre TRIGONE).</p>' +
             '<p id="JUM-RC-ETAT" style="font-weight:700;color:' + (actif ? '#15803d' : '#b45309') + ';">' + (actif ? '✓ Activée sur votre compte.' : 'Pas encore activée sur votre compte.') + '</p>' +
             (codeDefini() ? '<div class="JUM-R-CHAMP"><label for="JUM-RC-CODE">' + (actif ? 'Revalider avec votre code' : 'Activer : saisissez votre code') + '</label><input id="JUM-RC-CODE" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"></div>' +
@@ -6227,6 +6228,13 @@
         appelApi('compte/etat').then(function(r) {
             // Code de reconnexion pas (ou plus) connu du compte : redéclaré à la prochaine saisie du code.
             if ((r.codeCnx === false || r.codeCoupe) && lireTxt('trigone_code_cnx')) try { localStorage.removeItem('trigone_code_cnx'); } catch (e) {}
+            // Code d'accès choisi mais pas encore connu du compte (appli ouverte par empreinte, déjà déverrouillée…) : on le
+            // demande une fois (au plus une fois par jour) pour que « adresse + code » marche depuis n'importe quel appareil.
+            if ((r.codeCnx === false || r.codeCoupe) && codeDefini() && window.JUMELAGE_DEVERROUILLE() && lireTxt('trigone_reco_propose') !== new Date().toDateString()) setTimeout(function() {
+                if (lireTxt('trigone_code_cnx') || document.querySelector('.JUM-GC-FOND, .JUM-REGLAGES, .JUM-PARAM, .JUM-ACC, .JUM-PIN') || window.JUMELAGE_PARCOURS_EN_COURS()) return;
+                ecrireTxt('trigone_reco_propose', new Date().toDateString());
+                window.JUMELAGE_RECONNEXION_CODE({ auto: true });
+            }, 3000);
             // Autre appareil du compte passé à son adresse TRIGONE : celui-ci suit.
             if (r.compte && r.compte !== (monCompte() || {}).mail) changerMailCompte((monCompte() || {}).mail, r.compte);
             // Compte en attente de validation : rappel une fois par ouverture ; validé : on le dit une fois.
