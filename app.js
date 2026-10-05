@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 243;
+var APP_CODE_VERSION = 244;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -561,7 +561,7 @@ function TPL_MAIL(page, o) {
     if (MER_SEL[page] && !lignes.some(function(l) { return l.id === MER_SEL[page]; })) MER_SEL[page] = null;
     if (pc && d && !MER_SEL[page] && lignes.length) MER_SEL[page] = lignes[0].id;
     var rangees = ds.map(function(x) {
-        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d && x.id === d.id && pc ? ' on' : '') + (x.nb ? '' : ' vide') + (x.nouveau ? ' nouveau' : '') + '" data-dossier="' + x.id + '" data-mvt="MER:' + page + ':' + x.id + '" onclick="OUVRIR_DOSSIER(\'' + page + '\', \'' + x.id + '\')">' +
+        return '<button type="button" class="MER-DOSSIER MER-BX-D' + (d && x.id === d.id && pc ? ' on' : '') + (x.nb ? '' : ' vide') + (x.nouveau ? ' nouveau' : '') + '" data-dossier="' + x.id + '" data-mvt="MER:' + page + ':' + x.id + '"' + ((x.items ? !x.items.length : !x.nb) ? ' data-vide="1"' : '') + ' onclick="OUVRIR_DOSSIER(\'' + page + '\', \'' + x.id + '\')">' +
             '<span class="MER-BX-DIC">' + MER_BX_ICO(x.ic || MER_IC_DOSSIER[x.id] || 'boite') + '</span><span class="MER-BX-DTXT"><b>' + ESC(x.titre) + '</b>' + (pc ? '' : '<small>' + ESC(x.sous || '') + (x.det ? ' · ' + x.det : '') + '</small>') + '</span>' +
             (x.nb ? '<span class="MER-DOSSIER-NB' + (x.gris ? ' gris' : '') + '">' + x.nb + '</span>' : '') + '<span class="MER-BX-CHEV" aria-hidden="true">›</span></button>';
     }).join('');
@@ -3982,7 +3982,7 @@ function TPL_BX_DOSSIERS(page, groupes, dId) {
             var corps = '<span class="MER-BX-DIC">' + MER_BX_ICO(d.ic) + '</span><span class="MER-BX-DTXT">' + ESC(d.titre) + '</span>' + nb + '<span class="MER-BX-CHEV" aria-hidden="true">›</span>';
             var cls = 'MER-DOSSIER MER-BX-D' + (d.id === dId ? ' on' : '') + (d.nb ? '' : ' vide') + (d.nouveau ? ' nouveau' : '');
             if (d.fichier) return '<label class="' + cls + '" data-dossier="' + d.id + '">' + corps + '<input type="file" accept=".pdf,application/pdf" multiple style="display:none;" onchange="VERIFIER_FICHIERS(this)"></label>';
-            return '<button type="button" class="' + cls + '" data-dossier="' + d.id + '" data-mvt="MER:' + page + ':' + d.id + '" onclick="' + (d.lien || 'OUVRIR_DOSSIER(\'' + page + '\', \'' + d.id + '\')') + '">' + corps + '</button>';
+            return '<button type="button" class="' + cls + '" data-dossier="' + d.id + '" data-mvt="MER:' + page + ':' + d.id + '"' + ((d.items ? !d.items.length : !d.nb) ? ' data-vide="1"' : '') + ' onclick="' + (d.lien || 'OUVRIR_DOSSIER(\'' + page + '\', \'' + d.id + '\')') + '">' + corps + '</button>';
         }).join('');
     }).join('') + '</nav>';
 }
