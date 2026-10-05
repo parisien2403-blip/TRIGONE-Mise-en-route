@@ -33,6 +33,7 @@ const TESTS = {
     'inscription': ['Inscription sans adresse mail, validation, blocage, code de réactivation', require('./test-inscription')],
     'migration': ['Passage des anciens comptes à leur adresse TRIGONE (compte, rôles, carte, boîte ; ancienne adresse retrouvée)', require('./test-migration')],
     'qrconnexion': ['QR de connexion (autre appareil, caméra ou capture d\'écran)', require('./test-qrconnexion')],
+    'connexioncode': ['Reconnexion avec l\'adresse TRIGONE et le code à 4 chiffres', require('./test-connexion-code')],
     'groupe': ['Envoi au groupe (tous les assistants Chorus DT de l\'unité), traité par le premier', require('./test-groupe')],
     'premiere': ['Première connexion guidée (7 étapes, destinataires selon les rôles, bienvenue)', require('./test-premiere')],
     'comptes': ['Comptes : administrateur, réinitialisation et suppression sur demande', require('./test-comptes')],
