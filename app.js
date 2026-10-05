@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 238;
+var APP_CODE_VERSION = 239;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -618,7 +618,9 @@ function TPL_BIBLIOTHEQUE() {
         lecture: function(d, id) {
             var e = BIB_TROUVER(id); if (!e) return '';
             var s0 = d.id === 'traitees' && window.JUMELAGE_SUIVI ? (JUMELAGE_SUIVI()[(e.demandes[0] || {}).id] || {}) : null;
-            var tampon = s0 && window.JUMELAGE_TAMPON ? JUMELAGE_TAMPON({ unite: String(((e.demandes[0] || {}).personnes || [{}])[0].unite || '').toUpperCase(), le: s0.le, omr: (e.demandes[0] || {}).omr || '' }, 'bib:' + e.id) : '';
+            var tOmr = window.JUMELAGE_TAMPON_OMR ? e.demandes.map(function(x) { return JUMELAGE_TAMPON_OMR(x.id); }).filter(Boolean)[0] : null;
+            var tampon = tOmr ? JUMELAGE_TAMPON_OMR_HTML(Object.assign({}, tOmr, { unite: tOmr.unite || String(((e.demandes[0] || {}).personnes || [{}])[0].unite || '').toUpperCase(), omr: tOmr.omr || (e.demandes[0] || {}).omr || '' }), 'bib-' + tOmr.s + ':' + e.id) :
+                s0 && window.JUMELAGE_TAMPON ? JUMELAGE_TAMPON({ unite: String(((e.demandes[0] || {}).personnes || [{}])[0].unite || '').toUpperCase(), le: s0.le, omr: (e.demandes[0] || {}).omr || '' }, 'bib:' + e.id) : '';
             return tampon + '<h2>' + ESC(e.demandes.map(function(x) { return x.objet || ''; }).filter(Boolean).join(' · ') || 'Demande de mise en route') + '</h2>' +
                 '<div class="MER-BX-DE">' + ESC(e.demandes.map(function(x) { return RESUME_DEMANDE(x).noms; }).join(' · ')) + (e.envoyeLe ? ' · envoyée le ' + ESC(new Date(e.envoyeLe).toLocaleDateString('fr-FR')) : '') + (e.destinataire ? ' à ' + ESC(e.destinataire) : '') + '</div>' +
                 (e.attente ? '<span class="MER-BADGE" style="background:rgba(180,83,9,0.12);color:#b45309;">En attente de réseau — partira toute seule</span>' : '') +
@@ -4180,7 +4182,12 @@ function MER_REG_JALON(x, k) {
     return m ? new Date(+m[3], +m[2] - 1, +m[1], +m[4], +m[5]) : null;
 }
 function MER_REG_QUAND(d) { return ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) + ' à ' + ('0' + d.getHours()).slice(-2) + 'h' + ('0' + d.getMinutes()).slice(-2); }
+// Tampon « SANS FRAIS » ou « ANNULÉ » posé par un assistant Chorus DT (commun à tous) : x.tampon = { s, le, par, motif, unite }.
+// Retiré : s = 'aucun' (la fusion du serveur garde un champ vide, d'où une valeur explicite).
+function MER_REG_TAMPON(x) { var t = x && x.tampon; return t && (t.s === 'sansfrais' || t.s === 'annule') ? t : null; }
 function MER_REG_ETAT(x) {
+    var tp = MER_REG_TAMPON(x);
+    if (tp) return tp.s === 'annule' ? { cls: 'annule', txt: 'Annulé' } : { cls: 'sansfrais', txt: 'Sans frais — rien à rembourser' };
     var n = (x.crs || []).length, att = MER_REG_ATTENDUS(x);
     if (MER_REG_RENDU(x)) return { cls: 'ok', txt: '✔ Validé — CR rendu' + (n > 1 ? 's' : '') };
     var ech = MER_REG_ECHEANCE(x), maint = new Date(), deb = MER_REG_DATE(x.debut), fin = MER_REG_DATE(x.fin, true);
@@ -4201,6 +4208,10 @@ function MER_REG_ETAT(x) {
 // Avec les heures réelles du missionnaire (Compte-rendu) : départ, sur site, retour suivent ses appuis, heure affichée.
 // Sans elles : départ et retour suivent les dates prévues de la demande.
 function MER_REG_FRISE(x, e) {
+    var tp = MER_REG_TAMPON(x);
+    if (tp) return '<div class="MER-REG-FRISE ' + e.cls + '">' + ['Demande validée', 'Départ', 'Sur site', 'Retour', tp.s === 'annule' ? 'Annulé' : 'Sans frais'].map(function(t, i) {
+        return '<span class="' + (tp.s === 'sansfrais' || i === 0 || i === 4 ? 'fait' : '') + (i === 4 ? ' ici' : '') + '"><i></i>' + t + '</span>';
+    }).join('') + '</div>';
     var maint = new Date(), deb = MER_REG_DATE(x.debut), fin = MER_REG_DATE(x.fin, true), ok = e.cls === 'ok';
     var J = { depart: MER_REG_JALON(x, 'depart'), surSite: MER_REG_JALON(x, 'surSite'), departSite: MER_REG_JALON(x, 'departSite'), retour: MER_REG_JALON(x, 'retour') }, reel = !!J.depart;
     var etapes = reel ? [['Demande validée', true], ['Départ', true, J.depart], ['Sur site', !!(J.surSite || J.departSite || J.retour) || ok, J.surSite], ['Retour', !!J.retour || ok, J.retour], ['CR rendu', ok]]
@@ -4236,7 +4247,7 @@ function MER_REG_RECU_PAR(x) {
 }
 function MER_EUROS(v) { return (Math.round((v || 0) * 100) / 100).toLocaleString('fr-FR', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) + ' €'; }
 // Un seul registre, toutes les missions ligne par ligne ; les filtres ne font que trier ce qu'on regarde.
-var MER_REG_FILTRES = [['tout', 'Toutes'], ['avenir', 'À venir'], ['encours', 'En cours'], ['attente', 'CR attendu'], ['retard', 'En retard'], ['ok', 'CR rendus']];
+var MER_REG_FILTRES = [['tout', 'Toutes'], ['avenir', 'À venir'], ['encours', 'En cours'], ['attente', 'CR attendu'], ['retard', 'En retard'], ['ok', 'CR rendus'], ['sansfrais', 'Sans frais'], ['annule', 'Annulés']];
 function MER_REGISTRE_LIGNES() {
     var l = (window.JUMELAGE_REGISTRE ? JUMELAGE_REGISTRE() : []).slice().sort(MER_OMR_COMPARER);
     return { tout: l, mer: l.filter(function(x) { return !MER_REG_RENDU(x); }), cr: l.filter(MER_REG_RENDU) };
@@ -4288,13 +4299,13 @@ function TPL_REGISTRE() {
     var f = MER_REGISTRE_FILTRES(true), filtre = MER_REGISTRE_ONGLET in f ? MER_REGISTRE_ONGLET : 'tout', l = f[filtre];
     var puce = function(c) { return '<button type="button" class="MER-REG-FILTRE ' + c[0] + (filtre === c[0] ? ' actif' : '') + '" onclick="OUVRIR_REGISTRE(\'' + c[0] + '\')">' + c[1] + ' <span>' + f[c[0]].length + '</span></button>'; };
     var lignes = l.map(function(x) {
-        var e = MER_REG_ETAT(x), m = MER_REG_MONTANTS(x), brut = MER_REG_MONTANTS(x, true), corr = MER_REG_CORRIGES(x), ref = ESC(x.ref).replace(/'/g, ''), rendu = e.cls === 'ok', ech = MER_REG_ECHEANCE(x);
+        var e = MER_REG_ETAT(x), m = MER_REG_MONTANTS(x), brut = MER_REG_MONTANTS(x, true), corr = MER_REG_CORRIGES(x), ref = ESC(x.ref).replace(/'/g, ''), rendu = e.cls === 'ok', ech = MER_REG_ECHEANCE(x), tp = MER_REG_TAMPON(x);
         var tete = '<div class="MER-REG-TETE"><span class="MER-REG-TETE-G"><b class="MER-REG-OMR">' + (x.omr ? 'N°' + ESC(x.omr) : 'Sans n°') + '</b>' + (x.sansDemande ? '' : MER_REG_NATURE_HTML(x)) + '</span><span class="MER-REG-MARQ ' + e.cls + '">' + e.txt + '</span></div>';
         var corps = '<div class="MER-REG-GRILLE mer"><span><small>Envoyée le</small>' + MER_REG_JOUR(x.omrLe || x.recuLe) + '</span><span class="large"><small>Objet</small>' + ESC(x.objet || '—') + '</span>' +
                 '<span><small>Code FD</small>' + (function() { var u = MER_CODE_UNITE(x.codeFD); return u ? '<em class="MER-REG-CODE ' + u + '" title="' + (u === 'unite' ? 'Code du ' : 'Hors ') + ESC(MER_UNITE().nom) + '">' + ESC(x.codeFD) + '</em>' : ESC(x.codeFD || '—'); })() + '</span><span><small>Début</small>' + MER_REG_JOUR(x.debut) + '</span><span><small>Fin</small>' + MER_REG_JOUR(x.fin) + '</span>' +
                 '<span class="large"><small>Personnel' + ((x.personnes || []).length > 1 ? ' (' + x.personnes.length + ')' : '') + '</small>' + MER_REG_PERSONNEL_HTML(x) + '</span>' +
                 (rendu ? '<span><small>CR rendu le</small>' + MER_REG_JOUR((x.crs || []).map(function(c) { return c.recuLe; }).sort().slice(-1)[0]) + '</span>'
-                    : '<span><small>CR attendu le</small>' + (ech ? ech.toLocaleDateString('fr-FR') : '—') + '</span>') + '</div>' +
+                    : '<span><small>CR attendu le</small>' + (ech && !tp ? ech.toLocaleDateString('fr-FR') : '—') + '</span>') + '</div>' +
             ((x.crs || []).length ? '<div class="MER-REG-GRILLE montants">' + MER_REG_RUBRIQUES.map(function(r) {
                     var c = corr.indexOf(r[0]) >= 0;
                     return '<span' + (c ? ' class="corrige" title="Corrigé — montant du compte-rendu : ' + MER_EUROS(brut[r[0]]) + '"' : '') + '><small>' + r[1] + (c ? ' ✏' : '') + '</small>' + MER_EUROS(m[r[0]]) + '</span>';
@@ -4302,10 +4313,18 @@ function TPL_REGISTRE() {
             (corr.length ? '<p class="MER-HINT MER-REG-CORR" style="margin:4px 0 0;">✏ Montants corrigés' + (x.corrigesPar ? ' par ' + ESC(x.corrigesPar) : '') + (x.corrigesLe ? ' le ' + MER_REG_JOUR(x.corrigesLe) : '') +
                 ' (compte-rendu : ' + corr.map(function(k) { return MER_REG_RUBRIQUES.filter(function(r) { return r[0] === k; })[0][1].toLowerCase() + ' ' + MER_EUROS(brut[k]); }).join(', ') + ')</p>' : '') +
             MER_REG_RECU_PAR(x) + MER_REG_OBS_HTML(x, ref) +
-            ((x.relances || []).length && !rendu ? '<p class="MER-HINT" style="margin:4px 0 0;">🔔 Relancé le ' + x.relances.map(function(t) { var q = (x.relancesQui || {})[t]; return MER_REG_JOUR(t) + (q ? ' (par ' + ESC(q) + ')' : ''); }).join(', ') + '</p>' : '') +
-            (rendu ? '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + '</div>' :
+            ((x.relances || []).length && !rendu && !tp ? '<p class="MER-HINT" style="margin:4px 0 0;">🔔 Relancé le ' + x.relances.map(function(t) { var q = (x.relancesQui || {})[t]; return MER_REG_JOUR(t) + (q ? ' (par ' + ESC(q) + ')' : ''); }).join(', ') + '</p>' : '') +
+            (tp ? '<p class="MER-HINT MER-REG-TAMPON-INFO ' + tp.s + '" style="margin:4px 0 0;">' + (tp.s === 'annule' ? '🔴 Annulé' : '🟠 Passé « sans frais »') + (tp.par ? ' par ' + ESC(tp.par) : '') + (tp.le ? ' le ' + MER_REG_JOUR(tp.le) : '') +
+                (tp.s === 'annule' && tp.motif ? ' — motif : « ' + ESC(tp.motif) + ' »' : '') + ' — aucun compte-rendu de frais attendu, pas de relance.</p>' +
+                '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', false)">✉ Message</button>' +
+                '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_TAMPON_RETIRER(\'' + ref + '\')">↩ Retirer le tampon</button></div>' +
+                window.JUMELAGE_TAMPON({ titre: tp.s === 'annule' ? 'ANNULÉ' : 'SANS FRAIS', couleur: tp.s === 'annule' ? 'rouge' : 'orange', unite: tp.unite, le: tp.le, omr: x.omr || '' }) :
+            rendu ? '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + '</div>' :
                 '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + (e.cls === 'attente' || e.cls === 'retard' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_RELANCER(\'' + ref + '\')">🔔 Relancer pour le CR</button>' : '') +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', false)">✉ Message</button>' +
+                ((x.crs || []).length ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL MER-REG-B-SF" onclick="REGISTRE_TAMPON(\'' + ref + '\', \'sansfrais\')">🟠 Sans frais</button>' +
+                    '<button type="button" class="BTN BTN-GHOST BTN-SMALL MER-REG-B-AN" onclick="REGISTRE_TAMPON(\'' + ref + '\', \'annule\')">🔴 Annuler l\'OMR</button>') +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_SUPPRIMER(\'' + ref + '\')">Supprimer</button></div>');
         return '<div class="MER-REG-LIGNE ' + e.cls + '">' + tete + MER_REG_FRISE(x, e) + corps + '</div>';
     }).join('');
@@ -4486,6 +4505,48 @@ function REGISTRE_SUPPRIMER(ref) {
     var x = REGISTRE_LIGNE(ref); if (!x) return;
     MSG_CONFIRM('Supprimer cette ligne ?', (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || '') + '\n\nÀ faire par exemple pour une mission annulée. La ligne disparaît du registre, chez tous les assistants Chorus DT de l\'unité ; le n° OMR n\'est pas réattribué.', 'Supprimer',
         function() { JUMELAGE_REGISTRE_MAJ(ref, null); SHOW_PAGE('CHORUS'); }, '🗑', 'mascotte-poubelle.webp', true);
+}
+// « Sans frais » / « Annuler l'OMR » : coup de tampon, ligne fermée (plus de CR attendu ni de relance) chez tous les
+// assistants Chorus DT de l'unité ; le missionnaire est prévenu dans sa boîte TRIGONE et voit le tampon dans sa Bibliothèque.
+function REGISTRE_TAMPON(ref, s) {
+    var x = REGISTRE_LIGNE(ref); if (!x) return;
+    var an = s === 'annule';
+    AFFICHER_MODALE(an ? 'Annuler l\'OMR' : 'OMR sans frais',
+        '<p style="font-size:0.86em; line-height:1.5;">' + (x.omr ? '<b>OMR N°' + ESC(x.omr) + '</b> — ' : '') + ESC(x.objet || '') + '<br>' + ESC(MER_REG_PERSONNEL(x)) + '</p>' +
+        '<p class="MER-HINT">' + (an ? 'La mission est marquée annulée' : 'La mission est marquée sans frais : rien à rembourser') + ', chez tous les assistants Chorus DT de l\'unité. Plus aucun compte-rendu de frais n\'est attendu et plus de relance. Le missionnaire est prévenu dans sa boîte TRIGONE.</p>' +
+        (an ? '<div class="MER-FIELD"><label for="MER-TAMPON-MOTIF">Motif (facultatif)</label><input type="text" id="MER-TAMPON-MOTIF" maxlength="200" data-no-uppercase="1" placeholder="Ex : stage reporté"></div>' : ''),
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Annuler</button><button type="button" class="BTN BTN-PRIMARY" onclick="REGISTRE_TAMPON_OK(\'' + ESC(ref).replace(/'/g, '') + '\', \'' + s + '\')">' + (an ? '🔴 Annuler l\'OMR' : '🟠 Sans frais') + '</button>');
+}
+function REGISTRE_TAMPON_OK(ref, s) {
+    var x = REGISTRE_LIGNE(ref); if (!x) return;
+    var m = document.getElementById('MER-TAMPON-MOTIF'), motif = m ? m.value.trim() : '';
+    var t = { s: s, le: Date.now(), par: (window.JUMELAGE_QUI ? JUMELAGE_QUI() : '') || 'ASSIST CHORUS DT', motif: motif, unite: MER_UNITE_TAMPON() };
+    FERMER_MODALE();
+    JUMELAGE_REGISTRE_MAJ(ref, { tampon: t });
+    if (window.JUMELAGE_TAMPON_COUP) JUMELAGE_TAMPON_COUP({ titre: s === 'annule' ? 'ANNULÉ' : 'SANS FRAIS', couleur: s === 'annule' ? 'rouge' : 'orange', unite: t.unite, le: t.le, omr: x.omr || '' });
+    if (PAGE_ACTUELLE === 'CHORUS') MER_REG_REAFFICHER();
+    REGISTRE_TAMPON_PREVENIR(x, t, s === 'annule'
+        ? 'Votre mission « ' + (x.objet || '') + ' »' + (x.omr ? ' (OMR N°' + x.omr + ')' : '') + ' est annulée' + (motif ? ' — motif : « ' + motif + ' »' : '') + '. Aucun compte-rendu de frais n\'est attendu.'
+        : 'Votre mission « ' + (x.objet || '') + ' »' + (x.omr ? ' (OMR N°' + x.omr + ')' : '') + ' est passée « sans frais » : rien à rembourser, aucun compte-rendu de frais n\'est attendu.');
+}
+function REGISTRE_TAMPON_RETIRER(ref) {
+    var x = REGISTRE_LIGNE(ref), tp = MER_REG_TAMPON(x); if (!tp) return;
+    MSG_CONFIRM('Retirer le tampon ?', (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || '') + '\n\nLa mission redevient normale (compte-rendu attendu, relances possibles), chez tous les assistants Chorus DT de l\'unité. Le missionnaire est prévenu.', 'Retirer', function() {
+        var t = { s: 'aucun', le: Date.now(), par: (window.JUMELAGE_QUI ? JUMELAGE_QUI() : '') || 'ASSIST CHORUS DT' };
+        JUMELAGE_REGISTRE_MAJ(ref, { tampon: t });
+        if (PAGE_ACTUELLE === 'CHORUS') MER_REG_REAFFICHER();
+        REGISTRE_TAMPON_PREVENIR(x, t, 'Le tampon « ' + (tp.s === 'annule' ? 'ANNULÉ' : 'SANS FRAIS') + ' » de votre mission « ' + (x.objet || '') + ' »' + (x.omr ? ' (OMR N°' + x.omr + ')' : '') + ' a été retiré : la mission suit son cours normal.');
+    }, '↩');
+}
+function REGISTRE_TAMPON_PREVENIR(x, t, texte) {
+    if (x.sansDemande) return;
+    var qui = [window.JUMELAGE_QUI ? JUMELAGE_QUI() : '', 'ASSIST CHORUS DT'].filter(Boolean).join(' — ');
+    REGISTRE_DESTINATAIRES(x).then(function(dests) {
+        return Promise.all(dests.map(function(d) {
+            return JUMELAGE_ENVOYER_DIRECT(d, 'QUESTION', 'Question.json', JSON.stringify({ app: 'TRIGONE-QUESTION', ref: x.ref, genre: 'registre', objet: (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || ''), question: texte, qui: qui, rappel: true,
+                tampon: Object.assign({ omr: x.omr || '' }, t) }), { differable: true, libelle: 'Votre message' });
+        }));
+    }).catch(function(e) { MSG_ERREUR('Missionnaire non prévenu', e.message || String(e)); });
 }
 function REGISTRE_TEXTE_RELANCE(x) {
     var ech = MER_REG_ECHEANCE(x);

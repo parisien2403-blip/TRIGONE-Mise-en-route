@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=193"></script>
+<script src="jumelage.js?v=194"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -573,6 +573,18 @@ body.dark-mode .MER-REG-FILTRE { background: #1f1f1f; border-color: #3a3a3a; col
 body.dark-mode .MER-REG-FRISE i { background: #1f1f1f; border-color: #4a4a4a; } body.dark-mode .MER-REG-FRISE span::before { background: #3a3a3a; }
 .MER-REG-LIGNE { border: 1.5px solid var(--tg-border); border-left: 5px solid #d6a756; border-radius: 14px; padding: 12px 14px; margin: 0 0 10px; background: #fff; }
 .MER-REG-LIGNE.retard { border-left-color: #b91c1c; } .MER-REG-LIGNE.ok { border-left-color: #15803d; } .MER-REG-LIGNE.avenir { border-left-color: #9ca3af; }
+/* OMR « sans frais » (orange) et « annulé » (rouge) : tampon posé par l'assistant Chorus DT. */
+.MER-REG-LIGNE { position: relative; overflow: hidden; }
+.MER-REG-LIGNE.sansfrais { border-left-color: #e07a1f; } .MER-REG-LIGNE.annule { border-left-color: #c62828; }
+.MER-REG-MARQ.sansfrais { background: rgba(224,122,31,0.12); color: #b85c0c; } .MER-REG-MARQ.annule { background: rgba(198,40,40,0.1); color: #b71c1c; }
+.MER-REG-FILTRE.sansfrais span { background: rgba(224,122,31,0.14); color: #b85c0c; } .MER-REG-FILTRE.annule span { background: rgba(198,40,40,0.12); color: #b71c1c; }
+.MER-REG-FRISE.sansfrais span.fait { color: #b85c0c; } .MER-REG-FRISE.sansfrais span.fait::before, .MER-REG-FRISE.sansfrais span.fait i { background: #e07a1f; border-color: #e07a1f; }
+.MER-REG-FRISE.annule span.fait { color: #b71c1c; } .MER-REG-FRISE.annule span.fait i { background: #c62828; border-color: #c62828; } .MER-REG-FRISE.annule span.fait::before { background: #e5e5e5; } .MER-REG-FRISE.annule span i { border-color: #e5b4b4; }
+.MER-REG-LIGNE.annule .MER-REG-GRILLE.mer { opacity: 0.55; text-decoration: line-through; }
+.MER-REG-LIGNE .JUM-TAMPON { top: auto; bottom: 16px; right: 36px; }
+.MER-REG-TAMPON-INFO.sansfrais { color: #b85c0c !important; } .MER-REG-TAMPON-INFO.annule { color: #b71c1c !important; }
+.BTN.MER-REG-B-SF { border-color: #f0b27a !important; color: #b85c0c !important; } .BTN.MER-REG-B-AN { border-color: #ef9a9a !important; color: #b71c1c !important; }
+body.dark-mode .MER-REG-MARQ.sansfrais, body.dark-mode .MER-REG-TAMPON-INFO.sansfrais, body.dark-mode .BTN.MER-REG-B-SF { color: #f0a35e !important; } body.dark-mode .MER-REG-MARQ.annule, body.dark-mode .MER-REG-TAMPON-INFO.annule, body.dark-mode .BTN.MER-REG-B-AN { color: #ef6b6b !important; }
 .MER-REG-TETE { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
 .MER-REG-OMR { font-size: 1.02rem; letter-spacing: 0.02em; }
 .MER-REG-TETE-G { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 8px; }
@@ -1156,6 +1168,6 @@ body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.da
     </div>
   </div>
 </div>
-<script src="app.js?v=193"></script>
+<script src="app.js?v=194"></script>
 </body>
 </html>
