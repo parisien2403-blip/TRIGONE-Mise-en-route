@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 182;
+    var VERSION = 183;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i><span class="n-leg">' + TEL_SVG + (n === 'c3-carte-grand' ? 'Téléphone à l\'horizontale · Android / iPhone' : 'Téléphone · Android / iPhone') + '</span></button>'; }
@@ -180,7 +180,7 @@
         savoir('<b>Un registre par régiment</b> : chaque unité (celle de Mon profil) a son propre registre et sa propre numérotation OMR. Les assistants d\'un autre régiment ne voient pas le vôtre.'), 'chorus'));
     ajouter(page('Une ligne d\'OMR', duo('e1-registre-ligne', et([r(1) + ' Touchez un <b>nom</b> du personnel : le <b>recto de sa carte TRIGONE</b> (photo si elle est partagée, grade, unité, matricule) ; ni verso, ni QR code.', r(2) + ' <b>Observations</b> : la dernière note, son auteur, sa date ; touchez pour tout voir.', r(3) + ' <b>Relancer pour le CR</b> : un <b>simple rappel</b> en un toucher, sans discussion (le missionnaire répond « Vu »).'])), 'chorus'));
     ajouter(page('Sans frais, annulé', '<p style="text-align:center"><span style="display:inline-block;margin:6px 10px;padding:5px 12px;border:3px double #e07a1f;border-radius:8px;color:#e07a1f;font:900 1.05em Montserrat,sans-serif;letter-spacing:0.14em;transform:rotate(-8deg)">SANS FRAIS</span><span style="display:inline-block;margin:6px 10px;padding:5px 12px;border:3px double #c62828;border-radius:8px;color:#c62828;font:900 1.05em Montserrat,sans-serif;letter-spacing:0.14em;transform:rotate(-8deg)">ANNULÉ</span></p>' +
-        et(['Sur une mission sans compte-rendu, deux boutons : <b style="color:#e07a1f">🟠 Sans frais</b> (rien à rembourser) et <b style="color:#c62828">🔴 Annuler l\'OMR</b> (motif facultatif, ex. « stage reporté »).',
+        et(['Sur chaque mission, même validée, deux boutons : <b style="color:#e07a1f">🟠 Sans frais</b> (rien à rembourser) et <b style="color:#c62828">🔴 Annuler l\'OMR</b> (motif facultatif, ex. « stage reporté »).',
             'Coup de tampon : la ligne, la frise et l\'étiquette passent en <b style="color:#e07a1f">orange</b> ou en <b style="color:#c62828">rouge</b> (infos barrées si annulé), avec qui l\'a posé et quand.',
             'Plus de CR attendu, plus de relance ; filtres <b>Sans frais</b> et <b>Annulés</b>. Visible de <b>tous les assistants</b> de l\'unité.',
             'Le missionnaire est <b>prévenu</b> dans sa boîte et voit le tampon sur sa demande (Bibliothèque).',
