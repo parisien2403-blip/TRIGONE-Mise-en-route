@@ -1217,7 +1217,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 195, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 196, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -1647,9 +1647,17 @@
             return Array.prototype.map.call(new Uint8Array(b), function(x) { return ('0' + x.toString(16)).slice(-2); }).join('');
         });
     }
+    // Le code à 4 chiffres sert aussi à se reconnecter (adresse TRIGONE + code) : déclaré au compte, qui n'en garde
+    // qu'une empreinte lente. Déclaré quand on le choisit, et à l'ouverture tant qu'il ne l'a pas été (ou s'il a changé).
+    function declarerCodeCnx(code) {
+        var h = lireTxt(CLE_CODE);
+        if (!monCompte() || !navigator.onLine || !h || lireTxt('trigone_code_cnx') === h) return;
+        appelApi('compte/code', { methode: 'POST', corps: { code: code } }).then(function() { ecrireTxt('trigone_code_cnx', h); }, function() {});
+    }
     function poserCode(code) {
         return empreinte(code).then(function(h) {
             ecrireTxt(CLE_CODE, h);
+            setTimeout(function() { declarerCodeCnx(code); }, 0);
             // Le code commun remplace les anciens codes propres à chaque appli.
             try { localStorage.removeItem('mer_pin_hash'); localStorage.removeItem('trigone_pin_hash'); } catch (e) {}
             if (window.JUMELAGE_MARQUER_DEVERROUILLE) window.JUMELAGE_MARQUER_DEVERROUILLE();
@@ -1674,6 +1682,7 @@
             return m ? empreinteMer(code).then(function(x) { return x === m ? 'ancien' : ''; }) : '';
         }).then(function(r) {
             if (r === 'ancien') return poserCode(code).then(function() { return true; });
+            if (r === 'commun') setTimeout(function() { declarerCodeCnx(code); }, 0);
             return r === 'commun';
         });
     };
@@ -3037,6 +3046,27 @@
             return rep.mail;
         });
     };
+    // Reconnexion avec l'adresse TRIGONE et le code à 4 chiffres : le compte revient (comme un code de réactivation) ;
+    // le même code ouvre ensuite l'appli sur cet appareil, et les données reviennent avec le code de récupération.
+    window.JUMELAGE_CONNEXION_CODE = function(mail, code) {
+        mail = String(mail || '').trim(); code = String(code || '').replace(/\D/g, '');
+        if (!mail) return Promise.reject(new Error('Indiquez votre adresse TRIGONE.'));
+        if (code.length !== 4) return Promise.reject(new Error('Le code contient 4 chiffres.'));
+        if (!navigator.onLine) return Promise.reject(new Error('Pas de connexion.'));
+        var paire, rep;
+        return SUBTLE.generateKey({ name: 'ECDH', namedCurve: 'P-256' }, false, ['deriveBits']).then(function(p) {
+            paire = p; return SUBTLE.exportKey('jwk', p.publicKey);
+        }).then(function(pub) {
+            return appelApi('connexion/code', { methode: 'POST', corps: { mail: mail, code: code, nom: nomAppareil(), cle: { kty: pub.kty, crv: pub.crv, x: pub.x, y: pub.y } } });
+        }).then(function(r) {
+            rep = r; return cleIdb('ecrire', { prive: paire.privateKey });
+        }).then(function() {
+            ecrireTxt(CLE_COMPTE, JSON.stringify({ mail: rep.mail, appareil: rep.appareil, jeton: rep.jeton }));
+            ecrireTxt('trigone_liaison_faite', String(Date.now()));
+            ecrireTxt('trigone_reactivation', '1');
+            return poserCode(code);
+        }).then(function() { ecrireTxt('trigone_code_cnx', lireTxt(CLE_CODE)); return rep.mail; });
+    };
     // Zone de saisie du code (nouvel appareil) : champ + bouton + message ; après réussite, TRIGONE redémarre.
     // QR de connexion : lien …?liaison=K7P29XQM (ouvre TRIGONE avec le code si on le scanne avec l'appareil photo).
     function lienLiaison(code) { return location.origin + racineAppli + '?liaison=' + codeLiaisonNormal(code); }
@@ -4340,6 +4370,16 @@
                         '<p class="JUM-C-APERCU" id="JUM-C-APERCU"></p>' +
                         '<button type="button" class="JUM-ACC-BTN noir" id="JUM-C-CREER">Créer mon compte</button>' +
                     '</div>' +
+                    '<div id="JUM-C-PINBLOC" style="display:none;">' +
+                        '<label class="JUM-ACC-LBL" for="JUM-C-PADR">Adresse TRIGONE</label>' +
+                        '<div class="JUM-ACC-CHAMP">' + SVG('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>') +
+                            '<input id="JUM-C-PADR" type="email" autocomplete="username" data-no-uppercase="1" placeholder="prenom.nom@trigone-app.com"></div>' +
+                        '<label class="JUM-ACC-LBL" for="JUM-C-PCODE">Code à 4 chiffres</label>' +
+                        '<div class="JUM-ACC-CHAMP">' + SVG('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>') +
+                            '<input id="JUM-C-PCODE" type="password" inputmode="numeric" maxlength="4" autocomplete="current-password" placeholder="••••"></div>' +
+                        '<button type="button" class="JUM-ACC-BTN noir" id="JUM-C-PGO">Se connecter</button>' +
+                        '<p class="JUM-R-AIDE" style="margin:8px 0 12px;">Le code qui ouvre TRIGONE sur votre appareil habituel. Code oublié : QR de connexion ou code de réactivation ci-dessous.</p>' +
+                    '</div>' +
                     '<div id="JUM-C-SANSMAILBLOC" style="display:none;"><button type="button" class="JUM-ACC-BTN noir" data-aller="liaison">J\'ai un code de liaison ou de réactivation</button></div>' +
                     '<div id="JUM-C-MAILBLOC">' +
                     '<label class="JUM-ACC-LBL" for="JUM-C-MAIL">Adresse mail du compte</label>' +
@@ -4375,7 +4415,7 @@
         fenCompte.querySelector('#JUM-C-SANS').addEventListener('click', function() { window.JUMELAGE_FERMER_COMPTE(); window.JUMELAGE_REGLAGES(); });
         var TEXTES = {
             creer: ['Bienvenue 👋', 'Votre grade, votre nom, votre unité : TRIGONE vous crée votre adresse prénom.nom@trigone-app.com. Aucune adresse mail personnelle, aucun mot de passe. Un responsable de votre unité valide ensuite votre compte.'],
-            connecter: ['Bon retour 👋', 'Votre compte existe déjà : reliez cet appareil avec un code de liaison (sur votre ancien appareil : Paramètres › Compte › « Ajouter un appareil »). Ancien appareil perdu ou bloqué : demandez un code de réactivation à l\'administrateur de votre unité.']
+            connecter: ['Bon retour 👋', 'Votre adresse TRIGONE et votre code à 4 chiffres suffisent. Pour retrouver aussi les données de votre autre appareil : code de liaison ou QR de connexion. Appareil perdu, code oublié : code de réactivation de l\'administrateur de votre unité.']
         };
         var modeCourant = 'creer';
         function mode(m) {
@@ -4384,6 +4424,7 @@
             var avecMail = !ETAT_INFO || ETAT_INFO.connexionMail;   // plus de connexion par mail (sauf tests locaux)
             fenCompte.querySelector('#JUM-C-MAILBLOC').style.display = m === 'creer' || !avecMail ? 'none' : '';
             fenCompte.querySelector('#JUM-C-SANSMAILBLOC').style.display = m === 'connecter' && !avecMail ? '' : 'none';
+            fenCompte.querySelector('#JUM-C-PINBLOC').style.display = m === 'connecter' ? '' : 'none';
             ['.JUM-ACC-OU', '.JUM-ACC-AUTRE'].forEach(function(q) { var e = fenCompte.querySelector('[data-volet="mail"] ' + q); if (e) e.style.display = m === 'connecter' && !avecMail ? 'none' : ''; });
             Array.prototype.forEach.call(fenCompte.querySelectorAll('.JUM-ACC-ONGLETS button'), function(x) { x.classList.toggle('actif', x.getAttribute('data-mode') === m); });
             fenCompte.querySelector('#JUM-C-TITRE').textContent = TEXTES[m][0];
@@ -4410,6 +4451,18 @@
         champCode.addEventListener('keydown', function(e) { if (e.key === 'Enter' && !btnValider.disabled) btnValider.click(); });
         var err = fenCompte.querySelector('#JUM-C-ERR'), champMail = fenCompte.querySelector('#JUM-C-MAIL'), mailDemande = '';
         var btnEnvoi = fenCompte.querySelector('#JUM-C-ENVOI'), btnValider = fenCompte.querySelector('#JUM-C-VALIDER');
+        var btnPin = fenCompte.querySelector('#JUM-C-PGO'), champPin = fenCompte.querySelector('#JUM-C-PCODE'), champAdr = fenCompte.querySelector('#JUM-C-PADR');
+        champPin.addEventListener('input', function() { var v = champPin.value.replace(/\D/g, '').slice(0, 4); if (v !== champPin.value) champPin.value = v; });
+        champPin.addEventListener('keydown', function(e) { if (e.key === 'Enter') btnPin.click(); });
+        btnPin.addEventListener('click', function() {
+            err.style.color = ''; err.textContent = '';
+            btnPin.disabled = true; btnPin.textContent = 'Connexion…';
+            window.JUMELAGE_CONNEXION_CODE(champAdr.value, champPin.value).then(function(m) {
+                err.style.color = '#15803d'; err.textContent = '✓ Compte ' + m + ' reconnecté : TRIGONE redémarre…';
+                try { sessionStorage.setItem('trigone_apres_liaison', '1'); } catch (e) {}
+                setTimeout(function() { location.replace(DANS_CR ? '../' : './'); }, 1200);
+            }).catch(function(e) { err.textContent = '⛔ ' + (e.message || e); champPin.value = ''; btnPin.disabled = false; btnPin.textContent = 'Se connecter'; });
+        });
         // Créer mon compte (sans adresse mail) : aperçu de l'adresse TRIGONE, puis création ; le compte attend sa validation.
         var champsId = ['GRADE', 'UNITE', 'NOM', 'PRENOM'].map(function(k) { return fenCompte.querySelector('#JUM-C-' + k); });
         brancherListeUnites(champsId[1]);
@@ -4505,7 +4558,7 @@
             });
         };
         var texte = 'Cet appareil ne pourra plus envoyer ni recevoir d\'envois TRIGONE. Vos demandes, comptes-rendus et réglages restent sur l\'appareil.' +
-            (/@trigone-app\.com$/.test((monCompte() || {}).mail || '') ? '\n\nCompte sans adresse mail : pour vous reconnecter, il faudra un code de liaison depuis un autre de vos appareils, ou un code de réactivation remis par votre administrateur.' : '');
+            (/@trigone-app\.com$/.test((monCompte() || {}).mail || '') ? '\n\nPour vous reconnecter : votre adresse TRIGONE (' + ((monCompte() || {}).mail || '') + ') et votre code à 4 chiffres, ou un QR de connexion depuis un autre de vos appareils, ou un code de réactivation remis par votre administrateur.' : '');
         if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Se déconnecter ?', texte, 'Oui, me déconnecter', go, '⚠️', null, true);
         else if (window.confirm(texte)) go();
     }
