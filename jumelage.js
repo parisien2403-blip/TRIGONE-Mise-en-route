@@ -1217,7 +1217,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 196, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 197, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -4461,7 +4461,7 @@
                 err.style.color = '#15803d'; err.textContent = '✓ Compte ' + m + ' reconnecté : TRIGONE redémarre…';
                 try { sessionStorage.setItem('trigone_apres_liaison', '1'); } catch (e) {}
                 setTimeout(function() { location.replace(DANS_CR ? '../' : './'); }, 1200);
-            }).catch(function(e) { err.textContent = '⛔ ' + (e.message || e); champPin.value = ''; btnPin.disabled = false; btnPin.textContent = 'Se connecter'; });
+            }).catch(function(e) { var m = e.message || String(e); err.textContent = '⛔ ' + m + (/incorrect/.test(m) ? ' Vérifiez l\'adresse exacte et que la reconnexion est activée : sur votre appareil habituel, Paramètres › Compte › « Reconnexion adresse + code ».' : ''); champPin.value = ''; btnPin.disabled = false; btnPin.textContent = 'Se connecter'; });
         });
         // Créer mon compte (sans adresse mail) : aperçu de l'adresse TRIGONE, puis création ; le compte attend sa validation.
         var champsId = ['GRADE', 'UNITE', 'NOM', 'PRENOM'].map(function(k) { return fenCompte.querySelector('#JUM-C-' + k); });
@@ -4784,6 +4784,7 @@
                 L('roles', ic('groupe'), 'Mes rôles', aRole ? 'Valideur, assistant Chorus DT : gérer' : 'Valideur, assistant Chorus DT : ajouter un rôle avec son code', function() { window.JUMELAGE_REGLAGES({ vue: 'roles' }); }),
                 aRole && L('absence', ic('sablier'), 'Absence', 'Désigner un remplaçant pendant votre absence', function() { window.JUMELAGE_REGLAGES({ vue: 'absence' }); }),
                 c && L('appareil', ic('telephone'), 'Ajouter un appareil', 'PC ou téléphone, sans rien ressaisir', function() { window.JUMELAGE_COMPTE({ liaison: true }); }),
+                c && L('reco', ic('cadenas'), 'Reconnexion adresse + code', lireTxt('trigone_code_cnx') && lireTxt('trigone_code_cnx') === lireTxt(CLE_CODE) ? '✓ Activée : votre adresse TRIGONE et votre code à 4 chiffres' : 'À activer : saisissez une fois votre code', function() { window.JUMELAGE_RECONNEXION_CODE(); }),
                 c && L('mesappareils', ic('telephone'), 'Mes appareils', 'Voir vos appareils, retirer un téléphone perdu', function() { window.JUMELAGE_MES_APPAREILS(); }),
                 c && (roles.chorus || lireTxt(CLE_ROLE_ADMIN)) && L('gestion', ic('groupe'), 'Comptes et demandes' + (NB_DEMANDES_COMPTE ? ' (' + NB_DEMANDES_COMPTE + ')' : ''), lireTxt(CLE_ROLE_ADMIN) ? 'Inscriptions, comptes de l\'unité (bloquer, supprimer), demandes, journal' : 'Inscriptions à valider, demandes de vos missionnaires', function() { window.JUMELAGE_GESTION_COMPTES(); })
             ] },
@@ -6162,6 +6163,39 @@
             appelApi('compte/valider-carte', { methode: 'POST', corps: { carte: c.id } }).then(function(x) { bandeau('✔ ' + x.qui + ' : compte validé.'); window.JUMELAGE_INSCRIPTIONS_ACTUALISER(true); }, function(e) { bandeau(e.message); });
         });
     };
+    // Reconnexion adresse + code : état, adresse exacte à utiliser, et activation en saisissant son code d'accès.
+    window.JUMELAGE_RECONNEXION_CODE = function() {
+        if (window.JUMELAGE_FERMER_PARAMETRES) window.JUMELAGE_FERMER_PARAMETRES();
+        var c = monCompte(); if (!c) return;
+        var adr = window.JUMELAGE_ADRESSE_CONNUE() || c.mail, actif = lireTxt('trigone_code_cnx') && lireTxt('trigone_code_cnx') === lireTxt(CLE_CODE);
+        var f = document.createElement('div'); f.className = 'JUM-GC-FOND'; document.body.appendChild(f);
+        f.addEventListener('click', function(e) { if (e.target === f) f.remove(); });
+        f.innerHTML = '<div class="JUM-GC-FEN"><button type="button" class="JUM-GC-X" aria-label="Fermer">✕</button><h3>🔐 Reconnexion adresse + code</h3>' +
+            '<p>Sur un autre appareil : <b>Se connecter</b>, puis<br>adresse : <b>' + esc(adr) + '</b><br>code : votre code à 4 chiffres (celui qui ouvre TRIGONE).</p>' +
+            '<p id="JUM-RC-ETAT" style="font-weight:700;color:' + (actif ? '#15803d' : '#b45309') + ';">' + (actif ? '✓ Activée sur votre compte.' : 'Pas encore activée sur votre compte.') + '</p>' +
+            (codeDefini() ? '<div class="JUM-R-CHAMP"><label for="JUM-RC-CODE">' + (actif ? 'Revalider avec votre code' : 'Activer : saisissez votre code') + '</label><input id="JUM-RC-CODE" type="password" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="••••"></div>' +
+                '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-RC-GO" style="margin-top:10px;">' + (actif ? 'Revalider' : 'Activer') + '</button>'
+                : '<p>Choisissez d\'abord un code d\'accès à 4 chiffres (Mon profil › code d\'accès).</p>') + '</div>';
+        f.querySelector('.JUM-GC-X').onclick = function() { f.remove(); };
+        var go = f.querySelector('#JUM-RC-GO'), champ = f.querySelector('#JUM-RC-CODE'), etat = f.querySelector('#JUM-RC-ETAT');
+        if (!go) return;
+        champ.addEventListener('input', function() { champ.value = champ.value.replace(/\D/g, '').slice(0, 4); });
+        champ.addEventListener('keydown', function(e) { if (e.key === 'Enter') go.click(); });
+        go.onclick = function() {
+            var code = champ.value;
+            if (code.length !== 4) { etat.style.color = '#b91c1c'; etat.textContent = 'Le code contient 4 chiffres.'; return; }
+            go.disabled = true;
+            window.JUMELAGE_VERIFIER_CODE(code).then(function(ok) {
+                if (!ok) throw new Error('Ce n\'est pas votre code d\'accès à 4 chiffres.');
+                return appelApi('compte/code', { methode: 'POST', corps: { code: code } });
+            }).then(function() {
+                ecrireTxt('trigone_code_cnx', lireTxt(CLE_CODE));
+                etat.style.color = '#15803d'; etat.textContent = '✓ Activée : sur un autre appareil, « Se connecter » avec ' + adr + ' et ce code.';
+                champ.value = ''; go.disabled = false; go.textContent = 'Revalider';
+            }).catch(function(e) { etat.style.color = '#b91c1c'; etat.textContent = '⛔ ' + (e.message || e); champ.value = ''; go.disabled = false; });
+        };
+        setTimeout(function() { champ.focus(); }, 50);
+    };
     window.JUMELAGE_MES_APPAREILS = function() {
         if (window.JUMELAGE_FERMER_PARAMETRES) window.JUMELAGE_FERMER_PARAMETRES();
         var f = document.createElement('div'); f.className = 'JUM-GC-FOND'; document.body.appendChild(f);
@@ -6191,6 +6225,8 @@
         // Ancien compte (adresse mail personnelle) : il passe une fois pour toutes à son adresse TRIGONE.
         if (!/@trigone-app\.com$/.test(c.mail)) migrerVersTrigone(false);
         appelApi('compte/etat').then(function(r) {
+            // Code de reconnexion pas (ou plus) connu du compte : redéclaré à la prochaine saisie du code.
+            if ((r.codeCnx === false || r.codeCoupe) && lireTxt('trigone_code_cnx')) try { localStorage.removeItem('trigone_code_cnx'); } catch (e) {}
             // Autre appareil du compte passé à son adresse TRIGONE : celui-ci suit.
             if (r.compte && r.compte !== (monCompte() || {}).mail) changerMailCompte((monCompte() || {}).mail, r.compte);
             // Compte en attente de validation : rappel une fois par ouverture ; validé : on le dit une fois.

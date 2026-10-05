@@ -34,6 +34,14 @@ module.exports = async function() {
     verifier(await n.evaluate(() => fetch('api/connexion/code', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ mail: 'personne.inconnue@trigone-app.com', code: '1234', cle: { kty: 'EC', crv: 'P-256', x: 'a', y: 'b' } }) }).then(r => r.json()).then(j => j.erreur || j.message || '')) .then(t => /incorrect/.test(t)), 'adresse inconnue : même message qu\'un code faux (rien ne dit si le compte existe)');
     // Le titulaire rechoisit son code (remet les erreurs à zéro), puis connexion réussie.
     await a.evaluate(() => { localStorage.removeItem('trigone_code_cnx'); return JUMELAGE_POSER_CODE('4821'); }); await attendre(2500);
+    // Paramètres › Compte › « Reconnexion adresse + code » : activation à la main (code jamais déclaré, ex. ouverture par empreinte).
+    await a.evaluate(() => { localStorage.removeItem('trigone_code_cnx'); window.JUMELAGE_RECONNEXION_CODE(); }); await attendre(400);
+    verifier(/Pas encore activée/.test(await a.textContent('#JUM-RC-ETAT')), 'Paramètres : reconnexion « pas encore activée », adresse à utiliser affichée');
+    await a.fill('#JUM-RC-CODE', '9999'); await a.click('#JUM-RC-GO'); await attendre(800);
+    verifier(/pas votre code/.test(await a.textContent('#JUM-RC-ETAT')), 'activation : mauvais code refusé');
+    await a.fill('#JUM-RC-CODE', '4821'); await a.click('#JUM-RC-GO'); await attendre(2500);
+    verifier(/Activée/.test(await a.textContent('#JUM-RC-ETAT')) && await a.evaluate(() => localStorage.getItem('trigone_code_cnx') === localStorage.getItem('trigone_code_commun')), 'activation avec le bon code : reconnexion activée');
+    await a.evaluate(() => document.querySelectorAll('.JUM-GC-FOND').forEach(e => e.remove()));
     const r = await n.evaluate(m => JUMELAGE_CONNEXION_CODE(m, '4821').then(x => x, e => 'ERR ' + e.message), MAIL);
     verifier(r === MAIL, 'adresse + bon code : compte reconnecté (' + r + ')');
     verifier(await n.evaluate(m => { const c = JSON.parse(localStorage.getItem('trigone_compte') || '{}'); return c.mail === m && !!c.jeton && !!localStorage.getItem('trigone_code_commun') && localStorage.getItem('trigone_reactivation') === '1'; }, MAIL), 'nouvel appareil : compte enregistré, même code pour ouvrir l\'appli, récupération des données proposée');
