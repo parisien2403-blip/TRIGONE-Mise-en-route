@@ -1217,7 +1217,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 198, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 199, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3838,7 +3838,11 @@
     window.JUMELAGE_MVT = function(cle) { var m = mvtLire(); m[cle] = Date.now(); ecrireTxt(CLE_MVT, JSON.stringify(m)); window.JUMELAGE_MVT_MAJ(); };
     window.JUMELAGE_MVT_VU = function(cle) { var m = mvtLire(); if (!m[cle]) return; delete m[cle]; ecrireTxt(CLE_MVT, JSON.stringify(m)); setTimeout(window.JUMELAGE_MVT_MAJ, 0); };
     window.JUMELAGE_MVT_A = function(prefixe) { var m = mvtLire(); return Object.keys(m).some(function(k) { return k === prefixe || k.indexOf(prefixe + ':') === 0; }); };
+    // Dossier vide (data-vide) : plus rien à y voir, sa pastille tombe (un envoi parti de « À envoyer » n'y laisse pas de point).
     window.JUMELAGE_MVT_MAJ = function() {
+        var m = mvtLire(), vus = 0;
+        Array.prototype.forEach.call(document.querySelectorAll('[data-mvt][data-vide]'), function(el) { var k = el.getAttribute('data-mvt'); if (m[k]) { delete m[k]; vus++; } });
+        if (vus) ecrireTxt(CLE_MVT, JSON.stringify(m));
         Array.prototype.forEach.call(document.querySelectorAll('[data-mvt]'), function(el) { el.classList.toggle('mvt', window.JUMELAGE_MVT_A(el.getAttribute('data-mvt'))); });
     };
     if (typeof MutationObserver === 'function') {

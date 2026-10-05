@@ -14,6 +14,10 @@ module.exports = async function(srv) {
     await p.goto(srv.url + 'cr/'); await attendre(3000);
     const videsCr = await p.evaluate(() => { document.querySelectorAll('.JUM-CHOIX,.JUM-NOUV').forEach(e => e.remove()); OUVRIR_BIBLIOTHEQUE(); const a = document.querySelectorAll('#BIB-LIST .MER-DOSSIER').length; OUVRIR_STAT_FORFAIT(); return [a, document.querySelectorAll('#FORFAIT-MONTH-LIST .MER-DOSSIER').length]; });
     verifier(videsCr[0] === 3 && videsCr[1] === 1, 'Compte-rendu vide : 3 dossiers en Bibliothèque, le mois en cours en Remboursement ' + JSON.stringify(videsCr));
+    // Pastille rouge d'un dossier devenu vide (ex. CR parti de « À envoyer » vers « Envoyés ») : elle tombe d'elle-même.
+    const pastille = await p.evaluate(() => { JUMELAGE_MVT('CR:P-BIB:aenvoyer'); JUMELAGE_MVT('CR:P-BIB:envoyes'); OUVRIR_BIBLIOTHEQUE();
+        return new Promise(ok => setTimeout(() => { const m = JSON.parse(localStorage.getItem('trigone_mouvements') || '{}'); ok({ a: !!m['CR:P-BIB:aenvoyer'], vide: !!document.querySelector('[data-mvt="CR:P-BIB:aenvoyer"][data-vide]') }); }, 300)); });
+    verifier(pastille.vide && !pastille.a, 'dossier vide : sa pastille rouge tombe toute seule (À envoyer vidé après un envoi)');
     await p.goto(srv.url);
     await p.evaluate(() => {
         sessionStorage.setItem('trigone_choix_fait', '1');
