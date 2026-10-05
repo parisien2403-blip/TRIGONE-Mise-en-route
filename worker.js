@@ -1468,7 +1468,8 @@ async function api(requete, env, url, ctx) {
     // Réinitialisation acceptée : chaque appareil du compte s'efface à son ouverture, puis se retire du compte.
     if (chemin === 'compte/etat' && methode === 'GET') {
         const l = await kv.get('reinit:' + moi.mail, 'json');
-        return json({ ok: true, compte: moi.mail, reinit: Array.isArray(l) && l.indexOf(moi.appareil.id) >= 0, attente: !!moi.compte.attente, sansMail: !!moi.compte.sansMail });
+        return json({ ok: true, compte: moi.mail, reinit: Array.isArray(l) && l.indexOf(moi.appareil.id) >= 0, attente: !!moi.compte.attente, sansMail: !!moi.compte.sansMail,
+            codeCnx: !!moi.compte.codeCnx, codeCoupe: ((moi.compte.codeEchecs || {}).total || 0) >= 10 });
     }
     if (chemin === 'erreurs' && methode === 'GET') {
         if (!estAdmin(env, moi.mail)) return erreur(403, 'Réservé à l\'administrateur de TRIGONE.');

@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 184;
+    var VERSION = 185;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i><span class="n-leg">' + TEL_SVG + (n === 'c3-carte-grand' ? 'Téléphone à l\'horizontale · Android / iPhone' : 'Téléphone · Android / iPhone') + '</span></button>'; }
@@ -87,7 +87,7 @@
         savoir('QR scanné avec l\'appareil photo du téléphone : TRIGONE s\'ouvre directement sur cet écran, code déjà rempli. Votre code VALIDEUR 1 / 2 sera redemandé une fois, à la première signature.'), 'compte'));
     ajouter(page('Se reconnecter (adresse + code)', '<h5>Sans autre appareil sous la main</h5>' + et(['Écran d\'accueil de TRIGONE › <b>Se connecter</b>.', 'Votre <b>adresse TRIGONE</b> (prénom.nom@trigone-app.com, ou seulement prénom.nom).', 'Votre <b>code à 4 chiffres</b> : celui qui ouvre TRIGONE sur votre appareil habituel. Il ouvrira aussi TRIGONE sur ce nouvel appareil.', 'Vos données reviennent ensuite avec votre <b>code de récupération</b> (sauvegarde du compte).']) +
         '<h5>Sécurité</h5>' + et(['5 codes faux : <b>15 minutes d\'attente</b> ; 10 : connexion par code <b>coupée</b> (QR de connexion ou code de réactivation).', 'Chaque connexion par code <b>vous est notifiée</b> sur vos autres appareils. Pas vous ? Mes appareils › retirez-le, et changez votre code.']) +
-        astuce('Le code est déclaré à votre compte la première fois que vous ouvrez TRIGONE avec (ou quand vous le changez) : ouvrez TRIGONE une fois sur votre appareil habituel avant de vous en servir ailleurs.'), 'compte'));
+        astuce('À activer une fois sur votre appareil habituel : Paramètres › Compte › <b>Reconnexion adresse + code</b> (votre adresse exacte y est indiquée).'), 'compte'));
     ajouter(page('Un compte, plusieurs appareils', '<h5>Chaque appareil reçoit les envois</h5>' + et(['Demandes, comptes-rendus et questions arrivent sur <b>chacun de vos appareils</b> reliés au compte (PC, téléphone).', 'Vous pouvez commencer sur l\'un et finir sur l\'autre.']) +
         '<h5>Traité ici, traité partout</h5>' + et(['Une demande <b>signée sur le PC</b> passe en <b>« traité »</b> sur le téléphone : elle quitte « À signer » et l\'Espace valideur du téléphone.', 'Même chose pour un envoi <b>rouvert</b> ou <b>supprimé</b>, et pour l\'assistant Chorus DT (demande ou compte-rendu marqué « Traité »).', 'Délai : <b>quelques secondes</b>, dès que l\'autre appareil est ouvert (relevé toutes les 20 s). Déjà traité ailleurs : <b>pas de message</b> « reçu ».']) +
         savoir('Une décision déjà prise sur le téléphone mais <b>pas encore transmise</b> n\'est jamais effacée : elle reste à transmettre.'), 'compte'));
