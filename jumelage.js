@@ -648,6 +648,9 @@
         '.JUM-TAMPON.coup { animation: jumTampon 0.55s cubic-bezier(.2,.9,.3,1.3) both; }' +
         '@keyframes jumTampon { 0% { transform: rotate(-16deg) scale(2.2); opacity: 0; filter: blur(2px); } 60% { transform: rotate(-11deg) scale(0.94); opacity: 1; filter: blur(0); } 100% { transform: rotate(-11deg) scale(1); opacity: 1; } }' +
         '.JUM-TAMPON.orange { color: #e07a1f; border-color: #e07a1f; box-shadow: inset 0 0 0 1px rgba(224,122,31,0.25); } .JUM-TAMPON.rouge { color: #c62828; border-color: #c62828; box-shadow: inset 0 0 0 1px rgba(198,40,40,0.25); }' +
+        '.JUM-OEIL-Z { position: relative; display: block; flex: 1; min-width: 0; } .JUM-OEIL-Z > input { width: 100%; box-sizing: border-box; padding-right: 46px !important; }' +
+        '.JUM-OEIL-B { position: absolute; right: 4px; top: 50%; transform: translateY(-50%); width: 38px; height: 38px; display: flex; align-items: center; justify-content: center; border: 0; background: none; color: #8a8a8a; cursor: pointer; border-radius: 10px; padding: 0; }' +
+        '.JUM-OEIL-B svg { width: 21px; height: 21px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; } .JUM-OEIL-B.vu { color: #b8862b; } html body.dark-mode .JUM-OEIL-B { color: #a3a3a3; }' +
         'html body.dark-mode .JUM-TAMPON.orange { color: #f0a35e; border-color: #f0a35e; } html body.dark-mode .JUM-TAMPON.rouge { color: #ef6b6b; border-color: #ef6b6b; }' +
         'html body.dark-mode .JUM-TAMPON { mix-blend-mode: screen; } html body.dark-mode .JUM-TAMPON:not(.orange):not(.rouge) { color: #e0b86a; border-color: #e0b86a; } .JUM-TAMPON-SCENE .JUM-TAMPON { mix-blend-mode: normal !important; opacity: 1; }' +
         '.JUM-TAMPON-SCENE { position: fixed; inset: 0; z-index: 99980; display: flex; align-items: center; justify-content: center; pointer-events: none; background: rgba(0,0,0,0.15); transition: opacity 0.4s; }' +
@@ -3845,8 +3848,30 @@
         if (vus) ecrireTxt(CLE_MVT, JSON.stringify(m));
         Array.prototype.forEach.call(document.querySelectorAll('[data-mvt]'), function(el) { el.classList.toggle('mvt', window.JUMELAGE_MVT_A(el.getAttribute('data-mvt'))); });
     };
+    // Œil sur chaque champ de code (codes VALIDEUR 1 / 2, ASSIST CHORUS DT, ADMINISTRATEUR, code d'accès…) : afficher
+    // ce qu'on a tapé pour vérifier la saisie, puis le masquer de nouveau.
+    var SVG_OEIL = '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/></svg>';
+    var SVG_OEIL_BARRE = '<svg viewBox="0 0 24 24"><path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z"/><circle cx="12" cy="12" r="3"/><path d="M4 4l16 16"/></svg>';
+    function oeilsCodes() {
+        Array.prototype.forEach.call(document.querySelectorAll('input[type="password"]:not([data-oeil])'), function(inp) {
+            if (inp.closest('.JUM-PIN')) return;   // écran d'ouverture : clavier à 4 cases, rien à afficher
+            inp.setAttribute('data-oeil', '1');
+            inp.setAttribute('data-no-uppercase', '1');   // affiché en clair : la saisie reste telle quelle
+            var z = document.createElement('span'); z.className = 'JUM-OEIL-Z';
+            inp.parentNode.insertBefore(z, inp); z.appendChild(inp);
+            var b = document.createElement('button'); b.type = 'button'; b.className = 'JUM-OEIL-B'; b.setAttribute('aria-label', 'Afficher le code'); b.innerHTML = SVG_OEIL;
+            b.addEventListener('mousedown', function(e) { e.preventDefault(); });
+            b.addEventListener('click', function() {
+                var vu = inp.type === 'password'; inp.type = vu ? 'text' : 'password';
+                b.classList.toggle('vu', vu); b.innerHTML = vu ? SVG_OEIL_BARRE : SVG_OEIL; b.setAttribute('aria-label', vu ? 'Masquer le code' : 'Afficher le code');
+                inp.focus();
+            });
+            z.appendChild(b);
+        });
+    }
+    window.JUMELAGE_OEILS = oeilsCodes;
     if (typeof MutationObserver === 'function') {
-        var mvtMinuteur = null, mvtObs = new MutationObserver(function() { clearTimeout(mvtMinuteur); mvtMinuteur = setTimeout(window.JUMELAGE_MVT_MAJ, 30); });
+        var mvtMinuteur = null, mvtObs = new MutationObserver(function() { clearTimeout(mvtMinuteur); mvtMinuteur = setTimeout(function() { window.JUMELAGE_MVT_MAJ(); oeilsCodes(); }, 30); });
         var mvtGo = function() { mvtObs.observe(document.body, { childList: true, subtree: true }); window.JUMELAGE_MVT_MAJ(); };
         if (document.body) mvtGo(); else document.addEventListener('DOMContentLoaded', mvtGo);
     }
