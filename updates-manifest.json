@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 239,
-  "appCodeMessage": "Nouveau : tampons « SANS FRAIS » (orange) et « ANNULÉ » (rouge) dans le Registre des OMR. Le missionnaire est prévenu et voit le tampon sur sa demande.",
+  "appCodeVersion": 240,
+  "appCodeMessage": "Tampons « SANS FRAIS » et « ANNULÉ » aussi sur les missions déjà validées ; bouton « ← Accueil » dans la Boîte de réception sur téléphone.",
   "appMessageVersion": 0,
   "appMessage": ""
 }

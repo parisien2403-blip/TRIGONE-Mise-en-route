@@ -177,6 +177,8 @@ module.exports = async function() {
     await c.evaluate(() => OUVRIR_REGISTRE('ok')); await attendre(400);
     verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') >= 0, 'filtre « CR rendus » : la ligne rendue y est');
     await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(400);
+    verifier(await c.evaluate(() => { const x = { ref: 'v1', omr: 'V1', personnes: [{}], crs: [{ envoiId: 'e', montants: {} }] }; const L = window.JUMELAGE_REGISTRE; window.JUMELAGE_REGISTRE = () => [x];
+        const h = TPL_REGISTRE(); window.JUMELAGE_REGISTRE = L; return MER_REG_ETAT(x).cls === 'ok' && /REGISTRE_TAMPON\('v1', 'sansfrais'\)/.test(h) && /REGISTRE_TAMPON\('v1', 'annule'\)/.test(h); }), 'mission validée (CR rendu) : boutons « Sans frais » et « Annuler l\'OMR » présents aussi');
     // Tampons « SANS FRAIS » (orange) et « ANNULÉ » (rouge) : ligne fermée chez l'assistant, missionnaire prévenu, tampon dans sa bibliothèque.
     await c.evaluate(r => REGISTRE_TAMPON(r, 'sansfrais'), d2.id); await attendre(300);
     await c.evaluate(r => REGISTRE_TAMPON_OK(r, 'sansfrais'), d2.id); await attendre(2500);

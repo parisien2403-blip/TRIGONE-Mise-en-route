@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 239;
+var APP_CODE_VERSION = 240;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -4108,7 +4108,7 @@ function TPL_RECEPTION() {
     return '<div class="CARD MER-BX-CARTE' + (pc ? ' PC-LARGE' : '') + '">' +
         (niveau ? '' : '<div class="MER-BX-ENTETE"><div><h2>Boîte de réception</h2><small>' + ESC(JUMELAGE_COMPTE_MAIL()) + '</small></div>' +
             '<button type="button" class="MER-BX-RELEVER" onclick="ACTUALISER_RECEPTION(this)" title="Relever maintenant">' + MER_BX_ICO('maj') + '<span>Relever</span></button></div>') +
-        TPL_BX('RECEPTION') + '</div>';
+        TPL_BX('RECEPTION') + '</div>' + (!pc && !niveau ? '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button>' : '');
 }
 // ===================== ESPACE ASSISTANT CHORUS DT =====================
 // Ouvert depuis le logo central de l'écran de choix (rôle activé dans les Réglages avec son code) : sa boîte de
@@ -4320,11 +4320,10 @@ function TPL_REGISTRE() {
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', false)">✉ Message</button>' +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_TAMPON_RETIRER(\'' + ref + '\')">↩ Retirer le tampon</button></div>' +
                 window.JUMELAGE_TAMPON({ titre: tp.s === 'annule' ? 'ANNULÉ' : 'SANS FRAIS', couleur: tp.s === 'annule' ? 'rouge' : 'orange', unite: tp.unite, le: tp.le, omr: x.omr || '' }) :
-            rendu ? '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + '</div>' :
+            rendu ? '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + MER_REG_BOUTONS_TAMPON(ref) + '</div>' :
                 '<div class="MER-REG-ACTIONS">' + (x.sansDemande ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_REG(\'' + ref + '\')">👥 Participants</button>') + ((x.crs || []).length ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_CORRIGER(\'' + ref + '\')">✏ Corriger les montants</button>' : '') + (e.cls === 'attente' || e.cls === 'retard' ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_RELANCER(\'' + ref + '\')">🔔 Relancer pour le CR</button>' : '') +
                 '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="REGISTRE_MESSAGE(\'' + ref + '\', false)">✉ Message</button>' +
-                ((x.crs || []).length ? '' : '<button type="button" class="BTN BTN-GHOST BTN-SMALL MER-REG-B-SF" onclick="REGISTRE_TAMPON(\'' + ref + '\', \'sansfrais\')">🟠 Sans frais</button>' +
-                    '<button type="button" class="BTN BTN-GHOST BTN-SMALL MER-REG-B-AN" onclick="REGISTRE_TAMPON(\'' + ref + '\', \'annule\')">🔴 Annuler l\'OMR</button>') +
+                MER_REG_BOUTONS_TAMPON(ref) +
                 '<button type="button" class="BTN-DANGER-TEXT" onclick="REGISTRE_SUPPRIMER(\'' + ref + '\')">Supprimer</button></div>');
         return '<div class="MER-REG-LIGNE ' + e.cls + '">' + tete + MER_REG_FRISE(x, e) + corps + '</div>';
     }).join('');
@@ -4508,6 +4507,11 @@ function REGISTRE_SUPPRIMER(ref) {
 }
 // « Sans frais » / « Annuler l'OMR » : coup de tampon, ligne fermée (plus de CR attendu ni de relance) chez tous les
 // assistants Chorus DT de l'unité ; le missionnaire est prévenu dans sa boîte TRIGONE et voit le tampon dans sa Bibliothèque.
+// Boutons « Sans frais » / « Annuler l'OMR » : sur toute ligne, même validée (CR rendu).
+function MER_REG_BOUTONS_TAMPON(ref) {
+    return '<button type="button" class="BTN BTN-GHOST BTN-SMALL MER-REG-B-SF" onclick="REGISTRE_TAMPON(\'' + ref + '\', \'sansfrais\')">🟠 Sans frais</button>' +
+        '<button type="button" class="BTN BTN-GHOST BTN-SMALL MER-REG-B-AN" onclick="REGISTRE_TAMPON(\'' + ref + '\', \'annule\')">🔴 Annuler l\'OMR</button>';
+}
 function REGISTRE_TAMPON(ref, s) {
     var x = REGISTRE_LIGNE(ref); if (!x) return;
     var an = s === 'annule';
@@ -4531,7 +4535,7 @@ function REGISTRE_TAMPON_OK(ref, s) {
 }
 function REGISTRE_TAMPON_RETIRER(ref) {
     var x = REGISTRE_LIGNE(ref), tp = MER_REG_TAMPON(x); if (!tp) return;
-    MSG_CONFIRM('Retirer le tampon ?', (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || '') + '\n\nLa mission redevient normale (compte-rendu attendu, relances possibles), chez tous les assistants Chorus DT de l\'unité. Le missionnaire est prévenu.', 'Retirer', function() {
+    MSG_CONFIRM('Retirer le tampon ?', (x.omr ? 'OMR N°' + x.omr + ' — ' : '') + (x.objet || '') + '\n\nLa mission redevient normale (compte-rendu attendu ou rendu, comme avant), chez tous les assistants Chorus DT de l\'unité. Le missionnaire est prévenu.', 'Retirer', function() {
         var t = { s: 'aucun', le: Date.now(), par: (window.JUMELAGE_QUI ? JUMELAGE_QUI() : '') || 'ASSIST CHORUS DT' };
         JUMELAGE_REGISTRE_MAJ(ref, { tampon: t });
         if (PAGE_ACTUELLE === 'CHORUS') MER_REG_REAFFICHER();
