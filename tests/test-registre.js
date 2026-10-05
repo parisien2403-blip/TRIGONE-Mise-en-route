@@ -47,7 +47,7 @@ module.exports = async function() {
     const reg = await c.evaluate(p => JUMELAGE_REGISTRE().filter(x => String(x.omr).indexOf(p) === 0), pref);
     verifier(reg.length === 2 && reg.every(x => x.omr && x.codeFD && x.personnes.length), 'registre : une ligne par demande validée reçue (n° OMR, code FD, personnel)');
     const texte = await c.evaluate(() => document.querySelector('.CARD').textContent);
-    verifier(texte.indexOf('N°' + pref + '0007') < texte.indexOf('N°' + pref + '0008') && /En retard/.test(texte) && await c.evaluate(() => document.querySelectorAll('.MER-REG-FRISE').length > 0 && document.querySelectorAll('.MER-REG-FILTRE').length === 6), 'registre unique : ordre des n° OMR, frise par ligne, filtres, « En retard » (fin de mission + 30 jours dépassée)');
+    verifier(texte.indexOf('N°' + pref + '0007') < texte.indexOf('N°' + pref + '0008') && /En retard/.test(texte) && await c.evaluate(() => document.querySelectorAll('.MER-REG-FRISE').length > 0 && document.querySelectorAll('.MER-REG-FILTRE').length === 8), 'registre unique : ordre des n° OMR, frise par ligne, filtres, « En retard » (fin de mission + 30 jours dépassée)');
     // Relance du missionnaire : message dans sa boîte TRIGONE (Questions).
     await c.evaluate(r => REGISTRE_MESSAGE(r, true), d.id); await attendre(1500);
     verifier(/Rappel : votre compte-rendu/.test(await c.inputValue('#MER-REG-TXT')), 'relance : texte de rappel prérempli (modifiable)');
@@ -177,6 +177,23 @@ module.exports = async function() {
     await c.evaluate(() => OUVRIR_REGISTRE('ok')); await attendre(400);
     verifier((await c.evaluate(() => document.querySelector('.CARD').textContent)).indexOf(pref + '0007') >= 0, 'filtre « CR rendus » : la ligne rendue y est');
     await c.evaluate(() => OUVRIR_REGISTRE('tout')); await attendre(400);
+    // Tampons « SANS FRAIS » (orange) et « ANNULÉ » (rouge) : ligne fermée chez l'assistant, missionnaire prévenu, tampon dans sa bibliothèque.
+    await c.evaluate(r => REGISTRE_TAMPON(r, 'sansfrais'), d2.id); await attendre(300);
+    await c.evaluate(r => REGISTRE_TAMPON_OK(r, 'sansfrais'), d2.id); await attendre(2500);
+    const sf = await c.evaluate(([r, o]) => { const x = JUMELAGE_REGISTRE().find(y => y.ref === r); const l = [...document.querySelectorAll('.MER-REG-LIGNE')].find(e => e.textContent.indexOf('N°' + o) >= 0);
+        return { cls: MER_REG_ETAT(x).cls, ligne: l && l.className, tampon: l && (l.querySelector('.JUM-TAMPON.orange') || {}).textContent, relancer: REGISTRE_A_RELANCER([x]).length, f: MER_REGISTRE_FILTRES().sansfrais.some(y => y.ref === r) }; }, [d2.id, d2.omr]);
+    verifier(sf.cls === 'sansfrais' && /sansfrais/.test(sf.ligne) && /SANS FRAIS/.test(sf.tampon || '') && !sf.relancer && sf.f, 'tampon SANS FRAIS : ligne orange, tampon posé, filtre « Sans frais », plus de relance');
+    await c.evaluate(r => REGISTRE_TAMPON(r, 'annule'), d2.id); await attendre(300);
+    await c.fill('#MER-TAMPON-MOTIF', 'stage reporté'); await c.evaluate(r => REGISTRE_TAMPON_OK(r, 'annule'), d2.id); await attendre(2500);
+    verifier(await c.evaluate(([r, o]) => { const l = [...document.querySelectorAll('.MER-REG-LIGNE')].find(e => e.textContent.indexOf('N°' + o) >= 0); return !!l && /annule/.test(l.className) && !!l.querySelector('.JUM-TAMPON.rouge') && /stage reporté/.test(l.textContent) && /Retirer le tampon/.test(l.textContent); }, [d2.id, d2.omr]), 'tampon ANNULÉ : ligne rouge, motif, « Retirer le tampon »');
+    await m.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
+    verifier(await m.evaluate(r => { const t = JUMELAGE_TAMPON_OMR(r); return !!t && t.s === 'annule' && t.motif === 'stage reporté' && /ANNULÉ/.test(JUMELAGE_TAMPON_OMR_HTML(t)); }, d2.id) &&
+        await m.evaluate(() => JUMELAGE_BOITE_LISTE().some(x => x.nature === 'question' && /est annulée/.test(x.question))), 'missionnaire : prévenu dans sa boîte, tampon ANNULÉ gardé pour sa demande');
+    await c.evaluate(r => REGISTRE_TAMPON_RETIRER(r), d2.id); await attendre(300);
+    await c.evaluate(() => { const b = [...document.querySelectorAll('#MSG-OVERLAY button')].find(x => /Retirer/.test(x.textContent)); b && b.click(); }); await attendre(2500);
+    verifier(await c.evaluate(r => MER_REG_ETAT(JUMELAGE_REGISTRE().find(y => y.ref === r)).cls === 'retard', d2.id), 'tampon retiré : la mission redevient normale (en retard)');
+    await m.evaluate(() => JUMELAGE_RELEVER()); await attendre(3000);
+    verifier(await m.evaluate(r => !JUMELAGE_TAMPON_OMR(r), d2.id), 'missionnaire : tampon retiré chez lui aussi');
     // PDF de l'onglet, et suppression d'une ligne (mission annulée).
     const dl = c.waitForEvent('download', { timeout: 15000 }); await c.evaluate(() => REGISTRE_PDF());
     verifier(/Registre OMR - toutes/.test((await dl).suggestedFilename()), 'PDF du registre (liste affichée)');

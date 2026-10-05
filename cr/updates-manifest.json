@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 288,
-  "appCodeMessage": "Nouveau : le tampon « TRAITÉ ». Quand l'assistant Chorus DT traite une demande ou un compte-rendu, un coup de tampon or s'abat (avec un petit « clac ») ; le missionnaire le voit se poser la première fois qu'il ouvre sa demande ou son compte-rendu traité.",
+  "appCodeVersion": 289,
+  "appCodeMessage": "Nouveau : tampons « SANS FRAIS » (orange) et « ANNULÉ » (rouge) dans le Registre des OMR. Le missionnaire est prévenu et voit le tampon sur sa demande.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

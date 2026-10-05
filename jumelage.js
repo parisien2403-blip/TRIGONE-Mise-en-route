@@ -647,7 +647,9 @@
         '.JUM-TAMPON::after { content: ""; position: absolute; inset: 0; border-radius: 6px; background: repeating-radial-gradient(circle at 30% 40%, rgba(255,255,255,0.0) 0 2px, rgba(255,255,255,0.35) 2px 3px); mix-blend-mode: screen; }' +
         '.JUM-TAMPON.coup { animation: jumTampon 0.55s cubic-bezier(.2,.9,.3,1.3) both; }' +
         '@keyframes jumTampon { 0% { transform: rotate(-16deg) scale(2.2); opacity: 0; filter: blur(2px); } 60% { transform: rotate(-11deg) scale(0.94); opacity: 1; filter: blur(0); } 100% { transform: rotate(-11deg) scale(1); opacity: 1; } }' +
-        'html body.dark-mode .JUM-TAMPON { mix-blend-mode: screen; color: #e0b86a; border-color: #e0b86a; } .JUM-TAMPON-SCENE .JUM-TAMPON { mix-blend-mode: normal !important; opacity: 1; }' +
+        '.JUM-TAMPON.orange { color: #e07a1f; border-color: #e07a1f; box-shadow: inset 0 0 0 1px rgba(224,122,31,0.25); } .JUM-TAMPON.rouge { color: #c62828; border-color: #c62828; box-shadow: inset 0 0 0 1px rgba(198,40,40,0.25); }' +
+        'html body.dark-mode .JUM-TAMPON.orange { color: #f0a35e; border-color: #f0a35e; } html body.dark-mode .JUM-TAMPON.rouge { color: #ef6b6b; border-color: #ef6b6b; }' +
+        'html body.dark-mode .JUM-TAMPON { mix-blend-mode: screen; } html body.dark-mode .JUM-TAMPON:not(.orange):not(.rouge) { color: #e0b86a; border-color: #e0b86a; } .JUM-TAMPON-SCENE .JUM-TAMPON { mix-blend-mode: normal !important; opacity: 1; }' +
         '.JUM-TAMPON-SCENE { position: fixed; inset: 0; z-index: 99980; display: flex; align-items: center; justify-content: center; pointer-events: none; background: rgba(0,0,0,0.15); transition: opacity 0.4s; }' +
         '.JUM-TAMPON-SCENE .JUM-TAMPON { position: relative; right: auto; top: auto; transform-origin: center; padding: 16px 30px; background: rgba(255,250,235,0.92); } .JUM-TAMPON-SCENE .JUM-TAMPON .t1 { font-size: 46px; } .JUM-TAMPON-SCENE .JUM-TAMPON .t2, .JUM-TAMPON-SCENE .JUM-TAMPON .t3 { font-size: 12px; }' +
         '.JUM-TAMPON-SCENE.fin { opacity: 0; }' +
@@ -1215,7 +1217,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 193, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 194, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3722,6 +3724,7 @@
             if (d.app === 'TRIGONE-JUSTIF') return { nature: 'justif', n: 1, ids: [], noms: d.nomDe || d.de || 'Expéditeur inconnu', objet: d.sujet || 'Justificatif reçu par mail',
                 dates: '', lieu: '', verifie: !!d.verifie, transfere: !!d.transfere, pieces: (d.fichiers || []).length,
                 fichiers: (d.fichiers || []).map(function(f) { return { nom: String(f.nom || 'justificatif').slice(0, 120), type: f.type || '' }; }) };
+            if (d.app === 'TRIGONE-QUESTION' && d.tampon) tamponOmrNoter(d.ref, d.tampon);
             if (d.app === 'TRIGONE-QUESTION' || d.app === 'TRIGONE-REPONSE') return { nature: d.app === 'TRIGONE-QUESTION' ? 'question' : 'reponse', n: 1, ids: [],
                 noms: d.qui || '', objet: d.objet || '', dates: '', lieu: '', ref: d.ref || '', genre: d.genre || '', question: String(d.question || '').slice(0, 2000), reponse: String(d.reponse || '').slice(0, 2000), rappel: !!d.rappel };
             if (d.app === 'TRIGONE-CR') return { nature: 'cr', n: 1, ids: [], noms: d.missionnaire || '', objet: d.libelle || 'Compte-rendu de mission',
@@ -3753,7 +3756,7 @@
     // et petit « clac ») se joue au moment de « Traité » chez l'assistant, et la première fois que le missionnaire l'ouvre.
     var CLE_TAMPONS = 'trigone_tampons_vus';
     function htmlTampon(o, anime) {
-        return '<div class="JUM-TAMPON' + (anime ? ' coup' : '') + '" aria-label="Traité"><div class="t1">' + esc(o.titre || 'TRAITÉ') + '</div>' +
+        return '<div class="JUM-TAMPON' + (o.couleur ? ' ' + o.couleur : '') + (anime ? ' coup' : '') + '" aria-label="' + esc(o.titre || 'Traité') + '"><div class="t1">' + esc(o.titre || 'TRAITÉ') + '</div>' +
             '<div class="t2">' + esc([o.unite, 'ASSIST CHORUS DT'].filter(Boolean).join(' · ')) + '</div>' +
             '<div class="t3">' + esc([o.le ? new Date(o.le).toLocaleDateString('fr-FR') : '', o.omr ? 'OMR N°' + o.omr : ''].filter(Boolean).join(' · ')) + '</div></div>';
     }
@@ -3781,6 +3784,20 @@
         document.body.appendChild(f); setTimeout(clac, 380);
         setTimeout(function() { f.classList.add('fin'); }, 1300); setTimeout(function() { f.remove(); }, 1700);
         if (o.cle) { var vus = lireJSON(CLE_TAMPONS) || {}; vus[o.cle] = Date.now(); ecrireTxt(CLE_TAMPONS, JSON.stringify(vus)); }
+    };
+    // Tampons « SANS FRAIS » (orange) et « ANNULÉ » (rouge) posés par l'assistant Chorus DT sur un OMR du registre : reçus
+    // par le missionnaire avec le message qui le prévient, gardés par demande (ref) ; s: 'aucun' quand le tampon est retiré.
+    var CLE_TAMPONS_OMR = 'trigone_tampons_omr';
+    function tamponOmrNoter(ref, t) {
+        if (!ref || !t || ['sansfrais', 'annule', 'aucun'].indexOf(t.s) < 0) return;
+        var m = lireJSON(CLE_TAMPONS_OMR) || {};
+        if (m[ref] && (m[ref].le || 0) >= (t.le || 0)) return;
+        m[ref] = { s: t.s, le: t.le || Date.now(), par: String(t.par || '').slice(0, 120), motif: String(t.motif || '').slice(0, 300), unite: String(t.unite || '').slice(0, 30), omr: String(t.omr || '').slice(0, 30) };
+        ecrireTxt(CLE_TAMPONS_OMR, JSON.stringify(m));
+    }
+    window.JUMELAGE_TAMPON_OMR = function(ref) { var t = (lireJSON(CLE_TAMPONS_OMR) || {})[ref]; return t && t.s !== 'aucun' ? t : null; };
+    window.JUMELAGE_TAMPON_OMR_HTML = function(t, cle) {
+        return window.JUMELAGE_TAMPON({ titre: t.s === 'annule' ? 'ANNULÉ' : 'SANS FRAIS', couleur: t.s === 'annule' ? 'rouge' : 'orange', unite: t.unite, le: t.le, omr: t.omr }, cle);
     };
     // ---------- Pastilles de mouvement ----------
     // Chaque fois qu'un envoi ou une demande change de dossier, son dossier, l'entrée du menu et l'onglet qui y mènent
