@@ -1051,6 +1051,13 @@ async function api(requete, env, url, ctx) {
     }
     // Administrateur de TRIGONE passé à son adresse TRIGONE (son ancienne adresse figurait dans ADMIN_MAILS).
     if (moi.compte.superAdmin && !estAdmin(env, moi.mail)) { const e2 = Object.create(env); e2.ADMIN_MAILS = (env.ADMIN_MAILS || '') + ',' + moi.mail; env = e2; }
+    // Adresse inscrite par le propriétaire dans ADMIN_MAILS (Cloudflare) : compte validé d'office, sans attendre l'unité
+    // (choix du propriétaire de TRIGONE : lui seul contrôle cette liste).
+    if (moi.compte.attente && estAdmin(env, moi.mail)) {
+        delete moi.compte.attente; moi.compte.validePar = 'ADMIN_MAILS'; moi.compte.valideLe = Date.now();
+        await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
+        await majLigneCompte(env, moi.mail, { statut: 'actif', par: 'ADMIN_MAILS' }).catch(() => {});
+    }
     if (moi.compte.attente && !LIBRE_EN_ATTENTE.has(chemin)) return erreur(403, 'Votre compte TRIGONE attend sa validation par l\'administrateur ou l\'assistant Chorus DT de votre unité.');
     // Carte perdue ou volée : l'ancien identifiant est effacé (son QR code devient « non reconnu »), un nouveau est tiré.
     if (chemin === 'carte/revoquer' && methode === 'POST') {
