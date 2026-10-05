@@ -83,6 +83,13 @@ module.exports = async function() {
     const liste = await api(a, 'compte/unite');
     const x = (liste.comptes || []).find(y => y.mail === mailN);
     verifier(/^(admin|super)$/.test(liste.role) && x && x.statut === 'actif' && x.adresse === mailN, 'comptes de l\'unité : adresse TRIGONE et statut (actif après déblocage)');
+    // Adresse inscrite dans ADMIN_MAILS (ici, en test : adresse commençant par « admin. ») : compte validé d'office.
+    const sa = await page();
+    const mailSa = await inscrire(sa, 'Admin');
+    const etSa = await api(sa, 'compte/etat');
+    verifier(/^admin\./.test(mailSa) && etSa.attente === false && (await api(sa, 'compte/demandes')).statut !== 403, 'compte dont l\'adresse est dans ADMIN_MAILS : validé d\'office (' + mailSa + ')');
+    const z = await page(); await inscrire(z, 'Zoe');
+    verifier((await api(z, 'compte/etat')).attente === true, 'les autres inscriptions restent en attente de validation');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
     await b.close();
 };
