@@ -48,6 +48,26 @@ module.exports = async function() {
     verifier(/inscriptions à valider/i.test(vue) && vue.includes('CAPORAL ' + nom + ' Emma') && vue.includes(adresseAttendue), 'administrateur : l\'inscription apparaît (grade, nom, adresse TRIGONE)');
     await a.evaluate(m => document.querySelector('.JUM-GC-CPT[data-m="' + m + '"] [data-c="valider"]').click(), mailN); await attendre(1500);
     verifier((await api(n, 'compte/etat')).attente === false && (await api(a, 'cles?mail=' + encodeURIComponent(mailN))).compte === true, 'validée : le compte peut recevoir (adresse @trigone-app.com comme destinataire)');
+    // Déjà inscrit (ex. sur son téléphone), il ouvre TRIGONE sur un PC et refait « Créer mon compte » : pas de doublon,
+    // TRIGONE lui propose de se connecter (adresse pré-remplie) ; un homonyme peut quand même créer son compte.
+    {
+        const ctx = await b.newContext({ viewport: { width: 1366, height: 768 } }), pc = await ctx.newPage();
+        pc.on('pageerror', e => erreurs.push(e.message)); pc.on('dialog', d => d.accept());
+        await pc.goto(URL); await pc.evaluate(preparer, APP_CODE);
+        await pc.evaluate(() => { sessionStorage.setItem('trigone_choix_fait', '1'); localStorage.removeItem('trigone_reglages_communs'); }); await pc.reload(); await attendre(2500);
+        await pc.evaluate(() => JUMELAGE_CONNEXION()); await attendre(500);
+        verifier(await pc.evaluate(() => { const o = document.querySelector('.JUM-ACC-ONGLETS [data-mode="connecter"]'); return !!o.offsetParent && /déjà un compte/i.test(o.textContent) && !!document.querySelector('.JUM-C-DEJA').offsetParent; }), 'PC : onglet « J\'ai déjà un compte » et lien « Se connecter » sous « Créer mon compte »');
+        await pc.fill('#JUM-C-GRADE', 'CAPORAL'); await pc.fill('#JUM-C-UNITE', '4°RIISC'); await pc.fill('#JUM-C-NOM', nom); await pc.fill('#JUM-C-PRENOM', 'emma'); await pc.fill('#JUM-C-MDP1', 'Autre-2026!'); await pc.fill('#JUM-C-MDP2', 'Autre-2026!');
+        await pc.click('#JUM-C-CREER'); await attendre(2000);
+        const bloc = await pc.evaluate(() => { const x = document.getElementById('JUM-C-EXISTE'); return x && x.offsetParent ? x.innerText : ''; });
+        verifier(/déjà un compte/i.test(bloc) && bloc.includes(adresseAttendue) && !(await pc.evaluate(() => localStorage.getItem('trigone_compte'))), 'même nom : pas de 2e compte, « Vous avez déjà un compte TRIGONE » avec l\'adresse');
+        if (process.env.TRIGONE_CAPTURE_EXISTE) await pc.screenshot({ path: process.env.TRIGONE_CAPTURE_EXISTE });
+        await pc.click('#JUM-C-EX-CO'); await attendre(300);
+        verifier(await pc.evaluate(a => document.getElementById('JUM-C-PINBLOC').offsetParent && document.getElementById('JUM-C-PADR').value === a, adresseAttendue), '« Me connecter » : adresse pré-remplie, il ne reste que le code de connexion');
+        await pc.fill('#JUM-C-PCODE', 'Essai-2026!'); await pc.click('#JUM-C-PGO'); await attendre(2500);
+        verifier(await pc.evaluate(() => JSON.parse(localStorage.getItem('trigone_compte') || '{}').mail) === adresseAttendue, 'connecté au compte existant sur le PC');
+        await ctx.close();
+    }
     // Validation en personne : un 2e inscrit, sa carte scannée par l'administrateur.
     const n2 = await page();
     const mail2 = await inscrire(n2, 'Hugo');

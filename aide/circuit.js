@@ -601,6 +601,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 214, version: 'V211', l: ['Déjà un compte TRIGONE (sur votre téléphone) ? Sur un nouvel appareil, « J\'ai déjà un compte » est mis en avant', 'Si vous refaites « Créer mon compte » à votre nom, TRIGONE vous propose de vous connecter au lieu de créer un doublon'] },
         { build: 213, version: 'V210', l: ['« Ai-je droit au repas du soir ? » : la mascotte répond selon VOS horaires de mission', '« Pourquoi seulement 180 € ? » : le détail du calcul, jour par jour, et les repas que vous auriez pu déclarer', 'L\'IA connaît les règles de calcul de TRIGONE et le résumé de votre mission (sans nom ni matricule)'] },
         { build: 212, version: 'V209', l: ['Les suites de questions sont comprises : « prix à Lyon », puis « et Paris ? », « et Marseille », « et en Italie », « pareil pour une nuit » — sans tout reposer', 'L\'IA suit aussi la conversation (elle voit ce que la mascotte vient de répondre)'] },
         { build: 211, version: 'V208', l: ['La mascotte comprend encore plus de façons d\'écrire : SMS (« kom », « jtrouv pa », « cmb »), fautes courantes, argot et sigles militaires (« le fourrier », « mon CDU », « ma tire »…)', 'Elle varie ses réponses pour ne pas toujours répéter la même phrase, toujours avec respect'] },

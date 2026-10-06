@@ -955,6 +955,10 @@ async function api(requete, env, url, ctx) {
         const cle = corps.cle;
         if (!cle || cle.kty !== 'EC' || cle.crv !== 'P-256' || !cle.x || !cle.y || cle.d) return erreur(400, 'Clé d\'appareil invalide.');
         const base = [slugAdresse(prenom), slugAdresse(nom)].filter(Boolean).join('.');
+        // Compte déjà existant à ce nom : on propose de se connecter plutôt que de créer un doublon (prenom.nom2),
+        // sauf si la personne confirme être un homonyme.
+        if (!corps.homonyme && base && !ADRESSES_RESERVEES.includes(base) && (await kv.get('adresse:' + base) || await kv.get('compte:' + base + '@' + DOMAINE_RECEPTION)))
+            return json({ ok: false, existe: true, adresse: base + '@' + DOMAINE_RECEPTION, erreur: 'Un compte TRIGONE existe déjà à ce nom.' }, 409);
         let local = '';
         for (let i = 1; i < 200 && !local; i++) {
             const l = base + (i > 1 ? i : '');
