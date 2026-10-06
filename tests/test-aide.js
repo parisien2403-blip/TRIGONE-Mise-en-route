@@ -265,6 +265,18 @@ module.exports = async function() {
         verifier(/FDYDDR4FRM/.test(txt('code fd 4eriisc formation')) && /2° REI/.test(txt('code fd du 2e régiment étranger d\'infanterie')), 'codier : « 4eriisc formation », « 2e régiment étranger d\'infanterie » (REI)');
     }
 
+    // ----- Suites de questions : on ne reprend pas tout depuis le début -----
+    {
+        await t.evaluate(() => { AIDE_FERMER(); sessionStorage.removeItem('trigone_aide_fil'); sessionStorage.removeItem('trigone_aide_dernier'); AIDE_OUVRIR(); }); await attendre(600);
+        const s1 = await demander(t, 'prix à Lyon'); await attendre(300);
+        const s2 = await demander(t, 'et paris'); await attendre(300);
+        const s3 = await demander(t, 'et marseille'); await attendre(300);
+        const s4 = await demander(t, 'et en italie'); await attendre(300);
+        const s5 = await demander(t, 'pareil pour une nuit');
+        verifier(/Lyon/.test(s1) && /120,00 €/.test(s1) && /Paris/.test(s2) && /140,00 €/.test(s2) && /Marseille/.test(s3) && /ITALIE/.test(s4) && /Nuit/.test(s5),
+            'suites : « prix à Lyon » → « et paris » → « et marseille » → « et en italie » → « pareil pour une nuit » : chaque réponse reprend le sujet [' + [s1, s2, s3, s4, s5].map(x => x.slice(0, 40)).join(' | ') + ']');
+    }
+
     // ----- Simulation d'une mission décrite en une phrase -----
     {
         const sim = await t.evaluate(async () => {
