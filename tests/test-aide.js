@@ -73,6 +73,10 @@ module.exports = async function() {
     verifier(/Bourges/.test(r) && /90,00 €/.test(r), 'barème France : autre ville (Bourges) → 90,00 €');
     r = await demander(t, 'repas en allemagne combien');
     verifier(/ALLEMAGNE/.test(r) && /42,00 €/.test(r), 'barème étranger : repas en Allemagne → 42,00 € (17,5 % de 240 €)');
+    r = await demander(t, 'indemnisation en espagne');
+    verifier(/ESPAGNE/.test(r) && /37,10 €/.test(r) && /137,80 €/.test(r), 'barème étranger : « indemnisation en espagne » → repas 37,10 €, nuit 137,80 €');
+    r = await demander(t, 'indemnisation à l\'étranger');
+    verifier(/dépend du pays/.test(r) && /Espagne/.test(r), 'étranger sans pays : explication, exemples et demande du pays');
     r = await demander(t, 'indemnités aux usa');
     verifier(/ETATS-UNIS/.test(r) && /New York/.test(r) && /≈/.test(r), 'barème étranger : États-Unis (avec New York) converti en euros');
     r = await demander(t, 'tarif hotel a la reunion');

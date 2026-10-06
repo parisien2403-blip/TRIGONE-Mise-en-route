@@ -14,7 +14,7 @@
     // ---------- Intention ----------
     var CODE_FD = /\b(fd[0-9a-z]{6,10})\b/i;
     var MOTS_FD = / (code fd|codes fd|code d engagement|codes d engagement|code engagement|fd ligne|fd@ligne|fdligne|codier|fd) /;
-    var FORT = / (tarif|tarifs|taux|bareme|baremes|forfait|forfaits|prix|montant|montants|coute|coutent|cout|couts|euro|euros|indemnite|indemnites|indemnise|rembourse|remboursee|remboursement|plafond|droit|droits) /;
+    var FORT = / (tarif|tarifs|taux|bareme|baremes|forfait|forfaits|prix|montant|montants|coute|coutent|cout|couts|euro|euros|indemnite|indemnites|indemnise|indemnisation|indemnisations|indemnisee|frais|allocation|allocations|prime|primes|touche|toucher|percoit|percevoir|rembourse|remboursee|remboursement|plafond|droit|droits) /;
     var SUJET = / (repas|manger|dejeuner|diner|hebergement|hotel|hotels|nuit|nuits|nuitee|nuitees|dormir|logement|chambre|journalier|journaliere|etranger|pays) /;
     var OUTRE_MER = / (reunion|guadeloupe|martinique|guyane|mayotte|nouvelle caledonie|polynesie|tahiti|saint pierre et miquelon|wallis|saint martin|saint barthelemy|dom tom|outre mer|dom) /;
 
@@ -125,6 +125,11 @@
             return { html: html + '<br><small>Les repas pris pendant le trajet (avant l\'arrivée ou après le départ du site) restent au taux France : ' + euros(R) + '.' +
                 (conv ? ' Conversion en euros : ' + esc(dateChange || 'taux de référence de TRIGONE') + '.' : '') + '</small>', etq: etq };
         }
+        if (/ (etranger|international|internationale|pays|hors de france) /.test(s)) {
+            var exemples = ['ALLEMAGNE', 'ESPAGNE', 'ITALIE', 'BELGIQUE'].map(function(n) { var p = tarifs.pays.filter(function(x) { return x.p === n; })[0]; return p ? '• ' + titre(n.toLowerCase()) + ' : ' + nombre(p.m) + ' €/jour → repas ' + euros(p.m * tarifs.coefRepas) + ', nuit ' + euros(p.m * tarifs.coefHebergement) : ''; }).filter(Boolean).join('<br>');
+            return { html: 'À l\'étranger, tout dépend du <b>pays</b> : une <b>indemnité journalière</b> par pays, dont <b>' + String(Math.round(tarifs.coefRepas * 1000) / 10).replace('.', ',') + ' %</b> par repas et <b>' +
+                String(Math.round(tarifs.coefHebergement * 1000) / 10).replace('.', ',') + ' %</b> par nuit. Par exemple :<br>' + exemples + '<br><small>Dites-moi le pays (« indemnités en Espagne », « hôtel au Sénégal ») : ' + tarifs.pays.length + ' pays sont dans TRIGONE.</small>', etq: etq };
+        }
         var v = trouverVille(q, tarifs);
         var bareme = '• Paris : <b>' + euros(H.PARIS) + '</b> la nuit<br>• Grandes villes (Marseille, Lyon, Toulouse, Nice, Nantes, Montpellier, Strasbourg, Bordeaux, Lille, Rennes) et communes du Grand Paris : <b>' + euros(H.GRANDE) + '</b><br>• Autres villes : <b>' + euros(H.PETITE) + '</b>';
         if (v) {
@@ -142,7 +147,8 @@
         if (MOTS_FD.test(s) && motsRecherche(q).length) return 'fd';
         var combien = / combien /.test(s) && !/ combien de (repas|nuit|nuits|nuitee|nuitees|jours?) /.test(s);
         if ((FORT.test(s) || combien) && (SUJET.test(s) || OUTRE_MER.test(s))) return 'tarif';
-        if (tarifs && (FORT.test(s) || combien || SUJET.test(s)) && trouverPays(q, tarifs).length) return 'tarif';
+        // Un pays cité (« Espagne », « mission en Espagne », « indemnisation Italie ») : son barème.
+        if (tarifs && trouverPays(q, tarifs).length) return 'tarif';
         return null;
     }
     var DONNEES = { intention: intention, codier: repondreCodier, tarif: repondreTarif, trouverPays: trouverPays, trouverVille: trouverVille, normal: normal };
