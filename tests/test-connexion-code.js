@@ -54,6 +54,14 @@ module.exports = async function() {
         boite: (JSON.parse(localStorage.getItem('trigone_boite') || '[]')).some(x => x.id === 'cnxb1'), profil: !!localStorage.getItem('trigone_reglages_communs') }), MAIL);
     verifier(rN.compte && rN.temoin === 'données de A' && rN.boite && rN.profil, 'adresse + code de connexion : compte, profil, données et boîte de réception revenus tout seuls ' + JSON.stringify(rN));
     verifier(await n.evaluate(() => { const e = JSON.parse(localStorage.getItem('trigone_sauvegarde_auto') || '{}'); return e.v === 2; }), 'nouvel appareil : continue la sauvegarde du compte');
+    // Changer de code : le code actuel est exigé (un téléphone laissé ouvert ne suffit pas).
+    await n.evaluate(() => { document.querySelectorAll('.JUM-MDP-FOND').forEach(e => e.remove()); JUMELAGE_CODE_CONNEXION({ changer: true }); }); await attendre(300);
+    await n.fill('#JUM-MDP-1', 'Nouveau-' + 'code1'); await n.fill('#JUM-MDP-2', 'Nouveau-code1'); await n.click('#JUM-MDP-GO'); await attendre(300);
+    verifier(/actuel/.test(await n.textContent('#JUM-MDP-ERR')), 'changer de code : le code actuel est demandé');
+    await n.fill('#JUM-MDP-0', 'pas-le-bon-code'); await n.fill('#JUM-MDP-1', 'Nouveau-code1'); await n.fill('#JUM-MDP-2', 'Nouveau-code1'); await n.click('#JUM-MDP-GO'); await attendre(1500);
+    verifier(/incorrect/.test(await n.textContent('#JUM-MDP-ERR')), 'changer de code : mauvais code actuel refusé');
+    await n.fill('#JUM-MDP-0', CODE); await n.fill('#JUM-MDP-1', CODE); await n.fill('#JUM-MDP-2', CODE); await n.click('#JUM-MDP-GO'); await attendre(1500);
+    verifier(!(await n.$('.JUM-MDP-FOND')), 'changer de code : accepté avec le bon code actuel');
     // Essais au hasard : 5 erreurs → 15 minutes d'attente, même avec le bon code.
     const autre = await appareil('X', false);
     for (let i = 0; i < 5; i++) await autre.evaluate(m => JUMELAGE_CONNEXION_MDP(m, 'mauvais-code-' + Math.random()).catch(() => {}), MAIL);
@@ -71,6 +79,9 @@ module.exports = async function() {
     const rR = await r2.evaluate(() => ({ temoin: localStorage.getItem('trigone_temoin_cnx'), refaire: localStorage.getItem('trigone_mdp_refaire'), fen: !!document.querySelector('.JUM-MDP-FOND') }));
     verifier(rR.temoin === 'données de A', 'code oublié → code de réactivation : les données reviennent quand même');
     verifier(rR.refaire === '1' && rR.fen, 'après réactivation : un nouveau code de connexion est demandé, sans pouvoir passer');
+    verifier(!(await r2.$('#JUM-MDP-0')), 'après réactivation : pas besoin de l\'ancien code (oublié)');
+    await r2.fill('#JUM-MDP-1', 'Apres-oubli-1'); await r2.fill('#JUM-MDP-2', 'Apres-oubli-1'); await r2.click('#JUM-MDP-GO'); await attendre(1500);
+    verifier(!(await r2.$('.JUM-MDP-FOND')), 'après réactivation : nouveau code de connexion enregistré');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
     await b.close();
 };
