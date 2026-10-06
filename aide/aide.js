@@ -7,7 +7,7 @@
     var DANS_CR = /\/cr\//.test(location.pathname), B = DANS_CR ? '../' : '', APP = DANS_CR ? 'cr' : 'mer';
     var VERSION = ((document.currentScript && /[?&]v=(\d+)/.exec(document.currentScript.src)) || [])[1] || '';
     var IMG = B + 'aide/mascotte-aide.webp', CLE_FIL = 'trigone_aide_fil', CLE_VUE = 'trigone_aide_vue', CLE_ACTION = 'trigone_aide_action';
-    var base = null, moteur = null, chargement = null, fen = null, fil = [], pastille = null, attenteIa = false;
+    var base = null, moteur = null, chargement = null, fen = null, fil = [], pastille = null, attenteIa = false, tarifs = null, codier = null;
 
     function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
     function lire(cle) { try { return JSON.parse(sessionStorage.getItem(cle) || 'null'); } catch (e) { return null; } }
@@ -18,7 +18,9 @@
         if (moteur) return Promise.resolve(moteur);
         if (!chargement) chargement = fetch(B + 'aide/base.json?v=' + VERSION, { cache: 'no-cache' })
             .then(function(r) { if (!r.ok) throw new Error('base'); return r.json(); })
-            .then(function(j) { base = j; moteur = window.AIDE_MOTEUR.creer(j); return moteur; })
+            .then(function(j) { base = j; moteur = window.AIDE_MOTEUR.creer(j);
+                // Barèmes (repas, hébergement, pays) : petits, chargés avec la base ; le codier, lui, à la première question sur un code FD.
+                return fetch(B + 'aide/tarifs.json?v=' + VERSION).then(function(r) { return r.ok ? r.json() : null; }).then(function(x) { tarifs = x; }, function() {}).then(function() { return moteur; }); })
             .catch(function(e) { chargement = null; throw e; });
         return chargement;
     }
@@ -128,8 +130,32 @@
         return '<div class="AIDE-ACTIONS"><button type="button" class="AIDE-BTN AIDE-IA" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button>' +
             '<button type="button" class="AIDE-LIEN" data-signaler="1">Signaler un problème</button></div>';
     }
+    // Codier FD et barèmes : réponse tirée des données de TRIGONE (sans IA, sans réseau une fois chargés).
+    function tauxChange() {
+        var t = null, d = '';
+        try { t = JSON.parse(localStorage.getItem('trigone_exchange_rates') || 'null'); d = localStorage.getItem('trigone_exchange_rates_date') || ''; } catch (e) {}
+        return { taux: Object.assign({}, tarifs.change, t || {}), date: t ? d : 'taux de référence par défaut de TRIGONE (Compte-rendu les met à jour chaque jour)' };
+    }
+    function repondreDonnees(question, type) {
+        var D = window.AIDE_DONNEES, fin = function(r) {
+            if (!r) return false;
+            ajouter({ de: 'lui', html: r.html + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>', etq: r.etq, q: question });
+            return true;
+        };
+        if (type === 'tarif') { var c = tauxChange(); return Promise.resolve(fin(D.tarif(question, tarifs, c.taux, c.date))); }
+        var avoir = codier ? Promise.resolve(codier) : fetch(B + 'codier.json').then(function(r) { if (!r.ok) throw new Error('codier'); return r.json(); }).then(function(j) { codier = j; return j; });
+        return avoir.then(function(cd) { return fin(D.codier(question, cd)); }, function() { return false; });
+    }
     function repondre(question) {
         ajouter({ de: 'moi', texte: question });
+        var type = window.AIDE_DONNEES && window.AIDE_DONNEES.intention(question, tarifs);
+        if (type === 'fd' || (type === 'tarif' && tarifs)) {
+            repondreDonnees(question, type).then(function(ok) { if (!ok) repondreFiches(question); });
+            return;
+        }
+        repondreFiches(question);
+    }
+    function repondreFiches(question) {
         var r = moteur.chercher(question, { app: APP, ecran: ecranCourant() }), top = r.resultats[0], M = window.AIDE_MOTEUR;
         if (top && top.score >= M.SUR) {
             ajouter({ de: 'lui', html: htmlFiche(top.fiche) + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>',
@@ -189,6 +215,7 @@
             if (t.dataset.notice !== undefined) { var titre = t.dataset.notice; window.AIDE_FERMER(); window.JUMELAGE_NOTICE(null, titre ? { titre: titre } : {}); return; }
             if (t.dataset.ia !== undefined) { demanderIa(t.dataset.ia); return; }
             if (t.dataset.signaler) { window.AIDE_FERMER(); window.JUMELAGE_SIGNALER(); return; }
+            if (t.dataset.copier) { try { navigator.clipboard.writeText(t.dataset.copier); } catch (e) {} t.textContent = 'Copié ✓'; return; }
             if (t.dataset.civ) { try { localStorage.setItem(CLE_CIV, t.dataset.civ); } catch (e) {} accueil(); return; }
         });
         fen.querySelector('form').addEventListener('submit', function(ev) {
@@ -289,6 +316,11 @@
         '.AIDE-BTN{border:0;background:#c99a45;color:#111;border-radius:16px;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}',
         '.AIDE-LIEN{border:0;background:none;color:#8a5e10;font:inherit;font-size:13px;font-weight:700;padding:2px 0;cursor:pointer;text-align:left}',
         '.AIDE-AUTRE{margin-top:8px;font-size:12.5px;color:#6b7280}',
+        '.AIDE-M small{display:block;font-size:12px;color:#6b7280;margin-top:4px;line-height:1.35}',
+        '.AIDE-CODE{margin:8px 0 2px;padding:7px 9px;border:1px solid #e7cf98;border-radius:10px;background:#fffaf0}',
+        '.AIDE-CODE b{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.5px}',
+        'body.dark-mode .AIDE-CODE{background:#2a2518;border-color:#5a4a26}',
+        'body.dark-mode .AIDE-M small{color:#9ca3af}',
         '.AIDE-AVERT{font-size:11.5px;color:#92400e;background:#fef3c7;padding:6px 12px;text-align:center}',
         '.AIDE-SAISIE{display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid #dde1e7;margin:0}',
         '.AIDE-SAISIE input{flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:22px;padding:10px 14px;font:inherit;font-size:16px;background:#fff;color:#111;text-transform:none}',

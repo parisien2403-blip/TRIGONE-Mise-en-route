@@ -61,6 +61,31 @@ module.exports = async function() {
     verifier(await t.evaluate(() => getComputedStyle(document.querySelector('.AIDE-FEN')).backgroundColor !== 'rgb(244, 245, 247)'), 'mode sombre : la fenêtre passe en sombre');
     await t.evaluate(() => AIDE_FERMER());
 
+    // ----- Codier FD et barèmes : réponses tirées des données de TRIGONE, sans IA -----
+    await t.evaluate(() => { document.body.classList.remove('dark-mode'); AIDE_OUVRIR(); }); await attendre(500);
+    r = await demander(t, 'c quoi le code fd pour la formation au 4eme RIISC'); await attendre(1500); r = await derniere(t);
+    verifier(/FDYDDR4FRM/.test(r) && /UIISC n°4 - Déplacement formation/.test(r) && /codier FD/.test(await t.innerText('.AIDE-FIL')), 'codier : « code fd pour la formation au 4eme RIISC » → FDYDDR4FRM (UIISC n°4, formation)');
+    r = await demander(t, 'FD1ADNR11F il marche encore ?');
+    verifier(/plus valable/.test(r) && /FD1ADTB11C/.test(r), 'codier : ancien code fermé → le code qui le remplace');
+    r = await demander(t, 'combien pour une nuit d\'hotel a lyon');
+    verifier(/Lyon/.test(r) && /120,00 €/.test(r) && !/Repas/.test(r), 'barème France : nuit d\'hôtel à Lyon (grande ville) → 120,00 €');
+    r = await demander(t, 'combien la nuit a bourges');
+    verifier(/Bourges/.test(r) && /90,00 €/.test(r), 'barème France : autre ville (Bourges) → 90,00 €');
+    r = await demander(t, 'repas en allemagne combien');
+    verifier(/ALLEMAGNE/.test(r) && /42,00 €/.test(r), 'barème étranger : repas en Allemagne → 42,00 € (17,5 % de 240 €)');
+    r = await demander(t, 'indemnités aux usa');
+    verifier(/ETATS-UNIS/.test(r) && /New York/.test(r) && /≈/.test(r), 'barème étranger : États-Unis (avec New York) converti en euros');
+    r = await demander(t, 'tarif hotel a la reunion');
+    verifier(/outre-mer/.test(r), 'outre-mer : renvoi à l\'assistant Chorus DT (barèmes absents de TRIGONE)');
+    await t.click('.AIDE-VIDER'); await attendre(300);
+    // Concordance : aide/tarifs.json = barèmes de Compte-rendu (sinon relancer node aide/extraire-tarifs.js).
+    const cr0 = await (await b.newContext()).newPage(); await cr0.goto(URL + 'cr/'); await attendre(1500);
+    const conc = await cr0.evaluate(() => fetch('../aide/tarifs.json').then(r => r.json()).then(x => JSON.stringify(x.pays) === JSON.stringify(COUNTRY_MISSION_RATES) &&
+        JSON.stringify(x.change) === JSON.stringify(DEFAULT_EXCHANGE_RATES) && JSON.stringify(x.grandesVilles) === JSON.stringify(GRANDES_VILLES_FR) && x.repasFrance === GET_REPAS_RATE_EUR({}) &&
+        x.hebergementFrance.PARIS === GET_HEBERG_RATE_FOR_JOUR({ V: 'PARIS' }, {}) && x.hebergementFrance.GRANDE === GET_HEBERG_RATE_FOR_JOUR({ V: 'GRANDE' }, {}) && x.hebergementFrance.PETITE === GET_HEBERG_RATE_FOR_JOUR({ V: 'PETITE' }, {})));
+    verifier(conc, 'aide/tarifs.json identique aux barèmes de Compte-rendu (pays, devises, grandes villes, repas, hébergement)');
+    await cr0.close();
+
     // ----- Salutation selon le grade (écritures libres) ; commissaire : Monsieur ou Madame, demandé une fois -----
     const sal = await t.evaluate(() => ['A/C', 'Sergent chef', 'CNE.', 'lcl', '1CL', 'MAJ', 'civil'].map(AIDE_MOTEUR.appellation));
     verifier(sal.join('|') === 'mon adjudant-chef|sergent-chef|mon capitaine|mon colonel|soldat|major|', 'appellations : A/C, Sergent chef, CNE., lcl, 1CL, MAJ, civil → ' + sal.join(' | '));

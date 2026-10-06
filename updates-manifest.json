@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 249,
-  "appCodeMessage": "Nouveau : la mascotte d'aide ! Touchez-la (à côté de la lune, ou « Besoin d'aide ? » sur PC) et posez votre question comme vous parlez : elle répond avec la notice, vous montre où cliquer, et peut demander à l'IA.",
+  "appCodeVersion": 250,
+  "appCodeMessage": "La mascotte d'aide connaît maintenant le codier FD (« code FD du 4e RIISC formation ») et les forfaits repas et hébergement, en France selon la ville et à l'étranger selon le pays. Sans IA, sans réseau, gratuit.",
   "appMessageVersion": 0,
   "appMessage": ""
 }
