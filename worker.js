@@ -797,8 +797,13 @@ const REGLES_FRAIS = [
     'Repas en France : forfait de 20 € par repas non pris au restaurant administratif et non fourni. Midi : compte si parti au plus tard à 11 h le jour du départ et rentré à 14 h ou après le jour du retour ; soir : parti au plus tard à 18 h, rentré à 21 h ou après. Les jours entre le départ et le retour sont toujours éligibles. Il faut être hors de ses résidences (administrative et familiale) sur toute la tranche.',
     'Hébergement en France (petit-déjeuner compris), seulement si la nuit est à la charge de la personne (hôtel) : 90 € (communes ordinaires), 120 € (grandes villes de 200 000 habitants et plus, communes du Grand Paris), 140 € (Paris). Logé gratuitement : rien.',
     'Étranger : un forfait journalier par pays, en devise, converti avec les taux de la BCE ; 65 % pour la nuit, 17,5 % par repas. Les repas pris pendant le trajet en France restent à 20 €. Logé ou nourri gratuitement : la part correspondante est déduite.',
-    'Indemnités kilométriques (véhicule personnel, sur autorisation) : 0,32 €/km (5 CV et moins), 0,41 €/km (6 et 7 CV), 0,45 €/km (8 CV et plus), barème de la fonction publique.',
-    'Référence : arrêté du 3 juillet 2006 fixant les taux des indemnités de mission. Pour tout cas non couvert ici (péage, parking, taxi, annulation, avance, délais), dis que l\'assistant Chorus DT de l\'unité fait foi et ne donne pas de chiffre.'
+    'Petit-déjeuner : pas indemnisé à part, il est compris dans la nuitée. Nuit imprévue (train annulé, grève, retard sur ordre) : indemnisée si elle est justifiée (facture d\'hôtel et attestation de retard ou d\'annulation).',
+    'Indemnités kilométriques (véhicule personnel) : 0,32 €/km (5 CV et moins), 0,41 €/km (6 et 7 CV), 0,45 €/km (8 CV et plus), barème de la fonction publique.',
+    'Véhicule personnel : seulement sur autorisation (au 4e RIISC, c\'est le chef de corps qui l\'autorise), avec une assurance qui couvre les trajets professionnels. Autorisé : péage et parking remboursés sur justificatif.',
+    'Véhicule de service : pas d\'indemnités kilométriques ; carburant et péage avec les moyens de l\'unité. Taxi : seulement en l\'absence de transport en commun ou en cas d\'urgence, si c\'est autorisé, sur justificatif.',
+    'Avance : possible jusqu\'à 75 % des frais prévus, à demander avant le départ (case « Demande d\'avance » de la demande de mise en route).',
+    'Consignes du 4e RIISC : le compte-rendu se rend dans les 30 jours après la date de fin de mission ; les billets de train et d\'avion passent par l\'organisme de réservation Amplitude (ABT).',
+    'Référence : décret n° 2006-781 et arrêtés du 3 juillet 2006. Pour tout cas non couvert ici (restaurant administratif accessible mais repas pris ailleurs, hôtel plus cher que le forfait, outre-mer, classe de train ou avion, mission annulée, justificatif perdu, stage, délai de remboursement), dis que l\'assistant Chorus DT de l\'unité fait foi et ne donne pas de chiffre.'
 ].join('\n');
 function consigneAide(base, fiches, ecran, appli, mission) {
     return [

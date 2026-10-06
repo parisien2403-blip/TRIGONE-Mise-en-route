@@ -2418,8 +2418,7 @@
     "joindre la nds",
     "joindre la daf",
     "pièce jointe convocation",
-    "demander une avance",
-    "avance sur frais",
+    "case demande d'avance",
     "onglet imputation",
     "centre financier"
    ],
@@ -3563,6 +3562,189 @@
     "l": "Ouvrir la notice"
    },
    "c": "La notice complète est derrière le bouton Notice, en bas."
+  },
+  {
+   "id": "regle-peage-parking",
+   "t": "Péage et parking",
+   "app": "tous",
+   "e": [
+    "cr-frais"
+   ],
+   "q": [
+    "le péage est remboursé",
+    "péage remboursé",
+    "est ce que le parking est remboursé",
+    "parking remboursé",
+    "je paye le péage",
+    "autoroute remboursée",
+    "ticket de parking",
+    "frais de péage",
+    "on me rembourse l'autoroute",
+    "le parking de la gare",
+    "peage rembourse",
+    "j'ai payé l'autoroute"
+   ],
+   "r": "Avec le <b>véhicule personnel autorisé</b>, le <b>péage et le parking</b> sont remboursés <b>sur justificatif</b> (ticket, facture).<br>Dans le compte-rendu : onglet <b>Frais › Trajets</b>, puis joignez la photo du ticket.<br>Avec un véhicule de service : le péage se fait avec les moyens de l'unité.",
+   "c": "Avec le véhicule personnel autorisé, péage et parking sont remboursés sur justificatif."
+  },
+  {
+   "id": "regle-taxi",
+   "t": "Taxi",
+   "app": "tous",
+   "e": [
+    "cr-frais"
+   ],
+   "q": [
+    "le taxi est remboursé",
+    "taxi remboursé",
+    "j'ai pris un taxi",
+    "je peux prendre un taxi",
+    "uber remboursé",
+    "vtc remboursé",
+    "frais de taxi",
+    "pas de bus j'ai pris un taxi"
+   ],
+   "r": "Le <b>taxi</b> n'est remboursé qu'<b>en l'absence de transport en commun</b> ou <b>en cas d'urgence</b>, <b>si c'est autorisé</b> et <b>sur justificatif</b> (reçu du taxi).<br>En cas de doute, demandez avant à l'assistant Chorus DT.",
+   "c": "Le taxi n'est remboursé qu'en l'absence de transport en commun ou en urgence, s'il est autorisé et sur justificatif."
+  },
+  {
+   "id": "regle-vehicule-perso",
+   "t": "Utiliser son véhicule personnel",
+   "app": "tous",
+   "e": [
+    "mer-formulaire"
+   ],
+   "q": [
+    "j'ai le droit de prendre ma voiture",
+    "utiliser mon véhicule personnel",
+    "qui autorise le véhicule personnel",
+    "autorisation véhicule perso",
+    "prendre ma caisse en mission",
+    "vl perso autorisation",
+    "je peux y aller avec ma voiture",
+    "j'ai le droit de partir avec ma caisse",
+    "je peux partir avec ma voiture perso",
+    "assurance véhicule personnel",
+    "il faut une autorisation pour ma voiture"
+   ],
+   "r": "Le <b>véhicule personnel</b> s'utilise <b>seulement sur autorisation</b>. Au 4e RIISC, c'est <b>le chef de corps</b> qui l'autorise.<br>Il faut une <b>assurance</b> qui couvre les trajets professionnels.<br>Une fois autorisé : indemnités kilométriques (0,32 / 0,41 / 0,45 €/km selon les CV), péage et parking sur justificatif.",
+   "c": "Le véhicule personnel s'utilise seulement sur autorisation : au 4e RIISC, c'est le chef de corps qui l'autorise."
+  },
+  {
+   "id": "regle-vehicule-service",
+   "t": "Véhicule de service",
+   "app": "tous",
+   "e": [
+    "mer-formulaire"
+   ],
+   "q": [
+    "véhicule de service",
+    "je pars en véhicule de service",
+    "vl de service ik",
+    "j'ai droit aux ik avec le véhicule de service",
+    "carburant véhicule de service",
+    "plein du véhicule de service",
+    "péage avec la voiture de service"
+   ],
+   "r": "Avec un <b>véhicule de service</b> : <b>pas d'indemnités kilométriques</b>. Le <b>carburant et le péage</b> se font avec les <b>moyens de l'unité</b>.",
+   "c": "Avec un véhicule de service, pas d'indemnités kilométriques : carburant et péage avec les moyens de l'unité."
+  },
+  {
+   "id": "regle-avance",
+   "t": "Avance sur frais",
+   "app": "tous",
+   "e": [
+    "mer-formulaire"
+   ],
+   "q": [
+    "demander une avance",
+    "avance sur frais",
+    "je peux avoir une avance",
+    "combien d'avance",
+    "avance de frais",
+    "avoir de l'argent avant de partir",
+    "on peut me payer avant la mission",
+    "acompte mission"
+   ],
+   "r": "Une <b>avance</b> est possible jusqu'à <b>75 %</b> des frais prévus. Demandez-la <b>avant le départ</b> : case <b>« Demande d'avance »</b> de la demande de mise en route.",
+   "c": "Une avance est possible jusqu'à 75 % des frais prévus, à demander avant le départ (case « Demande d'avance »)."
+  },
+  {
+   "id": "regle-delai-cr",
+   "t": "Délai pour rendre le compte-rendu",
+   "app": "tous",
+   "e": [
+    "cr-recap"
+   ],
+   "q": [
+    "délai pour rendre le compte rendu",
+    "j'ai combien de temps pour faire mon cr",
+    "quand rendre mon compte rendu",
+    "date limite compte rendu",
+    "le cr c'est pour quand",
+    "trop tard pour mon cr",
+    "délai cr",
+    "combien de jours pour rendre le cr"
+   ],
+   "r": "Au 4e RIISC, le compte-rendu se rend <b>dans les 30 jours après la date de fin de mission</b>. Le plus tôt est le mieux : TRIGONE garde vos horaires et justificatifs pendant la mission.",
+   "c": "Au 4e RIISC, le compte-rendu se rend dans les 30 jours après la fin de la mission."
+  },
+  {
+   "id": "regle-reservation",
+   "t": "Réserver train ou avion",
+   "app": "tous",
+   "e": [
+    "mer-formulaire"
+   ],
+   "q": [
+    "qui réserve les billets",
+    "réserver mon billet de train",
+    "réservation avion",
+    "comment avoir mon billet",
+    "amplitude",
+    "abt",
+    "je réserve moi même mon train",
+    "organisme de réservation",
+    "billets de train mission"
+   ],
+   "r": "Au 4e RIISC, les billets (train, avion) passent par <b>Amplitude (ABT)</b>, l'organisme de réservation.<br>Dans le compte-rendu, déclarez-les dans <b>Frais › Trajets</b>.",
+   "c": "Au 4e RIISC, les billets de train et d'avion passent par Amplitude (ABT)."
+  },
+  {
+   "id": "regle-nuit-imprevue",
+   "t": "Nuit imprévue",
+   "app": "tous",
+   "e": [
+    "cr-frais"
+   ],
+   "q": [
+    "train annulé je dois dormir à l'hôtel",
+    "nuit imprévue",
+    "grève j'ai dormi sur place",
+    "retard je dois rester une nuit de plus",
+    "nuit en plus pas prévue",
+    "mission prolongée une nuit",
+    "annulation train hôtel"
+   ],
+   "r": "Une <b>nuit imprévue</b> (train annulé, grève, retard sur ordre) est indemnisée <b>si elle est justifiée</b> : <b>facture d'hôtel</b> et <b>attestation de retard ou d'annulation</b>. Ajoutez la nuit dans <b>Frais › Repas & hébergement</b> et joignez les deux justificatifs.",
+   "c": "Une nuit imprévue (train annulé, grève, retard) est indemnisée avec la facture d'hôtel et une attestation."
+  },
+  {
+   "id": "regle-petit-dej",
+   "t": "Petit-déjeuner",
+   "app": "tous",
+   "e": [
+    "cr-frais"
+   ],
+   "q": [
+    "petit déjeuner remboursé",
+    "le petit dej",
+    "et le petit-déjeuner",
+    "petit dej compte",
+    "déclarer le petit déjeuner"
+   ],
+   "r": "Le <b>petit-déjeuner</b> n'est pas indemnisé à part : il est <b>compris dans la nuitée</b> (90, 120 ou 140 €).",
+   "c": "Le petit-déjeuner n'est pas payé à part : il est compris dans la nuitée."
   },
   {
    "id": "qui-valide",

@@ -99,6 +99,7 @@
         q = deplier(q, ctx);
         var s = N(q);
         if (/ qui (valide|signe|vise) /.test(s) || / (mon adresse|mes roles|mon role) /.test(s)) return null;        // réponses personnelles déjà connues
+        if (/ (combien de temps|delai|delais|date limite|jusqu a quand|avant quand|trop tard) /.test(s) && / (rendre|cr|compte rendu|faire mon|envoyer) /.test(s) && !/ (ou en est|ou est|deja|traite|recu) /.test(s)) return null;   // délai du CR : fiche du mémento
         if (A_JOUR.test(s) && SUJETS_A_JOUR.some(function(x) { return x[1].test(s); }) && !/ (comment|installer|faire la|ma demande|mon cr) /.test(s)) return 'ajour';
         if (NOUVEAU.test(s) && !/ (comment|installer|faire la) /.test(s)) return 'nouveautes';
         var taux = (ctx.change && ctx.change.taux) || {};
@@ -601,6 +602,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 215, version: 'V212', l: ['La mascotte connaît les règles validées par le 4e RIISC : péage et parking, taxi, véhicule personnel (autorisé par le chef de corps), véhicule de service, avance de 75 %, nuit imprévue, petit-déjeuner', 'Consignes de l\'unité : compte-rendu à rendre dans les 30 jours après la fin de mission, billets par Amplitude (ABT)'] },
         { build: 214, version: 'V211', l: ['Déjà un compte TRIGONE (sur votre téléphone) ? Sur un nouvel appareil, « J\'ai déjà un compte » est mis en avant', 'Si vous refaites « Créer mon compte » à votre nom, TRIGONE vous propose de vous connecter au lieu de créer un doublon'] },
         { build: 213, version: 'V210', l: ['« Ai-je droit au repas du soir ? » : la mascotte répond selon VOS horaires de mission', '« Pourquoi seulement 180 € ? » : le détail du calcul, jour par jour, et les repas que vous auriez pu déclarer', 'L\'IA connaît les règles de calcul de TRIGONE et le résumé de votre mission (sans nom ni matricule)'] },
         { build: 212, version: 'V209', l: ['Les suites de questions sont comprises : « prix à Lyon », puis « et Paris ? », « et Marseille », « et en Italie », « pareil pour une nuit » — sans tout reposer', 'L\'IA suit aussi la conversation (elle voit ce que la mascotte vient de répondre)'] },
