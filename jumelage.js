@@ -687,6 +687,8 @@
             'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB.has-badge::after { top: 2px !important; right: calc(50% - 20px) !important; border-color: #121212 !important; }' +
         '}' +
         // Écrans étroits (320 px et moins, gros caractères) : les libellés de la barre du bas ne se touchent pas.
+        // Libellés encore trop larges (téléphone réglé en grands caractères) : AJUSTER_DOCKS ajoute JUM-DOCK-PETIT.
+        'html body .P0-TAB-BAR .P0-DOCK-INNER.JUM-DOCK-APPLI.JUM-DOCK-PETIT { column-gap: 4px !important; } html body .P0-TAB-BAR .JUM-DOCK-APPLI.JUM-DOCK-PETIT .P0-TAB { font-size: 0.46rem !important; letter-spacing: 0 !important; padding-left: 1px !important; padding-right: 1px !important; }' +
         '@media (max-width: 360px) { html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB { letter-spacing: 0 !important; padding-left: 1px !important; padding-right: 1px !important; font-size: 0.54rem !important; } html body .JUM-DOCK-APPLI .P0-LBL-LONG { display: none !important; } html body .JUM-DOCK-APPLI .P0-LBL-COURT { display: inline !important; } html body .P0-TAB-BAR .P0-DOCK-INNER.JUM-DOCK-APPLI { column-gap: 4px !important; } }' +
         '@media (max-width: 300px) { html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB { font-size: 0.46rem !important; } html body .P0-TAB-BAR .P0-DOCK-INNER.JUM-DOCK-APPLI { padding-left: 2px !important; padding-right: 2px !important; } }' +
         '@media (min-width: 1100px) { .JUM-ONG-CARTE, .JUM-ONG-NOTICE, .JUM-ONG-PC { display: none !important; } }' +
@@ -728,7 +730,7 @@
             '.JUM-V2.choisi .JUM-DOCK { opacity: 0; pointer-events: none; }' +
             '.JUM-V2 > .JUM-MAJ-BTN, .JUM-V2 > .JUM-CARTE-ACCES, .JUM-V2 > .JUM-PARAM-ACCES, .JUM-V2 > .JUM-NOTICE-ACCES, .JUM-V2 > .JUM-MODE { display: none !important; }' +
         '}' +
-        '.JUM-DOCK-BARRE { display: flex; justify-content: space-around; align-items: stretch; padding: 7px 4px 6px; border-radius: 20px; background: linear-gradient(180deg, #1c1c1c, #121212); border: 1px solid rgba(214,167,86,0.35); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }' +
+        '.JUM-DOCK-BARRE { display: flex; justify-content: space-around; align-items: stretch; column-gap: 4px; padding: 7px 4px 6px; border-radius: 20px; background: linear-gradient(180deg, #1c1c1c, #121212); border: 1px solid rgba(214,167,86,0.35); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }' +
         '.JUM-DOCK button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: none; color: #e9d9b4; font: 700 0.6rem Montserrat, system-ui, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 2px; border-radius: 14px; cursor: pointer; text-align: center; line-height: 1.15; -webkit-tap-highlight-color: transparent; }' +
         '.JUM-DOCK button:active { background: rgba(214,167,86,0.14); }' +
         '@media (max-width: 360px) { .JUM-DOCK button { font-size: 0.52rem; letter-spacing: 0; padding: 5px 1px; } .JUM-DOCK-BARRE { column-gap: 3px; } }' +
@@ -1235,7 +1237,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 205, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 206, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;

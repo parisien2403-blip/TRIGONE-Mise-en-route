@@ -11,10 +11,10 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=205"></script>
-<script src="../aide/moteur.js?v=205"></script>
-<script src="../aide/donnees.js?v=205"></script>
-<script src="../aide/aide.js?v=205"></script>
+<script src="../jumelage.js?v=206"></script>
+<script src="../aide/moteur.js?v=206"></script>
+<script src="../aide/donnees.js?v=206"></script>
+<script src="../aide/aide.js?v=206"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -5134,11 +5134,12 @@ body { overflow-wrap: break-word; }                       /* un mot trop long (f
   .BIB-SHELL { padding-left: 12px; padding-right: 12px; }
   #P0 .P0-SHELL { padding-left: 8px !important; padding-right: 8px !important; }
 }
+/* Tableau des frais trop serré (voir FST_AJUSTER) : la catégorie sur sa propre ligne, max / payant / montant dessous */
+.FST-EMPILE .FST-HEADER, .FST-EMPILE .FST-ROW { grid-template-columns: minmax(28px, auto) 1fr auto !important; column-gap: 8px !important; row-gap: 4px; padding-left: 8px !important; padding-right: 8px !important; }
+.FST-EMPILE .FST-HEADER > :first-child, .FST-EMPILE .FST-ROW > .FST-CAT { grid-column: 1 / -1; }
+.FST-EMPILE .FST-HEADER span { white-space: nowrap; }
 @media (max-width: 300px) {
   #P2-FIN .FRAIS-SECTION { padding: 10px 8px; }
-  /* Tableau des frais : la catégorie sur sa propre ligne, max / payant / montant dessous */
-  .FST-HEADER, .FST-ROW { grid-template-columns: 24px 1fr auto !important; column-gap: 6px !important; row-gap: 4px; padding-left: 6px !important; padding-right: 6px !important; }
-  .FST-HEADER > :first-child, .FST-ROW > .FST-CAT { grid-column: 1 / -1; }
   .frais-main-tab { min-width: 0; padding: 6px 2px; font-size: 0.6em; letter-spacing: 0; }
   .frais-main-tab small { font-size: 0.78em; overflow-wrap: normal; }
 }
@@ -11763,7 +11764,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 300;
+var APP_CODE_VERSION = 301;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -14155,7 +14156,9 @@ function LIBELLES_COURTS_DOCK() {
 // Chaque barre du bas essaie les libellés entiers, puis abrégés, puis abrégés en plus petit : jamais de « … ».
 function AJUSTER_DOCKS() {
     function deborde(l) {
-        return l.scrollWidth > l.clientWidth + 1 || Array.prototype.some.call(l.querySelectorAll('span'), function(sp) { return sp.offsetWidth && sp.scrollWidth > l.clientWidth + 1; });
+        // largeur réelle du texte (avec 2 px d'air de chaque côté, sinon deux libellés voisins se touchent)
+        var g = document.createRange(); g.selectNodeContents(l); var w = g.getBoundingClientRect().width;
+        return w > l.clientWidth - 4 || l.scrollWidth > l.clientWidth + 1 || Array.prototype.some.call(l.querySelectorAll('span'), function(sp) { return sp.offsetWidth && sp.scrollWidth > l.clientWidth + 1; });
     }
     document.querySelectorAll('.P0-DOCK-INNER').forEach(function(dock) {
         if (!dock.getBoundingClientRect().width) return;
@@ -15368,6 +15371,23 @@ function RENDER_FRAIS_MAIN_PANELS() {
     setTimeout(UPDATE_SCROLL_HINT, 30);
 }
 
+// Tableau des frais : si une colonne ne tient plus (écran étroit, téléphone réglé en grands caractères),
+// la catégorie passe sur sa propre ligne, max / payant / montant dessous. Mesuré à chaque changement de taille.
+function FST_AJUSTER(racine) {
+    (racine || document).querySelectorAll('.FRAIS-SUMMARY-TABLE').forEach(function(t) {
+        var largeur = -1, mesurer = function() {
+            if (!t.isConnected || !t.offsetWidth || t.offsetWidth === largeur) return;
+            largeur = t.offsetWidth;
+            t.classList.remove('FST-EMPILE');
+            var serre = [].some.call(t.querySelectorAll('.FST-HEADER span, .FST-ROW > span'), function(e) { return e.scrollWidth > e.clientWidth + 1; }) ||
+                [].some.call(t.querySelectorAll('.FST-HEADER, .FST-ROW'), function(r) { return r.scrollWidth > r.clientWidth + 1; });
+            t.classList.toggle('FST-EMPILE', serre);
+        };
+        if (window.ResizeObserver) new ResizeObserver(mesurer).observe(t);
+        mesurer();
+    });
+}
+
 function UPDATE_SCROLL_HINT() {
     var scrollEl = document.getElementById('P2-FIN');
     var hintEl = document.getElementById('P2-FIN-SCROLL-HINT');
@@ -15682,6 +15702,7 @@ function RENDER() {
     html += '</div>';
 
     L.innerHTML = html;
+    FST_AJUSTER(L);
     UPDATE_GAUGE();
     RENDER_FRAIS_MAIN_PANELS();
 }
