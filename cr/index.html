@@ -5109,6 +5109,38 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
   #P0 .P0-TAB { flex-direction: row; min-height: 44px; padding: 6px 8px; gap: 8px; }
   #P0 .P0-TAB-ICON { width: 26px; height: 26px; }
 }
+
+/* ===== Petits écrans (320 px et moins, téléphone en gros caractères ou zoom) : rien ne se chevauche ni ne déborde ===== */
+body { overflow-wrap: break-word; }                       /* un mot trop long (fichier, adresse) passe à la ligne */
+@media (max-width: 380px) {
+  .BIB-HEADER { flex-wrap: wrap; row-gap: 8px; }          /* « Relever » passe dessous plutôt que d'écraser le titre */
+  .BIB-HEADER-TXT { flex: 1 1 120px !important; }
+  .BIB-HEADER .MER-BX-RELEVER { margin-left: auto; }
+}
+@media (max-width: 340px) {
+  .CARD-HEAD { flex-wrap: wrap; row-gap: 8px; }          /* Menu et « ? » passent sous le titre plutôt que de le couper */
+  .CARD-HEAD-TXT { flex: 1 1 170px; }
+  .CARD-HEAD-TOOLS { margin-left: auto; }
+}
+
+@media (max-width: 380px) {
+  .FST-HEADER, .FST-ROW { grid-template-columns: minmax(60px, 1fr) 24px auto auto !important; column-gap: 6px !important; }
+  .FST-MNT { white-space: nowrap; }
+  .FST-HEADER span { white-space: nowrap; letter-spacing: 0; overflow-wrap: normal; }
+  .FST-CAT { overflow-wrap: normal; line-height: 1.2; }
+}
+@media (max-width: 340px) {
+  #PAGE-STAGE > .CARD { padding-left: 12px; padding-right: 12px; }   /* moins de marges perdues sur les très petits écrans */
+  .BIB-SHELL { padding-left: 12px; padding-right: 12px; }
+}
+@media (max-width: 300px) {
+  #P2-FIN .FRAIS-SECTION { padding: 10px 8px; }
+  /* Tableau des frais : la catégorie sur sa propre ligne, max / payant / montant dessous */
+  .FST-HEADER, .FST-ROW { grid-template-columns: 24px 1fr auto !important; column-gap: 6px !important; row-gap: 4px; padding-left: 6px !important; padding-right: 6px !important; }
+  .FST-HEADER > :first-child, .FST-ROW > .FST-CAT { grid-column: 1 / -1; }
+  .frais-main-tab { min-width: 0; padding: 6px 2px; font-size: 0.6em; letter-spacing: 0; }
+  .frais-main-tab small { font-size: 0.78em; overflow-wrap: normal; }
+}
 </style>
 </head>
 <body class="sm2-app">
@@ -15341,6 +15373,9 @@ function UPDATE_SCROLL_HINT() {
     if (!scrollEl || !hintEl) return;
     var container = scrollEl.querySelector('.P2-FIN-SCROLL');
     if (!container) return;
+    // La flèche se pose au bas de la zone qui défile, au-dessus du lien « Retour mission en cours ».
+    var parent = hintEl.offsetParent;
+    if (parent) hintEl.style.bottom = Math.max(0, Math.round(parent.getBoundingClientRect().bottom - container.getBoundingClientRect().bottom)) + 'px';
     var remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
     hintEl.classList.toggle('is-visible', remaining > 24);
 }

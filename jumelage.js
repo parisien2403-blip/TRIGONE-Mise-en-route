@@ -686,6 +686,9 @@
             'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB-LBL { color: #e9d9b4 !important; white-space: nowrap !important; overflow: visible !important; line-height: 1.15 !important; }' +
             'html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB.has-badge::after { top: 2px !important; right: calc(50% - 20px) !important; border-color: #121212 !important; }' +
         '}' +
+        // Écrans étroits (320 px et moins, gros caractères) : les libellés de la barre du bas ne se touchent pas.
+        '@media (max-width: 360px) { html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB { letter-spacing: 0 !important; padding-left: 1px !important; padding-right: 1px !important; font-size: 0.54rem !important; } html body .JUM-DOCK-APPLI .P0-LBL-LONG { display: none !important; } html body .JUM-DOCK-APPLI .P0-LBL-COURT { display: inline !important; } }' +
+        '@media (max-width: 300px) { html body .P0-TAB-BAR .JUM-DOCK-APPLI .P0-TAB { font-size: 0.46rem !important; } html body .P0-TAB-BAR .P0-DOCK-INNER.JUM-DOCK-APPLI { padding-left: 2px !important; padding-right: 2px !important; } }' +
         '@media (min-width: 1100px) { .JUM-ONG-CARTE, .JUM-ONG-NOTICE, .JUM-ONG-PC { display: none !important; } }' +
         '.JUM-HORS-RESEAU { position: fixed; z-index: 2147482000; top: calc(62px + env(safe-area-inset-top, 0px)); left: 50%; transform: translateX(-50%); max-width: calc(100vw - 32px); display: flex; flex-direction: column; align-items: center; gap: 4px; padding: 6px 12px; border-radius: 16px; border: 1px solid rgba(251,191,36,0.6); background: rgba(24,18,6,0.94); color: #fde68a; font: 800 0.66rem Montserrat, system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; box-shadow: 0 6px 18px rgba(0,0,0,0.3); -webkit-tap-highlight-color: transparent; }' +
         '.JUM-HORS-RESEAU b { display: flex; align-items: center; white-space: nowrap; font-weight: 800; }' +
@@ -728,6 +731,7 @@
         '.JUM-DOCK-BARRE { display: flex; justify-content: space-around; align-items: stretch; padding: 7px 4px 6px; border-radius: 20px; background: linear-gradient(180deg, #1c1c1c, #121212); border: 1px solid rgba(214,167,86,0.35); box-shadow: inset 0 1px 0 rgba(255,255,255,0.06); }' +
         '.JUM-DOCK button { flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; gap: 4px; border: 0; background: none; color: #e9d9b4; font: 700 0.6rem Montserrat, system-ui, sans-serif; letter-spacing: 0.05em; text-transform: uppercase; padding: 5px 2px; border-radius: 14px; cursor: pointer; text-align: center; line-height: 1.15; -webkit-tap-highlight-color: transparent; }' +
         '.JUM-DOCK button:active { background: rgba(214,167,86,0.14); }' +
+        '@media (max-width: 360px) { .JUM-DOCK button { font-size: 0.52rem; letter-spacing: 0; padding: 5px 1px; } .JUM-DOCK-BARRE { column-gap: 3px; } }' +
         '.JUM-DOCK button svg { width: 23px; height: 23px; fill: none; stroke: #d6a756; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }' +
         '.JUM-DOCK button.tourne svg { animation: jum-tourne 0.9s linear infinite; }' +
         '.JUM-V2 .JUM-PAN { position: relative; inset: auto; clip-path: none; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; overflow: hidden; transition: filter 0.2s ease, opacity 0.3s ease; }' +

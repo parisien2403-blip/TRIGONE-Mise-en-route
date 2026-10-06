@@ -1038,6 +1038,14 @@ body.pc-depot::after { content: 'Déposez les fichiers pour les importer'; posit
 .MER-BASCULE-ROLE button.actif { background: #1a1a1a; color: #fff; }
 .PC-VAL-ENTETE .MER-BASCULE-ROLE { margin: 0; }
 body.dark-mode .MER-BASCULE-ROLE { background: rgba(255,255,255,0.08); } body.dark-mode .MER-BASCULE-ROLE button { color: #e0b86a; } body.dark-mode .MER-BASCULE-ROLE button.actif { background: #ececec; color: #141414; }
+
+/* ===== Petits écrans (320 px et moins, téléphone en gros caractères ou zoom) : rien ne se chevauche ni ne déborde ===== */
+body { overflow-wrap: break-word; }                       /* un mot trop long (fichier, adresse) passe à la ligne */
+@media (max-width: 380px) {
+  .BIB-HEADER { flex-wrap: wrap; row-gap: 8px; }          /* « Relever » passe dessous plutôt que d'écraser le titre */
+  .BIB-HEADER-TXT { flex: 1 1 120px !important; }
+  .BIB-HEADER .MER-BX-RELEVER { margin-left: auto; }
+}
 </style>
 </head>
 <body>
