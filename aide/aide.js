@@ -176,12 +176,42 @@
     function htmlIa(t) {
         return esc(t).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/^\s*[-•]\s+/gm, '• ').replace(/\n/g, '<br>');
     }
+    // ---------- Rappels et félicitations (mascotte qui salue) : après une vraie réponse, une fois par jour au plus ----------
+    // Compte-rendu commencé mais pas envoyé (Compte-rendu, sur cet appareil) ; nouvelle médaille (félicitée une seule fois).
+    var CLE_RAPPEL_JOUR = 'trigone_aide_rappel_jour', CLE_MEDAILLE_FETEE = 'trigone_aide_medaille_fetee';
+    var PALIERS = [[1, 'BRONZE', 'TRIGONE de Bronze', '🥉'], [10, 'ARGENT', 'TRIGONE d\'Argent', '🥈'], [20, 'OR', 'TRIGONE d\'Or', '🥇']];
+    function lireLocal(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+    function dateFr(iso) { var d = new Date(iso); return isNaN(d) ? '' : ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
+    function rappels() {
+        var l = [], a = appel(), vous = a ? ', ' + esc(a) : '';
+        var m = null; try { m = JSON.parse(lireLocal('mission_data') || 'null'); } catch (e) {}
+        if (m && !m.MAIL_SENT && (m.DEBUT || m.ARR_SITE || (m.JOURS && m.JOURS.length))) {
+            var quoi = [m.LIBELLE_MISSION ? '« ' + esc(String(m.LIBELLE_MISSION).toLowerCase()) + ' »' : '', m.DEBUT ? 'partie le ' + dateFr(m.DEBUT) : ''].filter(Boolean).join(', ');
+            l.push({ html: 'Au fait' + vous + ', au cas où vous l\'auriez oublié : vous avez un <b>compte-rendu de fin de mission</b> à rendre' + (quoi ? ' (' + quoi + ')' : '') +
+                (m.DEADLINE ? ', <b>avant le ' + dateFr(m.DEADLINE) + '</b>' : '') + '.<div class="AIDE-ACTIONS"><button type="button" class="AIDE-BTN" data-rappel-cr="1">👉 Ouvrir mon compte-rendu</button></div>' });
+        }
+        var n = parseInt(lireLocal('trigone_cr_envoyes_total') || '0', 10) || 0, eu = null, suivant = null;
+        PALIERS.forEach(function(p) { if (n >= p[0]) eu = p; else if (!suivant) suivant = p; });
+        if (eu && lireLocal(CLE_MEDAILLE_FETEE) !== eu[1]) {
+            l.push({ medaille: eu[1], html: (l.length ? 'Et je' : 'Je') + ' tenais à vous féliciter pour votre <b>' + eu[2] + '</b> ' + eu[3] + vous.replace(/^, /, ', ') + '\u00a0!' +
+                (suivant ? ' Encore <b>' + (suivant[0] - n) + ' compte' + (suivant[0] - n > 1 ? 's' : '') + '-rendu' + (suivant[0] - n > 1 ? 's' : '') + '</b> et vous passez ' + (suivant[1] === 'OR' ? 'à l\'Or' : 'à l\'Argent') + '.' : ' C\'est la plus haute distinction de TRIGONE, chapeau.') });
+        }
+        return l;
+    }
+    function glisserRappels() {
+        var jour = new Date().toISOString().slice(0, 10);
+        if (lireLocal(CLE_RAPPEL_JOUR) === jour) return;
+        var l = rappels(); if (!l.length) return;
+        try { localStorage.setItem(CLE_RAPPEL_JOUR, jour); } catch (e) {}
+        setTimeout(function() { l.forEach(function(x) { if (x.medaille) try { localStorage.setItem(CLE_MEDAILLE_FETEE, x.medaille); } catch (e) {} ajouter({ de: 'lui', html: x.html, pose: 'garde', rappel: true }); }); }, 900);
+    }
     var sourire = false;
     function ajouter(m) {
+        if (m.de === 'lui' && !m.rappel && (m.etq || m.fiche || m.ia)) glisserRappels();
         if (sourire && m.de === 'lui' && !m.pose) { m.html = 'Bien sûr\u00a0! ' + m.html; m.pose = 'content'; sourire = false; }
         fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
     // La mascotte prend une posture selon sa réponse (images déjà dans TRIGONE).
-    var POSES = { salut: 'mascotte.webp', montre: 'demo-mascotte.webp', aide: 'mascotte-assistance.webp', code: 'mascotte-code.webp', content: 'mascotte-ok.webp', desole: 'mascotte-erreur.webp' };
+    var POSES = { garde: 'aide/mascotte-salut.webp', salut: 'mascotte.webp', montre: 'demo-mascotte.webp', aide: 'mascotte-assistance.webp', code: 'mascotte-code.webp', content: 'mascotte-ok.webp', desole: 'mascotte-erreur.webp' };
     function poseDe(m) {
         if (/AIDE-POUCE/.test(m.html)) return '';
         // Pas à chaque réponse (ce serait lourd) : seulement à certains moments de la conversation.
@@ -229,7 +259,7 @@
         if (court && /^(merci|mrc|mci|thanks|thx|top|super|parfait|nickel|genial|cool|impec|impeccable|ok merci|d accord merci|c est bon|ca marche|bien recu|au top|trop bien|excellent|merci beaucoup|merci bien|merci a toi|merci a vous)( |$)/.test(s))
             return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + '\u00a0! Si vous avez une autre question, je suis là.</span></div>';
         if (court && /^(au revoir|aurevoir|bye|a plus|a\+|bonne journee|bonne soiree|bonne nuit|a bientot|ciao|tchao|salut a plus|bonne mission)( |$)/.test(s))
-            return '<div class="AIDE-POUCE"><img src="' + B + 'mascotte.webp" alt=""><span>Au revoir' + vous + ', et bonne mission\u00a0! 🫡</span></div>';
+            return '<div class="AIDE-POUCE"><img src="' + B + 'aide/mascotte-salut.webp" alt=""><span>Au revoir' + vous + ', et bonne mission\u00a0! 🫡</span></div>';
         if (s.split(' ').length <= 3 && /^(bonjour|salut|hello|coucou|bonsoir|hey|yo|bjr|slt|cc)( |$)/.test(s))
             return '\u0001salut' + 'Bonjour' + vous + '\u00a0! Que puis-je faire pour vous\u00a0?<div class="AIDE-PUCES">' + puces() + '</div>';
         if (court && /^(ca va|comment ca va|ca va et toi|tu vas bien|comment vas tu|cv)( |$)/.test(s))
@@ -335,6 +365,7 @@
             if (t.dataset.notice !== undefined) { var titre = t.dataset.notice; window.AIDE_FERMER(); window.JUMELAGE_NOTICE(null, titre ? { titre: titre } : {}); return; }
             if (t.dataset.ia !== undefined) { demanderIa(t.dataset.ia); return; }
             if (t.dataset.signaler) { window.AIDE_FERMER(); window.JUMELAGE_SIGNALER(); return; }
+            if (t.dataset.rappelCr) { window.AIDE_FERMER(); executer({ a: 'cr:P0', c: '#BTN-RESTORE-BACKUP, #P0-MISSION-EN-COURS, .BTN-ACCUEIL' }); return; }
             if (t.dataset.copier) { try { navigator.clipboard.writeText(t.dataset.copier); } catch (e) {} t.textContent = 'Copié ✓'; return; }
             if (t.dataset.civ) { try { localStorage.setItem(CLE_CIV, t.dataset.civ); } catch (e) {} accueil(); return; }
         });
@@ -440,6 +471,7 @@
         '.AIDE-LIGNE{display:flex;align-items:flex-end;gap:6px;align-self:flex-start;max-width:94%;min-width:0}',
         '.AIDE-LIGNE .AIDE-M{max-width:100%;min-width:0}',
         '.AIDE-POSE{width:44px;height:52px;object-fit:contain;object-position:bottom;flex:none;margin-bottom:-2px}',
+        '.AIDE-POSE[src*="mascotte-salut"]{width:56px;height:52px}',
         '@media (max-width:340px){.AIDE-POSE{width:34px;height:40px}}',
         '.AIDE-POUCE img{width:72px;height:72px;object-fit:contain;flex:none;animation:aidePouce .6s ease-out}',
         '@keyframes aidePouce{0%{transform:scale(.4) rotate(-12deg);opacity:0}70%{transform:scale(1.1) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0)}}',

@@ -122,6 +122,18 @@ module.exports = async function() {
     verifier(conc, 'aide/tarifs.json identique aux barèmes de Compte-rendu (pays, devises, grandes villes, repas, hébergement)');
     await cr0.close();
 
+    // ----- Rappels et félicitations (mascotte qui salue), une fois par jour au plus, après une vraie réponse -----
+    await t.evaluate(() => { localStorage.setItem('mission_data', JSON.stringify({ DEBUT: '2026-10-12T07:30:00', DEADLINE: '2026-11-11T18:00:00', LIBELLE_MISSION: 'STAGE FORMATEUR', MAIL_SENT: false }));
+        localStorage.setItem('trigone_cr_envoyes_total', '1'); localStorage.removeItem('trigone_aide_rappel_jour'); localStorage.removeItem('trigone_aide_medaille_fetee'); });
+    await demander(t, 'comment je fais un ordre de mission'); await attendre(1500);
+    const rap = await t.evaluate(() => [...document.querySelectorAll('.AIDE-LIGNE')].filter(l => /mascotte-salut/.test(l.querySelector('img').src)).map(l => l.textContent));
+    verifier(rap.length === 2 && /compte-rendu de fin de mission/.test(rap[0]) && /avant le 11\/11/.test(rap[0]) && /TRIGONE de Bronze/.test(rap[1]) && /Encore 9 comptes-rendus/.test(rap[1]),
+        'rappels : CR à rendre (avant le 11/11) et félicitations Bronze (encore 9 pour l\'Argent), mascotte qui salue');
+    await demander(t, 'comment je fais un ordre de mission'); await attendre(1500);
+    verifier(await t.evaluate(() => [...document.querySelectorAll('.AIDE-LIGNE img')].filter(i => /mascotte-salut/.test(i.src)).length) === 2, 'rappels : pas répétés dans la journée');
+    await t.evaluate(() => { localStorage.removeItem('mission_data'); localStorage.removeItem('trigone_cr_envoyes_total'); });
+    await t.click('.AIDE-VIDER'); await attendre(300);
+
     // ----- Salutation selon le grade (écritures libres) ; commissaire : Monsieur ou Madame, demandé une fois -----
     const sal = await t.evaluate(() => ['A/C', 'Sergent chef', 'CNE.', 'lcl', '1CL', 'MAJ', 'civil'].map(AIDE_MOTEUR.appellation));
     verifier(sal.join('|') === 'mon adjudant-chef|sergent-chef|mon capitaine|mon colonel|soldat|major|', 'appellations : A/C, Sergent chef, CNE., lcl, 1CL, MAJ, civil → ' + sal.join(' | '));
@@ -152,6 +164,10 @@ module.exports = async function() {
     // ----- Compte-rendu : même aide, sujets du Compte-rendu, « Me montrer » vers Mise en route -----
     const c = await page({ width: 412, height: 860 }, 'cr/', 'CR');
     verifier(await c.isVisible('.AIDE-PASTILLE'), 'Compte-rendu : pastille de la mascotte');
+    await c.evaluate(() => AFFICHER_ECRAN_MEDAILLE('ARGENT', 10)); await attendre(500);
+    verifier(/^Bravo, mon adjudant\s! Vous obtenez le TRIGONE d'Argent pour vos 10 comptes-rendus envoyés\. Encore 10 et c'est l'Or/.test(await c.textContent('#MEDAILLE-TEXTE')) && /mascotte-pouce/.test(await c.getAttribute('#MEDAILLE-MASCOTTE', 'src')),
+        'fenêtre de médaille : « Bravo, mon adjudant ! … Encore 10 et c\'est l\'Or ! », mascotte aux deux pouces');
+    await c.evaluate(() => FERMER_ECRAN_MEDAILLE()); await attendre(500);
     await c.click('.AIDE-PASTILLE'); await attendre(800);
     verifier(await c.evaluate(() => !!document.querySelector('.AIDE-PUCE[data-fiche="cr-commencer"]')), 'Compte-rendu : sujets du compte-rendu proposés');
     r = await demander(c, 'combien de repas je met');

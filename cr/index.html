@@ -8600,7 +8600,12 @@ function AFFICHER_ECRAN_MEDAILLE(palier, count) {
     if (!overlay) return;
     document.getElementById('MEDAILLE-IMG').src = info.fichier;
     document.getElementById('MEDAILLE-TITRE').textContent = info.titre;
-    document.getElementById('MEDAILLE-TEXTE').textContent = 'Bravo, vous obtenez le ' + info.titre + ' ' + info.texte + ' !';
+    // Texte personnel : appellation selon le grade du profil (« mon adjudant »…) et palier suivant.
+    var appel = '';
+    try { appel = window.AIDE_MOTEUR ? AIDE_MOTEUR.appellation((JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}')).grade) : ''; } catch (e) {}
+    if (appel.charAt(0) === '§') { var civ = ''; try { civ = localStorage.getItem('trigone_aide_civilite') || ''; } catch (e) {} appel = civ ? civ + appel.slice(1) : ''; }
+    var suite = palier === 'BRONZE' ? ' Encore 9 et c\'est l\'Argent\u00a0!' : palier === 'ARGENT' ? ' Encore 10 et c\'est l\'Or\u00a0!' : ' La plus haute distinction de TRIGONE\u00a0!';
+    document.getElementById('MEDAILLE-TEXTE').textContent = 'Bravo' + (appel ? ', ' + appel : '') + '\u00a0! Vous obtenez le ' + info.titre + ' ' + info.texte + '.' + suite;
     overlay.classList.remove('HIDDEN');
     requestAnimationFrame(function() { requestAnimationFrame(function() { overlay.classList.add('medaille-in'); }); });
 }
