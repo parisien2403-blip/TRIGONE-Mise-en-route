@@ -2493,9 +2493,13 @@
             N = NT.pour ? NT.pour(niv) : NT;
             // Chapitre demandé absent de cette notice (ex. écran d'un autre rôle) : la notice complète.
             if (chapitre && NT.pour && !N.chapitres.some(function(c) { return c.id === chapitre; })) N = NT.pour(2);
+            // Page précise demandée par son titre (aide de la mascotte) : absente de cette notice → la notice complète.
+            var aPage = function(n) { var i = -1; n.pages.forEach(function(p, k) { if (i < 0 && p.titre === opts.titre) i = k; }); return i; };
+            if (opts.titre && NT.pour && aPage(N) < 0) N = NT.pour(2);
             var tt = f.querySelector('.N-TITRE'); if (tt && N.nom) tt.textContent = N.nom;
             if (!document.getElementById('N-CSS')) { var st = document.createElement('style'); st.id = 'N-CSS'; st.textContent = NT.css; document.head.appendChild(st); }
             if (chapitre) N.chapitres.forEach(function(c) { if (c.id === chapitre) page = c.page; });
+            if (opts.titre && aPage(N) >= 0) page = aPage(N);
             construire();
             window.addEventListener('resize', auRedim); document.addEventListener('keydown', touche);
         }, function() {
@@ -2965,6 +2969,7 @@
                 });
             });
     }
+    window.JUMELAGE_API = function(chemin, corps) { return appelApi(chemin, corps ? { methode: 'POST', corps: corps } : {}); };   // aide de la mascotte (aide/aide.js)
     // Service disponible ? (boîte aux lettres en place sur le serveur)
     var ETAT_INFO = null;   // { connexionMail } : la connexion par adresse mail n'existe plus (tests locaux seulement)
     function serviceDisponible() {

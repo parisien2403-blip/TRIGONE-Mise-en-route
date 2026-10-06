@@ -12,6 +12,8 @@
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
 <script src="../jumelage.js?v=203"></script>
+<script src="../aide/moteur.js?v=203"></script>
+<script src="../aide/aide.js?v=203"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -13816,7 +13818,7 @@ function RENDRE_MENU_PC_CR(page) {
         item('P-BIB', CR_ICONES_PC.BIB, 'Bibliothèque', 'OUVRIR_BIBLIOTHEQUE()') +
         item('P-STAT', CR_ICONES_PC.EUR, 'Remboursement', 'OUVRIR_STAT_FORFAIT()') +
         (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? item('P-BOITE', CR_ICONES_PC.BOITE, 'Boîte', 'OUVRIR_BOITE_CR()', CR_BX_NB()) : '') +
-        '<div class="PC-BAS">' + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
+        '<div class="PC-BAS">' + (window.AIDE_BOUTON_PC ? AIDE_BOUTON_PC() : '') + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'mer\')"><img src="../logo_mer.webp" alt=""><span>Passer à Mise en route</span></button>' +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';

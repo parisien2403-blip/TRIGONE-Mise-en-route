@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 188;
+    var VERSION = 189;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i><span class="n-leg">' + TEL_SVG + (n === 'c3-carte-grand' ? 'Téléphone à l\'horizontale · Android / iPhone' : 'Téléphone · Android / iPhone') + '</span></button>'; }
@@ -56,7 +56,7 @@
 
     // ---------- 2. Installer et ouvrir ----------
     ajouter(chapitre(2, 'Installer et ouvrir TRIGONE', 'TRIGONE est une application web : elle s\'installe depuis le navigateur, sans magasin d\'applications, et se met à jour toute seule.',
-        ['Installer TRIGONE sur le téléphone et le PC', 'L\'écran d\'accueil', 'Mises à jour, thème clair ou sombre'], 'inst'));
+        ['Installer TRIGONE sur le téléphone et le PC', 'L\'écran d\'accueil', 'Mises à jour, thème clair ou sombre', 'La mascotte d\'aide'], 'inst'));
     ajouter(page('Installer TRIGONE', '<h5>Sur un téléphone Android (Chrome)</h5>' + et(['Ouvrez l\'adresse de TRIGONE dans <b>Chrome</b> (lien ou QR code donné par un collègue).', 'Touchez le menu <b>⋮</b> en haut à droite.', 'Touchez <b>« Installer l\'application »</b> (ou « Ajouter à l\'écran d\'accueil »).', 'L\'icône TRIGONE (le phénix) apparaît sur l\'écran d\'accueil du téléphone : ouvrez TRIGONE <b>toujours depuis cette icône</b>.']) +
         '<h5>Sur iPhone (Safari)</h5>' + et(['Ouvrez l\'adresse dans <b>Safari</b>.', 'Touchez <b>Partager</b> puis <b>« Sur l\'écran d\'accueil »</b>.']) +
         '<h5>Sur PC (Chrome ou Edge)</h5>' + et(['Ouvrez l\'adresse, puis cliquez sur l\'icône <b>Installer</b> à droite de la barre d\'adresse.']) +
@@ -71,6 +71,12 @@
         attention('Ouvrez toujours TRIGONE depuis l\'<b>icône installée</b> : vos données sont rangées dans l\'appli de ce téléphone, pas dans un onglet du navigateur.'), 'inst'));
 
     // ---------- 3. Compte ----------
+    ajouter(page('La mascotte d\'aide', '<p>Une question ? Demandez à la mascotte, sur <b>chaque écran</b> de Mise en route et de Compte-rendu.</p>' +
+        et(['Téléphone : la <b>pastille de la mascotte</b>, en haut à droite, à côté de la lune. PC : <b>Besoin d\'aide ?</b> dans le menu de gauche.',
+            'Écrivez comme vous parlez : « mdp oublié », « le chef a refusé mon OM », « combien de repas je mets »… ou touchez un sujet proposé.',
+            'Elle répond à partir de cette notice, <b>même sans réseau</b>. <b>👉 Me montrer</b> ouvre le bon écran et fait clignoter le bon bouton ; <b>📖 Notice</b> ouvre la bonne page.',
+            'Pas trouvé ? <b>✨ Demander à l\'IA</b> (compte connecté, réseau) : elle comprend la question et explique où cliquer.']) +
+        attention('L\'IA peut se tromper : la notice fait foi. Ne tapez jamais d\'information personnelle (nom, matricule, code). Nombre de questions à l\'IA limité par jour.'), 'inst'));
     ajouter(chapitre(3, 'Créer son compte TRIGONE', 'Le compte TRIGONE vous donne votre adresse prénom.nom@trigone-app.com : elle sert à envoyer et recevoir demandes, comptes-rendus et justificatifs. Pas d\'adresse mail personnelle : un code de connexion, choisi deux fois, vous connecte partout ; un responsable de votre unité valide votre compte.',
         ['Créer son compte (identité, puis validation)', 'Activer les notifications', 'Se connecter partout (adresse + code)', 'Créer son code de connexion', 'Un compte, plusieurs appareils'], 'compte'));
     ajouter(page('Créer son compte — 1/2', duo('f1-inscription', et(['Écran d\'accueil de TRIGONE › <b>Créer mon compte</b>.', r(1) + ' Votre <b>grade</b> et votre <b>unité</b> (choisie dans la liste).', r(2) + ' Votre <b>nom</b> et votre <b>prénom</b> : TRIGONE affiche votre <b>adresse TRIGONE</b>.', r(3) + ' Votre <b>code de connexion</b> (8 caractères au moins), puis ' + r(4) + ' le même une 2<sup>e</sup> fois.', r(5) + ' <b>Créer mon compte</b>.'])) +
@@ -107,7 +113,7 @@
     ajouter(chapitre(5, 'Les Paramètres', 'Toutes les options de TRIGONE sont rangées dans une seule page, par rubriques : Compte, Notifications, réglages de l\'appli, Données et Aide.',
         ['Ouvrir les Paramètres', 'Les rubriques', 'Montre connectée'], 'param'));
     ajouter(page('Ouvrir les Paramètres', duo('10-parametres-compte', et(['Touchez la <b>pastille de votre compte</b> (votre photo ou vos initiales) puis <b>Paramètres</b> (ou le bouton <b>Paramètres</b> de la barre du bas).', r(1) + ' Choisissez une <b>rubrique</b> en haut.', '<b>Compte</b> : ' + r(2) + ' Ma carte TRIGONE, ' + r(3) + ' Mon profil, ' + r(4) + ' Mes rôles, Absence, Mon code de connexion.', '<b>Notifications</b> : activer, couper sur cet appareil, tester, montre connectée.'])), 'param'));
-    ajouter(page('Les autres rubriques', duo('11-parametres-donnees', et(['<b>Compte-rendu</b> (dans l\'appli Compte-rendu) : réglages du compte-rendu (rappels, envoi, barèmes, étranger).', '<b>Données</b> : sauvegarde automatique, restaurer depuis le compte, sauvegarder ou restaurer un fichier, se déconnecter et effacer, réinitialiser TRIGONE.', '<b>Aide</b> : cette notice, Références, Mise à jour, Découvrir TRIGONE, Partager TRIGONE, <b>Signaler un problème</b>.', 'Accès direct : la <b>roue ⚙</b> de l\'écran d\'accueil ouvre les Paramètres ; le bouton <b>Notice</b> (livre) ouvre cette notice.'])) +
+    ajouter(page('Les autres rubriques', duo('11-parametres-donnees', et(['<b>Compte-rendu</b> (dans l\'appli Compte-rendu) : réglages du compte-rendu (rappels, envoi, barèmes, étranger).', '<b>Données</b> : sauvegarde automatique, envois en attente, se déconnecter et effacer, réinitialiser TRIGONE.', '<b>Aide</b> : cette notice, Références, Mise à jour, Découvrir TRIGONE, Partager TRIGONE, <b>Signaler un problème</b>.', 'Accès direct : la <b>roue ⚙</b> de l\'écran d\'accueil ouvre les Paramètres ; le bouton <b>Notice</b> (livre) ouvre cette notice.'])) +
         attention('Compte connecté : la <b>réinitialisation</b> et la <b>suppression du compte</b> se demandent à votre assistant Chorus DT ou à l\'administrateur de l\'unité (chapitre 14). Seul « Code oublié » efface l\'appareil sans demande.'), 'param'));
     ajouter(page('Montre connectée', duo('82-montre', et(['Paramètres › Notifications › <b>Montre connectée</b> (pastille verte = prête, rouge = pas prête).', 'Activez les notifications de TRIGONE sur le téléphone.', 'Dans l\'appli de la montre (ex. Galaxy Wearable › Notifications), autorisez <b>Chrome</b> et TRIGONE.', 'Pendant une mission, la notification « Mission en cours » arrive sur la montre avec le bouton de l\'étape suivante : <b>un appui horodate</b>, même sans réseau.'])), 'param'));
 
@@ -234,7 +240,7 @@
 
     // ---------- 14. Données ----------
     ajouter(chapitre(14, 'Sauvegarder et retrouver ses données', 'Vos demandes, missions et réglages sont rangés sur votre appareil. La sauvegarde automatique les garde aussi, chiffrés, dans votre compte : un téléphone perdu ne fait rien perdre.',
-        ['Sauvegarde automatique du compte', 'Sauvegarde dans un fichier', 'Nouveau téléphone', 'Réinitialiser ou supprimer son compte', 'Comptes et demandes', 'Valider une inscription', 'Téléphone perdu ou volé', 'Hors réseau'], 'donnees'));
+        ['Sauvegarde automatique du compte', 'Nouveau téléphone', 'Réinitialiser ou supprimer son compte', 'Comptes et demandes', 'Valider une inscription', 'Téléphone perdu ou volé', 'Hors réseau'], 'donnees'));
     ajouter(page('Sauvegarde automatique', duo('80-sauvegarde-auto', et(['<b>Toujours active</b>, rien à faire : tout TRIGONE est copié, chiffré, dans votre compte.', 'Une copie part <b>dès qu\'il y a du nouveau</b> (10 minutes au plus tôt) et quand vous quittez l\'appli.', 'Demandes, documents, <b>boîte de réception</b>, comptes-rendus, réglages, pièces jointes.', r(1) + ' <b>Sauvegarder maintenant</b> : une copie tout de suite.'])) +
         savoir('Nouveau téléphone : <b>Se connecter</b> (adresse + code de connexion) : tout revient.'), 'donnees'));
     ajouter(page('Nouveau téléphone, sans réseau', '<h5>Changer de téléphone</h5>' + et(['Sur le nouveau : accueil de TRIGONE › <b>Se connecter</b>, avec votre adresse TRIGONE et votre <b>code de connexion</b> : tout revient.', '<b>Code de connexion oublié</b> : l\'administrateur de votre unité vous remet un code de réactivation (« J\'ai un code de réactivation »).', '<b>Ancien téléphone perdu</b> : retirez-le dans Paramètres › Compte › Mes appareils.']) +
@@ -249,7 +255,7 @@
     ajouter(page('Valider une inscription', '<h5>À distance</h5>' + et(['Une notification <b>« Nouvelle inscription »</b> arrive à l\'administrateur et à l\'assistant Chorus DT de l\'unité.', 'Comptes et demandes › <b>Valider</b>, après avoir vérifié que la personne est bien de l\'unité.']) +
         '<h5>En personne</h5>' + et(['La personne montre sa <b>carte TRIGONE</b> (verso, QR code).', 'Comptes et demandes › <b>Valider en scannant sa carte</b> ; ou l\'appareil photo du téléphone ouvre le lien de la carte : bouton <b>Valider son inscription</b>.', 'Peuvent valider : administrateur, assistant Chorus DT, valideurs de l\'unité.']) +
         attention('Ne validez que quelqu\'un que vous connaissez : un compte validé reçoit des demandes et des factures à son nom.'), 'donnees'));
-    ajouter(page('Téléphone perdu ou volé', duo('f4-code', et(['Prévenez <b>l\'administrateur de votre unité</b> : il <b>bloque</b> votre compte. Le téléphone perdu ne reçoit plus rien et <b>s\'efface</b> s\'il se reconnecte.', 'Avec un autre appareil (PC) : Paramètres › Compte › <b>Mes appareils</b> › <b>Retirer</b>, vous-même.', 'Nouveau téléphone : l\'administrateur vous remet un <b>code de réactivation</b> (48 h, une seule fois). TRIGONE › « J\'ai déjà TRIGONE sur un autre appareil » › ce code.', 'Puis <b>Se connecter</b> sur le nouveau téléphone (adresse + code de connexion) : tout revient.'])) +
+    ajouter(page('Téléphone perdu ou volé', duo('f4-code', et(['Prévenez <b>l\'administrateur de votre unité</b> : il <b>bloque</b> votre compte. Le téléphone perdu ne reçoit plus rien et <b>s\'efface</b> s\'il se reconnecte.', 'Avec un autre appareil (PC) : Paramètres › Compte › <b>Mes appareils</b> › <b>Retirer</b>, vous-même.', 'Nouveau téléphone : l\'administrateur vous remet un <b>code de réactivation</b> (48 h, une seule fois). TRIGONE › « J\'ai un code de réactivation » › ce code.', 'Puis <b>Se connecter</b> sur le nouveau téléphone (adresse + code de connexion) : tout revient.'])) +
         savoir('Votre compte, votre adresse TRIGONE, votre carte et votre sauvegarde ne sont pas touchés par le blocage.'), 'donnees'));
     ajouter(page('Hors réseau', duo('a1-hors-reseau', et(['Sans réseau, une pastille ' + r(1) + ' <b>Hors réseau</b> apparaît en haut de l\'écran (avec le nombre d\'envois en attente).', 'Touchez-la : tout est <b>gardé sur l\'appareil</b> (horodatages, comptes-rendus, demandes) et <b>part tout seul</b> au retour du réseau.', 'Au retour du réseau : « <b>Réseau revenu</b> », la pastille disparaît.'])), 'donnees'));
 

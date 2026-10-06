@@ -41,7 +41,8 @@ const TESTS = {
     'raccourcis': ['Raccourcis de l\'icône et validation groupée', require('./test-raccourcis')],
     'attente': ['Envois sans réseau (boîte d\'envoi) et agenda', require('./test-attente')],
     'erreurs': ['Remontée des erreurs (page administrateur)', require('./test-erreurs')],
-    'boite': ['Boîte aux lettres TRIGONE (envois directs chiffrés)', require('./test-boite')]
+    'boite': ['Boîte aux lettres TRIGONE (envois directs chiffrés)', require('./test-boite')],
+    'aide': ['Aide de la mascotte (notice, jargon, « Me montrer », IA simulée et ses limites)', require('./test-aide')]
 };
 (async () => {
     const choix = process.argv.slice(2);
