@@ -1536,6 +1536,10 @@ async function api(requete, env, url, ctx) {
         const d = await requete.json().catch(() => ({}));
         const question = String(d.question || '').replace(/\s+/g, ' ').trim().slice(0, 400);
         if (question.length < 2) return erreur(400, 'Question vide.');
+        // Propos insultants : refusés ici aussi (la mascotte coupe déjà la conversation dans l'appli).
+        const qn = ' ' + question.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
+        if (/ (connard|connasse|conard|salope|salaud|pute|petasse|encule|enculer|enfoire|batard|ntm|nique|fdp|ta gueule|tg|fils de pute|de merde|pd|pede) /.test(qn) ||
+            / (t es|tu es|espece de|sale|gros|grosse) (con|conne|nul|debile|abruti|idiot|cretin|imbecile|bete|stupide|inutile|bouffon|tocard) /.test(qn)) return erreur(400, 'Propos insultants : question refusée.');
         const jour = new Date().toISOString().slice(0, 10);
         const maxCompte = +env.AIDE_IA_MAX_COMPTE || 10, maxJour = +env.AIDE_IA_MAX_JOUR || 40;
         const cleC = 'aide-ia:' + jour + ':' + moi.mail, cleJ = 'aide-ia-jour:' + jour;

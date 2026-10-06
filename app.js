@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 251;
+var APP_CODE_VERSION = 252;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2335,6 +2335,16 @@ function AFFICHER_MSG_CENTRE(opts) {
         btn.onclick = function() { FERMER_MSG(); if (b.action) setTimeout(b.action, 300); };
         zone.appendChild(btn);
     });
+    // Message d'erreur : « Pourquoi ? » fait expliquer la mascotte d'aide (aide/aide.js).
+    var pqAncien = document.getElementById('MSG-POURQUOI'); if (pqAncien) pqAncien.remove();
+    if (opts.icone === '⛔' && window.AIDE_OUVRIR) {
+        var pq = document.createElement('button');
+        pq.type = 'button'; pq.id = pq.className = 'MSG-POURQUOI'; pq.textContent = '🤔 Pourquoi ce message ?';
+        pq.style.cssText = 'display:block; margin:10px auto 0; border:0; background:none; color:#9a6f22; font:inherit; font-size:0.86em; font-weight:800; text-decoration:underline; cursor:pointer;';
+        var errT = opts.titre || '', errX = opts.texte || '';
+        pq.onclick = function() { FERMER_MSG(); setTimeout(function() { window.AIDE_OUVRIR({ erreur: { titre: errT, texte: errX } }); }, 320); };
+        zone.parentNode.insertBefore(pq, zone.nextSibling);
+    }
     o.classList.remove('HIDDEN');
     requestAnimationFrame(function() { requestAnimationFrame(function() { o.classList.add('msg-in'); }); });
     var premier = zone.querySelector('.BTN-PRIMARY') || zone.lastChild;

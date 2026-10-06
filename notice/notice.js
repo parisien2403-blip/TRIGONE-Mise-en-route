@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 190;
+    var VERSION = 191;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i><span class="n-leg">' + TEL_SVG + (n === 'c3-carte-grand' ? 'Téléphone à l\'horizontale · Android / iPhone' : 'Téléphone · Android / iPhone') + '</span></button>'; }
@@ -74,10 +74,11 @@
     ajouter(page('La mascotte d\'aide', '<p>Une question ? Demandez à la mascotte, sur <b>chaque écran</b> de Mise en route et de Compte-rendu.</p>' +
         et(['Téléphone : la <b>pastille de la mascotte</b>, en haut à droite, à côté de la lune. PC : <b>Besoin d\'aide ?</b> dans le menu de gauche.',
             'Ce qu\'elle sait faire : bouton <b>?</b> de sa fenêtre (PC : <b>Ce que la mascotte sait faire ›</b>). Touchez un exemple (nuit à Paris, IK, code FD, qui valide…), elle répond.',
-            'Écrivez comme vous parlez : « mdp oublié », « le chef a refusé mon OM », « combien de repas je mets »…',
+            'Elle suit <b>votre circuit</b> : « où en est ma demande ? », « et mon CR ? », « combien je vais toucher ? », « vérifie ma demande ». Valideur ou assistant Chorus DT : ce que votre rôle vous confie, rien de plus.',
+            'Écrivez comme vous parlez : « mdp oublié », « le chef a refusé mon OM »… Un message d\'erreur ? <b>Pourquoi ce message ?</b> la fait expliquer.',
             'Elle répond à partir de cette notice, <b>même sans réseau</b>. <b>👉 Me montrer</b> ouvre le bon écran et fait clignoter le bon bouton ; <b>📖 Notice</b> ouvre la bonne page.',
             'Pas trouvé ? <b>✨ Demander à l\'IA</b> (compte connecté, réseau) : elle comprend la question et explique où cliquer.']) +
-        attention('L\'IA peut se tromper : la notice fait foi. Ne tapez jamais d\'information personnelle (nom, matricule, code). Nombre de questions à l\'IA limité par jour.'), 'inst'));
+        attention('L\'IA peut se tromper : la notice fait foi. Ne tapez jamais d\'information personnelle (nom, matricule, code). Propos insultants : la conversation est coupée.'), 'inst'));
     ajouter(chapitre(3, 'Créer son compte TRIGONE', 'Le compte TRIGONE vous donne votre adresse prénom.nom@trigone-app.com : elle sert à envoyer et recevoir demandes, comptes-rendus et justificatifs. Pas d\'adresse mail personnelle : un code de connexion, choisi deux fois, vous connecte partout ; un responsable de votre unité valide votre compte.',
         ['Créer son compte (identité, puis validation)', 'Activer les notifications', 'Se connecter partout (adresse + code)', 'Créer son code de connexion', 'Un compte, plusieurs appareils'], 'compte'));
     ajouter(page('Créer son compte — 1/2', duo('f1-inscription', et(['Écran d\'accueil de TRIGONE › <b>Créer mon compte</b>.', r(1) + ' Votre <b>grade</b> et votre <b>unité</b> (choisie dans la liste).', r(2) + ' Votre <b>nom</b> et votre <b>prénom</b> : TRIGONE affiche votre <b>adresse TRIGONE</b>.', r(3) + ' Votre <b>code de connexion</b> (8 caractères au moins), puis ' + r(4) + ' le même une 2<sup>e</sup> fois.', r(5) + ' <b>Créer mon compte</b>.'])) +

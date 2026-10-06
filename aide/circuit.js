@@ -1,0 +1,467 @@
+// ===================== AIDE TRIGONE : LE CIRCUIT DE LA PERSONNE =====================
+// La mascotte répond sur le parcours réel de celui qui l'interroge : où en est ma demande, mon compte-rendu, combien je
+// vais toucher, ma demande est-elle prête, ce que j'ai à valider (valideurs), à traiter (assistant Chorus DT), devises,
+// nouveautés, et le « Pourquoi ? » des messages d'erreur. Sans IA ni réseau en plus : elle ne lit que ce que TRIGONE a
+// déjà sur cet appareil pour ce compte (le serveur ne donne à chacun que ses propres dossiers) ; un rôle qu'on n'a pas
+// ne donne rien (« Je n'ai pas accès à cette information depuis votre compte »).
+// Aussi : les propos insultants coupent la conversation.
+(function() {
+    function N(s) { return window.AIDE_MOTEUR.normal(s); }
+    function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function(c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
+    function euros(n) { return (Math.round(n * 100) / 100).toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'; }
+    function eurosRond(n) { return String(Math.round(n)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' €'; }
+    function lireL(k, def) { try { var v = JSON.parse(localStorage.getItem(k) || 'null'); return v == null ? def : v; } catch (e) { return def; } }
+    function date(v) { if (!v) return null; if (typeof v === 'string' && /^\d{1,2}\/\d{1,2}\/\d{4}/.test(v)) { var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})/.exec(v); return new Date(+m[3], m[2] - 1, +m[1]); } var d = new Date(v); return isNaN(d) ? null : d; }
+    function jour(v) { var d = date(v); return d ? ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2) : ''; }
+    function quand(ms) {
+        var d = date(ms); if (!d) return '';
+        var h = ('0' + d.getHours()).slice(-2) + ' h ' + ('0' + d.getMinutes()).slice(-2), auj = new Date(), hier = new Date(Date.now() - 864e5);
+        if (d.toDateString() === auj.toDateString()) return 'aujourd\'hui à ' + h;
+        if (d.toDateString() === hier.toDateString()) return 'hier à ' + h;
+        return 'le ' + jour(d) + ' à ' + h;
+    }
+    function depuis(ms) {
+        var m = Math.max(0, Math.round((Date.now() - ms) / 60000));
+        if (m < 60) return m <= 1 ? '1 minute' : m + ' minutes';
+        var h = Math.round(m / 60); if (h < 24) return h + ' h';
+        var j = Math.round(h / 24); return j + ' jour' + (j > 1 ? 's' : '');
+    }
+    function bouton(texte, aller) { return '<button type="button" class="AIDE-BTN" data-aller="' + esc(aller) + '">👉 ' + esc(texte) + '</button>'; }
+    function actions(h) { return h ? '<div class="AIDE-ACTIONS">' + h + '</div>' : ''; }
+    var PAS_ACCES = 'Je n\'ai pas accès à cette information depuis votre compte : je ne vois que vos propres dossiers et ceux que votre rôle vous confie.';
+
+    // ---------- Propos insultants : la conversation est coupée ----------
+    // Toujours insultants, même seuls ; les mots plus faibles (« nul », « débile »…) seulement adressés à la mascotte.
+    var GROS = / (connard|connards|connasse|conard|connar|conasse|salope|salopes|salopard|salaud|salauds|pute|putes|petasse|pouffiasse|encule|enculer|enculee|enculés|enfoire|enfoiree|batard|batards|batarde|ntm|nique|niquer|niker|nik|fdp|pd|pede|tapette|tafiole|ta gueule|ta geule|ta gueul|tg|ferme la|ferme ta gueule|va te faire|vtff|fils de pute|fils de chien|nique ta mere|de merde|sous merde|merdeux|trou du cul|tete de con|gros con|grosse conne|petit con|sale con|espece de con) /;
+    var ADRESSE = / (t es|tu es|t etais|tes|t est|vous etes|espece d|espece de|sale|gros|grosse|pauvre|quel|quelle|mascotte de) (con|conne|cons|nul|nulle|naze|debile|abruti|abrutie|idiot|idiote|cretin|cretine|imbecile|bete|stupide|inutile|bouffon|tocard|clown|teube|boloss|bolosse|mongol|gogol|attarde|demeure|cinglé|cingle|baltringue) /;
+    var SEUL = /^ (con|conne|abruti|idiot|cretin|imbecile|debile|bouffon|tocard|nul|naze) $/;
+    var FRUSTRE = / (merde|putain|ptn|purée|fait chier|fais chier|ca saoule|ca me saoule|ras le bol|chiant|chiante|galere|relou|ca m enerve|j en ai marre|marre) /;
+    var CLE_COUPE = 'trigone_aide_coupee', DUREE_COUPE = 15 * 60 * 1000;
+    function insulte(q) { var s = N(q); return GROS.test(s) || ADRESSE.test(s) || SEUL.test(s); }
+    function coupeeJusqua() { var t = +(lireL(CLE_COUPE, 0) || 0); return t > Date.now() ? t : 0; }
+    function couper() { var t = Date.now() + DUREE_COUPE; try { localStorage.setItem(CLE_COUPE, String(t)); } catch (e) {} return t; }
+    function heure(t) { var d = new Date(t); return ('0' + d.getHours()).slice(-2) + ' h ' + ('0' + d.getMinutes()).slice(-2); }
+
+    // ---------- Les intentions (chacun l'écrit à sa façon) ----------
+    var COMMENT = / (comment|c est quoi|ca veut dire|que veut dire|qu est ce que c est|explique|expliquer|kesako|ca sert a quoi|a quoi sert|ou trouver|ou je trouve|ou se trouve le bouton|tuto) /;
+    var PERSO = / (ma|mes|mon|j|je|me|m|moi|ai je|est ce que j) /;
+    var STATUT = / (ou en est|ou en sont|ou est|ou sont|en est ou|en sont ou|elle en est|il en est|ca en est ou|ou ca en est|ou elle en est|ou il en est|avance|avancee|avancement|statut|etat|suivi|nouvelles|news|bloque|bloquee|coince|coincee|toujours pas|validee|validees|valide|signee|signe|passee|passe|acceptee|accepte|refusee|refuse|traitee|traite|recue|recu|partie|parti|arrivee|arrive|a ete|ca avance|ca bouge|ca donne quoi|reponse|retour|en attente|attend|qui l a|chez qui) /;
+    var DEMANDE = / (demande|demandes|mer|mise en route|mises en route|om|oms|ordre de mission|ordres de mission|dossier|dossiers|omr|deplacement) /;
+    var CR = / (cr|crs|compte rendu|comptes rendus|cr de mission|frais de mission|note de frais|mon remboursement|mes remboursements|mes frais|ma note) /;
+    var ARGENT = / (combien|montant|estimation|estimer|estime|toucher|touche|toucherai|toucherais|percevoir|percevrai|rembourse|remboursee|remboursement|rembourser|gagner|gagne|rapporter|rapporte|rapportera|recuperer|recupere|indemnite|indemnites|indemnise|indemnisation|pognon|thune|thunes|fric|oseille|sous|pepettes|ble|argent|euros|tune) /;
+    var MA_MISSION = / (je vais|vais je|je toucherai|je touche|j aurai|toucher|percevoir|rapporter|me rapporte|ma mission|cette mission|mon deplacement|ma demande|mon om|ma mer|je serai rembourse|je vais etre rembourse|vais etre rembourse|combien je|combien j|combien on va me|combien vais|combien ca me|ca me fait combien|mon stage|ma formation|ma prochaine mission) /;
+    var RELIRE = / (verifie|verifier|verif|verifies|relis|relire|relit|relecture|controle|controler|check|checker|regarde ma|jette un oeil|jeter un oeil) /;
+    var PRETE = / (il manque quoi|il me manque quoi|manque t il|qu est ce qui manque|ce qui manque|quoi qui manque|c est bon pour envoyer|je peux envoyer|je peux l envoyer|prete a envoyer|prete a partir|prete pour l envoi|pret pour l envoi|est elle complete|est elle prete|elle est prete|elle est complete|c est complet|tout est bon|j ai tout rempli|j ai rien oublie|j ai oublie quelque chose|j ai oublie quoi|elle est bonne|c est bon ma demande|ma demande est bonne) /;
+    var VALIDER = / (a valider|a signer|a viser|valider|signer|viser|validation|validations|signature|signatures) /;
+    var QUI_QUOI = / (des|y a t il|est ce qu il y a|j ai|j|ai je|me|moi|mes|attend|attendent|en attente|combien|quoi|qu est ce|reste|il y a|y a|y en a|arrive|arrivees|recues|nouvelles) /;
+    var CHORUS = / (a traiter|traiter|registre|numero omr|numeros omr|dernier omr|derniere omr|om a creer|ordres de mission a creer|cr recus|comptes rendus recus|demandes validees|espace chorus|chorus) /;
+    // « Est-ce à jour ? » : codier, IK, taux de change, barèmes, appli.
+    var A_JOUR = / (a jour|actualise|actualisee|actualises|actualisees|mis a jour|mise a jour|mises a jour|maj|date de|date du|date des|quelle date|de quand|depuis quand|derniere version|recent|recente|recents|valable|valables|en vigueur|perime|perimee|perimes|obsolete|obsoletes|vieux|vieille|ancien|ancienne|bon|bons|juste|justes|fiable|fiables|officiel|officiels) /;
+    var SUJETS_A_JOUR = [['codier', / (codier|code fd|codes fd|codification|imputation|imputations) /], ['ik', / (ik|indemnites? kilometriques?|bareme kilometrique|baremes kilometriques|taux kilometriques?|taux ik|taux km|frais kilometriques?) /],
+        ['change', / (taux de change|change|devises?|conversion|bce|dollar|livre) /], ['baremes', / (bareme|baremes|forfaits?|taux de repas|taux repas|indemnites? de mission|indemnites? journalieres?|hebergement|nuitees?|taux par pays|taux des pays|taux etranger) /],
+        ['appli', / (appli|application|trigone|version|logiciel|mascotte) /]];
+    // Mes chiffres : missions faites, comptes-rendus, nuits, kilomètres, montants, médailles.
+    var CHIFFRES = / (combien|nombre|nb|total|totaux|statistique|statistiques|stats|bilan|compteur|chiffres|resume|recap) /;
+    var PASSE = / (j ai|ai je|j avais|deja|depuis|cette annee|l annee|l an dernier|annee derniere|en tout|au total|total|jusqu a present|jusqu ici|en (19|20)\d\d|fait|faites|effectue|effectuees|envoye|envoyes|eu|touche|percu|parcouru|dormi|mes) /;
+    var SUJET_CHIFFRES = / (touche|percu|gagne|missions?|deplacements?|cr|crs|comptes? rendus?|demandes?|mer|om|nuits?|nuitees?|jours?|km|kilometres?|rembourse|remboursements?|frais|ik|forfaits?|medailles?|trigone d|euros|argent|sous|destinations?|villes?|pays) /;
+    var NOUVEAU = / (quoi de neuf|nouveaute|nouveautes|nouveau dans|du nouveau|nouvelle version|derniere version|derniere mise a jour|ce qui a change|qu est ce qui a change|quoi de nouveau|changements|changelog) /;
+
+    // Devises : noms courants vers les clés des taux de Compte-rendu (euros pour 1 unité).
+    var DEVISES = [[/ (dollars? canadiens?|cad) /, 'DOLLAR CANADIEN'], [/ (dollars? australiens?|aud) /, 'DOLLAR AUSTRALIEN'], [/ (dollars? (neo|nouvelle) zelandais|nzd) /, 'DOLLAR NEO-ZELANDAIS'],
+        [/ (dollars? de hong kong|hkd) /, 'DOLLAR DE HONG KONG'], [/ (dollars? singapouriens?|sgd) /, 'DOLLAR SINGAPOURIEN'], [/ (dollars?|usd|dollars? us|dollars? americains?|\$) /, 'DOLLAR US'],
+        [/ (livres?|livres? sterling|gbp|pounds?) /, 'LIVRE STERLING'], [/ (francs? suisses?|chf) /, 'FRANC SUISSE'], [/ (yens?|jpy) /, 'YEN'], [/ (yuans?|rmb|renminbi|cny) /, 'YUAN CHINOIS'],
+        [/ (francs? cfa|fcfa|xof|xaf|cfa) /, 'FRANC CFA'], [/ (dirhams?|mad) /, 'DIRHAM MAROCAIN'], [/ (dinars? tunisiens?|tnd) /, 'DINAR TUNISIEN'], [/ (dinars? algeriens?|dzd) /, 'DINAR ALGERIEN'],
+        [/ (couronnes? suedoises?|sek) /, 'COURONNE SUEDOISE'], [/ (couronnes? norvegiennes?|nok) /, 'COURONNE NORVEGIENNE'], [/ (couronnes? danoises?|dkk) /, 'COURONNE DANOISE'],
+        [/ (zlotys?|pln) /, 'ZLOTY'], [/ (roubles?|rub) /, 'ROUBLE'], [/ (roupies? indiennes?|roupies?|inr) /, 'ROUPIE INDIENNE'], [/ (reals?|reais|brl) /, 'REAL BRESILIEN'], [/ (pesos? mexicains?|mxn) /, 'PESO MEXICAIN']];
+    function devise(s, taux) {
+        for (var i = 0; i < DEVISES.length; i++) if (DEVISES[i][0].test(s)) {
+            var k = DEVISES[i][1]; if (taux[k] != null) return k;
+            var proche = Object.keys(taux).filter(function(x) { return x.indexOf(k.split(' ')[0]) === 0 && (k.split(' ')[1] ? x.indexOf(k.split(' ')[1]) >= 0 : true); })[0];
+            return proche || null;
+        }
+        return null;
+    }
+
+    function suite(q) { var s = N(q); return s.trim().split(' ').length <= 9 && /^ (et|puis|sinon|aussi|pareil|idem) /.test(s) || / (celle|celui|celles|ceux|l autre|les autres) /.test(s); }
+    function intention(q, ctx) {
+        var s = N(q);
+        if (/ qui (valide|signe|vise) /.test(s) || / (mon adresse|mes roles|mon role) /.test(s)) return null;        // réponses personnelles déjà connues
+        if (A_JOUR.test(s) && SUJETS_A_JOUR.some(function(x) { return x[1].test(s); }) && !/ (comment|installer|faire la|ma demande|mon cr) /.test(s)) return 'ajour';
+        if (NOUVEAU.test(s) && !/ (comment|installer|faire la) /.test(s)) return 'nouveautes';
+        var taux = (ctx.change && ctx.change.taux) || {};
+        if (devise(s, taux) && (/\d/.test(s) || / (taux|cours|combien|vaut|fait|conversion|convertir|change|en euros|en euro) /.test(s))) return 'devise';
+        if (COMMENT.test(s) && !/ (ou en est|ou est|ou sont|ou en sont) /.test(s)) return null;
+        if ((RELIRE.test(s) && (DEMANDE.test(s) || / (formulaire|saisie|tout) /.test(s))) || PRETE.test(s)) return 'relecture';
+        if (/ (statistiques|mes stats|mon bilan|mes chiffres) /.test(s)) return 'chiffres';
+        // « le CR de Roux », « la demande validée de Petit » : le dossier d'un autre (assistant Chorus DT seulement).
+        var autre = / (cr|crs|compte rendu|comptes rendus) (de|du) ([a-z]{3,}) /.exec(s);
+        if (autre && !/^(la|le|les|mon|mes|cette|mission|missions|janvier|fevrier|mars|avril|mai|juin|juillet|aout|septembre|octobre|novembre|decembre|retour|stage|formation)$/.test(autre[3])) return 'chorus';
+        if (CHORUS.test(s) && (PERSO.test(s) || QUI_QUOI.test(s) || / (dernier|derniere) /.test(s)) && !CR.test(s.replace(/ (cr recus|comptes rendus recus) /, ' '))) return 'chorus';
+        if (VALIDER.test(s) && QUI_QUOI.test(s) && !/ (ma demande|mes demandes) (a ete|est|sont|ont) /.test(s) && !STATUT.test(s.replace(/ (valider|signer|valide|signe|en attente|attend|attendent) /g, ' '))) return 'avalider';
+        if (CR.test(s) && (STATUT.test(s) || / (mes cr|mes comptes rendus|mon cr|mon compte rendu) $/.test(s)) && !/ (combien|montant|toucher) /.test(s)) return 'moncr';
+        if ((CHIFFRES.test(s) || / (mes statistiques|mon bilan|mes stats|ma medaille|mes medailles) /.test(s)) && PASSE.test(s) && SUJET_CHIFFRES.test(s) && !/ (je vais|vais je|toucherai|prochaine|cette mission) /.test(s)) return 'chiffres';
+        if (ARGENT.test(s) && MA_MISSION.test(s)) return 'estimation';
+        if (DEMANDE.test(s) && STATUT.test(s) && (PERSO.test(s) || / de [a-z]{3,} /.test(s))) return 'demande';
+        if (CR.test(s) && PERSO.test(s) && STATUT.test(s)) return 'moncr';
+        return null;
+    }
+
+    // ---------- Les données de la personne ----------
+    function suivi() { return window.JUMELAGE_SUIVI ? window.JUMELAGE_SUIVI() : {}; }
+    function actualiser() {
+        var a = window.JUMELAGE_COMPTE_ACTIF && window.JUMELAGE_COMPTE_ACTIF() && navigator.onLine && window.JUMELAGE_SUIVI_ACTUALISER;
+        return a ? Promise.race([window.JUMELAGE_SUIVI_ACTUALISER(), new Promise(function(r) { setTimeout(r, 4000); })]).catch(function() {}) : Promise.resolve();
+    }
+    function boite() { return window.JUMELAGE_BOITE_LISTE ? window.JUMELAGE_BOITE_LISTE() : []; }
+    function roles() { var r = lireL('trigone_roles_locaux', {}) || {}; return { v1: !!r.valideur1, v2: !!r.valideur2, chorus: !!(window.JUMELAGE_ROLE_CHORUS && window.JUMELAGE_ROLE_CHORUS()) || localStorage.getItem('trigone_role_chorus') === '1' }; }
+    function nomsDe(d) { return (d.personnes || []).map(function(p) { return [p.grade, p.nom].filter(Boolean).join(' '); }).filter(Boolean).join(', '); }
+    function lieuDe(d) { var a = (d.trajets || {}).aller || {}; return a.paysArr && !/^france$/i.test(a.paysArr) ? a.paysArr : (a.lieuArr || ''); }
+    function datesDe(d) { var a = (d.trajets || {}).aller || {}, r = (d.trajets || {}).retour || {}; return [jour(a.dateDep), jour(r.dateArr)].filter(Boolean).join(' → '); }
+    function titreDe(d) { return d.objet || (lieuDe(d) ? 'Mission à ' + lieuDe(d) : 'Demande de mise en route'); }
+    function mesDemandes() {
+        var s = suivi(), vues = {}, l = [];
+        (lireL('mer_bibliotheque', []) || []).slice().sort(function(a, b) { return new Date(b.envoyeLe || 0) - new Date(a.envoyeLe || 0); }).forEach(function(e) {
+            (e.demandes || []).forEach(function(d) { if (!d || vues[d.id]) return; vues[d.id] = 1; l.push({ d: d, envoyeLe: e.envoyeLe, s: s[d.id] || null }); });
+        });
+        return l;
+    }
+    function finie(x) { return x.s && (x.s.etape === 'traite' || x.s.etape === 'abandon'); }
+    // Choix d'une demande d'après les mots de la question (objet, lieu, noms) ; sinon la plus récente pas encore finie.
+    var VIDES = ' ma mes mon ma demande demande demandes mise route mer est elle en ou sont de la le les du des pour avec quoi qui quand est ce que ca a ete valide validee signe passee mission om ordre deja bien ';
+    function choisir(l, q, texte) {
+        var mots = N(q).trim().split(' ').filter(function(m) { return m.length >= 3 && VIDES.indexOf(' ' + m + ' ') < 0; });
+        var meilleur = null, sc = 0;
+        l.forEach(function(x) { var t = N(texte(x)), n = mots.filter(function(m) { return t.indexOf(' ' + m) >= 0; }).length; if (n > sc) { sc = n; meilleur = x; } });
+        return meilleur ? { x: meilleur, parMots: true } : { x: l.filter(function(x) { return !finie(x); })[0] || l[0], parMots: false };
+    }
+    var ETAPES = [['envoyee', 'Envoyée'], ['val1', 'VAL 1'], ['val2', 'VAL 2'], ['chorus', 'Chorus DT']];
+    function frise(rang, refus) {
+        return '<div class="AIDE-FRISE">' + ETAPES.map(function(e, i) {
+            var c = refus ? (i === 0 ? 'ok' : '') : i < rang ? 'ok' : i === rang ? 'en' : '';
+            return '<span class="AIDE-PT ' + c + '"><i>' + (c === 'ok' ? '✓' : c === 'en' ? '…' : '') + '</i>' + e[1] + '</span>';
+        }).join('<span class="AIDE-TR"></span>') + '</div>';
+    }
+    function etatDemande(s, envoyeLe) {
+        if (!s) return { rang: 1, html: 'Envoyée ' + quand(envoyeLe) + '.' + (window.JUMELAGE_COMPTE_ACTIF && window.JUMELAGE_COMPTE_ACTIF() ? '' : ' <small>Connectez votre compte TRIGONE pour suivre ses étapes.</small>') };
+        var der = (s.etapes || [])[(s.etapes || []).length - 1] || {}, par = der.qui ? ' (<b>' + esc(der.qui) + '</b>)' : '';
+        if (s.etape === 'refus') return { rang: 0, refus: true, html: '<b style="color:#b91c1c">Refusée</b>' + par + ' ' + quand(der.le) + '. Le motif est dans votre Boîte de réception : corrigez-la dans Documents, puis renvoyez-la.' };
+        if (s.etape === 'abandon') return { rang: 0, refus: true, html: 'Abandonnée après un refus.' };
+        if (s.etape === 'traite') return { rang: 4, html: '<b style="color:#15803d">Traitée par l\'assistant Chorus DT</b>' + par + ' ' + quand(der.le) + ' : l\'ordre de mission est créé dans Chorus DT.' };
+        var rang = { val1: 1, val2: 2, chorus: 3 }[s.etape] || 1;
+        var fait = { envoyee: 'Envoyée', val1: 'Validée par le VALIDEUR 1', val2: 'Validée par le VALIDEUR 2', renvoi: 'Renvoyée au VALIDEUR 1 par le VALIDEUR 2' }[der.e] || 'Mise à jour';
+        return { rang: rang, html: fait + par + ' ' + quand(der.le) + '. <b>Chez ' + (rang === 3 ? 'l\'assistant Chorus DT' : 'le VALIDEUR ' + rang) + ' depuis ' + depuis(s.le || der.le) + '.</b>' };
+    }
+    function htmlDemande(x, vous) {
+        var e = etatDemande(x.s, x.envoyeLe), dt = datesDe(x.d);
+        return (vous ? 'Votre demande' : 'La demande') + ' <b>« ' + esc(titreDe(x.d)) + ' »</b>' + (dt ? ' (' + esc(dt) + ')' : '') + (vous ? '' : ' de <b>' + esc(nomsDe(x.d)) + '</b>') + ' :' + frise(e.rang, e.refus) + e.html;
+    }
+    function repDemande(q) {
+        return actualiser().then(function() {
+            var l = mesDemandes(), r = roles();
+            // Valideur, assistant : les demandes des autres qu'il a validées ou reçues (Boîte), avec leur suite connue.
+            var autres = [];
+            if (r.v1 || r.v2 || r.chorus) {
+                var s = suivi();
+                boite().forEach(function(b) { if (['niveau1', 'niveau2', 'renvoi', 'chorus'].indexOf(b.nature) < 0) return;
+                    (b.ids || []).forEach(function(id, i) { if (!i) autres.push({ b: b, s: s[id] || null }); }); });
+            }
+            var texteMoi = function(x) { var a = (x.d.trajets || {}).aller || {}; return [titreDe(x.d), lieuDe(x.d), a.lieuArr, a.paysArr, nomsDe(x.d)].join(' '); }, texteAutre = function(x) { return [x.b.noms, x.b.objet, x.b.lieu].join(' '); };
+            var a = autres.length ? choisir(autres, q, texteAutre) : null, m = l.length ? choisir(l, q, texteMoi) : null;
+            if (a && a.parMots && !(m && m.parMots)) {
+                var x = a.x, e = x.s ? etatDemande(x.s, x.b.le) : null;
+                return { html: 'La demande de <b>' + esc(x.b.noms) + '</b> « ' + esc(x.b.objet || 'mise en route') + ' »' + (x.b.dates ? ' (' + esc(x.b.dates) + ')' : '') + ' : ' +
+                    (e ? frise(e.rang, e.refus) + e.html : x.b.statut === 'traite' ? 'vous l\'avez traitée ; je n\'en connais pas encore la suite.' : '<b>elle vous attend</b> dans votre Boîte.') +
+                    actions(bouton('Ouvrir ma Boîte', 'mer:RECEPTION')), etq: 'D\'après votre Boîte et le suivi TRIGONE' };
+            }
+            if (!l.length) {
+                var panier = lireL('mer_panier', []) || [];
+                if (/ de [a-z]{3,} /.test(N(q)) && !(r.v1 || r.v2 || r.chorus)) return { html: PAS_ACCES };
+                if (!panier.length) return { vide: true };
+                return { html: panier.length ? 'Je ne vois aucune demande envoyée sur cet appareil, mais <b>' + panier.length + ' demande' + (panier.length > 1 ? 's sont prêtes' : ' est prête') + ' à envoyer</b> dans vos Documents.' + actions(bouton('Ouvrir mes Documents', 'mer:PANIER'))
+                    : 'Je ne vois aucune demande envoyée depuis cet appareil. Si vous l\'avez envoyée d\'un autre appareil, connectez-vous avec votre compte TRIGONE : tout revient.' + actions(bouton('Faire une demande', 'mer:NOUVELLE')) };
+            }
+            var c = m.x, enCours = l.filter(function(x) { return x !== c && !finie(x) && (!x.s || x.s.etape !== 'refus'); }).slice(0, 3);
+            return { html: htmlDemande(c, true) + (enCours.length ? '<div class="AIDE-AUTRES">Vous avez aussi : ' + enCours.map(function(x) {
+                    return '<br>• « ' + esc(titreDe(x.d)) + ' » : ' + esc({ val1: 'chez le VALIDEUR 1', val2: 'chez le VALIDEUR 2', chorus: 'chez l\'assistant Chorus DT' }[(x.s || {}).etape] || 'envoyée'); }).join('') + '</div>' : '') +
+                actions(bouton('Voir dans la Bibliothèque', 'mer:BIBLIOTHEQUE')), etq: 'D\'après votre suivi TRIGONE', dem: c.d.id };
+        });
+    }
+
+    // ---------- Compte-rendu ----------
+    function suiviCr(e, s) {
+        if (e.envoiId) return s[e.envoiId] || null;
+        var t = e.snapshot && e.snapshot.MAIL_SENT_AT ? Date.parse(e.snapshot.MAIL_SENT_AT) : 0, trouve = null;
+        if (t) Object.keys(s).forEach(function(k) { var x = s[k], u = x.etapes && x.etapes[0] ? x.etapes[0].le : 0; if (x.genre === 'cr' && !x.intervenant && Math.abs(u - t) < 600000) trouve = x; });
+        return trouve;
+    }
+    function titreCr(e) { var sn = e.snapshot || {}; return sn.LIBELLE_MISSION || 'Mission du ' + jour(e.debut); }
+    function repCr(q) {
+        return actualiser().then(function() {
+            var s = suivi(), lib = (lireL('mission_bibliotheque', []) || []).map(function(e) { return { e: e, s: suiviCr(e, s) }; });
+            var m = lireL('mission_data', null), html = '';
+            var enCours = m && !m.MAIL_SENT && (m.DEBUT || m.ARR_SITE || (m.JOURS && m.JOURS.length));
+            if (!lib.length && !enCours) return { html: 'Je ne vois aucun compte-rendu sur cet appareil. Il se fait dans <b>TRIGONE Compte-rendu</b>, au retour de mission.' + actions(bouton('Ouvrir Compte-rendu', 'cr:P0')) };
+            var c = lib.length ? choisir(lib.map(function(x) { x.d = {}; return x; }), q, function(x) { return titreCr(x.e) + ' ' + jour(x.e.debut); }) : null;
+            if (c && !c.parMots) c = { x: lib[0], parMots: false };            // sans précision : le plus récent
+            if (enCours && (!c || !c.parMots)) {
+                html = 'Votre compte-rendu <b>« ' + esc(m.LIBELLE_MISSION || 'mission en cours') + ' »</b>' + (m.DEBUT ? ' (partie le ' + jour(m.DEBUT) + ')' : '') + ' n\'est <b>pas encore envoyé</b>' + (m.DEADLINE ? ' : à rendre avant le <b>' + jour(m.DEADLINE) + '</b>' : '') + '.' +
+                    actions('<button type="button" class="AIDE-BTN" data-rappel-cr="1">👉 Ouvrir mon compte-rendu</button>');
+                if (!lib.length) return { html: html };
+                html += '<br><br>Et le dernier envoyé : ';
+            }
+            var x = c ? c.x : null; if (!x) return { html: html };
+            var e = x.e, st = x.s, der = st && st.etapes ? st.etapes[st.etapes.length - 1] || {} : {}, par = der.qui ? ' par <b>' + esc(der.qui) + '</b>' : '';
+            var etat = e.attente ? '⏳ <b>en attente de réseau</b> : il partira tout seul dès le retour du réseau.'
+                : !st ? (e.snapshot && e.snapshot.MAIL_SENT_AT ? 'envoyé ' + quand(e.snapshot.MAIL_SENT_AT) + '.' : 'archivé dans votre Bibliothèque.')
+                : st.etape === 'traite' ? '<b style="color:#15803d">traité par l\'assistant Chorus DT</b>' + par + ' ' + quand(der.le) + '. Le remboursement suit dans Chorus DT.'
+                : st.etape === 'recu' ? '<b>récupéré par l\'assistant Chorus DT</b>' + par + ' ' + quand(der.le) + ' : il est en cours de traitement.'
+                : '<b>envoyé à l\'assistant Chorus DT</b> ' + quand((st.etapes[0] || {}).le || st.le) + ', <b>pas encore récupéré</b> (depuis ' + depuis(st.le) + ').';
+            html += (html ? '' : 'Votre compte-rendu ') + '<b>« ' + esc(titreCr(e)) + ' »</b> : ' + etat + (e.forfaitOfficiel ? '<br>Forfait calculé (repas et hébergement) : <b>' + euros(e.forfaitOfficiel) + '</b>.' : '');
+            return { html: html + actions(bouton('Ma Bibliothèque de Compte-rendu', 'cr:P-BIB')), etq: 'D\'après votre suivi TRIGONE' };
+        });
+    }
+
+    // ---------- Estimation : repas et nuits d'après les dates, la destination et les barèmes de Compte-rendu ----------
+    // Repas : la mission couvre 11 h – 14 h (midi) ou 18 h – 21 h (soir) ; nuit : 0 h – 5 h. Estimation seulement.
+    function estimer(d, ctx) {
+        var T = ctx.tarifs, D = window.AIDE_DONNEES; if (!T || !D) return null;
+        var a = (d.trajets || {}).aller || {}, r = (d.trajets || {}).retour || {};
+        var deb = date(a.dateDep), fin = date(r.dateArr || r.dateDep);
+        if (!deb || !fin || fin <= deb) return null;
+        var midi = 0, soir = 0, nuits = 0, j = new Date(deb.getFullYear(), deb.getMonth(), deb.getDate());
+        for (var k = 0; j <= fin && k < 400; k++, j = new Date(j.getFullYear(), j.getMonth(), j.getDate() + 1)) {
+            var h = function(x) { return new Date(j.getFullYear(), j.getMonth(), j.getDate(), x); };
+            if (deb <= h(11) && fin >= h(14)) midi++;
+            if (deb <= h(18) && fin >= h(21)) soir++;
+            if (deb <= h(24) && fin >= h(29)) nuits++;
+        }
+        var pays = a.paysArr && !/^france$/i.test(a.paysArr) ? a.paysArr : '', prixRepas = T.repasFrance, prixNuit, lieu;
+        if (pays) {
+            var p = (T.pays.filter(function(x) { return N(x.p) === N(pays); })[0]) || ((D.trouverPays(' ' + pays + ' ', T)[0] || [])[0]);
+            var t = p && ctx.change.taux[p.d]; if (!p || t == null) return null;
+            prixRepas = p.m * t * T.coefRepas; prixNuit = p.m * t * T.coefHebergement; lieu = p.p.charAt(0) + p.p.slice(1).toLowerCase();
+        } else {
+            var v = D.trouverVille(' a ' + (a.lieuArr || '') + ' ' + (a.cpArr || '') + ' ', T) || { zone: 'PETITE', nom: a.lieuArr || 'la destination' };
+            prixNuit = T.hebergementFrance[v.zone]; lieu = v.nom;
+        }
+        var repas = midi + soir, total = repas * prixRepas + nuits * prixNuit;
+        return { repas: repas, prixRepas: prixRepas, nuits: nuits, prixNuit: prixNuit, total: total, lieu: lieu, pays: !!pays, moyen: a.moyen || '', n: (d.personnes || []).length || 1 };
+    }
+    var TRANSPORT = { SERVICE: 'Véhicule de service : pas d\'indemnité kilométrique.', FERREE: 'Train : billets réservés par l\'unité ou remboursés sur justificatif.', AERIENNE: 'Avion : billets réservés par l\'unité ou remboursés sur justificatif.',
+        MARITIME: 'Bateau : billets réservés par l\'unité ou remboursés sur justificatif.', CIVILE: 'Véhicule personnel : si les indemnités kilométriques sont accordées, demandez-moi par exemple « IK Lyon Grenoble 6 CV ».' };
+    function htmlEstimation(est, titre) {
+        return 'Pour ' + (titre ? '<b>« ' + esc(titre) + ' »</b>' : 'cette mission') + ', comptez <b>environ ' + eurosRond(est.total) + '</b>' + (est.n > 1 ? ' par personne' : '') + ' :' +
+            '<table class="AIDE-TAB"><tr><td>' + est.repas + ' repas × ' + euros(est.prixRepas) + '</td><td>' + euros(est.repas * est.prixRepas) + '</td></tr>' +
+            '<tr><td>' + est.nuits + ' nuit' + (est.nuits > 1 ? 's' : '') + ' (' + esc(est.lieu) + ') × ' + euros(est.prixNuit) + '</td><td>' + euros(est.nuits * est.prixNuit) + '</td></tr>' +
+            '<tr class="tot"><td>Estimation</td><td>' + euros(est.total) + '</td></tr></table>' +
+            (TRANSPORT[est.moyen] ? '<small>' + TRANSPORT[est.moyen] + '</small>' : '') +
+            '<small>Estimation d\'après vos dates : le montant exact sort de votre compte-rendu (horaires réels, repas ou logement fournis' + (est.pays ? ', repas du trajet au taux France' : '') + ').</small>';
+    }
+    function brouillon() {
+        if (window.D && window.MANQUES_ONGLET && (window.D.objet || ((window.D.trajets || {}).aller || {}).dateDep)) return window.D;
+        var b = lireL('mer_brouillon', null); return b && b.demande && (b.demande.objet || ((b.demande.trajets || {}).aller || {}).dateDep) ? b.demande : null;
+    }
+    function repEstimation(q, ctx) {
+        // Compte-rendu ouvert : son propre calcul (horaires réels).
+        if (window.CALC_FORFAIT_MISSION_COURANTE && window.M && window.M.DEBUT && !/ (prochaine|demande|om|mer) /.test(N(q))) {
+            var f = window.CALC_FORFAIT_MISSION_COURANTE();
+            return Promise.resolve({ html: 'D\'après votre compte-rendu en cours' + (window.M.LIBELLE_MISSION ? ' (<b>« ' + esc(window.M.LIBELLE_MISSION) + ' »</b>)' : '') + ', le forfait repas et hébergement est de <b>' + euros(f) + '</b> pour l\'instant.' +
+                '<small>Il se met à jour avec vos saisies (repas, nuits, horaires). Les indemnités kilométriques et les frais réels s\'y ajoutent.</small>', etq: 'Calcul de votre compte-rendu' });
+        }
+        var cands = [], b = brouillon();
+        if (b) cands.push({ d: b, quoi: 'en cours de saisie' });
+        (lireL('mer_panier', []) || []).forEach(function(d) { cands.push({ d: d, quoi: 'prête à envoyer' }); });
+        mesDemandes().forEach(function(x) { cands.push({ d: x.d, quoi: 'envoyée', s: x.s }); });
+        var futures = cands.filter(function(x) { var r = ((x.d.trajets || {}).retour || {}).dateArr; return !r || date(r) >= new Date(Date.now() - 864e5 * 60); });
+        if (!futures.length) return Promise.resolve({ html: 'Je n\'ai pas de mission à estimer : remplissez d\'abord les dates et la destination de votre demande, ou demandez-moi un barème (« combien la nuit à Lyon ? »).' });
+        var c = choisir(futures, q, function(x) { var a = (x.d.trajets || {}).aller || {}; return [titreDe(x.d), lieuDe(x.d), a.lieuArr, a.paysArr].join(' '); }).x;
+        var est = estimer(c.d, ctx);
+        if (!est) return Promise.resolve({ html: 'Il me manque les <b>dates</b> ou la <b>destination</b> de « ' + esc(titreDe(c.d)) + ' » pour faire le calcul.' });
+        return Promise.resolve({ html: htmlEstimation(est, titreDe(c.d)), etq: 'Estimation d\'après les barèmes de TRIGONE Compte-rendu' });
+    }
+
+    // ---------- Relecture de la demande avant envoi ----------
+    var ONGLETS = { IDENTITE: 'Identité', ALLER: 'Aller', RETOUR: 'Retour', CONDITIONS: 'Conditions', IMPUTATION: 'Imputation' };
+    function repRelecture(q, ctx) {
+        if (!window.MANQUES_ONGLET) return Promise.resolve({ html: 'La relecture se fait dans <b>Mise en route</b>, sur votre demande en cours.' + actions(bouton('Ouvrir Mise en route', 'mer:ACCUEIL')) });
+        var d = brouillon();
+        if (!d) {
+            var p = lireL('mer_panier', []) || [];
+            return Promise.resolve({ html: p.length ? 'Pas de demande en cours de saisie. Vos <b>' + p.length + ' demande' + (p.length > 1 ? 's' : '') + ' prête' + (p.length > 1 ? 's' : '') + ' à envoyer</b> ont déjà été vérifiées par TRIGONE.' + actions(bouton('Ouvrir mes Documents', 'mer:PANIER'))
+                : 'Je ne vois pas de demande en cours. Commencez-en une, puis redemandez-moi : je la relis avant l\'envoi.' + actions(bouton('Nouvelle demande', 'mer:NOUVELLE')) });
+        }
+        var manques = [];
+        (window.MER_TABS_ORDRE || Object.keys(ONGLETS)).forEach(function(t) { window.MANQUES_ONGLET(t).forEach(function(m) { manques.push({ t: t, path: m.path, l: m.libelle }); }); });
+        var a = (d.trajets || {}).aller || {}, r = (d.trajets || {}).retour || {}, alertes = [];
+        if (a.dateDep && date(a.dateDep) < new Date()) alertes.push({ t: 'ALLER', path: 'trajets.aller.dateDep', l: 'Le départ (' + jour(a.dateDep) + ') est déjà passé : vérifiez la date.' });
+        if (a.dateDep && r.dateArr && date(r.dateArr) < date(a.dateDep)) alertes.push({ t: 'RETOUR', path: 'trajets.retour.dateArr', l: 'Le retour est avant le départ.' });
+        if (a.dateDep && r.dateArr && (date(r.dateArr) - date(a.dateDep)) > 864e5 * 45) alertes.push({ t: 'RETOUR', path: 'trajets.retour.dateArr', l: 'Mission de plus de 45 jours : vérifiez la date de retour.' });
+        var reg = lireL('trigone_reglages_communs', {}) || {};
+        if (!reg.mailVal1) alertes.push({ aller: 'profil', l: 'Aucun <b>VALIDEUR 1</b> choisi : à remplir dans Mon profil.' });
+        var code = String(d.codeFD || '').toUpperCase().trim();
+        var finir = function(cd) {
+            if (code && cd) {
+                var v = cd[code];
+                if (!v) alertes.push({ t: 'IMPUTATION', path: 'codeFD', l: 'Le code FD <b>' + esc(code) + '</b> n\'est pas dans le codier : vérifiez-le.' });
+                else if (v.fin && !v.lib) alertes.push({ t: 'IMPUTATION', path: 'codeFD', l: 'Le code FD <b>' + esc(code) + '</b> est <b>fermé</b>' + (v.dev ? ' : il est remplacé par <b>' + esc(v.dev) + '</b>' : '') + '.' });
+            }
+            if (!manques.length && !alertes.length) {
+                var est = estimer(d, ctx);
+                return { html: 'Tout est bon ✅ Votre demande <b>« ' + esc(titreDe(d)) + ' »</b> est complète et cohérente : vous pouvez l\'envoyer.' + (est ? '<br><br>' + htmlEstimation(est) : ''), etq: 'Relecture de votre demande', pose: 'content' };
+            }
+            var lien = function(but) { return ' <button type="button" class="AIDE-LIEN" data-aller="' + esc(but) + '">Me montrer</button>'; };
+            // D'abord ce qui est faux (dates, code FD, destinataire), puis ce qui manque, onglet par onglet.
+            var lignes = alertes.map(function(m) { return '<li>⚠️ ' + m.l + lien(m.aller || 'mer:CHAMP:' + m.t + ':' + m.path) + '</li>'; });
+            Object.keys(ONGLETS).forEach(function(t) {
+                var l = manques.filter(function(m) { return m.t === t; }); if (!l.length) return;
+                var noms = l.map(function(m) { return m.l.replace(/^(Aller|Retour|Intermédiaire aller|Intermédiaire retour) : /, '').toLowerCase(); });
+                noms = noms.filter(function(x, i) { return noms.indexOf(x) === i; });
+                lignes.push('<li><b>' + ONGLETS[t] + '</b> : ' + esc(noms.slice(0, 4).join(', ') + (noms.length > 4 ? '… (' + noms.length + ' champs)' : '')) + ' à remplir' + lien('mer:CHAMP:' + t + ':' + l[0].path) + '</li>');
+            });
+            var n = lignes.length;
+            return { html: 'J\'ai relu votre demande <b>« ' + esc(titreDe(d)) + ' »</b>. ' + (n > 1 ? 'Il reste <b>' + n + ' points</b>' : 'Il reste <b>un point</b>') + ' à voir :<ul class="AIDE-LISTE">' + lignes.join('') + '</ul>', etq: 'Relecture de votre demande' };
+        };
+        return (code && ctx.codier ? ctx.codier().catch(function() { return null; }) : Promise.resolve(null)).then(finir);
+    }
+
+    // ---------- Valideurs : ce qui attend leur signature ----------
+    function repAValider() {
+        var r = roles();
+        if (!r.v1 && !r.v2) return Promise.resolve({ html: 'Vous n\'avez pas le rôle de <b>valideur</b> sur cet appareil : rien ne vous attend à signer. Si ce rôle vous a été confié, cochez-le dans <b>Paramètres › Compte › Mes rôles</b> avec son code.' + actions(bouton('Mes rôles', 'roles')) });
+        var l = boite().filter(function(x) { return ['niveau1', 'niveau2', 'renvoi'].indexOf(x.nature) >= 0 && x.statut !== 'traite'; }).sort(function(a, b) { return (a.le || 0) - (b.le || 0); });
+        if (!l.length) return Promise.resolve({ html: 'Rien à valider pour l\'instant 👍 Vous serez prévenu dès qu\'une demande arrive.', etq: 'D\'après votre Boîte TRIGONE' });
+        var n = l.reduce(function(t, x) { return t + (x.n > 1 ? x.n : 1); }, 0);
+        return Promise.resolve({ html: '<b>' + n + ' demande' + (n > 1 ? 's' : '') + '</b> ' + (n > 1 ? 'vous attendent' : 'vous attend') + ', la plus ancienne d\'abord :' + l.slice(0, 6).map(function(x) {
+            return '<div class="AIDE-LIGNE-DEM"><b>' + esc(x.noms || '') + (x.objet ? ' — ' + esc(x.objet) : '') + '</b><small>' + [x.dates, x.le ? 'depuis ' + depuis(x.le) : '', x.nature === 'renvoi' ? 'renvoyée pour correction' : x.nature === 'niveau2' ? 'en 2e validation' : ''].filter(Boolean).map(esc).join(' · ') + '</small></div>';
+        }).join('') + (l.length > 6 ? '<small>… et ' + (l.length - 6) + ' autre(s).</small>' : '') + actions(bouton('Ouvrir mes demandes à signer', 'mer:RECEPTION')), etq: 'D\'après votre Boîte TRIGONE' });
+    }
+    // ---------- Assistant Chorus DT : ce qui attend d'être traité ----------
+    function repChorus(q) {
+        if (!roles().chorus) return Promise.resolve({ html: PAS_ACCES });
+        var l = boite().filter(function(x) { return (x.nature === 'chorus' || x.nature === 'cr') && x.statut !== 'traite'; }).sort(function(a, b) { return (a.le || 0) - (b.le || 0); });
+        var s = N(q), mots = s.trim().split(' ').filter(function(m) { return m.length >= 4 && ' complet complete traiter traite recu recus compte rendu rendus demande demandes chorus est elle '.indexOf(' ' + m + ' ') < 0; });
+        var cible = mots.length ? l.filter(function(x) { var t = N([x.noms, x.objet].join(' ')); return mots.some(function(m) { return t.indexOf(' ' + m) >= 0; }); })[0] : null;
+        if (cible) return Promise.resolve({ html: (cible.nature === 'cr' ? 'Compte-rendu' : 'Demande validée') + ' de <b>' + esc(cible.noms) + '</b> « ' + esc(cible.objet || '') + ' »' + (cible.dates ? ' (' + esc(cible.dates) + ')' : '') +
+            (cible.pieces ? ' : ' + cible.pieces + ' fichier' + (cible.pieces > 1 ? 's' : '') : '') + ', reçu' + (cible.nature === 'cr' ? '' : 'e') + ' il y a ' + depuis(cible.le || Date.now()) + '. Ouvrez-le pour le contrôle des signatures et des pièces jointes.' +
+            actions(bouton('Ouvrir l\'espace Chorus DT', 'mer:CHORUS')), etq: 'D\'après votre espace Chorus DT' });
+        var dem = l.filter(function(x) { return x.nature === 'chorus'; }), crs = l.filter(function(x) { return x.nature === 'cr'; });
+        var nd = dem.reduce(function(t, x) { return t + (x.n > 1 ? x.n : 1); }, 0);
+        if (!l.length) return Promise.resolve({ html: 'Rien à traiter pour l\'instant 👍', etq: 'D\'après votre espace Chorus DT' });
+        return Promise.resolve({ html: 'À traiter :<ul class="AIDE-LISTE">' + (nd ? '<li><b>' + nd + ' demande' + (nd > 1 ? 's' : '') + ' validée' + (nd > 1 ? 's' : '') + '</b> (ordres de mission à créer), la plus ancienne depuis ' + depuis(dem[0].le || Date.now()) + ' ;</li>' : '') +
+            (crs.length ? '<li><b>' + crs.length + ' compte' + (crs.length > 1 ? 's' : '') + '-rendu' + (crs.length > 1 ? 's' : '') + '</b> reçu' + (crs.length > 1 ? 's' : '') + '.</li>' : '') + '</ul>' +
+            actions(bouton('Ouvrir l\'espace Chorus DT', 'mer:CHORUS')), etq: 'D\'après votre espace Chorus DT' });
+    }
+
+    // ---------- Devises ----------
+    function repDevise(q, ctx) {
+        var s = N(q), taux = ctx.change.taux, k = devise(s, taux); if (!k) return Promise.resolve(null);
+        var m = /(\d+(?:[.,]\d+)?)/.exec(q.replace(/(\d)\s+(\d{3})/g, '$1$2')), n = m ? parseFloat(m[1].replace(',', '.')) : 1;
+        var nomD = k.toLowerCase(), t = taux[k];
+        var versDevise = / euros? (en|vers|to) /.test(s) || / en (dollars?|livres?|francs?|yens?|yuans?|dirhams?|dinars?|couronnes?|zlotys?|roubles?|roupies?|reals?|pesos?) /.test(s) && / euros? /.test(s.split(' en ')[0] + ' ');
+        var html = versDevise ? '<b>' + (n + '').replace('.', ',') + ' €</b> = <b>' + (Math.round(n / t * 100) / 100 + '').replace('.', ',') + ' ' + esc(nomD) + '</b>'
+            : '<b>' + (n + '').replace('.', ',') + ' ' + esc(nomD) + '</b> = <b>' + euros(n * t) + '</b>';
+        return Promise.resolve({ html: html + '<small>1 ' + esc(nomD) + ' = ' + euros(t).replace(' €', '') + ' € — ' + esc(ctx.change.date) + '.</small>', etq: 'Taux de change de TRIGONE Compte-rendu' });
+    }
+
+    // ---------- Les références sont-elles à jour ? ----------
+    function repAJour(q, ctx) {
+        var s = N(q), sujets = SUJETS_A_JOUR.filter(function(x) { return x[1].test(s); }).map(function(x) { return x[0]; });
+        if (sujets.length > 1 && sujets.indexOf('appli') >= 0) sujets.splice(sujets.indexOf('appli'), 1);
+        var T = ctx.tarifs || {}, lignes = [];
+        var avoirCodier = sujets.indexOf('codier') >= 0 && ctx.codier ? ctx.codier().catch(function() { return null; }) : Promise.resolve(null);
+        return avoirCodier.then(function(cd) {
+            sujets.forEach(function(x) {
+                if (x === 'codier') {
+                    var dt = cd && cd._source && cd._source.date ? cd._source.date.split('-').reverse().join('/') : '';
+                    lignes.push('<b>Codier FD</b> : ' + (dt ? 'version du <b>' + dt + '</b>' : 'version intégrée à TRIGONE') + '. Il est mis à jour par le concepteur de TRIGONE à chaque nouvelle diffusion du codier, et arrive tout seul avec la mise à jour de l\'appli. Un code fermé vous est signalé avec le code qui le remplace.');
+                }
+                if (x === 'ik') {
+                    var d = ''; try { d = localStorage.getItem('trigone_ik_rates_date') || ''; } catch (e) {}
+                    var ik = T.ik || {};
+                    lignes.push('<b>Indemnités kilométriques</b> : ' + esc(d || T.ikDate || 'barème de la fonction publique') + ' — 5 CV et moins : ' + euros(ik['5cv'] || 0).replace(' €', '') + ' €/km, 6 et 7 CV : ' + euros(ik['6-7cv'] || 0).replace(' €', '') + ' €/km, 8 CV et plus : ' + euros(ik['8cv'] || 0).replace(' €', '') + ' €/km.');
+                }
+                if (x === 'change') lignes.push('<b>Taux de change</b> : ' + esc(ctx.change.date) + '. Compte-rendu les reprend de la Banque centrale européenne (BCE) dès qu\'il a du réseau.');
+                if (x === 'baremes') lignes.push('<b>Indemnités de mission</b> : barèmes officiels (arrêté du 3 juillet 2006 modifié) — en France, repas ' + euros(T.repasFrance || 20) + ', nuit ' + euros((T.hebergementFrance || {}).PETITE || 90) + ' / ' + euros((T.hebergementFrance || {}).GRANDE || 120) + ' (grandes villes, Grand Paris) / ' + euros((T.hebergementFrance || {}).PARIS || 140) + ' (Paris) ; à l\'étranger, ' + ((T.pays || []).length) + ' pays. Ce sont ceux de TRIGONE Compte-rendu, mis à jour par le concepteur à chaque nouveau texte.');
+                if (x === 'appli') lignes.push('<b>TRIGONE</b> : vous avez la publication n° <b>' + esc(ctx.version || '?') + '</b>. L\'appli se met à jour toute seule à l\'ouverture quand une nouvelle version sort (Paramètres › Mise à jour pour vérifier).');
+            });
+            return { html: lignes.join('<br><br>') + '<small>En cas de doute sur un montant, l\'assistant Chorus DT fait foi.</small>', etq: 'D\'après les références intégrées à TRIGONE' };
+        });
+    }
+
+    // ---------- Mes chiffres (Bibliothèques de Compte-rendu et de Mise en route, sur cet appareil) ----------
+    var PALIERS = [[5, 'Bronze'], [10, 'Argent'], [20, 'Or']];
+    function repChiffres(q) {
+        var s = N(q), an = (/ en ((?:19|20)\d\d) /.exec(s) || [])[1] || (/ (cette annee|l annee|depuis janvier) /.test(s) ? String(new Date().getFullYear()) : / (l an dernier|annee derniere) /.test(s) ? String(new Date().getFullYear() - 1) : '');
+        var crs = (lireL('mission_bibliotheque', []) || []).filter(function(e) { var d = date(e.debut); return !an || (d && String(d.getFullYear()) === an); });
+        var dem = mesDemandes().filter(function(x) { var d = date(((x.d.trajets || {}).aller || {}).dateDep || x.envoyeLe); return !an || (d && String(d.getFullYear()) === an); });
+        var forfait = 0, ik = 0, km = 0, nuits = 0, jours = 0, lieux = {};
+        crs.forEach(function(e) {
+            var sn = e.snapshot || {}; forfait += +e.forfaitOfficiel || 0;
+            ['A', 'A_ANX', 'R', 'R_ANX'].forEach(function(k) { if (sn['IK_' + k]) { ik += +sn['IK_MONTANT_' + k] || 0; km += +sn['IK_KM_' + k] || 0; } });
+            (sn.JOURS || []).forEach(function(j) { jours++; if (j && j.L === 'PAYANT') nuits++; });
+            var l = sn.LIBELLE_MISSION || ''; if (l) lieux[l] = (lieux[l] || 0) + 1;
+        });
+        var envoyes = parseInt(localStorage.getItem('trigone_cr_envoyes_total') || '0', 10) || 0, med = null, suiv = null;
+        PALIERS.forEach(function(p) { if (envoyes >= p[0]) med = p; else if (!suiv) suiv = p; });
+        var refus = dem.filter(function(x) { return x.s && x.s.etape === 'refus'; }).length, traitees = dem.filter(function(x) { return x.s && x.s.etape === 'traite'; }).length;
+        if (!crs.length && !dem.length) return Promise.resolve({ html: 'Je ne trouve encore aucune mission' + (an ? ' en ' + an : '') + ' sur cet appareil. Si vous utilisiez un autre appareil, connectez votre compte TRIGONE : vos données reviennent.' });
+        var l = [];
+        if (dem.length) l.push('<b>' + dem.length + '</b> demande' + (dem.length > 1 ? 's' : '') + ' de mise en route envoyée' + (dem.length > 1 ? 's' : '') + (traitees ? ', dont <b>' + traitees + '</b> traitée' + (traitees > 1 ? 's' : '') + ' par l\'assistant Chorus DT' : '') + (refus ? ' et ' + refus + ' refusée' + (refus > 1 ? 's' : '') + ' (à corriger)' : ''));
+        if (crs.length) l.push('<b>' + crs.length + '</b> mission' + (crs.length > 1 ? 's' : '') + ' avec compte-rendu' + (jours ? ', <b>' + jours + '</b> jour' + (jours > 1 ? 's' : '') + ' en mission' : '') + (nuits ? ', <b>' + nuits + '</b> nuit' + (nuits > 1 ? 's' : '') + ' payée' + (nuits > 1 ? 's' : '') : ''));
+        if (forfait) l.push('Forfaits repas et hébergement : <b>' + euros(forfait) + '</b>');
+        if (ik) l.push('Indemnités kilométriques : <b>' + euros(ik) + '</b>' + (km ? ' pour ' + String(Math.round(km)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ') + ' km' : ''));
+        if (forfait && ik) l.push('Total estimé : <b>' + euros(forfait + ik) + '</b>');
+        if (!an) l.push(envoyes ? '<b>' + envoyes + '</b> compte' + (envoyes > 1 ? 's' : '') + '-rendu' + (envoyes > 1 ? 's' : '') + ' envoyé' + (envoyes > 1 ? 's' : '') + (med ? ' : <b>TRIGONE ' + med[1] + '</b> 🏅' : '') + (suiv ? ' (encore ' + (suiv[0] - envoyes) + ' pour ' + (suiv[1] === 'Or' ? 'l\'Or' : suiv[1] === 'Argent' ? 'l\'Argent' : 'le Bronze') + ')' : '') : 'Pas encore de compte-rendu envoyé : la médaille de Bronze arrive au 5e.');
+        var top = Object.keys(lieux).sort(function(a, b) { return lieux[b] - lieux[a]; })[0];
+        if (top && lieux[top] > 1) l.push('Mission la plus fréquente : <b>« ' + esc(top) + ' »</b> (' + lieux[top] + ' fois)');
+        return Promise.resolve({ html: 'Vos chiffres' + (an ? ' pour <b>' + an + '</b>' : '') + ' :<ul class="AIDE-LISTE">' + l.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul><small>Montants d\'après vos comptes-rendus (forfaits calculés par TRIGONE) ; le remboursement réel est celui de Chorus DT.</small>' +
+            actions(bouton('Voir Remboursement', 'cr:P-STAT')), etq: 'D\'après vos Bibliothèques TRIGONE' });
+    }
+
+    // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
+    var NOUVEAUTES = [
+        { build: 207, version: 'V204', l: ['La mascotte suit votre circuit : « où en est ma demande ? », « et mon compte-rendu ? », « combien je vais toucher ? »', 'Elle relit votre demande avant l\'envoi et vous montre ce qui manque', 'Valideurs : « j\'ai quoi à valider ? » ; assistant Chorus DT : « j\'ai quoi à traiter ? »', 'Conversion de devises, et un bouton « Pourquoi ? » sur les messages d\'erreur'] },
+        { build: 206, version: 'V203', l: ['Affichage revu pour tous les téléphones, grands caractères compris', 'La page « Ce que je sais faire » de la mascotte', 'Questions de suite (« et en Italie ? »), indemnités kilométriques, qui valide ma demande'] }
+    ];
+    function htmlNouveautes(n) { return 'Nouveau dans <b>TRIGONE ' + esc(n.version) + '</b> :<ul class="AIDE-LISTE">' + n.l.map(function(x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>'; }
+    function repNouveautes() { return Promise.resolve({ html: htmlNouveautes(NOUVEAUTES[0]) + (NOUVEAUTES[1] ? '<small>Et juste avant (' + esc(NOUVEAUTES[1].version) + ') : ' + NOUVEAUTES[1].l.map(esc).join(' · ') + '.</small>' : ''), etq: 'Nouveautés de TRIGONE' }); }
+    // Une fois par publication, à l'ouverture de la discussion.
+    function nouveautesAAnnoncer(build, taire) {
+        var n = NOUVEAUTES.filter(function(x) { return x.build === +build; })[0]; if (!n) return null;
+        if (lireL('trigone_aide_nouveautes_vues', 0) >= n.build) return null;
+        try { localStorage.setItem('trigone_aide_nouveautes_vues', String(n.build)); } catch (e) {}
+        return taire ? null : htmlNouveautes(n);
+    }
+
+    // ---------- « Pourquoi ? » d'un message d'erreur ----------
+    var ERREURS = [
+        [/a completer|identite incomplete|objet manquant/, 'Il manque des informations obligatoires dans votre demande. Les champs en rouge sont ceux à remplir ; je peux aussi relire toute la demande pour vous (« vérifie ma demande »).'],
+        [/pas de connexion|hors ligne|reseau/, 'Le téléphone n\'a pas de réseau en ce moment. Rien n\'est perdu : réessayez quand vous avez du réseau (4G ou wifi). Les envois en attente partent tout seuls dès le retour du réseau.'],
+        [/mail manquant|adresse.*inconnue|demandeur inconnu/, 'TRIGONE ne sait pas à qui envoyer : l\'adresse du destinataire manque. Choisissez-le dans <b>Paramètres › À qui j\'envoie</b> (ou dans la liste de votre unité).'],
+        [/pas encore de compte trigone/, 'Le destinataire n\'a pas encore activé son compte TRIGONE. Demandez-lui de se connecter (bouton « Se connecter » en haut à droite), puis renvoyez : rien n\'est perdu.'],
+        [/mauvais destinataire/, 'Ce destinataire n\'a pas le bon rôle pour recevoir cet envoi (par exemple un VALIDEUR 2 à la place d\'un VALIDEUR 1). Vérifiez le destinataire choisi.'],
+        [/fichier trop lourd/, 'Le fichier dépasse la taille permise. Pour une photo, prenez-la de plus loin ou réduisez-la ; pour un PDF, scannez-le en qualité « normale ».'],
+        [/format non (accepte|pris en charge)|fichier non reconnu|import impossible/, 'Ce type de fichier n\'est pas accepté. TRIGONE prend les PDF et les photos (JPG, PNG) ; pour les listes de personnes, un fichier Excel, Calc ou CSV.'],
+        [/matricule incorrect/, 'Le matricule doit compter exactement 10 chiffres (identifiant défense).'],
+        [/motif manquant|commentaire manquant/, 'Un refus ou un renvoi doit toujours dire pourquoi : écrivez un motif, il sera envoyé au demandeur pour qu\'il corrige.'],
+        [/aucune demande cochee/, 'Cochez d\'abord au moins une demande dans la liste, puis relancez l\'action.'],
+        [/piece jointe (absente|impossible|modifiee)/, 'Une pièce jointe manque ou a été modifiée depuis la signature : par sécurité, TRIGONE la refuse. Demandez au demandeur de la renvoyer.'],
+        [/signature impossible|verification impossible|controle impossible/, 'TRIGONE n\'a pas pu vérifier ou poser la signature électronique. Vérifiez votre code de valideur (Paramètres › Compte › Mes rôles), puis réessayez.'],
+        [/pdf (complet )?impossible|ouverture impossible/, 'Le document n\'a pas pu être fabriqué ou ouvert. Réessayez ; si ça recommence, fermez puis rouvrez TRIGONE. Le bouton « Signaler un problème » prévient le concepteur.'],
+        [/envoi (impossible|illisible)|question (impossible|non envoyee)|reponse non envoyee|relance impossible/, 'L\'envoi n\'est pas parti (réseau ou serveur indisponible). Rien n\'est perdu : réessayez dans un moment.'],
+        [/numerotation|premier numero|registre/, 'Le registre des OMR n\'a pas pu être mis à jour (réseau). Réessayez dans un moment : la numérotation reste cohérente.'],
+        [/montant a verifier/, 'Le montant saisi paraît anormal (trop élevé ou négatif). Vérifiez-le avant de continuer.']
+    ];
+    function expliquerErreur(titre, texte) {
+        var s = N(titre + ' ' + texte);
+        for (var i = 0; i < ERREURS.length; i++) if (ERREURS[i][0].test(s)) return ERREURS[i][1];
+        return null;
+    }
+
+    var REPONSES = { chiffres: repChiffres, ajour: repAJour, demande: repDemande, moncr: repCr, estimation: repEstimation, relecture: repRelecture, avalider: repAValider, chorus: repChorus, devise: repDevise, nouveautes: repNouveautes };
+    window.AIDE_CIRCUIT = {
+        intention: intention, suite: suite, repondre: function(id, q, ctx) { return (REPONSES[id] || function() { return Promise.resolve(null); })(q, ctx); },
+        insulte: insulte, frustre: function(q) { return FRUSTRE.test(N(q)); }, couper: couper, coupeeJusqua: coupeeJusqua, heure: heure,
+        nouveautesAAnnoncer: nouveautesAAnnoncer, expliquerErreur: expliquerErreur, estimer: estimer
+    };
+})();
