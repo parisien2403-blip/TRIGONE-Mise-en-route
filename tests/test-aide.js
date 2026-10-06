@@ -114,6 +114,13 @@ module.exports = async function() {
     verifier(/ITALIE/.test(r) && /143,00 €/.test(r) && !/Repas :/.test(r), 'suite : « pareil pour une nuit » → nuit en Italie (143,00 €)');
     r = await demander(t, 'et à lyon');
     verifier(/Lyon/.test(r) && /120,00 €/.test(r), 'suite : « et à lyon » → nuit à Lyon (120,00 €)');
+    // Mémento validé par l'unité : réponses sans IA.
+    r = await demander(t, 'le péage c\'est remboursé ?');
+    verifier(/péage/i.test(r) && /justificatif/i.test(r), 'mémento : « le péage c\'est remboursé ? » → sur justificatif, véhicule personnel autorisé');
+    r = await demander(t, 'j\'ai combien de temps pour rendre mon cr');
+    verifier(/30 jours/.test(r), 'mémento : délai du compte-rendu au 4e RIISC → 30 jours après la fin de mission');
+    r = await demander(t, 'qui autorise ma voiture perso');
+    verifier(/chef de corps/i.test(r), 'mémento : véhicule personnel autorisé par le chef de corps');
     r = await demander(t, 'code fd du 4e riisc formation'); await attendre(800);
     r = await demander(t, 'et intervention ?');
     verifier(/FDYDDR4INT/.test(r), 'suite : « et intervention ? » après le code FD formation du 4e RIISC → FDYDDR4INT');

@@ -179,7 +179,7 @@
     }
     // « entre Libourne et Bordeaux », « de Libourne à Bordeaux », « Libourne - Bordeaux » → { de, a }.
     function villesIk(q) {
-        var s = normal(q).replace(/ (\d{1,2}) ?(?:cv|ch|chevaux|c v) /g, ' ').replace(/ (aller retour|aller simple|a r|ar) /g, ' ');
+        var s = normal(q).replace(/ (\d{1,2}) ?(?:cv|ch|chevaux|c v) /g, ' ').replace(/ (aller retour|aller simple|a r|ar) /g, ' ').replace(/ (combien de temps|de temps|de jours|du temps) /g, ' ');
         var m = / entre (.+?) et (.+) $/.exec(s + ' ') || /^.* (?:de|depuis|du) ([a-z][a-z0-9 ]*?) (?:a|au|aux|jusqu a|vers|pour) ([a-z][a-z0-9 ]*) $/.exec(s + ' ');
         if (!m) { var t = String(q).split(/\s+(?:-|–|→|>)\s+/); if (t.length === 2) m = [null, normal(t[0]).trim().split(' ').slice(-3).join(' '), normal(t[1]).trim().split(' ').slice(0, 3).join(' ')]; }
         if (!m) return null;
