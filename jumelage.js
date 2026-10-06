@@ -4425,6 +4425,12 @@
     // reçu par mail), ou « J'ai déjà TRIGONE sur un autre appareil » (code de liaison, rien à ressaisir).
     // opts.premiere : imposée à la première ouverture (ni « Plus tard », ni profil sans compte).
     var CLE_CONNEXION_PROPOSEE = 'trigone_connexion_proposee', profilApresConnexion = false;
+    // Appareil sans compte ni profil : l'accueil (Créer mon compte / Se connecter) s'impose à chaque ouverture, quel que
+    // soit l'écran (choix, Mise en route, Compte-rendu), jusqu'à la connexion.
+    setTimeout(function imposerAccueil() {
+        if (!accueilAProposer() || fenCompte || DEMENAGEMENT || document.querySelector('.JUM-PRES, .JUM-CONNEXION, .JUM-REGLAGES') || /[?&]demo/.test(location.search)) return;
+        window.JUMELAGE_CONNEXION({ premiere: true });
+    }, 1800);
     window.JUMELAGE_CONNEXION = function(opts) {
         opts = opts || {};
         if (fenCompte || !document.body) return;
