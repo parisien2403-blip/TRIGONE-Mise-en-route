@@ -176,13 +176,16 @@
     function htmlIa(t) {
         return esc(t).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/^\s*[-•]\s+/gm, '• ').replace(/\n/g, '<br>');
     }
-    function ajouter(m) { fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
+    var sourire = false;
+    function ajouter(m) {
+        if (sourire && m.de === 'lui' && !m.pose) { m.html = 'Bien sûr\u00a0! ' + m.html; m.pose = 'content'; sourire = false; }
+        fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
     // La mascotte prend une posture selon sa réponse (images déjà dans TRIGONE).
     var POSES = { salut: 'mascotte.webp', montre: 'demo-mascotte.webp', aide: 'mascotte-assistance.webp', code: 'mascotte-code.webp', content: 'mascotte-ok.webp', desole: 'mascotte-erreur.webp' };
     function poseDe(m) {
         if (/AIDE-POUCE/.test(m.html)) return '';
-        var k = m.pose || (m.ia ? 'aide' : /codier/.test(m.etq || '') ? 'code' : /Barème/.test(m.etq || '') ? 'content' : m.fiche ? (/AIDE-MONTRER/.test(m.html) ? 'montre' : 'aide')
-            : /n'ai pas trouvé|pas pu|pas disponible|est atteint|réservée aux|Pas de réseau|n'arrive pas/.test(m.html) ? 'desole' : /^Bonjour/.test(m.html) ? 'salut' : 'aide');
+        // Pas à chaque réponse (ce serait lourd) : seulement à certains moments de la conversation.
+        var k = m.pose || (/^Je n'ai pas trouvé/.test(m.html) ? 'desole' : '');
         return POSES[k] || '';
     }
     function dessinerFil() {
@@ -226,22 +229,41 @@
         if (court && /^(merci|mrc|mci|thanks|thx|top|super|parfait|nickel|genial|cool|impec|impeccable|ok merci|d accord merci|c est bon|ca marche|bien recu|au top|trop bien|excellent|merci beaucoup|merci bien|merci a toi|merci a vous)( |$)/.test(s))
             return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + '\u00a0! Si vous avez une autre question, je suis là.</span></div>';
         if (court && /^(au revoir|aurevoir|bye|a plus|a\+|bonne journee|bonne soiree|bonne nuit|a bientot|ciao|tchao|salut a plus|bonne mission)( |$)/.test(s))
-            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Au revoir' + vous + ', et bonne mission\u00a0! 🫡</span></div>';
+            return '<div class="AIDE-POUCE"><img src="' + B + 'mascotte.webp" alt=""><span>Au revoir' + vous + ', et bonne mission\u00a0! 🫡</span></div>';
         if (s.split(' ').length <= 3 && /^(bonjour|salut|hello|coucou|bonsoir|hey|yo|bjr|slt|cc)( |$)/.test(s))
-            return 'Bonjour' + vous + '\u00a0! Que puis-je faire pour vous\u00a0?<div class="AIDE-PUCES">' + puces() + '</div>';
+            return '\u0001salut' + 'Bonjour' + vous + '\u00a0! Que puis-je faire pour vous\u00a0?<div class="AIDE-PUCES">' + puces() + '</div>';
         if (court && /^(ca va|comment ca va|ca va et toi|tu vas bien|comment vas tu|cv)( |$)/.test(s))
             return 'Très bien, merci' + vous + '\u00a0! Toujours prêt à vous aider. Une question sur TRIGONE\u00a0?';
         return '';
     }
+    // Indemnités kilométriques : distance par la route (serveur TRIGONE, carte de l'IGN), puis montant selon la puissance.
+    function repondreIk(q) {
+        var D = window.AIDE_DONNEES, v = D.villesIk(q), perso = null;
+        try { perso = JSON.parse(localStorage.getItem('trigone_ik_rates') || 'null'); } catch (e) {}
+        var fin = function(km, err) {
+            var rep = D.ik(q, tarifs, perso, km, err);
+            ajouter({ de: 'lui', html: rep.html + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(q) + '">✨ Demander à l\'IA</button></div>', etq: rep.etq, q: q });
+            ecrire(CLE_DERNIER, { type: 'ik', q: q, ik: rep.ik });
+        };
+        if (!v) return fin(null);
+        if (!navigator.onLine) return fin(null, 'pas de réseau');
+        attenteIa = true; dessinerFil();
+        fetch(B + 'api/distance?de=' + encodeURIComponent(v.de.toUpperCase()) + '&a=' + encodeURIComponent(v.a.toUpperCase()), { cache: 'no-store' })
+            .then(function(r) { return r.json(); }).then(function(j) { attenteIa = false; if (j && j.ok && j.km >= 0) fin(j.km); else fin(null, (j && j.erreur) || 'service indisponible'); },
+                function() { attenteIa = false; fin(null, 'service indisponible'); });
+    }
     function repondre(question) {
         ajouter({ de: 'moi', texte: question });
         var poli = politesse(question);
-        if (poli) { ajouter({ de: 'lui', html: poli }); return; }
+        if (poli) { var sal = poli.indexOf('\u0001salut') === 0; ajouter({ de: 'lui', html: sal ? poli.slice(6) : poli, pose: sal ? 'salut' : '' }); return; }
+        // « stp », « s'il vous plaît » : la mascotte répond avec le sourire (« Bien sûr ! »).
+        sourire = /(^| )(stp|svp|s il te plait|s il vous plait|sil te plait|sil vous plait|steuplait|stplait|please)( |$)/.test(window.AIDE_MOTEUR.normal(question));
         var D = window.AIDE_DONNEES, q = question, type = D && D.intention(question, tarifs), dernier = lire(CLE_DERNIER);
-        if (D && dernier && D.estSuite(question) && (dernier.type === 'tarif' || dernier.type === 'fd')) {
+        if (D && dernier && D.estSuite(question) && (dernier.type === 'tarif' || dernier.type === 'fd' || dernier.type === 'ik')) {
             var q2 = D.completer(dernier, question, tarifs), t2 = q2 && D.intention(q2, tarifs);
             if (t2 === dernier.type) { q = q2; type = t2; }
         }
+        if (type === 'ik' && tarifs) { repondreIk(q); return; }
         if (type === 'fd' || (type === 'tarif' && tarifs)) {
             repondreDonnees(q, type).then(function(ok) { if (ok) ecrire(CLE_DERNIER, { type: type, q: q }); else repondreFiches(question, dernier); });
             return;

@@ -98,6 +98,17 @@ module.exports = async function() {
     verifier(!/codes FD correspondent/.test(r) && /cerveau IA|Vous voulez parler/.test(r), 'un mot hors sujet après un code FD n\'est pas pris pour une suite (« blanquette »)');
     r = await demander(t, 'combien coute un repas en espagne'); r = await demander(t, 'blanquette');
     verifier(!/€/.test(r), 'un mot hors sujet après un barème n\'est pas pris pour une ville (« blanquette »)');
+    // Indemnités kilométriques : distance par la route (simulée ici) et montant selon la puissance ; suites.
+    await t.route('**/api/distance**', rt => { rt.fulfill({ contentType: 'application/json', body: JSON.stringify(/[?&]a=PARIS(&|$)/.test(rt.request().url()) ? { ok: true, km: 580 } : { ok: true, km: 33 }) }); });
+    r = await demander(t, 'combien je vais toucher en ik entre libourne et bordeaux avec ma 5 cv'); await attendre(800); r = await derniere(t);
+    verifier(/Libourne → Bordeaux/.test(r) && /33 km/.test(r) && /10,56 €/.test(r) && /21,12 €/.test(r) && !/6 à 7 CV/.test(r), 'IK : Libourne → Bordeaux, 33 km, 5 CV → 10,56 € (aller-retour 21,12 €)');
+    r = await demander(t, 'et en 7 chevaux ?'); await attendre(800); r = await derniere(t);
+    verifier(/6 à 7 CV/.test(r) && /13,53 €/.test(r), 'IK, suite : « et en 7 chevaux ? » → 33 km × 0,41 € = 13,53 €');
+    r = await demander(t, 'et pour paris'); await attendre(800); r = await derniere(t);
+    verifier(/Libourne → Paris/.test(r) && /580 km/.test(r) && /237,80 €/.test(r), 'IK, suite : « et pour paris » → Libourne → Paris, 580 km × 0,41 € = 237,80 €');
+    r = await demander(t, 'tarif ik');
+    verifier(/0,32 €/.test(r) && /0,41 €/.test(r) && /0,45 €/.test(r), 'IK sans trajet : le barème par puissance (0,32 / 0,41 / 0,45 € le km)');
+    await t.unroute('**/api/distance**');
     r = await demander(t, 'indemnités aux usa');
     verifier(/ETATS-UNIS/.test(r) && /New York/.test(r) && /≈/.test(r), 'barème étranger : États-Unis (avec New York) converti en euros');
     r = await demander(t, 'tarif hotel a la reunion');
@@ -107,7 +118,7 @@ module.exports = async function() {
     const cr0 = await (await b.newContext()).newPage(); await cr0.goto(URL + 'cr/'); await attendre(1500);
     const conc = await cr0.evaluate(() => fetch('../aide/tarifs.json').then(r => r.json()).then(x => JSON.stringify(x.pays) === JSON.stringify(COUNTRY_MISSION_RATES) &&
         JSON.stringify(x.change) === JSON.stringify(DEFAULT_EXCHANGE_RATES) && JSON.stringify(x.grandesVilles) === JSON.stringify(GRANDES_VILLES_FR) && x.repasFrance === GET_REPAS_RATE_EUR({}) &&
-        x.hebergementFrance.PARIS === GET_HEBERG_RATE_FOR_JOUR({ V: 'PARIS' }, {}) && x.hebergementFrance.GRANDE === GET_HEBERG_RATE_FOR_JOUR({ V: 'GRANDE' }, {}) && x.hebergementFrance.PETITE === GET_HEBERG_RATE_FOR_JOUR({ V: 'PETITE' }, {})));
+        x.hebergementFrance.PARIS === GET_HEBERG_RATE_FOR_JOUR({ V: 'PARIS' }, {}) && x.hebergementFrance.GRANDE === GET_HEBERG_RATE_FOR_JOUR({ V: 'GRANDE' }, {}) && x.hebergementFrance.PETITE === GET_HEBERG_RATE_FOR_JOUR({ V: 'PETITE' }, {}) && JSON.stringify(x.ik) === JSON.stringify(DEFAULT_IK_RATES)));
     verifier(conc, 'aide/tarifs.json identique aux barèmes de Compte-rendu (pays, devises, grandes villes, repas, hébergement)');
     await cr0.close();
 
