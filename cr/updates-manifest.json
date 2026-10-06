@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 303,
-  "appCodeMessage": "Codes FD : la mascotte reconnaît toutes les unités du codier, écrites à votre façon (« 3rpima », « 3°RPiMa », « 6e régiment du génie »).",
+  "appCodeVersion": 304,
+  "appCodeMessage": "Simulez une mission en une phrase : « si je pars 5 jours à Paris en VRC depuis Libourne, 6 CV, combien ? » — la mascotte compte repas, nuits et indemnités kilométriques.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

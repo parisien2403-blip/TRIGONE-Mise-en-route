@@ -55,7 +55,12 @@
     var VALIDER = / (a valider|a signer|a viser|valider|signer|viser|validation|validations|signature|signatures) /;
     var QUI_QUOI = / (des|y a t il|est ce qu il y a|j ai|j|ai je|me|moi|mes|attend|attendent|en attente|combien|quoi|qu est ce|reste|il y a|y a|y en a|arrive|arrivees|recues|nouvelles) /;
     var CHORUS = / (a traiter|traiter|registre|numero omr|numeros omr|dernier omr|derniere omr|om a creer|ordres de mission a creer|cr recus|comptes rendus recus|demandes validees|espace chorus|chorus) /;
-    // « Est-ce à jour ? » : codier, IK, taux de change, barèmes, appli.
+    // Simulation d'une mission décrite en une phrase (« si je pars sur Paris en VRC 5 jours, logement et repas à ma charge »).
+    var DUREE = / (\d{1,3}) ?(jours?|j|journees?|nuits?|nuitees?|semaines?) | (une|un|deux|trois|quatre) (semaines?|jours?|nuits?) | du \d{1,2} (au|a) \d{1,2} | une semaine | la semaine /;
+    var HYPO = / (si je|si j|si on|je pars|je vais partir|j vais partir|je partirai|on part|on va partir|je dois partir|je pars en mission|pour une mission|mission de|simulation|simuler|simule|hypothese|imaginons|admettons|supposons|par exemple) /;
+    var VP = / (vrc|vp|vl perso|vl personnelle|vehicule perso|vehicule personnel|voiture perso|voiture personnelle|ma voiture|ma caisse|ma bagnole|mon vehicule|ma vl|en voiture|avec ma voiture|ik|indemnites? kilometriques?|frais kilometriques?) /;
+    var TRAIN = / (train|tgv|sncf|ter|voie ferree|vf) /, AVION = / (avion|vol|aerien|aerienne) /, SERVICE = / (vrm|vehicule de service|vl de service|voiture de service|vehicule militaire|vl service) /;
+
     var A_JOUR = / (a jour|actualise|actualisee|actualises|actualisees|mis a jour|mise a jour|mises a jour|maj|date de|date du|date des|quelle date|de quand|depuis quand|derniere version|recent|recente|recents|valable|valables|en vigueur|perime|perimee|perimes|obsolete|obsoletes|vieux|vieille|ancien|ancienne|bon|bons|juste|justes|fiable|fiables|officiel|officiels) /;
     var SUJETS_A_JOUR = [['codier', / (codier|code fd|codes fd|codification|imputation|imputations) /], ['ik', / (ik|indemnites? kilometriques?|bareme kilometrique|baremes kilometriques|taux kilometriques?|taux ik|taux km|frais kilometriques?) /],
         ['change', / (taux de change|change|devises?|conversion|bce|dollar|livre) /], ['baremes', / (bareme|baremes|forfaits?|taux de repas|taux repas|indemnites? de mission|indemnites? journalieres?|hebergement|nuitees?|taux par pays|taux des pays|taux etranger) /],
@@ -82,7 +87,7 @@
         return null;
     }
 
-    function suite(q) { var s = N(q); return s.trim().split(' ').length <= 9 && /^ (et|puis|sinon|aussi|pareil|idem) /.test(s) || / (celle|celui|celles|ceux|l autre|les autres) /.test(s); }
+    function suite(q) { var s = N(q); if (s.trim().split(' ').length <= 8 && / (depuis|cv|chevaux|en train|en avion|en voiture|en vrc|jours|nuits|loge|nourri|a ma charge) /.test(s)) return true; return s.trim().split(' ').length <= 9 && /^ (et|puis|sinon|aussi|pareil|idem) /.test(s) || / (celle|celui|celles|ceux|l autre|les autres) /.test(s); }
     function intention(q, ctx) {
         var s = N(q);
         if (/ qui (valide|signe|vise) /.test(s) || / (mon adresse|mes roles|mon role) /.test(s)) return null;        // réponses personnelles déjà connues
@@ -99,6 +104,8 @@
         if (CHORUS.test(s) && (PERSO.test(s) || QUI_QUOI.test(s) || / (dernier|derniere) /.test(s)) && !CR.test(s.replace(/ (cr recus|comptes rendus recus) /, ' '))) return 'chorus';
         if (VALIDER.test(s) && QUI_QUOI.test(s) && !/ (ma demande|mes demandes) (a ete|est|sont|ont) /.test(s) && !STATUT.test(s.replace(/ (valider|signer|valide|signe|en attente|attend|attendent) /g, ' '))) return 'avalider';
         if (CR.test(s) && (STATUT.test(s) || / (mes cr|mes comptes rendus|mon cr|mon compte rendu) $/.test(s)) && !/ (combien|montant|toucher) /.test(s)) return 'moncr';
+        if (ARGENT.test(s) && (DUREE.test(s) || HYPO.test(s)) && (VP.test(s) || TRAIN.test(s) || AVION.test(s) || SERVICE.test(s) || DUREE.test(s)) &&
+            ctx.tarifs && window.AIDE_DONNEES && (window.AIDE_DONNEES.trouverVille(q, ctx.tarifs) || window.AIDE_DONNEES.trouverPays(q, ctx.tarifs).length || (window.AIDE_DONNEES.villesIk(q) || {}).a)) return 'simulation';
         if ((CHIFFRES.test(s) || / (mes statistiques|mon bilan|mes stats|ma medaille|mes medailles) /.test(s)) && PASSE.test(s) && SUJET_CHIFFRES.test(s) && !/ (je vais|vais je|toucherai|prochaine|cette mission) /.test(s)) return 'chiffres';
         if (ARGENT.test(s) && MA_MISSION.test(s)) return 'estimation';
         if (DEMANDE.test(s) && STATUT.test(s) && (PERSO.test(s) || / de [a-z]{3,} /.test(s))) return 'demande';
@@ -363,6 +370,95 @@
         return Promise.resolve({ html: html + '<small>1 ' + esc(nomD) + ' = ' + euros(t).replace(' €', '') + ' € — ' + esc(ctx.change.date) + '.</small>', etq: 'Taux de change de TRIGONE Compte-rendu' });
     }
 
+    // ---------- Simulation d'une mission décrite en une phrase ----------
+    // Mêmes barèmes que le simulateur de Compte-rendu ; horaires supposés : départ le 1er jour vers 8 h, retour le dernier vers 18 h.
+    var NOMBRES = { un: 1, une: 1, deux: 2, trois: 3, quatre: 4, cinq: 5, six: 6, sept: 7, huit: 8, neuf: 9, dix: 10 };
+    function lireMission(q, ctx) {
+        var s = N(q), D = window.AIDE_DONNEES, T = ctx.tarifs, p = {};
+        var m;
+        if ((m = / (\d{1,3}|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix) ?(jours?|j|journees?) /.exec(s))) p.jours = +m[1] || NOMBRES[m[1]];
+        if ((m = / (\d{1,3}|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix) ?(nuits?|nuitees?) /.exec(s))) p.nuits = +m[1] || NOMBRES[m[1]];
+        if ((m = / (\d{1,2}|une|un|deux|trois|quatre) ?semaines? /.exec(s)) || / la semaine /.test(s)) { p.jours = p.jours || 5 * ((m && (+m[1] || NOMBRES[m[1]])) || 1); p.semaine = true; }
+        if ((m = / du (\d{1,2}) (?:au|a) (\d{1,2}) /.exec(s)) && +m[2] >= +m[1]) p.jours = +m[2] - +m[1] + 1;
+        if (p.nuits != null && p.jours == null) p.jours = p.nuits + 1;
+        // Où : pays (hors France), sinon ville ; « de X à Y », « depuis X » donnent le départ (pour les IK).
+        var STOP = ' mission missions hebergement logement repas charge frais jours jour nuits nuit semaine semaines vrc train avion voiture vehicule perso personnel personnelle service ma mon mes la le les un une des du de en a au aux pour sur vers avec et combien je vais etre rembourse remboursement indemnite indemnites kilometrique kilometriques ik cv chevaux me on nous si pars partir part depuis chez ';
+        // Nom de ville : jusqu'à 4 mots ; « le », « sur », « en »… seulement au milieu (« Nogent-le-Rotrou », « Bourg-en-Bresse »).
+        var ville = function(t) {
+            var w = t.trim().split(' '), g = [];
+            for (var i = 0; i < w.length && g.length < 4 && !/\d/.test(w[i]); i++) {
+                var liaison = / (le|la|les|sur|en|de|du|des|sous|lez|les) /.test(' ' + w[i] + ' ');
+                if (liaison && g.length && w[i + 1] && STOP.indexOf(' ' + w[i + 1] + ' ') < 0 && !/\d/.test(w[i + 1])) { g.push(w[i]); continue; }
+                if (STOP.indexOf(' ' + w[i] + ' ') >= 0) break;
+                g.push(w[i]);
+            }
+            return g.join(' ');
+        };
+        var titre = function(t) { return t.replace(/\b[a-z]/g, function(c) { return c.toUpperCase(); }); };
+        var dm = / (?:de|du|depuis|en partant de|au depart de) ([a-z][a-z ]*?) (?:a|au|aux|vers|pour|jusqu a|sur) ([a-z][a-z ]*)/.exec(s);
+        if (dm && ville(dm[1]) && ville(dm[2]) && (T.grandesVilles.some(function(g) { return N(g).trim() === ville(dm[2]); }) || / paris /.test(' ' + ville(dm[2]) + ' ') || ville(dm[1]).length >= 3)) { p.de = titre(ville(dm[1])); p.a = titre(ville(dm[2])); }
+        var dep = / (?:depuis|en partant de|au depart de|je pars de|on part de|je partirai de) ([a-z][a-z ]*)/.exec(s);
+        if (dep && ville(dep[1])) p.de = titre(ville(dep[1]));
+        var pays = D.trouverPays(q, T).filter(function(l) { return !/^FRANCE/.test(l[0].p); });
+        if (pays.length) { p.pays = pays[0][0]; p.lieuPays = (/ (?:a|au|sur|vers) ([a-z]+) /.exec(s) || [])[1] || ''; }
+        else {
+            var vi = p.a ? (D.trouverVille(' a ' + N(p.a) + ' ', T) || { nom: p.a, zone: 'PETITE' }) : D.trouverVille(q.replace(/ (?:depuis|en partant de|au depart de|je pars de|de) [A-Za-zÀ-ÿ'-]+/gi, ' '), T);
+            if (vi && vi.zone === 'PETITE' && !p.a) { var mv = / (?:a|au|aux|sur|vers) ([a-z][a-z ]*)/.exec(s), nv = mv && ville(mv[1]); if (nv && nv.length > N(vi.nom).trim().length) vi = { nom: titre(nv), zone: 'PETITE' }; }
+            if (vi && STOP.indexOf(' ' + N(vi.nom).trim() + ' ') < 0) { p.ville = vi; p.a = p.a || vi.nom; }
+        }
+        // Transport (le dernier cité l'emporte) et puissance.
+        var mode = null, pos = -1;
+        [['vp', VP], ['train', TRAIN], ['avion', AVION], ['service', SERVICE]].forEach(function(x) { var r = new RegExp(x[1].source, 'g'), k; while ((k = r.exec(s))) { if (k.index > pos) { pos = k.index; mode = x[0]; } r.lastIndex = k.index + 1; } });
+        if (mode) p.mode = mode;
+        var cv = D.puissance(q); if (cv) p.cv = cv;
+        // Logement et repas : à sa charge (par défaut) ou fournis.
+        if (/ (loge gratuitement|heberge gratuitement|hebergement gratuit|hebergement fourni|logement fourni|hebergement pris en charge|logement pris en charge|chambre fournie|loge par l unite|loge sur place|loge au quartier|loge en caserne|loge a la caserne|loge sur la base|dors au quartier|dors a la caserne|pas de frais d hebergement|sans hebergement) /.test(s)) p.logeGratuit = true;
+        else if (/ (hebergement|logement|hotel|nuit|nuits) (et (les )?repas )?(a ma charge|a mes frais|payes? par moi|je paye|je paie|que je paye) | a ma charge | a mes frais /.test(s)) p.logeGratuit = false;
+        if (/ (nourri|nourris|repas fournis|repas pris en charge|repas offerts|ordinaire|mess|cantine|cercle|repas gratuits?|pas de frais de repas|je mange au quartier|je mange sur place gratuitement) /.test(s)) p.nourri = true;
+        else if (/ (repas|nourriture|manger)( et (l )?hebergement)? (a ma charge|a mes frais) | a ma charge | a mes frais /.test(s)) p.nourri = false;
+        return p;
+    }
+    function repSimulation(q, ctx) {
+        var T = ctx.tarifs, p = Object.assign({}, ctx.precedent || {}, lireMission(q, ctx));
+        if (ctx.precedent && lireMission(q, ctx).pays) delete p.ville; if (ctx.precedent && lireMission(q, ctx).ville) delete p.pays;
+        if (!p.jours) return Promise.resolve({ html: 'Pour combien de temps ? Dites-moi la durée (« 5 jours », « 3 nuits », « du 12 au 16 ») et je fais le calcul.', params: p });
+        if (!p.pays && !p.ville) return Promise.resolve({ html: 'Où se passe la mission ? Dites-moi la ville ou le pays (« à Lyon », « en Allemagne »).', params: p });
+        var jours = Math.max(1, Math.min(p.jours, 180)), nuits = p.nuits != null ? p.nuits : jours - 1;
+        var nRepas = p.nourri ? 0 : jours * 2 - 1, nNuits = p.logeGratuit ? 0 : nuits;
+        var prixRepas = T.repasFrance, prixNuit, lieu;
+        if (p.pays) { var t = ctx.change.taux[p.pays.d]; if (t == null) return Promise.resolve({ html: 'Je n\'ai pas le taux de change pour ce pays : utilisez le simulateur de Compte-rendu.' + actions(bouton('Ouvrir le simulateur', 'cr:P-SIMU')), params: p });
+            prixRepas = p.pays.m * t * T.coefRepas; prixNuit = p.pays.m * t * T.coefHebergement; lieu = p.pays.p.charAt(0) + p.pays.p.slice(1).toLowerCase(); }
+        else { prixNuit = T.hebergementFrance[p.ville.zone]; lieu = p.ville.nom + (p.ville.zone === 'PARIS' ? '' : p.ville.zone === 'GRANDE' ? ' (grande ville)' : ''); }
+        var ou = p.pays ? 'en <b>' + esc(lieu) + '</b>' : 'à <b>' + esc(lieu.replace(/ \(grande ville\)$/, '')) + '</b>';
+        var taux = Object.assign({}, T.ik || {}, lireL('trigone_ik_rates', {}) || {});
+        var finir = function(km, err) {
+            // Noms officiels trouvés par le service de cartographie (« NOGENT-LE-ROTROU (28400) ») : la ville tapée vite est confirmée.
+            if (km && typeof km === 'object') { if (km.de) p.de = officiel(km.de); if (km.a) { p.aOfficiel = officiel(km.a); } km = km.km; }
+            var lignes = [], total = nRepas * prixRepas + nNuits * prixNuit;
+            lignes.push('<tr><td>' + nRepas + ' repas × ' + euros(prixRepas) + (p.nourri ? ' (repas fournis)' : '') + '</td><td>' + euros(nRepas * prixRepas) + '</td></tr>');
+            lignes.push('<tr><td>' + nNuits + ' nuit' + (nNuits > 1 ? 's' : '') + ' (' + esc(lieu) + ') × ' + euros(prixNuit) + (p.logeGratuit ? ' (logé gratuitement)' : '') + '</td><td>' + euros(nNuits * prixNuit) + '</td></tr>');
+            var ikTxt = '';
+            if (p.mode === 'vp') {
+                if (km != null) {
+                    var ar = km * 2, arTxt = String(Math.round(ar)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
+                    if (p.cv) { var ik = ar * taux[p.cv]; total += ik; lignes.push('<tr><td>IK ' + esc(p.de) + ' ⇄ ' + esc(p.aOfficiel || p.a || lieu) + ' : ' + arTxt + ' km × ' + euros(taux[p.cv]).replace(' €', '') + ' € (' + { '5cv': '5 CV et moins', '6-7cv': '6 et 7 CV', '8cv': '8 CV et plus' }[p.cv] + ')</td><td>' + euros(ik) + '</td></tr>'); }
+                    else ikTxt = 'IK aller-retour ' + esc(p.de) + ' ⇄ ' + esc(p.aOfficiel || p.a || lieu) + ' (' + arTxt + ' km) : <b>' + euros(ar * taux['5cv']) + '</b> en 5 CV, <b>' + euros(ar * taux['6-7cv']) + '</b> en 6-7 CV, <b>' + euros(ar * taux['8cv']) + '</b> en 8 CV et plus. Dites-moi la puissance de votre véhicule.';
+                } else ikTxt = p.de ? 'Je n\'ai pas pu calculer la distance ' + esc(p.de) + ' → ' + esc(p.a || lieu) + (err ? ' (' + esc(err) + ')' : '') + '.' : 'Pour les <b>indemnités kilométriques</b>, dites-moi d\'où vous partez et la puissance (« depuis Libourne, 6 CV »).';
+            }
+            if (p.aOfficiel && !p.pays) ou = 'à <b>' + esc(p.aOfficiel) + '</b>';
+            var html = 'Pour <b>' + jours + ' jour' + (jours > 1 ? 's' : '') + '</b> ' + ou + (p.mode === 'vp' ? ' en véhicule personnel' : p.mode === 'train' ? ' en train' : p.mode === 'avion' ? ' en avion' : p.mode === 'service' ? ' en véhicule de service' : '') + ', comptez <b>environ ' + eurosRond(total) + '</b> :' +
+                '<table class="AIDE-TAB">' + lignes.join('') + '<tr class="tot"><td>Estimation</td><td>' + euros(total) + '</td></tr></table>' +
+                (ikTxt ? '<small>' + ikTxt + '</small>' : '') + (TRANSPORT_SIMU[p.mode] ? '<small>' + TRANSPORT_SIMU[p.mode] + '</small>' : '') +
+                '<small>Hypothèses : départ le 1er jour vers 8 h, retour le dernier vers 18 h' + (p.semaine ? ', une semaine = 5 jours' : '') + (p.logeGratuit || p.nourri ? '' : ', logement et repas à votre charge') + '. Le montant exact sort de votre compte-rendu (horaires réels).</small>' +
+                actions(bouton('Affiner dans le simulateur', 'cr:P-SIMU'));
+            return { html: html, etq: 'Simulation d\'après les barèmes de TRIGONE Compte-rendu', params: p };
+        };
+        if (p.mode === 'vp' && p.de && navigator.onLine && ctx.distance) return ctx.distance(p.de, p.a || (p.ville ? p.ville.nom : '')).then(function(km) { return finir(km); }, function(e) { return finir(null, e && e.message); });
+        return Promise.resolve(finir(null, p.de && !navigator.onLine ? 'pas de réseau' : ''));
+    }
+    function officiel(n) { return String(n).toLowerCase().replace(/(^|[\s-])([a-zà-ÿ])/g, function(t, x, c) { return x + c.toUpperCase(); }).replace(/-(Le|La|Les|Sur|En|De|Du|Des|Sous)-/g, function(t, x) { return '-' + x.toLowerCase() + '-'; }); }
+    var TRANSPORT_SIMU = { train: 'Train : billets réservés par l\'unité, ou remboursés sur justificatif.', avion: 'Avion : billets réservés par l\'unité, ou remboursés sur justificatif.', service: 'Véhicule de service : pas d\'indemnité kilométrique.' };
+
     // ---------- Les références sont-elles à jour ? ----------
     function repAJour(q, ctx) {
         var s = N(q), sujets = SUJETS_A_JOUR.filter(function(x) { return x[1].test(s); }).map(function(x) { return x[0]; });
@@ -420,6 +516,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 209, version: 'V206', l: ['Simulation en une phrase : « si je pars 5 jours à Paris en VRC depuis Libourne, 6 CV, logement et repas à ma charge, combien ? » → repas, nuits, IK et total', 'Suites : « et en train ? », « depuis Bordeaux », « en 8 CV »'] },
         { build: 208, version: 'V205', l: ['Codes FD : la mascotte reconnaît toutes les unités du codier, écrites à votre façon (« 3rpima », « 3°RPiMa », « 6e régiment du génie », « 4eriisc »)'] },
         { build: 207, version: 'V204', l: ['La mascotte suit votre circuit : « où en est ma demande ? », « et mon compte-rendu ? », « combien je vais toucher ? »', 'Elle relit votre demande avant l\'envoi et vous montre ce qui manque', 'Valideurs : « j\'ai quoi à valider ? » ; assistant Chorus DT : « j\'ai quoi à traiter ? »', 'Conversion de devises, et un bouton « Pourquoi ? » sur les messages d\'erreur'] },
         { build: 206, version: 'V203', l: ['Affichage revu pour tous les téléphones, grands caractères compris', 'La page « Ce que je sais faire » de la mascotte', 'Questions de suite (« et en Italie ? »), indemnités kilométriques, qui valide ma demande'] }
@@ -459,7 +556,7 @@
         return null;
     }
 
-    var REPONSES = { chiffres: repChiffres, ajour: repAJour, demande: repDemande, moncr: repCr, estimation: repEstimation, relecture: repRelecture, avalider: repAValider, chorus: repChorus, devise: repDevise, nouveautes: repNouveautes };
+    var REPONSES = { simulation: repSimulation, chiffres: repChiffres, ajour: repAJour, demande: repDemande, moncr: repCr, estimation: repEstimation, relecture: repRelecture, avalider: repAValider, chorus: repChorus, devise: repDevise, nouveautes: repNouveautes };
     window.AIDE_CIRCUIT = {
         intention: intention, suite: suite, repondre: function(id, q, ctx) { return (REPONSES[id] || function() { return Promise.resolve(null); })(q, ctx); },
         insulte: insulte, frustre: function(q) { return FRUSTRE.test(N(q)); }, couper: couper, coupeeJusqua: coupeeJusqua, heure: heure,

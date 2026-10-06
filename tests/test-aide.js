@@ -254,6 +254,26 @@ module.exports = async function() {
         verifier(/FDYDDR4FRM/.test(txt('code fd 4eriisc formation')) && /2° REI/.test(txt('code fd du 2e régiment étranger d\'infanterie')), 'codier : « 4eriisc formation », « 2e régiment étranger d\'infanterie » (REI)');
     }
 
+    // ----- Simulation d'une mission décrite en une phrase -----
+    {
+        const sim = await t.evaluate(async () => {
+            const T = await fetch('aide/tarifs.json').then(r => r.json()), C = window.AIDE_CIRCUIT, ctx = { tarifs: T, change: { taux: T.change, date: '' }, distance: () => Promise.resolve(580) };
+            const q1 = 'si je pars sur paris en vrc remboursement indemnité kilometrique pour 5 jours de mission hebergement et repas a ma charge combien je vais etre rembourser ?';
+            const r1 = await C.repondre(C.intention(q1, ctx), q1, ctx);
+            const r2 = await C.repondre('simulation', 'depuis libourne en 6 cv', Object.assign({ precedent: r1.params }, ctx));
+            const q3 = 'si je vais à Nogent-le-Rotrou 3 jours en vl perso 8cv nourri au mess';
+            const r3 = await C.repondre('simulation', q3, ctx);
+            const ctx2 = Object.assign({}, ctx, { distance: () => Promise.resolve({ km: 150, de: 'PARIS (75001)', a: 'NOGENT-LE-ROTROU (28400)' }) });
+            const r4 = await C.repondre('simulation', 'si je vais a nogent le rotrou 3 jours en vrc 5cv depuis paris combien je touche', ctx2);
+            return { i1: C.intention(q1, ctx), r1: r1.html, r2: r2.html, r3: r3.html, r4: r4.html };
+        });
+        verifier(sim.i1 === 'simulation' && /5 jours/.test(sim.r1) && /Paris/.test(sim.r1) && /9 repas/.test(sim.r1) && /4 nuits/.test(sim.r1) && /740,00 €/.test(sim.r1) && /d'où vous partez/.test(sim.r1),
+            'simulation « Paris en VRC, 5 jours, hébergement et repas à ma charge » : 9 repas + 4 nuits à Paris = 740 €, demande d\'où l\'on part pour les IK');
+        verifier(/Libourne/.test(sim.r2) && /1 160 km/.test(sim.r2) && /475,60 €/.test(sim.r2) && /1 215,60 €/.test(sim.r2), 'suite « depuis Libourne en 6 CV » : IK 1 160 km × 0,41 € = 475,60 €, total 1 215,60 €');
+        verifier(/Nogent-le-Rotrou \(28400\)/.test(sim.r4) && /300 km/.test(sim.r4), 'ville tapée vite (« nogent le rotrou », sans tirets ni majuscules) : nom officiel confirmé « Nogent-le-Rotrou (28400) », IK sur 300 km');
+        verifier(/Nogent Le Rotrou/i.test(sim.r3) && /repas fournis/.test(sim.r3) && /180,00 €/.test(sim.r3), 'simulation « Nogent-le-Rotrou 3 jours, nourri au mess » : nom complet, repas fournis, 2 nuits = 180 €');
+    }
+
     // ----- Le circuit de la personne : ses demandes, ses comptes-rendus, ses chiffres, ses rôles -----
     const k = await page({ width: 412, height: 860 }, '', 'circuit');
     await k.evaluate(() => {
