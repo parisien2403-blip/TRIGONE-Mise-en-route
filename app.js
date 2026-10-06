@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 247;
+var APP_CODE_VERSION = 248;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -747,12 +747,6 @@ function TPL_MON_ESPACE() {
             '<span class="NOTICE-CARD-CHEV">›</span></button>' +
         '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_COMPTE()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/></svg></span>' +
             '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Compte TRIGONE</span><span class="NOTICE-CARD-SUB">' + (window.JUMELAGE_COMPTE_ACTIF && JUMELAGE_COMPTE_ACTIF() ? 'Actif : ' + ESC(JUMELAGE_COMPTE_MAIL()) + ' — les demandes arrivent directement dans TRIGONE' : 'Envoyer et recevoir les demandes directement dans TRIGONE, chiffrées, sans pièce jointe') + '</span></span>' +
-            '<span class="NOTICE-CARD-CHEV">›</span></button>' +
-        '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_SAUVEGARDER()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><path d="M5 3h11l4 4v12a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V5a2 2 0 0 1 1-2Z"/><path d="M8 3v5h7V3M8 21v-7h8v7"/></svg></span>' +
-            '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Sauvegarder mes données</span><span class="NOTICE-CARD-SUB">Un seul fichier pour tout TRIGONE (Mise en route et Compte-rendu, pièces jointes comprises)' + (MER_DATE_SAUVEGARDE() ? ' — dernière : ' + MER_DATE_SAUVEGARDE() : ' — jamais faite') + '</span></span>' +
-            '<span class="NOTICE-CARD-CHEV">›</span></button>' +
-        '<button type="button" class="NOTICE-CARD" onclick="JUMELAGE_RESTAURER()"><span class="NOTICE-CARD-ICON"><svg viewBox="0 0 24 24"><path d="M12 3v11M7.5 9.5 12 14l4.5-4.5"/><path d="M4 15v3.5A2.5 2.5 0 0 0 6.5 21h11a2.5 2.5 0 0 0 2.5-2.5V15"/></svg></span>' +
-            '<span class="NOTICE-CARD-BODY"><span class="NOTICE-CARD-TITLE">Restaurer une sauvegarde</span><span class="NOTICE-CARD-SUB">Remettre en place un fichier « TRIGONE - sauvegarde », sur cet appareil ou un nouveau</span></span>' +
             '<span class="NOTICE-CARD-CHEV">›</span></button>' +
         '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'ACCUEIL\')">← Accueil</button></div>';
 }
@@ -3665,7 +3659,6 @@ window.addEventListener('DOMContentLoaded', function() {
     else if (PIN_EST_DEFINI() && !window.JUMELAGE_DEVERROUILLE) OUVRIR_ECRAN_PIN('verif', suite);
     else suite();
     REGISTER_SERVICE_WORKER();
-    setTimeout(MER_RAPPEL_SAUVEGARDE, 6000);
     INIT_VERIF_MAJ_AUTO();
 });
 

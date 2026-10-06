@@ -28,7 +28,7 @@ module.exports = async function() {
         await f.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await attendre(200);
         verifier((await f.textContent('#JUM-C-TITRE')).includes('Bon retour') && await f.isVisible('#JUM-C-PADR') && await f.isVisible('#JUM-C-PCODE'), 'accueil : onglet « Se connecter » : adresse TRIGONE + code de connexion');
         await f.click('.JUM-ACC-AUTRE'); await attendre(200);
-        verifier(await f.isVisible('#JUM-L-CODE') && !(await f.isVisible('#JUM-C-MAIL')), 'accueil : « J\'ai déjà TRIGONE sur un autre appareil » → code de liaison');
+        verifier(await f.isVisible('#JUM-L-CODE') && !(await f.isVisible('#JUM-C-MAIL')) && !(await f.$('#JUM-L-CAM')) && /réactivation/.test(await f.textContent('.JUM-CONNEXION')), 'accueil : « J\'ai un code de réactivation » → saisie du code');
         await f.click('.JUM-ACC-RETOUR'); await attendre(200);
         verifier(await f.isVisible('.JUM-ACC [data-aller="creer"]'), 'accueil : retour à l\'écran d\'accueil');
         verifier(!(await f.isVisible('#JUM-C-PLUSTARD')) && !(await f.isVisible('#JUM-C-SANS')), 'première ouverture : ni « Plus tard » ni « sans compte » : la connexion est obligatoire');
@@ -66,7 +66,7 @@ module.exports = async function() {
             await p.click('.JUM-CPT-MENU [data-action="parametres"]'); await attendre(400);
             let tout = '';
             for (const r of await p.$$eval('.JUM-PARAM-NAV [data-rub]', l => l.map(x => x.getAttribute('data-rub')))) { await p.click('.JUM-PARAM-NAV [data-rub="' + r + '"]'); await attendre(100); tout += await p.textContent('.JUM-PARAM-CONTENU'); }
-            verifier(['Mes rôles', 'Notifications', 'Ajouter un appareil', 'Notice', 'Références', 'Signaler un problème', 'Sauvegarder dans un fichier', 'Demander la réinitialisation', 'Partager TRIGONE'].every(t => tout.includes(t)) && !tout.includes('Réinitialiser TRIGONE'),
+            verifier(['Mes rôles', 'Notifications', 'Mon code de connexion', 'Notice', 'Références', 'Signaler un problème', 'Sauvegarde automatique', 'Demander la réinitialisation', 'Partager TRIGONE'].every(t => tout.includes(t)) && !tout.includes('Réinitialiser TRIGONE') && !tout.includes('Ajouter un appareil') && !tout.includes('Sauvegarder dans un fichier'),
                 'Paramètres : compte, notifications, appareils, notice, références, signalement, sauvegarde, réinitialisation sur demande, partage');
             await p.evaluate(() => JUMELAGE_FERMER_PARAMETRES());
         }
@@ -476,9 +476,9 @@ module.exports = async function() {
     const nbAppareils = async () => ((await api(m, 'cles?mail=' + encodeURIComponent(MAILS.M))).appareils || []).length;
     const avant = await nbAppareils();
     await m.evaluate(() => { SHOW_PAGE('ACCUEIL'); JUMELAGE_COMPTE(); }); await attendre(600);
-    await m.click('#JUM-C-LIAISON'); await attendre(3500);
-    const codeLiaison = (await m.textContent('.JUM-LIAISON-CODE')).trim();
-    verifier(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(codeLiaison) && (await m.textContent('#JUM-C-LIAISON-T')).includes('Valable encore'), 'liaison : code affiché (' + codeLiaison + '), valable 15 min');
+    verifier(!(await m.$('#JUM-C-LIAISON')) && /code de connexion/.test(await m.textContent('.JUM-REGLAGES')), 'Compte : plus de bouton « Ajouter un autre appareil » (adresse + code de connexion)');
+    const codeLiaison = (await m.evaluate(() => JUMELAGE_LIAISON_CREER())).code;
+    verifier(/^[A-Z2-9]{4}-[A-Z2-9]{4}$/.test(codeLiaison), 'liaison (interne, sert au code de réactivation) : code créé (' + codeLiaison + ')');
     await m.evaluate(() => JUMELAGE_FERMER_COMPTE());
     const ctxN = await b.newContext({ viewport: { width: 480, height: 1000 } });
     const n = await ctxN.newPage(); n.on('pageerror', e => erreurs.push('N : ' + e.message)); n.on('dialog', d => d.accept());

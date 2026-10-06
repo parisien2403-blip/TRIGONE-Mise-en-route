@@ -1231,7 +1231,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 202, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 203, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -3171,10 +3171,8 @@
         }).then(function(t) { if (!t) throw new Error('Aucun QR code trouvé dans cette image.'); return t; });
     }
     function htmlSaisieLiaison() {
-        return '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;"><div class="JUM-R-CHAMP"><label for="JUM-L-CODE">Code de liaison ou de réactivation</label>' +
+        return '<div class="JUM-R-GRILLE" style="grid-template-columns:1fr;"><div class="JUM-R-CHAMP"><label for="JUM-L-CODE">Code de réactivation</label>' +
             '<input id="JUM-L-CODE" type="text" autocomplete="off" autocapitalize="characters" spellcheck="false" maxlength="9" placeholder="EX : K7P2-9XQM" style="letter-spacing:0.12em; font-weight:800; text-transform:uppercase;"></div></div>' +
-            '<div class="JUM-L-SCAN"><button type="button" class="JUM-R-SECOND" id="JUM-L-CAM">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('qr') : '') + 'Scanner le QR de connexion</button>' +
-                '<label class="JUM-R-SECOND" id="JUM-L-IMG">Depuis une image (capture)<input type="file" accept="image/*" style="display:none;"></label></div>' +
             '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-L-OK" style="width:100%; margin:6px 0 0;">Récupérer mon compte et mes données</button>' +
             '<p class="JUM-R-ERREUR" id="JUM-L-ERR" style="min-height:0;"></p>';
     }
@@ -4363,8 +4361,7 @@
                 '<p class="JUM-R-AIDE">Sur un autre appareil (PC, téléphone), activez aussi votre compte avec la même adresse : chacun recevra les envois.</p>' +
                 blocNotif() +
                 '<div class="JUM-R-TITRE">Autres appareils</div>' +
-                '<p class="JUM-R-AIDE">Installer TRIGONE sur votre PC ou votre téléphone sans tout refaire : touchez le bouton, puis saisissez le code sur l\'autre appareil (à sa première ouverture, ou dans son Compte TRIGONE).</p>' +
-                '<button type="button" class="JUM-R-PRINCIPAL" id="JUM-C-LIAISON" style="margin:4px 0 0; width:100%;">📲 Ajouter un autre appareil</button><div id="JUM-C-LIAISON-ZONE"></div>' +
+                '<p class="JUM-R-AIDE">Sur votre PC ou un autre téléphone : ouvrez TRIGONE, touchez « Se connecter » et saisissez votre adresse TRIGONE et votre code de connexion. Tout revient tout seul.</p>' +
                 '<button type="button" class="JUM-R-LIEN" id="JUM-C-DECO">Se déconnecter (garder les données)</button>' +
                 '<button type="button" class="JUM-R-LIEN" id="JUM-C-EFFACER" style="color:#b91c1c;">Me déconnecter et effacer cet appareil</button><p class="JUM-R-ERREUR" id="JUM-C-ERR"></p></div>' +
                 '<div class="JUM-R-PIED"><button type="button" class="JUM-R-PRINCIPAL" onclick="JUMELAGE_FERMER_COMPTE()">Fermer</button></div></div>';
@@ -4396,7 +4393,8 @@
             });
             // Code de liaison : affiché en grand, avec le temps restant ; un nouveau appui en tire un autre.
             var minuteur = null;
-            fenCompte.querySelector('#JUM-C-LIAISON').addEventListener('click', function() {
+            var btnLiaison = fenCompte.querySelector('#JUM-C-LIAISON');
+            if (btnLiaison) btnLiaison.addEventListener('click', function() {
                 var b = this, zone = fenCompte.querySelector('#JUM-C-LIAISON-ZONE');
                 b.disabled = true; zone.innerHTML = '<p class="JUM-R-AIDE" style="margin-top:8px;">Préparation du code (copie chiffrée de vos données)…</p>';
                 if (minuteur) clearInterval(minuteur);
@@ -4417,7 +4415,7 @@
             // Déconnexion complète : le compte quitte l'appareil et toutes les données TRIGONE en sont effacées.
             fenCompte.querySelector('#JUM-C-EFFACER').addEventListener('click', deconnecterEtEffacer);
             fenCompte.querySelector('#JUM-C-DECO').addEventListener('click', deconnecter);
-            if (opts.liaison) fenCompte.querySelector('#JUM-C-LIAISON').click();
+            if (opts.liaison && btnLiaison) btnLiaison.click();
             return;
         }
     };
@@ -4463,7 +4461,7 @@
                 '<div class="JUM-ACC-BOUTONS">' +
                     '<button type="button" class="JUM-ACC-BTN or" data-aller="creer">Créer mon compte</button>' +
                     '<button type="button" class="JUM-ACC-BTN ligne" data-aller="connecter">Se connecter</button>' +
-                    '<button type="button" class="JUM-ACC-LIEN" data-aller="liaison">J\'ai déjà TRIGONE sur un autre appareil</button>' +
+                    '<button type="button" class="JUM-ACC-LIEN" data-aller="liaison">J\'ai un code de réactivation</button>' +
                     '<div class="JUM-ACC-NOTE">Sans adresse mail personnelle · votre code de connexion suffit sur tout appareil</div>' +
                 '</div>' +
                 '<div class="JUM-ACC-BAS"><span>4<sup>e</sup> RIISC</span><span>Conçu par Germain-Pierre BOUQUET</span></div>' +
@@ -4500,7 +4498,7 @@
                         '<button type="button" class="JUM-R-LIEN" id="JUM-C-OUBLI" style="margin:10px 0 4px;">Code de connexion oublié ?</button>' +
                         '<p class="JUM-R-AIDE" id="JUM-C-OUBLI-TXT" style="display:none;margin:4px 0 12px;">Demandez un <b>code de réactivation</b> à l\'administrateur de votre unité, puis touchez « J\'ai un code de liaison ou de réactivation » ci-dessous. Vos données reviennent, et vous choisissez un nouveau code de connexion.</p>' +
                     '</div>' +
-                    '<div id="JUM-C-SANSMAILBLOC" style="display:none;"><button type="button" class="JUM-ACC-BTN noir" data-aller="liaison">J\'ai un code de liaison ou de réactivation</button></div>' +
+                    '<div id="JUM-C-SANSMAILBLOC" style="display:none;"><button type="button" class="JUM-ACC-BTN noir" data-aller="liaison">J\'ai un code de réactivation</button></div>' +
                     '<div id="JUM-C-MAILBLOC">' +
                     '<label class="JUM-ACC-LBL" for="JUM-C-MAIL">Adresse mail du compte</label>' +
                     '<div class="JUM-ACC-CHAMP">' + SVG('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3.5 6.5 8.5 6.5 8.5-6.5"/>') +
@@ -4516,13 +4514,13 @@
                     '</div>' +
                     '<p class="JUM-R-ERREUR" id="JUM-C-ERR"></p>' +
                     '<div class="JUM-ACC-OU">ou</div>' +
-                    '<button type="button" class="JUM-ACC-AUTRE" data-aller="liaison">' + SVG('<rect x="7" y="2" width="10" height="20" rx="2"/><path d="M11 18h2"/>') + 'J\'ai déjà TRIGONE sur un autre appareil</button>' +
+                    '<button type="button" class="JUM-ACC-AUTRE" data-aller="liaison">' + SVG('<rect x="5" y="11" width="14" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/>') + 'J\'ai un code de réactivation</button>' +
                 '</div>' +
                 '<div data-volet="liaison" style="display:none;">' +
-                    '<h2>Relier cet appareil</h2>' +
-                    '<p class="JUM-ACC-AIDE">Sur l\'appareil où TRIGONE est déjà installé : bouton de compte <b>en haut à droite</b> › <b>« Ajouter un appareil »</b> (ou <b>Ma carte › QR de connexion</b>). Saisissez ici le code affiché, ou scannez le QR : identité, mails, rôles, code d\'accès, compte, demandes et bibliothèque sont recopiés. Pas de mail à attendre.</p>' +
+                    '<h2>Code de réactivation</h2>' +
+                    '<p class="JUM-ACC-AIDE">Code de connexion oublié ou compte bloqué : l\'administrateur de votre unité vous remet un <b>code de réactivation</b> (8 caractères, valable 48 h). Saisissez-le ici : votre compte et vos données reviennent, puis vous choisissez un nouveau code de connexion.</p>' +
                     htmlSaisieLiaison() +
-                    '<button type="button" class="JUM-R-LIEN" data-aller="connecter" style="margin-top:10px;">← Avec mon adresse mail</button>' +
+                    '<button type="button" class="JUM-R-LIEN" data-aller="connecter" style="margin-top:10px;">← Avec mon adresse et mon code de connexion</button>' +
                 '</div>' +
                 '<div class="JUM-ACC-SECU">' + SVG('<path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>') + '<span>Vos demandes et comptes-rendus sont chiffrés sur votre appareil avant tout envoi.' +
                     (window.JUMELAGE_REGLAGES_FAITS() ? '' : ' Ensuite, TRIGONE vous demande une seule fois votre profil.') + '</span></div>' +
@@ -4906,7 +4904,6 @@
                 L('profil', ic('personne'), 'Mon profil', 'Identité, destinataires, demande de réservation, code d\'accès', function() { window.JUMELAGE_REGLAGES({ vue: 'profil' }); }),
                 L('roles', ic('groupe'), 'Mes rôles', aRole ? 'Valideur, assistant Chorus DT : gérer' : 'Valideur, assistant Chorus DT : ajouter un rôle avec son code', function() { window.JUMELAGE_REGLAGES({ vue: 'roles' }); }),
                 aRole && L('absence', ic('sablier'), 'Absence', 'Désigner un remplaçant pendant votre absence', function() { window.JUMELAGE_REGLAGES({ vue: 'absence' }); }),
-                c && L('appareil', ic('telephone'), 'Ajouter un appareil', 'PC ou téléphone, sans rien ressaisir', function() { window.JUMELAGE_COMPTE({ liaison: true }); }),
                 c && L('mdp', ic('cadenas'), 'Mon code de connexion', 'Pour vous connecter sur un autre appareil : le changer', function() { window.JUMELAGE_CODE_CONNEXION({ changer: true }); }),
                 c && L('mesappareils', ic('telephone'), 'Mes appareils', 'Voir vos appareils, retirer un téléphone perdu', function() { window.JUMELAGE_MES_APPAREILS(); }),
                 c && (roles.chorus || lireTxt(CLE_ROLE_ADMIN)) && L('gestion', ic('groupe'), 'Comptes et demandes' + (NB_DEMANDES_COMPTE ? ' (' + NB_DEMANDES_COMPTE + ')' : ''), lireTxt(CLE_ROLE_ADMIN) ? 'Inscriptions, comptes de l\'unité (bloquer, supprimer), demandes, journal' : 'Inscriptions à valider, demandes de vos missionnaires', function() { window.JUMELAGE_GESTION_COMPTES(); })
@@ -4923,9 +4920,6 @@
         r.push({ id: 'donnees', titre: 'Données', icone: ic('disquette'), aide: c ? 'Tout TRIGONE est rangé sur cet appareil : la sauvegarde automatique le garde aussi, chiffré, dans votre compte.' : 'Tout TRIGONE est rangé sur cet appareil : sauvegardez-le dans un fichier, ou connectez-vous pour la sauvegarde automatique.', lignes: [
             NB_ATTENTE && L('attente', ic('mail'), 'Envois en attente (' + NB_ATTENTE + ')', 'Faits sans réseau : ils partent tout seuls au retour du réseau', function() { window.JUMELAGE_ATTENTE(); }),
             c && L('sauvauto', ic('disquette'), 'Sauvegarde automatique', window.JUMELAGE_SAUVEGARDE_AUTO_RESUME(), function() { window.JUMELAGE_SAUVEGARDE_AUTO(); }),
-            c && !etatSauvAuto().actif && L('restaurercompte', ic('importer'), 'Restaurer depuis mon compte', 'Nouvel appareil : avec votre code de récupération', function() { window.JUMELAGE_RESTAURER_COMPTE(); }),
-            L('sauvegarder', ic('disquette'), 'Sauvegarder dans un fichier', 'Un fichier pour tout TRIGONE, à ranger où vous voulez', function() { window.JUMELAGE_SAUVEGARDER(); }),
-            L('restaurer', ic('importer'), 'Restaurer depuis un fichier', 'Sur cet appareil ou un nouveau', function() { window.JUMELAGE_RESTAURER(); }),
             // Réinitialiser ou supprimer son compte : sur demande à l'assistant Chorus DT (ou à l'administrateur de l'unité) ;
             // l'administrateur garde la réinitialisation de son propre appareil. Sans compte : effacement de l'appareil.
             c && L('demreinit', CORBEILLE_SVG, 'Demander la réinitialisation', etatDemandeCompte('reinit') || 'Accordée par votre assistant Chorus DT ou l\'administrateur', function() { window.JUMELAGE_DEMANDE_COMPTE('reinit'); }, true),
@@ -5132,8 +5126,6 @@
             '<button type="button" data-action="partager">' + window.JUMELAGE_ICONE('partage') + '<span><b>Partager TRIGONE</b><small>QR code et lien de l\'application</small></span></button>' +
             '<button type="button" data-action="signaler">' + window.JUMELAGE_ICONE('bouee') + '<span><b>Signaler un problème</b><small>Écrire à l\'équipe TRIGONE</small></span></button>' +
             '<div class="JUM-ROUE-SEP"></div>' +
-            '<button type="button" data-action="sauvegarder">' + window.JUMELAGE_ICONE('disquette') + '<span><b>Sauvegarder mes données</b><small>Un fichier pour tout TRIGONE</small></span></button>' +
-            '<button type="button" data-action="restaurer">' + window.JUMELAGE_ICONE('importer') + '<span><b>Restaurer une sauvegarde</b><small>Remettre en place un fichier de sauvegarde</small></span></button>' +
             '<div class="JUM-ROUE-SEP"></div>' +
             '<button type="button" data-action="reinitialiser" class="JUM-ROUE-DANGER">' + CORBEILLE_SVG + '<span><b>Réinitialiser TRIGONE</b><small>Tout effacer sur cet appareil</small></span></button>';
         ['pointerdown', 'pointerup', 'click'].forEach(function(t) { m.addEventListener(t, function(ev) { ev.stopPropagation(); }); });
@@ -5662,7 +5654,7 @@
                 : '<div class="JUM-CARTE-DUO"><div class="face avant">' + carteRecto(d) + '</div><div class="face arriere">' + carteVerso(d, memo) + '</div></div>') +
                 '<div class="JUM-CARTE-BTNS"><button type="button" class="JUM-R-SECOND JUM-CARTE-PHOTO-BTN">' + (lireTxt(CLE_CARTE_PHOTO) ? 'Changer la photo' : 'Ajouter ma photo') + '</button>' +
                     '<button type="button" class="JUM-R-SECOND JUM-CARTE-PARTAGER">Partager</button></div>' +
-                '<button type="button" class="JUM-R-SECOND JUM-CARTE-QRCO">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('qr') : '') + 'QR de connexion (autre appareil)</button>' +
+                '' +
                 '<label class="JUM-CARTE-PARTPHOTO"><input type="checkbox" id="JUM-PHOTO-PARTAGE"' + (photoPartagee() ? ' checked' : '') + '><span><b>Partager ma photo avec les valideurs et l\'assistant Chorus DT</b>' +
                     '<small>Chiffrée de bout en bout : seuls leurs appareils (et le chef d\'une mission collective où vous êtes) peuvent la voir, sur votre carte, dans l\'onglet Participants de vos demandes.</small></span></label>' +
                 '<p class="JUM-CARTE-NOTE">Remplie toute seule avec <b>Mon profil</b> (grade, nom, NID, unité). La photo reste <b>sur cet appareil</b>' + (photoPartagee() ? ' et ne part que chiffrée' : '') + '. ' +
@@ -5687,7 +5679,7 @@
                 dessiner();
             });
             fenCarte.querySelector('.JUM-CARTE-PARTAGER').addEventListener('click', function() { partagerCarte(d, memo); });
-            fenCarte.querySelector('.JUM-CARTE-QRCO').addEventListener('click', qrConnexion);
+            var qrco = fenCarte.querySelector('.JUM-CARTE-QRCO'); if (qrco) qrco.addEventListener('click', qrConnexion);
             fenCarte.querySelector('.JUM-CARTE-PROFIL').addEventListener('click', function() { window.JUMELAGE_FERMER_CARTE(); window.JUMELAGE_REGLAGES({ vue: 'profil' }); });
             var rev = fenCarte.querySelector('.JUM-CARTE-REVOQUER');
             if (rev) rev.addEventListener('click', function() { revoquerCarte(function(m) { memo = m; dessiner(); }); });
