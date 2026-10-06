@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 254,
-  "appCodeMessage": "Simulez une mission en une phrase : « si je pars 5 jours à Paris en VRC depuis Libourne, 6 CV, combien ? » — la mascotte compte repas, nuits et indemnités kilométriques.",
+  "appCodeVersion": 255,
+  "appCodeMessage": "La mascotte connaît toutes les formules de politesse et sait quoi répondre : bonjour, ça va, merci, au revoir, désolé, bravo, mes respects, bonnes fêtes…",
   "appMessageVersion": 0,
   "appMessage": ""
 }

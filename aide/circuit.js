@@ -516,6 +516,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 210, version: 'V207', l: ['La mascotte connaît toutes les formules de politesse (bonjour, ça va, merci, au revoir, désolé, bravo, mes respects, bonnes fêtes…) et sait quoi répondre, même combinées (« merci, bonne soirée »)'] },
         { build: 209, version: 'V206', l: ['Simulation en une phrase : « si je pars 5 jours à Paris en VRC depuis Libourne, 6 CV, logement et repas à ma charge, combien ? » → repas, nuits, IK et total', 'Suites : « et en train ? », « depuis Bordeaux », « en 8 CV »'] },
         { build: 208, version: 'V205', l: ['Codes FD : la mascotte reconnaît toutes les unités du codier, écrites à votre façon (« 3rpima », « 3°RPiMa », « 6e régiment du génie », « 4eriisc »)'] },
         { build: 207, version: 'V204', l: ['La mascotte suit votre circuit : « où en est ma demande ? », « et mon compte-rendu ? », « combien je vais toucher ? »', 'Elle relit votre demande avant l\'envoi et vous montre ce qui manque', 'Valideurs : « j\'ai quoi à valider ? » ; assistant Chorus DT : « j\'ai quoi à traiter ? »', 'Conversion de devises, et un bouton « Pourquoi ? » sur les messages d\'erreur'] },

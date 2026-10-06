@@ -49,7 +49,18 @@ module.exports = async function() {
     await t.click('.AIDE-PRES-Q:has-text("Comment j\'envoie ma demande")'); await attendre(800);
     verifier(/Prêtes à envoyer/.test(await derniere(t)), 'question touchée (« Comment j\'envoie ma demande ? ») : fiche de la notice');
     r = await demander(t, 'bonne journée');
-    verifier(/Au revoir, mon adjudant, et bonne mission/.test(r), '« bonne journée » : « Au revoir, mon adjudant, et bonne mission ! »');
+    verifier(/Bonne journée, mon adjudant, et bonne mission/.test(r) && await t.evaluate(() => { const l = document.querySelectorAll('.AIDE-POUCE img'); return /mascotte-salut/.test(l[l.length - 1].src); }), '« bonne journée » : « Bonne journée, mon adjudant, et bonne mission ! » (mascotte qui salue)');
+    // Toutes les formules de politesse, seules ou combinées, ont leur réponse (sans IA).
+    const POLI = [['bonjour ça va ?', /Bonjour, mon adjudant.*très bien, merci.*Et vous/], ['re', /Re-bonjour/], ['bonsoir', /Bonsoir, mon adjudant/], ['mes respects mon adjudant', /Mes respects/],
+        ['ça va et toi', /très bien|Parfait/], ['bof je suis crevé', /Courage/], ['merci beaucoup bonne soirée', /Avec plaisir.*Bonne soirée, mon adjudant/], ['désolé', /Pas de souci/],
+        ['t es le meilleur', /ça me fait plaisir/], ['mdr', /sourire/], ['t es qui ?', /mascotte d'aide de TRIGONE/], ['tu es là ?', /je suis là/], ['je suis perdu', /Pas de panique/],
+        ['à vos ordres', /Repos/], ['joyeux noël', /Joyeux Noël à vous aussi/], ['bon week-end', /Bon week-end/], ['non merci c est tout', /Je reste là si besoin/], ['ok', /Autre chose/],
+        ['bon appétit', /Bon appétit/], ['tu dors ?', /24 h sur 24/], ['stp', /Bien sûr/], ['bonne route', /soyez prudent/]];
+    const ratees = [];
+    for (const [q, att] of POLI) { const x = await demander(t, q); if (!att.test(x)) ratees.push(q + ' → ' + x.slice(0, 60)); }
+    verifier(!ratees.length, 'politesse : ' + POLI.length + ' formules (bonjour, ça va, merci, au revoir, désolé, bravo, mdr, t\'es qui, à vos ordres, fêtes…) ont leur réponse' + (ratees.length ? ' — ratées : ' + ratees.join(' | ') : ''));
+    r = await demander(t, 'bonjour je voudrais savoir comment envoyer ma demande');
+    verifier(!/Que puis-je faire pour vous/.test(r) && /Prêtes à envoyer|Envoyer/.test(r), 'bonjour + vraie question : la question passe (pas seulement « Bonjour »)');
     r = await demander(t, 'salut');
     verifier(/^Bonjour, mon adjudant\s! Que puis-je faire pour vous/.test(r.trim()), '« salut » : la mascotte salue et propose des sujets');
     r = await demander(t, 'jai dormi a l\'hotel comment je le mets');
