@@ -597,6 +597,27 @@
         'html body.dark-mode .JUM-PF-NOTIF { background: #1d1d1d; } html body.dark-mode .JUM-PF-NOTIF span { color: #bbb; }' +
         '.JUM-BIENV { position: fixed; inset: 0; z-index: 99990; background: radial-gradient(circle at 50% 22%, #2a2a2a, #0e0e0e 70%); color: #fff; overflow-y: auto; display: flex; justify-content: center; animation: jumBienv .5s ease; }' +
         '@keyframes jumBienv { from { opacity: 0; } to { opacity: 1; } }' +
+        // Présentation de l'assistant (mascotte au casque), juste après le questionnaire.
+        '.JUM-ASST { position: fixed; inset: 0; z-index: 99991; background: radial-gradient(120% 70% at 50% 18%, #3a2f1c 0%, #171717 55%, #0c0c0c 100%); color: #fff; overflow-y: auto; display: flex; justify-content: center; animation: jumBienv .5s ease; }' +
+        '.JUM-ASST-PAGE { position: relative; width: 100%; max-width: 440px; box-sizing: border-box; padding: calc(env(safe-area-inset-top, 0px) + 22px) 20px calc(env(safe-area-inset-bottom, 0px) + 20px); display: flex; flex-direction: column; min-height: 100%; }' +
+        '.JUM-ASST-BARRES { display: flex; gap: 5px; } .JUM-ASST-BARRES i { flex: 1; height: 4px; border-radius: 3px; background: #d6a756; }' +
+        '.JUM-ASST-SUR { margin-top: 8px; font: 800 0.66rem Montserrat, system-ui, sans-serif; letter-spacing: 0.12em; text-transform: uppercase; color: #d6a756; }' +
+        '.JUM-ASST-SCENE { position: relative; margin: 10px auto 0; width: 230px; }' +
+        '.JUM-ASST-SCENE:before { content: ""; position: absolute; left: 50%; top: 40%; width: 330px; height: 330px; transform: translate(-50%, -50%); border-radius: 50%; background: radial-gradient(circle, rgba(214,167,86,0.35), transparent 65%); }' +
+        '.JUM-ASST-SCENE img { position: relative; display: block; width: 100%; -webkit-mask-image: linear-gradient(#000 85%, transparent); mask-image: linear-gradient(#000 85%, transparent); animation: jumAsstEntree .7s ease both; }' +
+        '@keyframes jumAsstEntree { from { opacity: 0; transform: translateY(18px); } to { opacity: 1; transform: none; } }' +
+        '.JUM-ASST-BULLE { position: absolute; z-index: 1; right: -64px; top: 52%; max-width: 170px; background: #fff; color: #111; font: 700 0.8rem Montserrat, system-ui, sans-serif; padding: 9px 12px; border-radius: 14px 14px 4px 14px; box-shadow: 0 6px 16px rgba(0,0,0,0.3); animation: jumAsstEntree .5s .6s ease both; }' +
+        '.JUM-ASST h2 { margin: 6px 0 6px; text-align: center; font: 800 1.5rem/1.15 Montserrat, system-ui, sans-serif; color: #fff; } .JUM-ASST h2 em { font-style: normal; color: #d6a756; }' +
+        '.JUM-ASST-INTRO { margin: 0 6px 14px; text-align: center; font-size: 0.84rem; line-height: 1.45; color: #cfcfcf; } .JUM-ASST-INTRO b { color: #fff; }' +
+        '.JUM-ASST-GRILLE { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; }' +
+        '.JUM-ASST-C { background: rgba(255,255,255,0.06); border: 1px solid rgba(214,167,86,0.35); border-radius: 14px; padding: 11px; }' +
+        '.JUM-ASST-C svg { width: 20px; height: 20px; fill: none; stroke: #d6a756; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }' +
+        '.JUM-ASST-C b { display: block; margin: 5px 0 2px; font: 700 0.78rem Montserrat, system-ui, sans-serif; color: #fff; } .JUM-ASST-C span { display: block; font-size: 0.7rem; line-height: 1.35; color: #bdbdbd; }' +
+        '.JUM-ASST-BTN { margin-top: auto; width: 100%; padding: 16px; border: 0; border-radius: 16px; background: linear-gradient(#e2b866, #c99a45); color: #111; font: 800 0.92rem Montserrat, system-ui, sans-serif; letter-spacing: 0.04em; text-transform: uppercase; cursor: pointer; }' +
+        '.JUM-ASST-ESP { height: 16px; flex: none; }' +
+        '.JUM-ASST-NOTE { margin-top: 9px; text-align: center; font-size: 0.7rem; color: #9a9a9a; }' +
+        '@media (max-width: 360px) { .JUM-ASST-SCENE { width: 180px; } .JUM-ASST-BULLE { right: -50px; } .JUM-ASST h2 { font-size: 1.3rem; } }' +
+        '@media (min-width: 900px) { .JUM-ASST-PAGE { max-width: 760px; padding-top: 40px; } .JUM-ASST-GRILLE { grid-template-columns: repeat(4, 1fr); } .JUM-ASST-BTN { max-width: 420px; margin-left: auto; margin-right: auto; } }' +
         '.JUM-BIENV-PAGE { width: 100%; max-width: 440px; box-sizing: border-box; padding: calc(env(safe-area-inset-top, 0px) + 46px) 26px calc(env(safe-area-inset-bottom, 0px) + 28px); text-align: center; display: flex; flex-direction: column; min-height: 100%; }' +
         '.JUM-BIENV-ECU { width: 92px; height: 92px; margin: 0 auto; border-radius: 50%; border: 2px solid #d6a756; display: flex; align-items: center; justify-content: center; box-shadow: 0 0 0 8px rgba(214,167,86,0.12), 0 0 40px rgba(214,167,86,0.18); }' +
         '.JUM-BIENV-ECU img { width: 58px; filter: invert(1) brightness(1.2); }' +
@@ -1242,7 +1263,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 215, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 216, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -2134,8 +2155,39 @@
         afficher();
     }
     // Fin du parcours : bienvenue, au style de l'écran d'ouverture.
+    // Après le questionnaire : l'assistant TRIGONE (mascotte au casque) se présente, une seule fois, avant « Bienvenue ».
+    var CLE_ASST_PRESENTE = 'trigone_assistant_presente';
+    function presenterAssistant(suite) {
+        if (lireTxt(CLE_ASST_PRESENTE) === '1') { suite(); return; }
+        var rg = lireReglages(), dossier = DANS_CR ? '../' : '', pc = window.matchMedia && window.matchMedia('(min-width: 900px)').matches;
+        var SVG = function(d) { return '<svg viewBox="0 0 24 24">' + d + '</svg>'; };
+        var carte = function(icone, titre, texte) { return '<div class="JUM-ASST-C">' + SVG(icone) + '<b>' + titre + '</b><span>' + texte + '</span></div>'; };
+        var f = document.createElement('div'); f.className = 'JUM-ASST'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Votre assistant TRIGONE');
+        f.innerHTML = '<div class="JUM-ASST-PAGE">' +
+            '<div class="JUM-ASST-BARRES"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>' +
+            '<div class="JUM-ASST-SUR">Dernière étape · Votre assistant</div>' +
+            '<div class="JUM-ASST-SCENE"><img src="' + dossier + 'aide/mascotte-casque.webp" alt=""><div class="JUM-ASST-BULLE">Bienvenue' + (rg.prenom ? ', ' + esc(rg.prenom) : '') + ' 👋</div></div>' +
+            '<h2>Je suis votre <em>assistant TRIGONE</em></h2>' +
+            '<p class="JUM-ASST-INTRO">TRIGONE a pensé à tout. Et si vous avez un doute, je suis là : ' +
+                (pc ? '<b>« Besoin d\'aide ? »</b>, dans le menu de gauche' : 'touchez <b>ma pastille</b>, en haut de l\'écran') +
+                '. Posez-moi votre question comme vous la diriez à un camarade.</p>' +
+            '<div class="JUM-ASST-GRILLE">' +
+                carte('<rect x="2.5" y="6" width="19" height="12" rx="2"/><circle cx="12" cy="12" r="2.6"/><path d="M6 9.5v5M18 9.5v5"/>', 'Combien je vais toucher', 'Repas, nuits, kilomètres : calculés d\'après votre mission.') +
+                carte('<path d="M12 21s7-6.2 7-11.5A7 7 0 0 0 5 9.5C5 14.8 12 21 12 21z"/><circle cx="12" cy="9.5" r="2.5"/>', 'Où en est ma demande', 'Chez qui, depuis quand : je vous le dis.') +
+                carte('<path d="M9 12l2 2 4-4"/><path d="M12 3l7 3v5c0 5-3.5 8.5-7 10-3.5-1.5-7-5-7-10V6z"/>', 'Rien d\'oublié', 'Je relis votre demande et votre compte-rendu avant l\'envoi.') +
+                carte('<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>', 'Les règles', 'Péage, avance, délai du CR, codes FD, barèmes…') +
+            '</div><div class="JUM-ASST-ESP"></div>' +
+            '<button type="button" class="JUM-ASST-BTN">C\'est parti</button>' +
+            '<div class="JUM-ASST-NOTE">Je ne vous demanderai jamais votre code ni votre matricule.</div></div>';
+        document.body.appendChild(f);
+        f.querySelector('.JUM-ASST-BTN').addEventListener('click', function() { ecrireTxt(CLE_ASST_PRESENTE, '1'); f.remove(); suite(); });
+    }
+    window.JUMELAGE_TEST_ASSISTANT = function() { presenterAssistant(function() {}); };   // essais d'affichage
     function bienvenueParcours() {
         try { localStorage.removeItem('trigone_parcours_etape'); } catch (e) {}
+        presenterAssistant(afficherBienvenue);
+    }
+    function afficherBienvenue() {
         var rg = lireReglages(), c = monCompte(), attente = !!lireTxt(CLE_ATTENTE), photo = !!lireTxt(CLE_CARTE_PHOTO), dossier = DANS_CR ? '../' : '';
         var f = document.createElement('div'); f.className = 'JUM-BIENV'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Bienvenue dans TRIGONE');
         var li = function(ok, t) { return '<li class="' + (ok ? 'ok' : 'att') + '">' + t + '</li>'; };

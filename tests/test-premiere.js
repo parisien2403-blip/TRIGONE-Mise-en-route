@@ -82,6 +82,13 @@ module.exports = async function() {
     await p.click('#JUM-PF-SUIVANT'); await attendre(400);
     verifier(await titre() === 'Être prévenu' && (await num()).includes('Étape 7 sur 7'), 'étape 7 : notifications');
     await p.click('#JUM-PF-SUIVANT'); await attendre(2500);
+    // L'assistant TRIGONE (mascotte au casque) se présente, puis « Bienvenue ».
+    const asst = await p.evaluate(() => { const f = document.querySelector('.JUM-ASST'); if (!f) return null; const img = f.querySelector('img');
+        return { t: f.innerText, img: img.complete && img.naturalWidth > 0 && /mascotte-casque/.test(img.src), bienv: !!document.querySelector('.JUM-BIENV'), deborde: document.documentElement.scrollWidth > innerWidth }; });
+    verifier(asst && asst.img && /assistant TRIGONE/i.test(asst.t) && /Bienvenue, Léa/.test(asst.t) && /Combien je vais toucher/.test(asst.t) && /Les règles/.test(asst.t) && !asst.bienv && !asst.deborde,
+        'fin du questionnaire : page « Je suis votre assistant TRIGONE » (mascotte au casque, prénom, 4 cartes), avant « Bienvenue »');
+    if (process.env.TRIGONE_CAPTURE_ASST) await p.screenshot({ path: process.env.TRIGONE_CAPTURE_ASST, fullPage: true });
+    await p.click('.JUM-ASST-BTN'); await attendre(500);
     const bv = await p.textContent('.JUM-BIENV').catch(() => '');
     verifier(/Bienvenue dans TRIGONE/.test(bv) && bv.includes('CAPORAL MARTIN' + s) && bv.includes('L\'équipe TRIGONE') && /Validation par votre unité/.test(bv), 'fin : bienvenue (grade, nom), signé « L\'équipe TRIGONE », validation à venir rappelée');
     const rg = await p.evaluate(() => JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}'));

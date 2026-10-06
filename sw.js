@@ -1,4 +1,4 @@
-const CACHE_NAME = 'trigone-mise-en-route-v269';
+const CACHE_NAME = 'trigone-mise-en-route-v270';
 const ASSETS = [
   './',
   './manifest.json',
@@ -13,6 +13,7 @@ const ASSETS = [
   './aide/base.json',
   './aide/mascotte-aide.webp',
   './aide/mascotte-salut.webp',
+  './aide/mascotte-casque.webp',
   './cr/logo_cr_accueil.png',
   './codier.json',
   './valideurs.json',
