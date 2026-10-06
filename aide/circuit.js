@@ -420,6 +420,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 208, version: 'V205', l: ['Codes FD : la mascotte reconnaît toutes les unités du codier, écrites à votre façon (« 3rpima », « 3°RPiMa », « 6e régiment du génie », « 4eriisc »)'] },
         { build: 207, version: 'V204', l: ['La mascotte suit votre circuit : « où en est ma demande ? », « et mon compte-rendu ? », « combien je vais toucher ? »', 'Elle relit votre demande avant l\'envoi et vous montre ce qui manque', 'Valideurs : « j\'ai quoi à valider ? » ; assistant Chorus DT : « j\'ai quoi à traiter ? »', 'Conversion de devises, et un bouton « Pourquoi ? » sur les messages d\'erreur'] },
         { build: 206, version: 'V203', l: ['Affichage revu pour tous les téléphones, grands caractères compris', 'La page « Ce que je sais faire » de la mascotte', 'Questions de suite (« et en Italie ? »), indemnités kilométriques, qui valide ma demande'] }
     ];

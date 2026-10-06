@@ -243,6 +243,17 @@ module.exports = async function() {
     r = await demander(a, 'comment je fais un ordre de mission');
     verifier(/^Touchez le bouton doré NOUVELLE DEMANDE et laissez-vous guider/.test(r.trim()) && /Voir comment faire/.test(r) && !(await a.evaluate(() => { const l = document.querySelectorAll('.AIDE-DETAIL'); return l[l.length - 1].open; })),
         'réponse « humaine » : une phrase courte, le pas-à-pas replié derrière « Voir comment faire » (' + r.trim().slice(0, 60) + ')');
+    // ----- Codier : les unités écrites de toutes les façons -----
+    {
+        const D = require('../aide/donnees.js'), cod = JSON.parse(require('fs').readFileSync(require('path').join(__dirname, '..', 'codier.json'), 'utf8'));
+        const txt = q => { const x = D.codier(q, cod); return x ? x.html : ''; };
+        verifier(['code fd du 6rg', 'code fd 6eme rg', 'code FD du 6ème régiment du génie', 'code fd sixieme regiment du genie', 'code fd 6e genie'].every(q => /FD1ADFY21C/.test(txt(q)) && /6° RG/.test(txt(q))),
+            'codier : « 6rg », « 6eme rg », « 6ème régiment du génie », « sixième régiment du génie », « 6e génie » → codes du 6° RG');
+        verifier(['code fd 3rpima', 'code fd 3°RPiMa', 'le code du 3e rpima', 'code fd du 3ème régiment de parachutistes d\'infanterie de marine'].every(q => /FD1ADEG21C/.test(txt(q))) && D.intention('le code du 3rpima', null) === 'fd',
+            'codier : « 3rpima », « 3°RPiMa », « le code du 3e rpima », en toutes lettres → 3° RPIMA');
+        verifier(/FDYDDR4FRM/.test(txt('code fd 4eriisc formation')) && /2° REI/.test(txt('code fd du 2e régiment étranger d\'infanterie')), 'codier : « 4eriisc formation », « 2e régiment étranger d\'infanterie » (REI)');
+    }
+
     // ----- Le circuit de la personne : ses demandes, ses comptes-rendus, ses chiffres, ses rôles -----
     const k = await page({ width: 412, height: 860 }, '', 'circuit');
     await k.evaluate(() => {
