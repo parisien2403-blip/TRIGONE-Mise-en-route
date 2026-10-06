@@ -71,7 +71,7 @@
         attention('Ouvrez toujours TRIGONE depuis l\'<b>icône installée</b> : vos données sont rangées dans l\'appli de ce téléphone, pas dans un onglet du navigateur.'), 'inst'));
 
     // ---------- 3. Compte ----------
-    ajouter(chapitre(3, 'Créer son compte TRIGONE', 'Le compte TRIGONE vous donne votre adresse prénom.nom@trigone-app.com : elle sert à envoyer et recevoir demandes, comptes-rendus et justificatifs. Pas d'adresse mail personnelle : un code de connexion, choisi deux fois, vous connecte partout ; un responsable de votre unité valide votre compte.',
+    ajouter(chapitre(3, 'Créer son compte TRIGONE', 'Le compte TRIGONE vous donne votre adresse prénom.nom@trigone-app.com : elle sert à envoyer et recevoir demandes, comptes-rendus et justificatifs. Pas d\'adresse mail personnelle : un code de connexion, choisi deux fois, vous connecte partout ; un responsable de votre unité valide votre compte.',
         ['Créer son compte (identité, puis validation)', 'Activer les notifications', 'Ajouter un autre appareil (PC, 2e téléphone)', 'Le QR de connexion', 'Se connecter partout (adresse + code)', 'Un compte, plusieurs appareils'], 'compte'));
     ajouter(page('Créer son compte — 1/2', duo('f1-inscription', et(['Écran d\'accueil de TRIGONE › <b>Créer mon compte</b>.', r(1) + ' Votre <b>grade</b> et votre <b>unité</b> (choisie dans la liste).', r(2) + ' Votre <b>nom</b> et votre <b>prénom</b>.', r(3) + ' TRIGONE affiche <b>votre adresse TRIGONE</b> (homonyme : prénom.nom2…).', r(4) + ' <b>Créer mon compte</b>.'])) +
         savoir('Aucune adresse mail personnelle n\'est demandée. Un compte créé avant octobre 2026 avec une adresse mail passe tout seul à son adresse TRIGONE (prénom.nom@trigone-app.com) : rien à faire.'), 'compte'));
