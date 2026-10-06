@@ -77,6 +77,17 @@ module.exports = async function() {
     verifier(/ESPAGNE/.test(r) && /37,10 €/.test(r) && /137,80 €/.test(r), 'barème étranger : « indemnisation en espagne » → repas 37,10 €, nuit 137,80 €');
     r = await demander(t, 'indemnisation à l\'étranger');
     verifier(/dépend du pays/.test(r) && /Espagne/.test(r), 'étranger sans pays : explication, exemples et demande du pays');
+    // Questions de suite : le sujet de la question précédente est repris.
+    r = await demander(t, 'combien coute un repas en espagne');
+    r = await demander(t, 'et en italie ?');
+    verifier(/ITALIE/.test(r) && /38,50 €/.test(r) && !/Nuit/.test(r), 'suite : « et en italie ? » après un repas en Espagne → repas en Italie (38,50 €)');
+    r = await demander(t, 'pareil pour une nuit');
+    verifier(/ITALIE/.test(r) && /143,00 €/.test(r) && !/Repas :/.test(r), 'suite : « pareil pour une nuit » → nuit en Italie (143,00 €)');
+    r = await demander(t, 'et à lyon');
+    verifier(/Lyon/.test(r) && /120,00 €/.test(r), 'suite : « et à lyon » → nuit à Lyon (120,00 €)');
+    r = await demander(t, 'code fd du 4e riisc formation'); await attendre(800);
+    r = await demander(t, 'et intervention ?');
+    verifier(/FDYDDR4INT/.test(r), 'suite : « et intervention ? » après le code FD formation du 4e RIISC → FDYDDR4INT');
     r = await demander(t, 'indemnités aux usa');
     verifier(/ETATS-UNIS/.test(r) && /New York/.test(r) && /≈/.test(r), 'barème étranger : États-Unis (avec New York) converti en euros');
     r = await demander(t, 'tarif hotel a la reunion');

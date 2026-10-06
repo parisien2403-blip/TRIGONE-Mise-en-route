@@ -151,7 +151,38 @@
         if (tarifs && trouverPays(q, tarifs).length) return 'tarif';
         return null;
     }
-    var DONNEES = { intention: intention, codier: repondreCodier, tarif: repondreTarif, trouverPays: trouverPays, trouverVille: trouverVille, normal: normal };
+    // ---------- Questions de suite : « et en Italie ? » après « combien coûte un repas en Espagne » ----------
+    // La question courte qui commence par « et », « pareil », « aussi »… reprend le sujet de la précédente.
+    function estSuite(q) {
+        var s = normal(q).trim();
+        return /^(et|pareil|idem|meme chose|aussi|puis|sinon|ok et|d accord et|bon et|alors et|mais|ou)( |$)/.test(s) || / (aussi|pareil|idem)$/.test(s) || s.split(' ').length <= 3;
+    }
+    var OBJETS = ['formation', 'intervention', 'entrainement', 'fonctionnement', 'courant', 'changement', 'residence', 'mission', 'missions', 'deplacement', 'deplacements', 'bagage', 'mobilier', 'permanents', 'instruction'];
+    function completer(precedent, q, tarifs) {
+        var nouveau = normal(q).trim().replace(/^(et|pareil|idem|meme chose|aussi|puis|sinon|ok et|d accord et|bon et|alors et|mais|ou)( (pour|pour le|pour la|pour les|a|au|aux|en|de|du|dans|sur))? /, '').replace(/ (aussi|pareil|idem)$/, '');
+        if (precedent.type === 'tarif') {
+            var p = normal(precedent.q), n = ' ' + nouveau + ' ';
+            var sujetN = /repas|manger|dejeuner|diner|hebergement|hotel|nuit|dormir|logement|chambre/.test(n);
+            // Même lieu, autre sujet (« pareil pour une nuit ») : on reprend le pays ou la ville d'avant.
+            if (sujetN && tarifs && !trouverPays(q, tarifs).length && !trouverVille(q, tarifs)) {
+                var pays = trouverPays(precedent.q, tarifs), ville = trouverVille(precedent.q, tarifs);
+                var lieu = pays.length ? nomPays(pays[0][0].p) : ville ? normal(ville.nom).trim() : '';
+                if (lieu) return ('combien ' + nouveau + ' a ' + lieu).trim();
+            }
+            var sujet = sujetN ? '' : /repas|manger|dejeuner|diner/.test(p) && !/hebergement|hotel|nuit|dormir|logement|chambre/.test(p) ? 'combien coute un repas' :
+                /hebergement|hotel|nuit|dormir|logement|chambre/.test(p) && !/repas|manger|dejeuner|diner/.test(p) ? 'combien coute une nuit d hotel' : 'combien';
+            return (sujet + ' a ' + nouveau).trim();
+        }
+        if (precedent.type === 'fd') {
+            var avant = motsRecherche(precedent.q), apres = motsRecherche(q).filter(function(m) { return ['et', 'aussi', 'pareil', 'idem', 'pour', 'sinon'].indexOf(m) < 0; });
+            var objet = function(m) { return OBJETS.indexOf(m) >= 0; };
+            if (apres.some(objet)) avant = avant.filter(function(m) { return !objet(m); });
+            if (apres.some(function(m) { return !objet(m); })) avant = avant.filter(objet);
+            return 'code fd ' + avant.concat(apres).join(' ');
+        }
+        return (precedent.q + ' ' + nouveau).trim();
+    }
+    var DONNEES = { estSuite: estSuite, completer: completer, intention: intention, codier: repondreCodier, tarif: repondreTarif, trouverPays: trouverPays, trouverVille: trouverVille, normal: normal };
     if (typeof module !== 'undefined' && module.exports) module.exports = DONNEES;
     else window.AIDE_DONNEES = DONNEES;
 })();

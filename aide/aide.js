@@ -146,17 +146,29 @@
         var avoir = codier ? Promise.resolve(codier) : fetch(B + 'codier.json').then(function(r) { if (!r.ok) throw new Error('codier'); return r.json(); }).then(function(j) { codier = j; return j; });
         return avoir.then(function(cd) { return fin(D.codier(question, cd)); }, function() { return false; });
     }
+    // La question précédente (sujet et type), pour comprendre « et en Italie ? » ; gardée le temps de la conversation.
+    var CLE_DERNIER = 'trigone_aide_dernier';
     function repondre(question) {
         ajouter({ de: 'moi', texte: question });
-        var type = window.AIDE_DONNEES && window.AIDE_DONNEES.intention(question, tarifs);
+        var D = window.AIDE_DONNEES, q = question, type = D && D.intention(question, tarifs), dernier = lire(CLE_DERNIER);
+        if (D && dernier && D.estSuite(question) && (dernier.type === 'tarif' || dernier.type === 'fd')) {
+            var q2 = D.completer(dernier, question, tarifs), t2 = D.intention(q2, tarifs);
+            if (t2 === dernier.type) { q = q2; type = t2; }
+        }
         if (type === 'fd' || (type === 'tarif' && tarifs)) {
-            repondreDonnees(question, type).then(function(ok) { if (!ok) repondreFiches(question); });
+            repondreDonnees(q, type).then(function(ok) { if (ok) ecrire(CLE_DERNIER, { type: type, q: q }); else repondreFiches(question, dernier); });
             return;
         }
-        repondreFiches(question);
+        repondreFiches(question, dernier);
     }
-    function repondreFiches(question) {
+    function repondreFiches(question, dernier) {
         var r = moteur.chercher(question, { app: APP, ecran: ecranCourant() }), top = r.resultats[0], M = window.AIDE_MOTEUR;
+        // Question de suite sur un sujet de la notice : on la complète avec la précédente si, seule, elle ne suffit pas.
+        if ((!top || top.score < M.SUR) && dernier && dernier.type === 'fiche' && window.AIDE_DONNEES.estSuite(question)) {
+            var r2 = moteur.chercher(window.AIDE_DONNEES.completer(dernier, question, tarifs), { app: APP, ecran: ecranCourant() });
+            if (r2.resultats[0] && r2.resultats[0].score >= M.SUR && r2.resultats[0].fiche.id !== dernier.fiche) { r = r2; top = r2.resultats[0]; }
+        }
+        if (top && top.score >= M.SUR) ecrire(CLE_DERNIER, { type: 'fiche', q: question, fiche: top.fiche.id });
         if (top && top.score >= M.SUR) {
             ajouter({ de: 'lui', html: htmlFiche(top.fiche) + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>',
                 etq: 'Réponse trouvée dans la notice', fiche: top.fiche.id, q: question });
@@ -209,7 +221,7 @@
             if (ev.target === fen && !estPc()) { window.AIDE_FERMER(); return; }
             var t = ev.target.closest('button'); if (!t) return;
             if (t.classList.contains('AIDE-X')) { window.AIDE_FERMER(); return; }
-            if (t.classList.contains('AIDE-VIDER')) { fil = []; ecrire(CLE_FIL, fil); accueil(); return; }
+            if (t.classList.contains('AIDE-VIDER')) { fil = []; ecrire(CLE_FIL, fil); ecrire(CLE_DERNIER, null); accueil(); return; }
             if (t.dataset.fiche) { var f = moteur.fiche(t.dataset.fiche); if (f) { ajouter({ de: 'moi', texte: f.t }); ajouter({ de: 'lui', html: htmlFiche(f), etq: 'Réponse trouvée dans la notice', fiche: f.id }); } return; }
             if (t.dataset.montrer) { var g = moteur.fiche(t.dataset.montrer); if (g && g.m) { window.AIDE_FERMER(); executer(g.m); } return; }
             if (t.dataset.notice !== undefined) { var titre = t.dataset.notice; window.AIDE_FERMER(); window.JUMELAGE_NOTICE(null, titre ? { titre: titre } : {}); return; }
