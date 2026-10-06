@@ -94,6 +94,10 @@ module.exports = async function() {
     r = await demander(t, 'code fd du 4e riisc formation'); await attendre(800);
     r = await demander(t, 'et intervention ?');
     verifier(/FDYDDR4INT/.test(r), 'suite : « et intervention ? » après le code FD formation du 4e RIISC → FDYDDR4INT');
+    r = await demander(t, 'blanquette');
+    verifier(!/codes FD correspondent/.test(r) && /cerveau IA|Vous voulez parler/.test(r), 'un mot hors sujet après un code FD n\'est pas pris pour une suite (« blanquette »)');
+    r = await demander(t, 'combien coute un repas en espagne'); r = await demander(t, 'blanquette');
+    verifier(!/€/.test(r), 'un mot hors sujet après un barème n\'est pas pris pour une ville (« blanquette »)');
     r = await demander(t, 'indemnités aux usa');
     verifier(/ETATS-UNIS/.test(r) && /New York/.test(r) && /≈/.test(r), 'barème étranger : États-Unis (avec New York) converti en euros');
     r = await demander(t, 'tarif hotel a la reunion');

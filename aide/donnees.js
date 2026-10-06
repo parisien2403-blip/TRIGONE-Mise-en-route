@@ -165,6 +165,10 @@
         var nouveau = normal(q).trim().replace(/^(et|pareil|idem|meme chose|aussi|puis|sinon|ok et|d accord et|bon et|alors et|mais|ou)( (pour|pour le|pour la|pour les|a|au|aux|en|de|du|dans|sur))? /, '').replace(/ (aussi|pareil|idem)$/, '');
         if (precedent.type === 'tarif') {
             var p = normal(precedent.q), n = ' ' + nouveau + ' ';
+            // Plausible seulement avec un pays, un lieu introduit (« à Bourges », « en Italie », « 33000 ») ou un autre sujet.
+            var lieuIntroduit = /^(a|au|aux|en|pour|sur|dans|vers|de|du) /.test(normal(q).trim().replace(/^(et|pareil|idem|aussi|puis|sinon|ok et|bon et|alors et|mais|ou) /, '') + ' ');
+            if (!(tarifs && trouverPays(q, tarifs).length) && !lieuIntroduit && !/ \d{5} /.test(n) && !/ paris /.test(n) &&
+                !/repas|manger|dejeuner|diner|hebergement|hotel|nuit|dormir|logement|chambre/.test(n)) return null;
             var sujetN = /repas|manger|dejeuner|diner|hebergement|hotel|nuit|dormir|logement|chambre/.test(n);
             // Même lieu, autre sujet (« pareil pour une nuit ») : on reprend le pays ou la ville d'avant.
             if (sujetN && tarifs && !trouverPays(q, tarifs).length && !trouverVille(q, tarifs)) {
@@ -179,6 +183,8 @@
         if (precedent.type === 'fd') {
             var avant = motsRecherche(precedent.q), apres = motsRecherche(q).filter(function(m) { return ['et', 'aussi', 'pareil', 'idem', 'pour', 'sinon'].indexOf(m) < 0; });
             var objet = function(m) { return OBJETS.indexOf(m) >= 0; };
+            // Plausible seulement avec un objet de mission, un numéro d'unité ou un nom d'unité (« et intervention », « et pour le 7 »).
+            if (!apres.length || !apres.every(function(m) { return objet(m) || /^\d+$/.test(m) || /^(uiisc|riisc|rsc|ensoa|emat|drhat)$/.test(m); })) return null;
             if (apres.some(objet)) avant = avant.filter(function(m) { return !objet(m); });
             if (apres.some(function(m) { return !objet(m); })) avant = avant.filter(objet);
             return 'code fd ' + avant.concat(apres).join(' ');

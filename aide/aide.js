@@ -177,13 +177,22 @@
         return esc(t).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/^\s*[-•]\s+/gm, '• ').replace(/\n/g, '<br>');
     }
     function ajouter(m) { fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
+    // La mascotte prend une posture selon sa réponse (images déjà dans TRIGONE).
+    var POSES = { salut: 'mascotte.webp', montre: 'demo-mascotte.webp', aide: 'mascotte-assistance.webp', code: 'mascotte-code.webp', content: 'mascotte-ok.webp', desole: 'mascotte-erreur.webp' };
+    function poseDe(m) {
+        if (/AIDE-POUCE/.test(m.html)) return '';
+        var k = m.pose || (m.ia ? 'aide' : /codier/.test(m.etq || '') ? 'code' : /Barème/.test(m.etq || '') ? 'content' : m.fiche ? (/AIDE-MONTRER/.test(m.html) ? 'montre' : 'aide')
+            : /n'ai pas trouvé|pas pu|pas disponible|est atteint|réservée aux|Pas de réseau|n'arrive pas/.test(m.html) ? 'desole' : /^Bonjour/.test(m.html) ? 'salut' : 'aide');
+        return POSES[k] || '';
+    }
     function dessinerFil() {
         if (!fen) return;
         var z = fen.querySelector('.AIDE-FIL');
         z.innerHTML = fil.map(function(m) {
             if (m.de === 'moi') return '<div class="AIDE-M moi">' + esc(m.texte) + '</div>';
             var et = m.ia ? '<div class="AIDE-ETQ">✨ Réponse de l\'IA — elle peut se tromper, la notice fait foi</div>' : m.etq ? '<div class="AIDE-ETQ">' + esc(m.etq) + '</div>' : '';
-            return '<div class="AIDE-M lui' + (m.ia ? ' ia' : '') + '">' + m.html + '</div>' + et;
+            var bulle = '<div class="AIDE-M lui' + (m.ia ? ' ia' : '') + '">' + m.html + '</div>', pose = poseDe(m);
+            return (pose ? '<div class="AIDE-LIGNE"><img class="AIDE-POSE" src="' + B + pose + '" alt="">' + bulle + '</div>' : bulle) + et;
         }).join('') + (attenteIa ? '<div class="AIDE-M lui AIDE-TAPE"><i></i><i></i><i></i></div>' : '');
         z.scrollTop = z.scrollHeight;
     }
@@ -230,7 +239,7 @@
         if (poli) { ajouter({ de: 'lui', html: poli }); return; }
         var D = window.AIDE_DONNEES, q = question, type = D && D.intention(question, tarifs), dernier = lire(CLE_DERNIER);
         if (D && dernier && D.estSuite(question) && (dernier.type === 'tarif' || dernier.type === 'fd')) {
-            var q2 = D.completer(dernier, question, tarifs), t2 = D.intention(q2, tarifs);
+            var q2 = D.completer(dernier, question, tarifs), t2 = q2 && D.intention(q2, tarifs);
             if (t2 === dernier.type) { q = q2; type = t2; }
         }
         if (type === 'fd' || (type === 'tarif' && tarifs)) {
@@ -243,7 +252,7 @@
         var r = moteur.chercher(question, { app: APP, ecran: ecranCourant() }), top = r.resultats[0], M = window.AIDE_MOTEUR;
         // Question de suite sur un sujet de la notice : on la complète avec la précédente si, seule, elle ne suffit pas.
         if ((!top || top.score < M.SUR) && dernier && dernier.type === 'fiche' && window.AIDE_DONNEES.estSuite(question)) {
-            var r2 = moteur.chercher(window.AIDE_DONNEES.completer(dernier, question, tarifs), { app: APP, ecran: ecranCourant() });
+            var r2 = moteur.chercher(window.AIDE_DONNEES.completer(dernier, question, tarifs) || question, { app: APP, ecran: ecranCourant() });
             if (r2.resultats[0] && r2.resultats[0].score >= M.SUR && r2.resultats[0].fiche.id !== dernier.fiche) { r = r2; top = r2.resultats[0]; }
         }
         if (top && top.score >= M.SUR) ecrire(CLE_DERNIER, { type: 'fiche', q: question, fiche: top.fiche.id });
@@ -406,6 +415,10 @@
         '.AIDE-LIEN{border:0;background:none;color:#8a5e10;font:inherit;font-size:13px;font-weight:700;padding:2px 0;cursor:pointer;text-align:left}',
         '.AIDE-AUTRE{margin-top:8px;font-size:12.5px;color:#6b7280}',
         '.AIDE-POUCE{display:flex;align-items:center;gap:10px}',
+        '.AIDE-LIGNE{display:flex;align-items:flex-end;gap:6px;align-self:flex-start;max-width:94%;min-width:0}',
+        '.AIDE-LIGNE .AIDE-M{max-width:100%;min-width:0}',
+        '.AIDE-POSE{width:44px;height:52px;object-fit:contain;object-position:bottom;flex:none;margin-bottom:-2px}',
+        '@media (max-width:340px){.AIDE-POSE{width:34px;height:40px}}',
         '.AIDE-POUCE img{width:72px;height:72px;object-fit:contain;flex:none;animation:aidePouce .6s ease-out}',
         '@keyframes aidePouce{0%{transform:scale(.4) rotate(-12deg);opacity:0}70%{transform:scale(1.1) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0)}}',
         '.AIDE-DETAIL{margin-top:8px;border-top:1px dashed #e2d3ae;padding-top:6px}',
