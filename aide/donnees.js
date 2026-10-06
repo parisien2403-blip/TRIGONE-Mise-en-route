@@ -27,11 +27,39 @@
         if (indexCodier && indexCodier.src === codier) return indexCodier;
         var liste = [];
         Object.keys(codier).forEach(function(k) { var v = codier[k]; if (k.charAt(0) !== '_' && v && v.lib) liste.push({ code: k, v: v, mots: normal(v.lib).trim().split(' ') }); });
+        var vus = {};
+        liste.forEach(function(e) { var m, re = / \d{1,3} ([a-z]{2,8}) /g, t = ' ' + e.mots.join(' ') + ' '; while ((m = re.exec(t))) { vus[m[1]] = 1; re.lastIndex--; } });
+        Object.keys(vus).forEach(function(x) { if (SIGLES_CONNUS.indexOf(' ' + x + ' ') < 0) SIGLES_CONNUS += x + ' '; });
         indexCodier = { src: codier, liste: liste };
         return indexCodier;
     }
+    // Unités en toutes lettres → sigles du codier (« 6e régiment du génie » → « 6 rg ») ; les plus longues d'abord.
+    var SIGLES = [['regiment etranger du genie', 'reg'], ['regiment etranger d infanterie', 'rei'], ['regiment etranger de cavalerie', 'rec'], ['regiment etranger de parachutistes', 'rep'],
+        ['regiment du genie parachutiste', 'rgp'], ['regiment de parachutistes d infanterie de marine', 'rpima'], ['regiment d infanterie de marine', 'rima'], ['regiment d artillerie de marine', 'rama'],
+        ['regiment d helicopteres de combat', 'rhc'], ['regiment de hussards parachutistes', 'rhp'], ['regiment de chasseurs parachutistes', 'rcp'], ['regiment du service militaire volontaire', 'rsmv'],
+        ['bataillon de chasseurs alpins', 'bca'], ['bataillon de chasseurs a pied', 'bcp'], ['brigade legere blindee', 'blb'], ['regiment de tirailleurs', 'rtir'],
+        ['regiment du genie', 'rg'], ['regiment de genie', 'rg'], ['regiment genie', 'rg'], ['regiment d infanterie', 'ri'], ['regiment d artillerie', 'ra'], ['regiment du materiel', 'rmat'], ['regiment de materiel', 'rmat'],
+        ['regiment de transmissions', 'rt'], ['regiment des transmissions', 'rt'], ['regiment de chasseurs', 'rch'], ['regiment de dragons', 'rd'], ['regiment de hussards', 'rh'], ['regiment de cuirassiers', 'rc'],
+        ['genie', 'rg'], ['materiel', 'rmat'], ['transmissions', 'rt']];
+    var ORDINAUX = { premier: 1, premiere: 1, deuxieme: 2, second: 2, seconde: 2, troisieme: 3, quatrieme: 4, cinquieme: 5, sixieme: 6, septieme: 7, huitieme: 8, neuvieme: 9, dixieme: 10, onzieme: 11, douzieme: 12,
+        treizieme: 13, quatorzieme: 14, quinzieme: 15, seizieme: 16, 'dix septieme': 17, 'dix huitieme': 18, 'dix neuvieme': 19, vingtieme: 20, 'vingt et unieme': 21, trentieme: 30, 'trente et unieme': 31 };
+    var SIGLES_CONNUS = ' riisc uiisc rsc rg rmat ri ra rt rima rpima rama rhc rhp rcp rsmv bca bcp blb rtir rch rd rh rc reg rei rec rep rgp rtrs cie gim bsmat rcs ';
+    function unites(s) {
+        Object.keys(ORDINAUX).sort(function(a, b) { return b.length - a.length; }).forEach(function(o) { s = s.split(' ' + o + ' ').join(' ' + ORDINAUX[o] + ' '); });
+        // « 6eme », « 6e », « 1er », « 6rg », « 4eriisc » : le numéro, puis le sigle à part.
+        var coupe = function(t, n, x) {
+            var ord = ['ieme', 'eme', 'ere', 'er', 'em', 'e'], c = [x].concat(ord.filter(function(o) { return x.indexOf(o) === 0; }).map(function(o) { return x.slice(o.length); }));
+            var connu = c.filter(function(y) { return y && SIGLES_CONNUS.indexOf(' ' + y + ' ') >= 0; })[0];
+            var reste = connu || (ord.indexOf(x) >= 0 ? '' : x);
+            return ' ' + n + ' ' + (reste ? reste + ' ' : '');
+        };
+        s = s.replace(/ (\d{1,3})([a-z]{1,9}) /g, coupe).replace(/ (\d{1,3})([a-z]{1,9}) /g, coupe);
+        s = s.replace(/ (\d{1,3}) (?:er|ere|eme|ieme|em|e) /g, ' $1 ');
+        SIGLES.forEach(function(x) { s = s.split(' ' + x[0] + ' ').join(' ' + x[1] + ' '); });
+        return s;
+    }
     function motsRecherche(q) {
-        var s = normal(q)
+        var s = unites(normal(q))
             .replace(/ (\d+) ?(?:e|eme|er|ere|ieme)? ?(?:riisc|uiisc|rsc) /g, ' uiisc $1 ').replace(/ (?:riisc|uiisc|rsc) ?(?:n|no|numero)? ?(\d+) /g, ' uiisc $1 ')
             .replace(/ uiisc(\d+) /g, ' uiisc $1 ').replace(/ stages? /g, ' formation ').replace(/ entrainements? /g, ' entrainement ').replace(/ interventions? /g, ' intervention ');
         return s.trim().split(' ').filter(function(m) { return m && !vides[m] && !CODE_FD.test(m); });
@@ -53,9 +81,9 @@
             if (suivant && codier[suivant] && codier[suivant].lib) html += ' Il est remplacé par :' + ligneCode(suivant, codier[suivant]);
             return { html: html, etq: etq };
         }
+        var idx = preparerCodier(codier), meilleurs = [], best = 0;
         var mots = motsRecherche(q);
         if (!mots.length) return null;
-        var idx = preparerCodier(codier), meilleurs = [], best = 0;
         idx.liste.forEach(function(e) {
             var ok = 0, chiffres = true;
             mots.forEach(function(w) {
@@ -194,6 +222,8 @@
         if (MOTS_IK.test(s) && (FORT.test(s) || / combien | distance | entre /.test(s) || trajet)) return 'ik';
         if (trajet && (FORT.test(s) || / combien /.test(s)) && !trouverPays(q, tarifs || { pays: [] }).length) return 'ik';
         if (MOTS_FD.test(s) && motsRecherche(q).length) return 'fd';
+        // « le code du 3rpima », « imputation du 6e régiment du génie » : un mot de code et une unité numérotée.
+        if (/ (code|codes|imputation|imputer|engagement) /.test(s)) { var u = unites(s), m = / \d{1,3} ([a-z]{2,8}) /.exec(u); if (m && SIGLES_CONNUS.indexOf(' ' + m[1] + ' ') >= 0) return 'fd'; }
         var combien = / combien /.test(s) && !/ combien de (repas|nuit|nuits|nuitee|nuitees|jours?) /.test(s);
         if ((FORT.test(s) || combien) && (SUJET.test(s) || OUTRE_MER.test(s))) return 'tarif';
         // Un pays cité (« Espagne », « mission en Espagne », « indemnisation Italie ») : son barème.
