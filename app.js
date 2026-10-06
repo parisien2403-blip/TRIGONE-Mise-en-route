@@ -2049,7 +2049,7 @@ function PROPOSER_INSTALLATION(manuel) {
             });
         } }];
     } else if (plateforme === 'ios') {
-        texte = 'Dans Safari, appuyez sur Partager (le carré avec une flèche), puis « Sur l\'écran d\'accueil ». TRIGONE Mise en route s\'ouvrira ensuite comme une vraie application, avec son icône.';
+        texte = 'Dans Safari, appuyez sur Partager (le carré avec une flèche), puis « Sur l\'écran d\'accueil ». Ouvrez ensuite TRIGONE depuis cette icône : l\'iPhone la sépare de Safari, connectez-vous donc une fois avec votre adresse TRIGONE et votre code de connexion. Tout revient.';
     } else if (plateforme === 'android') {
         texte = 'Menu du navigateur ⋮ puis « Installer l\'application » ou « Ajouter à l\'écran d\'accueil ». TRIGONE Mise en route s\'ouvrira ensuite comme une vraie application, avec son icône.';
     } else {

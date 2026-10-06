@@ -46,6 +46,7 @@ function preparer(appCode) {
     localStorage.setItem('trigone_nouveautes_vue', '9999');
     localStorage.setItem('mer_maj_vues', JSON.stringify({ appCode: appCode }));
     localStorage.setItem('trigone_derniere_sauvegarde', String(Date.now()));
+    localStorage.setItem('trigone_test_sans_mdp', '1');   // comptes de test créés par mail : pas de fenêtre « code de connexion »
     localStorage.setItem('trigone_reglages_communs', JSON.stringify({ unite: '4°RIISC', cie: '4CIE', grade: 'ADJ', nom: 'TEST', prenom: 'Essai',
         matricule: '067 50 10 191', mailVal1: 'chef@test.fr', monMail: 'moi@test.fr', mailChorus: 'chorus@test.fr' }));
 }

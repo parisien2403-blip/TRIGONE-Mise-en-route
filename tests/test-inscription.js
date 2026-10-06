@@ -20,7 +20,7 @@ module.exports = async function() {
         headers: { Authorization: 'TRIGONE ' + encodeURIComponent(k.mail) + ' ' + k.appareil + ' ' + k.jeton, 'Content-Type': 'application/json', 'X-Trigone-Unite': '4RIISC' }, body: corps ? JSON.stringify(corps) : undefined }).then(r => r.json().then(j => Object.assign(j, { statut: r.status }))); }, [chemin, corps, methode]);
     const inscrire = async (p, prenom) => {
         await p.evaluate(() => JUMELAGE_CONNEXION()); await attendre(500);
-        await p.fill('#JUM-C-GRADE', 'CAPORAL'); await p.fill('#JUM-C-UNITE', '4°RIISC'); await p.fill('#JUM-C-NOM', nom); await p.fill('#JUM-C-PRENOM', prenom);
+        await p.fill('#JUM-C-GRADE', 'CAPORAL'); await p.fill('#JUM-C-UNITE', '4°RIISC'); await p.fill('#JUM-C-NOM', nom); await p.fill('#JUM-C-PRENOM', prenom); await p.fill('#JUM-C-MDP1', 'Essai-2026!'); await p.fill('#JUM-C-MDP2', 'Essai-2026!');
         await p.click('#JUM-C-CREER'); await attendre(2000);
         await p.evaluate(() => { const m = document.getElementById('MSG-OVERLAY'); if (m) m.classList.add('HIDDEN'); if (window.JUMELAGE_FERMER_REGLAGES) JUMELAGE_FERMER_REGLAGES(); });
         return p.evaluate(() => JSON.parse(localStorage.getItem('trigone_compte') || '{}').mail);

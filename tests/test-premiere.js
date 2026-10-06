@@ -37,6 +37,9 @@ module.exports = async function() {
     await p.click('.JUM-ACC [data-aller="creer"]'); await attendre(400);
     verifier((await p.textContent('.JUM-ACC-PROG')).includes('Étape 1 sur 7'), 'compte : étape 1 sur 7');
     await p.fill('#JUM-C-GRADE', 'CAPORAL'); await p.fill('#JUM-C-UNITE', '4°RIISC'); await p.fill('#JUM-C-NOM', 'MARTIN' + s); await p.fill('#JUM-C-PRENOM', 'Léa');
+    await p.fill('#JUM-C-MDP1', 'Lea-2026x'); await p.fill('#JUM-C-MDP2', 'autre-code'); await p.click('#JUM-C-CREER'); await attendre(400);
+    verifier(/pas identiques/.test(await p.textContent('#JUM-C-ERR')), 'compte : les deux codes de connexion doivent être identiques');
+    await p.fill('#JUM-C-MDP2', 'Lea-2026x');
     await p.click('#JUM-C-CREER'); await attendre(2500);
     const titre = () => p.textContent('#JUM-PF-TITRE'), num = () => p.textContent('#JUM-PF-NUM'), err = () => p.textContent('#JUM-R-ERREUR');
     verifier(await titre() === 'Mon profil' && (await num()).includes('Étape 2 sur 7') && (await p.textContent('.JUM-PF-OK')).includes('@trigone-app.com')
