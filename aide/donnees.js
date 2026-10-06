@@ -155,7 +155,10 @@
     // La question courte qui commence par « et », « pareil », « aussi »… reprend le sujet de la précédente.
     function estSuite(q) {
         var s = normal(q).trim();
-        return /^(et|pareil|idem|meme chose|aussi|puis|sinon|ok et|d accord et|bon et|alors et|mais|ou)( |$)/.test(s) || / (aussi|pareil|idem)$/.test(s) || s.split(' ').length <= 3;
+        if (/^(et|pareil|idem|meme chose|aussi|puis|sinon|ok et|d accord et|bon et|alors et|mais|ou)( |$)/.test(s) || / (aussi|pareil|idem)$/.test(s)) return true;
+        // Message court sans sujet à lui (« en Italie ? », « formation ») : c'est une suite. « indemnités aux USA » n'en est pas une.
+        var n = ' ' + s + ' ';
+        return s.split(' ').length <= 3 && !FORT.test(n) && !SUJET.test(n) && !MOTS_FD.test(n) && !CODE_FD.test(q) && !/ combien /.test(n);
     }
     var OBJETS = ['formation', 'intervention', 'entrainement', 'fonctionnement', 'courant', 'changement', 'residence', 'mission', 'missions', 'deplacement', 'deplacements', 'bagage', 'mobilier', 'permanents', 'instruction'];
     function completer(precedent, q, tarifs) {
