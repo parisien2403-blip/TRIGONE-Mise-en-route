@@ -293,6 +293,7 @@
     }
     function contexte() {
         return { tarifs: tarifs, change: tarifs ? tauxChange() : { taux: {}, date: '' }, version: VERSION, app: APP,
+            distance: function(de, a) { return fetch(B + 'api/distance?de=' + encodeURIComponent(String(de).toUpperCase()) + '&a=' + encodeURIComponent(String(a).toUpperCase()), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(j) { if (j && j.ok && j.km >= 0) return j.km; throw new Error((j && j.erreur) || 'service indisponible'); }); },
             codier: function() { return codier ? Promise.resolve(codier) : fetch(B + 'codier.json').then(function(r) { if (!r.ok) throw new Error('codier'); return r.json(); }).then(function(j) { codier = j; return j; }); } };
     }
     // Propos insultants : la conversation est coupée un quart d'heure (et l'IA avec).
@@ -304,12 +305,13 @@
         if (t) setTimeout(coupure, Math.min(t - Date.now() + 500, 60000));
         return t;
     }
-    function repondreCircuit(id, question) {
+    function repondreCircuit(id, question, precedent) {
         attenteIa = true; dessinerFil();
-        window.AIDE_CIRCUIT.repondre(id, question, contexte()).then(function(r) {
+        var cx = contexte(); cx.precedent = precedent || null;
+        window.AIDE_CIRCUIT.repondre(id, question, cx).then(function(r) {
             attenteIa = false;
             if (r && r.vide) { repondreFiches(question, null); return; }
-            if (r && r.html) { ajouter({ de: 'lui', html: r.html, etq: r.etq || '', pose: r.pose || '', q: question }); ecrire(CLE_DERNIER, { type: 'circuit', id: id, q: question }); }
+            if (r && r.html) { ajouter({ de: 'lui', html: r.html, etq: r.etq || '', pose: r.pose || '', q: question }); ecrire(CLE_DERNIER, { type: 'circuit', id: id, q: question, params: r.params || null }); }
             else repondreFiches(question, null);
         }, function() { attenteIa = false; repondreFiches(question, null); });
     }
@@ -328,6 +330,8 @@
         // Le circuit de la personne (sa demande, son compte-rendu, ce qu'elle a à valider…), avant la notice.
         var ic = C && C.intention(question, contexte()), avant = lire(CLE_DERNIER);
         // « combien je vais toucher entre Libourne et Bordeaux » : indemnités kilométriques, pas l'estimation de la mission.
+        // Suite d'une simulation (« et en 6 CV », « depuis Bordeaux », « et en train ») : on garde la mission et on change ce qui est dit.
+        if (!ic && C && avant && avant.type === 'circuit' && avant.id === 'simulation' && C.suite(question)) { repondreCircuit('simulation', question, avant.params); return; }
         if (ic === 'estimation' && window.AIDE_DONNEES && window.AIDE_DONNEES.intention(question, tarifs) === 'ik') ic = null;
         try { localStorage.setItem('trigone_aide_deja', '1'); } catch (e) {}
         // « et celle de Madrid ? » après une question sur le circuit : même sujet.
@@ -471,7 +475,7 @@
     var EXEMPLES = [
         ['Mon circuit', [['Où en est ma demande ?'], ['Vérifie ma demande avant l\'envoi'], ['Combien je vais toucher ?'], ['Et mon compte-rendu ?']]],
         ['L\'appli', [['Comment j\'envoie ma demande ?', 'envoyer-demande'], ['Je me suis trompé, je corrige comment ?', 'modifier-envoyee'], ['Comment je fais mon compte-rendu ?', 'cr-commencer']]],
-        ['Vos frais', [['Combien la nuit à Paris ?'], ['Repas en Allemagne'], ['IK Lyon → Grenoble 6 CV'], ['100 dollars en euros']]],
+        ['Vos frais', [['5 jours à Paris en VRC depuis Libourne, 6 CV : combien ?'], ['Combien la nuit à Paris ?'], ['Repas en Allemagne'], ['IK Lyon → Grenoble 6 CV'], ['100 dollars en euros']]],
         ['Les règles', [['Code FD pour un stage'], ['Qui valide ma demande ?', 'qui-valide'], ['Le codier est-il à jour ?']]],
         ['Rien que pour vous', [['Combien de missions j\'ai faites ?'], ['Mon adresse TRIGONE', 'mon-adresse'], ['Quoi de neuf ?']]]
     ];
