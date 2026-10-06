@@ -1231,7 +1231,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 201, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 202, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -6298,7 +6298,8 @@
         fenMdp.innerHTML = '<div class="JUM-GC-FEN">' + (opts.changer ? '<button type="button" class="JUM-GC-X" aria-label="Fermer">✕</button>' : '') +
             '<h3>🔐 ' + (opts.changer ? 'Changer mon code de connexion' : refaire ? 'Choisissez un nouveau code de connexion' : 'Créez votre code de connexion') + '</h3>' +
             '<p>' + (opts.changer ? '' : 'Nouveau dans TRIGONE : ') + 'avec votre adresse <b>' + esc(adr) + '</b> et ce code, vous vous connectez sur <b>n\'importe quel téléphone ou PC</b>, et toutes vos données reviennent.</p>' +
-            '<div class="JUM-R-CHAMP"><label for="JUM-MDP-1">Code de connexion (8 caractères au moins)</label><input id="JUM-MDP-1" type="password" autocomplete="new-password" data-no-uppercase="1"></div>' +
+            (opts.changer && !refaire ? '<div class="JUM-R-CHAMP" style="margin-bottom:8px;"><label for="JUM-MDP-0">Code de connexion actuel</label><input id="JUM-MDP-0" type="password" autocomplete="current-password" data-no-uppercase="1"></div>' : '') +
+            '<div class="JUM-R-CHAMP"><label for="JUM-MDP-1">' + (opts.changer ? 'Nouveau code' : 'Code de connexion') + ' (8 caractères au moins)</label><input id="JUM-MDP-1" type="password" autocomplete="new-password" data-no-uppercase="1"></div>' +
             '<div class="JUM-R-CHAMP" style="margin-top:8px;"><label for="JUM-MDP-2">Confirmez le code</label><input id="JUM-MDP-2" type="password" autocomplete="new-password" data-no-uppercase="1"></div>' +
             '<p class="JUM-R-AIDE" style="margin:8px 0 0;">Différent du code à 4 chiffres, qui sert seulement à ouvrir l\'appli sur cet appareil. Notez-le : en cas d\'oubli, l\'administrateur de votre unité vous remet un code de réactivation.</p>' +
             '<p class="JUM-R-ERREUR" id="JUM-MDP-ERR"></p>' +
@@ -6312,11 +6313,13 @@
             if (a.length < 8) { err.textContent = '⛔ 8 caractères au moins.'; return; }
             if (a !== b) { err.textContent = '⛔ Les deux codes ne sont pas identiques.'; f.querySelector('#JUM-MDP-2').value = ''; return; }
             go.disabled = true; go.textContent = 'Enregistrement…'; err.textContent = '';
-            appelApi('compte/motdepasse', { methode: 'POST', corps: { mdp: a } }).then(function() {
+            var anc = f.querySelector('#JUM-MDP-0');
+            if (anc && !anc.value) { err.textContent = '⛔ Tapez d\'abord votre code de connexion actuel.'; go.disabled = false; go.textContent = 'Enregistrer mon code'; return; }
+            appelApi('compte/motdepasse', { methode: 'POST', corps: { mdp: a, ancien: anc ? anc.value : '' } }).then(function() {
                 try { localStorage.removeItem('trigone_mdp_refaire'); } catch (e) {}
                 fermer(); bandeau('✔ Code de connexion enregistré : adresse TRIGONE + ce code, sur n\'importe quel appareil.');
                 if (opts.apres) opts.apres();
-            }, function(e) { go.disabled = false; go.textContent = 'Enregistrer mon code'; err.textContent = '⛔ ' + (e.message || e); });
+            }, function(e) { go.disabled = false; go.textContent = 'Enregistrer mon code'; err.textContent = '⛔ ' + (e.message || e); if (anc && /actuel/.test(e.message || '')) { anc.value = ''; anc.focus(); } });
         };
         setTimeout(function() { var c1 = f.querySelector('#JUM-MDP-1'); if (c1) c1.focus(); }, 60);
     };

@@ -960,6 +960,7 @@ async function api(requete, env, url, ctx) {
             nom: String(corps.nom || 'Appareil').slice(0, 60), cree: Date.now() };
         compte.appareils = compte.appareils.concat(app).slice(-10);
         delete compte.mdpEchecs;   // connexion par code coupée après trop d'erreurs : rétablie par un QR ou un code de réactivation
+        if (l.reactivation) compte.mdpLibre = true;   // code oublié : le nouveau code se choisit sans l'ancien
         await kv.put('compte:' + l.mail, JSON.stringify(compte));
         return json({ ok: true, mail: l.mail, appareil: app.id, jeton, paquet: l.paquet, reactivation: !!l.reactivation });
     }
@@ -1459,6 +1460,17 @@ async function api(requete, env, url, ctx) {
     if (chemin === 'compte/motdepasse' && methode === 'POST') {
         const c = await requete.json().catch(() => ({})), code = String(c.mdp || '');
         if (code.length < 8 || code.length > 200) return erreur(400, 'Le code de connexion contient 8 caractères au moins.');
+        // Changer un code existant : le code actuel d'abord (un téléphone laissé ouvert ne suffit pas). Pas demandé pour
+        // un premier code, ni juste après un code de réactivation (code oublié).
+        if (moi.compte.mdp && !moi.compte.mdpLibre) {
+            const lim = 'limite-mdp:' + moi.mail, n = +(await kv.get(lim)) || 0;
+            if (n >= 5) return erreur(429, 'Trop d\'essais : réessayez dans une heure.');
+            if (await empreinteMdp(String(c.ancien || ''), depuisB64url(moi.compte.mdp.sel)) !== moi.compte.mdp.h) {
+                await kv.put(lim, String(n + 1), { expirationTtl: 3600 });
+                return erreur(403, 'Code de connexion actuel incorrect.');
+            }
+        }
+        delete moi.compte.mdpLibre;
         const sel = hasard(16);
         moi.compte.mdp = { sel: b64url(sel), h: await empreinteMdp(code, sel), le: Date.now() };
         delete moi.compte.mdpEchecs; delete moi.compte.codeCnx; delete moi.compte.codeEchecs;
