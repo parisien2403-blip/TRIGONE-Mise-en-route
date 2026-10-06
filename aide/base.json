@@ -15,7 +15,18 @@
     "omr",
     "om",
     "mer",
-    "odm"
+    "odm",
+    "ordre de deplacement",
+    "feuille de route",
+    "ordre de route",
+    "demande d om",
+    "demande de deplacement",
+    "fiche de mission",
+    "demande de mission",
+    "mon ordre",
+    "mise en route",
+    "dossier de deplacement",
+    "bon de mission"
    ]
   ],
   [
@@ -29,7 +40,16 @@
     "notes de frais",
     "etat de frais",
     "cr",
-    "cdr"
+    "cdr",
+    "rapport de mission",
+    "bilan de mission",
+    "compte rendu de mission",
+    "retour de mission",
+    "decompte",
+    "etat de remboursement",
+    "frais de deplacement",
+    "note de frais de mission",
+    "releve de frais"
    ]
   ],
   [
@@ -110,7 +130,21 @@
     "trouve plus",
     "trouve pas",
     "je la trouve",
-    "ou je trouve"
+    "ou je trouve",
+    "je vois pas",
+    "vois pas",
+    "je vois plus",
+    "vois plus",
+    "introuvable",
+    "disparu",
+    "disparue",
+    "c est ou",
+    "c ou",
+    "ou est ce que",
+    "ou ca",
+    "il est passe ou",
+    "elle est passee ou",
+    "je l ai perdu"
    ]
   ],
   [
@@ -227,7 +261,26 @@
     "n+1",
     "superieur",
     "mon superieur",
-    "hierarchie"
+    "hierarchie",
+    "cdu",
+    "commandant d unite",
+    "commandant de compagnie",
+    "cdt de cie",
+    "cdt d unite",
+    "chef de peloton",
+    "chef de poste",
+    "patron",
+    "le boss",
+    "boss",
+    "adu",
+    "adjudant d unite",
+    "le pitaine",
+    "mon cdu",
+    "mon chef de section",
+    "mon adjudant",
+    "mon lieutenant",
+    "mon capitaine",
+    "mon commandant"
    ]
   ],
   [
@@ -248,7 +301,14 @@
     "le colon",
     "pacha",
     "chef du corps",
-    "n+2"
+    "n+2",
+    "commandant de regiment",
+    "chef d etat major",
+    "le grand chef",
+    "mon chef de corps",
+    "le corps",
+    "le colonel",
+    "mon colonel"
    ]
   ],
   [
@@ -270,7 +330,22 @@
     "secretariat",
     "compta",
     "comptable",
-    "comptabilite"
+    "comptabilite",
+    "fourrier",
+    "le fourrier",
+    "gestionnaire",
+    "le gestionnaire",
+    "administratif",
+    "service administratif",
+    "bureau mouvement",
+    "bureau des mouvements",
+    "bmv",
+    "service deplacement",
+    "cellule chorus",
+    "la compta",
+    "bureau rh",
+    "brh",
+    "sga"
    ]
   ],
   [
@@ -288,7 +363,18 @@
     "caisse",
     "bagnole",
     "auto",
-    "vehicule"
+    "vehicule",
+    "ma tire",
+    "mon vehicule",
+    "mon auto",
+    "mon vehicule perso",
+    "vehicule prive",
+    "voiture privee",
+    "vl personnelle",
+    "vrc",
+    "voie routiere civile",
+    "4x4",
+    "voiture de location"
    ]
   ],
   [
@@ -326,7 +412,25 @@
     "graille",
     "grailler",
     "nourriture",
-    "nourri"
+    "nourri",
+    "casse dalle",
+    "casse-dalle",
+    "bouffer",
+    "becter",
+    "croute",
+    "popote",
+    "ordinaire",
+    "mess",
+    "cantine",
+    "cercle",
+    "rata",
+    "sandwich",
+    "dej",
+    "petit dej",
+    "petit dejeuner",
+    "repas du midi",
+    "repas du soir",
+    "dejeuner du midi"
    ]
   ],
   [
@@ -346,7 +450,23 @@
     "loge",
     "chambre",
     "coucher",
-    "airbnb"
+    "airbnb",
+    "piaule",
+    "pieu",
+    "plumard",
+    "pioncer",
+    "roupiller",
+    "se loger",
+    "gite",
+    "auberge",
+    "appartement",
+    "appart",
+    "casernement",
+    "chambree",
+    "hebergee",
+    "heberge",
+    "nuit d hotel",
+    "nuits d hotel"
    ]
   ],
   [
@@ -364,7 +484,21 @@
     "ouigo",
     "avion",
     "vol",
-    "air france"
+    "air france",
+    "le train",
+    "trains",
+    "billet sncf",
+    "e billet",
+    "ebillet",
+    "billet electronique",
+    "titre de transport",
+    "navette",
+    "bus",
+    "tram",
+    "metro",
+    "taxi",
+    "ticket de train",
+    "ticket de metro"
    ]
   ],
   [
@@ -386,7 +520,17 @@
     "recu de caisse",
     "quittance",
     "preuve",
-    "pj"
+    "pj",
+    "note d hotel",
+    "facture d hotel",
+    "note de restaurant",
+    "addition",
+    "ticket de peage",
+    "peage",
+    "ticket de parking",
+    "parking",
+    "carburant",
+    "essence"
    ]
   ],
   [
@@ -461,7 +605,15 @@
     "faux",
     "fausse",
     "pas bon",
-    "pas bonne"
+    "pas bonne",
+    "pas validee",
+    "pas valide",
+    "non validee",
+    "bloquee par le chef",
+    "il a refuse",
+    "il l a refusee",
+    "on m a refuse",
+    "refusee par"
    ]
   ],
   [
@@ -478,7 +630,17 @@
     "transmettre",
     "transmis",
     "expedier",
-    "balancer"
+    "balancer",
+    "poster",
+    "faire passer",
+    "transferer",
+    "transfere",
+    "partager",
+    "faire remonter",
+    "remonter",
+    "faire valider",
+    "adresser",
+    "acheminer"
    ]
   ],
   [
@@ -493,7 +655,13 @@
     "mobile",
     "iphone",
     "android",
-    "samsung"
+    "samsung",
+    "bigophone",
+    "gsm",
+    "cellulaire",
+    "mon tel",
+    "mon portable",
+    "mon phone"
    ]
   ],
   [
@@ -529,7 +697,15 @@
     "partir",
     "je pars",
     "parti",
-    "partie"
+    "partie",
+    "c est parti",
+    "je decolle",
+    "on part",
+    "on y va",
+    "jour du depart",
+    "heure de depart",
+    "pointer mon depart",
+    "pointer le depart"
    ]
   ],
   [
@@ -542,7 +718,14 @@
     "en arrivant",
     "sur site",
     "sur place",
-    "arrivee"
+    "arrivee",
+    "je suis sur place",
+    "arrive a destination",
+    "arrivee a destination",
+    "je suis la bas",
+    "je suis arrive sur place",
+    "pointer mon arrivee",
+    "pointer l arrivee"
    ]
   ],
   [
@@ -566,7 +749,27 @@
     "freeze",
     "crash",
     "bloquee",
-    "bloque"
+    "bloque",
+    "ca deconne",
+    "deconne",
+    "ca beugue",
+    "rien ne se passe",
+    "ca charge pas",
+    "charge pas",
+    "page blanche",
+    "ca tourne en rond",
+    "ca rame",
+    "ca lag",
+    "lag",
+    "ne repond pas",
+    "repond pas",
+    "ca coince",
+    "coince",
+    "plante tout le temps",
+    "ca saute",
+    "erreur",
+    "message d erreur",
+    "ca affiche une erreur"
    ]
   ],
   [
@@ -579,7 +782,13 @@
     "virer",
     "degager",
     "enlever",
-    "retirer"
+    "retirer",
+    "jeter",
+    "mettre a la poubelle",
+    "poubelle",
+    "degommer",
+    "faire disparaitre",
+    "nettoyer"
    ]
   ],
   [
@@ -593,7 +802,16 @@
     "rectifier",
     "changer",
     "change",
-    "editer"
+    "editer",
+    "retoucher",
+    "ajuster",
+    "reprendre",
+    "revoir",
+    "refaire",
+    "mettre a jour",
+    "changer quelque chose",
+    "faire une correction",
+    "correction"
    ]
   ],
   [
@@ -677,7 +895,13 @@
     "centre financier",
     "centre de cout",
     "imputation",
-    "imputer"
+    "imputer",
+    "code engagement",
+    "numero fd",
+    "n fd",
+    "code budgetaire",
+    "ligne budgetaire",
+    "imputation budgetaire"
    ]
   ],
   [
@@ -702,7 +926,18 @@
     "suivre",
     "suivi",
     "statut",
-    "nouvelles"
+    "nouvelles",
+    "ca avance",
+    "ca bouge",
+    "des nouvelles",
+    "du nouveau",
+    "ou ca en est",
+    "sa en est ou",
+    "ca donne quoi",
+    "ou elle se trouve",
+    "a quelle etape",
+    "quelle etape",
+    "ou ca bloque"
    ]
   ],
   [
@@ -736,7 +971,13 @@
     "remplacant",
     "remplacante",
     "interim",
-    "remplacer"
+    "remplacer",
+    "en conge",
+    "en vacances",
+    "en permission",
+    "je serai absent",
+    "indisponible",
+    "en arret"
    ]
   ],
   [
@@ -781,7 +1022,12 @@
     "medaille",
     "distinction",
     "distinctions",
-    "bronze"
+    "bronze",
+    "trigone d or",
+    "trigone d argent",
+    "trigone de bronze",
+    "recompense",
+    "trophee"
    ]
   ],
   [
@@ -848,7 +1094,11 @@
     "inbox",
     "messagerie",
     "mes messages",
-    "courrier"
+    "courrier",
+    "mes envois recus",
+    "ce que j ai recu",
+    "reception",
+    "recus"
    ]
   ],
   [
@@ -893,7 +1143,11 @@
     "configuration",
     "config",
     "engrenage",
-    "roue"
+    "roue",
+    "les reglages",
+    "le menu",
+    "menu",
+    "les options"
    ]
   ],
   [
@@ -908,7 +1162,14 @@
     "grade",
     "compagnie",
     "cie",
-    "unite"
+    "unite",
+    "mes coordonnees",
+    "mes donnees",
+    "mon nom",
+    "mon grade",
+    "mon matricule",
+    "mon unite",
+    "ma compagnie"
    ]
   ],
   [
@@ -930,7 +1191,13 @@
     "simulation",
     "simulateur",
     "estimer",
-    "estimation"
+    "estimation",
+    "calculer mes frais",
+    "calcul de mes frais",
+    "faire une simulation",
+    "faire une estimation",
+    "savoir combien",
+    "avoir une idee du montant"
    ]
   ],
   [
@@ -944,7 +1211,12 @@
     "opex",
     "outre mer",
     "outre-mer",
-    "dom tom"
+    "dom tom",
+    "a l international",
+    "en dehors de la france",
+    "pays etranger",
+    "mission a l etranger",
+    "hors metropole"
    ]
   ],
   [
@@ -980,7 +1252,27 @@
     "argent",
     "sous",
     "thune",
-    "fric"
+    "fric",
+    "oseille",
+    "pognon",
+    "fraiche",
+    "maille",
+    "tune",
+    "flouze",
+    "ble",
+    "indemnisation",
+    "indemnise",
+    "indemnisee",
+    "etre paye",
+    "me payer",
+    "payer",
+    "rembourser",
+    "remboursable",
+    "mes sous",
+    "mon argent",
+    "la paye",
+    "la paie",
+    "combien je recupere"
    ]
   ],
   [
@@ -992,7 +1284,13 @@
     "livret",
     "tuto",
     "tutoriel",
-    "aide"
+    "aide",
+    "documentation",
+    "guide",
+    "explications",
+    "faq",
+    "aide en ligne",
+    "mode d emploi complet"
    ]
   ],
   [
@@ -1006,7 +1304,14 @@
     "reconnecter",
     "acceder",
     "entrer dans",
-    "rentrer dans"
+    "rentrer dans",
+    "me log",
+    "se log",
+    "me logger",
+    "m identifier",
+    "m authentifier",
+    "ouvrir une session",
+    "ouvrir ma session"
    ]
   ],
   [
@@ -1032,7 +1337,15 @@
     "souviens plus",
     "rappelle plus",
     "perdu mon code",
-    "perdu le code"
+    "perdu le code",
+    "j ai plus",
+    "je l ai plus",
+    "trou de memoire",
+    "je sais plus",
+    "sais plus",
+    "aucune idee",
+    "je me souviens plus",
+    "jamais su"
    ]
   ],
   [
@@ -1101,7 +1414,11 @@
     "retour",
     "destination",
     "lieu de depart",
-    "lieu d arrivee"
+    "lieu d arrivee",
+    "en plusieurs parties",
+    "plusieurs parties",
+    "plusieurs etapes",
+    "en plusieurs etapes"
    ]
   ],
   [
@@ -1130,6 +1447,19 @@
     "annule",
     "annuler",
     "tampon"
+   ]
+  ],
+  [
+   "jesuisperdu",
+   [
+    "je suis perdu",
+    "je suis perdue",
+    "suis perdu",
+    "suis perdue",
+    "chui perdu",
+    "jsuis perdu",
+    "je m y perds",
+    "je suis largue"
    ]
   ]
  ],
@@ -1255,7 +1585,156 @@
   "bloqué": "bloque",
   "kilo": "kilometres",
   "bornes": "kilometres",
-  "resto": "restaurant"
+  "resto": "restaurant",
+  "jsuis": "je suis",
+  "chui": "je suis",
+  "chuis": "je suis",
+  "jsui": "je suis",
+  "jvai": "je vais",
+  "jvais": "je vais",
+  "jva": "je vais",
+  "g": "j ai",
+  "ct": "c etait",
+  "kel": "quel",
+  "kelle": "quelle",
+  "keske": "qu est ce que",
+  "kesk": "qu est ce que",
+  "keskil": "qu est ce qu il",
+  "komment": "comment",
+  "koman": "comment",
+  "komen": "comment",
+  "pkoi": "pourquoi",
+  "pourqoi": "pourquoi",
+  "pourquo": "pourquoi",
+  "ouske": "ou est ce que",
+  "oske": "ou est ce que",
+  "dc": "donc",
+  "dnc": "donc",
+  "mtn": "maintenant",
+  "mnt": "maintenant",
+  "auj": "aujourd hui",
+  "ajd": "aujourd hui",
+  "aujourdhui": "aujourd hui",
+  "dmn": "demain",
+  "tkt": "ne t inquiete pas",
+  "vrmt": "vraiment",
+  "vrm": "vraiment",
+  "tte": "toute",
+  "ttes": "toutes",
+  "tlm": "tout le monde",
+  "qlq": "quelque",
+  "qlqch": "quelque chose",
+  "qqc": "quelque chose",
+  "cmb": "combien",
+  "cbn": "combien",
+  "combin": "combien",
+  "conbien": "combien",
+  "combiens": "combien",
+  "cb": "combien",
+  "rembourcement": "remboursement",
+  "remboursser": "rembourser",
+  "remboursemen": "remboursement",
+  "indemnitee": "indemnite",
+  "hebergment": "hebergement",
+  "hebergemment": "hebergement",
+  "logment": "logement",
+  "demmander": "demander",
+  "anvoyer": "envoyer",
+  "envoier": "envoyer",
+  "envoyez": "envoyer",
+  "missio": "mission",
+  "mision": "mission",
+  "misson": "mission",
+  "comptrendu": "compte rendu",
+  "conterendu": "compte rendu",
+  "compterendu": "compte rendu",
+  "comptesrendus": "comptes rendus",
+  "deplacemen": "deplacement",
+  "deplacment": "deplacement",
+  "aplication": "application",
+  "aplli": "application",
+  "applie": "application",
+  "telefone": "telephone",
+  "telphone": "telephone",
+  "bcq": "beaucoup",
+  "bocou": "beaucoup",
+  "pck": "parce que",
+  "pcq": "parce que",
+  "psk": "parce que",
+  "prcq": "parce que",
+  "parske": "parce que",
+  "jcrois": "je crois",
+  "jpense": "je pense",
+  "jvoulais": "je voulais",
+  "jvoudrais": "je voudrais",
+  "jaimerais": "j aimerais",
+  "jarrivepas": "j arrive pas",
+  "jy": "j y",
+  "jen": "j en",
+  "ny": "n y",
+  "nest": "n est",
+  "cest": "c est",
+  "sest": "s est",
+  "quil": "qu il",
+  "quest": "qu est",
+  "lappli": "l application",
+  "lapplication": "l application",
+  "jusqua": "jusqu a",
+  "quelquun": "quelqu un",
+  "jsavais": "je savais",
+  "jpensais": "je pensais",
+  "jtrouvepas": "je trouve pas",
+  "jtrouvpa": "je trouve pas",
+  "jcomprendpas": "je comprends pas",
+  "jcomprendpa": "je comprends pas",
+  "jpeuxpas": "je peux pas",
+  "jpeupa": "je peux pas",
+  "valideure": "valideur",
+  "validateur": "valideur",
+  "valideurs": "valideurs",
+  "signateur": "valideur",
+  "sigature": "signature",
+  "signture": "signature",
+  "notfication": "notification",
+  "notifcation": "notification",
+  "parametrage": "parametres",
+  "mdpass": "mot de passe",
+  "motpasse": "mot de passe",
+  "mtdp": "mot de passe",
+  "pswd": "mot de passe",
+  "pwd": "mot de passe",
+  "codfd": "code fd",
+  "codefd": "code fd",
+  "indem": "indemnite",
+  "indems": "indemnites",
+  "kms": "kilometres",
+  "klm": "kilometres",
+  "hotl": "hotel",
+  "hotell": "hotel",
+  "restau": "restaurant",
+  "dej": "dejeuner",
+  "ptidej": "petit dejeuner",
+  "bouff": "bouffe",
+  "nuite": "nuitee",
+  "nuitee": "nuitee",
+  "jfe": "je fais",
+  "jdoi": "je dois",
+  "fo": "faut",
+  "fodrait": "faudrait",
+  "faudre": "faudrait",
+  "poure": "pourrait",
+  "pourai": "pourrai",
+  "pourrai": "pourrai",
+  "ckoi": "c est quoi",
+  "cquoi": "c est quoi",
+  "jtrouv": "je trouve",
+  "jtrouvepa": "je trouve pas",
+  "trouv": "trouve",
+  "jcherche": "je cherche",
+  "e": "est",
+  "ets": "est",
+  "ai": "ai",
+  "é": "est"
  },
  "vides": [
   "a",

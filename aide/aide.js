@@ -175,7 +175,7 @@
     // Donne la réponse d'une fiche (personnelle si elle l'est), avec « Ce n'est pas ça ? » si elle vient d'une question.
     function donnerFiche(f, question) {
         var fin = function(corps) {
-            ajouter({ de: 'lui', html: htmlFiche(f, corps) + (question ? '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>' : ''),
+            ajouter({ de: 'lui', html: htmlFiche(f, corps) + (question ? '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>' : ''),
                 etq: f.dyn ? 'Réponse d\'après votre profil' : 'Réponse trouvée dans la notice', fiche: f.id, q: question });
         };
         if (f.dyn && PERSO[f.dyn]) { attenteIa = true; dessinerFil(); PERSO[f.dyn]().then(function(h) { attenteIa = false; fin(h); }, function() { attenteIa = false; fin(); }); }
@@ -251,7 +251,7 @@
     function repondreDonnees(question, type) {
         var D = window.AIDE_DONNEES, fin = function(r) {
             if (!r) return false;
-            ajouter({ de: 'lui', html: r.html + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>', etq: r.etq, q: question });
+            ajouter({ de: 'lui', html: r.html + '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>', etq: r.etq, q: question });
             return true;
         };
         if (type === 'tarif') { var c = tauxChange(); return Promise.resolve(fin(D.tarif(question, tarifs, c.taux, c.date))); }
@@ -262,6 +262,14 @@
     var CLE_DERNIER = 'trigone_aide_dernier';
     // Politesse : « merci » → la mascotte lève le pouce ; « bonjour », « au revoir » → une vraie réponse.
     var IMG_POUCE = B + 'mascotte-pouce.webp';
+    function pasCa() { return varie('pasca', ['Ce n\'est pas ça ?', 'Pas tout à fait ?', 'Je suis à côté ?', 'Ce n\'était pas votre question ?']); }
+    // Plusieurs façons de dire la même chose : tirée au hasard, jamais deux fois de suite la même.
+    function varie(cle, liste) {
+        var k = 'trigone_aide_v_' + cle, der = -1; try { der = parseInt(sessionStorage.getItem(k), 10); } catch (e) {}
+        var i = Math.floor(Math.random() * liste.length); if (liste.length > 1 && i === der) i = (i + 1) % liste.length;
+        try { sessionStorage.setItem(k, String(i)); } catch (e) {}
+        return liste[i];
+    }
     // ---------- Politesse : tout ce qu'on dit à quelqu'un, avec la réponse qui va ----------
     // Un message fait seulement de formules (« bonjour ça va ? », « merci bonne journée », « désolé », « t'es qui ? ») reçoit
     // une réponse composée ; s'il contient une vraie question, la question passe (et « stp » donne « Bien sûr ! »).
@@ -299,20 +307,26 @@
         var reste = s.trim().split(' ').filter(function(m) { return m && REMPLISSAGE.indexOf(' ' + m + ' ') < 0; });
         if (!n || reste.length) return null;                                     // une vraie question : elle passe
         var t = window.AIDE_MOTEUR.normal(question), html = [], pose = '', fin = '', PRES = ' <button type="button" class="AIDE-LIEN" data-presentation="1">Ce que je sais faire ›</button>';
-        if (vu.pardon) html.push('Pas de souci' + vous + ', ça arrive à tout le monde !');
-        if (vu.respects) { html.push('Mes respects' + vous + ' !'); pose = 'garde'; }
-        else if (vu.bonjour) { html.push((/ re(bonjour| bonjour|bonsoir)? /.test(t) ? 'Re-bonjour' : / (bonsoir|bsr) /.test(t) ? 'Bonsoir' : 'Bonjour') + vous + ' !'); pose = pose || 'salut'; }
-        if (vu.ordres) html.push(/ repos /.test(t) ? 'Merci ! Je reste à votre service.' : 'Repos' + vous + ' 😄 ! C\'est moi qui suis à vos ordres.');
-        if (vu.cava) html.push('Je vais très bien, merci ! Et vous ?');
-        if (vu.bien && !vu.cava) html.push('Parfait, ça fait plaisir !');
-        if (vu.mal) html.push('Courage' + vous + ' ! Dites-moi ce qui coince : je vais essayer de vous simplifier la vie.');
-        if (vu.bravo) { html.push('Merci' + vous + ', ça me fait plaisir ! 😊'); pose = pose || 'content'; }
-        if (vu.rire) { html.push('😄 Content de vous faire sourire !'); pose = pose || 'content'; }
-        if (vu.tendre) { html.push('C\'est gentil 😊 Restons professionnels quand même !'); pose = pose || 'content'; }
-        if (vu.dors) html.push('Jamais ! Je suis disponible 24 h sur 24, même sans réseau.');
-        if (vu.la) html.push('Oui, je suis là' + vous + ' ! Je vous écoute.');
+        // Chaque réponse a plusieurs tournures (varie) : la mascotte ne répète pas toujours la même phrase.
+        var V = function(cle, l) { return varie(cle, l).split('{v}').join(vous); };
+        if (vu.pardon) html.push(V('pardon', ['Pas de souci{v}, ça arrive à tout le monde !', 'Aucun problème{v} !', 'Ne vous inquiétez pas{v}, il n\'y a pas de mal !', 'Pas de souci, on reprend tranquillement.']));
+        if (vu.respects) { html.push(V('respects', ['Mes respects{v} !', 'Mes respects{v}, à votre service !'])); pose = 'garde'; }
+        else if (vu.bonjour) {
+            var mot = / re(bonjour| bonjour|bonsoir)? /.test(t) ? 'Re-bonjour' : / (bonsoir|bsr) /.test(t) ? 'Bonsoir' : 'Bonjour';
+            html.push(mot + vous + V('bonjour-fin', [' !', ' ! Ravi de vous voir.', ' ! Content de vous retrouver.', ' !']));
+            pose = pose || 'salut';
+        }
+        if (vu.ordres) html.push(/ repos /.test(t) ? V('repos', ['Merci ! Je reste à votre service.', 'Merci ! Toujours prêt si besoin.']) : V('ordres', ['Repos{v} 😄 ! C\'est moi qui suis à vos ordres.', 'Repos{v} 😄 ! Dites-moi plutôt ce que je peux faire pour vous.']));
+        if (vu.cava) html.push(V('cava', ['Je vais très bien, merci ! Et vous ?', 'Très bien, merci de demander ! Et de votre côté ?', 'En pleine forme, merci ! Et vous, comment allez-vous ?', 'Toujours d\'attaque, merci ! Et vous ?']));
+        if (vu.bien && !vu.cava) html.push(V('bien', ['Parfait, ça fait plaisir !', 'Tant mieux !', 'Content de l\'apprendre !', 'Excellent, très bien !']));
+        if (vu.mal) html.push(V('mal', ['Courage{v} ! Dites-moi ce qui coince : je vais essayer de vous simplifier la vie.', 'Courage{v}, ça va aller ! Si TRIGONE peut vous faciliter la tâche, dites-moi comment.', 'Courage{v} ! Je suis là pour vous alléger le travail : que puis-je faire ?']));
+        if (vu.bravo) { html.push(V('bravo', ['Merci{v}, ça me fait plaisir ! 😊', 'Merci beaucoup, c\'est gentil ! 😊', 'Je fais de mon mieux, merci ! 😊', 'Merci{v}, ça me touche ! 😊'])); pose = pose || 'content'; }
+        if (vu.rire) { html.push(V('rire', ['😄 Content de vous faire sourire !', '😄 Ravi de vous voir de bonne humeur !', '😄 Le sourire, c\'est important en mission !'])); pose = pose || 'content'; }
+        if (vu.tendre) { html.push(V('tendre', ['C\'est gentil 😊 Restons professionnels quand même !', 'Merci, c\'est touchant 😊 Revenons à nos missions !'])); pose = pose || 'content'; }
+        if (vu.dors) html.push(V('dors', ['Jamais ! Je suis disponible 24 h sur 24, même sans réseau.', 'Pas du tout, je veille ! Jour et nuit, à votre service.']));
+        if (vu.la) html.push(V('la', ['Oui, je suis là{v} ! Je vous écoute.', 'Présent{v} ! Que puis-je faire pour vous ?', 'Toujours là{v} ! Je vous écoute.']));
         if (vu.qui) html.push('Je suis la <b>mascotte d\'aide de TRIGONE</b>. Je réponds avec la notice, les barèmes, le codier et votre propre circuit (demandes, comptes-rendus), sans réseau pour l\'essentiel. Je ne suis pas un humain : pour les questions imprévues, je peux demander à mon cerveau IA.' + PRES);
-        if (vu.perdu) html.push('Pas de panique' + vous + ' ! Dites-moi en quelques mots ce que vous voulez faire (« envoyer ma demande », « où en est mon CR »…), ou regardez ce que je sais faire.' + PRES);
+        if (vu.perdu) html.push(V('perdu', ['Pas de panique{v} ! ', 'On va trouver ensemble{v} ! ', 'Je suis là pour ça{v} ! ']) + 'Dites-moi en quelques mots ce que vous voulez faire (« envoyer ma demande », « où en est mon CR »…), ou regardez ce que je sais faire.' + PRES);
         if (vu.fetes) {
             var f = / bonne annee | meilleurs voeux /.test(t) ? 'Bonne année à vous aussi' : / joyeux noel /.test(t) ? 'Joyeux Noël à vous aussi' : / bonnes fetes /.test(t) ? 'Bonnes fêtes à vous aussi' : / bonnes vacances /.test(t) ? 'Merci, bonnes vacances à vous' :
                 / bon appetit /.test(t) ? 'Bon appétit' : / joyeux anniversaire | bonne fete /.test(t) ? 'Merci beaucoup' : / bon courage | bonne chance /.test(t) ? 'Merci, à vous aussi' : 'Merci, à vous aussi';
@@ -321,15 +335,16 @@
         if (vu.aurevoir || (vu.non && !vu.ok)) {
             var au = / bonne nuit /.test(t) ? 'Bonne nuit' + vous + ', reposez-vous bien' : / bon week end | bon weekend | bon we /.test(t) ? 'Bon week-end' + vous : / bonne semaine | bonne fin de semaine /.test(t) ? 'Bonne semaine' + vous :
                 / bonne soiree | bonne fin de soiree /.test(t) ? 'Bonne soirée' + vous : / bonne journee | bonne fin de journee /.test(t) ? 'Bonne journée' + vous : / a demain /.test(t) ? 'À demain' + vous : / bonne route | bon retour /.test(t) ? 'Bonne route' + vous + ', soyez prudent' :
-                vu.non && !vu.aurevoir ? 'Très bien' + vous + '. Je reste là si besoin' : 'Au revoir' + vous;
-            var txt = (vu.merci ? 'Avec plaisir ! ' : '') + au + ', et bonne mission ! 🫡';
+                vu.non && !vu.aurevoir ? V('fin-non', ['Très bien{v}. Je reste là si besoin', 'Entendu{v}. Je reste disponible si besoin', 'D\'accord{v}. Revenez quand vous voulez, je reste là si besoin']) : V('aurevoir', ['Au revoir{v}', 'À bientôt{v}', 'À la prochaine{v}', 'Au revoir{v}, à très vite']);
+            var txt = (vu.merci ? V('merci-court', ['Avec plaisir ! ', 'Je vous en prie ! ', 'De rien ! ']) : '') + au + V('bonne-mission', [', et bonne mission ! 🫡', ', et bonne mission ! 🫡 Prenez soin de vous.', ', et bonne mission ! 🫡 Au plaisir de vous aider.']);
             return { html: (html.length ? html.join(' ') + '<br>' : '') + '<div class="AIDE-POUCE"><img src="' + B + 'aide/mascotte-salut.webp" alt=""><span>' + txt + '</span></div>' };
         }
-        if (vu.merci) return { html: (html.length ? html.join(' ') + '<br>' : '') + '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + ' ! Si vous avez une autre question, je suis là.</span></div>' };
-        if (vu.ok && !html.length) html.push('Très bien' + vous + ' ! Autre chose ?');
-        if (vu.stp && !html.length) { html.push('Bien sûr ! Que puis-je faire pour vous ?'); pose = 'content'; }
+        if (vu.merci) return { html: (html.length ? html.join(' ') + '<br>' : '') + '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>' +
+            V('merci', ['Avec plaisir{v} ! Si vous avez une autre question, je suis là.', 'Avec plaisir{v} ! N\'hésitez pas si besoin.', 'Avec plaisir{v}, c\'est mon rôle !', 'Avec plaisir{v} ! Je reste à votre disposition.']) + '</span></div>' };
+        if (vu.ok && !html.length) html.push(V('ok', ['Très bien{v} ! Autre chose ?', 'Parfait ! Puis-je vous aider pour autre chose ?', 'Entendu{v}. Autre chose ?', 'C\'est noté ! Autre chose pour vous ?']));
+        if (vu.stp && !html.length) { html.push(V('stp', ['Bien sûr ! Que puis-je faire pour vous ?', 'Bien sûr, avec plaisir ! Je vous écoute.', 'Bien sûr ! Dites-moi tout.'])); pose = 'content'; }
         // Bonjour seul (ou avec « ça va ») : on propose des sujets.
-        if ((vu.bonjour || vu.respects) && !vu.qui && !vu.perdu) fin = ' Que puis-je faire pour vous ?<div class="AIDE-PUCES">' + puces() + '</div>';
+        if ((vu.bonjour || vu.respects) && !vu.qui && !vu.perdu) fin = ' ' + V('bonjour-q', ['Que puis-je faire pour vous ?', 'En quoi puis-je vous aider ?', 'Que puis-je faire pour vous aujourd\'hui ?']) + '<div class="AIDE-PUCES">' + puces() + '</div>';
         if (!html.length) return null;
         return { html: html.join(' ') + fin, pose: pose };
     }
@@ -339,7 +354,7 @@
         try { perso = JSON.parse(localStorage.getItem('trigone_ik_rates') || 'null'); } catch (e) {}
         var fin = function(km, err) {
             var rep = D.ik(q, tarifs, perso, km, err);
-            ajouter({ de: 'lui', html: rep.html + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(q) + '">✨ Demander à l\'IA</button></div>', etq: rep.etq, q: q });
+            ajouter({ de: 'lui', html: rep.html + '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(q) + '">✨ Demander à l\'IA</button></div>', etq: rep.etq, q: q });
             ecrire(CLE_DERNIER, { type: 'ik', q: q, ik: rep.ik });
         };
         if (!v) return fin(null);
@@ -350,7 +365,7 @@
                 function() { attenteIa = false; fin(null, 'service indisponible'); });
     }
     function contexte() {
-        return { tarifs: tarifs, change: tarifs ? tauxChange() : { taux: {}, date: '' }, version: VERSION, app: APP,
+        return { tarifs: tarifs, change: tarifs ? tauxChange() : { taux: {}, date: '' }, version: VERSION, app: APP, sms: (base && base.sms) || {},
             distance: function(de, a) { return fetch(B + 'api/distance?de=' + encodeURIComponent(String(de).toUpperCase()) + '&a=' + encodeURIComponent(String(a).toUpperCase()), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(j) { if (j && j.ok && j.km >= 0) return { km: j.km, de: j.de || '', a: j.a || '' }; throw new Error((j && j.erreur) || 'service indisponible'); }); },
             codier: function() { return codier ? Promise.resolve(codier) : fetch(B + 'codier.json').then(function(r) { if (!r.ok) throw new Error('codier'); return r.json(); }).then(function(j) { codier = j; return j; }); } };
     }
@@ -379,7 +394,7 @@
         if (C && C.insulte(question)) {
             ajouter({ de: 'moi', texte: '[propos retiré]' });
             var t = C.couper();
-            ajouter({ de: 'lui', html: 'Je ne poursuis pas sur ce ton. <b>La conversation est coupée jusqu\'à ' + C.heure(t) + '.</b> Je reste à votre disposition ensuite, dans le respect.', pose: 'desole' });
+            ajouter({ de: 'lui', html: varie('insulte', ['Je ne poursuis pas sur ce ton.', 'Restons respectueux, s\'il vous plaît.', 'Je ne réponds pas à ce genre de propos.']) + ' <b>La conversation est coupée jusqu\'à ' + C.heure(t) + '.</b> Je reste à votre disposition ensuite, dans le respect.', pose: 'desole' });
             coupure(); return;
         }
         ajouter({ de: 'moi', texte: question });
@@ -395,7 +410,7 @@
         // « et celle de Madrid ? » après une question sur le circuit : même sujet.
         if (!ic && C && avant && avant.type === 'circuit' && avant.id && C.suite(question) && ['demande', 'moncr', 'estimation', 'chorus', 'avalider', 'chiffres'].indexOf(avant.id) >= 0) ic = avant.id;
         if (ic) { repondreCircuit(ic, question); return; }
-        if (C && C.frustre(question) && question.split(/\s+/).length <= 4) { ajouter({ de: 'lui', html: 'Je comprends, c\'est agaçant. Dites-moi ce qui bloque, en quelques mots, et je vous aide.' }); return; }
+        if (C && C.frustre(question) && question.split(/\s+/).length <= 4) { ajouter({ de: 'lui', html: varie('agace', ['Je comprends, c\'est agaçant. Dites-moi ce qui bloque, en quelques mots, et je vous aide.', 'Je comprends votre agacement. Expliquez-moi le problème en quelques mots, on va le régler ensemble.', 'Pas de panique, on va trouver. Qu\'est-ce qui ne va pas, exactement ?']) }); return; }
         // « stp », « s'il vous plaît » : la mascotte répond avec le sourire (« Bien sûr ! »).
         sourire = /(^| )(stp|svp|s il te plait|s il vous plait|sil te plait|sil vous plait|steuplait|stplait|please)( |$)/.test(window.AIDE_MOTEUR.normal(question));
         var D = window.AIDE_DONNEES, q = question, type = D && D.intention(question, tarifs), dernier = lire(CLE_DERNIER);
@@ -421,11 +436,12 @@
         if (top && top.score >= M.SUR) {
             donnerFiche(top.fiche, question);
         } else if (top && top.score >= M.PROPOSER) {
-            ajouter({ de: 'lui', html: 'Vous voulez parler de :<div class="AIDE-PUCES">' + r.resultats.slice(0, 3).map(function(x) {
+            ajouter({ de: 'lui', html: varie('proposer', ['Vous voulez parler de :', 'Vous pensez à l\'un de ces sujets ?', 'Je vois plusieurs possibilités :', 'C\'est l\'un de ceux-là ?']) + '<div class="AIDE-PUCES">' + r.resultats.slice(0, 3).map(function(x) {
                 return '<button type="button" class="AIDE-PUCE" data-fiche="' + x.fiche.id + '">' + esc(x.fiche.t) + '</button>'; }).join('') + '</div>' +
-                '<div class="AIDE-AUTRE">Aucun des trois ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>', q: question });
+                '<div class="AIDE-AUTRE">' + varie('aucun', ['Aucun des trois ?', 'Rien de tout ça ?', 'Ce n\'est aucun de ceux-là ?']) + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>', q: question });
         } else {
-            ajouter({ de: 'lui', html: 'Je n\'ai pas trouvé de page de la notice qui réponde à ça. Voulez-vous que je demande à mon <b>cerveau IA</b> ?' + boutonsIa(question), q: question });
+            ajouter({ de: 'lui', html: varie('pastrouve', ['Je n\'ai pas trouvé de page de la notice qui réponde à ça.', 'Hum, je ne trouve pas de réponse toute prête à cette question.', 'Là, je sèche un peu : rien dans la notice ne correspond.', 'Je n\'ai rien de précis là-dessus dans la notice.']) +
+                ' ' + varie('pastrouve-ia', ['Voulez-vous que je demande à mon <b>cerveau IA</b> ?', 'Je peux demander à mon <b>cerveau IA</b>, si vous voulez.', 'On tente avec mon <b>cerveau IA</b> ?']) + '<div class="AIDE-AUTRE">' + varie('reformuler', ['Ou reformulez avec d\'autres mots : je comprends le langage de tous les jours.', 'Vous pouvez aussi le dire autrement, je réessaie.', 'Ou dites-le autrement, avec vos mots : je réessaie.']) + '</div>' + boutonsIa(question), q: question, pose: 'desole' });
         }
     }
     function demanderIa(question) {

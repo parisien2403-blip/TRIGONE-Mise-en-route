@@ -45,7 +45,7 @@
     // ---------- Les intentions (chacun l'écrit à sa façon) ----------
     var COMMENT = / (comment|c est quoi|ca veut dire|que veut dire|qu est ce que c est|explique|expliquer|kesako|ca sert a quoi|a quoi sert|ou trouver|ou je trouve|ou se trouve le bouton|tuto) /;
     var PERSO = / (ma|mes|mon|j|je|me|m|moi|ai je|est ce que j) /;
-    var STATUT = / (ou en est|ou en sont|ou est|ou sont|en est ou|en sont ou|elle en est|il en est|ca en est ou|ou ca en est|ou elle en est|ou il en est|avance|avancee|avancement|statut|etat|suivi|nouvelles|news|bloque|bloquee|coince|coincee|toujours pas|validee|validees|valide|signee|signe|passee|passe|acceptee|accepte|refusee|refuse|traitee|traite|recue|recu|partie|parti|arrivee|arrive|a ete|ca avance|ca bouge|ca donne quoi|reponse|retour|en attente|attend|qui l a|chez qui) /;
+    var STATUT = / (je trouve pas|je trouve plus|trouve pas|trouve plus|ou est passee|ou est passe|disparu|disparue|ou en est|ou en sont|ou est|ou sont|en est ou|en sont ou|elle en est|il en est|ca en est ou|ou ca en est|ou elle en est|ou il en est|avance|avancee|avancement|statut|etat|suivi|nouvelles|news|bloque|bloquee|coince|coincee|toujours pas|validee|validees|valide|signee|signe|passee|passe|acceptee|accepte|refusee|refuse|traitee|traite|recue|recu|partie|parti|arrivee|arrive|a ete|ca avance|ca bouge|ca donne quoi|reponse|retour|en attente|attend|qui l a|chez qui) /;
     var DEMANDE = / (demande|demandes|mer|mise en route|mises en route|om|oms|ordre de mission|ordres de mission|dossier|dossiers|omr|deplacement) /;
     var CR = / (cr|crs|compte rendu|comptes rendus|cr de mission|frais de mission|note de frais|mon remboursement|mes remboursements|mes frais|ma note) /;
     var ARGENT = / (combien|montant|estimation|estimer|estime|toucher|touche|toucherai|toucherais|percevoir|percevrai|rembourse|remboursee|remboursement|rembourser|gagner|gagne|rapporter|rapporte|rapportera|recuperer|recupere|indemnite|indemnites|indemnise|indemnisation|pognon|thune|thunes|fric|oseille|sous|pepettes|ble|argent|euros|tune) /;
@@ -88,14 +88,17 @@
     }
 
     function suite(q) { var s = N(q); if (s.trim().split(' ').length <= 8 && / (depuis|cv|chevaux|en train|en avion|en voiture|en vrc|jours|nuits|loge|nourri|a ma charge) /.test(s)) return true; return s.trim().split(' ').length <= 9 && /^ (et|puis|sinon|aussi|pareil|idem) /.test(s) || / (celle|celui|celles|ceux|l autre|les autres) /.test(s); }
+    // Le langage SMS de la base (« jtrouv », « kom », « mtn »…) est déplié avant de chercher l'intention.
+    function deplier(q, ctx) { var sms = (ctx && ctx.sms) || {}, s = N(q); return ' ' + s.trim().split(' ').map(function(m) { return Object.prototype.hasOwnProperty.call(sms, m) && sms[m] ? sms[m] : m; }).join(' ') + ' '; }
     function intention(q, ctx) {
+        q = deplier(q, ctx);
         var s = N(q);
         if (/ qui (valide|signe|vise) /.test(s) || / (mon adresse|mes roles|mon role) /.test(s)) return null;        // réponses personnelles déjà connues
         if (A_JOUR.test(s) && SUJETS_A_JOUR.some(function(x) { return x[1].test(s); }) && !/ (comment|installer|faire la|ma demande|mon cr) /.test(s)) return 'ajour';
         if (NOUVEAU.test(s) && !/ (comment|installer|faire la) /.test(s)) return 'nouveautes';
         var taux = (ctx.change && ctx.change.taux) || {};
         if (devise(s, taux) && (/\d/.test(s) || / (taux|cours|combien|vaut|fait|conversion|convertir|change|en euros|en euro) /.test(s))) return 'devise';
-        if (COMMENT.test(s) && !/ (ou en est|ou est|ou sont|ou en sont) /.test(s)) return null;
+        if (COMMENT.test(s) && !/ (ou en est|ou est|ou sont|ou en sont|ca avance|ca bouge|ca se passe|ca donne quoi|ca en est) /.test(s)) return null;
         if ((RELIRE.test(s) && (DEMANDE.test(s) || / (formulaire|saisie|tout) /.test(s))) || PRETE.test(s)) return 'relecture';
         if (/ (statistiques|mes stats|mon bilan|mes chiffres) /.test(s)) return 'chiffres';
         // « le CR de Roux », « la demande validée de Petit » : le dossier d'un autre (assistant Chorus DT seulement).
@@ -516,6 +519,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 211, version: 'V208', l: ['La mascotte comprend encore plus de façons d\'écrire : SMS (« kom », « jtrouv pa », « cmb »), fautes courantes, argot et sigles militaires (« le fourrier », « mon CDU », « ma tire »…)', 'Elle varie ses réponses pour ne pas toujours répéter la même phrase, toujours avec respect'] },
         { build: 210, version: 'V207', l: ['La mascotte connaît toutes les formules de politesse (bonjour, ça va, merci, au revoir, désolé, bravo, mes respects, bonnes fêtes…) et sait quoi répondre, même combinées (« merci, bonne soirée »)'] },
         { build: 209, version: 'V206', l: ['Simulation en une phrase : « si je pars 5 jours à Paris en VRC depuis Libourne, 6 CV, logement et repas à ma charge, combien ? » → repas, nuits, IK et total', 'Suites : « et en train ? », « depuis Bordeaux », « en 8 CV »'] },
         { build: 208, version: 'V205', l: ['Codes FD : la mascotte reconnaît toutes les unités du codier, écrites à votre façon (« 3rpima », « 3°RPiMa », « 6e régiment du génie », « 4eriisc »)'] },
