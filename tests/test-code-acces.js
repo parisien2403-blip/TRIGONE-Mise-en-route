@@ -20,6 +20,10 @@ module.exports = async function(srv) {
             nom + ' : ancien code de Compte-rendu accepté et devenu le code TRIGONE');
         await p.goto(srv.url + 'cr/'); await attendre(2000);
         verifier(await p.evaluate(() => !document.querySelector('.JUM-PIN')), nom + ' : pas redemandé en passant à Compte-rendu');
+        // Appli fermée puis rouverte (le navigateur restaure la session, mais plus aucun « battement » depuis 20 s) : reverrouillée.
+        await p.evaluate(() => { sessionStorage.setItem('trigone_vivant', String(Date.now() - 20000)); location.reload(); }); await attendre(2500);
+        verifier(await p.evaluate(() => !!document.querySelector('.JUM-PIN')), nom + ' : appli fermée puis rouverte → code redemandé');
+        await p.keyboard.type('1234'); await attendre(800);
         const p2 = await ctx.newPage(); await p2.goto(srv.url + 'cr/'); await attendre(2000);
         verifier(await p2.evaluate(() => !!document.querySelector('.JUM-PIN')), nom + ' : redemandé à une nouvelle ouverture (Compte-rendu)');
         await ctx.close();

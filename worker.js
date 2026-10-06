@@ -154,7 +154,7 @@ async function adminsDe(env, u) { return ((await (await baseBoite(env)).prepare(
 // les lignes du registre des OMR (historique administratif des missions) et une trace sans l'adresse.
 async function supprimerCompte(env, mail, par, motif, unite, qui) {
     const kv = env.TRIGONE_KV, db = await baseBoite(env), compte = await kv.get('compte:' + mail, 'json');
-    const cles = ['compte:', 'nid-de:', 'carte-de:', 'adresse-de:', 'photo:', 'sauvegarde:', 'code:', 'unite-de:'].map(k => k + mail);
+    const cles = ['compte:', 'nid-de:', 'carte-de:', 'adresse-de:', 'photo:', 'sauvegarde:', 'cle-donnees:', 'code:', 'unite-de:'].map(k => k + mail);
     const nid = (await kv.get('nid-de:' + mail)) || (compte && compte.nid) || '';
     if (nid && await kv.get('nid:' + nid) === mail) cles.push('nid:' + nid);
     const carte = await kv.get('carte-de:' + mail); if (carte) cles.push('carte:' + carte);
@@ -199,7 +199,7 @@ async function migrerCompte(env, ancien, prenom, nom) {
     if (estAdmin(env, ancien)) compte.superAdmin = true;   // administrateur de TRIGONE (ADMIN_MAILS) : il le reste sous sa nouvelle adresse
     await kv.put('compte:' + neuf, JSON.stringify(compte));
     await kv.put('adresse:' + local, neuf); await kv.put('adresse-de:' + neuf, local);
-    for (const p of ['unite-de:', 'carte-de:', 'nid-de:', 'photo:', 'reinit:', 'idx-roles:']) {
+    for (const p of ['unite-de:', 'carte-de:', 'nid-de:', 'photo:', 'reinit:', 'idx-roles:', 'cle-donnees:']) {
         const v = await kv.get(p + ancien);
         if (v !== null) { await kv.put(p + neuf, v); await kv.delete(p + ancien); }
     }
@@ -295,7 +295,7 @@ async function journal(env, unite, par, motif, mail, qui) {
         .bind(Date.now(), unite || '', par, String(motif || '').slice(0, 300), (await empreinte('supprime:' + mail)).slice(0, 16), String(qui || '').slice(0, 80), '').run();
 }
 const LIBRE_EN_ATTENTE = new Set(['etat', 'compte/etat', 'compte/role', 'compte/demandes', 'compte/demande', 'compte/appareils', 'unite', 'push', 'push/muet', 'push/test', 'boite', 'boite/etats',
-    'adresse', 'appareil', 'carte', 'carte/revoquer', 'sauvegarde', 'sauvegarde/info', 'admin', 'suivi', 'annuaire']);
+    'adresse', 'appareil', 'carte', 'carte/revoquer', 'sauvegarde', 'sauvegarde/info', 'admin', 'suivi', 'annuaire', 'compte/motdepasse', 'donnees/cle']);
 
 // ---------- Registre OMR partagé ----------
 const UNITE_REGISTRE = 'principale';
@@ -713,9 +713,9 @@ async function empreinteNid(env, nid) {
     return empreinte(l.valeur + ':' + nid);
 }
 function chiffresNid(v) { const c = String(v || '').replace(/\D/g, ''); return c.length === 10 ? c : ''; }
-// Code à 4 chiffres de reconnexion (adresse TRIGONE + code) : empreinte lente et salée, jamais le code lui-même.
-async function empreinteCodeCnx(code, sel) {
-    const k = await crypto.subtle.importKey('raw', new TextEncoder().encode('TRIGONE-CNX:' + code), 'PBKDF2', false, ['deriveBits']);
+// Code de connexion (adresse TRIGONE + code, 8 caractères au moins) : empreinte lente et salée, jamais le code lui-même.
+async function empreinteMdp(code, sel) {
+    const k = await crypto.subtle.importKey('raw', new TextEncoder().encode('TRIGONE-MDP:' + code), 'PBKDF2', false, ['deriveBits']);
     return b64url(new Uint8Array(await crypto.subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256', salt: sel, iterations: 100000 }, k, 256)));
 }
 async function empreinte(texte) {
@@ -908,6 +908,8 @@ async function api(requete, env, url, ctx) {
         const t = (v, n) => String(v || '').trim().slice(0, n);
         const grade = t(corps.grade, 30).toUpperCase(), nom = t(corps.nom, 60).toUpperCase(), prenom = t(corps.prenom, 60), u = uniteRegistre(requete);
         if (!nom || !prenom) return erreur(400, 'Indiquez votre nom et votre prénom.');
+        const mdp = String(corps.mdp || '');
+        if (mdp && (mdp.length < 8 || mdp.length > 200)) return erreur(400, 'Le code de connexion contient 8 caractères au moins.');
         if (u === UNITE_REGISTRE && !requete.headers.get('X-Trigone-Unite')) return erreur(400, 'Indiquez votre unité.');
         const cle = corps.cle;
         if (!cle || cle.kty !== 'EC' || cle.crv !== 'P-256' || !cle.x || !cle.y || cle.d) return erreur(400, 'Clé d\'appareil invalide.');
@@ -921,7 +923,9 @@ async function api(requete, env, url, ctx) {
         if (!local) return erreur(409, 'Adresse TRIGONE indisponible pour ce nom.');
         const mail = local + '@' + DOMAINE_RECEPTION, jeton = b64url(hasard(32));
         const app = { id: b64url(hasard(9)), cle: { kty: 'EC', crv: 'P-256', x: cle.x, y: cle.y }, jeton: await empreinte(jeton), nom: t(corps.appareil, 60) || 'Appareil', cree: Date.now() };
-        await kv.put('compte:' + mail, JSON.stringify({ appareils: [app], attente: true, cree: Date.now(), sansMail: true }));
+        const selMdp = hasard(16), cpt = { appareils: [app], attente: true, cree: Date.now(), sansMail: true };
+        if (mdp) cpt.mdp = { sel: b64url(selMdp), h: await empreinteMdp(mdp, selMdp), le: Date.now() };
+        await kv.put('compte:' + mail, JSON.stringify(cpt));
         await kv.put('adresse:' + local, mail); await kv.put('adresse-de:' + mail, local); await kv.put('unite-de:' + mail, u);
         await majLigneCompte(env, mail, { unite: u, grade, nom, prenom, adresse: mail, statut: 'attente', le: Date.now() });
         // Prévenus : administrateurs de l'unité, assistants Chorus DT de l'unité.
@@ -955,16 +959,16 @@ async function api(requete, env, url, ctx) {
         const app = { id: b64url(hasard(9)), cle: { kty: 'EC', crv: 'P-256', x: cle.x, y: cle.y }, jeton: await empreinte(jeton),
             nom: String(corps.nom || 'Appareil').slice(0, 60), cree: Date.now() };
         compte.appareils = compte.appareils.concat(app).slice(-10);
-        delete compte.codeEchecs;   // connexion par code coupée après trop d'erreurs : rétablie par un QR ou un code de réactivation
+        delete compte.mdpEchecs;   // connexion par code coupée après trop d'erreurs : rétablie par un QR ou un code de réactivation
         await kv.put('compte:' + l.mail, JSON.stringify(compte));
         return json({ ok: true, mail: l.mail, appareil: app.id, jeton, paquet: l.paquet, reactivation: !!l.reactivation });
     }
 
-    // Reconnexion avec l'adresse TRIGONE et le code à 4 chiffres (celui qui ouvre l'appli, déclaré par l'appli au
-    // compte). Contre les essais au hasard : 5 erreurs → 15 minutes d'attente ; 10 erreurs sans réussite → connexion
-    // par code coupée (rétablie par un QR / code de liaison, un code de réactivation, ou un changement de code).
-    // Comme un code de réactivation : le compte seulement, les données reviennent avec le code de récupération.
-    if (chemin === 'connexion/code' && methode === 'POST') {
+    // Connexion avec l'adresse TRIGONE et le code de connexion (choisi à l'inscription, 8 caractères au moins), depuis
+    // n'importe quel appareil. Contre les essais au hasard : 5 erreurs → 15 minutes d'attente ; 10 erreurs sans réussite →
+    // connexion par code coupée (rétablie par un QR / code de liaison ou un code de réactivation de l'administrateur).
+    // Les données reviennent ensuite toutes seules (sauvegarde du compte, voir donnees/cle).
+    if (chemin === 'connexion/motdepasse' && methode === 'POST') {
         const corps = await requete.json().catch(() => ({}));
         const ip = requete.headers.get('CF-Connecting-IP') || 'local';
         const n = +(await kv.get('limite-cnx:' + ip)) || 0;
@@ -972,32 +976,32 @@ async function api(requete, env, url, ctx) {
         await kv.put('limite-cnx:' + ip, String(n + 1), { expirationTtl: 900 });
         let saisie = normaliser(corps.mail);
         if (saisie && saisie.indexOf('@') < 0) saisie += '@' + DOMAINE_RECEPTION;
-        const code = String(corps.code || '');
-        if (!mailValide(saisie) || !/^\d{4}$/.test(code)) return erreur(400, 'Indiquez votre adresse TRIGONE et votre code à 4 chiffres.');
+        const code = String(corps.mdp || '');
+        if (!mailValide(saisie) || code.length < 8 || code.length > 200) return erreur(400, 'Indiquez votre adresse TRIGONE et votre code de connexion (8 caractères au moins).');
         const cle = corps.cle;
         if (!cle || cle.kty !== 'EC' || cle.crv !== 'P-256' || !cle.x || !cle.y || cle.d) return erreur(400, 'Clé d\'appareil invalide.');
         const mail = await cleCompte(kv, saisie), compte = await kv.get('compte:' + mail, 'json');
-        const refus = 'Adresse ou code incorrect.';
-        if (!compte || !compte.codeCnx) return erreur(403, compte ? 'Ce compte n\'a pas encore de code de reconnexion : ouvrez une fois TRIGONE avec votre code sur votre appareil habituel, ou utilisez le QR de connexion.' : refus);
+        const refus = 'Adresse ou code de connexion incorrect.';
+        if (!compte || !compte.mdp) return erreur(403, refus);
         if (compte.bloque) return erreur(403, 'Ce compte TRIGONE est bloqué : demandez à l\'administrateur de le débloquer.');
-        const e = compte.codeEchecs || { n: 0, total: 0, jusqua: 0 };
-        if (e.total >= 10) return erreur(403, 'Trop d\'erreurs : la connexion par code est coupée pour ce compte. Utilisez le QR de connexion (Ma carte, sur un autre appareil) ou demandez un code de réactivation à l\'administrateur.');
+        const e = compte.mdpEchecs || { n: 0, total: 0, jusqua: 0 };
+        if (e.total >= 10) return erreur(403, 'Trop d\'erreurs : la connexion par code est coupée pour ce compte. Demandez un code de réactivation à l\'administrateur de votre unité (ou utilisez le QR de connexion d\'un autre appareil).');
         if (e.jusqua > Date.now()) return erreur(429, 'Trop d\'erreurs : réessayez dans ' + Math.ceil((e.jusqua - Date.now()) / 60000) + ' minute(s).');
-        if (await empreinteCodeCnx(code, depuisB64url(compte.codeCnx.sel)) !== compte.codeCnx.h) {
+        if (await empreinteMdp(code, depuisB64url(compte.mdp.sel)) !== compte.mdp.h) {
             e.n = (e.n || 0) + 1; e.total = (e.total || 0) + 1;
             if (e.n >= 5) { e.n = 0; e.jusqua = Date.now() + 15 * 60000; }
-            compte.codeEchecs = e; await kv.put('compte:' + mail, JSON.stringify(compte));
-            if (e.total === 5 || e.total === 10) await notifierCompte(env, mail, { titre: 'TRIGONE : essais de connexion', texte: e.total + ' codes faux ont été saisis pour vous connecter à votre compte' + (e.total >= 10 ? ' : la connexion par code est coupée.' : '.') + ' Si ce n\'est pas vous, changez votre code.', type: 'COMPTE', url: '/' }, url.origin).catch(() => {});
+            compte.mdpEchecs = e; await kv.put('compte:' + mail, JSON.stringify(compte));
+            if (e.total === 5 || e.total === 10) await notifierCompte(env, mail, { titre: 'TRIGONE : essais de connexion', texte: e.total + ' codes faux ont été saisis pour vous connecter à votre compte' + (e.total >= 10 ? ' : la connexion par code est coupée.' : '.') + ' Si ce n\'est pas vous, changez votre code de connexion.', type: 'COMPTE', url: '/' }, url.origin).catch(() => {});
             return erreur(403, refus + (e.total >= 10 ? '' : ' (' + (10 - e.total) + ' essai(s) restant(s))'));
         }
-        delete compte.codeEchecs;
+        delete compte.mdpEchecs;
         const jeton = b64url(hasard(32));
         const app = { id: b64url(hasard(9)), cle: { kty: 'EC', crv: 'P-256', x: cle.x, y: cle.y }, jeton: await empreinte(jeton),
             nom: String(corps.nom || 'Appareil').slice(0, 60), cree: Date.now() };
         compte.appareils = compte.appareils.concat(app).slice(-10);
         await kv.put('compte:' + mail, JSON.stringify(compte));
-        await notifierCompte(env, mail, { titre: 'TRIGONE : nouvelle connexion', texte: 'Votre compte vient d\'être ouvert sur un nouvel appareil (' + app.nom + ') avec votre code. Si ce n\'est pas vous : Paramètres › Compte › Mes appareils, retirez-le et changez votre code.', type: 'COMPTE', url: '/' }, url.origin).catch(() => {});
-        return json({ ok: true, mail, appareil: app.id, jeton, reactivation: true });
+        await notifierCompte(env, mail, { titre: 'TRIGONE : nouvelle connexion', texte: 'Votre compte vient d\'être ouvert sur un nouvel appareil (' + app.nom + '). Si ce n\'est pas vous : Paramètres › Compte › Mes appareils, retirez-le et changez votre code de connexion.', type: 'COMPTE', url: '/' }, url.origin).catch(() => {});
+        return json({ ok: true, mail, appareil: app.id, jeton });
     }
 
     // Erreur technique remontée par une appli (sans compte : elle peut survenir avant la connexion). Anonyme :
@@ -1451,15 +1455,23 @@ async function api(requete, env, url, ctx) {
         await journal(env, uc, moi.mail, chemin === 'compte/debloquer' ? 'Déblocage, code de réactivation remis' : 'Code de réactivation remis', cible, l ? [l.grade, l.nom, l.prenom].filter(Boolean).join(' ') : '');
         return json({ ok: true, code, expire: Date.now() + 2 * JOUR * 1000 });
     }
-    // Code à 4 chiffres de reconnexion : déclaré par l'appli quand on le choisit ou qu'on ouvre TRIGONE avec (empreinte lente).
-    if (chemin === 'compte/code' && methode === 'POST') {
-        const c = await requete.json().catch(() => ({})), code = String(c.code || '');
-        if (!/^\d{4}$/.test(code)) return erreur(400, 'Code à 4 chiffres attendu.');
+    // Code de connexion : choisi (ou changé) par la personne sur un appareil déjà connecté. Empreinte lente et salée.
+    if (chemin === 'compte/motdepasse' && methode === 'POST') {
+        const c = await requete.json().catch(() => ({})), code = String(c.mdp || '');
+        if (code.length < 8 || code.length > 200) return erreur(400, 'Le code de connexion contient 8 caractères au moins.');
         const sel = hasard(16);
-        moi.compte.codeCnx = { sel: b64url(sel), h: await empreinteCodeCnx(code, sel), le: Date.now() };
-        delete moi.compte.codeEchecs;
+        moi.compte.mdp = { sel: b64url(sel), h: await empreinteMdp(code, sel), le: Date.now() };
+        delete moi.compte.mdpEchecs; delete moi.compte.codeCnx; delete moi.compte.codeEchecs;
         await kv.put('compte:' + moi.mail, JSON.stringify(moi.compte));
         return json({ ok: true });
+    }
+    // Clé des données du compte (sauvegarde automatique) : tirée au hasard une fois, gardée par le serveur, remise à
+    // tout appareil connecté au compte. Comme sur n'importe quel site : un code de connexion oublié ne fait rien perdre
+    // (code de réactivation → nouvel appareil → les données reviennent avec cette clé).
+    if (chemin === 'donnees/cle' && methode === 'GET') {
+        let k = await kv.get('cle-donnees:' + moi.mail);
+        if (!k) { k = b64url(hasard(32)); await kv.put('cle-donnees:' + moi.mail, k); }
+        return json({ ok: true, cle: k });
     }
     // Mes appareils : liste, et retrait d'un appareil (perdu) qui s'effacera à sa prochaine ouverture.
     if (chemin === 'compte/appareils' && (methode === 'GET' || methode === 'DELETE')) {
@@ -1476,7 +1488,7 @@ async function api(requete, env, url, ctx) {
     if (chemin === 'compte/etat' && methode === 'GET') {
         const l = await kv.get('reinit:' + moi.mail, 'json');
         return json({ ok: true, compte: moi.mail, reinit: Array.isArray(l) && l.indexOf(moi.appareil.id) >= 0, attente: !!moi.compte.attente, sansMail: !!moi.compte.sansMail,
-            codeCnx: !!moi.compte.codeCnx, codeCoupe: ((moi.compte.codeEchecs || {}).total || 0) >= 10 });
+            mdp: !!moi.compte.mdp, mdpCoupe: ((moi.compte.mdpEchecs || {}).total || 0) >= 10 });
     }
     if (chemin === 'erreurs' && methode === 'GET') {
         if (!estAdmin(env, moi.mail)) return erreur(403, 'Réservé à l\'administrateur de TRIGONE.');

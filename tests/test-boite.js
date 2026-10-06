@@ -26,16 +26,14 @@ module.exports = async function() {
         await f.click('.JUM-ACC [data-aller="creer"]'); await attendre(300);
         verifier(await f.isVisible('.JUM-CONNEXION #JUM-C-NOM') && !(await f.isVisible('#JUM-C-MAIL')) && (await f.textContent('#JUM-C-TITRE')).includes('Bienvenue'), 'accueil : « Créer mon compte » ouvre le formulaire d\'identité (sans adresse mail)');
         await f.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await attendre(200);
-        verifier((await f.textContent('#JUM-C-TITRE')).includes('Bon retour') && await f.isVisible('#JUM-C-MAIL'), 'accueil : onglet « Se connecter » (comptes avec adresse mail)');
+        verifier((await f.textContent('#JUM-C-TITRE')).includes('Bon retour') && await f.isVisible('#JUM-C-PADR') && await f.isVisible('#JUM-C-PCODE'), 'accueil : onglet « Se connecter » : adresse TRIGONE + code de connexion');
         await f.click('.JUM-ACC-AUTRE'); await attendre(200);
         verifier(await f.isVisible('#JUM-L-CODE') && !(await f.isVisible('#JUM-C-MAIL')), 'accueil : « J\'ai déjà TRIGONE sur un autre appareil » → code de liaison');
         await f.click('.JUM-ACC-RETOUR'); await attendre(200);
         verifier(await f.isVisible('.JUM-ACC [data-aller="creer"]'), 'accueil : retour à l\'écran d\'accueil');
-        await f.click('#JUM-C-PLUSTARD'); await attendre(600);
-        verifier(!(await f.$('.JUM-REGLAGES')) && (await f.textContent('.JUM-CHOIX .JUM-CPT')).includes('Se connecter'),
-            'première ouverture : « Plus tard » → écran d\'accueil libre, « Se connecter » en haut à droite');
+        verifier(!(await f.isVisible('#JUM-C-PLUSTARD')) && !(await f.isVisible('#JUM-C-SANS')), 'première ouverture : ni « Plus tard » ni « sans compte » : la connexion est obligatoire');
         await f.reload(); await attendre(3500);
-        verifier(!(await f.$('.JUM-REGLAGES')), 'réouverture : la connexion n\'est plus imposée');
+        verifier(await f.isVisible('.JUM-ACC [data-aller="creer"]'), 'réouverture (ex. appli installée ensuite) : l\'accueil est toujours imposé tant qu\'il n\'y a pas de compte');
         await ctx.close();
     }
     async function appareil(nom) {

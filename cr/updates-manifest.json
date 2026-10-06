@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 294,
-  "appCodeMessage": "Correctifs : la pastille rouge ne reste plus sur un dossier vide ; œil sur les champs de code (rôles, administrateur, code d'accès) pour vérifier sa saisie.",
+  "appCodeVersion": 295,
+  "appCodeMessage": "Nouveau : votre code de connexion. Créez-le (deux fois) : avec votre adresse TRIGONE et ce code, vous vous connectez sur n'importe quel téléphone ou PC et toutes vos données reviennent. Le code à 4 chiffres sert seulement à ouvrir l'appli, à chaque réouverture.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
