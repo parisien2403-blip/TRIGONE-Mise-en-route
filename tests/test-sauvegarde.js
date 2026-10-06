@@ -19,7 +19,8 @@ module.exports = async function(srv) {
     await pa.click('.JUM-CHOIX .JUM-CPT'); await attendre(300);
     await pa.click('.JUM-CPT-MENU [data-action="parametres"]'); await attendre(300);
     await pa.click('.JUM-PARAM [data-rub="donnees"]'); await attendre(200);
-    const [dl] = await Promise.all([pa.waitForEvent('download'), pa.click('.JUM-PARAM [data-action="sauvegarder"]')]);
+    verifier(!(await pa.$('.JUM-PARAM [data-action="sauvegarder"], .JUM-PARAM [data-action="restaurer"]')), 'Paramètres › Données : plus de sauvegarde ni de restauration par fichier (sauvegarde du compte automatique)');
+    const [dl] = await Promise.all([pa.waitForEvent('download'), pa.evaluate(() => JUMELAGE_SAUVEGARDER())]);
     const f = path.join(SORTIE, 'sauvegarde.json'); await dl.saveAs(f);
     const s = JSON.parse(fs.readFileSync(f));
     verifier(/^TRIGONE - sauvegarde \d\d-\d\d-\d{4}\.json$/.test(dl.suggestedFilename()), 'fichier « TRIGONE - sauvegarde JJ-MM-AAAA.json »');
