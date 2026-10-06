@@ -432,6 +432,8 @@
         var ou = p.pays ? 'en <b>' + esc(lieu) + '</b>' : 'à <b>' + esc(lieu.replace(/ \(grande ville\)$/, '')) + '</b>';
         var taux = Object.assign({}, T.ik || {}, lireL('trigone_ik_rates', {}) || {});
         var finir = function(km, err) {
+            // Noms officiels trouvés par le service de cartographie (« NOGENT-LE-ROTROU (28400) ») : la ville tapée vite est confirmée.
+            if (km && typeof km === 'object') { if (km.de) p.de = officiel(km.de); if (km.a) { p.aOfficiel = officiel(km.a); } km = km.km; }
             var lignes = [], total = nRepas * prixRepas + nNuits * prixNuit;
             lignes.push('<tr><td>' + nRepas + ' repas × ' + euros(prixRepas) + (p.nourri ? ' (repas fournis)' : '') + '</td><td>' + euros(nRepas * prixRepas) + '</td></tr>');
             lignes.push('<tr><td>' + nNuits + ' nuit' + (nNuits > 1 ? 's' : '') + ' (' + esc(lieu) + ') × ' + euros(prixNuit) + (p.logeGratuit ? ' (logé gratuitement)' : '') + '</td><td>' + euros(nNuits * prixNuit) + '</td></tr>');
@@ -439,10 +441,11 @@
             if (p.mode === 'vp') {
                 if (km != null) {
                     var ar = km * 2, arTxt = String(Math.round(ar)).replace(/\B(?=(\d{3})+(?!\d))/g, ' ');
-                    if (p.cv) { var ik = ar * taux[p.cv]; total += ik; lignes.push('<tr><td>IK ' + esc(p.de) + ' ⇄ ' + esc(p.a || lieu) + ' : ' + arTxt + ' km × ' + euros(taux[p.cv]).replace(' €', '') + ' € (' + { '5cv': '5 CV et moins', '6-7cv': '6 et 7 CV', '8cv': '8 CV et plus' }[p.cv] + ')</td><td>' + euros(ik) + '</td></tr>'); }
-                    else ikTxt = 'IK aller-retour ' + esc(p.de) + ' ⇄ ' + esc(p.a || lieu) + ' (' + arTxt + ' km) : <b>' + euros(ar * taux['5cv']) + '</b> en 5 CV, <b>' + euros(ar * taux['6-7cv']) + '</b> en 6-7 CV, <b>' + euros(ar * taux['8cv']) + '</b> en 8 CV et plus. Dites-moi la puissance de votre véhicule.';
+                    if (p.cv) { var ik = ar * taux[p.cv]; total += ik; lignes.push('<tr><td>IK ' + esc(p.de) + ' ⇄ ' + esc(p.aOfficiel || p.a || lieu) + ' : ' + arTxt + ' km × ' + euros(taux[p.cv]).replace(' €', '') + ' € (' + { '5cv': '5 CV et moins', '6-7cv': '6 et 7 CV', '8cv': '8 CV et plus' }[p.cv] + ')</td><td>' + euros(ik) + '</td></tr>'); }
+                    else ikTxt = 'IK aller-retour ' + esc(p.de) + ' ⇄ ' + esc(p.aOfficiel || p.a || lieu) + ' (' + arTxt + ' km) : <b>' + euros(ar * taux['5cv']) + '</b> en 5 CV, <b>' + euros(ar * taux['6-7cv']) + '</b> en 6-7 CV, <b>' + euros(ar * taux['8cv']) + '</b> en 8 CV et plus. Dites-moi la puissance de votre véhicule.';
                 } else ikTxt = p.de ? 'Je n\'ai pas pu calculer la distance ' + esc(p.de) + ' → ' + esc(p.a || lieu) + (err ? ' (' + esc(err) + ')' : '') + '.' : 'Pour les <b>indemnités kilométriques</b>, dites-moi d\'où vous partez et la puissance (« depuis Libourne, 6 CV »).';
             }
+            if (p.aOfficiel && !p.pays) ou = 'à <b>' + esc(p.aOfficiel) + '</b>';
             var html = 'Pour <b>' + jours + ' jour' + (jours > 1 ? 's' : '') + '</b> ' + ou + (p.mode === 'vp' ? ' en véhicule personnel' : p.mode === 'train' ? ' en train' : p.mode === 'avion' ? ' en avion' : p.mode === 'service' ? ' en véhicule de service' : '') + ', comptez <b>environ ' + eurosRond(total) + '</b> :' +
                 '<table class="AIDE-TAB">' + lignes.join('') + '<tr class="tot"><td>Estimation</td><td>' + euros(total) + '</td></tr></table>' +
                 (ikTxt ? '<small>' + ikTxt + '</small>' : '') + (TRANSPORT_SIMU[p.mode] ? '<small>' + TRANSPORT_SIMU[p.mode] + '</small>' : '') +
@@ -453,6 +456,7 @@
         if (p.mode === 'vp' && p.de && navigator.onLine && ctx.distance) return ctx.distance(p.de, p.a || (p.ville ? p.ville.nom : '')).then(function(km) { return finir(km); }, function(e) { return finir(null, e && e.message); });
         return Promise.resolve(finir(null, p.de && !navigator.onLine ? 'pas de réseau' : ''));
     }
+    function officiel(n) { return String(n).toLowerCase().replace(/(^|[\s-])([a-zà-ÿ])/g, function(t, x, c) { return x + c.toUpperCase(); }).replace(/-(Le|La|Les|Sur|En|De|Du|Des|Sous)-/g, function(t, x) { return '-' + x.toLowerCase() + '-'; }); }
     var TRANSPORT_SIMU = { train: 'Train : billets réservés par l\'unité, ou remboursés sur justificatif.', avion: 'Avion : billets réservés par l\'unité, ou remboursés sur justificatif.', service: 'Véhicule de service : pas d\'indemnité kilométrique.' };
 
     // ---------- Les références sont-elles à jour ? ----------

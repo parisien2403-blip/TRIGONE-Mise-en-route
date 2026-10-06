@@ -293,7 +293,7 @@
     }
     function contexte() {
         return { tarifs: tarifs, change: tarifs ? tauxChange() : { taux: {}, date: '' }, version: VERSION, app: APP,
-            distance: function(de, a) { return fetch(B + 'api/distance?de=' + encodeURIComponent(String(de).toUpperCase()) + '&a=' + encodeURIComponent(String(a).toUpperCase()), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(j) { if (j && j.ok && j.km >= 0) return j.km; throw new Error((j && j.erreur) || 'service indisponible'); }); },
+            distance: function(de, a) { return fetch(B + 'api/distance?de=' + encodeURIComponent(String(de).toUpperCase()) + '&a=' + encodeURIComponent(String(a).toUpperCase()), { cache: 'no-store' }).then(function(r) { return r.json(); }).then(function(j) { if (j && j.ok && j.km >= 0) return { km: j.km, de: j.de || '', a: j.a || '' }; throw new Error((j && j.erreur) || 'service indisponible'); }); },
             codier: function() { return codier ? Promise.resolve(codier) : fetch(B + 'codier.json').then(function(r) { if (!r.ok) throw new Error('codier'); return r.json(); }).then(function(j) { codier = j; return j; }); } };
     }
     // Propos insultants : la conversation est coupée un quart d'heure (et l'IA avec).

@@ -867,7 +867,7 @@ async function api(requete, env, url, ctx) {
         if (de.nom === a.nom && de.cp === a.cp) return json({ ok: true, km: 0 });
         const cle = 'distance:' + [de.nom + '|' + de.cp, a.nom + '|' + a.cp].sort().join('>');
         const garde = await kv.get(cle, 'json');
-        if (garde) return json({ ok: true, km: garde.km });
+        if (garde) return json({ ok: true, km: garde.km, de: garde.de || '', a: garde.a || '' });
         const ip = requete.headers.get('CF-Connecting-IP') || 'local';
         const n = +(await kv.get('limite-distance:' + ip)) || 0;
         if (n >= 120) return erreur(429, 'Trop de calculs de distance. Réessayez dans une heure.');
@@ -878,7 +878,7 @@ async function api(requete, env, url, ctx) {
             if (!p1 || !p2) return erreur(404, 'Ville introuvable : ' + (!p1 ? de.nom : a.nom) + '.');
             const res = { km: Math.round(await distanceRoute(p1, p2, traces)), de: p1.nom, a: p2.nom };
             await kv.put(cle, JSON.stringify(res), { expirationTtl: 180 * 86400 });
-            return json({ ok: true, km: res.km });
+            return json({ ok: true, km: res.km, de: res.de, a: res.a });
         } catch (e) {
             // Détail (services joints ou non) lisible en ouvrant l'adresse /api/distance?de=…&a=… dans un navigateur.
             return json({ ok: false, erreur: 'Calcul de distance indisponible pour le moment.', etape: String(e.message || e), detail: traces }, 502);
