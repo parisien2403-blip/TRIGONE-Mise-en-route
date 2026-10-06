@@ -90,7 +90,7 @@
     // demandé une fois (le profil ne le dit pas) et retenu sur l'appareil.
     var CLE_CIV = 'trigone_aide_civilite';
     // L'appellation seule (« mon adjudant », « Madame le commissaire »), ou '' si le grade est inconnu.
-    function appel() { var s = salutation(); return s.texte ? s.texte.replace(/^Bonjour,? ?/, '').replace(/, en quoi puis-je vous aider \?$/, '').replace(/^en quoi puis-je vous aider \?$/, '') : ''; }
+    function appel() { var s = salutation(); return s.texte ? s.texte.replace(/^Bonjour,? ?/, '').replace(/, en quoi puis-je vous aider\s\?$/, '').replace(/^en quoi puis-je vous aider\s\?$/, '') : ''; }
     function salutation() {
         var g = ''; try { g = (JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}').grade) || ''; } catch (e) {}
         var a = window.AIDE_MOTEUR.appellation(g);
@@ -99,7 +99,7 @@
             if (!civ) return { demander: a.slice(2) };
             a = civ + a.slice(1);
         }
-        return { texte: 'Bonjour' + (a ? ', ' + a : '') + ', en quoi puis-je vous aider ?' };
+        return { texte: 'Bonjour' + (a ? ', ' + a : '') + ', en quoi puis-je vous aider\u00a0?' };
     }
     function puces() {
         // Sujets de l'écran ouvert d'abord (sauf sur les accueils : les plus demandés), puis les plus demandés.
@@ -224,13 +224,13 @@
         var s = window.AIDE_MOTEUR.normal(question).trim(), a = appel(), vous = a ? ', ' + esc(a) : '';
         var court = s.split(' ').length <= 6;
         if (court && /^(merci|mrc|mci|thanks|thx|top|super|parfait|nickel|genial|cool|impec|impeccable|ok merci|d accord merci|c est bon|ca marche|bien recu|au top|trop bien|excellent|merci beaucoup|merci bien|merci a toi|merci a vous)( |$)/.test(s))
-            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + ' ! Si vous avez une autre question, je suis là.</span></div>';
+            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + '\u00a0! Si vous avez une autre question, je suis là.</span></div>';
         if (court && /^(au revoir|aurevoir|bye|a plus|a\+|bonne journee|bonne soiree|bonne nuit|a bientot|ciao|tchao|salut a plus|bonne mission)( |$)/.test(s))
-            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Au revoir' + vous + ', et bonne mission ! 🫡</span></div>';
+            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Au revoir' + vous + ', et bonne mission\u00a0! 🫡</span></div>';
         if (s.split(' ').length <= 3 && /^(bonjour|salut|hello|coucou|bonsoir|hey|yo|bjr|slt|cc)( |$)/.test(s))
-            return 'Bonjour' + vous + ' ! Que puis-je faire pour vous ?<div class="AIDE-PUCES">' + puces() + '</div>';
+            return 'Bonjour' + vous + '\u00a0! Que puis-je faire pour vous\u00a0?<div class="AIDE-PUCES">' + puces() + '</div>';
         if (court && /^(ca va|comment ca va|ca va et toi|tu vas bien|comment vas tu|cv)( |$)/.test(s))
-            return 'Très bien, merci' + vous + ' ! Toujours prêt à vous aider. Une question sur TRIGONE ?';
+            return 'Très bien, merci' + vous + '\u00a0! Toujours prêt à vous aider. Une question sur TRIGONE\u00a0?';
         return '';
     }
     function repondre(question) {

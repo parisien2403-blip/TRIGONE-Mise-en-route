@@ -28,7 +28,7 @@ module.exports = async function() {
     await attendre(2200);
     verifier(await t.isVisible('.AIDE-BULLE') && await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE')), 'première fois : la mascotte se signale (« Besoin d\'aide ? Touchez-moi »)');
     await t.click('.AIDE-PASTILLE'); await attendre(800);
-    verifier(await t.isVisible('.AIDE-FEN') && /^Bonjour, mon adjudant, en quoi puis-je vous aider \?/.test(await derniere(t)) && (await t.$$('.AIDE-PUCE')).length === 4, 'fenêtre ouverte : « Bonjour, mon adjudant, en quoi puis-je vous aider ? » (grade ADJ), 4 sujets proposés');
+    verifier(await t.isVisible('.AIDE-FEN') && /^Bonjour, mon adjudant, en quoi puis-je vous aider\s\?/.test(await derniere(t)) && (await t.$$('.AIDE-PUCE')).length === 4, 'fenêtre ouverte : « Bonjour, mon adjudant, en quoi puis-je vous aider ? » (grade ADJ), 4 sujets proposés');
     verifier(!(await t.isVisible('.AIDE-BULLE')) && !(await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE'))), 'ouverte une fois : la mascotte ne se signale plus');
     let r = await demander(t, 'jme rappel plu de mon mot2pass');
     verifier(/code de réactivation/.test(r) && /Réponse trouvée dans la notice/.test(await t.innerText('.AIDE-FIL')), 'langage SMS et fautes (« jme rappel plu de mon mot2pass ») : code de connexion oublié');
@@ -39,7 +39,7 @@ module.exports = async function() {
     r = await demander(t, 'bonne journée');
     verifier(/Au revoir, mon adjudant, et bonne mission/.test(r), '« bonne journée » : « Au revoir, mon adjudant, et bonne mission ! »');
     r = await demander(t, 'salut');
-    verifier(/^Bonjour, mon adjudant ! Que puis-je faire pour vous/.test(r.trim()), '« salut » : la mascotte salue et propose des sujets');
+    verifier(/^Bonjour, mon adjudant\s! Que puis-je faire pour vous/.test(r.trim()), '« salut » : la mascotte salue et propose des sujets');
     r = await demander(t, 'jai dormi a l\'hotel comment je le mets');
     verifier(/Repas & hébergement/.test(r), 'familier (« jai dormi a l\'hotel… ») : frais d\'hébergement');
     r = await demander(t, 'recette de la blanquette de veau');
@@ -118,7 +118,7 @@ module.exports = async function() {
     await t.click('.AIDE-VIDER'); await attendre(300);
     verifier(/dois-je dire/.test(await derniere(t)) && await t.isVisible('[data-civ="Madame"]'), 'commissaire (CRP) : la mascotte demande Monsieur ou Madame le commissaire');
     await t.click('[data-civ="Madame"]'); await attendre(300);
-    verifier(/^Bonjour, Madame le commissaire, en quoi puis-je vous aider \?/.test(await derniere(t)), 'choix retenu : « Bonjour, Madame le commissaire, en quoi puis-je vous aider ? »');
+    verifier(/^Bonjour, Madame le commissaire, en quoi puis-je vous aider\s\?/.test(await derniere(t)), 'choix retenu : « Bonjour, Madame le commissaire, en quoi puis-je vous aider ? »');
     await t.evaluate(() => { AIDE_FERMER(); const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.grade = 'CRC1'; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); sessionStorage.removeItem('trigone_aide_fil'); AIDE_OUVRIR(); }); await attendre(400);
     verifier(/^Bonjour, Madame le commissaire en chef,/.test(await derniere(t)), 'commissaire en chef (CRC1) : « Madame le commissaire en chef », sans redemander');
     await t.evaluate(() => AIDE_FERMER());
