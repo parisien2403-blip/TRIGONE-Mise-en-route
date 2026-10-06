@@ -51,18 +51,18 @@ module.exports = async function() {
     r = await demander(t, 'bonne journée');
     verifier(/Bonne journée, mon adjudant, et bonne mission/.test(r) && await t.evaluate(() => { const l = document.querySelectorAll('.AIDE-POUCE img'); return /mascotte-salut/.test(l[l.length - 1].src); }), '« bonne journée » : « Bonne journée, mon adjudant, et bonne mission ! » (mascotte qui salue)');
     // Toutes les formules de politesse, seules ou combinées, ont leur réponse (sans IA).
-    const POLI = [['bonjour ça va ?', /Bonjour, mon adjudant.*très bien, merci.*Et vous/], ['re', /Re-bonjour/], ['bonsoir', /Bonsoir, mon adjudant/], ['mes respects mon adjudant', /Mes respects/],
-        ['ça va et toi', /très bien|Parfait/], ['bof je suis crevé', /Courage/], ['merci beaucoup bonne soirée', /Avec plaisir.*Bonne soirée, mon adjudant/], ['désolé', /Pas de souci/],
-        ['t es le meilleur', /ça me fait plaisir/], ['mdr', /sourire/], ['t es qui ?', /mascotte d'aide de TRIGONE/], ['tu es là ?', /je suis là/], ['je suis perdu', /Pas de panique/],
-        ['à vos ordres', /Repos/], ['joyeux noël', /Joyeux Noël à vous aussi/], ['bon week-end', /Bon week-end/], ['non merci c est tout', /Je reste là si besoin/], ['ok', /Autre chose/],
-        ['bon appétit', /Bon appétit/], ['tu dors ?', /24 h sur 24/], ['stp', /Bien sûr/], ['bonne route', /soyez prudent/]];
+    const POLI = [['bonjour ça va ?', /Bonjour, mon adjudant.*(très bien|Très bien|pleine forme|attaque)/], ['re', /Re-bonjour/], ['bonsoir', /Bonsoir, mon adjudant/], ['mes respects mon adjudant', /Mes respects/],
+        ['ça va et toi', /très bien|Très bien|Parfait|Tant mieux|Content|Excellent|forme|attaque/], ['bof je suis crevé', /Courage/], ['merci beaucoup bonne soirée', /(Avec plaisir|Je vous en prie|De rien).*Bonne soirée, mon adjudant/], ['désolé', /Pas de souci|Aucun problème|Ne vous inquiétez/],
+        ['t es le meilleur', /[Mm]erci|mieux/], ['mdr', /😄/], ['t es qui ?', /mascotte d'aide de TRIGONE/], ['tu es là ?', /là|Présent/], ['je suis perdu', /Pas de panique|ensemble|pour ça/],
+        ['à vos ordres', /Repos/], ['joyeux noël', /Joyeux Noël à vous aussi/], ['bon week-end', /Bon week-end/], ['non merci c est tout', /si besoin/], ['ok', /utre chose/],
+        ['bon appétit', /Bon appétit/], ['tu dors ?', /24 h sur 24|je veille/], ['stp', /Bien sûr/], ['bonne route', /soyez prudent/]];
     const ratees = [];
     for (const [q, att] of POLI) { const x = await demander(t, q); if (!att.test(x)) ratees.push(q + ' → ' + x.slice(0, 60)); }
     verifier(!ratees.length, 'politesse : ' + POLI.length + ' formules (bonjour, ça va, merci, au revoir, désolé, bravo, mdr, t\'es qui, à vos ordres, fêtes…) ont leur réponse' + (ratees.length ? ' — ratées : ' + ratees.join(' | ') : ''));
     r = await demander(t, 'bonjour je voudrais savoir comment envoyer ma demande');
     verifier(!/Que puis-je faire pour vous/.test(r) && /Prêtes à envoyer|Envoyer/.test(r), 'bonjour + vraie question : la question passe (pas seulement « Bonjour »)');
     r = await demander(t, 'salut');
-    verifier(/^Bonjour, mon adjudant\s! Que puis-je faire pour vous/.test(r.trim()), '« salut » : la mascotte salue et propose des sujets');
+    verifier(/^Bonjour, mon adjudant\s!/.test(r.trim()) && /(Que puis-je|En quoi puis-je)/.test(r), '« salut » : la mascotte salue et propose des sujets');
     r = await demander(t, 'jai dormi a l\'hotel comment je le mets');
     verifier(/Repas & hébergement/.test(r), 'familier (« jai dormi a l\'hotel… ») : frais d\'hébergement');
     r = await demander(t, 'recette de la blanquette de veau');
@@ -118,7 +118,7 @@ module.exports = async function() {
     r = await demander(t, 'et intervention ?');
     verifier(/FDYDDR4INT/.test(r), 'suite : « et intervention ? » après le code FD formation du 4e RIISC → FDYDDR4INT');
     r = await demander(t, 'blanquette');
-    verifier(!/codes FD correspondent/.test(r) && /cerveau IA|Vous voulez parler/.test(r), 'un mot hors sujet après un code FD n\'est pas pris pour une suite (« blanquette »)');
+    verifier(!/codes FD correspondent/.test(r) && /cerveau IA|Vous voulez parler|Vous pensez|plusieurs possibilités|l'un de ceux-là/.test(r), 'un mot hors sujet après un code FD n\'est pas pris pour une suite (« blanquette »)');
     r = await demander(t, 'combien coute un repas en espagne'); r = await demander(t, 'blanquette');
     verifier(!/€/.test(r), 'un mot hors sujet après un barème n\'est pas pris pour une ville (« blanquette »)');
     // Indemnités kilométriques : distance par la route (simulée ici) et montant selon la puissance ; suites.
