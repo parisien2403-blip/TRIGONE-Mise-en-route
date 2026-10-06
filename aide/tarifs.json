@@ -1095,5 +1095,11 @@
   "ROUPIE ILE MAURICE": 0.02,
   "VATU": 0.0075,
   "BAHT": 0.026
- }
+ },
+ "ik": {
+  "5cv": 0.32,
+  "6-7cv": 0.41,
+  "8cv": 0.45
+ },
+ "ikDate": "barème fonction publique en vigueur au 06/08/2026"
 }

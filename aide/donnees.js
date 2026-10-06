@@ -14,7 +14,7 @@
     // ---------- Intention ----------
     var CODE_FD = /\b(fd[0-9a-z]{6,10})\b/i;
     var MOTS_FD = / (code fd|codes fd|code d engagement|codes d engagement|code engagement|fd ligne|fd@ligne|fdligne|codier|fd) /;
-    var FORT = / (tarif|tarifs|taux|bareme|baremes|forfait|forfaits|prix|montant|montants|coute|coutent|cout|couts|euro|euros|indemnite|indemnites|indemnise|rembourse|remboursee|remboursement|plafond|droit|droits) /;
+    var FORT = / (tarif|tarifs|taux|bareme|baremes|forfait|forfaits|prix|montant|montants|coute|coutent|cout|couts|euro|euros|indemnite|indemnites|indemnise|indemnisation|indemnisations|indemnisee|frais|allocation|allocations|prime|primes|touche|toucher|percoit|percevoir|rembourse|remboursee|remboursement|plafond|droit|droits) /;
     var SUJET = / (repas|manger|dejeuner|diner|hebergement|hotel|hotels|nuit|nuits|nuitee|nuitees|dormir|logement|chambre|journalier|journaliere|etranger|pays) /;
     var OUTRE_MER = / (reunion|guadeloupe|martinique|guyane|mayotte|nouvelle caledonie|polynesie|tahiti|saint pierre et miquelon|wallis|saint martin|saint barthelemy|dom tom|outre mer|dom) /;
 
@@ -125,6 +125,11 @@
             return { html: html + '<br><small>Les repas pris pendant le trajet (avant l\'arrivée ou après le départ du site) restent au taux France : ' + euros(R) + '.' +
                 (conv ? ' Conversion en euros : ' + esc(dateChange || 'taux de référence de TRIGONE') + '.' : '') + '</small>', etq: etq };
         }
+        if (/ (etranger|international|internationale|pays|hors de france) /.test(s)) {
+            var exemples = ['ALLEMAGNE', 'ESPAGNE', 'ITALIE', 'BELGIQUE'].map(function(n) { var p = tarifs.pays.filter(function(x) { return x.p === n; })[0]; return p ? '• ' + titre(n.toLowerCase()) + ' : ' + nombre(p.m) + ' €/jour → repas ' + euros(p.m * tarifs.coefRepas) + ', nuit ' + euros(p.m * tarifs.coefHebergement) : ''; }).filter(Boolean).join('<br>');
+            return { html: 'À l\'étranger, tout dépend du <b>pays</b> : une <b>indemnité journalière</b> par pays, dont <b>' + String(Math.round(tarifs.coefRepas * 1000) / 10).replace('.', ',') + ' %</b> par repas et <b>' +
+                String(Math.round(tarifs.coefHebergement * 1000) / 10).replace('.', ',') + ' %</b> par nuit. Par exemple :<br>' + exemples + '<br><small>Dites-moi le pays (« indemnités en Espagne », « hôtel au Sénégal ») : ' + tarifs.pays.length + ' pays sont dans TRIGONE.</small>', etq: etq };
+        }
         var v = trouverVille(q, tarifs);
         var bareme = '• Paris : <b>' + euros(H.PARIS) + '</b> la nuit<br>• Grandes villes (Marseille, Lyon, Toulouse, Nice, Nantes, Montpellier, Strasbourg, Bordeaux, Lille, Rennes) et communes du Grand Paris : <b>' + euros(H.GRANDE) + '</b><br>• Autres villes : <b>' + euros(H.PETITE) + '</b>';
         if (v) {
@@ -136,16 +141,113 @@
             '<small>Donnez-moi une ville (« hôtel à Lyon ») ou un pays (« repas en Allemagne ») pour le montant exact.</small>', etq: etq };
     }
 
+    // ---------- Indemnités kilométriques : barème selon la puissance fiscale, distance entre deux villes ----------
+    var MOTS_IK = / (ik|i k|indemnites? kilometriques?|frais kilometriques?|frais km|kilometriques?|kilometrage|kilometres?|km|bornes|vehicule perso(nnel)?|voiture perso(nnelle)?|vl perso|vlp|ma voiture|ma caisse|ma bagnole|mon vehicule|en voiture|par la route|essence|gasoil|gazole|carburant|chevaux|cv) /;
+    var VIDES_VILLE = / (en|avec|pour|par|ma|mon|une|un|voiture|vehicule|caisse|bagnole|perso|personnel|personnelle|aller|retour|simple|ik|km|cv|chevaux|combien|rembourse|remboursement|frais|kilometriques?|indemnites?|ca|fait|faire|coute|je|vais|toucher|touche|on|est|il|y|a|de|du|des|et|distance|entre|trajet|la route|svp|stp)$/;
+    function puissance(q) {
+        var m = / (\d{1,2}) ?(?:cv|ch|chevaux|c v)\b/.exec(normal(q));
+        if (!m) return '';
+        var n = +m[1]; return n <= 5 ? '5cv' : n <= 7 ? '6-7cv' : '8cv';
+    }
+    // « entre Libourne et Bordeaux », « de Libourne à Bordeaux », « Libourne - Bordeaux » → { de, a }.
+    function villesIk(q) {
+        var s = normal(q).replace(/ (\d{1,2}) ?(?:cv|ch|chevaux|c v) /g, ' ').replace(/ (aller retour|aller simple|a r|ar) /g, ' ');
+        var m = / entre (.+?) et (.+) $/.exec(s + ' ') || /^.* (?:de|depuis|du) ([a-z][a-z0-9 ]*?) (?:a|au|aux|jusqu a|vers|pour) ([a-z][a-z0-9 ]*) $/.exec(s + ' ');
+        if (!m) { var t = String(q).split(/\s+(?:-|–|→|>)\s+/); if (t.length === 2) m = [null, normal(t[0]).trim().split(' ').slice(-3).join(' '), normal(t[1]).trim().split(' ').slice(0, 3).join(' ')]; }
+        if (!m) return null;
+        var nettoyer = function(v) {
+            var mots = (' ' + v + ' ').trim().split(' '), garde = [];
+            // on retire les mots qui ne sont pas un nom de ville, au début et à la fin
+            while (mots.length && VIDES_VILLE.test(' ' + mots[0])) mots.shift();
+            while (mots.length && VIDES_VILLE.test(' ' + mots[mots.length - 1])) mots.pop();
+            mots.forEach(function(x) { garde.push(x); });
+            return garde.join(' ').trim();
+        };
+        var de = nettoyer(m[1]), a = nettoyer(m[2]);
+        return de.length >= 2 && a.length >= 2 ? { de: de, a: a } : null;
+    }
+    function tauxIk(tarifs, perso) { return Object.assign({}, tarifs.ik || {}, perso || {}); }
+    var NOMS_CV = { '5cv': '5 CV et moins', '6-7cv': '6 à 7 CV', '8cv': '8 CV et plus' };
+    // km : distance par la route (null si inconnue) ; erreurDistance : pourquoi elle manque.
+    function repondreIk(q, tarifs, persoTaux, km, erreurDistance) {
+        var taux = tauxIk(tarifs, persoTaux), cv = puissance(q), v = villesIk(q), etq = 'Barème kilométrique de TRIGONE Compte-rendu — l\'assistant Chorus DT fait foi';
+        var lignes = function(dist) {
+            return (cv ? [cv] : ['5cv', '6-7cv', '8cv']).map(function(k) {
+                return '• ' + NOMS_CV[k] + ' : ' + (dist != null ? nombre(dist) + ' km × ' + String(taux[k].toFixed(2)).replace('.', ',') + ' € = <b>' + euros(dist * taux[k]) + '</b>' : '<b>' + String(taux[k].toFixed(2)).replace('.', ',') + ' €</b> le km');
+            }).join('<br>');
+        };
+        if (v && km != null) {
+            return { html: '<b>' + esc(titre(v.de)) + ' → ' + esc(titre(v.a)) + '</b> : <b>' + nombre(km) + ' km</b> par la route.<br>Aller simple :<br>' + lignes(km) + '<br>Aller-retour (' + nombre(km * 2) + ' km) :<br>' + lignes(km * 2) +
+                (cv ? '' : '<small>Dites-moi la puissance de votre véhicule (« 5 CV », « 7 chevaux ») pour le montant exact ; elle est sur la carte grise (case P.6).</small>') +
+                '<small>Distance de l\'itinéraire le plus rapide (Géoplateforme de l\'IGN). Les péages et parkings se déclarent à part, avec leurs justificatifs.</small>', etq: etq, ik: { de: v.de, a: v.a, cv: cv } };
+        }
+        return { html: (v ? 'Je n\'ai pas pu calculer la distance <b>' + esc(titre(v.de)) + ' → ' + esc(titre(v.a)) + '</b>' + (erreurDistance ? ' (' + esc(erreurDistance) + ')' : '') + '. ' : '') +
+            'Indemnités kilométriques (véhicule personnel) :<br>' + lignes(null) + '<br><small>' + (v ? 'Vérifiez l\'orthographe des villes (ou ajoutez le code postal), ou réessayez avec du réseau.' :
+            'Donnez-moi le trajet, par exemple « IK entre Libourne et Bordeaux en 5 CV » : je calcule la distance et le montant.') + ' Barème : ' + esc(tarifs.ikDate || '') + '.</small>', etq: etq, ik: v ? { de: v.de, a: v.a, cv: cv } : null };
+    }
+
     function intention(q, tarifs) {
         var s = normal(q);
         if (CODE_FD.test(q)) return 'fd';
+        // IK : mots du kilométrique (« IK », « bornes », « ma caisse », « 5 CV »…) avec une question de montant ou un trajet.
+        var trajet = villesIk(q);
+        if (MOTS_IK.test(s) && (FORT.test(s) || / combien | distance | entre /.test(s) || trajet)) return 'ik';
+        if (trajet && (FORT.test(s) || / combien /.test(s)) && !trouverPays(q, tarifs || { pays: [] }).length) return 'ik';
         if (MOTS_FD.test(s) && motsRecherche(q).length) return 'fd';
         var combien = / combien /.test(s) && !/ combien de (repas|nuit|nuits|nuitee|nuitees|jours?) /.test(s);
         if ((FORT.test(s) || combien) && (SUJET.test(s) || OUTRE_MER.test(s))) return 'tarif';
-        if (tarifs && (FORT.test(s) || combien || SUJET.test(s)) && trouverPays(q, tarifs).length) return 'tarif';
+        // Un pays cité (« Espagne », « mission en Espagne », « indemnisation Italie ») : son barème.
+        if (tarifs && trouverPays(q, tarifs).length) return 'tarif';
         return null;
     }
-    var DONNEES = { intention: intention, codier: repondreCodier, tarif: repondreTarif, trouverPays: trouverPays, trouverVille: trouverVille, normal: normal };
+    // ---------- Questions de suite : « et en Italie ? » après « combien coûte un repas en Espagne » ----------
+    // La question courte qui commence par « et », « pareil », « aussi »… reprend le sujet de la précédente.
+    function estSuite(q) {
+        var s = normal(q).trim();
+        if (/^(et|pareil|idem|meme chose|aussi|puis|sinon|ok et|d accord et|bon et|alors et|mais|ou)( |$)/.test(s) || / (aussi|pareil|idem)$/.test(s)) return true;
+        // Message court sans sujet à lui (« en Italie ? », « formation ») : c'est une suite. « indemnités aux USA » n'en est pas une.
+        var n = ' ' + s + ' ';
+        return s.split(' ').length <= 3 && !FORT.test(n) && !SUJET.test(n) && !MOTS_FD.test(n) && !CODE_FD.test(q) && !/ combien /.test(n);
+    }
+    var OBJETS = ['formation', 'intervention', 'entrainement', 'fonctionnement', 'courant', 'changement', 'residence', 'mission', 'missions', 'deplacement', 'deplacements', 'bagage', 'mobilier', 'permanents', 'instruction'];
+    function completer(precedent, q, tarifs) {
+        var nouveau = normal(q).trim().replace(/^(et|pareil|idem|meme chose|aussi|puis|sinon|ok et|d accord et|bon et|alors et|mais|ou)( (pour|pour le|pour la|pour les|a|au|aux|en|de|du|dans|sur))? /, '').replace(/ (aussi|pareil|idem)$/, '');
+        if (precedent.type === 'tarif') {
+            var p = normal(precedent.q), n = ' ' + nouveau + ' ';
+            // Plausible seulement avec un pays, un lieu introduit (« à Bourges », « en Italie », « 33000 ») ou un autre sujet.
+            var lieuIntroduit = /^(a|au|aux|en|pour|sur|dans|vers|de|du) /.test(normal(q).trim().replace(/^(et|pareil|idem|aussi|puis|sinon|ok et|bon et|alors et|mais|ou) /, '') + ' ');
+            if (!(tarifs && trouverPays(q, tarifs).length) && !lieuIntroduit && !/ \d{5} /.test(n) && !/ paris /.test(n) &&
+                !/repas|manger|dejeuner|diner|hebergement|hotel|nuit|dormir|logement|chambre/.test(n)) return null;
+            var sujetN = /repas|manger|dejeuner|diner|hebergement|hotel|nuit|dormir|logement|chambre/.test(n);
+            // Même lieu, autre sujet (« pareil pour une nuit ») : on reprend le pays ou la ville d'avant.
+            if (sujetN && tarifs && !trouverPays(q, tarifs).length && !trouverVille(q, tarifs)) {
+                var pays = trouverPays(precedent.q, tarifs), ville = trouverVille(precedent.q, tarifs);
+                var lieu = pays.length ? nomPays(pays[0][0].p) : ville ? normal(ville.nom).trim() : '';
+                if (lieu) return ('combien ' + nouveau + ' a ' + lieu).trim();
+            }
+            var sujet = sujetN ? '' : /repas|manger|dejeuner|diner/.test(p) && !/hebergement|hotel|nuit|dormir|logement|chambre/.test(p) ? 'combien coute un repas' :
+                /hebergement|hotel|nuit|dormir|logement|chambre/.test(p) && !/repas|manger|dejeuner|diner/.test(p) ? 'combien coute une nuit d hotel' : 'combien';
+            return (sujet + ' a ' + nouveau).trim();
+        }
+        if (precedent.type === 'ik' && precedent.ik) {
+            var ik = precedent.ik, cvN = puissance(q), nv = nouveau.replace(/\b(\d{1,2}) ?(cv|ch|chevaux)\b/, '').replace(/^(a|au|aux|pour|vers|jusqu a) /, '').trim();
+            var cvTxt = cvN ? (cvN === '5cv' ? '5' : cvN === '6-7cv' ? '7' : '8') : ik.cv ? (ik.cv === '5cv' ? '5' : ik.cv === '6-7cv' ? '7' : '8') : '';
+            if (!cvN && !nv) return null;
+            var arrivee = nv && !/^(retour|aller|aller retour)$/.test(nv) ? nv : ik.a;
+            return 'ik entre ' + ik.de + ' et ' + arrivee + (cvTxt ? ' ' + cvTxt + ' cv' : '');
+        }
+        if (precedent.type === 'fd') {
+            var avant = motsRecherche(precedent.q), apres = motsRecherche(q).filter(function(m) { return ['et', 'aussi', 'pareil', 'idem', 'pour', 'sinon'].indexOf(m) < 0; });
+            var objet = function(m) { return OBJETS.indexOf(m) >= 0; };
+            // Plausible seulement avec un objet de mission, un numéro d'unité ou un nom d'unité (« et intervention », « et pour le 7 »).
+            if (!apres.length || !apres.every(function(m) { return objet(m) || /^\d+$/.test(m) || /^(uiisc|riisc|rsc|ensoa|emat|drhat)$/.test(m); })) return null;
+            if (apres.some(objet)) avant = avant.filter(function(m) { return !objet(m); });
+            if (apres.some(function(m) { return !objet(m); })) avant = avant.filter(objet);
+            return 'code fd ' + avant.concat(apres).join(' ');
+        }
+        return (precedent.q + ' ' + nouveau).trim();
+    }
+    var DONNEES = { villesIk: villesIk, puissance: puissance, ik: repondreIk, estSuite: estSuite, completer: completer, intention: intention, codier: repondreCodier, tarif: repondreTarif, trouverPays: trouverPays, trouverVille: trouverVille, normal: normal };
     if (typeof module !== 'undefined' && module.exports) module.exports = DONNEES;
     else window.AIDE_DONNEES = DONNEES;
 })();

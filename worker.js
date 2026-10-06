@@ -154,7 +154,7 @@ async function adminsDe(env, u) { return ((await (await baseBoite(env)).prepare(
 // les lignes du registre des OMR (historique administratif des missions) et une trace sans l'adresse.
 async function supprimerCompte(env, mail, par, motif, unite, qui) {
     const kv = env.TRIGONE_KV, db = await baseBoite(env), compte = await kv.get('compte:' + mail, 'json');
-    const cles = ['compte:', 'nid-de:', 'carte-de:', 'adresse-de:', 'photo:', 'sauvegarde:', 'cle-donnees:', 'code:', 'unite-de:'].map(k => k + mail);
+    const cles = ['compte:', 'nid-de:', 'carte-de:', 'adresse-de:', 'photo:', 'sauvegarde:', 'cle-donnees:', 'code:', 'unite-de:', 'fonctions:'].map(k => k + mail);
     const nid = (await kv.get('nid-de:' + mail)) || (compte && compte.nid) || '';
     if (nid && await kv.get('nid:' + nid) === mail) cles.push('nid:' + nid);
     const carte = await kv.get('carte-de:' + mail); if (carte) cles.push('carte:' + carte);
@@ -1413,7 +1413,8 @@ async function api(requete, env, url, ctx) {
         for (const x of r) {
             if (x.mail === moi.mail || !String(x.roles || '').split(',').includes(role) || x.statut === 'attente' || x.statut === 'bloque') continue;
             if ((x.unite || (await kv.get('unite-de:' + x.mail)) || '') !== u) continue;
-            l.push({ mail: x.mail, grade: x.grade || '', nom: x.nom || '', prenom: x.prenom || '' });
+            const f = role === 'chorus' ? null : await kv.get('fonctions:' + x.mail, 'json');
+            l.push({ mail: x.mail, grade: x.grade || '', nom: x.nom || '', prenom: x.prenom || '', fonction: (f && f[role]) || '' });
         }
         l.sort((a, b) => (a.nom || a.mail).localeCompare(b.nom || b.mail, 'fr'));
         return json({ ok: true, role, unite: nomUnite(u), personnes: l.slice(0, 100), groupe: role === 'valideur1' ? '' : adresseGroupe(role, u) });
@@ -1618,6 +1619,13 @@ async function api(requete, env, url, ctx) {
         retirer.forEach(r => { delete frais.roles[r]; });
         await kv.put('compte:' + moi.mail, JSON.stringify(frais));
         await indexerRoles(env, moi.mail, frais.roles);
+        // Fonction de signature de chaque rôle de valideur (« CHEF DE SECTION », « CHEF DE CORPS ») : montrée dans
+        // l'annuaire de l'unité (l'aide de la mascotte dit « votre VALIDEUR 1 : ADJ DUPONT, chef de section »).
+        if (c.fonctions && typeof c.fonctions === 'object') {
+            const f = {};
+            ['valideur1', 'valideur2'].forEach(r => { const v = String(c.fonctions[r] || '').replace(/\s+/g, ' ').trim().slice(0, 60); if (v && frais.roles[r]) f[r] = v; });
+            if (Object.keys(f).length) await kv.put('fonctions:' + moi.mail, JSON.stringify(f)); else await kv.delete('fonctions:' + moi.mail);
+        }
         return json({ ok: true, roles: frais.roles });
     }
     if (chemin === 'role' && methode === 'POST') {

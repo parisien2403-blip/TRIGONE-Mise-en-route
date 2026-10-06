@@ -89,6 +89,8 @@
     // Salutation selon le grade du profil (« mon adjudant », « sergent-chef »…) ; commissaires : Monsieur ou Madame,
     // demandé une fois (le profil ne le dit pas) et retenu sur l'appareil.
     var CLE_CIV = 'trigone_aide_civilite';
+    // L'appellation seule (« mon adjudant », « Madame le commissaire »), ou '' si le grade est inconnu.
+    function appel() { var s = salutation(); return s.texte ? s.texte.replace(/^Bonjour,? ?/, '').replace(/, en quoi puis-je vous aider\s\?$/, '').replace(/^en quoi puis-je vous aider\s\?$/, '') : ''; }
     function salutation() {
         var g = ''; try { g = (JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}').grade) || ''; } catch (e) {}
         var a = window.AIDE_MOTEUR.appellation(g);
@@ -97,7 +99,7 @@
             if (!civ) return { demander: a.slice(2) };
             a = civ + a.slice(1);
         }
-        return { texte: 'Bonjour' + (a ? ', ' + a : '') + ', en quoi puis-je vous aider ?' };
+        return { texte: 'Bonjour' + (a ? ', ' + a : '') + ', en quoi puis-je vous aider\u00a0?' };
     }
     function puces() {
         // Sujets de l'écran ouvert d'abord (sauf sur les accueils : les plus demandés), puis les plus demandés.
@@ -107,22 +109,123 @@
         defaut.forEach(function(id) { if (ids.length < 4 && ids.indexOf(id) < 0) ids.push(id); });
         return ids.map(function(id) { var f = moteur.fiche(id); return f ? '<button type="button" class="AIDE-PUCE" data-fiche="' + id + '">' + esc(f.t) + '</button>' : ''; }).join('');
     }
-    function htmlFiche(f) {
-        return f.r + '<div class="AIDE-ACTIONS">' + (f.m ? '<button type="button" class="AIDE-BTN AIDE-MONTRER" data-montrer="' + f.id + '">👉 ' + esc(f.m.l || 'Me montrer') + '</button>' : '') +
+    // Réponse d'une fiche : la phrase courte, dite comme on parle, puis le pas-à-pas replié (« Voir comment faire »).
+    function htmlFiche(f, corps) {
+        var texte = corps || (f.c ? esc(f.c) + '<details class="AIDE-DETAIL"><summary>Voir comment faire</summary>' + f.r + '</details>' : f.r);
+        return texte + '<div class="AIDE-ACTIONS">' + (f.m ? '<button type="button" class="AIDE-BTN AIDE-MONTRER" data-montrer="' + f.id + '">👉 ' + esc(f.m.l || 'Me montrer') + '</button>' : '') +
             (f.n ? '<button type="button" class="AIDE-LIEN" data-notice="' + esc(f.n) + '">📖 Notice › ' + esc(f.n) + '</button>' : '') + '</div>';
+    }
+    // ---------- Réponses personnelles : calculées sur l'appareil (profil, rôles) et avec l'annuaire de l'unité ----------
+    function reglages() { try { return JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}'); } catch (e) { return {}; } }
+    function nomDepuisMail(m) {
+        var l = String(m || '').split('@')[0].split('.'); if (l.length < 2) return m || '';
+        var p = l[0].split('-').map(function(x) { return x.charAt(0).toUpperCase() + x.slice(1); }).join('-');
+        return p + ' ' + l.slice(1).join(' ').toUpperCase();
+    }
+    function personne(x, avecMail) {
+        var n = [x.grade, x.prenom ? x.prenom.charAt(0).toUpperCase() + x.prenom.slice(1).toLowerCase() : '', x.nom].filter(Boolean).join(' ') || nomDepuisMail(x.mail);
+        return '<b>' + esc(n) + '</b>' + (x.fonction ? ', ' + esc(x.fonction.toLowerCase()) : '') + (avecMail && x.mail && n !== x.mail ? ' <small style="display:inline">(' + esc(x.mail) + ')</small>' : '');
+    }
+    function annuaire(role) { return compteActif() && navigator.onLine && window.JUMELAGE_API ? window.JUMELAGE_API('annuaire?role=' + role).catch(function() { return null; }) : Promise.resolve(null); }
+    function liste(l) { return l.length === 1 ? personne(l[0]) : l.slice(0, -1).map(function(x) { return personne(x); }).join(', ') + ' ou ' + personne(l[l.length - 1]); }
+    var PERSO = {
+        // Qui valide : le VALIDEUR 1 choisi dans Mon profil, puis les VALIDEUR 2 et assistants Chorus DT de SON unité
+        // (l'annuaire du serveur ne donne que l'unité du demandeur : jamais un valideur d'un autre régiment).
+        'qui-valide': function() {
+            var reg = reglages(), v1 = String(reg.mailVal1 || '').toLowerCase(), ch = String(reg.mailChorus || '').toLowerCase();
+            return Promise.all([annuaire('valideur1'), annuaire('valideur2'), annuaire('chorus')]).then(function(a) {
+                var connu = !!(a[0] || a[1] || a[2]), unite = (a[0] || a[1] || a[2] || {}).unite || reg.unite || '';
+                var l1 = (a[0] && a[0].personnes) || [], l2 = (a[1] && a[1].personnes) || [], l3 = (a[2] && a[2].personnes) || [];
+                var h = '';
+                if (!v1) h += 'Vous n\'avez pas encore indiqué votre <b>VALIDEUR 1</b> : c\'est en général votre chef de section ou votre commandant d\'unité. Mettez son adresse dans <b>Mon profil › Envois</b> (ou scannez sa carte).';
+                else {
+                    var p1 = l1.filter(function(x) { return x.mail === v1; })[0];
+                    h += 'Votre demande va d\'abord chez votre <b>VALIDEUR 1</b> : ' + personne(p1 || { mail: v1 }, true) + '.';
+                    if (connu && !p1) h += '<small>⚠️ Je ne le trouve pas parmi les VALIDEUR 1 ' + (unite ? 'du ' + esc(unite) : 'de votre unité') + ' : vérifiez l\'adresse dans Mon profil (ou qu\'il a bien coché son rôle).</small>';
+                }
+                h += '<br>' + (v1 ? 'Il' : 'Le VALIDEUR 1') + ' la transmet ensuite au <b>VALIDEUR 2</b>' + (l2.length ? ' : ' + liste(l2.slice(0, 4)) : unite ? ' du ' + esc(unite) : ' de l\'unité') + '.';
+                var p3 = l3.filter(function(x) { return x.mail === ch; })[0];
+                h += '<br>Enfin, l\'<b>assistant Chorus DT</b> crée votre ordre de mission' + (p3 ? ' : ' + personne(p3) : l3.length ? ' : ' + liste(l3.slice(0, 3)) : ch ? ' : ' + personne({ mail: ch }) : '') + '.';
+                h += '<br>Vous êtes prévenu à chaque étape, et vous suivez tout dans la <b>Bibliothèque</b>.';
+                if (!connu) h += '<small>Connecté avec du réseau, je vous dirais aussi qui sont le VALIDEUR 2 et l\'assistant Chorus DT de votre unité.</small>';
+                return h;
+            });
+        },
+        'mon-adresse': function() {
+            var a = (window.JUMELAGE_ADRESSE_CONNUE && window.JUMELAGE_ADRESSE_CONNUE()) || (window.JUMELAGE_COMPTE_MAIL && window.JUMELAGE_COMPTE_MAIL()) || '';
+            return Promise.resolve(a ? 'Votre adresse TRIGONE, c\'est <b>' + esc(a) + '</b> <button type="button" class="AIDE-LIEN" data-copier="' + esc(a) + '">Copier</button><br>Elle sert à vous connecter (avec votre code de connexion) et à recevoir vos factures et billets.'
+                : 'Vous n\'êtes pas encore connecté sur cet appareil : touchez <b>Se connecter</b> (pastille du compte) avec votre adresse TRIGONE et votre code de connexion.');
+        },
+        'mes-roles': function() {
+            var l = {}; try { l = JSON.parse(localStorage.getItem('trigone_roles_locaux') || '{}') || {}; if (localStorage.getItem('trigone_role_chorus') === '1') l.chorus = true; if (localStorage.getItem('trigone_role_admin')) l.admin = true; } catch (e) {}
+            var noms = { valideur1: 'VALIDEUR 1', valideur2: 'VALIDEUR 2', chorus: 'ASSIST CHORUS DT', admin: 'ADMINISTRATEUR' }, eus = Object.keys(noms).filter(function(k) { return l[k]; }).map(function(k) { return '<b>' + noms[k] + '</b>'; });
+            return Promise.resolve(eus.length ? 'Sur cet appareil, vous êtes missionnaire et ' + eus.join(', ') + '. Pour en ajouter ou en retirer : <b>Paramètres › Compte › Mes rôles</b>.'
+                : 'Vous êtes <b>missionnaire</b>, comme tout le monde. Si on vous a confié un rôle (VALIDEUR 1 ou 2, ASSIST CHORUS DT), cochez-le dans <b>Paramètres › Compte › Mes rôles</b> avec son code.');
+        }
+    };
+    // Donne la réponse d'une fiche (personnelle si elle l'est), avec « Ce n'est pas ça ? » si elle vient d'une question.
+    function donnerFiche(f, question) {
+        var fin = function(corps) {
+            ajouter({ de: 'lui', html: htmlFiche(f, corps) + (question ? '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>' : ''),
+                etq: f.dyn ? 'Réponse d\'après votre profil' : 'Réponse trouvée dans la notice', fiche: f.id, q: question });
+        };
+        if (f.dyn && PERSO[f.dyn]) { attenteIa = true; dessinerFil(); PERSO[f.dyn]().then(function(h) { attenteIa = false; fin(h); }, function() { attenteIa = false; fin(); }); }
+        else fin();
     }
     // Réponse de l'IA : texte simple, gras **…** et retours à la ligne seulement (jamais de HTML venu du serveur).
     function htmlIa(t) {
         return esc(t).replace(/\*\*([^*\n]+)\*\*/g, '<b>$1</b>').replace(/^\s*[-•]\s+/gm, '• ').replace(/\n/g, '<br>');
     }
-    function ajouter(m) { fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
+    // ---------- Rappels et félicitations (mascotte qui salue) : après une vraie réponse, une fois par jour au plus ----------
+    // Compte-rendu commencé mais pas envoyé (Compte-rendu, sur cet appareil) ; nouvelle médaille (félicitée une seule fois).
+    var CLE_RAPPEL_JOUR = 'trigone_aide_rappel_jour', CLE_MEDAILLE_FETEE = 'trigone_aide_medaille_fetee';
+    var PALIERS = [[1, 'BRONZE', 'TRIGONE de Bronze', '🥉'], [10, 'ARGENT', 'TRIGONE d\'Argent', '🥈'], [20, 'OR', 'TRIGONE d\'Or', '🥇']];
+    function lireLocal(k) { try { return localStorage.getItem(k) || ''; } catch (e) { return ''; } }
+    function dateFr(iso) { var d = new Date(iso); return isNaN(d) ? '' : ('0' + d.getDate()).slice(-2) + '/' + ('0' + (d.getMonth() + 1)).slice(-2); }
+    function rappels() {
+        var l = [], a = appel(), vous = a ? ', ' + esc(a) : '';
+        var m = null; try { m = JSON.parse(lireLocal('mission_data') || 'null'); } catch (e) {}
+        if (m && !m.MAIL_SENT && (m.DEBUT || m.ARR_SITE || (m.JOURS && m.JOURS.length))) {
+            var quoi = [m.LIBELLE_MISSION ? '« ' + esc(String(m.LIBELLE_MISSION).toLowerCase()) + ' »' : '', m.DEBUT ? 'partie le ' + dateFr(m.DEBUT) : ''].filter(Boolean).join(', ');
+            l.push({ html: 'Au fait' + vous + ', au cas où vous l\'auriez oublié : vous avez un <b>compte-rendu de fin de mission</b> à rendre' + (quoi ? ' (' + quoi + ')' : '') +
+                (m.DEADLINE ? ', <b>avant le ' + dateFr(m.DEADLINE) + '</b>' : '') + '.<div class="AIDE-ACTIONS"><button type="button" class="AIDE-BTN" data-rappel-cr="1">👉 Ouvrir mon compte-rendu</button></div>' });
+        }
+        var n = parseInt(lireLocal('trigone_cr_envoyes_total') || '0', 10) || 0, eu = null, suivant = null;
+        PALIERS.forEach(function(p) { if (n >= p[0]) eu = p; else if (!suivant) suivant = p; });
+        if (eu && lireLocal(CLE_MEDAILLE_FETEE) !== eu[1]) {
+            l.push({ medaille: eu[1], html: (l.length ? 'Et je' : 'Je') + ' tenais à vous féliciter pour votre <b>' + eu[2] + '</b> ' + eu[3] + vous.replace(/^, /, ', ') + '\u00a0!' +
+                (suivant ? ' Encore <b>' + (suivant[0] - n) + ' compte' + (suivant[0] - n > 1 ? 's' : '') + '-rendu' + (suivant[0] - n > 1 ? 's' : '') + '</b> et vous passez ' + (suivant[1] === 'OR' ? 'à l\'Or' : 'à l\'Argent') + '.' : ' C\'est la plus haute distinction de TRIGONE, chapeau.') });
+        }
+        return l;
+    }
+    function glisserRappels() {
+        var jour = new Date().toISOString().slice(0, 10);
+        if (lireLocal(CLE_RAPPEL_JOUR) === jour) return;
+        var l = rappels(); if (!l.length) return;
+        try { localStorage.setItem(CLE_RAPPEL_JOUR, jour); } catch (e) {}
+        setTimeout(function() { l.forEach(function(x) { if (x.medaille) try { localStorage.setItem(CLE_MEDAILLE_FETEE, x.medaille); } catch (e) {} ajouter({ de: 'lui', html: x.html, pose: 'garde', rappel: true }); }); }, 900);
+    }
+    var sourire = false;
+    function ajouter(m) {
+        if (m.de === 'lui' && !m.rappel && (m.etq || m.fiche || m.ia)) glisserRappels();
+        if (sourire && m.de === 'lui' && !m.pose) { m.html = 'Bien sûr\u00a0! ' + m.html; m.pose = 'content'; sourire = false; }
+        fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
+    // La mascotte prend une posture selon sa réponse (images déjà dans TRIGONE).
+    var POSES = { garde: 'aide/mascotte-salut.webp', salut: 'mascotte.webp', montre: 'demo-mascotte.webp', aide: 'mascotte-assistance.webp', code: 'mascotte-code.webp', content: 'mascotte-ok.webp', desole: 'mascotte-erreur.webp' };
+    function poseDe(m) {
+        if (/AIDE-POUCE/.test(m.html)) return '';
+        // Pas à chaque réponse (ce serait lourd) : seulement à certains moments de la conversation.
+        var k = m.pose || (/^Je n'ai pas trouvé/.test(m.html) ? 'desole' : '');
+        return POSES[k] || '';
+    }
     function dessinerFil() {
         if (!fen) return;
         var z = fen.querySelector('.AIDE-FIL');
         z.innerHTML = fil.map(function(m) {
             if (m.de === 'moi') return '<div class="AIDE-M moi">' + esc(m.texte) + '</div>';
             var et = m.ia ? '<div class="AIDE-ETQ">✨ Réponse de l\'IA — elle peut se tromper, la notice fait foi</div>' : m.etq ? '<div class="AIDE-ETQ">' + esc(m.etq) + '</div>' : '';
-            return '<div class="AIDE-M lui' + (m.ia ? ' ia' : '') + '">' + m.html + '</div>' + et;
+            var bulle = '<div class="AIDE-M lui' + (m.ia ? ' ia' : '') + '">' + m.html + '</div>', pose = poseDe(m);
+            return (pose ? '<div class="AIDE-LIGNE"><img class="AIDE-POSE" src="' + B + pose + '" alt="">' + bulle + '</div>' : bulle) + et;
         }).join('') + (attenteIa ? '<div class="AIDE-M lui AIDE-TAPE"><i></i><i></i><i></i></div>' : '');
         z.scrollTop = z.scrollHeight;
     }
@@ -146,20 +249,67 @@
         var avoir = codier ? Promise.resolve(codier) : fetch(B + 'codier.json').then(function(r) { if (!r.ok) throw new Error('codier'); return r.json(); }).then(function(j) { codier = j; return j; });
         return avoir.then(function(cd) { return fin(D.codier(question, cd)); }, function() { return false; });
     }
+    // La question précédente (sujet et type), pour comprendre « et en Italie ? » ; gardée le temps de la conversation.
+    var CLE_DERNIER = 'trigone_aide_dernier';
+    // Politesse : « merci » → la mascotte lève le pouce ; « bonjour », « au revoir » → une vraie réponse.
+    var IMG_POUCE = B + 'mascotte-pouce.webp';
+    function politesse(question) {
+        var s = window.AIDE_MOTEUR.normal(question).trim(), a = appel(), vous = a ? ', ' + esc(a) : '';
+        var court = s.split(' ').length <= 6;
+        if (court && /^(merci|mrc|mci|thanks|thx|top|super|parfait|nickel|genial|cool|impec|impeccable|ok merci|d accord merci|c est bon|ca marche|bien recu|au top|trop bien|excellent|merci beaucoup|merci bien|merci a toi|merci a vous)( |$)/.test(s))
+            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + '\u00a0! Si vous avez une autre question, je suis là.</span></div>';
+        if (court && /^(au revoir|aurevoir|bye|a plus|a\+|bonne journee|bonne soiree|bonne nuit|a bientot|ciao|tchao|salut a plus|bonne mission)( |$)/.test(s))
+            return '<div class="AIDE-POUCE"><img src="' + B + 'aide/mascotte-salut.webp" alt=""><span>Au revoir' + vous + ', et bonne mission\u00a0! 🫡</span></div>';
+        if (s.split(' ').length <= 3 && /^(bonjour|salut|hello|coucou|bonsoir|hey|yo|bjr|slt|cc)( |$)/.test(s))
+            return '\u0001salut' + 'Bonjour' + vous + '\u00a0! Que puis-je faire pour vous\u00a0?<div class="AIDE-PUCES">' + puces() + '</div>';
+        if (court && /^(ca va|comment ca va|ca va et toi|tu vas bien|comment vas tu|cv)( |$)/.test(s))
+            return 'Très bien, merci' + vous + '\u00a0! Toujours prêt à vous aider. Une question sur TRIGONE\u00a0?';
+        return '';
+    }
+    // Indemnités kilométriques : distance par la route (serveur TRIGONE, carte de l'IGN), puis montant selon la puissance.
+    function repondreIk(q) {
+        var D = window.AIDE_DONNEES, v = D.villesIk(q), perso = null;
+        try { perso = JSON.parse(localStorage.getItem('trigone_ik_rates') || 'null'); } catch (e) {}
+        var fin = function(km, err) {
+            var rep = D.ik(q, tarifs, perso, km, err);
+            ajouter({ de: 'lui', html: rep.html + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(q) + '">✨ Demander à l\'IA</button></div>', etq: rep.etq, q: q });
+            ecrire(CLE_DERNIER, { type: 'ik', q: q, ik: rep.ik });
+        };
+        if (!v) return fin(null);
+        if (!navigator.onLine) return fin(null, 'pas de réseau');
+        attenteIa = true; dessinerFil();
+        fetch(B + 'api/distance?de=' + encodeURIComponent(v.de.toUpperCase()) + '&a=' + encodeURIComponent(v.a.toUpperCase()), { cache: 'no-store' })
+            .then(function(r) { return r.json(); }).then(function(j) { attenteIa = false; if (j && j.ok && j.km >= 0) fin(j.km); else fin(null, (j && j.erreur) || 'service indisponible'); },
+                function() { attenteIa = false; fin(null, 'service indisponible'); });
+    }
     function repondre(question) {
         ajouter({ de: 'moi', texte: question });
-        var type = window.AIDE_DONNEES && window.AIDE_DONNEES.intention(question, tarifs);
+        var poli = politesse(question);
+        if (poli) { var sal = poli.indexOf('\u0001salut') === 0; ajouter({ de: 'lui', html: sal ? poli.slice(6) : poli, pose: sal ? 'salut' : '' }); return; }
+        // « stp », « s'il vous plaît » : la mascotte répond avec le sourire (« Bien sûr ! »).
+        sourire = /(^| )(stp|svp|s il te plait|s il vous plait|sil te plait|sil vous plait|steuplait|stplait|please)( |$)/.test(window.AIDE_MOTEUR.normal(question));
+        var D = window.AIDE_DONNEES, q = question, type = D && D.intention(question, tarifs), dernier = lire(CLE_DERNIER);
+        if (D && dernier && D.estSuite(question) && (dernier.type === 'tarif' || dernier.type === 'fd' || dernier.type === 'ik')) {
+            var q2 = D.completer(dernier, question, tarifs), t2 = q2 && D.intention(q2, tarifs);
+            if (t2 === dernier.type) { q = q2; type = t2; }
+        }
+        if (type === 'ik' && tarifs) { repondreIk(q); return; }
         if (type === 'fd' || (type === 'tarif' && tarifs)) {
-            repondreDonnees(question, type).then(function(ok) { if (!ok) repondreFiches(question); });
+            repondreDonnees(q, type).then(function(ok) { if (ok) ecrire(CLE_DERNIER, { type: type, q: q }); else repondreFiches(question, dernier); });
             return;
         }
-        repondreFiches(question);
+        repondreFiches(question, dernier);
     }
-    function repondreFiches(question) {
+    function repondreFiches(question, dernier) {
         var r = moteur.chercher(question, { app: APP, ecran: ecranCourant() }), top = r.resultats[0], M = window.AIDE_MOTEUR;
+        // Question de suite sur un sujet de la notice : on la complète avec la précédente si, seule, elle ne suffit pas.
+        if ((!top || top.score < M.SUR) && dernier && dernier.type === 'fiche' && window.AIDE_DONNEES.estSuite(question)) {
+            var r2 = moteur.chercher(window.AIDE_DONNEES.completer(dernier, question, tarifs) || question, { app: APP, ecran: ecranCourant() });
+            if (r2.resultats[0] && r2.resultats[0].score >= M.SUR && r2.resultats[0].fiche.id !== dernier.fiche) { r = r2; top = r2.resultats[0]; }
+        }
+        if (top && top.score >= M.SUR) ecrire(CLE_DERNIER, { type: 'fiche', q: question, fiche: top.fiche.id });
         if (top && top.score >= M.SUR) {
-            ajouter({ de: 'lui', html: htmlFiche(top.fiche) + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>',
-                etq: 'Réponse trouvée dans la notice', fiche: top.fiche.id, q: question });
+            donnerFiche(top.fiche, question);
         } else if (top && top.score >= M.PROPOSER) {
             ajouter({ de: 'lui', html: 'Vous voulez parler de :<div class="AIDE-PUCES">' + r.resultats.slice(0, 3).map(function(x) {
                 return '<button type="button" class="AIDE-PUCE" data-fiche="' + x.fiche.id + '">' + esc(x.fiche.t) + '</button>'; }).join('') + '</div>' +
@@ -190,8 +340,14 @@
                 ajouter({ de: 'lui', html: msg + '<div class="AIDE-ACTIONS"><button type="button" class="AIDE-LIEN" data-notice="">📖 Ouvrir la notice</button></div>' });
             });
     }
-    window.AIDE_OUVRIR = function() {
-        if (fen) return;
+    // demande (facultatif) : { fiche: id } ou { q: texte }, touchée sur la page « Ce que je sais faire ».
+    function poser(d) {
+        if (!d || !moteur) return;
+        var f = d.fiche && moteur.fiche(d.fiche);
+        if (f) { ajouter({ de: 'moi', texte: d.l || f.t }); donnerFiche(f); } else if (d.q) repondre(d.q);
+    }
+    window.AIDE_OUVRIR = function(demande) {
+        if (fen) { poser(demande); return; }
         try { localStorage.setItem(CLE_VUE, '1'); } catch (e) {}
         if (pastille) pastille.classList.remove('AIDE-INVITE');
         var b = document.querySelector('.AIDE-BULLE'); if (b) b.remove();
@@ -199,7 +355,7 @@
         fen.className = 'AIDE-FOND' + (estPc() ? ' pc' : '');
         fen.setAttribute('role', 'dialog'); fen.setAttribute('aria-label', 'Aide de TRIGONE');
         fen.innerHTML = '<div class="AIDE-FEN"><div class="AIDE-TETE"><img src="' + IMG + '" alt=""><div><b>Besoin d\'aide ?</b><small>Je cherche dans la notice TRIGONE</small></div>' +
-            '<button type="button" class="AIDE-VIDER" title="Nouvelle conversation" aria-label="Nouvelle conversation">↺</button><button type="button" class="AIDE-X" aria-label="Fermer">✕</button></div>' +
+            '<button type="button" class="AIDE-QUOI" title="Ce que je sais faire" aria-label="Ce que je sais faire">?</button><button type="button" class="AIDE-VIDER" title="Nouvelle conversation" aria-label="Nouvelle conversation">↺</button><button type="button" class="AIDE-X" aria-label="Fermer">✕</button></div>' +
             '<div class="AIDE-FIL"><div class="AIDE-M lui">Chargement…</div></div>' +
             '<div class="AIDE-AVERT">⚠️ Ne saisissez pas d\'informations personnelles (nom, matricule, détails de mission).</div>' +
             '<form class="AIDE-SAISIE"><input type="text" data-no-uppercase="1" maxlength="400" placeholder="Posez votre question…" aria-label="Votre question" autocomplete="off"><button type="submit" aria-label="Envoyer">➤</button></form></div>';
@@ -209,12 +365,14 @@
             if (ev.target === fen && !estPc()) { window.AIDE_FERMER(); return; }
             var t = ev.target.closest('button'); if (!t) return;
             if (t.classList.contains('AIDE-X')) { window.AIDE_FERMER(); return; }
-            if (t.classList.contains('AIDE-VIDER')) { fil = []; ecrire(CLE_FIL, fil); accueil(); return; }
-            if (t.dataset.fiche) { var f = moteur.fiche(t.dataset.fiche); if (f) { ajouter({ de: 'moi', texte: f.t }); ajouter({ de: 'lui', html: htmlFiche(f), etq: 'Réponse trouvée dans la notice', fiche: f.id }); } return; }
+            if (t.classList.contains('AIDE-QUOI')) { window.AIDE_FERMER(); window.AIDE_PRESENTATION(); return; }
+            if (t.classList.contains('AIDE-VIDER')) { fil = []; ecrire(CLE_FIL, fil); ecrire(CLE_DERNIER, null); accueil(); return; }
+            if (t.dataset.fiche) { var f = moteur.fiche(t.dataset.fiche); if (f) { ajouter({ de: 'moi', texte: f.t }); donnerFiche(f); } return; }
             if (t.dataset.montrer) { var g = moteur.fiche(t.dataset.montrer); if (g && g.m) { window.AIDE_FERMER(); executer(g.m); } return; }
             if (t.dataset.notice !== undefined) { var titre = t.dataset.notice; window.AIDE_FERMER(); window.JUMELAGE_NOTICE(null, titre ? { titre: titre } : {}); return; }
             if (t.dataset.ia !== undefined) { demanderIa(t.dataset.ia); return; }
             if (t.dataset.signaler) { window.AIDE_FERMER(); window.JUMELAGE_SIGNALER(); return; }
+            if (t.dataset.rappelCr) { window.AIDE_FERMER(); executer({ a: 'cr:P0', c: '#BTN-RESTORE-BACKUP, #P0-MISSION-EN-COURS, .BTN-ACCUEIL' }); return; }
             if (t.dataset.copier) { try { navigator.clipboard.writeText(t.dataset.copier); } catch (e) {} t.textContent = 'Copié ✓'; return; }
             if (t.dataset.civ) { try { localStorage.setItem(CLE_CIV, t.dataset.civ); } catch (e) {} accueil(); return; }
         });
@@ -232,7 +390,8 @@
         charger().then(function() {
             fil = lire(CLE_FIL) || [];
             if (!fil.length) accueil(); else dessinerFil();
-            if (!('ontouchstart' in window)) champ.focus();
+            poser(demande);
+            if (!('ontouchstart' in window) && !demande) champ.focus();
         }, function() {
             fen.querySelector('.AIDE-FIL').innerHTML = '<div class="AIDE-M lui">Je n\'arrive pas à charger l\'aide. Vérifiez le réseau, ou ouvrez la notice.<div class="AIDE-ACTIONS"><button type="button" class="AIDE-LIEN" data-notice="">📖 Ouvrir la notice</button></div></div>';
         });
@@ -241,9 +400,54 @@
     function echap(e) { if (e.key === 'Escape') window.AIDE_FERMER(); }
     window.AIDE_FERMER = function() { if (fen) { fen.remove(); fen = null; } document.removeEventListener('keydown', echap); };
 
+    // ---------- « Ce que je sais faire » : des exemples de questions à toucher ----------
+    // Chaque exemple pose la question dans la discussion. Ceux qui renvoient à une fiche l'ouvrent directement (réponse sûre) ;
+    // les autres (barèmes, IK, codes FD) passent par la recherche comme une question tapée.
+    var EXEMPLES = [
+        ['L\'appli', [['Comment j\'envoie ma demande ?', 'envoyer-demande'], ['Où en est ma demande ?', 'suivre-demande'], ['Je me suis trompé, je corrige comment ?', 'modifier-envoyee'], ['Comment je fais mon compte-rendu ?', 'cr-commencer']]],
+        ['Vos frais', [['Combien la nuit à Paris ?'], ['Repas en Allemagne'], ['IK Lyon → Grenoble 6 CV']]],
+        ['Les règles', [['Code FD pour un stage'], ['Qui valide ma demande ?', 'qui-valide']]],
+        ['Rien que pour vous', [['Mon adresse TRIGONE', 'mon-adresse'], ['Mes rôles', 'mes-roles'], ['Ma carte TRIGONE', 'carte-trigone']]]
+    ];
+    var pres = null;
+    function echapPres(e) { if (e.key === 'Escape') window.AIDE_PRESENTATION_FERMER(); }
+    window.AIDE_PRESENTATION_FERMER = function() { if (pres) { pres.remove(); pres = null; } document.removeEventListener('keydown', echapPres); };
+    window.AIDE_PRESENTATION = function() {
+        if (pres) return;
+        window.AIDE_FERMER();
+        try { localStorage.setItem(CLE_VUE, '1'); } catch (e) {}
+        if (pastille) pastille.classList.remove('AIDE-INVITE');
+        var bu = document.querySelector('.AIDE-BULLE'); if (bu) bu.remove();
+        pres = document.createElement('div');
+        pres.className = 'AIDE-PRES-FOND' + (estPc() ? ' pc' : '');
+        pres.setAttribute('role', 'dialog'); pres.setAttribute('aria-label', 'Ce que la mascotte sait faire');
+        var n = 0;
+        pres.innerHTML = '<div class="AIDE-PRES"><div class="AIDE-PRES-TETE"><button type="button" class="AIDE-PRES-RETOUR" aria-label="Fermer">‹</button>' +
+            '<div><b>Assistant TRIGONE</b><small>Touchez une question pour essayer</small></div></div>' +
+            '<div class="AIDE-PRES-CORPS"><div class="AIDE-PRES-SCENE"><img src="' + IMG_POUCE + '" alt="">' +
+            '<div class="AIDE-PRES-BULLE">Je réponds à tout ça, et à bien d\'autres choses. <b>Touchez une question</b>, je vous montre&nbsp;!</div></div>' +
+            EXEMPLES.map(function(th) {
+                return '<div class="AIDE-PRES-THEME">' + esc(th[0]) + '</div><div class="AIDE-PRES-QS">' + th[1].map(function(x) {
+                    return '<button type="button" class="AIDE-PRES-Q" data-i="' + (n++) + '">' + esc(x[0]) + '</button>'; }).join('') + '</div>';
+            }).join('') +
+            '<p class="AIDE-PRES-NOTE">Gratuit : l\'essentiel marche même sans réseau. Pour une question imprévue, la mascotte peut demander à l\'IA (compte TRIGONE connecté, 10 questions par jour). N\'y écrivez ni données personnelles ni informations classifiées.</p>' +
+            '<button type="button" class="AIDE-PRES-GO">Poser ma propre question</button></div></div>';
+        var tous = [].concat.apply([], EXEMPLES.map(function(th) { return th[1]; }));
+        pres.addEventListener('click', function(ev) {
+            if (ev.target === pres) { window.AIDE_PRESENTATION_FERMER(); return; }
+            var t = ev.target.closest('button'); if (!t) return;
+            if (t.classList.contains('AIDE-PRES-RETOUR')) { window.AIDE_PRESENTATION_FERMER(); return; }
+            if (t.classList.contains('AIDE-PRES-GO')) { window.AIDE_PRESENTATION_FERMER(); window.AIDE_OUVRIR(); return; }
+            if (t.dataset.i !== undefined) { var x = tous[+t.dataset.i]; window.AIDE_PRESENTATION_FERMER(); window.AIDE_OUVRIR(x[1] ? { fiche: x[1], l: x[0] } : { q: x[0] }); }
+        });
+        document.body.appendChild(pres);
+        document.addEventListener('keydown', echapPres);
+    };
+
     // ---------- Les boutons : pastille (téléphone) et carte du menu (PC) ----------
     window.AIDE_BOUTON_PC = function() {
-        return '<button type="button" class="AIDE-CARTE-PC" onclick="AIDE_OUVRIR()"><img src="' + IMG + '" alt=""><span><b>Besoin d\'aide ?</b><small>Posez votre question</small></span></button>';
+        return '<button type="button" class="AIDE-CARTE-PC" onclick="AIDE_OUVRIR()"><img src="' + IMG + '" alt=""><span><b>Besoin d\'aide ?</b><small>Posez votre question</small></span></button>' +
+            '<button type="button" class="AIDE-CARTE-PC-QUOI" onclick="AIDE_PRESENTATION()">Ce que la mascotte sait faire ›</button>';
     };
     // La pastille suit le bouton de thème (la lune) : juste à sa gauche, même hauteur, sur tous les écrans du téléphone.
     var FENETRES = '.JUM-REGLAGES, .JUM-PARAM, .JUM-SIG, .JUM-CHOIX, .JUM-VERROU, .JUM-PAVE, .JUM-PRES, .JUM-NOUV, .JUM-MDP-FOND, .JUM-GC-FEN, .JUM-ACC, .JUM-ROUE-MENU';
@@ -265,7 +469,9 @@
         pastille = document.createElement('button');
         pastille.type = 'button'; pastille.className = 'AIDE-PASTILLE'; pastille.title = 'Besoin d\'aide ?'; pastille.setAttribute('aria-label', 'Besoin d\'aide ? Posez votre question à la mascotte');
         pastille.innerHTML = '<img src="' + IMG + '" alt="">';
-        pastille.addEventListener('click', function() { window.AIDE_OUVRIR(); });
+        // Tout premier appui : la page « Ce que je sais faire » ; ensuite, directement la discussion.
+        var premier = function() { var v = false; try { v = !!localStorage.getItem(CLE_VUE); } catch (e) {} if (v) window.AIDE_OUVRIR(); else window.AIDE_PRESENTATION(); };
+        pastille.addEventListener('click', premier);
         document.body.appendChild(pastille);
         placer(); window.addEventListener('resize', placer); setInterval(placer, 1000);
         if (window.MutationObserver) new MutationObserver(placer).observe(document.body, { childList: true });
@@ -278,7 +484,7 @@
             pastille.classList.add('AIDE-INVITE');
             var bu = document.createElement('div'); bu.className = 'AIDE-BULLE'; bu.textContent = 'Besoin d\'aide ? Touchez-moi';
             var r = pastille.getBoundingClientRect(); bu.style.top = (r.bottom + 10) + 'px'; bu.style.right = Math.max(8, window.innerWidth - r.right - 10) + 'px';
-            bu.addEventListener('click', function() { window.AIDE_OUVRIR(); });
+            bu.addEventListener('click', premier);
             document.body.appendChild(bu); setTimeout(function() { bu.remove(); }, 9000);
         }, 4000);
         reprendreAction();
@@ -295,6 +501,37 @@
         '.AIDE-CARTE-PC:hover{border-color:#e9c47a;background:linear-gradient(135deg,#232323,#3a301a)}',
         '.AIDE-CARTE-PC img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #d4a64a;background:#fff;flex:none}',
         '.AIDE-CARTE-PC small{display:block;font-weight:400;font-size:11.5px;color:#d9c08a}',
+        '.AIDE-CARTE-PC-QUOI{display:block;width:100%;margin:-4px 0 10px;padding:2px 4px;border:0;background:none;color:#9a6f22;font:700 12px system-ui,sans-serif;text-align:right;cursor:pointer}',
+        '.AIDE-CARTE-PC-QUOI:hover{text-decoration:underline}',
+        'body.dark-mode .AIDE-CARTE-PC-QUOI{color:#e9c47a}',
+        '.AIDE-QUOI{margin-left:auto;font-weight:800 !important;font-size:17px !important;border:1.5px solid rgba(212,166,74,.7) !important;width:32px !important;height:32px !important}',
+        '.AIDE-PRES-FOND{position:fixed;inset:0;z-index:12000;background:rgba(5,8,15,.55);display:flex;align-items:flex-end;justify-content:center}',
+        '.AIDE-PRES-FOND.pc{align-items:center}',
+        '.AIDE-PRES{width:100%;max-width:460px;height:92%;background:#fff;border-radius:22px 22px 0 0;border-top:3px solid #d4a64a;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.4);font:15px/1.45 Montserrat,system-ui,sans-serif;color:#1a1a1a}',
+        '.AIDE-PRES-FOND.pc .AIDE-PRES{height:min(760px,calc(100vh - 48px));border-radius:22px}',
+        '.AIDE-PRES-TETE{display:flex;align-items:center;gap:10px;padding:14px 14px 10px}',
+        '.AIDE-PRES-TETE b{display:block;font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.AIDE-PRES-TETE small{display:block;font-size:12px;color:#6b6b6b;font-weight:600}',
+        '.AIDE-PRES-RETOUR{width:38px;height:38px;border-radius:12px;border:1.5px solid #ece3d0;background:#faf7f0;font:800 20px system-ui;color:#1a1a1a;cursor:pointer;flex:none}',
+        '.AIDE-PRES-CORPS{flex:1;overflow-y:auto;padding:4px 14px 18px;overscroll-behavior:contain}',
+        '.AIDE-PRES-SCENE{position:relative;height:200px;border-radius:18px;background:radial-gradient(110% 90% at 20% 100%,#fff7e6 0%,#f3e6c8 60%,#ead6aa 100%);overflow:hidden;margin-bottom:6px}',
+        '.AIDE-PRES-SCENE img{position:absolute;left:-4px;bottom:0;height:190px;width:auto}',
+        '.AIDE-PRES-BULLE{position:absolute;right:10px;top:14px;width:min(190px,52%);background:#fff;border-radius:16px 16px 16px 4px;padding:10px 12px;font-size:13px;line-height:1.45;box-shadow:0 8px 20px rgba(0,0,0,.1)}',
+        '.AIDE-PRES-BULLE b{color:#9a6f22}',
+        '.AIDE-PRES-THEME{margin:14px 0 7px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#6b6b6b}',
+        '.AIDE-PRES-THEME::after{content:"";flex:1;height:1px;background:#eadfc6}',
+        '.AIDE-PRES-QS{display:flex;flex-wrap:wrap;gap:7px}',
+        '.AIDE-PRES-Q{display:flex;align-items:center;gap:7px;max-width:100%;padding:9px 12px;border-radius:14px;background:#fff;border:1.5px solid #ead9b5;font:600 13px/1.3 Montserrat,system-ui,sans-serif;color:#1a1a1a;text-align:left;cursor:pointer;box-shadow:0 2px 6px rgba(154,111,34,.08)}',
+        '.AIDE-PRES-Q::before{content:"›";font-weight:800;color:#9a6f22}',
+        '.AIDE-PRES-Q:active{transform:scale(.97);background:#faf5ea}',
+        '.AIDE-PRES-NOTE{margin:16px 0 12px;font-size:12px;color:#6b6b6b;text-align:center;line-height:1.5}',
+        '.AIDE-PRES-GO{display:block;width:100%;border:0;border-radius:14px;padding:14px;background:linear-gradient(180deg,#d6a756,#b88a35);color:#1a1a1a;font:800 13px Montserrat,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}',
+        'body.dark-mode .AIDE-PRES{background:#17181b;color:#e5e7eb}',
+        'body.dark-mode .AIDE-PRES-RETOUR{background:#24262b;border-color:#34373d;color:#e5e7eb}',
+        'body.dark-mode .AIDE-PRES-TETE small,body.dark-mode .AIDE-PRES-NOTE,body.dark-mode .AIDE-PRES-THEME{color:#9ca3af}',
+        'body.dark-mode .AIDE-PRES-THEME::after{background:#34373d}',
+        'body.dark-mode .AIDE-PRES-SCENE{background:radial-gradient(110% 90% at 20% 100%,#3a3020 0%,#2a2418 60%,#1d1a14 100%)}',
+        'body.dark-mode .AIDE-PRES-BULLE{background:#24262b;color:#e5e7eb}',
+        'body.dark-mode .AIDE-PRES-Q{background:#24262b;border-color:#4a3f26;color:#f3f4f6}',
         '.AIDE-FOND{position:fixed;inset:0;z-index:12000;background:rgba(5,8,15,.55);display:flex;align-items:flex-end;justify-content:center}',
         '.AIDE-FOND.pc{background:transparent;pointer-events:none;align-items:flex-end;justify-content:flex-end;padding:0 24px 24px 0}',
         '.AIDE-FEN{pointer-events:auto;width:100%;max-width:460px;height:86%;background:#f4f5f7;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.4);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:#111827}',
@@ -303,7 +540,7 @@
         '.AIDE-TETE img{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #d4a64a;background:#fff;flex:none}',
         '.AIDE-TETE b{font-size:16px;display:block}.AIDE-TETE small{opacity:.8;font-size:12px}',
         '.AIDE-TETE button{background:none;border:0;color:#fff;font-size:20px;width:38px;height:38px;border-radius:50%;cursor:pointer;flex:none}',
-        '.AIDE-VIDER{margin-left:auto}.AIDE-TETE button:hover{background:rgba(255,255,255,.12)}',
+        '.AIDE-VIDER{margin-left:0}.AIDE-TETE button:hover{background:rgba(255,255,255,.12)}',
         '.AIDE-FIL{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}',
         '.AIDE-M{max-width:86%;padding:10px 12px;border-radius:16px;overflow-wrap:anywhere}',
         '.AIDE-M.lui{background:#fff;border:1px solid #dde1e7;border-bottom-left-radius:4px;align-self:flex-start}',
@@ -316,6 +553,19 @@
         '.AIDE-BTN{border:0;background:#c99a45;color:#111;border-radius:16px;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}',
         '.AIDE-LIEN{border:0;background:none;color:#8a5e10;font:inherit;font-size:13px;font-weight:700;padding:2px 0;cursor:pointer;text-align:left}',
         '.AIDE-AUTRE{margin-top:8px;font-size:12.5px;color:#6b7280}',
+        '.AIDE-POUCE{display:flex;align-items:center;gap:10px}',
+        '.AIDE-LIGNE{display:flex;align-items:flex-end;gap:6px;align-self:flex-start;max-width:94%;min-width:0}',
+        '.AIDE-LIGNE .AIDE-M{max-width:100%;min-width:0}',
+        '.AIDE-POSE{width:44px;height:52px;object-fit:contain;object-position:bottom;flex:none;margin-bottom:-2px}',
+        '.AIDE-POSE[src*="mascotte-salut"]{width:56px;height:52px}',
+        '@media (max-width:340px){.AIDE-POSE{width:34px;height:40px}}',
+        '.AIDE-POUCE img{width:72px;height:72px;object-fit:contain;flex:none;animation:aidePouce .6s ease-out}',
+        '@keyframes aidePouce{0%{transform:scale(.4) rotate(-12deg);opacity:0}70%{transform:scale(1.1) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0)}}',
+        '.AIDE-DETAIL{margin-top:8px;border-top:1px dashed #e2d3ae;padding-top:6px}',
+        '.AIDE-DETAIL summary{cursor:pointer;color:#8a5e10;font-weight:700;font-size:13px;list-style:none}',
+        '.AIDE-DETAIL summary::before{content:"▸ "}.AIDE-DETAIL[open] summary::before{content:"▾ "}',
+        '.AIDE-DETAIL[open] summary{margin-bottom:6px}',
+        'body.dark-mode .AIDE-DETAIL summary{color:#e9c47a}',
         '.AIDE-M small{display:block;font-size:12px;color:#6b7280;margin-top:4px;line-height:1.35}',
         '.AIDE-CODE{margin:8px 0 2px;padding:7px 9px;border:1px solid #e7cf98;border-radius:10px;background:#fffaf0}',
         '.AIDE-CODE b{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.5px}',

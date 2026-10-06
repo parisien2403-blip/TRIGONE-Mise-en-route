@@ -18,7 +18,10 @@ const tarifs = {
     grandesVilles,
     coefRepas: +extraire(/function GET_REPAS_RATE_EUR[\s\S]*?montantJour \* ([\d.]+) \* 100/, 'coefficient repas'),
     coefHebergement: +extraire(/function GET_HEBERG_RATE_EUR[\s\S]*?montantJour \* ([\d.]+) \* 100/, 'coefficient hébergement'),
-    pays, change
+    pays, change,
+    // Indemnités kilométriques (véhicule personnel) : €/km selon la puissance fiscale.
+    ik: litteral(extraire(/var DEFAULT_IK_RATES = (\{.*?\});/, 'DEFAULT_IK_RATES')),
+    ikDate: litteral(extraire(/var IK_RATES_DATE = ('.*?');/, 'IK_RATES_DATE'))
 };
 fs.writeFileSync(path.join(__dirname, 'tarifs.json'), JSON.stringify(tarifs, null, 1) + '\n');
-console.log('aide/tarifs.json : ' + pays.length + ' pays, ' + Object.keys(change).length + ' devises, repas ' + tarifs.repasFrance + ' €, hébergement ' + JSON.stringify(tarifs.hebergementFrance) + ', coefficients ' + tarifs.coefRepas + ' / ' + tarifs.coefHebergement);
+console.log('aide/tarifs.json : ' + pays.length + ' pays, ' + Object.keys(change).length + ' devises, repas ' + tarifs.repasFrance + ' €, hébergement ' + JSON.stringify(tarifs.hebergementFrance) + ', coefficients ' + tarifs.coefRepas + ' / ' + tarifs.coefHebergement + ', IK ' + JSON.stringify(tarifs.ik));

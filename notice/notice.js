@@ -4,7 +4,7 @@
 // appli avec des personnages fictifs (notice/img), repères dorés ① ② ③ repris dans le texte.
 // {B} : chemin de la racine de TRIGONE (« ../ » depuis Compte-rendu).
 (function() {
-    var VERSION = 189;
+    var VERSION = 190;
     // Capture : un bouton, pour que le toucher l'agrandisse au lieu de tourner la page.
     var TEL_SVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="2.5" width="11" height="19" rx="2.5"/><path d="M11 18.5h2"/></svg>';
     function img(n) { return '<button type="button" class="n-capt" data-zoom="{B}notice/img/' + n + '.webp" aria-label="Agrandir la capture"><img src="{B}notice/img/' + n + '.webp" alt=""><i>⤢</i><span class="n-leg">' + TEL_SVG + (n === 'c3-carte-grand' ? 'Téléphone à l\'horizontale · Android / iPhone' : 'Téléphone · Android / iPhone') + '</span></button>'; }
@@ -73,7 +73,8 @@
     // ---------- 3. Compte ----------
     ajouter(page('La mascotte d\'aide', '<p>Une question ? Demandez à la mascotte, sur <b>chaque écran</b> de Mise en route et de Compte-rendu.</p>' +
         et(['Téléphone : la <b>pastille de la mascotte</b>, en haut à droite, à côté de la lune. PC : <b>Besoin d\'aide ?</b> dans le menu de gauche.',
-            'Écrivez comme vous parlez : « mdp oublié », « le chef a refusé mon OM », « combien de repas je mets »… ou touchez un sujet proposé.',
+            'Ce qu\'elle sait faire : bouton <b>?</b> de sa fenêtre (PC : <b>Ce que la mascotte sait faire ›</b>). Touchez un exemple (nuit à Paris, IK, code FD, qui valide…), elle répond.',
+            'Écrivez comme vous parlez : « mdp oublié », « le chef a refusé mon OM », « combien de repas je mets »…',
             'Elle répond à partir de cette notice, <b>même sans réseau</b>. <b>👉 Me montrer</b> ouvre le bon écran et fait clignoter le bon bouton ; <b>📖 Notice</b> ouvre la bonne page.',
             'Pas trouvé ? <b>✨ Demander à l\'IA</b> (compte connecté, réseau) : elle comprend la question et explique où cliquer.']) +
         attention('L\'IA peut se tromper : la notice fait foi. Ne tapez jamais d\'information personnelle (nom, matricule, code). Nombre de questions à l\'IA limité par jour.'), 'inst'));

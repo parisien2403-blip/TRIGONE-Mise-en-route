@@ -11,10 +11,10 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=205"></script>
-<script src="../aide/moteur.js?v=205"></script>
-<script src="../aide/donnees.js?v=205"></script>
-<script src="../aide/aide.js?v=205"></script>
+<script src="../jumelage.js?v=206"></script>
+<script src="../aide/moteur.js?v=206"></script>
+<script src="../aide/donnees.js?v=206"></script>
+<script src="../aide/aide.js?v=206"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -5109,6 +5109,40 @@ body.dark-mode .MER-LISTE-ITEM { border-color: #404040; background: #262626; }
   #P0 .P0-TAB { flex-direction: row; min-height: 44px; padding: 6px 8px; gap: 8px; }
   #P0 .P0-TAB-ICON { width: 26px; height: 26px; }
 }
+
+/* ===== Petits écrans (320 px et moins, téléphone en gros caractères ou zoom) : rien ne se chevauche ni ne déborde ===== */
+body { overflow-wrap: break-word; }                       /* un mot trop long (fichier, adresse) passe à la ligne */
+@media (max-width: 380px) {
+  .BIB-HEADER { flex-wrap: wrap; row-gap: 8px; }          /* « Relever » passe dessous plutôt que d'écraser le titre */
+  .BIB-HEADER-TXT { flex: 1 1 120px !important; }
+  .BIB-HEADER .MER-BX-RELEVER { margin-left: auto; }
+}
+@media (max-width: 340px) {
+  .CARD-HEAD { flex-wrap: wrap; row-gap: 8px; }          /* Menu et « ? » passent sous le titre plutôt que de le couper */
+  .CARD-HEAD-TXT { flex: 1 1 170px; }
+  .CARD-HEAD-TOOLS { margin-left: auto; }
+}
+
+@media (max-width: 380px) {
+  .FST-HEADER, .FST-ROW { grid-template-columns: minmax(60px, 1fr) 24px auto auto !important; column-gap: 6px !important; }
+  .FST-MNT { white-space: nowrap; }
+  .FST-HEADER span { white-space: nowrap; letter-spacing: 0; overflow-wrap: normal; }
+  .FST-CAT { overflow-wrap: normal; line-height: 1.2; }
+}
+@media (max-width: 340px) {
+  #PAGE-STAGE > .CARD { padding-left: 12px; padding-right: 12px; }   /* moins de marges perdues sur les très petits écrans */
+  .BIB-SHELL { padding-left: 12px; padding-right: 12px; }
+  #P0 .P0-SHELL { padding-left: 8px !important; padding-right: 8px !important; }
+}
+/* Tableau des frais trop serré (voir FST_AJUSTER) : la catégorie sur sa propre ligne, max / payant / montant dessous */
+.FST-EMPILE .FST-HEADER, .FST-EMPILE .FST-ROW { grid-template-columns: minmax(28px, auto) 1fr auto !important; column-gap: 8px !important; row-gap: 4px; padding-left: 8px !important; padding-right: 8px !important; }
+.FST-EMPILE .FST-HEADER > :first-child, .FST-EMPILE .FST-ROW > .FST-CAT { grid-column: 1 / -1; }
+.FST-EMPILE .FST-HEADER span { white-space: nowrap; }
+@media (max-width: 300px) {
+  #P2-FIN .FRAIS-SECTION { padding: 10px 8px; }
+  .frais-main-tab { min-width: 0; padding: 6px 2px; font-size: 0.6em; letter-spacing: 0; }
+  .frais-main-tab small { font-size: 0.78em; overflow-wrap: normal; }
+}
 </style>
 </head>
 <body class="sm2-app">
@@ -8600,7 +8634,12 @@ function AFFICHER_ECRAN_MEDAILLE(palier, count) {
     if (!overlay) return;
     document.getElementById('MEDAILLE-IMG').src = info.fichier;
     document.getElementById('MEDAILLE-TITRE').textContent = info.titre;
-    document.getElementById('MEDAILLE-TEXTE').textContent = 'Bravo, vous obtenez le ' + info.titre + ' ' + info.texte + ' !';
+    // Texte personnel : appellation selon le grade du profil (« mon adjudant »…) et palier suivant.
+    var appel = '';
+    try { appel = window.AIDE_MOTEUR ? AIDE_MOTEUR.appellation((JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}')).grade) : ''; } catch (e) {}
+    if (appel.charAt(0) === '§') { var civ = ''; try { civ = localStorage.getItem('trigone_aide_civilite') || ''; } catch (e) {} appel = civ ? civ + appel.slice(1) : ''; }
+    var suite = palier === 'BRONZE' ? ' Encore 9 et c\'est l\'Argent\u00a0!' : palier === 'ARGENT' ? ' Encore 10 et c\'est l\'Or\u00a0!' : ' La plus haute distinction de TRIGONE\u00a0!';
+    document.getElementById('MEDAILLE-TEXTE').textContent = 'Bravo' + (appel ? ', ' + appel : '') + '\u00a0! Vous obtenez le ' + info.titre + ' ' + info.texte + '.' + suite;
     overlay.classList.remove('HIDDEN');
     requestAnimationFrame(function() { requestAnimationFrame(function() { overlay.classList.add('medaille-in'); }); });
 }
@@ -11725,7 +11764,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 300;
+var APP_CODE_VERSION = 301;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -14117,7 +14156,9 @@ function LIBELLES_COURTS_DOCK() {
 // Chaque barre du bas essaie les libellés entiers, puis abrégés, puis abrégés en plus petit : jamais de « … ».
 function AJUSTER_DOCKS() {
     function deborde(l) {
-        return l.scrollWidth > l.clientWidth + 1 || Array.prototype.some.call(l.querySelectorAll('span'), function(sp) { return sp.offsetWidth && sp.scrollWidth > l.clientWidth + 1; });
+        // largeur réelle du texte (avec 2 px d'air de chaque côté, sinon deux libellés voisins se touchent)
+        var g = document.createRange(); g.selectNodeContents(l); var w = g.getBoundingClientRect().width;
+        return w > l.clientWidth - 4 || l.scrollWidth > l.clientWidth + 1 || Array.prototype.some.call(l.querySelectorAll('span'), function(sp) { return sp.offsetWidth && sp.scrollWidth > l.clientWidth + 1; });
     }
     document.querySelectorAll('.P0-DOCK-INNER').forEach(function(dock) {
         if (!dock.getBoundingClientRect().width) return;
@@ -15330,12 +15371,32 @@ function RENDER_FRAIS_MAIN_PANELS() {
     setTimeout(UPDATE_SCROLL_HINT, 30);
 }
 
+// Tableau des frais : si une colonne ne tient plus (écran étroit, téléphone réglé en grands caractères),
+// la catégorie passe sur sa propre ligne, max / payant / montant dessous. Mesuré à chaque changement de taille.
+function FST_AJUSTER(racine) {
+    (racine || document).querySelectorAll('.FRAIS-SUMMARY-TABLE').forEach(function(t) {
+        var largeur = -1, mesurer = function() {
+            if (!t.isConnected || !t.offsetWidth || t.offsetWidth === largeur) return;
+            largeur = t.offsetWidth;
+            t.classList.remove('FST-EMPILE');
+            var serre = [].some.call(t.querySelectorAll('.FST-HEADER span, .FST-ROW > span'), function(e) { return e.scrollWidth > e.clientWidth + 1; }) ||
+                [].some.call(t.querySelectorAll('.FST-HEADER, .FST-ROW'), function(r) { return r.scrollWidth > r.clientWidth + 1; });
+            t.classList.toggle('FST-EMPILE', serre);
+        };
+        if (window.ResizeObserver) new ResizeObserver(mesurer).observe(t);
+        mesurer();
+    });
+}
+
 function UPDATE_SCROLL_HINT() {
     var scrollEl = document.getElementById('P2-FIN');
     var hintEl = document.getElementById('P2-FIN-SCROLL-HINT');
     if (!scrollEl || !hintEl) return;
     var container = scrollEl.querySelector('.P2-FIN-SCROLL');
     if (!container) return;
+    // La flèche se pose au bas de la zone qui défile, au-dessus du lien « Retour mission en cours ».
+    var parent = hintEl.offsetParent;
+    if (parent) hintEl.style.bottom = Math.max(0, Math.round(parent.getBoundingClientRect().bottom - container.getBoundingClientRect().bottom)) + 'px';
     var remaining = container.scrollHeight - container.scrollTop - container.clientHeight;
     hintEl.classList.toggle('is-visible', remaining > 24);
 }
@@ -15641,6 +15702,7 @@ function RENDER() {
     html += '</div>';
 
     L.innerHTML = html;
+    FST_AJUSTER(L);
     UPDATE_GAUGE();
     RENDER_FRAIS_MAIN_PANELS();
 }

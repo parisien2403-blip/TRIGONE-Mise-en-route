@@ -17,7 +17,7 @@ module.exports = async function() {
         await p.evaluate(() => document.querySelectorAll('.JUM-ACC,.JUM-PRES,.JUM-NOUV,.JUM-VERROU,.JUM-PAVE,.JUM-MDP-FOND').forEach(x => x.remove()));
         return p;
     }
-    const derniere = p => p.evaluate(() => { const l = document.querySelectorAll('.AIDE-M.lui'); return l.length ? l[l.length - 1].innerText : ''; });
+    const derniere = p => p.evaluate(() => { const l = document.querySelectorAll('.AIDE-M.lui'); return l.length ? l[l.length - 1].textContent : ''; });
     async function demander(p, q) { await p.fill('.AIDE-SAISIE input', q); await p.click('.AIDE-SAISIE button'); await attendre(300); return derniere(p); }
 
     // ----- Téléphone, Mise en route, sans compte -----
@@ -28,12 +28,30 @@ module.exports = async function() {
     await attendre(2200);
     verifier(await t.isVisible('.AIDE-BULLE') && await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE')), 'première fois : la mascotte se signale (« Besoin d\'aide ? Touchez-moi »)');
     await t.click('.AIDE-PASTILLE'); await attendre(800);
-    verifier(await t.isVisible('.AIDE-FEN') && /^Bonjour, mon adjudant, en quoi puis-je vous aider \?/.test(await derniere(t)) && (await t.$$('.AIDE-PUCE')).length === 4, 'fenêtre ouverte : « Bonjour, mon adjudant, en quoi puis-je vous aider ? » (grade ADJ), 4 sujets proposés');
+    const pres = await t.evaluate(() => ({ vis: !!document.querySelector('.AIDE-PRES') && document.querySelector('.AIDE-PRES').getClientRects().length > 0, q: document.querySelectorAll('.AIDE-PRES-Q').length,
+        img: /mascotte-pouce/.test((document.querySelector('.AIDE-PRES-SCENE img') || {}).src), fen: !!document.querySelector('.AIDE-FEN') }));
+    verifier(pres.vis && pres.q >= 10 && pres.img && !pres.fen, 'tout premier appui : page « Ce que je sais faire » (mascotte au pouce, ' + pres.q + ' questions à toucher)');
+    await t.click('.AIDE-PRES-GO'); await attendre(800);
+    verifier(await t.isVisible('.AIDE-FEN') && /^Bonjour, mon adjudant, en quoi puis-je vous aider\s\?/.test(await derniere(t)) && (await t.$$('.AIDE-PUCE')).length === 4, 'fenêtre ouverte : « Bonjour, mon adjudant, en quoi puis-je vous aider ? » (grade ADJ), 4 sujets proposés');
     verifier(!(await t.isVisible('.AIDE-BULLE')) && !(await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE'))), 'ouverte une fois : la mascotte ne se signale plus');
     let r = await demander(t, 'jme rappel plu de mon mot2pass');
     verifier(/code de réactivation/.test(r) && /Réponse trouvée dans la notice/.test(await t.innerText('.AIDE-FIL')), 'langage SMS et fautes (« jme rappel plu de mon mot2pass ») : code de connexion oublié');
     r = await demander(t, 'le juteux a refusé mon OM pk');
     verifier(/Refusées — à corriger/.test(r), 'jargon (« le juteux a refusé mon OM pk ») : demande refusée, corriger et renvoyer');
+    r = await demander(t, 'merci beaucoup !');
+    verifier(/Avec plaisir, mon adjudant/.test(r) && await t.evaluate(() => { const l = document.querySelectorAll('.AIDE-POUCE img'); return l.length && /mascotte-pouce/.test(l[l.length - 1].src); }), '« merci » : la mascotte lève le pouce (« Avec plaisir, mon adjudant ! »)');
+    await t.click('.AIDE-QUOI'); await attendre(500);
+    verifier(await t.isVisible('.AIDE-PRES') && !(await t.isVisible('.AIDE-FEN')), 'bouton « ? » de la discussion : rouvre « Ce que je sais faire »');
+    await t.click('.AIDE-PRES-Q:has-text("Combien la nuit à Paris")'); await attendre(800);
+    r = await derniere(t);
+    verifier(!(await t.isVisible('.AIDE-PRES')) && /Paris/.test(r) && /140,00/.test(r), 'question touchée (« Combien la nuit à Paris ? ») : posée dans la discussion, réponse 140,00 €');
+    await t.evaluate(() => { AIDE_FERMER(); AIDE_PRESENTATION(); }); await attendre(400);
+    await t.click('.AIDE-PRES-Q:has-text("Comment j\'envoie ma demande")'); await attendre(800);
+    verifier(/Prêtes à envoyer/.test(await derniere(t)), 'question touchée (« Comment j\'envoie ma demande ? ») : fiche de la notice');
+    r = await demander(t, 'bonne journée');
+    verifier(/Au revoir, mon adjudant, et bonne mission/.test(r), '« bonne journée » : « Au revoir, mon adjudant, et bonne mission ! »');
+    r = await demander(t, 'salut');
+    verifier(/^Bonjour, mon adjudant\s! Que puis-je faire pour vous/.test(r.trim()), '« salut » : la mascotte salue et propose des sujets');
     r = await demander(t, 'jai dormi a l\'hotel comment je le mets');
     verifier(/Repas & hébergement/.test(r), 'familier (« jai dormi a l\'hotel… ») : frais d\'hébergement');
     r = await demander(t, 'recette de la blanquette de veau');
@@ -73,6 +91,36 @@ module.exports = async function() {
     verifier(/Bourges/.test(r) && /90,00 €/.test(r), 'barème France : autre ville (Bourges) → 90,00 €');
     r = await demander(t, 'repas en allemagne combien');
     verifier(/ALLEMAGNE/.test(r) && /42,00 €/.test(r), 'barème étranger : repas en Allemagne → 42,00 € (17,5 % de 240 €)');
+    r = await demander(t, 'indemnisation en espagne');
+    verifier(/ESPAGNE/.test(r) && /37,10 €/.test(r) && /137,80 €/.test(r), 'barème étranger : « indemnisation en espagne » → repas 37,10 €, nuit 137,80 €');
+    r = await demander(t, 'indemnisation à l\'étranger');
+    verifier(/dépend du pays/.test(r) && /Espagne/.test(r), 'étranger sans pays : explication, exemples et demande du pays');
+    // Questions de suite : le sujet de la question précédente est repris.
+    r = await demander(t, 'combien coute un repas en espagne');
+    r = await demander(t, 'et en italie ?');
+    verifier(/ITALIE/.test(r) && /38,50 €/.test(r) && !/Nuit/.test(r), 'suite : « et en italie ? » après un repas en Espagne → repas en Italie (38,50 €)');
+    r = await demander(t, 'pareil pour une nuit');
+    verifier(/ITALIE/.test(r) && /143,00 €/.test(r) && !/Repas :/.test(r), 'suite : « pareil pour une nuit » → nuit en Italie (143,00 €)');
+    r = await demander(t, 'et à lyon');
+    verifier(/Lyon/.test(r) && /120,00 €/.test(r), 'suite : « et à lyon » → nuit à Lyon (120,00 €)');
+    r = await demander(t, 'code fd du 4e riisc formation'); await attendre(800);
+    r = await demander(t, 'et intervention ?');
+    verifier(/FDYDDR4INT/.test(r), 'suite : « et intervention ? » après le code FD formation du 4e RIISC → FDYDDR4INT');
+    r = await demander(t, 'blanquette');
+    verifier(!/codes FD correspondent/.test(r) && /cerveau IA|Vous voulez parler/.test(r), 'un mot hors sujet après un code FD n\'est pas pris pour une suite (« blanquette »)');
+    r = await demander(t, 'combien coute un repas en espagne'); r = await demander(t, 'blanquette');
+    verifier(!/€/.test(r), 'un mot hors sujet après un barème n\'est pas pris pour une ville (« blanquette »)');
+    // Indemnités kilométriques : distance par la route (simulée ici) et montant selon la puissance ; suites.
+    await t.route('**/api/distance**', rt => { rt.fulfill({ contentType: 'application/json', body: JSON.stringify(/[?&]a=PARIS(&|$)/.test(rt.request().url()) ? { ok: true, km: 580 } : { ok: true, km: 33 }) }); });
+    r = await demander(t, 'combien je vais toucher en ik entre libourne et bordeaux avec ma 5 cv'); await attendre(800); r = await derniere(t);
+    verifier(/Libourne → Bordeaux/.test(r) && /33 km/.test(r) && /10,56 €/.test(r) && /21,12 €/.test(r) && !/6 à 7 CV/.test(r), 'IK : Libourne → Bordeaux, 33 km, 5 CV → 10,56 € (aller-retour 21,12 €)');
+    r = await demander(t, 'et en 7 chevaux ?'); await attendre(800); r = await derniere(t);
+    verifier(/6 à 7 CV/.test(r) && /13,53 €/.test(r), 'IK, suite : « et en 7 chevaux ? » → 33 km × 0,41 € = 13,53 €');
+    r = await demander(t, 'et pour paris'); await attendre(800); r = await derniere(t);
+    verifier(/Libourne → Paris/.test(r) && /580 km/.test(r) && /237,80 €/.test(r), 'IK, suite : « et pour paris » → Libourne → Paris, 580 km × 0,41 € = 237,80 €');
+    r = await demander(t, 'tarif ik');
+    verifier(/0,32 €/.test(r) && /0,41 €/.test(r) && /0,45 €/.test(r), 'IK sans trajet : le barème par puissance (0,32 / 0,41 / 0,45 € le km)');
+    await t.unroute('**/api/distance**');
     r = await demander(t, 'indemnités aux usa');
     verifier(/ETATS-UNIS/.test(r) && /New York/.test(r) && /≈/.test(r), 'barème étranger : États-Unis (avec New York) converti en euros');
     r = await demander(t, 'tarif hotel a la reunion');
@@ -82,9 +130,21 @@ module.exports = async function() {
     const cr0 = await (await b.newContext()).newPage(); await cr0.goto(URL + 'cr/'); await attendre(1500);
     const conc = await cr0.evaluate(() => fetch('../aide/tarifs.json').then(r => r.json()).then(x => JSON.stringify(x.pays) === JSON.stringify(COUNTRY_MISSION_RATES) &&
         JSON.stringify(x.change) === JSON.stringify(DEFAULT_EXCHANGE_RATES) && JSON.stringify(x.grandesVilles) === JSON.stringify(GRANDES_VILLES_FR) && x.repasFrance === GET_REPAS_RATE_EUR({}) &&
-        x.hebergementFrance.PARIS === GET_HEBERG_RATE_FOR_JOUR({ V: 'PARIS' }, {}) && x.hebergementFrance.GRANDE === GET_HEBERG_RATE_FOR_JOUR({ V: 'GRANDE' }, {}) && x.hebergementFrance.PETITE === GET_HEBERG_RATE_FOR_JOUR({ V: 'PETITE' }, {})));
+        x.hebergementFrance.PARIS === GET_HEBERG_RATE_FOR_JOUR({ V: 'PARIS' }, {}) && x.hebergementFrance.GRANDE === GET_HEBERG_RATE_FOR_JOUR({ V: 'GRANDE' }, {}) && x.hebergementFrance.PETITE === GET_HEBERG_RATE_FOR_JOUR({ V: 'PETITE' }, {}) && JSON.stringify(x.ik) === JSON.stringify(DEFAULT_IK_RATES)));
     verifier(conc, 'aide/tarifs.json identique aux barèmes de Compte-rendu (pays, devises, grandes villes, repas, hébergement)');
     await cr0.close();
+
+    // ----- Rappels et félicitations (mascotte qui salue), une fois par jour au plus, après une vraie réponse -----
+    await t.evaluate(() => { localStorage.setItem('mission_data', JSON.stringify({ DEBUT: '2026-10-12T07:30:00', DEADLINE: '2026-11-11T18:00:00', LIBELLE_MISSION: 'STAGE FORMATEUR', MAIL_SENT: false }));
+        localStorage.setItem('trigone_cr_envoyes_total', '1'); localStorage.removeItem('trigone_aide_rappel_jour'); localStorage.removeItem('trigone_aide_medaille_fetee'); });
+    await demander(t, 'comment je fais un ordre de mission'); await attendre(1500);
+    const rap = await t.evaluate(() => [...document.querySelectorAll('.AIDE-LIGNE')].filter(l => /mascotte-salut/.test(l.querySelector('img').src)).map(l => l.textContent));
+    verifier(rap.length === 2 && /compte-rendu de fin de mission/.test(rap[0]) && /avant le 11\/11/.test(rap[0]) && /TRIGONE de Bronze/.test(rap[1]) && /Encore 9 comptes-rendus/.test(rap[1]),
+        'rappels : CR à rendre (avant le 11/11) et félicitations Bronze (encore 9 pour l\'Argent), mascotte qui salue');
+    await demander(t, 'comment je fais un ordre de mission'); await attendre(1500);
+    verifier(await t.evaluate(() => [...document.querySelectorAll('.AIDE-LIGNE img')].filter(i => /mascotte-salut/.test(i.src)).length) === 2, 'rappels : pas répétés dans la journée');
+    await t.evaluate(() => { localStorage.removeItem('mission_data'); localStorage.removeItem('trigone_cr_envoyes_total'); });
+    await t.click('.AIDE-VIDER'); await attendre(300);
 
     // ----- Salutation selon le grade (écritures libres) ; commissaire : Monsieur ou Madame, demandé une fois -----
     const sal = await t.evaluate(() => ['A/C', 'Sergent chef', 'CNE.', 'lcl', '1CL', 'MAJ', 'civil'].map(AIDE_MOTEUR.appellation));
@@ -93,7 +153,7 @@ module.exports = async function() {
     await t.click('.AIDE-VIDER'); await attendre(300);
     verifier(/dois-je dire/.test(await derniere(t)) && await t.isVisible('[data-civ="Madame"]'), 'commissaire (CRP) : la mascotte demande Monsieur ou Madame le commissaire');
     await t.click('[data-civ="Madame"]'); await attendre(300);
-    verifier(/^Bonjour, Madame le commissaire, en quoi puis-je vous aider \?/.test(await derniere(t)), 'choix retenu : « Bonjour, Madame le commissaire, en quoi puis-je vous aider ? »');
+    verifier(/^Bonjour, Madame le commissaire, en quoi puis-je vous aider\s\?/.test(await derniere(t)), 'choix retenu : « Bonjour, Madame le commissaire, en quoi puis-je vous aider ? »');
     await t.evaluate(() => { AIDE_FERMER(); const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.grade = 'CRC1'; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); sessionStorage.removeItem('trigone_aide_fil'); AIDE_OUVRIR(); }); await attendre(400);
     verifier(/^Bonjour, Madame le commissaire en chef,/.test(await derniere(t)), 'commissaire en chef (CRC1) : « Madame le commissaire en chef », sans redemander');
     await t.evaluate(() => AIDE_FERMER());
@@ -112,11 +172,19 @@ module.exports = async function() {
     verifier(await pc.evaluate(() => document.querySelector('.AIDE-FOND').classList.contains('pc') && document.querySelector('.AIDE-FEN').getBoundingClientRect().right > innerWidth - 40), 'PC : la fenêtre s\'ouvre en bas à droite, l\'écran reste visible');
     await pc.evaluate(() => SHOW_PAGE('PANIER')); await attendre(300);
     verifier(!!(await pc.$('.AIDE-FOND')) && !!(await pc.$('.PC-BAS .AIDE-CARTE-PC')), 'PC : la carte reste dans le menu après un changement de page');
+    await pc.evaluate(() => AIDE_FERMER()); await pc.click('.PC-BAS .AIDE-CARTE-PC-QUOI'); await attendre(500);
+    verifier(await pc.isVisible('.AIDE-PRES'), 'PC : « Ce que la mascotte sait faire › » sous la carte ouvre la page des questions à toucher');
+    await pc.evaluate(() => AIDE_PRESENTATION_FERMER());
 
     // ----- Compte-rendu : même aide, sujets du Compte-rendu, « Me montrer » vers Mise en route -----
     const c = await page({ width: 412, height: 860 }, 'cr/', 'CR');
     verifier(await c.isVisible('.AIDE-PASTILLE'), 'Compte-rendu : pastille de la mascotte');
+    await c.evaluate(() => AFFICHER_ECRAN_MEDAILLE('ARGENT', 10)); await attendre(500);
+    verifier(/^Bravo, mon adjudant\s! Vous obtenez le TRIGONE d'Argent pour vos 10 comptes-rendus envoyés\. Encore 10 et c'est l'Or/.test(await c.textContent('#MEDAILLE-TEXTE')) && /mascotte-pouce/.test(await c.getAttribute('#MEDAILLE-MASCOTTE', 'src')),
+        'fenêtre de médaille : « Bravo, mon adjudant ! … Encore 10 et c\'est l\'Or ! », mascotte aux deux pouces');
+    await c.evaluate(() => FERMER_ECRAN_MEDAILLE()); await attendre(500);
     await c.click('.AIDE-PASTILLE'); await attendre(800);
+    await c.click('.AIDE-PRES-GO'); await attendre(800);
     verifier(await c.evaluate(() => !!document.querySelector('.AIDE-PUCE[data-fiche="cr-commencer"]')), 'Compte-rendu : sujets du compte-rendu proposés');
     r = await demander(c, 'combien de repas je met');
     verifier(/Repas midi/.test(r), 'Compte-rendu : « combien de repas je met » : frais de repas');
@@ -150,6 +218,31 @@ module.exports = async function() {
     await demander(a, 'blanquette'); await a.click('.AIDE-IA'); await attendre(1200);
     verifier(/questions à l'IA aujourd'hui|revient demain/.test(await derniere(a)), 'limite atteinte : la mascotte l\'explique');
     verifier(await a.evaluate(() => fetch('api/aide/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"question":"x y"}' }).then(r => r.status)) === 401, 'sans compte : la route de l\'IA refuse (401)');
+    // ----- « Qui valide ma demande ? » : réponse personnelle (profil + annuaire de l'unité, avec la fonction) -----
+    const MAILV = 'val.' + s + '@interieur.gouv.fr';
+    const v = await page({ width: 412, height: 860 }, '', 'VAL1');
+    await v.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
+    await v.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await v.fill('#JUM-C-MAIL', MAILV); await v.click('#JUM-C-ENVOI'); await attendre(1500);
+    await v.click('#JUM-C-VALIDER'); await attendre(2000); await v.evaluate(() => JUMELAGE_FERMER_COMPTE());
+    await v.evaluate(() => JUMELAGE_API('unite', { grade: 'ADJ', nom: 'VALIDE', prenom: 'Paul' }));
+    await a.evaluate(() => JUMELAGE_API('unite', { grade: 'ADJ', nom: 'TEST', prenom: 'Essai' }));
+    await v.evaluate(() => JUMELAGE_API('roles', { ajouter: ['valideur1'], retirer: [], fonctions: { valideur1: 'Chef de section', valideur2: 'ignorée (pas le rôle)' } }));
+    const an = await a.evaluate(m => JUMELAGE_API('annuaire?role=valideur1').then(r => r.personnes.filter(x => x.mail === m)[0] || null), MAILV);
+    verifier(an && an.fonction === 'Chef de section', 'annuaire de l\'unité : la fonction du VALIDEUR 1 est connue (« Chef de section ») ' + JSON.stringify(an));
+    await a.evaluate(m => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.mailVal1 = m; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); AIDE_OUVRIR(); }, MAILV); await attendre(500);
+    await a.click('.AIDE-VIDER'); await attendre(300);
+    await demander(a, 'qui valide ma demande de mise en route ?'); await attendre(2000);
+    r = await derniere(a);
+    verifier(/VALIDEUR 1/.test(r) && /chef de section/.test(r) && /VALIDEUR 2/.test(r) && /assistant Chorus DT/.test(r) && /d'après votre profil/.test(await a.innerText('.AIDE-FIL')),
+        '« qui valide ma demande ? » : VALIDEUR 1 du profil avec sa fonction (chef de section), puis VALIDEUR 2 et assistant Chorus DT de l\'unité');
+    await a.evaluate(() => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.mailVal1 = 'inconnu.ailleurs@trigone-app.com'; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); });
+    await demander(a, 'c est qui mon val1'); await attendre(2000);
+    verifier(/Je ne le trouve pas parmi les VALIDEUR 1/.test(await derniere(a)), 'VALIDEUR 1 du profil absent de l\'unité : la mascotte prévient (jamais un valideur d\'une autre unité)');
+    await demander(a, 'quelle est mon adresse trigone'); await attendre(500);
+    verifier(/Votre adresse TRIGONE, c'est/.test(await derniere(a)), '« quelle est mon adresse trigone » : l\'adresse du compte, avec Copier');
+    r = await demander(a, 'comment je fais un ordre de mission');
+    verifier(/^Touchez le bouton doré NOUVELLE DEMANDE et laissez-vous guider/.test(r.trim()) && /Voir comment faire/.test(r) && !(await a.evaluate(() => { const l = document.querySelectorAll('.AIDE-DETAIL'); return l[l.length - 1].open; })),
+        'réponse « humaine » : une phrase courte, le pas-à-pas replié derrière « Voir comment faire » (' + r.trim().slice(0, 60) + ')');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
     await b.close();
 };
