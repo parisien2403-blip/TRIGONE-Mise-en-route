@@ -40,6 +40,7 @@ const ASSETS = [
   '../codier.json',
   '../aide/base.json',
   '../aide/mascotte-aide.webp',
+  '../mascotte-pouce.webp',
   '../logo_chorus.webp',
   '../mascotte-assistance.webp',
   '../logo-pdf.webp',

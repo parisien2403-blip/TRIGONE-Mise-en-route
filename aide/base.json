@@ -1,5 +1,5 @@
 {
- "_lisezMoi": "Base de l'aide de la mascotte (aide.js) et de son IA (worker.js, route aide/ia). fiches : un sujet chacune — q : façons de demander (familier, militaire, SMS, fautes : plus il y en a, mieux la mascotte comprend), r : réponse, n : titre exact de la page de la notice, m : bouton « Me montrer » (a : action, c : élément à faire clignoter, l : libellé), e : écrans concernés. jargon : [mot retenu, [variantes]] ; sms : abréviations ; ecrans : description de chaque écran (où cliquer), donnée à l'IA.",
+ "_lisezMoi": "Base de l'aide de la mascotte (aide.js) et de son IA (worker.js, route aide/ia). fiches : un sujet chacune — c : la réponse courte, dite comme on parle ; dyn : réponse calculée sur l'appareil (qui valide, mon adresse, mes rôles) ; q : façons de demander (familier, militaire, SMS, fautes : plus il y en a, mieux la mascotte comprend), r : réponse, n : titre exact de la page de la notice, m : bouton « Me montrer » (a : action, c : élément à faire clignoter, l : libellé), e : écrans concernés. jargon : [mot retenu, [variantes]] ; sms : abréviations ; ecrans : description de chaque écran (où cliquer), donnée à l'IA.",
  "version": 1,
  "jargon": [
   [
@@ -42,6 +42,105 @@
     "n omr",
     "numero de mission",
     "numero de la demande"
+   ]
+  ],
+  [
+   "quivalide",
+   [
+    "qui valide",
+    "qui va valider",
+    "qui doit valider",
+    "qui signe",
+    "qui va signer",
+    "qui doit signer",
+    "qui approuve",
+    "qui est mon valideur",
+    "c est qui mon valideur",
+    "c est qui mon val",
+    "c est qui le val",
+    "qui est mon val",
+    "qui est le val",
+    "qui est le chef de corps",
+    "qui est l assistant",
+    "c est qui l assistant",
+    "a qui j envoie",
+    "a qui envoyer",
+    "va chez qui",
+    "chez qui va"
+   ]
+  ],
+  [
+   "monadresse",
+   [
+    "mon adresse trigone",
+    "mon adresse mail trigone",
+    "mon mail trigone",
+    "mon adresse",
+    "mon identifiant trigone",
+    "mon identifiant",
+    "mon mail"
+   ]
+  ],
+  [
+   "mesroles",
+   [
+    "mes roles",
+    "mon role",
+    "quel role",
+    "je suis valideur",
+    "suis je valideur",
+    "est ce que je suis valideur",
+    "mes droits"
+   ]
+  ],
+  [
+   "trouver",
+   [
+    "ou est passee",
+    "ou est passe",
+    "ou est",
+    "ou sont",
+    "elle est ou",
+    "il est ou",
+    "ou elle est",
+    "ou se trouve",
+    "ou trouver",
+    "je trouve plus",
+    "je trouve pas",
+    "trouve plus",
+    "trouve pas",
+    "je la trouve",
+    "ou je trouve"
+   ]
+  ],
+  [
+   "termine",
+   [
+    "rempli",
+    "remplie",
+    "termine",
+    "terminee",
+    "fini",
+    "finie",
+    "complete",
+    "completee",
+    "prete"
+   ]
+  ],
+  [
+   "creer",
+   [
+    "faire",
+    "fais",
+    "fait",
+    "faites",
+    "creer",
+    "cree",
+    "remplir",
+    "rediger",
+    "preparer",
+    "prepare",
+    "monter"
    ]
   ],
   [
@@ -1222,9 +1321,6 @@
   "etre",
   "euh",
   "eux",
-  "faire",
-  "fais",
-  "fait",
   "faut",
   "fois",
   "hello",
@@ -1506,7 +1602,8 @@
     "connexion coupée"
    ],
    "r": "Pas de panique, <b>vos données ne sont pas perdues</b>.<br>1. Demandez un <b>code de réactivation</b> à l'administrateur TRIGONE de votre unité.<br>2. À l'ouverture de TRIGONE, touchez <b>« J'ai un code de réactivation »</b> et saisissez-le.<br>3. Vos données reviennent ; TRIGONE vous demande alors de <b>choisir un nouveau code de connexion</b>.<br>À savoir : après 5 codes faux, il faut attendre 15 minutes ; après 10, la connexion par code est coupée (code de réactivation obligatoire).",
-   "n": "Connexion et code"
+   "n": "Connexion et code",
+   "c": "Pas de panique, vos données ne sont pas perdues : demandez un code de réactivation à l'administrateur de votre unité, puis touchez « J'ai un code de réactivation » à l'ouverture."
   },
   {
    "id": "code-acces-oublie",
@@ -1530,7 +1627,8 @@
     "enlever le code à 4 chiffres"
    ],
    "r": "Le code à 4 chiffres sert seulement à <b>ouvrir TRIGONE sur cet appareil</b> ; il est redemandé à chaque réouverture.<br>Oublié ? Sur l'écran du code, touchez <b>« Code oublié ? »</b> : TRIGONE s'efface de l'appareil. Reconnectez-vous ensuite avec <b>votre adresse TRIGONE et votre code de connexion</b> : tout revient (sauvegarde automatique).<br>Pour le changer ou le retirer : <b>Paramètres › Compte › Mon profil › Code d'accès</b>.",
-   "n": "Connexion et code"
+   "n": "Connexion et code",
+   "c": "Le code à 4 chiffres ne sert qu'à ouvrir l'appli : touchez « Code oublié ? », puis reconnectez-vous avec votre adresse et votre code de connexion, tout revient."
   },
   {
    "id": "se-connecter-ailleurs",
@@ -1558,7 +1656,8 @@
     "se reconnecter après déconnexion"
    ],
    "r": "Sur n'importe quel téléphone ou PC :<br>1. Ouvrez TRIGONE, touchez <b>Se connecter</b>.<br>2. Saisissez <b>votre adresse TRIGONE</b> (ou seulement prénom.nom) et <b>votre code de connexion</b>.<br>3. Profil, demandes, documents, boîte de réception et comptes-rendus <b>reviennent tout seuls</b>.<br>Chaque appareil relié reçoit ensuite vos envois. Ancien téléphone perdu : retirez-le dans <b>Paramètres › Compte › Mes appareils</b>.",
-   "n": "Se connecter partout (adresse + code)"
+   "n": "Se connecter partout (adresse + code)",
+   "c": "Sur n'importe quel téléphone ou PC, touchez « Se connecter » avec votre adresse TRIGONE et votre code de connexion : tout revient tout seul."
   },
   {
    "id": "creer-compte",
@@ -1580,7 +1679,8 @@
     "je suis nouveau sur trigone"
    ],
    "r": "1. À l'accueil de TRIGONE, touchez <b>Créer mon compte</b>.<br>2. Grade et unité (dans la liste), nom et prénom : TRIGONE vous donne votre adresse <b>prénom.nom@trigone-app.com</b>.<br>3. Choisissez votre <b>code de connexion</b> (8 caractères au moins), deux fois, puis <b>Créer mon compte</b>.<br>4. TRIGONE vous guide ensuite (profil, carte, destinataires, notifications).<br>Le compte doit ensuite être <b>validé</b> par votre unité : montrez votre carte TRIGONE à votre chef, un valideur ou l'assistant Chorus DT.",
-   "n": "Créer son compte — 1/2"
+   "n": "Créer son compte — 1/2",
+   "c": "À l'ouverture de TRIGONE, touchez « Créer mon compte » : grade, unité, nom, prénom, puis un code de connexion choisi deux fois. Votre unité valide ensuite le compte."
   },
   {
    "id": "compte-en-attente",
@@ -1605,7 +1705,8 @@
    "m": {
     "a": "carte",
     "l": "Ouvrir Ma carte"
-   }
+   },
+   "c": "Votre compte attend d'être validé : montrez votre carte TRIGONE à votre chef, un valideur ou l'assistant Chorus DT, il la scanne et c'est fait."
   },
   {
    "id": "changer-code-connexion",
@@ -1630,7 +1731,8 @@
    "m": {
     "a": "mdp",
     "l": "Changer mon code"
-   }
+   },
+   "c": "Ça se passe dans Paramètres › Compte › Mon code de connexion : votre code actuel, puis le nouveau deux fois."
   },
   {
    "id": "empreinte",
@@ -1655,7 +1757,8 @@
    "m": {
     "a": "profil",
     "l": "Ouvrir Mon profil"
-   }
+   },
+   "c": "Activez-la dans Mon profil › Code d'accès › Activer l'empreinte. Si elle fait des siennes, « Utiliser mon code » marche toujours."
   },
   {
    "id": "notifications",
@@ -1682,7 +1785,8 @@
    "m": {
     "a": "notif",
     "l": "Ouvrir les notifications"
-   }
+   },
+   "c": "Activez-les dans Paramètres › Notifications, puis testez. Sur Android, mettez Chrome en batterie « Non restreinte » sinon elles traînent."
   },
   {
    "id": "nouvelle-demande",
@@ -1715,7 +1819,8 @@
     "a": "mer:ACCUEIL",
     "c": "[onclick^=\"DEMARRER_NOUVELLE_DEMANDE\"]",
     "l": "Me montrer le bouton"
-   }
+   },
+   "c": "Touchez le bouton doré NOUVELLE DEMANDE et laissez-vous guider : 5 onglets, votre identité est déjà remplie."
   },
   {
    "id": "onglet-bloque",
@@ -1738,7 +1843,8 @@
     "onglet verrouillé"
    ],
    "r": "Chaque onglet est <b>vérifié avant de passer au suivant</b> : un cadenas reste tant que l'onglet d'avant n'est pas complet.<br>Touchez <b>Étape suivante</b> tout en bas : TRIGONE <b>signale en rouge</b> ce qui manque (objet, lieux, dates et heures, réponses OUI/NON…). Complétez, et un <b>✓ vert</b> apparaît sur l'onglet.",
-   "n": "Onglet 1 — Identité"
+   "n": "Onglet 1 — Identité",
+   "c": "Il manque sûrement un champ : touchez « Étape suivante » tout en bas, TRIGONE vous montre en rouge ce qu'il faut compléter."
   },
   {
    "id": "demande-collective",
@@ -1765,7 +1871,8 @@
    "m": {
     "a": "mer:NOUVELLE",
     "l": "Ouvrir une nouvelle demande"
-   }
+   },
+   "c": "Dans l'onglet Identité, ajoutez vos personnels un par un, en scannant leur carte TRIGONE, ou d'un coup avec un fichier Excel."
   },
   {
    "id": "trajet",
@@ -1789,7 +1896,8 @@
     "moyen de transport"
    ],
    "r": "Onglet <b>Aller</b> : lieu de départ (résidence administrative ou familiale), <b>moyen de transport</b> (véhicule de service, train, avion, <b>véhicule personnel</b>…), ville de départ et d'arrivée (le code postal se remplit seul), dates et heures. Trajet en plusieurs parties : <b>ajoutez un trajet intermédiaire</b>.<br>Onglet <b>Retour</b> : il est <b>pré-rempli avec l'aller inversé</b> ; corrigez ce qui change.",
-   "n": "Onglet 2 — Trajet aller"
+   "n": "Onglet 2 — Trajet aller",
+   "c": "Onglet Aller : lieu de départ, moyen de transport, villes, dates et heures. Le retour est déjà pré-rempli à l'envers, vous n'avez qu'à corriger."
   },
   {
    "id": "alim-heb",
@@ -1810,7 +1918,8 @@
     "transport en commun oui ou non"
    ],
    "r": "Répondez <b>OUI ou NON</b> à chaque ligne :<br>• <b>Durant le déplacement</b> : nourri à titre onéreux ? transport en commun ?<br>• <b>Durant la mission</b> : nourri à titre onéreux ? logé à titre onéreux ?<br>« À titre onéreux » = <b>vous payez</b> (restaurant, hôtel). Nourri ou logé gratuitement (ordinaire, quartier) : NON.<br>Si votre unité passe par un organisme, cochez <b>Hébergement</b> et/ou <b>Transport</b> à réserver.",
-   "n": "Onglet 4 — Alimentation, hébergement"
+   "n": "Onglet 4 — Alimentation, hébergement",
+   "c": "« À titre onéreux », ça veut dire que vous payez (restaurant, hôtel). Si vous mangez ou dormez gratuitement au quartier, c'est NON."
   },
   {
    "id": "imputation",
@@ -1836,7 +1945,8 @@
     "centre financier"
    ],
    "r": "Onglet <b>Imputation</b> :<br>• Mission imputée à l'unité : OUI ou NON.<br>• <b>Code d'engagement Fd@ligne</b> (donné par votre bureau / l'assistant Chorus DT) : TRIGONE affiche aussitôt le libellé, le centre financier et le centre de coût pour vérifier.<br>• Demande d'<b>avance</b> : OUI ou NON.<br>• <b>NDS ou DAF</b> : joignez le document (PDF ou photo).<br>Puis <b>Ajouter aux documents</b>.",
-   "n": "Onglet 5 — Imputation"
+   "n": "Onglet 5 — Imputation",
+   "c": "Dernier onglet : le code FD (votre bureau ou l'assistant Chorus DT vous le donne), l'avance si besoin, et la NDS ou la DAF en pièce jointe."
   },
   {
    "id": "envoyer-demande",
@@ -1847,16 +1957,16 @@
    ],
    "q": [
     "comment envoyer ma demande",
-    "j'ai rempli ma demande et après",
-    "ma demande remplie hier elle est où",
-    "où est ma demande que j'ai remplie",
-    "je trouve plus ma demande remplie",
-    "j'ai rempli ma demande où elle est passée",
+    "j'ai terminé ma demande et après",
+    "ma demande finie elle est passée où",
+    "où est passée ma demande terminée",
+    "je trouve plus ma demande terminée",
+    "j'ai fini ma demande où elle est passée",
     "j'ai fini ma demande et après",
     "où est ma demande",
     "envoyer au chef",
     "envoyer au valideur 1",
-    "elle est où ma demande que j'ai remplie",
+    "elle est où ma demande terminée",
     "envoyer mon om",
     "ma demande est dans documents",
     "prêtes à envoyer",
@@ -1871,7 +1981,8 @@
    "m": {
     "a": "mer:PANIER",
     "l": "Ouvrir mes Documents"
-   }
+   },
+   "c": "Elle vous attend dans Documents › Prêtes à envoyer : vérifiez le mail de votre VALIDEUR 1 et touchez « Envoyer cette demande »."
   },
   {
    "id": "destinataire-sans-compte",
@@ -1893,7 +2004,8 @@
     "erreur destinataire"
    ],
    "r": "<b>« Pas encore de compte TRIGONE »</b> : votre destinataire doit <b>créer son compte</b> et cocher son rôle (VALIDEUR 1…). Votre demande reste dans vos Documents en attendant.<br><b>« Mauvais destinataire »</b> : une demande part vers le <b>1er valideur</b>, la validation 1 vers le <b>2e</b>, la validation 2 et les comptes-rendus vers l'<b>assistant Chorus DT</b>. Vérifiez l'adresse (bouton QR : scannez sa carte TRIGONE, sans faute de frappe).",
-   "n": "Envois et notifications"
+   "n": "Envois et notifications",
+   "c": "Votre destinataire n'a pas encore de compte TRIGONE (ou ce n'est pas le bon rôle). Votre demande reste au chaud dans Documents en attendant."
   },
   {
    "id": "suivre-demande",
@@ -1925,7 +2037,8 @@
    "m": {
     "a": "mer:BIBLIOTHEQUE",
     "l": "Ouvrir la Bibliothèque"
-   }
+   },
+   "c": "Tout est dans la Bibliothèque : chaque demande est rangée selon son étape, et vous êtes prévenu à chaque changement."
   },
   {
    "id": "demande-refusee",
@@ -1937,6 +2050,8 @@
    ],
    "q": [
     "ma demande a été refusée",
+    "le chef m'a dit que ma demande était fausse",
+    "on m'a dit que ma demande était fausse je comprends pas",
     "le chef a refusé ma demande",
     "on m'a renvoyé ma demande",
     "ma demande est revenue",
@@ -1953,7 +2068,8 @@
    "m": {
     "a": "mer:PANIER",
     "l": "Ouvrir mes Documents"
-   }
+   },
+   "c": "Le motif est écrit sur la demande : ouvrez Documents › Refusées — à corriger, touchez Modifier, corrigez, et renvoyez."
   },
   {
    "id": "modifier-envoyee",
@@ -1976,7 +2092,8 @@
    "m": {
     "a": "mer:BIBLIOTHEQUE",
     "l": "Ouvrir la Bibliothèque"
-   }
+   },
+   "c": "Une demande partie ne se modifie plus : demandez à votre valideur de la refuser avec un motif, ou faites « Refaire une demande » depuis la Bibliothèque."
   },
   {
    "id": "supprimer-demande",
@@ -1996,7 +2113,8 @@
     "libérer de la mémoire"
    ],
    "r": "• Pas encore envoyée : <b>Documents</b> › la demande › <b>Retirer</b>.<br>• Déjà envoyée : <b>Bibliothèque</b> › la demande › <b>Supprimer</b> (elle disparaît de votre appareil seulement).<br>Retirer une demande refusée arrête aussi les rappels « à corriger ».",
-   "n": "Le détail d'une demande"
+   "n": "Le détail d'une demande",
+   "c": "Pas encore envoyée : Documents › Retirer. Déjà envoyée : Bibliothèque › Supprimer (ça ne l'efface que de votre appareil)."
   },
   {
    "id": "pastilles-rouges",
@@ -2016,7 +2134,8 @@
     "notification rouge sur documents"
    ],
    "r": "Un <b>point rouge</b> s'allume quand une demande ou un envoi <b>change de dossier</b> (envoyée, validée, refusée, traitée) : sur l'onglet du bas (ou le menu à gauche sur PC) et sur le dossier où elle est arrivée. Il <b>s'efface dès que vous ouvrez ce dossier</b>.<br>Dans la Boîte de réception, la pastille compte <b>ce qui reste à traiter</b> ; un <b>point bleu</b> marque un envoi nouveau.",
-   "n": "Les pastilles rouges"
+   "n": "Les pastilles rouges",
+   "c": "Le point rouge vous signale qu'une demande a changé de dossier ; il disparaît dès que vous ouvrez ce dossier."
   },
   {
    "id": "valider-demande",
@@ -2043,7 +2162,8 @@
    "m": {
     "a": "mer:RECEPTION",
     "l": "Ouvrir la Boîte de réception"
-   }
+   },
+   "c": "Ouvrez Boîte de réception › À signer, puis « Ouvrir et signer » : Aperçu, Valider, et Transmettre les décisions."
   },
   {
    "id": "refuser-demande",
@@ -2066,7 +2186,8 @@
    "m": {
     "a": "mer:VALIDATION",
     "l": "Ouvrir l'Espace valideur"
-   }
+   },
+   "c": "Dans l'Espace valideur, touchez Refuser et écrivez le motif ; pour une simple précision, préférez « Question »."
   },
   {
    "id": "role-valideur",
@@ -2097,7 +2218,8 @@
    "m": {
     "a": "roles",
     "l": "Ouvrir Mes rôles"
-   }
+   },
+   "c": "Cochez votre rôle dans Paramètres › Compte › Mes rôles, avec le code du rôle donné par l'administrateur et votre fonction."
   },
   {
    "id": "absence",
@@ -2122,7 +2244,8 @@
    "m": {
     "a": "absence",
     "l": "Ouvrir Absence"
-   }
+   },
+   "c": "Paramètres › Compte › Absence : un remplaçant par rôle et votre date de retour. Vos envois partent chez lui jusqu'à « Fin de l'absence »."
   },
   {
    "id": "chorus-traiter",
@@ -2146,7 +2269,8 @@
    "m": {
     "a": "mer:CHORUS",
     "l": "Ouvrir l'espace Chorus DT"
-   }
+   },
+   "c": "Dans votre espace, Demandes validées : Télécharger le PDF (TRIGONE vérifie les signatures), créez l'OM dans Chorus DT, puis marquez « Traitée »."
   },
   {
    "id": "registre",
@@ -2167,7 +2291,8 @@
     "exporter le registre en pdf"
    ],
    "r": "Le <b>Registre des OMR</b> (espace Chorus DT) : toutes les missions de l'unité par n° OMR, avec filtres (À venir, En cours, CR attendu, En retard…), recherche et ⛶ plein écran.<br>• <b>Relancer pour le CR</b> sur une ligne, ou <b>Relancer les N en retard</b> en haut.<br>• <b>Observations</b> : notes partagées entre assistants.<br>• <b>✏ Corriger les montants</b>, et <b>PDF</b> de la liste en bas.",
-   "n": "Registre des OMR"
+   "n": "Registre des OMR",
+   "c": "Le Registre des OMR montre toutes les missions de l'unité, avec filtres, recherche et relances en un geste."
   },
   {
    "id": "sans-frais-annule",
@@ -2187,7 +2312,8 @@
     "la mission n'a pas eu lieu"
    ],
    "r": "Dans le <b>Registre des OMR</b>, sur la mission (même validée) : <b>🟠 Sans frais</b> (rien à rembourser) ou <b>🔴 Annuler l'OMR</b> (motif facultatif). Un tampon orange ou rouge s'applique, plus de compte-rendu attendu ni de relance ; le missionnaire est prévenu.<br>Erreur ? <b>↩ Retirer le tampon</b>.<br>Missionnaire : si votre mission est annulée, prévenez votre assistant Chorus DT.",
-   "n": "Sans frais, annulé"
+   "n": "Sans frais, annulé",
+   "c": "Dans le registre, sur la mission : 🟠 Sans frais ou 🔴 Annuler l'OMR. Une erreur ? « Retirer le tampon »."
   },
   {
    "id": "cr-commencer",
@@ -2214,7 +2340,8 @@
     "a": "cr:P0",
     "c": "#BTN-DEPUIS-MER",
     "l": "Ouvrir Compte-rendu"
-   }
+   },
+   "c": "Le plus simple : « À partir d'une mise en route », tout est repris de votre demande. Le jour J, touchez « Départ en mission »."
   },
   {
    "id": "cr-depart",
@@ -2235,7 +2362,8 @@
     "horodater le départ"
    ],
    "r": "Au moment réel de partir : onglet <b>Top départ</b> › <b>Départ en mission</b> : l'heure exacte est enregistrée.<br>Déjà parti sans appuyer ? <b>« Vous êtes déjà parti ? Corriger l'heure de départ »</b>.<br>Appuyez au bon moment : les droits (repas, nuits) sont calculés à partir des horodatages.",
-   "n": "Top départ"
+   "n": "Top départ",
+   "c": "Au moment de partir, touchez « Départ en mission ». Déjà en route ? « Corriger l'heure de départ »."
   },
   {
    "id": "cr-pendant",
@@ -2257,7 +2385,8 @@
     "fin de mission"
    ],
    "r": "Écran <b>Mission en cours</b> :<br>1. En arrivant : <b>Arrivée sur site</b>.<br>2. En partant du site : <b>Je quitte le site</b> (vers une autre destination, ou <b>Retour définitif — fin de mission</b>).<br>3. Chez vous : <b>Arrivée finale</b>.<br>Oublié d'appuyer ? <b>« Cliquer ici »</b> pour saisir l'heure réelle. Pas besoin de réseau.",
-   "n": "Pendant la mission"
+   "n": "Pendant la mission",
+   "c": "Sur place : « Arrivée sur site », puis « Je quitte le site », puis « Arrivée finale » chez vous. Oublié d'appuyer ? « Cliquer ici » pour mettre la vraie heure."
   },
   {
    "id": "cr-frais",
@@ -2282,7 +2411,8 @@
     "nuit à l'hôtel"
    ],
    "r": "Écran <b>Frais de mission</b>, onglet <b>Repas & hébergement</b> (à remplir chez vous, sans limite de temps) :<br>• <b>Repas midi / soir</b> : avec − et +, le nombre de repas <b>payants</b> (le maximum autorisé est indiqué).<br>• <b>Hébergement</b>, nuit par nuit : <b>Gratuit</b>, <b>Demande de réservation</b> ou <b>Payant</b>.<br>Le total estimé se met à jour. Gardez vos <b>factures</b> pour les justificatifs.",
-   "n": "Frais — repas et hébergement"
+   "n": "Frais — repas et hébergement",
+   "c": "Écran Frais, onglet Repas & hébergement : le nombre de repas que vous avez payés, et pour chaque nuit, gratuite, réservée ou payante."
   },
   {
    "id": "cr-trajets",
@@ -2304,7 +2434,8 @@
     "combien de km"
    ],
    "r": "Onglet <b>Trajets</b> : <b>billets</b> (horaires des gares, aéroports), <b>indemnités kilométriques</b> (la distance se calcule toute seule entre les villes), <b>transports en commun</b>.<br>Puis onglet <b>Récap & valider › Valider et voir le récap</b>. Avant l'envoi, TRIGONE contrôle les incohérences (IK sans kilométrage, billet incohérent…).",
-   "n": "Frais — trajets et validation"
+   "n": "Frais — trajets et validation",
+   "c": "Onglet Trajets : billets, transports en commun, et les kilomètres en voiture perso se calculent tout seuls."
   },
   {
    "id": "cr-envoyer",
@@ -2324,7 +2455,8 @@
     "valider mon compte rendu"
    ],
    "r": "Au <b>récapitulatif</b> : vérifiez, ajoutez vos observations, touchez <b>Envoyer</b>.<br>Dans la fenêtre <b>Envoyer le compte-rendu</b> : <b>Ajouter des justificatifs</b> (PDF ou photos) ou <b>📥 Depuis ma boîte TRIGONE</b>, puis <b>Envoyer</b> : il arrive, chiffré, chez l'assistant Chorus DT et la mission passe dans la <b>Bibliothèque</b>.<br>À envoyer <b>au plus tard 30 jours</b> après la fin de mission.",
-   "n": "Envoyer le compte-rendu"
+   "n": "Envoyer le compte-rendu",
+   "c": "Au récapitulatif, touchez Envoyer, ajoutez vos justificatifs, et c'est parti chez l'assistant Chorus DT. Vous avez 30 jours."
   },
   {
    "id": "justif-mail",
@@ -2350,7 +2482,8 @@
    "m": {
     "a": "carte",
     "l": "Voir mon adresse"
-   }
+   },
+   "c": "Donnez votre adresse TRIGONE à la SNCF ou à l'hôtel : les factures arrivent toutes seules dans Boîte de réception › Justificatifs."
   },
   {
    "id": "joindre-justif",
@@ -2373,7 +2506,8 @@
     "quelles pièces je dois joindre"
    ],
    "r": "Fenêtre <b>Envoyer le compte-rendu</b>, partie Justificatifs :<br>• <b>Ajouter des justificatifs</b> : PDF ou photos (une facture photographiée est recadrée et allégée toute seule).<br>• <b>📥 Depuis ma boîte TRIGONE</b> : cochez les factures et billets reçus par mail, puis <b>Joindre la sélection</b>.<br>Le récapitulatif rappelle en <b>PJ</b> les pièces à joindre (facture d'hôtel…).",
-   "n": "Les joindre au compte-rendu"
+   "n": "Les joindre au compte-rendu",
+   "c": "Au moment d'envoyer le compte-rendu : « Ajouter des justificatifs » (photo ou PDF) ou « Depuis ma boîte TRIGONE »."
   },
   {
    "id": "collectif-chef",
@@ -2395,7 +2529,8 @@
     "mission collective chef"
    ],
    "r": "• Au départ : <b>Pointer les présents (cartes TRIGONE)</b>, scannez la carte de chacun.<br>• Au récapitulatif : <b>Envoyer aux participants dans TRIGONE</b> : chacun reçoit son compte-rendu déjà rempli (retrouvé par son matricule).<br>• <b>Suivi de l'équipe</b> : qui l'a envoyé ; <b>Relancer les retardataires</b> (une fois toutes les 12 h au plus).<br>Un participant sans compte TRIGONE ne peut rien recevoir.",
-   "n": "Envoyer aux participants"
+   "n": "Envoyer aux participants",
+   "c": "Comme chef de mission : pointez les présents au départ, puis au récap, « Envoyer aux participants » ; suivez qui a envoyé dans « Suivi de l'équipe »."
   },
   {
    "id": "collectif-participant",
@@ -2413,7 +2548,8 @@
     "participant mission collective"
    ],
    "r": "Vous recevez une notification <b>« Mission collective »</b>.<br><b>Boîte de réception</b> (ou Boîte du Compte-rendu) › <b>Missions collectives</b> › l'envoi › <b>Ouvrir mon compte-rendu</b> : il est pré-rempli avec la mission du chef. Complétez <b>vos frais et vos justificatifs</b>, puis envoyez-le à l'assistant Chorus DT ; votre chef le voit dans son suivi.",
-   "n": "Participant"
+   "n": "Participant",
+   "c": "Votre chef vous a envoyé votre compte-rendu tout prêt : Boîte › Missions collectives, complétez vos frais et envoyez."
   },
   {
    "id": "repondre-question",
@@ -2431,7 +2567,8 @@
     "comment je réponds"
    ],
    "r": "<b>Boîte › Questions</b> › touchez la question, puis <b>Répondre</b>, écrivez votre réponse et <b>Envoyer la réponse</b> : elle part chez celui qui l'a posée. La question passe dans <b>Traités</b>, dans Mise en route comme dans Compte-rendu.",
-   "n": "Répondre à une question"
+   "n": "Répondre à une question",
+   "c": "Boîte › Questions, touchez la question puis Répondre : votre réponse part directement chez celui qui l'a posée."
   },
   {
    "id": "remboursement",
@@ -2456,7 +2593,8 @@
    "m": {
     "a": "cr:P-STAT",
     "l": "Ouvrir Remboursement"
-   }
+   },
+   "c": "Dans Compte-rendu, l'onglet Rembours. récapitule vos montants mois par mois, et le simulateur estime une mission à venir."
   },
   {
    "id": "carte-trigone",
@@ -2482,7 +2620,8 @@
    "m": {
     "a": "carte",
     "l": "Ouvrir Ma carte"
-   }
+   },
+   "c": "Votre carte est dans le bouton Ma carte : touchez-la pour la retourner, changez la photo, ou affichez-la en grand."
   },
   {
    "id": "carte-perdue",
@@ -2504,7 +2643,8 @@
    "m": {
     "a": "carte",
     "l": "Ouvrir Ma carte"
-   }
+   },
+   "c": "Sous votre carte, « Révoquer le QR code » : l'ancien ne marche plus, un nouveau est créé aussitôt."
   },
   {
    "id": "profil",
@@ -2531,7 +2671,8 @@
    "m": {
     "a": "profil",
     "l": "Ouvrir Mon profil"
-   }
+   },
+   "c": "Tout se change dans Paramètres › Compte › Mon profil : identité, matricule et vos destinataires."
   },
   {
    "id": "telephone-perdu",
@@ -2555,7 +2696,8 @@
    "m": {
     "a": "mesappareils",
     "l": "Ouvrir Mes appareils"
-   }
+   },
+   "c": "Prévenez l'administrateur de votre unité, il bloque l'ancien téléphone. Sur le nouveau, reconnectez-vous : tout revient."
   },
   {
    "id": "hors-reseau",
@@ -2580,7 +2722,8 @@
    "m": {
     "a": "attente",
     "l": "Voir les envois en attente"
-   }
+   },
+   "c": "Pas de souci : TRIGONE marche sans réseau, et vos envois partent tout seuls dès que le réseau revient."
   },
   {
    "id": "installer",
@@ -2605,7 +2748,8 @@
    "m": {
     "a": "partager",
     "l": "Partager TRIGONE"
-   }
+   },
+   "c": "Sur Android : menu ⋮ › Installer l'application. Sur iPhone : Partager › Sur l'écran d'accueil. Sur PC : l'icône Installer dans la barre d'adresse."
   },
   {
    "id": "mise-a-jour",
@@ -2623,7 +2767,8 @@
     "l'appli n'est pas à jour"
    ],
    "r": "TRIGONE <b>se met à jour tout seul</b> à l'ouverture ; une fenêtre <b>Nouveautés</b> présente les changements. Pour forcer la vérification : bouton <b>Mise à jour</b> de l'écran de choix, ou <b>Paramètres › Aide › Mise à jour</b>. Le numéro de version est en bas de l'accueil.",
-   "n": "Mises à jour, thème et PC"
+   "n": "Mises à jour, thème et PC",
+   "c": "TRIGONE se met à jour tout seul à l'ouverture ; le bouton Mise à jour force la vérification."
   },
   {
    "id": "theme",
@@ -2647,7 +2792,8 @@
     "a": "theme",
     "c": ".THEME-TOGGLE",
     "l": "Me montrer le bouton"
-   }
+   },
+   "c": "La lune en haut à droite passe de clair à sombre."
   },
   {
    "id": "sauvegarde",
@@ -2670,7 +2816,8 @@
    "m": {
     "a": "sauvauto",
     "l": "Ouvrir la sauvegarde"
-   }
+   },
+   "c": "Rien à faire : tout est sauvegardé automatiquement et chiffré dans votre compte. Nouveau téléphone ? Reconnectez-vous et tout revient."
   },
   {
    "id": "reinitialiser",
@@ -2694,7 +2841,8 @@
    "m": {
     "a": "param:donnees",
     "l": "Ouvrir Données"
-   }
+   },
+   "c": "Ça se demande dans Paramètres › Données : votre assistant Chorus DT ou l'administrateur l'accorde."
   },
   {
    "id": "signaler",
@@ -2721,7 +2869,8 @@
    "m": {
     "a": "signaler",
     "l": "Signaler un problème"
-   }
+   },
+   "c": "Paramètres › Aide › Signaler un problème : votre messagerie s'ouvre avec la version et l'appareil déjà remplis."
   },
   {
    "id": "montre",
@@ -2742,7 +2891,8 @@
    "m": {
     "a": "montre",
     "l": "Ouvrir Montre connectée"
-   }
+   },
+   "c": "Paramètres › Notifications › Montre connectée : autorisez Chrome et TRIGONE dans l'appli de votre montre."
   },
   {
    "id": "medailles",
@@ -2760,7 +2910,8 @@
     "distinction trigone"
    ],
    "r": "Chaque compte-rendu envoyé compte : <b>Bronze</b> au 1er, <b>Argent</b> au 10e, <b>Or</b> au 20e. La médaille s'affiche au-dessus du Bonjour et le liseré de votre carte prend sa couleur. <b>Paramètres › Compte-rendu › Mes médailles</b> pour recompter.",
-   "n": "Les distinctions"
+   "n": "Les distinctions",
+   "c": "Bronze au 1er compte-rendu, Argent au 10e, Or au 20e : la médaille s'affiche sur l'accueil et sur votre carte."
   },
   {
    "id": "valider-inscription",
@@ -2783,7 +2934,8 @@
    "m": {
     "a": "gestion",
     "l": "Ouvrir Comptes et demandes"
-   }
+   },
+   "c": "Paramètres › Compte › Comptes et demandes : Valider, ou scannez directement sa carte TRIGONE."
   },
   {
    "id": "admin-reactivation",
@@ -2809,7 +2961,8 @@
    "m": {
     "a": "gestion",
     "l": "Ouvrir Comptes et demandes"
-   }
+   },
+   "c": "Comptes et demandes › Comptes de l'unité : retrouvez la personne et touchez « Code » pour lui donner un code de réactivation."
   },
   {
    "id": "securite",
@@ -2827,7 +2980,8 @@
     "rgpd"
    ],
    "r": "Vos demandes, comptes-rendus et justificatifs restent <b>sur votre appareil</b>. Un envoi est <b>chiffré</b> avant de partir : seul l'appareil du destinataire peut le lire. Les validations sont <b>signées</b>. La sauvegarde est chiffrée avec la clé de votre compte. Le serveur (hébergé chez Cloudflare) ne garde que l'adresse, les rôles, l'étape de suivi, la carte et, pour les assistants Chorus DT, le registre des OMR.",
-   "n": "En résumé"
+   "n": "En résumé",
+   "c": "Vos missions restent sur votre appareil, et chaque envoi est chiffré : seul le destinataire peut le lire."
   },
   {
    "id": "circuit",
@@ -2839,7 +2993,7 @@
     "je comprends rien à trigone",
     "je comprends pas comment ça marche",
     "par où je commence",
-    "qui valide quoi",
+    "qui fait quoi dans le circuit",
     "le circuit d'une demande",
     "c'est quoi trigone",
     "les étapes d'une mission",
@@ -2847,7 +3001,8 @@
     "à quoi sert trigone"
    ],
    "r": "1. Le <b>missionnaire</b> fait sa demande de mise en route et l'envoie à son <b>VALIDEUR 1</b>.<br>2. Le <b>VALIDEUR 1</b> (chef de service) valide et signe, ou refuse, puis transmet au <b>VALIDEUR 2</b> (chef de corps).<br>3. Le VALIDEUR 2 valide et transmet à l'<b>assistant Chorus DT</b>, qui crée l'ordre de mission dans Chorus DT.<br>4. Au retour, le missionnaire fait son <b>compte-rendu</b> (horodatages, frais, justificatifs) et l'envoie à l'assistant Chorus DT.",
-   "n": "Le circuit d'une mission"
+   "n": "Le circuit d'une mission",
+   "c": "Vous faites la demande, votre VALIDEUR 1 la signe, puis le VALIDEUR 2, et l'assistant Chorus DT crée l'ordre de mission. Au retour, le compte-rendu."
   },
   {
    "id": "etranger",
@@ -2865,7 +3020,8 @@
     "opex"
    ],
    "r": "Dans la demande, choisissez le <b>pays</b> pour les lieux hors de France. Dans le compte-rendu, onglet <b>Identification</b> : <b>mission en France ou à l'étranger</b> ; les barèmes étrangers se règlent dans <b>Paramètres › Compte-rendu › Réglages du compte-rendu</b>. Dans le registre, la mission est marquée 🌍 INTERNATIONAL.",
-   "n": "Départ mission"
+   "n": "Départ mission",
+   "c": "Choisissez le pays dans la demande et dans le compte-rendu ; les barèmes du pays s'appliquent tout seuls. Demandez-moi par exemple « repas en Espagne »."
   },
   {
    "id": "reservation",
@@ -2882,7 +3038,8 @@
     "option réservation"
    ],
    "r": "Si votre unité passe par un organisme de réservation : cochez l'option dans <b>Mon profil</b> (avec le nom de l'organisme). Dans la demande, onglet <b>Alim./Héb.</b>, cochez <b>Hébergement</b> et/ou <b>Transport</b> à réserver ; le compte-rendu le reprendra (nuit en « Demande de réservation »).",
-   "n": "Onglet 4 — Alimentation, hébergement"
+   "n": "Onglet 4 — Alimentation, hébergement",
+   "c": "Si votre unité passe par un organisme, cochez-le dans Mon profil, puis dans la demande cochez hébergement et/ou transport à réserver."
   },
   {
    "id": "pdf-demande",
@@ -2905,7 +3062,8 @@
    "m": {
     "a": "mer:BIBLIOTHEQUE",
     "l": "Ouvrir la Bibliothèque"
-   }
+   },
+   "c": "Le PDF de votre demande est dans la Bibliothèque, bouton PDF."
   },
   {
    "id": "notice",
@@ -2924,7 +3082,88 @@
    "m": {
     "a": "notice",
     "l": "Ouvrir la notice"
-   }
+   },
+   "c": "La notice complète est derrière le bouton Notice, en bas."
+  },
+  {
+   "id": "qui-valide",
+   "t": "Qui valide ma demande ?",
+   "app": "tous",
+   "e": [
+    "mer-documents",
+    "mer-formulaire"
+   ],
+   "q": [
+    "qui valide ma demande",
+    "qui signe ma demande de mise en route",
+    "c'est qui mon valideur",
+    "qui est mon valideur 1",
+    "qui est mon valideur 2",
+    "à qui j'envoie ma demande",
+    "qui doit signer mon om",
+    "qui valide mon ordre de mission",
+    "c'est qui le val1",
+    "qui est le chef de corps dans trigone",
+    "qui approuve ma demande",
+    "qui est l'assistant chorus de mon unité",
+    "à qui j'envoie mon compte rendu",
+    "ma demande va chez qui",
+    "qui valide"
+   ],
+   "r": "Votre demande part d'abord chez votre <b>VALIDEUR 1</b> (celui de <b>Mon profil</b>), qui la transmet au <b>VALIDEUR 2</b> de l'unité, puis à l'<b>assistant Chorus DT</b>.",
+   "n": "Le circuit d'une mission",
+   "m": {
+    "a": "profil",
+    "l": "Voir mes destinataires"
+   },
+   "dyn": "qui-valide"
+  },
+  {
+   "id": "mon-adresse",
+   "t": "Mon adresse TRIGONE",
+   "app": "tous",
+   "e": [
+    "carte"
+   ],
+   "q": [
+    "quelle est mon adresse trigone",
+    "c'est quoi mon mail trigone",
+    "mon adresse trigone",
+    "mon identifiant trigone",
+    "je me connecte avec quelle adresse",
+    "quelle adresse pour me connecter",
+    "mon adresse pour les factures"
+   ],
+   "r": "Votre adresse TRIGONE est dans <b>Ma carte</b> (bouton Copier).",
+   "n": "Justificatifs par mail",
+   "m": {
+    "a": "carte",
+    "l": "Ouvrir Ma carte"
+   },
+   "dyn": "mon-adresse"
+  },
+  {
+   "id": "mes-roles",
+   "t": "Mes rôles",
+   "app": "tous",
+   "e": [
+    "parametres"
+   ],
+   "q": [
+    "quels sont mes rôles",
+    "est ce que je suis valideur",
+    "j'ai quel rôle",
+    "quel est mon rôle dans trigone",
+    "je suis valideur 1 ou 2",
+    "mes droits dans trigone"
+   ],
+   "r": "Vos rôles sont dans <b>Paramètres › Compte › Mes rôles</b>.",
+   "n": "Mes rôles",
+   "m": {
+    "a": "roles",
+    "l": "Ouvrir Mes rôles"
+   },
+   "dyn": "mes-roles"
   }
  ]
 }

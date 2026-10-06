@@ -3226,13 +3226,16 @@
         var c = monCompte(); if (!c || !navigator.onLine) return Promise.resolve();
         var voulus = Object.keys(rolesLocaux()), retirer = Object.keys(rolesARetirer);
         if (!voulus.length && !retirer.length) return Promise.resolve();
+        // Fonctions de signature (« CHEF DE SECTION »…) : transmises au compte quand elles changent (annuaire de l'unité).
+        var val = lireJSON('mer_valideur') || {}, fonctions = { valideur1: val.fonction1 || (voulus.indexOf('valideur1') >= 0 ? val.fonction || '' : ''), valideur2: val.fonction2 || (voulus.indexOf('valideur2') >= 0 && voulus.indexOf('valideur1') < 0 ? val.fonction || '' : '') };
+        var fonctionsNeuves = JSON.stringify(fonctions) !== lireTxt('trigone_fonctions_envoyees') && (fonctions.valideur1 || fonctions.valideur2);
         dernierControleRoles = Date.now();
         return appelApi('cles?mail=' + encodeURIComponent(c.mail)).then(function(x) {
             var serveur = x.roles || {};
             var ajouter = voulus.filter(function(role) { return !serveur[role]; }), aRetirer = retirer.filter(function(role) { return serveur[role]; });
-            if (!ajouter.length && !aRetirer.length) { rolesARetirer = {}; return; }
-            return appelApi('roles', { methode: 'POST', corps: { ajouter: ajouter, retirer: aRetirer } }).then(function() {
-                rolesARetirer = {};
+            if (!ajouter.length && !aRetirer.length && !fonctionsNeuves) { rolesARetirer = {}; return; }
+            return appelApi('roles', { methode: 'POST', corps: { ajouter: ajouter, retirer: aRetirer, fonctions: fonctions } }).then(function() {
+                rolesARetirer = {}; ecrireTxt('trigone_fonctions_envoyees', JSON.stringify(fonctions));
                 // Vérification quelques secondes plus tard ; redéclaration si le compte ne les montre pas encore.
                 if ((essai || 0) < 3) setTimeout(function() { declarerRoles((essai || 0) + 1); }, [3000, 8000, 20000][essai || 0]);
             });

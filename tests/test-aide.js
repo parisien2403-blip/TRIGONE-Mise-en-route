@@ -17,7 +17,7 @@ module.exports = async function() {
         await p.evaluate(() => document.querySelectorAll('.JUM-ACC,.JUM-PRES,.JUM-NOUV,.JUM-VERROU,.JUM-PAVE,.JUM-MDP-FOND').forEach(x => x.remove()));
         return p;
     }
-    const derniere = p => p.evaluate(() => { const l = document.querySelectorAll('.AIDE-M.lui'); return l.length ? l[l.length - 1].innerText : ''; });
+    const derniere = p => p.evaluate(() => { const l = document.querySelectorAll('.AIDE-M.lui'); return l.length ? l[l.length - 1].textContent : ''; });
     async function demander(p, q) { await p.fill('.AIDE-SAISIE input', q); await p.click('.AIDE-SAISIE button'); await attendre(300); return derniere(p); }
 
     // ----- Téléphone, Mise en route, sans compte -----
@@ -34,6 +34,12 @@ module.exports = async function() {
     verifier(/code de réactivation/.test(r) && /Réponse trouvée dans la notice/.test(await t.innerText('.AIDE-FIL')), 'langage SMS et fautes (« jme rappel plu de mon mot2pass ») : code de connexion oublié');
     r = await demander(t, 'le juteux a refusé mon OM pk');
     verifier(/Refusées — à corriger/.test(r), 'jargon (« le juteux a refusé mon OM pk ») : demande refusée, corriger et renvoyer');
+    r = await demander(t, 'merci beaucoup !');
+    verifier(/Avec plaisir, mon adjudant/.test(r) && await t.evaluate(() => { const l = document.querySelectorAll('.AIDE-POUCE img'); return l.length && /mascotte-pouce/.test(l[l.length - 1].src); }), '« merci » : la mascotte lève le pouce (« Avec plaisir, mon adjudant ! »)');
+    r = await demander(t, 'bonne journée');
+    verifier(/Au revoir, mon adjudant, et bonne mission/.test(r), '« bonne journée » : « Au revoir, mon adjudant, et bonne mission ! »');
+    r = await demander(t, 'salut');
+    verifier(/^Bonjour, mon adjudant ! Que puis-je faire pour vous/.test(r.trim()), '« salut » : la mascotte salue et propose des sujets');
     r = await demander(t, 'jai dormi a l\'hotel comment je le mets');
     verifier(/Repas & hébergement/.test(r), 'familier (« jai dormi a l\'hotel… ») : frais d\'hébergement');
     r = await demander(t, 'recette de la blanquette de veau');
@@ -165,6 +171,31 @@ module.exports = async function() {
     await demander(a, 'blanquette'); await a.click('.AIDE-IA'); await attendre(1200);
     verifier(/questions à l'IA aujourd'hui|revient demain/.test(await derniere(a)), 'limite atteinte : la mascotte l\'explique');
     verifier(await a.evaluate(() => fetch('api/aide/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"question":"x y"}' }).then(r => r.status)) === 401, 'sans compte : la route de l\'IA refuse (401)');
+    // ----- « Qui valide ma demande ? » : réponse personnelle (profil + annuaire de l'unité, avec la fonction) -----
+    const MAILV = 'val.' + s + '@interieur.gouv.fr';
+    const v = await page({ width: 412, height: 860 }, '', 'VAL1');
+    await v.evaluate(() => JUMELAGE_COMPTE()); await attendre(500);
+    await v.click('.JUM-ACC-ONGLETS [data-mode="connecter"]'); await v.fill('#JUM-C-MAIL', MAILV); await v.click('#JUM-C-ENVOI'); await attendre(1500);
+    await v.click('#JUM-C-VALIDER'); await attendre(2000); await v.evaluate(() => JUMELAGE_FERMER_COMPTE());
+    await v.evaluate(() => JUMELAGE_API('unite', { grade: 'ADJ', nom: 'VALIDE', prenom: 'Paul' }));
+    await a.evaluate(() => JUMELAGE_API('unite', { grade: 'ADJ', nom: 'TEST', prenom: 'Essai' }));
+    await v.evaluate(() => JUMELAGE_API('roles', { ajouter: ['valideur1'], retirer: [], fonctions: { valideur1: 'Chef de section', valideur2: 'ignorée (pas le rôle)' } }));
+    const an = await a.evaluate(m => JUMELAGE_API('annuaire?role=valideur1').then(r => r.personnes.filter(x => x.mail === m)[0] || null), MAILV);
+    verifier(an && an.fonction === 'Chef de section', 'annuaire de l\'unité : la fonction du VALIDEUR 1 est connue (« Chef de section ») ' + JSON.stringify(an));
+    await a.evaluate(m => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.mailVal1 = m; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); AIDE_OUVRIR(); }, MAILV); await attendre(500);
+    await a.click('.AIDE-VIDER'); await attendre(300);
+    await demander(a, 'qui valide ma demande de mise en route ?'); await attendre(2000);
+    r = await derniere(a);
+    verifier(/VALIDEUR 1/.test(r) && /chef de section/.test(r) && /VALIDEUR 2/.test(r) && /assistant Chorus DT/.test(r) && /d'après votre profil/.test(await a.innerText('.AIDE-FIL')),
+        '« qui valide ma demande ? » : VALIDEUR 1 du profil avec sa fonction (chef de section), puis VALIDEUR 2 et assistant Chorus DT de l\'unité');
+    await a.evaluate(() => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.mailVal1 = 'inconnu.ailleurs@trigone-app.com'; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); });
+    await demander(a, 'c est qui mon val1'); await attendre(2000);
+    verifier(/Je ne le trouve pas parmi les VALIDEUR 1/.test(await derniere(a)), 'VALIDEUR 1 du profil absent de l\'unité : la mascotte prévient (jamais un valideur d\'une autre unité)');
+    await demander(a, 'quelle est mon adresse trigone'); await attendre(500);
+    verifier(/Votre adresse TRIGONE, c'est/.test(await derniere(a)), '« quelle est mon adresse trigone » : l\'adresse du compte, avec Copier');
+    r = await demander(a, 'comment je fais un ordre de mission');
+    verifier(/^Touchez le bouton doré NOUVELLE DEMANDE et laissez-vous guider/.test(r.trim()) && /Voir comment faire/.test(r) && !(await a.evaluate(() => { const l = document.querySelectorAll('.AIDE-DETAIL'); return l[l.length - 1].open; })),
+        'réponse « humaine » : une phrase courte, le pas-à-pas replié derrière « Voir comment faire » (' + r.trim().slice(0, 60) + ')');
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
     await b.close();
 };

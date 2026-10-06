@@ -89,6 +89,8 @@
     // Salutation selon le grade du profil (« mon adjudant », « sergent-chef »…) ; commissaires : Monsieur ou Madame,
     // demandé une fois (le profil ne le dit pas) et retenu sur l'appareil.
     var CLE_CIV = 'trigone_aide_civilite';
+    // L'appellation seule (« mon adjudant », « Madame le commissaire »), ou '' si le grade est inconnu.
+    function appel() { var s = salutation(); return s.texte ? s.texte.replace(/^Bonjour,? ?/, '').replace(/, en quoi puis-je vous aider \?$/, '').replace(/^en quoi puis-je vous aider \?$/, '') : ''; }
     function salutation() {
         var g = ''; try { g = (JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}').grade) || ''; } catch (e) {}
         var a = window.AIDE_MOTEUR.appellation(g);
@@ -107,9 +109,68 @@
         defaut.forEach(function(id) { if (ids.length < 4 && ids.indexOf(id) < 0) ids.push(id); });
         return ids.map(function(id) { var f = moteur.fiche(id); return f ? '<button type="button" class="AIDE-PUCE" data-fiche="' + id + '">' + esc(f.t) + '</button>' : ''; }).join('');
     }
-    function htmlFiche(f) {
-        return f.r + '<div class="AIDE-ACTIONS">' + (f.m ? '<button type="button" class="AIDE-BTN AIDE-MONTRER" data-montrer="' + f.id + '">👉 ' + esc(f.m.l || 'Me montrer') + '</button>' : '') +
+    // Réponse d'une fiche : la phrase courte, dite comme on parle, puis le pas-à-pas replié (« Voir comment faire »).
+    function htmlFiche(f, corps) {
+        var texte = corps || (f.c ? esc(f.c) + '<details class="AIDE-DETAIL"><summary>Voir comment faire</summary>' + f.r + '</details>' : f.r);
+        return texte + '<div class="AIDE-ACTIONS">' + (f.m ? '<button type="button" class="AIDE-BTN AIDE-MONTRER" data-montrer="' + f.id + '">👉 ' + esc(f.m.l || 'Me montrer') + '</button>' : '') +
             (f.n ? '<button type="button" class="AIDE-LIEN" data-notice="' + esc(f.n) + '">📖 Notice › ' + esc(f.n) + '</button>' : '') + '</div>';
+    }
+    // ---------- Réponses personnelles : calculées sur l'appareil (profil, rôles) et avec l'annuaire de l'unité ----------
+    function reglages() { try { return JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}'); } catch (e) { return {}; } }
+    function nomDepuisMail(m) {
+        var l = String(m || '').split('@')[0].split('.'); if (l.length < 2) return m || '';
+        var p = l[0].split('-').map(function(x) { return x.charAt(0).toUpperCase() + x.slice(1); }).join('-');
+        return p + ' ' + l.slice(1).join(' ').toUpperCase();
+    }
+    function personne(x, avecMail) {
+        var n = [x.grade, x.prenom ? x.prenom.charAt(0).toUpperCase() + x.prenom.slice(1).toLowerCase() : '', x.nom].filter(Boolean).join(' ') || nomDepuisMail(x.mail);
+        return '<b>' + esc(n) + '</b>' + (x.fonction ? ', ' + esc(x.fonction.toLowerCase()) : '') + (avecMail && x.mail && n !== x.mail ? ' <small style="display:inline">(' + esc(x.mail) + ')</small>' : '');
+    }
+    function annuaire(role) { return compteActif() && navigator.onLine && window.JUMELAGE_API ? window.JUMELAGE_API('annuaire?role=' + role).catch(function() { return null; }) : Promise.resolve(null); }
+    function liste(l) { return l.length === 1 ? personne(l[0]) : l.slice(0, -1).map(function(x) { return personne(x); }).join(', ') + ' ou ' + personne(l[l.length - 1]); }
+    var PERSO = {
+        // Qui valide : le VALIDEUR 1 choisi dans Mon profil, puis les VALIDEUR 2 et assistants Chorus DT de SON unité
+        // (l'annuaire du serveur ne donne que l'unité du demandeur : jamais un valideur d'un autre régiment).
+        'qui-valide': function() {
+            var reg = reglages(), v1 = String(reg.mailVal1 || '').toLowerCase(), ch = String(reg.mailChorus || '').toLowerCase();
+            return Promise.all([annuaire('valideur1'), annuaire('valideur2'), annuaire('chorus')]).then(function(a) {
+                var connu = !!(a[0] || a[1] || a[2]), unite = (a[0] || a[1] || a[2] || {}).unite || reg.unite || '';
+                var l1 = (a[0] && a[0].personnes) || [], l2 = (a[1] && a[1].personnes) || [], l3 = (a[2] && a[2].personnes) || [];
+                var h = '';
+                if (!v1) h += 'Vous n\'avez pas encore indiqué votre <b>VALIDEUR 1</b> : c\'est en général votre chef de section ou votre commandant d\'unité. Mettez son adresse dans <b>Mon profil › Envois</b> (ou scannez sa carte).';
+                else {
+                    var p1 = l1.filter(function(x) { return x.mail === v1; })[0];
+                    h += 'Votre demande va d\'abord chez votre <b>VALIDEUR 1</b> : ' + personne(p1 || { mail: v1 }, true) + '.';
+                    if (connu && !p1) h += '<small>⚠️ Je ne le trouve pas parmi les VALIDEUR 1 ' + (unite ? 'du ' + esc(unite) : 'de votre unité') + ' : vérifiez l\'adresse dans Mon profil (ou qu\'il a bien coché son rôle).</small>';
+                }
+                h += '<br>' + (v1 ? 'Il' : 'Le VALIDEUR 1') + ' la transmet ensuite au <b>VALIDEUR 2</b>' + (l2.length ? ' : ' + liste(l2.slice(0, 4)) : unite ? ' du ' + esc(unite) : ' de l\'unité') + '.';
+                var p3 = l3.filter(function(x) { return x.mail === ch; })[0];
+                h += '<br>Enfin, l\'<b>assistant Chorus DT</b> crée votre ordre de mission' + (p3 ? ' : ' + personne(p3) : l3.length ? ' : ' + liste(l3.slice(0, 3)) : ch ? ' : ' + personne({ mail: ch }) : '') + '.';
+                h += '<br>Vous êtes prévenu à chaque étape, et vous suivez tout dans la <b>Bibliothèque</b>.';
+                if (!connu) h += '<small>Connecté avec du réseau, je vous dirais aussi qui sont le VALIDEUR 2 et l\'assistant Chorus DT de votre unité.</small>';
+                return h;
+            });
+        },
+        'mon-adresse': function() {
+            var a = (window.JUMELAGE_ADRESSE_CONNUE && window.JUMELAGE_ADRESSE_CONNUE()) || (window.JUMELAGE_COMPTE_MAIL && window.JUMELAGE_COMPTE_MAIL()) || '';
+            return Promise.resolve(a ? 'Votre adresse TRIGONE, c\'est <b>' + esc(a) + '</b> <button type="button" class="AIDE-LIEN" data-copier="' + esc(a) + '">Copier</button><br>Elle sert à vous connecter (avec votre code de connexion) et à recevoir vos factures et billets.'
+                : 'Vous n\'êtes pas encore connecté sur cet appareil : touchez <b>Se connecter</b> (pastille du compte) avec votre adresse TRIGONE et votre code de connexion.');
+        },
+        'mes-roles': function() {
+            var l = {}; try { l = JSON.parse(localStorage.getItem('trigone_roles_locaux') || '{}') || {}; if (localStorage.getItem('trigone_role_chorus') === '1') l.chorus = true; if (localStorage.getItem('trigone_role_admin')) l.admin = true; } catch (e) {}
+            var noms = { valideur1: 'VALIDEUR 1', valideur2: 'VALIDEUR 2', chorus: 'ASSIST CHORUS DT', admin: 'ADMINISTRATEUR' }, eus = Object.keys(noms).filter(function(k) { return l[k]; }).map(function(k) { return '<b>' + noms[k] + '</b>'; });
+            return Promise.resolve(eus.length ? 'Sur cet appareil, vous êtes missionnaire et ' + eus.join(', ') + '. Pour en ajouter ou en retirer : <b>Paramètres › Compte › Mes rôles</b>.'
+                : 'Vous êtes <b>missionnaire</b>, comme tout le monde. Si on vous a confié un rôle (VALIDEUR 1 ou 2, ASSIST CHORUS DT), cochez-le dans <b>Paramètres › Compte › Mes rôles</b> avec son code.');
+        }
+    };
+    // Donne la réponse d'une fiche (personnelle si elle l'est), avec « Ce n'est pas ça ? » si elle vient d'une question.
+    function donnerFiche(f, question) {
+        var fin = function(corps) {
+            ajouter({ de: 'lui', html: htmlFiche(f, corps) + (question ? '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>' : ''),
+                etq: f.dyn ? 'Réponse d\'après votre profil' : 'Réponse trouvée dans la notice', fiche: f.id, q: question });
+        };
+        if (f.dyn && PERSO[f.dyn]) { attenteIa = true; dessinerFil(); PERSO[f.dyn]().then(function(h) { attenteIa = false; fin(h); }, function() { attenteIa = false; fin(); }); }
+        else fin();
     }
     // Réponse de l'IA : texte simple, gras **…** et retours à la ligne seulement (jamais de HTML venu du serveur).
     function htmlIa(t) {
@@ -148,8 +209,25 @@
     }
     // La question précédente (sujet et type), pour comprendre « et en Italie ? » ; gardée le temps de la conversation.
     var CLE_DERNIER = 'trigone_aide_dernier';
+    // Politesse : « merci » → la mascotte lève le pouce ; « bonjour », « au revoir » → une vraie réponse.
+    var IMG_POUCE = B + 'mascotte-pouce.webp';
+    function politesse(question) {
+        var s = window.AIDE_MOTEUR.normal(question).trim(), a = appel(), vous = a ? ', ' + esc(a) : '';
+        var court = s.split(' ').length <= 6;
+        if (court && /^(merci|mrc|mci|thanks|thx|top|super|parfait|nickel|genial|cool|impec|impeccable|ok merci|d accord merci|c est bon|ca marche|bien recu|au top|trop bien|excellent|merci beaucoup|merci bien|merci a toi|merci a vous)( |$)/.test(s))
+            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + ' ! Si vous avez une autre question, je suis là.</span></div>';
+        if (court && /^(au revoir|aurevoir|bye|a plus|a\+|bonne journee|bonne soiree|bonne nuit|a bientot|ciao|tchao|salut a plus|bonne mission)( |$)/.test(s))
+            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Au revoir' + vous + ', et bonne mission ! 🫡</span></div>';
+        if (s.split(' ').length <= 3 && /^(bonjour|salut|hello|coucou|bonsoir|hey|yo|bjr|slt|cc)( |$)/.test(s))
+            return 'Bonjour' + vous + ' ! Que puis-je faire pour vous ?<div class="AIDE-PUCES">' + puces() + '</div>';
+        if (court && /^(ca va|comment ca va|ca va et toi|tu vas bien|comment vas tu|cv)( |$)/.test(s))
+            return 'Très bien, merci' + vous + ' ! Toujours prêt à vous aider. Une question sur TRIGONE ?';
+        return '';
+    }
     function repondre(question) {
         ajouter({ de: 'moi', texte: question });
+        var poli = politesse(question);
+        if (poli) { ajouter({ de: 'lui', html: poli }); return; }
         var D = window.AIDE_DONNEES, q = question, type = D && D.intention(question, tarifs), dernier = lire(CLE_DERNIER);
         if (D && dernier && D.estSuite(question) && (dernier.type === 'tarif' || dernier.type === 'fd')) {
             var q2 = D.completer(dernier, question, tarifs), t2 = D.intention(q2, tarifs);
@@ -170,8 +248,7 @@
         }
         if (top && top.score >= M.SUR) ecrire(CLE_DERNIER, { type: 'fiche', q: question, fiche: top.fiche.id });
         if (top && top.score >= M.SUR) {
-            ajouter({ de: 'lui', html: htmlFiche(top.fiche) + '<div class="AIDE-AUTRE">Ce n\'est pas ça ? <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>',
-                etq: 'Réponse trouvée dans la notice', fiche: top.fiche.id, q: question });
+            donnerFiche(top.fiche, question);
         } else if (top && top.score >= M.PROPOSER) {
             ajouter({ de: 'lui', html: 'Vous voulez parler de :<div class="AIDE-PUCES">' + r.resultats.slice(0, 3).map(function(x) {
                 return '<button type="button" class="AIDE-PUCE" data-fiche="' + x.fiche.id + '">' + esc(x.fiche.t) + '</button>'; }).join('') + '</div>' +
@@ -222,7 +299,7 @@
             var t = ev.target.closest('button'); if (!t) return;
             if (t.classList.contains('AIDE-X')) { window.AIDE_FERMER(); return; }
             if (t.classList.contains('AIDE-VIDER')) { fil = []; ecrire(CLE_FIL, fil); ecrire(CLE_DERNIER, null); accueil(); return; }
-            if (t.dataset.fiche) { var f = moteur.fiche(t.dataset.fiche); if (f) { ajouter({ de: 'moi', texte: f.t }); ajouter({ de: 'lui', html: htmlFiche(f), etq: 'Réponse trouvée dans la notice', fiche: f.id }); } return; }
+            if (t.dataset.fiche) { var f = moteur.fiche(t.dataset.fiche); if (f) { ajouter({ de: 'moi', texte: f.t }); donnerFiche(f); } return; }
             if (t.dataset.montrer) { var g = moteur.fiche(t.dataset.montrer); if (g && g.m) { window.AIDE_FERMER(); executer(g.m); } return; }
             if (t.dataset.notice !== undefined) { var titre = t.dataset.notice; window.AIDE_FERMER(); window.JUMELAGE_NOTICE(null, titre ? { titre: titre } : {}); return; }
             if (t.dataset.ia !== undefined) { demanderIa(t.dataset.ia); return; }
@@ -328,6 +405,14 @@
         '.AIDE-BTN{border:0;background:#c99a45;color:#111;border-radius:16px;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}',
         '.AIDE-LIEN{border:0;background:none;color:#8a5e10;font:inherit;font-size:13px;font-weight:700;padding:2px 0;cursor:pointer;text-align:left}',
         '.AIDE-AUTRE{margin-top:8px;font-size:12.5px;color:#6b7280}',
+        '.AIDE-POUCE{display:flex;align-items:center;gap:10px}',
+        '.AIDE-POUCE img{width:72px;height:72px;object-fit:contain;flex:none;animation:aidePouce .6s ease-out}',
+        '@keyframes aidePouce{0%{transform:scale(.4) rotate(-12deg);opacity:0}70%{transform:scale(1.1) rotate(4deg);opacity:1}100%{transform:scale(1) rotate(0)}}',
+        '.AIDE-DETAIL{margin-top:8px;border-top:1px dashed #e2d3ae;padding-top:6px}',
+        '.AIDE-DETAIL summary{cursor:pointer;color:#8a5e10;font-weight:700;font-size:13px;list-style:none}',
+        '.AIDE-DETAIL summary::before{content:"▸ "}.AIDE-DETAIL[open] summary::before{content:"▾ "}',
+        '.AIDE-DETAIL[open] summary{margin-bottom:6px}',
+        'body.dark-mode .AIDE-DETAIL summary{color:#e9c47a}',
         '.AIDE-M small{display:block;font-size:12px;color:#6b7280;margin-top:4px;line-height:1.35}',
         '.AIDE-CODE{margin:8px 0 2px;padding:7px 9px;border:1px solid #e7cf98;border-radius:10px;background:#fffaf0}',
         '.AIDE-CODE b{font-family:ui-monospace,Menlo,Consolas,monospace;letter-spacing:.5px}',
