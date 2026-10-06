@@ -1,0 +1,1099 @@
+{
+ "_lisezMoi": "Fabriqué par aide/extraire-tarifs.js à partir de cr/index.html : ne pas modifier à la main.",
+ "repasFrance": 20,
+ "hebergementFrance": {
+  "PARIS": 140,
+  "GRANDE": 120,
+  "PETITE": 90
+ },
+ "grandesVilles": [
+  "MARSEILLE",
+  "LYON",
+  "TOULOUSE",
+  "NICE",
+  "NANTES",
+  "MONTPELLIER",
+  "STRASBOURG",
+  "BORDEAUX",
+  "LILLE",
+  "RENNES"
+ ],
+ "coefRepas": 0.175,
+ "coefHebergement": 0.65,
+ "pays": [
+  {
+   "p": "AFGHANISTAN",
+   "d": "DOLLAR US",
+   "m": 279
+  },
+  {
+   "p": "AFRIQUE DU SUD",
+   "d": "EURO",
+   "m": 138
+  },
+  {
+   "p": "AFRIQUE DU SUD (15 dec au 1er mars)",
+   "d": "EURO",
+   "m": 185
+  },
+  {
+   "p": "ALBANIE",
+   "d": "EURO",
+   "m": 130
+  },
+  {
+   "p": "ALGERIE",
+   "d": "DINAR ALGERIEN",
+   "m": 20480
+  },
+  {
+   "p": "ALLEMAGNE",
+   "d": "EURO",
+   "m": 240
+  },
+  {
+   "p": "ANDORRE",
+   "d": "EURO",
+   "m": 118
+  },
+  {
+   "p": "ANGOLA",
+   "d": "EURO",
+   "m": 300
+  },
+  {
+   "p": "ANGUILLA",
+   "d": "DOLLAR US",
+   "m": 208
+  },
+  {
+   "p": "ANTIGUA ET BARBUDA",
+   "d": "DOLLAR US",
+   "m": 308
+  },
+  {
+   "p": "ARABIE SAOUDITE",
+   "d": "EURO",
+   "m": 337
+  },
+  {
+   "p": "ARGENTINE",
+   "d": "DOLLAR US",
+   "m": 157
+  },
+  {
+   "p": "ARMENIE",
+   "d": "EURO",
+   "m": 186
+  },
+  {
+   "p": "ARUBA",
+   "d": "DOLLAR US",
+   "m": 150
+  },
+  {
+   "p": "AUSTRALIE",
+   "d": "DOLLAR AUSTRALIEN",
+   "m": 380
+  },
+  {
+   "p": "AUTRICHE",
+   "d": "EURO",
+   "m": 175
+  },
+  {
+   "p": "AZERBAIDJAN",
+   "d": "EURO",
+   "m": 204
+  },
+  {
+   "p": "BAHAMAS",
+   "d": "DOLLAR US",
+   "m": 450
+  },
+  {
+   "p": "BAHREIN",
+   "d": "EURO",
+   "m": 200
+  },
+  {
+   "p": "BANGLADESH",
+   "d": "EURO",
+   "m": 258
+  },
+  {
+   "p": "LA BARBADE",
+   "d": "DOLLAR US",
+   "m": 355
+  },
+  {
+   "p": "BELGIQUE",
+   "d": "EURO",
+   "m": 206
+  },
+  {
+   "p": "BELIZE",
+   "d": "DOLLAR US",
+   "m": 177
+  },
+  {
+   "p": "BENIN",
+   "d": "EURO",
+   "m": 145
+  },
+  {
+   "p": "BERMUDES",
+   "d": "DOLLAR DES BERMUDES",
+   "m": 450
+  },
+  {
+   "p": "BIELORUSSIE",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "BIRMANIE",
+   "d": "DOLLAR US",
+   "m": 250
+  },
+  {
+   "p": "BOLIVIE",
+   "d": "DOLLAR US",
+   "m": 135
+  },
+  {
+   "p": "BOSNIE-HERZEGOVINE",
+   "d": "EURO",
+   "m": 169
+  },
+  {
+   "p": "BOTSWANA",
+   "d": "EURO",
+   "m": 119
+  },
+  {
+   "p": "BRESIL",
+   "d": "EURO",
+   "m": 216
+  },
+  {
+   "p": "BRUNEI",
+   "d": "DOLLAR DE BRUNEI",
+   "m": 255
+  },
+  {
+   "p": "BULGARIE",
+   "d": "EURO",
+   "m": 145
+  },
+  {
+   "p": "BURKINA FASO",
+   "d": "EURO",
+   "m": 145
+  },
+  {
+   "p": "BURUNDI",
+   "d": "EURO",
+   "m": 140
+  },
+  {
+   "p": "CAIMANS (iles)",
+   "d": "DOLLAR US",
+   "m": 450
+  },
+  {
+   "p": "CAMBODGE",
+   "d": "DOLLAR US",
+   "m": 150
+  },
+  {
+   "p": "CAMEROUN",
+   "d": "EURO",
+   "m": 161
+  },
+  {
+   "p": "CANADA - TORONTO",
+   "d": "DOLLAR CANADIEN",
+   "m": 552
+  },
+  {
+   "p": "CANADA - VANCOUVER",
+   "d": "DOLLAR CANADIEN",
+   "m": 449
+  },
+  {
+   "p": "CANADA - AUTRES VILLES",
+   "d": "DOLLAR CANADIEN",
+   "m": 319
+  },
+  {
+   "p": "CAP-VERT",
+   "d": "ESCUDO",
+   "m": 13575
+  },
+  {
+   "p": "CENTRAFRICAINE (Republique)",
+   "d": "FRANC CFA",
+   "m": 96000
+  },
+  {
+   "p": "CHILI",
+   "d": "DOLLAR US",
+   "m": 217
+  },
+  {
+   "p": "CHINE",
+   "d": "YUAN CHINOIS",
+   "m": 1700
+  },
+  {
+   "p": "CHYPRE",
+   "d": "EURO",
+   "m": 190
+  },
+  {
+   "p": "COLOMBIE",
+   "d": "DOLLAR US",
+   "m": 176
+  },
+  {
+   "p": "COMORES",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "CONGO BRAZZAVILLE",
+   "d": "FRANC CFA",
+   "m": 120000
+  },
+  {
+   "p": "CONGO (Republique democratique du)",
+   "d": "EURO",
+   "m": 240
+  },
+  {
+   "p": "COOK (iles)",
+   "d": "DOLLAR NEO-ZELANDAIS",
+   "m": 400
+  },
+  {
+   "p": "COREE DU NORD",
+   "d": "DOLLAR US",
+   "m": 272
+  },
+  {
+   "p": "COREE DU SUD",
+   "d": "EURO",
+   "m": 210
+  },
+  {
+   "p": "COSTA RICA",
+   "d": "DOLLAR US",
+   "m": 270
+  },
+  {
+   "p": "COTE D'IVOIRE",
+   "d": "FRANC CFA",
+   "m": 137000
+  },
+  {
+   "p": "CROATIE",
+   "d": "EURO",
+   "m": 142
+  },
+  {
+   "p": "CUBA",
+   "d": "EURO",
+   "m": 200
+  },
+  {
+   "p": "CURACAO",
+   "d": "DOLLAR US",
+   "m": 150
+  },
+  {
+   "p": "DANEMARK",
+   "d": "COURONNE DANOISE",
+   "m": 2160
+  },
+  {
+   "p": "DJIBOUTI",
+   "d": "FRANC DJIBOUTI",
+   "m": 36320
+  },
+  {
+   "p": "DOMINICAINE (Republique)",
+   "d": "DOLLAR US",
+   "m": 207
+  },
+  {
+   "p": "LA DOMINIQUE",
+   "d": "DOLLAR US",
+   "m": 266
+  },
+  {
+   "p": "EGYPTE",
+   "d": "EURO",
+   "m": 148
+  },
+  {
+   "p": "EMIRATS ARABES UNIS",
+   "d": "EURO",
+   "m": 300
+  },
+  {
+   "p": "EQUATEUR",
+   "d": "DOLLAR US",
+   "m": 150
+  },
+  {
+   "p": "ERYTHREE",
+   "d": "DOLLAR US",
+   "m": 195
+  },
+  {
+   "p": "ESPAGNE",
+   "d": "EURO",
+   "m": 212
+  },
+  {
+   "p": "ESTONIE",
+   "d": "EURO",
+   "m": 171
+  },
+  {
+   "p": "ETATS-UNIS (hors New York)",
+   "d": "DOLLAR US",
+   "m": 360
+  },
+  {
+   "p": "ETATS-UNIS - New York (1er jan-31 aout)",
+   "d": "DOLLAR US",
+   "m": 360
+  },
+  {
+   "p": "ETATS-UNIS - New York (1er sept-31 dec)",
+   "d": "DOLLAR US",
+   "m": 490
+  },
+  {
+   "p": "ETHIOPIE",
+   "d": "EURO",
+   "m": 123
+  },
+  {
+   "p": "FIDJI",
+   "d": "DOLLAR DE FIDJI",
+   "m": 421
+  },
+  {
+   "p": "FINLANDE",
+   "d": "EURO",
+   "m": 220
+  },
+  {
+   "p": "GABON",
+   "d": "FRANC CFA",
+   "m": 140000
+  },
+  {
+   "p": "GAMBIE",
+   "d": "DALASI",
+   "m": 8590
+  },
+  {
+   "p": "GEORGIE",
+   "d": "DOLLAR US",
+   "m": 195
+  },
+  {
+   "p": "GHANA",
+   "d": "DOLLAR US",
+   "m": 250
+  },
+  {
+   "p": "GRANDE-BRETAGNE",
+   "d": "LIVRE STERLING",
+   "m": 210
+  },
+  {
+   "p": "GRECE",
+   "d": "EURO",
+   "m": 167
+  },
+  {
+   "p": "GRENADE",
+   "d": "DOLLAR US",
+   "m": 283
+  },
+  {
+   "p": "GUATEMALA",
+   "d": "EURO",
+   "m": 160
+  },
+  {
+   "p": "GUINEE",
+   "d": "EURO",
+   "m": 170
+  },
+  {
+   "p": "GUINEE-BISSAU",
+   "d": "EURO",
+   "m": 169
+  },
+  {
+   "p": "GUINEE EQUATORIALE",
+   "d": "FRANC CFA",
+   "m": 90500
+  },
+  {
+   "p": "GUYANA",
+   "d": "DOLLAR US",
+   "m": 200
+  },
+  {
+   "p": "HAITI",
+   "d": "DOLLAR US",
+   "m": 220
+  },
+  {
+   "p": "HONDURAS",
+   "d": "DOLLAR US",
+   "m": 152
+  },
+  {
+   "p": "HONG KONG",
+   "d": "DOLLAR DE HONG KONG",
+   "m": 2200
+  },
+  {
+   "p": "HONGRIE",
+   "d": "EURO",
+   "m": 175
+  },
+  {
+   "p": "INDE",
+   "d": "EURO",
+   "m": 210
+  },
+  {
+   "p": "INDONESIE",
+   "d": "EURO",
+   "m": 160
+  },
+  {
+   "p": "IRAN",
+   "d": "DOLLAR US",
+   "m": 186
+  },
+  {
+   "p": "IRAK",
+   "d": "EURO",
+   "m": 300
+  },
+  {
+   "p": "IRLANDE",
+   "d": "EURO",
+   "m": 190
+  },
+  {
+   "p": "ISLANDE",
+   "d": "COURONNE ISLANDAISE",
+   "m": 34397
+  },
+  {
+   "p": "ISRAEL",
+   "d": "EURO",
+   "m": 230
+  },
+  {
+   "p": "ITALIE",
+   "d": "EURO",
+   "m": 220
+  },
+  {
+   "p": "JAMAIQUE",
+   "d": "DOLLAR US",
+   "m": 217
+  },
+  {
+   "p": "JAPON",
+   "d": "YEN",
+   "m": 25500
+  },
+  {
+   "p": "JAPON - TOKYO",
+   "d": "YEN",
+   "m": 30000
+  },
+  {
+   "p": "JORDANIE",
+   "d": "DINAR JORDANIEN",
+   "m": 151
+  },
+  {
+   "p": "KAZAKHSTAN",
+   "d": "EURO",
+   "m": 188
+  },
+  {
+   "p": "KENYA",
+   "d": "DOLLAR US",
+   "m": 180
+  },
+  {
+   "p": "KIRGHIZISTAN",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "KIRIBATI",
+   "d": "DOLLAR AUSTRALIEN",
+   "m": 207
+  },
+  {
+   "p": "KOSOVO",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "KOWEIT",
+   "d": "EURO",
+   "m": 245
+  },
+  {
+   "p": "LAOS",
+   "d": "DOLLAR US",
+   "m": 150
+  },
+  {
+   "p": "LESOTHO",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "LETTONIE",
+   "d": "EURO",
+   "m": 152
+  },
+  {
+   "p": "LIBAN",
+   "d": "EURO",
+   "m": 154
+  },
+  {
+   "p": "LIBERIA",
+   "d": "DOLLAR US",
+   "m": 230
+  },
+  {
+   "p": "LIBYE",
+   "d": "EURO",
+   "m": 240
+  },
+  {
+   "p": "LIECHTENSTEIN",
+   "d": "FRANC SUISSE",
+   "m": 230
+  },
+  {
+   "p": "LITUANIE",
+   "d": "EURO",
+   "m": 145
+  },
+  {
+   "p": "LUXEMBOURG",
+   "d": "EURO",
+   "m": 227
+  },
+  {
+   "p": "MACAO",
+   "d": "DOLLAR DE HONG KONG",
+   "m": 2200
+  },
+  {
+   "p": "MACEDOINE",
+   "d": "EURO",
+   "m": 117
+  },
+  {
+   "p": "MADAGASCAR",
+   "d": "EURO",
+   "m": 114
+  },
+  {
+   "p": "MALAISIE",
+   "d": "RINGGIT",
+   "m": 468
+  },
+  {
+   "p": "MALAWI",
+   "d": "DOLLAR US",
+   "m": 224
+  },
+  {
+   "p": "MALDIVES (iles)",
+   "d": "EURO",
+   "m": 320
+  },
+  {
+   "p": "MALI",
+   "d": "FRANC CFA",
+   "m": 161600
+  },
+  {
+   "p": "MALTE",
+   "d": "EURO",
+   "m": 200
+  },
+  {
+   "p": "MAROC",
+   "d": "EURO",
+   "m": 175
+  },
+  {
+   "p": "MARSHALL (iles)",
+   "d": "DOLLAR US",
+   "m": 154
+  },
+  {
+   "p": "MAURICE",
+   "d": "ROUPIE ILE MAURICE",
+   "m": 9450
+  },
+  {
+   "p": "MAURITANIE",
+   "d": "EURO",
+   "m": 143
+  },
+  {
+   "p": "MEXIQUE",
+   "d": "PESO MEXICAIN",
+   "m": 3800
+  },
+  {
+   "p": "MICRONESIE",
+   "d": "DOLLAR US",
+   "m": 157
+  },
+  {
+   "p": "MOLDAVIE",
+   "d": "DOLLAR US",
+   "m": 188
+  },
+  {
+   "p": "MONGOLIE EXTERIEURE",
+   "d": "EURO",
+   "m": 102
+  },
+  {
+   "p": "MONTENEGRO",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "MOZAMBIQUE",
+   "d": "DOLLAR US",
+   "m": 189
+  },
+  {
+   "p": "NAMIBIE",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "NAURU",
+   "d": "DOLLAR AUSTRALIEN",
+   "m": 600
+  },
+  {
+   "p": "NEPAL",
+   "d": "DOLLAR US",
+   "m": 140
+  },
+  {
+   "p": "NICARAGUA",
+   "d": "DOLLAR US",
+   "m": 154
+  },
+  {
+   "p": "NIGER",
+   "d": "FRANC CFA",
+   "m": 78000
+  },
+  {
+   "p": "NIGERIA - ABUJA/LAGOS/PORT-HARCOURT",
+   "d": "EURO",
+   "m": 230
+  },
+  {
+   "p": "NIGERIA - AUTRES VILLES",
+   "d": "EURO",
+   "m": 160
+  },
+  {
+   "p": "NIUE",
+   "d": "DOLLAR NEO-ZELANDAIS",
+   "m": 204
+  },
+  {
+   "p": "NORVEGE",
+   "d": "COURONNE NORVEGIENNE",
+   "m": 2700
+  },
+  {
+   "p": "NOUVELLE-ZELANDE",
+   "d": "DOLLAR NEO-ZELANDAIS",
+   "m": 370
+  },
+  {
+   "p": "OMAN",
+   "d": "EURO",
+   "m": 265
+  },
+  {
+   "p": "OUGANDA",
+   "d": "EURO",
+   "m": 130
+  },
+  {
+   "p": "OUZBEKISTAN",
+   "d": "DOLLAR US",
+   "m": 197
+  },
+  {
+   "p": "PAKISTAN",
+   "d": "DOLLAR US",
+   "m": 173
+  },
+  {
+   "p": "PALAOS (iles)",
+   "d": "DOLLAR US",
+   "m": 311
+  },
+  {
+   "p": "PANAMA",
+   "d": "DOLLAR US",
+   "m": 178
+  },
+  {
+   "p": "PAPOUASIE-NOUVELLE-GUINEE",
+   "d": "EURO",
+   "m": 245
+  },
+  {
+   "p": "PARAGUAY",
+   "d": "DOLLAR US",
+   "m": 180
+  },
+  {
+   "p": "PAYS-BAS",
+   "d": "EURO",
+   "m": 161
+  },
+  {
+   "p": "PEROU",
+   "d": "DOLLAR US",
+   "m": 170
+  },
+  {
+   "p": "PHILIPPINES",
+   "d": "PESO PHILIPPIN",
+   "m": 8770
+  },
+  {
+   "p": "POLOGNE",
+   "d": "EURO",
+   "m": 175
+  },
+  {
+   "p": "PORTUGAL",
+   "d": "EURO",
+   "m": 160
+  },
+  {
+   "p": "QATAR",
+   "d": "EURO",
+   "m": 278
+  },
+  {
+   "p": "ROUMANIE",
+   "d": "EURO",
+   "m": 160
+  },
+  {
+   "p": "RUSSIE",
+   "d": "EURO",
+   "m": 230
+  },
+  {
+   "p": "RWANDA",
+   "d": "DOLLAR AMERICAIN",
+   "m": 170
+  },
+  {
+   "p": "SAINT-CHRISTOPHE-ET-NIEVES",
+   "d": "DOLLAR US",
+   "m": 287
+  },
+  {
+   "p": "SAINTE-LUCIE",
+   "d": "DOLLAR US",
+   "m": 261
+  },
+  {
+   "p": "SAINT-VINCENT ET LES GRENADINES",
+   "d": "DOLLAR US",
+   "m": 275
+  },
+  {
+   "p": "SALOMON",
+   "d": "VATU",
+   "m": 23052
+  },
+  {
+   "p": "SALVADOR",
+   "d": "DOLLAR US",
+   "m": 177
+  },
+  {
+   "p": "SAMOA",
+   "d": "DOLLAR US",
+   "m": 230
+  },
+  {
+   "p": "SAO TOME ET PRINCIPE",
+   "d": "DOLLAR US",
+   "m": 135
+  },
+  {
+   "p": "SENEGAL",
+   "d": "FRANC CFA",
+   "m": 91800
+  },
+  {
+   "p": "SERBIE",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "SEYCHELLES",
+   "d": "EURO",
+   "m": 300
+  },
+  {
+   "p": "SIERRA LEONE",
+   "d": "DOLLAR US",
+   "m": 260
+  },
+  {
+   "p": "SINGAPOUR",
+   "d": "DOLLAR SINGAPOURIEN",
+   "m": 446
+  },
+  {
+   "p": "SLOVAQUIE",
+   "d": "EURO",
+   "m": 155
+  },
+  {
+   "p": "SLOVENIE",
+   "d": "EURO",
+   "m": 160
+  },
+  {
+   "p": "SOMALIE",
+   "d": "DOLLAR US",
+   "m": 158
+  },
+  {
+   "p": "SOUDAN",
+   "d": "DOLLAR US",
+   "m": 175
+  },
+  {
+   "p": "SOUDAN DU SUD",
+   "d": "DOLLAR US",
+   "m": 306
+  },
+  {
+   "p": "SRI LANKA",
+   "d": "EURO",
+   "m": 180
+  },
+  {
+   "p": "SUEDE",
+   "d": "COURONNE SUEDOISE",
+   "m": 1997
+  },
+  {
+   "p": "SUISSE",
+   "d": "FRANC SUISSE",
+   "m": 230
+  },
+  {
+   "p": "SURINAME",
+   "d": "DOLLAR US",
+   "m": 180
+  },
+  {
+   "p": "SWAZILAND",
+   "d": "EURO",
+   "m": 138
+  },
+  {
+   "p": "SYRIE",
+   "d": "EURO",
+   "m": 154
+  },
+  {
+   "p": "TADJIKISTAN",
+   "d": "DOLLAR US",
+   "m": 250
+  },
+  {
+   "p": "TAIWAN",
+   "d": "DOLLAR DE TAIWAN",
+   "m": 5990
+  },
+  {
+   "p": "TANZANIE",
+   "d": "EURO",
+   "m": 215
+  },
+  {
+   "p": "TCHAD",
+   "d": "EURO",
+   "m": 225
+  },
+  {
+   "p": "TCHEQUE (Republique)",
+   "d": "EURO",
+   "m": 180
+  },
+  {
+   "p": "THAILANDE",
+   "d": "BAHT",
+   "m": 5000
+  },
+  {
+   "p": "TIMOR ORIENTAL",
+   "d": "EURO",
+   "m": 150
+  },
+  {
+   "p": "TOGO - LOME",
+   "d": "FRANC CFA",
+   "m": 95771
+  },
+  {
+   "p": "TOGO - AUTRES VILLES",
+   "d": "FRANC CFA",
+   "m": 82640
+  },
+  {
+   "p": "TONGA",
+   "d": "DOLLAR DE FIDJI",
+   "m": 402
+  },
+  {
+   "p": "TRINITE ET TOBAGO",
+   "d": "DOLLAR US",
+   "m": 267
+  },
+  {
+   "p": "TUNISIE",
+   "d": "EURO",
+   "m": 125
+  },
+  {
+   "p": "TURKMENISTAN",
+   "d": "EURO",
+   "m": 224
+  },
+  {
+   "p": "TURQUIE",
+   "d": "EURO",
+   "m": 135
+  },
+  {
+   "p": "TUVALU",
+   "d": "DOLLAR AUSTRALIEN",
+   "m": 254
+  },
+  {
+   "p": "UKRAINE",
+   "d": "EURO",
+   "m": 208
+  },
+  {
+   "p": "URUGUAY",
+   "d": "DOLLAR US",
+   "m": 135
+  },
+  {
+   "p": "VANUATU",
+   "d": "EURO",
+   "m": 210
+  },
+  {
+   "p": "VENEZUELA",
+   "d": "EURO",
+   "m": 195
+  },
+  {
+   "p": "VIETNAM",
+   "d": "EURO",
+   "m": 158
+  },
+  {
+   "p": "YEMEN",
+   "d": "EURO",
+   "m": 188
+  },
+  {
+   "p": "ZAMBIE",
+   "d": "EURO",
+   "m": 180
+  },
+  {
+   "p": "ZIMBABWE",
+   "d": "DOLLAR US",
+   "m": 180
+  }
+ ],
+ "change": {
+  "EURO": 1,
+  "DOLLAR US": 0.92,
+  "DOLLAR AMERICAIN": 0.92,
+  "LIVRE STERLING": 1.18,
+  "FRANC SUISSE": 1.069,
+  "DOLLAR CANADIEN": 0.65,
+  "DOLLAR AUSTRALIEN": 0.6,
+  "DOLLAR NEO-ZELANDAIS": 0.56,
+  "YEN": 0.006,
+  "YUAN CHINOIS": 0.128,
+  "DOLLAR DE HONG KONG": 0.118,
+  "DOLLAR DE TAIWAN": 0.029,
+  "DOLLAR SINGAPOURIEN": 0.68,
+  "DOLLAR DE BRUNEI": 0.68,
+  "DOLLAR DE FIDJI": 0.41,
+  "DOLLAR DES BERMUDES": 0.92,
+  "COURONNE DANOISE": 0.134,
+  "COURONNE NORVEGIENNE": 0.084,
+  "COURONNE SUEDOISE": 0.087,
+  "COURONNE ISLANDAISE": 0.0067,
+  "DINAR ALGERIEN": 0.0068,
+  "DINAR JORDANIEN": 1.3,
+  "DALASI": 0.013,
+  "ESCUDO": 0.0091,
+  "FRANC CFA": 0.00152,
+  "FRANC DJIBOUTI": 0.0052,
+  "PESO MEXICAIN": 0.048,
+  "PESO PHILIPPIN": 0.0157,
+  "RINGGIT": 0.2,
+  "ROUPIE ILE MAURICE": 0.02,
+  "VATU": 0.0075,
+  "BAHT": 0.026
+ }
+}

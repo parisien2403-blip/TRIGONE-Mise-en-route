@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 299,
-  "appCodeMessage": "Nouveau : la mascotte d'aide ! Touchez-la (à côté de la lune, ou « Besoin d'aide ? » sur PC) et posez votre question comme vous parlez : elle répond avec la notice, vous montre où cliquer, et peut demander à l'IA.",
+  "appCodeVersion": 300,
+  "appCodeMessage": "La mascotte d'aide connaît maintenant le codier FD (« code FD du 4e RIISC formation ») et les forfaits repas et hébergement, en France selon la ville et à l'étranger selon le pays. Sans IA, sans réseau, gratuit.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
