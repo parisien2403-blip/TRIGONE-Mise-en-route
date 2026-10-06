@@ -118,7 +118,7 @@
         trouves = trouves.filter(function(n, i) { return !trouves.some(function(m, j) { return j !== i && m.length > n.length && m.indexOf(n) >= 0; }); });
         return trouves.map(function(n) { return noms[n]; });
     }
-    var MOTS_NON_VILLE = ' combien tarif taux bareme forfait prix montant coute cout repas hotel hebergement nuit nuitee dormir logement chambre manger mission la le les l un une de du d pour par en a au aux sur pres vers est c ca quel quelle quels quelles je on il mon ma mes ce cette et ou paye payee rembourse remboursement euros euro france ville grande petite combien droit droits jour jours semaine stage formation ';
+    var MOTS_NON_VILLE = ' payer paye rembourser avancer prevoir mettre faire remplir donner envoyer declarer saisir compter calculer toucher percevoir recevoir partir rester manger dormir loger combien tarif taux bareme forfait prix montant coute cout repas hotel hebergement nuit nuitee dormir logement chambre manger mission la le les l un une de du d pour par en a au aux sur pres vers est c ca quel quelle quels quelles je on il mon ma mes ce cette et ou paye payee rembourse remboursement euros euro france ville grande petite combien droit droits jour jours semaine stage formation ';
     function trouverVille(q, tarifs) {
         var s = normal(q), cp = (/ (\d{5}) /.exec(s) || [])[1] || '';
         if (/ paris /.test(s) || /^75\d{3}$/.test(cp)) return { nom: 'Paris', zone: 'PARIS' };
@@ -226,6 +226,8 @@
         if (/ (code|codes|imputation|imputer|engagement) /.test(s)) { var u = unites(s), m = / \d{1,3} ([a-z]{2,8}) /.exec(u); if (m && SIGLES_CONNUS.indexOf(' ' + m[1] + ' ') >= 0) return 'fd'; }
         var combien = / combien /.test(s) && !/ combien de (repas|nuit|nuits|nuitee|nuitees|jours?) /.test(s);
         if ((FORT.test(s) || combien) && (SUJET.test(s) || OUTRE_MER.test(s))) return 'tarif';
+        // « prix à Lyon », « combien à Paris », « tarif Lyon » : le barème de la ville (grande ville connue, ou question courte).
+        if ((FORT.test(s) || / combien | c est combien | ca coute | quel prix /.test(s)) && !MOTS_FD.test(s) && tarifs) { var vq = trouverVille(q, tarifs); if (vq && (vq.zone !== 'PETITE' || s.trim().split(' ').length <= 5)) return 'tarif'; }
         // Un pays cité (« Espagne », « mission en Espagne », « indemnisation Italie ») : son barème.
         if (tarifs && trouverPays(q, tarifs).length) return 'tarif';
         return null;
@@ -246,7 +248,10 @@
             var p = normal(precedent.q), n = ' ' + nouveau + ' ';
             // Plausible seulement avec un pays, un lieu introduit (« à Bourges », « en Italie », « 33000 ») ou un autre sujet.
             var lieuIntroduit = /^(a|au|aux|en|pour|sur|dans|vers|de|du) /.test(normal(q).trim().replace(/^(et|pareil|idem|aussi|puis|sinon|ok et|bon et|alors et|mais|ou) /, '') + ' ');
-            if (!(tarifs && trouverPays(q, tarifs).length) && !lieuIntroduit && !/ \d{5} /.test(n) && !/ paris /.test(n) &&
+            // Une ville seule : « et Marseille », « et Nogent le Rotrou » (avec « et »), ou une grande ville connue (« Marseille ? ») ; pas « blanquette ».
+            var grande = tarifs && (/^paris$/.test(nouveau) || tarifs.grandesVilles.some(function(g) { return normal(g).trim() === nouveau; }));
+            var villeSeule = (grande || /^(et|pareil|idem|aussi|puis|sinon|ok et|bon et|alors et|mais|ou) /.test(normal(q).trim() + ' ')) && /^[a-z][a-z ]*$/.test(nouveau) && nouveau.split(' ').length <= 3 && !/ (combien|prix|tarif|code|fd|ik|km|cv) /.test(n);
+            if (!(tarifs && trouverPays(q, tarifs).length) && !lieuIntroduit && !villeSeule && !/ \d{5} /.test(n) && !/ paris /.test(n) &&
                 !/repas|manger|dejeuner|diner|hebergement|hotel|nuit|dormir|logement|chambre/.test(n)) return null;
             var sujetN = /repas|manger|dejeuner|diner|hebergement|hotel|nuit|dormir|logement|chambre/.test(n);
             // Même lieu, autre sujet (« pareil pour une nuit ») : on reprend le pays ou la ville d'avant.
@@ -256,7 +261,7 @@
                 if (lieu) return ('combien ' + nouveau + ' a ' + lieu).trim();
             }
             var sujet = sujetN ? '' : /repas|manger|dejeuner|diner/.test(p) && !/hebergement|hotel|nuit|dormir|logement|chambre/.test(p) ? 'combien coute un repas' :
-                /hebergement|hotel|nuit|dormir|logement|chambre/.test(p) && !/repas|manger|dejeuner|diner/.test(p) ? 'combien coute une nuit d hotel' : 'combien';
+                /hebergement|hotel|nuit|dormir|logement|chambre/.test(p) && !/repas|manger|dejeuner|diner/.test(p) ? 'combien coute une nuit d hotel' : 'combien coute le repas et la nuit';
             return (sujet + ' a ' + nouveau).trim();
         }
         if (precedent.type === 'ik' && precedent.ik) {
@@ -270,7 +275,7 @@
             var avant = motsRecherche(precedent.q), apres = motsRecherche(q).filter(function(m) { return ['et', 'aussi', 'pareil', 'idem', 'pour', 'sinon'].indexOf(m) < 0; });
             var objet = function(m) { return OBJETS.indexOf(m) >= 0; };
             // Plausible seulement avec un objet de mission, un numéro d'unité ou un nom d'unité (« et intervention », « et pour le 7 »).
-            if (!apres.length || !apres.every(function(m) { return objet(m) || /^\d+$/.test(m) || /^(uiisc|riisc|rsc|ensoa|emat|drhat)$/.test(m); })) return null;
+            if (!apres.length || !apres.every(function(m) { return objet(m) || /^\d+$/.test(m) || /^(uiisc|riisc|rsc|ensoa|emat|drhat)$/.test(m) || SIGLES_CONNUS.indexOf(' ' + m + ' ') >= 0; })) return null;
             if (apres.some(objet)) avant = avant.filter(function(m) { return !objet(m); });
             if (apres.some(function(m) { return !objet(m); })) avant = avant.filter(objet);
             return 'code fd ' + avant.concat(apres).join(' ');

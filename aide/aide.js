@@ -451,7 +451,13 @@
         if (!navigator.onLine) { ajouter({ de: 'lui', html: 'Pas de réseau pour l\'instant : l\'IA a besoin d\'internet. Réessayez quand le réseau revient, ou ouvrez la notice.' }); return; }
         var r = moteur.chercher(question, { app: APP, ecran: ecranCourant() });
         // Les derniers échanges, pour qu'elle suive la conversation (texte seulement).
-        var hist = fil.slice(-6).filter(function(m) { return m.de === 'moi' || m.ia; }).map(function(m) { return { de: m.de === 'moi' ? 'moi' : 'ia', texte: m.de === 'moi' ? m.texte : (m.brut || '') }; }).slice(-4);
+        // Ses propres réponses (barèmes, notice…) aussi, en texte simple : l'IA sait ce qui vient d'être dit (« et Paris ? » après Lyon).
+        var texteDe = function(h) { var d = document.createElement('div'); d.innerHTML = String(h || '').replace(/<br\s*\/?>/gi, ' ; '); d.querySelectorAll('button, .AIDE-AUTRE, .AIDE-PUCES').forEach(function(x) { x.remove(); }); return (d.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 400); };
+        var hist = fil.slice(-8).filter(function(m) { return (m.de === 'moi' || m.de === 'lui') && !m.rappel; }).map(function(m) { return { de: m.de === 'moi' ? 'moi' : 'ia', texte: m.de === 'moi' ? m.texte : m.ia ? (m.brut || '') : texteDe(m.html) }; })
+            .filter(function(h) { return h.texte; }).slice(-6);
+        // Question courte qui fait suite (« et Paris ? ») : on lui rappelle la précédente.
+        var avant = lire(CLE_DERNIER);
+        if (avant && avant.q && avant.q !== question && window.AIDE_DONNEES && window.AIDE_DONNEES.estSuite(question)) question = question + ' (suite de ma question précédente : « ' + avant.q + ' »)';
         attenteIa = true; dessinerFil();
         window.JUMELAGE_API('aide/ia', { question: question, fiches: r.resultats.slice(0, 4).map(function(x) { return x.fiche.id; }), ecran: ecranCourant(), app: APP, historique: hist })
             .then(function(j) {

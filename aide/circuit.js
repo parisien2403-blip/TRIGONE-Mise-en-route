@@ -519,6 +519,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 212, version: 'V209', l: ['Les suites de questions sont comprises : « prix à Lyon », puis « et Paris ? », « et Marseille », « et en Italie », « pareil pour une nuit » — sans tout reposer', 'L\'IA suit aussi la conversation (elle voit ce que la mascotte vient de répondre)'] },
         { build: 211, version: 'V208', l: ['La mascotte comprend encore plus de façons d\'écrire : SMS (« kom », « jtrouv pa », « cmb »), fautes courantes, argot et sigles militaires (« le fourrier », « mon CDU », « ma tire »…)', 'Elle varie ses réponses pour ne pas toujours répéter la même phrase, toujours avec respect'] },
         { build: 210, version: 'V207', l: ['La mascotte connaît toutes les formules de politesse (bonjour, ça va, merci, au revoir, désolé, bravo, mes respects, bonnes fêtes…) et sait quoi répondre, même combinées (« merci, bonne soirée »)'] },
         { build: 209, version: 'V206', l: ['Simulation en une phrase : « si je pars 5 jours à Paris en VRC depuis Libourne, 6 CV, logement et repas à ma charge, combien ? » → repas, nuits, IK et total', 'Suites : « et en train ? », « depuis Bordeaux », « en 8 CV »'] },
