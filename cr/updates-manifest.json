@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 301,
-  "appCodeMessage": "Affichage revu pour tous les téléphones, petits écrans et grands caractères compris. La mascotte répond à « et en Italie ? », sait qui valide votre demande, calcule vos indemnités kilométriques et a sa page « Ce que je sais faire ».",
+  "appCodeVersion": 302,
+  "appCodeMessage": "La mascotte suit votre circuit : « où en est ma demande ? », « et mon compte-rendu ? », « combien je vais toucher ? ». Elle relit votre demande avant l'envoi, explique les messages d'erreur, et connaît vos chiffres.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

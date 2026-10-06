@@ -71,11 +71,20 @@
         };
         if (app === 'param') { window.JUMELAGE_PARAMETRES(quoi); }
         else if (app === 'mer') {
+            if (quoi.indexOf('CHAMP:') === 0) {
+                var p = quoi.split(':'), onglet = p[1], chemin = p.slice(2).join(':');
+                window.MER_ACTIVE_TAB = onglet; window.SHOW_PAGE('FORMULAIRE');
+                setTimeout(function() { var el = document.querySelector('[data-path="' + chemin + '"]'); if (el) { el.classList.add('MER-ERREUR'); el.scrollIntoView({ behavior: 'smooth', block: 'center' }); clignoter('[data-path="' + chemin + '"]'); } }, 400);
+                return;
+            }
             if (quoi === 'NOUVELLE') window.DEMARRER_NOUVELLE_DEMANDE();
             else if (quoi === 'CHORUS' && window.JUMELAGE_OUVRIR_CHORUS) window.JUMELAGE_OUVRIR_CHORUS();
             else window.SHOW_PAGE(quoi);
         } else if (app === 'cr') {
-            if (quoi === 'P-BOITE' && window.OUVRIR_BOITE_CR) window.OUVRIR_BOITE_CR(); else window.SHOW_PAGE(quoi);
+            if (quoi === 'P-BOITE' && window.OUVRIR_BOITE_CR) window.OUVRIR_BOITE_CR();
+            else if (quoi === 'P-STAT' && window.OUVRIR_STAT_FORFAIT) window.OUVRIR_STAT_FORFAIT();
+            else if (quoi === 'P-BIB' && window.OUVRIR_BIBLIOTHEQUE) window.OUVRIR_BIBLIOTHEQUE();
+            else window.SHOW_PAGE(quoi);
         } else if (actions[quoi]) actions[quoi]();
         clignoter(m.c);
     }
@@ -282,10 +291,49 @@
             .then(function(r) { return r.json(); }).then(function(j) { attenteIa = false; if (j && j.ok && j.km >= 0) fin(j.km); else fin(null, (j && j.erreur) || 'service indisponible'); },
                 function() { attenteIa = false; fin(null, 'service indisponible'); });
     }
+    function contexte() {
+        return { tarifs: tarifs, change: tarifs ? tauxChange() : { taux: {}, date: '' }, version: VERSION, app: APP,
+            codier: function() { return codier ? Promise.resolve(codier) : fetch(B + 'codier.json').then(function(r) { if (!r.ok) throw new Error('codier'); return r.json(); }).then(function(j) { codier = j; return j; }); } };
+    }
+    // Propos insultants : la conversation est coupée un quart d'heure (et l'IA avec).
+    function coupure() {
+        var C = window.AIDE_CIRCUIT, t = C && C.coupeeJusqua(); if (!fen) return t;
+        var champ = fen.querySelector('.AIDE-SAISIE input'), btn = fen.querySelector('.AIDE-SAISIE button');
+        champ.disabled = btn.disabled = !!t;
+        champ.placeholder = t ? 'Conversation coupée jusqu\'à ' + C.heure(t) : 'Posez votre question…';
+        if (t) setTimeout(coupure, Math.min(t - Date.now() + 500, 60000));
+        return t;
+    }
+    function repondreCircuit(id, question) {
+        attenteIa = true; dessinerFil();
+        window.AIDE_CIRCUIT.repondre(id, question, contexte()).then(function(r) {
+            attenteIa = false;
+            if (r && r.vide) { repondreFiches(question, null); return; }
+            if (r && r.html) { ajouter({ de: 'lui', html: r.html, etq: r.etq || '', pose: r.pose || '', q: question }); ecrire(CLE_DERNIER, { type: 'circuit', id: id, q: question }); }
+            else repondreFiches(question, null);
+        }, function() { attenteIa = false; repondreFiches(question, null); });
+    }
     function repondre(question) {
+        var C = window.AIDE_CIRCUIT;
+        if (C && C.coupeeJusqua()) { coupure(); return; }
+        if (C && C.insulte(question)) {
+            ajouter({ de: 'moi', texte: '[propos retiré]' });
+            var t = C.couper();
+            ajouter({ de: 'lui', html: 'Je ne poursuis pas sur ce ton. <b>La conversation est coupée jusqu\'à ' + C.heure(t) + '.</b> Je reste à votre disposition ensuite, dans le respect.', pose: 'desole' });
+            coupure(); return;
+        }
         ajouter({ de: 'moi', texte: question });
         var poli = politesse(question);
         if (poli) { var sal = poli.indexOf('\u0001salut') === 0; ajouter({ de: 'lui', html: sal ? poli.slice(6) : poli, pose: sal ? 'salut' : '' }); return; }
+        // Le circuit de la personne (sa demande, son compte-rendu, ce qu'elle a à valider…), avant la notice.
+        var ic = C && C.intention(question, contexte()), avant = lire(CLE_DERNIER);
+        // « combien je vais toucher entre Libourne et Bordeaux » : indemnités kilométriques, pas l'estimation de la mission.
+        if (ic === 'estimation' && window.AIDE_DONNEES && window.AIDE_DONNEES.intention(question, tarifs) === 'ik') ic = null;
+        try { localStorage.setItem('trigone_aide_deja', '1'); } catch (e) {}
+        // « et celle de Madrid ? » après une question sur le circuit : même sujet.
+        if (!ic && C && avant && avant.type === 'circuit' && avant.id && C.suite(question) && ['demande', 'moncr', 'estimation', 'chorus', 'avalider', 'chiffres'].indexOf(avant.id) >= 0) ic = avant.id;
+        if (ic) { repondreCircuit(ic, question); return; }
+        if (C && C.frustre(question) && question.split(/\s+/).length <= 4) { ajouter({ de: 'lui', html: 'Je comprends, c\'est agaçant. Dites-moi ce qui bloque, en quelques mots, et je vous aide.' }); return; }
         // « stp », « s'il vous plaît » : la mascotte répond avec le sourire (« Bien sûr ! »).
         sourire = /(^| )(stp|svp|s il te plait|s il vous plait|sil te plait|sil vous plait|steuplait|stplait|please)( |$)/.test(window.AIDE_MOTEUR.normal(question));
         var D = window.AIDE_DONNEES, q = question, type = D && D.intention(question, tarifs), dernier = lire(CLE_DERNIER);
@@ -319,6 +367,7 @@
         }
     }
     function demanderIa(question) {
+        if (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.coupeeJusqua()) { coupure(); return; }
         if (attenteIa) return;
         if (!compteActif()) { ajouter({ de: 'lui', html: 'L\'IA est réservée aux <b>comptes TRIGONE connectés</b> : connectez-vous (pastille du compte › Se connecter), puis reposez votre question.' }); return; }
         if (!navigator.onLine) { ajouter({ de: 'lui', html: 'Pas de réseau pour l\'instant : l\'IA a besoin d\'internet. Réessayez quand le réseau revient, ou ouvrez la notice.' }); return; }
@@ -343,8 +392,19 @@
     // demande (facultatif) : { fiche: id } ou { q: texte }, touchée sur la page « Ce que je sais faire ».
     function poser(d) {
         if (!d || !moteur) return;
+        if (d.erreur) { expliquerErreur(d.erreur); return; }
         var f = d.fiche && moteur.fiche(d.fiche);
         if (f) { ajouter({ de: 'moi', texte: d.l || f.t }); donnerFiche(f); } else if (d.q) repondre(d.q);
+    }
+    // « Pourquoi ? » sous un message d'erreur : l'explication connue, sinon la notice, sinon l'IA.
+    function expliquerErreur(e) {
+        var titre = String(e.titre || 'ce message'), texte = String(e.texte || '').slice(0, 300);
+        ajouter({ de: 'moi', texte: 'Pourquoi « ' + titre + ' » ?' });
+        var x = window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.expliquerErreur(titre, texte);
+        if (x) { ajouter({ de: 'lui', html: '<b>' + esc(titre) + '</b> : ' + x, etq: 'Explication du message', q: titre }); return; }
+        var r = moteur.chercher(titre + ' ' + texte, { app: APP, ecran: ecranCourant() }), top = r.resultats[0];
+        if (top && top.score >= window.AIDE_MOTEUR.SUR) { donnerFiche(top.fiche, titre); return; }
+        ajouter({ de: 'lui', html: 'Le message disait : « ' + esc(texte || titre) + ' ». Je n\'ai pas d\'explication toute prête : voulez-vous que je demande à mon <b>cerveau IA</b> ?' + boutonsIa('Pourquoi ai-je le message « ' + titre + ' » : ' + texte), q: titre });
     }
     window.AIDE_OUVRIR = function(demande) {
         if (fen) { poser(demande); return; }
@@ -373,12 +433,13 @@
             if (t.dataset.ia !== undefined) { demanderIa(t.dataset.ia); return; }
             if (t.dataset.signaler) { window.AIDE_FERMER(); window.JUMELAGE_SIGNALER(); return; }
             if (t.dataset.rappelCr) { window.AIDE_FERMER(); executer({ a: 'cr:P0', c: '#BTN-RESTORE-BACKUP, #P0-MISSION-EN-COURS, .BTN-ACCUEIL' }); return; }
+            if (t.dataset.aller) { window.AIDE_FERMER(); executer({ a: t.dataset.aller }); return; }
             if (t.dataset.copier) { try { navigator.clipboard.writeText(t.dataset.copier); } catch (e) {} t.textContent = 'Copié ✓'; return; }
             if (t.dataset.civ) { try { localStorage.setItem(CLE_CIV, t.dataset.civ); } catch (e) {} accueil(); return; }
         });
         fen.querySelector('form').addEventListener('submit', function(ev) {
             ev.preventDefault();
-            var q = champ.value.trim(); if (!q || !moteur) return;
+            var q = champ.value.trim(); if (!q || !moteur || coupure()) return;
             champ.value = ''; repondre(q);
         });
         var accueil = function() {
@@ -390,6 +451,10 @@
         charger().then(function() {
             fil = lire(CLE_FIL) || [];
             if (!fil.length) accueil(); else dessinerFil();
+            coupure();
+            // Nouveautés : une fois par publication, à qui a déjà discuté avec la mascotte (pas au tout premier contact).
+            var nv = window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.nouveautesAAnnoncer(VERSION, !lireLocal('trigone_aide_deja'));
+            if (nv) setTimeout(function() { ajouter({ de: 'lui', html: nv + '<div class="AIDE-AUTRE">Demandez-moi « quoi de neuf ? » pour les revoir.</div>', pose: 'content', rappel: true }); }, 600);
             poser(demande);
             if (!('ontouchstart' in window) && !demande) champ.focus();
         }, function() {
@@ -404,10 +469,11 @@
     // Chaque exemple pose la question dans la discussion. Ceux qui renvoient à une fiche l'ouvrent directement (réponse sûre) ;
     // les autres (barèmes, IK, codes FD) passent par la recherche comme une question tapée.
     var EXEMPLES = [
-        ['L\'appli', [['Comment j\'envoie ma demande ?', 'envoyer-demande'], ['Où en est ma demande ?', 'suivre-demande'], ['Je me suis trompé, je corrige comment ?', 'modifier-envoyee'], ['Comment je fais mon compte-rendu ?', 'cr-commencer']]],
-        ['Vos frais', [['Combien la nuit à Paris ?'], ['Repas en Allemagne'], ['IK Lyon → Grenoble 6 CV']]],
-        ['Les règles', [['Code FD pour un stage'], ['Qui valide ma demande ?', 'qui-valide']]],
-        ['Rien que pour vous', [['Mon adresse TRIGONE', 'mon-adresse'], ['Mes rôles', 'mes-roles'], ['Ma carte TRIGONE', 'carte-trigone']]]
+        ['Mon circuit', [['Où en est ma demande ?'], ['Vérifie ma demande avant l\'envoi'], ['Combien je vais toucher ?'], ['Et mon compte-rendu ?']]],
+        ['L\'appli', [['Comment j\'envoie ma demande ?', 'envoyer-demande'], ['Je me suis trompé, je corrige comment ?', 'modifier-envoyee'], ['Comment je fais mon compte-rendu ?', 'cr-commencer']]],
+        ['Vos frais', [['Combien la nuit à Paris ?'], ['Repas en Allemagne'], ['IK Lyon → Grenoble 6 CV'], ['100 dollars en euros']]],
+        ['Les règles', [['Code FD pour un stage'], ['Qui valide ma demande ?', 'qui-valide'], ['Le codier est-il à jour ?']]],
+        ['Rien que pour vous', [['Combien de missions j\'ai faites ?'], ['Mon adresse TRIGONE', 'mon-adresse'], ['Quoi de neuf ?']]]
     ];
     var pres = null;
     function echapPres(e) { if (e.key === 'Escape') window.AIDE_PRESENTATION_FERMER(); }
@@ -553,6 +619,18 @@
         '.AIDE-BTN{border:0;background:#c99a45;color:#111;border-radius:16px;padding:7px 12px;font:inherit;font-size:13.5px;font-weight:700;cursor:pointer}',
         '.AIDE-LIEN{border:0;background:none;color:#8a5e10;font:inherit;font-size:13px;font-weight:700;padding:2px 0;cursor:pointer;text-align:left}',
         '.AIDE-AUTRE{margin-top:8px;font-size:12.5px;color:#6b7280}',
+        '.AIDE-FRISE{display:flex;align-items:flex-start;gap:3px;margin:8px 0 6px}',
+        '.AIDE-PT{display:flex;flex-direction:column;align-items:center;gap:2px;flex:none;font-size:10.5px;font-weight:700;color:#6b7280}',
+        '.AIDE-PT i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:11px;color:#fff;background:#d1d5db}',
+        '.AIDE-PT.ok i{background:#15803d}.AIDE-PT.ok{color:#15803d}.AIDE-PT.en i{background:#d4a64a}.AIDE-PT.en{color:#8a5e10}',
+        '.AIDE-TR{flex:1;min-width:8px;height:2px;background:#d1d5db;margin-top:9px}',
+        '.AIDE-TAB{width:100%;border-collapse:collapse;margin:6px 0 4px;font-size:13.5px}.AIDE-TAB td{padding:3px 0}.AIDE-TAB td:last-child{text-align:right;font-weight:700;white-space:nowrap;padding-left:8px}',
+        '.AIDE-TAB tr.tot td{border-top:1px solid #e5e7eb;padding-top:5px;color:#8a5e10}',
+        '.AIDE-LISTE{margin:6px 0 0;padding-left:18px}.AIDE-LISTE li{margin:4px 0}',
+        '.AIDE-LIGNE-DEM{padding:6px 0;border-bottom:1px dashed #e5e7eb}.AIDE-LIGNE-DEM:last-of-type{border-bottom:0}.AIDE-LIGNE-DEM b{display:block;font-size:13.5px}',
+        '.AIDE-AUTRES{margin-top:8px;font-size:13px;color:#4b5563}',
+        '.AIDE-SAISIE input:disabled{background:#f3f4f6;color:#9ca3af}',
+        'body.dark-mode .AIDE-TAB tr.tot td{border-color:#34373d;color:#e9c47a}body.dark-mode .AIDE-LIGNE-DEM{border-color:#34373d}body.dark-mode .AIDE-AUTRES{color:#9ca3af}',
         '.AIDE-POUCE{display:flex;align-items:center;gap:10px}',
         '.AIDE-LIGNE{display:flex;align-items:flex-end;gap:6px;align-self:flex-start;max-width:94%;min-width:0}',
         '.AIDE-LIGNE .AIDE-M{max-width:100%;min-width:0}',

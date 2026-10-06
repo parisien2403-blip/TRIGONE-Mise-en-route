@@ -243,6 +243,60 @@ module.exports = async function() {
     r = await demander(a, 'comment je fais un ordre de mission');
     verifier(/^Touchez le bouton doré NOUVELLE DEMANDE et laissez-vous guider/.test(r.trim()) && /Voir comment faire/.test(r) && !(await a.evaluate(() => { const l = document.querySelectorAll('.AIDE-DETAIL'); return l[l.length - 1].open; })),
         'réponse « humaine » : une phrase courte, le pas-à-pas replié derrière « Voir comment faire » (' + r.trim().slice(0, 60) + ')');
+    // ----- Le circuit de la personne : ses demandes, ses comptes-rendus, ses chiffres, ses rôles -----
+    const k = await page({ width: 412, height: 860 }, '', 'circuit');
+    await k.evaluate(() => {
+        const H = 3600e3, now = Date.now();
+        localStorage.setItem('trigone_aide_vue', '1'); localStorage.setItem('trigone_aide_nouveautes_vues', '999'); localStorage.setItem('trigone_aide_rappel_jour', new Date().toISOString().slice(0, 10));
+        const dem = (id, objet, lieu, cp, dep, arr, pays) => ({ id, objet, personnes: [{ grade: 'ADC', nom: 'FICTIF' }], trajets: { aller: { dateDep: dep, lieuArr: lieu, cpArr: cp, paysArr: pays || '', moyen: 'FERREE' }, retour: { dateArr: arr } } });
+        localStorage.setItem('mer_bibliotheque', JSON.stringify([{ id: 'b1', envoyeLe: new Date(now - 30 * H).toISOString(), demandes: [dem('d1', 'STAGE FHU', 'NOGENT-LE-ROTROU', '28400', '2026-10-12T07:00', '2026-10-16T18:30')] },
+            { id: 'b2', envoyeLe: new Date(now - 300 * H).toISOString(), demandes: [dem('d2', 'REUNION', 'MADRID', '', '2026-10-20T06:00', '2026-10-22T20:00', 'ESPAGNE')] }]));
+        localStorage.setItem('trigone_suivi', JSON.stringify({ d1: { genre: 'mer', etape: 'val2', le: now - 18 * H, etapes: [{ e: 'envoyee', le: now - 30 * H }, { e: 'val1', le: now - 18 * H, qui: 'CNE TEST' }] },
+            d2: { genre: 'mer', etape: 'traite', le: now - 100 * H, etapes: [{ e: 'traite', le: now - 100 * H, qui: 'SCH ASSIST' }] },
+            env1: { genre: 'cr', etape: 'traite', le: now - 90 * H, etapes: [{ e: 'chorus', le: now - 200 * H }, { e: 'traite', le: now - 90 * H, qui: 'SCH ASSIST' }] } }));
+        localStorage.setItem('mission_bibliotheque', JSON.stringify([{ debut: '15/09/2026 07:00:00', forfaitOfficiel: 300, envoiId: 'env1', snapshot: { LIBELLE_MISSION: 'EXERCICE NIMES', JOURS: [{ L: 'PAYANT' }, {}], IK_A: true, IK_KM_A: 240, IK_MONTANT_A: 98.4 } }]));
+        localStorage.setItem('trigone_cr_envoyes_total', '7');
+        localStorage.setItem('trigone_boite', JSON.stringify([{ id: 'x1', nature: 'niveau1', n: 1, ids: ['z1'], noms: 'SCH BERNARD', objet: 'MISSION LYON', dates: '14/10/2026', le: now - 50 * H, statut: 'nouveau' }]));
+        localStorage.removeItem('trigone_roles_locaux');
+    });
+    await k.reload(); await attendre(2500);
+    await k.evaluate(() => { document.querySelectorAll('.JUM-ACC,.JUM-PRES,.JUM-NOUV,.JUM-VERROU,.JUM-PAVE,.JUM-MDP-FOND,.AIDE-BULLE').forEach(x => x.remove()); AIDE_OUVRIR(); }); await attendre(800);
+    const kd = async q => { await k.fill('.AIDE-SAISIE input', q); await k.click('.AIDE-SAISIE button'); await attendre(1300); return derniere(k); };
+    r = await kd('elle en est où ma MER ?');
+    verifier(/STAGE FHU/.test(r) && /Chez le VALIDEUR 2/.test(r) && /CNE TEST/.test(r) && await k.evaluate(() => !!document.querySelector('.AIDE-FRISE')), '« elle en est où ma MER ? » : la demande, la frise, chez le VALIDEUR 2 depuis… (validée par CNE TEST)');
+    r = await kd('et celle de madrid ?');
+    verifier(/REUNION/.test(r) && /Traitée par l'assistant Chorus DT/.test(r), 'suite « et celle de Madrid ? » : l\'autre demande, traitée par l\'assistant Chorus DT');
+    r = await kd('combien je vais toucher pour nogent');
+    verifier(/environ 540 €/.test(r) && /4 nuits/.test(r) && /90,00 €/.test(r), '« combien je vais toucher » : estimation repas + nuits (Nogent, 540 €)');
+    r = await kd('mon cr il en est où');
+    verifier(/EXERCICE NIMES/.test(r) && /traité par l'assistant Chorus DT/.test(r) && /300,00 €/.test(r), '« mon cr il en est où » : compte-rendu traité, forfait 300 €');
+    r = await kd('combien de missions j ai faites');
+    verifier(/1<\/b> mission|1 mission/.test(await k.evaluate(() => document.querySelectorAll('.AIDE-M.lui')[document.querySelectorAll('.AIDE-M.lui').length - 1].innerHTML)) && /98,40 €/.test(r) && /Bronze/.test(r), '« combien de missions j\'ai faites » : missions, IK, médaille');
+    r = await kd('j ai quoi à valider ?');
+    verifier(/pas le rôle de valideur/.test(r), 'sans le rôle de valideur : rien à valider (et rien de la Boîte d\'un autre rôle)');
+    r = await kd('j ai combien de trucs à traiter');
+    verifier(/Je n'ai pas accès à cette information depuis votre compte/.test(r), 'sans le rôle d\'assistant Chorus DT : « Je n\'ai pas accès à cette information depuis votre compte »' + (/Je n'ai pas accès/.test(r) ? '' : ' [' + r.slice(0, 200) + ']'));
+    await k.evaluate(() => localStorage.setItem('trigone_roles_locaux', JSON.stringify({ valideur1: true })));
+    r = await kd('des demandes à signer ?');
+    verifier(/1 demande/.test(r) && /SCH BERNARD/.test(r), 'VALIDEUR 1 : « des demandes à signer ? » : la demande de SCH BERNARD, depuis 2 jours');
+    r = await kd('100 dollars en euros');
+    verifier(/= 92,00 €/.test(r), '« 100 dollars en euros » : 92,00 €');
+    r = await kd('le codier est à jour ?');
+    verifier(/Codier FD/.test(r) && /\d\d\/\d\d\/20\d\d/.test(r), '« le codier est à jour ? » : date de la version du codier');
+    r = await kd('les taux ik sont actualisés ?');
+    verifier(/Indemnités kilométriques/.test(r) && /0,32/.test(r), '« les taux ik sont actualisés ? » : barème et sa date');
+    await k.evaluate(() => { D.objet = 'STAGE'; D.trajets.aller.dateDep = '2030-10-12T07:00'; D.trajets.retour.dateArr = '2030-10-10T18:00'; D.codeFD = 'FD1ADCW21C'; });
+    r = await kd('vérifie ma demande');
+    verifier(/retour est avant le départ/.test(r) && /fermé/.test(r) && /FD1ADAJ22Y/.test(r) && /Identité/.test(r), '« vérifie ma demande » : dates incohérentes, code FD fermé (remplaçant), champs manquants par onglet');
+    await k.evaluate(() => { AIDE_FERMER(); MSG_ERREUR('Fichier trop lourd', 'Ce fichier dépasse 10 Mo.'); }); await attendre(600);
+    await k.click('#MSG-POURQUOI'); await attendre(1200);
+    verifier(/Fichier trop lourd/.test(await derniere(k)) && /taille permise/.test(await derniere(k)), 'message d\'erreur : « Pourquoi ce message ? » ouvre la mascotte qui l\'explique');
+    r = await kd('t es nul');
+    verifier(/conversation est coupée/.test(r) && await k.evaluate(() => document.querySelector('.AIDE-SAISIE input').disabled) && await k.evaluate(() => !/nul/.test(document.querySelector('.AIDE-FIL').innerText.split('Je ne poursuis')[0].slice(-40))), 'propos insultant : retiré, conversation coupée, saisie bloquée');
+    const ins = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'espèce de con' }).then(() => 200, e => e.statut + ' ' + e.message));
+    verifier(/^400 .*insultants/.test(ins), 'serveur : question insultante refusée à l\'IA (' + ins + ')');
+    await k.evaluate(() => localStorage.removeItem('trigone_aide_coupee'));
+
     verifier(!erreurs.length, 'aucune erreur JavaScript' + (erreurs.length ? ' : ' + erreurs.join(' | ') : ''));
     await b.close();
 };

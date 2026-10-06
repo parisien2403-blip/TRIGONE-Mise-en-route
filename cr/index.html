@@ -11,10 +11,11 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=206"></script>
-<script src="../aide/moteur.js?v=206"></script>
-<script src="../aide/donnees.js?v=206"></script>
-<script src="../aide/aide.js?v=206"></script>
+<script src="../jumelage.js?v=207"></script>
+<script src="../aide/moteur.js?v=207"></script>
+<script src="../aide/donnees.js?v=207"></script>
+<script src="../aide/circuit.js?v=207"></script>
+<script src="../aide/aide.js?v=207"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -8745,6 +8746,16 @@ function AFFICHER_MSG_CENTRE(opts) {
         };
         boutonsZone.appendChild(btn);
     });
+    // Message d'erreur : « Pourquoi ? » fait expliquer la mascotte d'aide (aide/aide.js).
+    var pqAncien = document.getElementById('MSG-POURQUOI'); if (pqAncien) pqAncien.remove();
+    if (opts.icone === '⛔' && window.AIDE_OUVRIR) {
+        var pq = document.createElement('button');
+        pq.type = 'button'; pq.id = pq.className = 'MSG-POURQUOI'; pq.textContent = '🤔 Pourquoi ce message ?';
+        pq.style.cssText = 'display:block; margin:10px auto 0; border:0; background:none; color:#9a6f22; font:inherit; font-size:0.86em; font-weight:800; text-decoration:underline; cursor:pointer;';
+        var errT = opts.titre || '', errX = opts.texte || '';
+        pq.onclick = function() { FERMER_MSG(); setTimeout(function() { window.AIDE_OUVRIR({ erreur: { titre: errT, texte: errX } }); }, 320); };
+        boutonsZone.parentNode.insertBefore(pq, boutonsZone.nextSibling);
+    }
     overlay.classList.remove('HIDDEN');
     AJUSTER_BOUTONS_MSG();
     AJUSTER_HAUTEUR_MSG();
@@ -11764,7 +11775,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 301;
+var APP_CODE_VERSION = 302;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
