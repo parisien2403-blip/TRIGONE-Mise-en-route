@@ -790,6 +790,35 @@ async function distanceRoute(p1, p2, traces) {
     throw new Error('itinéraire');
 }
 
+// ----- Aide de la mascotte : consigne donnée à l'IA -----
+function texteSimple(h) { return String(h || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/[ \t]+/g, ' ').trim(); }
+function consigneAide(base, fiches, ecran, appli) {
+    return [
+        'Tu es la mascotte d\'aide de TRIGONE, l\'application du 4e RIISC pour les demandes d\'ordre de mise en route (avant une mission) et les comptes-rendus de mission (horodatages, frais et justificatifs, au retour). Tu aides un militaire à se servir de l\'application.',
+        'RÈGLES :',
+        '- Réponds en français, en vouvoyant, simplement : 2 à 6 phrases, ou des étapes numérotées courtes. Mets en **gras** les noms des boutons et des écrans.',
+        '- Appuie-toi UNIQUEMENT sur les fiches et la description des écrans ci-dessous. N\'invente aucun bouton, écran, règle, montant, taux ou délai.',
+        '- Pour dire où cliquer, sers-toi de la description des écrans (en commençant par l\'écran ouvert par l\'utilisateur).',
+        '- Si la réponse n\'y est pas, dis-le franchement et propose « Paramètres › Aide › Signaler un problème », ou de demander à l\'assistant Chorus DT ou à son chef.',
+        '- Droits, barèmes et réglementation : c\'est l\'assistant Chorus DT qui fait foi.',
+        '- Ne demande jamais d\'information personnelle (nom, matricule, code, mot de passe) et n\'en répète aucune.',
+        '- Question sans rapport avec TRIGONE ou les missions : réponds poliment que tu n\'aides que pour TRIGONE.',
+        '- Si une fiche ci-dessous t\'a servi, termine ta réponse par [FICHE:identifiant] (une seule).',
+        'VOCABULAIRE DES MILITAIRES : « chef », « juteux », « cds », « N+1 », « adjudant », « capitaine » = le plus souvent le VALIDEUR 1 ; « chef de corps », « colon », « pacha », « N+2 » = VALIDEUR 2 ; « assist », « Chorus », « la DT » = l\'assistant Chorus DT ; « OM », « OMR », « DOMR », « ordre de mission » = la demande de mise en route ; « CR » = compte-rendu ; « VL perso », « caisse » = véhicule personnel ; « IK », « bornes » = indemnités kilométriques ; « code FD », « Fd@ligne » = code d\'engagement ; « NDS », « DAF » = la note de service ou la décision à joindre ; « mdp » = code de connexion ; « perm » = absence.',
+        'APPLI OUVERTE : ' + appli + '.',
+        ecran ? 'ÉCRAN OUVERT PAR L\'UTILISATEUR : ' + ecran.nom + ' — ' + ecran.d : '',
+        'LES ÉCRANS DE TRIGONE (où cliquer) :',
+        base.ecrans.map(e => '* ' + e.nom + ' : ' + e.d).join('\n'),
+        fiches.length ? 'FICHES UTILES :\n' + fiches.map(f => '[' + f.id + '] ' + f.t + ' :\n' + texteSimple(f.r)).join('\n\n') : 'Aucune fiche ne correspond directement à la question.'
+    ].filter(Boolean).join('\n');
+}
+// Tests locaux (MODE_TEST et AIDE_IA_SIMULEE) : réponse fabriquée, sans appeler Workers AI.
+const iaSimulee = { run: async (modele, o) => {
+    const sys = o.messages[0].content, q = o.messages[o.messages.length - 1].content;
+    const id = (/\[([a-z0-9-]+)\] /.exec(sys.split('FICHES UTILES :')[1] || '') || [])[1];
+    return { response: 'Réponse simulée à « ' + q + ' » : touchez **Documents**.' + (id ? ' [FICHE:' + id + ']' : '') };
+} };
+
 async function api(requete, env, url, ctx) {
     const kv = env.TRIGONE_KV;
     if (!kv || !env.TRIGONE_DB) return erreur(503, 'Boîte aux lettres non configurée.');
@@ -1497,6 +1526,50 @@ async function api(requete, env, url, ctx) {
         return json({ ok: true, appareils: moi.compte.appareils.map(a => ({ id: a.id, nom: a.nom || 'Appareil', cree: a.cree || 0, moi: a.id === moi.appareil.id })) });
     }
     // Réinitialisation acceptée : chaque appareil du compte s'efface à son ouverture, puis se retire du compte.
+    // ----- Aide de la mascotte : l'IA (Workers AI) répond à partir de la base de l'aide (aide/base.json) -----
+    // Comptes connectés seulement ; limites par compte et pour tout TRIGONE, par jour, pour rester dans le quota gratuit
+    // de Workers AI. La question n'est pas conservée.
+    if (chemin === 'aide/ia' && methode === 'POST') {
+        const ia = env.MODE_TEST === '1' && env.AIDE_IA_SIMULEE === '1' ? iaSimulee : env.AI;
+        if (!ia) return erreur(503, 'L\'IA n\'est pas disponible.');
+        const d = await requete.json().catch(() => ({}));
+        const question = String(d.question || '').replace(/\s+/g, ' ').trim().slice(0, 400);
+        if (question.length < 2) return erreur(400, 'Question vide.');
+        const jour = new Date().toISOString().slice(0, 10);
+        const maxCompte = +env.AIDE_IA_MAX_COMPTE || 10, maxJour = +env.AIDE_IA_MAX_JOUR || 40;
+        const cleC = 'aide-ia:' + jour + ':' + moi.mail, cleJ = 'aide-ia-jour:' + jour;
+        const nC = +(await kv.get(cleC)) || 0, nJ = +(await kv.get(cleJ)) || 0;
+        if (nC >= maxCompte) return erreur(429, 'Vous avez posé ' + maxCompte + ' questions à l\'IA aujourd\'hui : elle revient demain.');
+        if (nJ >= maxJour) return erreur(429, 'L\'IA a atteint sa limite du jour pour TRIGONE : elle revient demain.');
+        const rb = await env.ASSETS.fetch(new Request(new URL('/aide/base.json', url).toString()));
+        if (!rb.ok) return erreur(503, 'Base de l\'aide introuvable.');
+        const base = await rb.json();
+        const fiches = (Array.isArray(d.fiches) ? d.fiches : []).slice(0, 4).map(id => base.fiches.find(f => f.id === id)).filter(Boolean);
+        const ecran = base.ecrans.find(e => e.id === d.ecran) || null;
+        const historique = (Array.isArray(d.historique) ? d.historique : []).slice(-4)
+            .map(h => ({ role: h && h.de === 'ia' ? 'assistant' : 'user', content: String((h && h.texte) || '').slice(0, 800) })).filter(h => h.content);
+        const messages = [{ role: 'system', content: consigneAide(base, fiches, ecran, d.app === 'cr' ? 'Compte-rendu' : 'Mise en route') }].concat(historique, [{ role: 'user', content: question }]);
+        await kv.put(cleC, String(nC + 1), { expirationTtl: 172800 });
+        await kv.put(cleJ, String(nJ + 1), { expirationTtl: 172800 });
+        const modele = env.AIDE_MODELE || '@cf/mistralai/mistral-small-3.1-24b-instruct';
+        let texte = '';
+        try {
+            const r = await ia.run(modele, { messages, max_tokens: 500, temperature: 0.2 });
+            texte = String((r && (r.response || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '').trim();
+        } catch (e) {
+            console.log('aide/ia : ' + (e && e.message || e));
+            // Quota gratuit de Workers AI épuisé (compte Workers Free : rien n'est facturé, l'IA revient le lendemain).
+            if (/allocation|quota|4006|neurons/i.test(String(e && e.message || e))) return erreur(429, 'L\'IA a atteint sa limite du jour pour TRIGONE : elle revient demain.');
+            return erreur(503, 'L\'IA n\'a pas pu répondre pour le moment.');
+        }
+        if (!texte) return erreur(503, 'L\'IA n\'a pas pu répondre pour le moment.');
+        // [FICHE:id] en fin de réponse : la fiche dont elle s'est servie (bouton « Me montrer » et page de la notice).
+        let fiche = '';
+        texte = texte.replace(/\[FICHE:\s*([a-z0-9-]+)\s*\]/gi, (m, id) => { if (!fiche && fiches.some(f => f.id === id)) fiche = id; return ''; }).trim().slice(0, 2500);
+        const rep = { ok: true, reponse: texte, fiche, restant: Math.max(0, maxCompte - nC - 1) };
+        if (env.MODE_TEST === '1') rep.essai = { modele, fiches: fiches.map(f => f.id), ecran: ecran ? ecran.id : '', messages };
+        return json(rep);
+    }
     if (chemin === 'compte/etat' && methode === 'GET') {
         const l = await kv.get('reinit:' + moi.mail, 'json');
         return json({ ok: true, compte: moi.mail, reinit: Array.isArray(l) && l.indexOf(moi.appareil.id) >= 0, attente: !!moi.compte.attente, sansMail: !!moi.compte.sansMail,

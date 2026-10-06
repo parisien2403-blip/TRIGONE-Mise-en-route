@@ -32,7 +32,9 @@ module.exports = async function() {
         'serveur : la sauvegarde est chiffrée (aucune donnée en clair)');
     await a.evaluate(() => JUMELAGE_FERMER_SAUVEGARDE_AUTO());
     // Appareil B : nouveau téléphone, sans profil ; connexion au même compte → tout revient tout seul.
-    const bb = await appareil('B', () => { localStorage.removeItem('trigone_reglages_communs'); localStorage.removeItem('mer_config_faite'); });
+    // (Profil effacé après la connexion : sans profil ni compte, l'accueil est imposé dès l'ouverture depuis la V197.)
+    const bb = await appareil('B');
+    await bb.evaluate(() => { localStorage.removeItem('trigone_reglages_communs'); localStorage.removeItem('mer_config_faite'); localStorage.removeItem('mer_bibliotheque'); });
     const compteB = await bb.evaluate(() => JSON.parse(localStorage.getItem('trigone_compte') || '{}').appareil);
     await bb.evaluate(() => JUMELAGE_RESTAURER_COMPTE({ apresConnexion: true })); await attendre(7000);
     const r = await bb.evaluate(() => ({ biblio: localStorage.getItem('mer_bibliotheque') || '', compte: JSON.parse(localStorage.getItem('trigone_compte') || '{}').appareil,

@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 248;
+var APP_CODE_VERSION = 249;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -222,7 +222,7 @@ function TPL_MENU_PC() {
             itemC(!dos, 'MER_RESULTATS_VERIF = null; MER_DOSSIER.CHORUS = null; SHOW_PAGE(\'CHORUS\')', MER_ICONES.ACCUEIL, 'Accueil Chorus DT', MER_NB_CHORUS() || '').replace('class="PC-NAV', 'data-mvt="MER:CHORUS" class="PC-NAV') +
             (MER_COMPTE_ACTIF() ? itemC(dos === 'registre', 'MER_RESULTATS_VERIF = null; OUVRIR_REGISTRE(\'tout\')', MER_ICONES.REGISTRE, 'Registre des OMR') : '') +
             itemC(false, 'MER_RESULTATS_VERIF = null; MER_DOSSIER.CHORUS = null; SHOW_PAGE(\'CHORUS\'); setTimeout(function() { var b = document.querySelector(\'#PAGE-STAGE input[type=file]\'); if (b) b.click(); }, 50)', MER_ICONES.PDF, 'Contrôler un PDF') +
-            '<div class="PC-BAS">' + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
+            '<div class="PC-BAS">' + (window.AIDE_BOUTON_PC ? AIDE_BOUTON_PC() : '') + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
                 '<button type="button" class="PC-BASCULE" onclick="SHOW_PAGE(\'ACCUEIL\')"><img src="logo_mer.webp" alt=""><span>Passer à Mise en route</span></button>' +
                 '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
                 '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
@@ -235,7 +235,7 @@ function TPL_MENU_PC() {
         item('BIBLIOTHEQUE', MER_ICONES.BIBLIOTHEQUE, 'Bibliothèque') +
         item('PANIER', MER_ICONES.PANIER, 'Documents', n || '') +
         (MER_EST_VALIDEUR() ? '<div class="PC-SEP"></div>' + item('VALIDATION', MER_ICONES.VALIDEUR, 'Espace valideur', MER_NB_A_SIGNER() || '') : '') +
-        '<div class="PC-BAS">' + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
+        '<div class="PC-BAS">' + (window.AIDE_BOUTON_PC ? AIDE_BOUTON_PC() : '') + (window.JUMELAGE_NOTICE_BOUTON ? JUMELAGE_NOTICE_BOUTON() : '') +
             '<button type="button" class="PC-BASCULE" onclick="JUMELAGE_ALLER(\'cr\')"><img src="cr/logo_cr_accueil.png" alt=""><span>Passer au Compte-rendu</span></button>' +
             '<div class="PC-PIED"><span>G.-P. BOUQUET</span><span>V' + APP_VERSION_AFFICHEE + '</span></div>' +
         '</div>';

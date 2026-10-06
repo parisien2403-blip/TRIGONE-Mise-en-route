@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 298,
-  "appCodeMessage": "Plus simple : le QR de connexion, le code de liaison et la sauvegarde par fichier disparaissent. Sur un autre appareil, « Se connecter » avec votre adresse et votre code de connexion suffit ; tout est sauvegardé automatiquement dans votre compte.",
+  "appCodeVersion": 299,
+  "appCodeMessage": "Nouveau : la mascotte d'aide ! Touchez-la (à côté de la lune, ou « Besoin d'aide ? » sur PC) et posez votre question comme vous parlez : elle répond avec la notice, vous montre où cliquer, et peut demander à l'IA.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""

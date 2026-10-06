@@ -9,6 +9,8 @@
   "assets": { "directory": ".", "binding": "ASSETS" },
   "kv_namespaces": [{ "binding": "TRIGONE_KV" }],
   "d1_databases": [{ "binding": "TRIGONE_DB", "database_name": "trigone-boite" }],
+  // IA de la mascotte d'aide (route aide/ia) : Workers AI, compris dans le compte Cloudflare (quota gratuit par jour).
+  "ai": { "binding": "AI" },
   "vars": {
     "DOMAINES_AUTORISES": "",
     "EXPEDITEUR_MAIL": "noreply@trigone-app.com",
