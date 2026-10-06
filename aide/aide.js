@@ -262,18 +262,76 @@
     var CLE_DERNIER = 'trigone_aide_dernier';
     // Politesse : « merci » → la mascotte lève le pouce ; « bonjour », « au revoir » → une vraie réponse.
     var IMG_POUCE = B + 'mascotte-pouce.webp';
+    // ---------- Politesse : tout ce qu'on dit à quelqu'un, avec la réponse qui va ----------
+    // Un message fait seulement de formules (« bonjour ça va ? », « merci bonne journée », « désolé », « t'es qui ? ») reçoit
+    // une réponse composée ; s'il contient une vraie question, la question passe (et « stp » donne « Bien sûr ! »).
+    // Postures : pouce (merci), salut militaire (au revoir, mes respects), main levée (bonjour), sourire (compliment, rire).
+    var FORMULES = {
+        bonjour: ['bonjour', 'bonsoir', 'salut', 'coucou', 'hello', 'hey', 'hi', 'yo', 'bjr', 'bsr', 'slt', 'cc', 're', 'rebonjour', 're bonjour', 'rebonsoir', 'wesh', 'bien le bonjour', 'bonjour a toi', 'bonjour a vous', 'hola'],
+        respects: ['mes respects', 'mes respects mon', 'respects'],
+        cava: ['ca va', 'cava', 'sa va', 'ca va bien', 'comment ca va', 'comment ca se passe', 'comment vas tu', 'comment tu vas', 'comment allez vous', 'vous allez bien', 'tu vas bien', 'ca roule', 'la forme', 'en forme', 'quoi de beau', 'cv', 'ca gaze', 'tout va bien', 'bien ou quoi', 'bien ou bien'],
+        bien: ['je vais bien', 'ca va bien', 'tres bien', 'bien et toi', 'bien et vous', 'ca va et toi', 'ca va et vous', 'oui ca va', 'nickel et toi', 'super et toi', 'et toi', 'et vous', 'en pleine forme', 'impeccable et toi'],
+        mal: ['bof', 'pas top', 'pas terrible', 'ca va pas', 'ca ne va pas', 'je suis fatigue', 'je suis fatiguee', 'fatigue', 'fatiguee', 'creve', 'crevee', 'je suis creve', 'je suis crevee', 'epuise', 'epuisee', 'je suis epuise', 'naze', 'lessive', 'claque', 'pas la forme', 'mal', 'pas bien', 'dur dur', 'journee difficile'],
+        merci: ['merci', 'mrc', 'mci', 'thx', 'thanks', 'thank you', 'cimer', 'merci beaucoup', 'merci bien', 'merci bcp', 'mille mercis', 'mille merci', 'merci mille fois', 'merci infiniment', 'je vous remercie', 'je te remercie', 'merci a toi', 'merci a vous', 'merci chef', 'merci mascotte', 'c est gentil', 'c est sympa', 'trop sympa', 'merci pour tout', 'merci pour l info', 'merci pour ton aide', 'merci pour votre aide', 'merci de ton aide', 'merci de votre aide', 'merci quand meme', 'grand merci', 'un grand merci'],
+        ok: ['ok', 'okay', 'oki', 'okey', 'okok', 'd accord', 'dac', 'dacc', 'entendu', 'compris', 'recu', 'bien recu', 'bien compris', 'ca marche', 'parfait', 'nickel', 'top', 'super', 'genial', 'cool', 'impec', 'impeccable', 'excellent', 'au top', 'trop bien', 'c est bon', 'c est note', 'note', 'vu', 'oui', 'ouais', 'ouep', 'yes', 'yep', 'oui oui', 'tres bien', 'bien', 'formidable', 'magnifique', 'ah ok', 'je vois', 'logique', 'ca roule'],
+        non: ['non', 'non merci', 'rien', 'c est tout', 'ca ira', 'pas besoin', 'plus rien', 'ce sera tout', 'rien d autre', 'non c est bon', 'c est bon merci', 'non rien', 'nan', 'nope', 'laisse tomber', 'laissez tomber', 'tant pis'],
+        aurevoir: ['au revoir', 'aurevoir', 'bye', 'bye bye', 'ciao', 'tchao', 'a plus', 'a +', 'a+', 'a plus tard', 'a bientot', 'a demain', 'a la prochaine', 'a tout a l heure', 'a tte', 'adieu', 'bonne continuation', 'je vous laisse', 'je te laisse', 'salut a plus', 'je file', 'je me sauve', 'a la revoyure', 'bonne journee', 'bonne soiree', 'bonne nuit', 'bon week end', 'bon weekend', 'bon we', 'bonne semaine', 'bonne fin de journee', 'bonne fin de soiree', 'bonne fin de semaine', 'bonne mission', 'bonne route', 'bon retour'],
+        pardon: ['desole', 'desolee', 'pardon', 'excuse moi', 'excusez moi', 'excuse', 'dsl', 'je m excuse', 'my bad', 'oups', 'oops', 'je me suis trompe', 'je me suis trompee', 'autant pour moi', 'au temps pour moi', 'erreur de ma part', 'mauvaise manip'],
+        bravo: ['bravo', 'bien joue', 'chapeau', 't es fort', 'tu es fort', 't es forte', 't es top', 'tu es top', 't es genial', 'tu es genial', 't es le meilleur', 'tu es le meilleur', 'super mascotte', 'j adore', 'trop fort', 'tu geres', 't es au top', 'excellent travail', 'bon travail', 'beau travail', 'felicitations', 'tu assures', 't assures', 't es un chef', 't es un boss', 'la classe', 'trop cool', 'tu es efficace', 'efficace', 'bien vu', 'impressionnant', 'pas mal'],
+        rire: ['mdr', 'lol', 'ptdr', 'haha', 'hahaha', 'ahah', 'ahahah', 'hihi', 'xd', 'mort de rire', 'trop drole', 'marrant', 'drole', 'hehe', 'rofl'],
+        qui: ['qui es tu', 't es qui', 'tu es qui', 'qui etes vous', 'vous etes qui', 'tu t appelles comment', 'comment tu t appelles', 'comment vous appelez vous', 'c est quoi ton nom', 'quel est ton nom', 'ton nom', 'tu es un robot', 't es un robot', 'tu es une ia', 't es une ia', 'tu es humain', 't es humain', 'tu es une vraie personne', 't es un bot', 'tu es un bot', 'c est qui', 'tu es quoi', 't es quoi', 'tu sers a quoi', 'tu fais quoi', 'que sais tu faire', 'tu sais faire quoi'],
+        la: ['tu es la', 't es la', 'vous etes la', 'allo', 'allo allo', 'il y a quelqu un', 'y a quelqu un', 'ohe', 'tu m entends', 'tu me recois', 'test', 'ca marche', 'tu marches'],
+        perdu: ['aide moi', 'aidez moi', 'au secours', 'help', 'sos', 'je suis perdu', 'je suis perdue', 'je comprends rien', 'j y comprends rien', 'je comprends pas', 'je ne comprends pas', 'je sais pas quoi faire', 'je ne sais pas quoi faire', 'je suis largue', 'je suis larguee', 'besoin d aide', 'j ai besoin d aide', 'je bloque', 'je suis bloque', 'je suis bloquee', 'je sais pas', 'aide'],
+        ordres: ['a vos ordres', 'a vos ordres chef', 'garde a vous', 'repos', 'a votre service', 'present', 'presente'],
+        fetes: ['bonne annee', 'joyeux noel', 'bonnes fetes', 'bonnes vacances', 'bon appetit', 'bonne chance', 'bon courage', 'joyeux anniversaire', 'bonne fete', 'bonnes fetes de fin d annee', 'bonne sante', 'meilleurs voeux'],
+        tendre: ['je t aime', 'je t adore', 'tu es mignon', 't es mignon', 't es beau', 'tu es beau', 'bisous', 'bisou', 'gros bisous', 'je vous aime', 't es chou', 'trop mignon'],
+        dors: ['tu dors', 'reveille toi', 'tu es reveille', 't es reveille', 'tu fais quoi la'],
+        stp: ['stp', 'svp', 's il te plait', 's il vous plait', 'please', 'plz', 'stplait', 'steuplait']
+    };
+    var REMPLISSAGE = ' je suis mascotte chef toi vous a toi a vous beaucoup encore alors ah oh eh bon ben hein bah ouf mon ma mes adjudant adjudant chef sergent caporal lieutenant capitaine commandant colonel general major monsieur madame commissaire bien et aussi trop tres vraiment quand meme deja tout donc puis enfin ';
+    var FORMULES_TRIEES = [];
+    Object.keys(FORMULES).forEach(function(k) { FORMULES[k].forEach(function(f) { FORMULES_TRIEES.push([' ' + f + ' ', k]); }); });
+    FORMULES_TRIEES.sort(function(a, b) { return b[0].length - a[0].length; });
     function politesse(question) {
-        var s = window.AIDE_MOTEUR.normal(question).trim(), a = appel(), vous = a ? ', ' + esc(a) : '';
-        var court = s.split(' ').length <= 6;
-        if (court && /^(merci|mrc|mci|thanks|thx|top|super|parfait|nickel|genial|cool|impec|impeccable|ok merci|d accord merci|c est bon|ca marche|bien recu|au top|trop bien|excellent|merci beaucoup|merci bien|merci a toi|merci a vous)( |$)/.test(s))
-            return '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + '\u00a0! Si vous avez une autre question, je suis là.</span></div>';
-        if (court && /^(au revoir|aurevoir|bye|a plus|a\+|bonne journee|bonne soiree|bonne nuit|a bientot|ciao|tchao|salut a plus|bonne mission)( |$)/.test(s))
-            return '<div class="AIDE-POUCE"><img src="' + B + 'aide/mascotte-salut.webp" alt=""><span>Au revoir' + vous + ', et bonne mission\u00a0! 🫡</span></div>';
-        if (s.split(' ').length <= 3 && /^(bonjour|salut|hello|coucou|bonsoir|hey|yo|bjr|slt|cc)( |$)/.test(s))
-            return '\u0001salut' + 'Bonjour' + vous + '\u00a0! Que puis-je faire pour vous\u00a0?<div class="AIDE-PUCES">' + puces() + '</div>';
-        if (court && /^(ca va|comment ca va|ca va et toi|tu vas bien|comment vas tu|cv)( |$)/.test(s))
-            return 'Très bien, merci' + vous + '\u00a0! Toujours prêt à vous aider. Une question sur TRIGONE\u00a0?';
-        return '';
+        var s = ' ' + window.AIDE_MOTEUR.normal(question).trim() + ' ', a = appel(), vous = a ? ', ' + esc(a) : '', vu = {}, n = 0;
+        if (s.trim().split(' ').length > 12) return null;
+        FORMULES_TRIEES.forEach(function(f) { while (s.indexOf(f[0]) >= 0) { s = s.replace(f[0], ' '); vu[f[1]] = (vu[f[1]] || 0) + 1; n++; } });
+        var reste = s.trim().split(' ').filter(function(m) { return m && REMPLISSAGE.indexOf(' ' + m + ' ') < 0; });
+        if (!n || reste.length) return null;                                     // une vraie question : elle passe
+        var t = window.AIDE_MOTEUR.normal(question), html = [], pose = '', fin = '', PRES = ' <button type="button" class="AIDE-LIEN" data-presentation="1">Ce que je sais faire ›</button>';
+        if (vu.pardon) html.push('Pas de souci' + vous + ', ça arrive à tout le monde !');
+        if (vu.respects) { html.push('Mes respects' + vous + ' !'); pose = 'garde'; }
+        else if (vu.bonjour) { html.push((/ re(bonjour| bonjour|bonsoir)? /.test(t) ? 'Re-bonjour' : / (bonsoir|bsr) /.test(t) ? 'Bonsoir' : 'Bonjour') + vous + ' !'); pose = pose || 'salut'; }
+        if (vu.ordres) html.push(/ repos /.test(t) ? 'Merci ! Je reste à votre service.' : 'Repos' + vous + ' 😄 ! C\'est moi qui suis à vos ordres.');
+        if (vu.cava) html.push('Je vais très bien, merci ! Et vous ?');
+        if (vu.bien && !vu.cava) html.push('Parfait, ça fait plaisir !');
+        if (vu.mal) html.push('Courage' + vous + ' ! Dites-moi ce qui coince : je vais essayer de vous simplifier la vie.');
+        if (vu.bravo) { html.push('Merci' + vous + ', ça me fait plaisir ! 😊'); pose = pose || 'content'; }
+        if (vu.rire) { html.push('😄 Content de vous faire sourire !'); pose = pose || 'content'; }
+        if (vu.tendre) { html.push('C\'est gentil 😊 Restons professionnels quand même !'); pose = pose || 'content'; }
+        if (vu.dors) html.push('Jamais ! Je suis disponible 24 h sur 24, même sans réseau.');
+        if (vu.la) html.push('Oui, je suis là' + vous + ' ! Je vous écoute.');
+        if (vu.qui) html.push('Je suis la <b>mascotte d\'aide de TRIGONE</b>. Je réponds avec la notice, les barèmes, le codier et votre propre circuit (demandes, comptes-rendus), sans réseau pour l\'essentiel. Je ne suis pas un humain : pour les questions imprévues, je peux demander à mon cerveau IA.' + PRES);
+        if (vu.perdu) html.push('Pas de panique' + vous + ' ! Dites-moi en quelques mots ce que vous voulez faire (« envoyer ma demande », « où en est mon CR »…), ou regardez ce que je sais faire.' + PRES);
+        if (vu.fetes) {
+            var f = / bonne annee | meilleurs voeux /.test(t) ? 'Bonne année à vous aussi' : / joyeux noel /.test(t) ? 'Joyeux Noël à vous aussi' : / bonnes fetes /.test(t) ? 'Bonnes fêtes à vous aussi' : / bonnes vacances /.test(t) ? 'Merci, bonnes vacances à vous' :
+                / bon appetit /.test(t) ? 'Bon appétit' : / joyeux anniversaire | bonne fete /.test(t) ? 'Merci beaucoup' : / bon courage | bonne chance /.test(t) ? 'Merci, à vous aussi' : 'Merci, à vous aussi';
+            html.push(f + vous + ' !');
+        }
+        if (vu.aurevoir || (vu.non && !vu.ok)) {
+            var au = / bonne nuit /.test(t) ? 'Bonne nuit' + vous + ', reposez-vous bien' : / bon week end | bon weekend | bon we /.test(t) ? 'Bon week-end' + vous : / bonne semaine | bonne fin de semaine /.test(t) ? 'Bonne semaine' + vous :
+                / bonne soiree | bonne fin de soiree /.test(t) ? 'Bonne soirée' + vous : / bonne journee | bonne fin de journee /.test(t) ? 'Bonne journée' + vous : / a demain /.test(t) ? 'À demain' + vous : / bonne route | bon retour /.test(t) ? 'Bonne route' + vous + ', soyez prudent' :
+                vu.non && !vu.aurevoir ? 'Très bien' + vous + '. Je reste là si besoin' : 'Au revoir' + vous;
+            var txt = (vu.merci ? 'Avec plaisir ! ' : '') + au + ', et bonne mission ! 🫡';
+            return { html: (html.length ? html.join(' ') + '<br>' : '') + '<div class="AIDE-POUCE"><img src="' + B + 'aide/mascotte-salut.webp" alt=""><span>' + txt + '</span></div>' };
+        }
+        if (vu.merci) return { html: (html.length ? html.join(' ') + '<br>' : '') + '<div class="AIDE-POUCE"><img src="' + IMG_POUCE + '" alt=""><span>Avec plaisir' + vous + ' ! Si vous avez une autre question, je suis là.</span></div>' };
+        if (vu.ok && !html.length) html.push('Très bien' + vous + ' ! Autre chose ?');
+        if (vu.stp && !html.length) { html.push('Bien sûr ! Que puis-je faire pour vous ?'); pose = 'content'; }
+        // Bonjour seul (ou avec « ça va ») : on propose des sujets.
+        if ((vu.bonjour || vu.respects) && !vu.qui && !vu.perdu) fin = ' Que puis-je faire pour vous ?<div class="AIDE-PUCES">' + puces() + '</div>';
+        if (!html.length) return null;
+        return { html: html.join(' ') + fin, pose: pose };
     }
     // Indemnités kilométriques : distance par la route (serveur TRIGONE, carte de l'IGN), puis montant selon la puissance.
     function repondreIk(q) {
@@ -326,7 +384,7 @@
         }
         ajouter({ de: 'moi', texte: question });
         var poli = politesse(question);
-        if (poli) { var sal = poli.indexOf('\u0001salut') === 0; ajouter({ de: 'lui', html: sal ? poli.slice(6) : poli, pose: sal ? 'salut' : '' }); return; }
+        if (poli) { ajouter({ de: 'lui', html: poli.html, pose: poli.pose || '' }); return; }
         // Le circuit de la personne (sa demande, son compte-rendu, ce qu'elle a à valider…), avant la notice.
         var ic = C && C.intention(question, contexte()), avant = lire(CLE_DERNIER);
         // « combien je vais toucher entre Libourne et Bordeaux » : indemnités kilométriques, pas l'estimation de la mission.
@@ -437,6 +495,7 @@
             if (t.dataset.ia !== undefined) { demanderIa(t.dataset.ia); return; }
             if (t.dataset.signaler) { window.AIDE_FERMER(); window.JUMELAGE_SIGNALER(); return; }
             if (t.dataset.rappelCr) { window.AIDE_FERMER(); executer({ a: 'cr:P0', c: '#BTN-RESTORE-BACKUP, #P0-MISSION-EN-COURS, .BTN-ACCUEIL' }); return; }
+            if (t.dataset.presentation) { window.AIDE_PRESENTATION(); return; }
             if (t.dataset.aller) { window.AIDE_FERMER(); executer({ a: t.dataset.aller }); return; }
             if (t.dataset.copier) { try { navigator.clipboard.writeText(t.dataset.copier); } catch (e) {} t.textContent = 'Copié ✓'; return; }
             if (t.dataset.civ) { try { localStorage.setItem(CLE_CIV, t.dataset.civ); } catch (e) {} accueil(); return; }
