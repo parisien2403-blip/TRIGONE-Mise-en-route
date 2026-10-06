@@ -28,6 +28,10 @@ module.exports = async function() {
     await attendre(2200);
     verifier(await t.isVisible('.AIDE-BULLE') && await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE')), 'première fois : la mascotte se signale (« Besoin d\'aide ? Touchez-moi »)');
     await t.click('.AIDE-PASTILLE'); await attendre(800);
+    const pres = await t.evaluate(() => ({ vis: !!document.querySelector('.AIDE-PRES') && document.querySelector('.AIDE-PRES').getClientRects().length > 0, q: document.querySelectorAll('.AIDE-PRES-Q').length,
+        img: /mascotte-pouce/.test((document.querySelector('.AIDE-PRES-SCENE img') || {}).src), fen: !!document.querySelector('.AIDE-FEN') }));
+    verifier(pres.vis && pres.q >= 10 && pres.img && !pres.fen, 'tout premier appui : page « Ce que je sais faire » (mascotte au pouce, ' + pres.q + ' questions à toucher)');
+    await t.click('.AIDE-PRES-GO'); await attendre(800);
     verifier(await t.isVisible('.AIDE-FEN') && /^Bonjour, mon adjudant, en quoi puis-je vous aider\s\?/.test(await derniere(t)) && (await t.$$('.AIDE-PUCE')).length === 4, 'fenêtre ouverte : « Bonjour, mon adjudant, en quoi puis-je vous aider ? » (grade ADJ), 4 sujets proposés');
     verifier(!(await t.isVisible('.AIDE-BULLE')) && !(await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE'))), 'ouverte une fois : la mascotte ne se signale plus');
     let r = await demander(t, 'jme rappel plu de mon mot2pass');
@@ -36,6 +40,14 @@ module.exports = async function() {
     verifier(/Refusées — à corriger/.test(r), 'jargon (« le juteux a refusé mon OM pk ») : demande refusée, corriger et renvoyer');
     r = await demander(t, 'merci beaucoup !');
     verifier(/Avec plaisir, mon adjudant/.test(r) && await t.evaluate(() => { const l = document.querySelectorAll('.AIDE-POUCE img'); return l.length && /mascotte-pouce/.test(l[l.length - 1].src); }), '« merci » : la mascotte lève le pouce (« Avec plaisir, mon adjudant ! »)');
+    await t.click('.AIDE-QUOI'); await attendre(500);
+    verifier(await t.isVisible('.AIDE-PRES') && !(await t.isVisible('.AIDE-FEN')), 'bouton « ? » de la discussion : rouvre « Ce que je sais faire »');
+    await t.click('.AIDE-PRES-Q:has-text("Combien la nuit à Paris")'); await attendre(800);
+    r = await derniere(t);
+    verifier(!(await t.isVisible('.AIDE-PRES')) && /Paris/.test(r) && /140,00/.test(r), 'question touchée (« Combien la nuit à Paris ? ») : posée dans la discussion, réponse 140,00 €');
+    await t.evaluate(() => { AIDE_FERMER(); AIDE_PRESENTATION(); }); await attendre(400);
+    await t.click('.AIDE-PRES-Q:has-text("Comment j\'envoie ma demande")'); await attendre(800);
+    verifier(/Prêtes à envoyer/.test(await derniere(t)), 'question touchée (« Comment j\'envoie ma demande ? ») : fiche de la notice');
     r = await demander(t, 'bonne journée');
     verifier(/Au revoir, mon adjudant, et bonne mission/.test(r), '« bonne journée » : « Au revoir, mon adjudant, et bonne mission ! »');
     r = await demander(t, 'salut');
@@ -160,6 +172,9 @@ module.exports = async function() {
     verifier(await pc.evaluate(() => document.querySelector('.AIDE-FOND').classList.contains('pc') && document.querySelector('.AIDE-FEN').getBoundingClientRect().right > innerWidth - 40), 'PC : la fenêtre s\'ouvre en bas à droite, l\'écran reste visible');
     await pc.evaluate(() => SHOW_PAGE('PANIER')); await attendre(300);
     verifier(!!(await pc.$('.AIDE-FOND')) && !!(await pc.$('.PC-BAS .AIDE-CARTE-PC')), 'PC : la carte reste dans le menu après un changement de page');
+    await pc.evaluate(() => AIDE_FERMER()); await pc.click('.PC-BAS .AIDE-CARTE-PC-QUOI'); await attendre(500);
+    verifier(await pc.isVisible('.AIDE-PRES'), 'PC : « Ce que la mascotte sait faire › » sous la carte ouvre la page des questions à toucher');
+    await pc.evaluate(() => AIDE_PRESENTATION_FERMER());
 
     // ----- Compte-rendu : même aide, sujets du Compte-rendu, « Me montrer » vers Mise en route -----
     const c = await page({ width: 412, height: 860 }, 'cr/', 'CR');
@@ -169,6 +184,7 @@ module.exports = async function() {
         'fenêtre de médaille : « Bravo, mon adjudant ! … Encore 10 et c\'est l\'Or ! », mascotte aux deux pouces');
     await c.evaluate(() => FERMER_ECRAN_MEDAILLE()); await attendre(500);
     await c.click('.AIDE-PASTILLE'); await attendre(800);
+    await c.click('.AIDE-PRES-GO'); await attendre(800);
     verifier(await c.evaluate(() => !!document.querySelector('.AIDE-PUCE[data-fiche="cr-commencer"]')), 'Compte-rendu : sujets du compte-rendu proposés');
     r = await demander(c, 'combien de repas je met');
     verifier(/Repas midi/.test(r), 'Compte-rendu : « combien de repas je met » : frais de repas');

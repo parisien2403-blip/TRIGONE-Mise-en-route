@@ -340,8 +340,14 @@
                 ajouter({ de: 'lui', html: msg + '<div class="AIDE-ACTIONS"><button type="button" class="AIDE-LIEN" data-notice="">📖 Ouvrir la notice</button></div>' });
             });
     }
-    window.AIDE_OUVRIR = function() {
-        if (fen) return;
+    // demande (facultatif) : { fiche: id } ou { q: texte }, touchée sur la page « Ce que je sais faire ».
+    function poser(d) {
+        if (!d || !moteur) return;
+        var f = d.fiche && moteur.fiche(d.fiche);
+        if (f) { ajouter({ de: 'moi', texte: d.l || f.t }); donnerFiche(f); } else if (d.q) repondre(d.q);
+    }
+    window.AIDE_OUVRIR = function(demande) {
+        if (fen) { poser(demande); return; }
         try { localStorage.setItem(CLE_VUE, '1'); } catch (e) {}
         if (pastille) pastille.classList.remove('AIDE-INVITE');
         var b = document.querySelector('.AIDE-BULLE'); if (b) b.remove();
@@ -349,7 +355,7 @@
         fen.className = 'AIDE-FOND' + (estPc() ? ' pc' : '');
         fen.setAttribute('role', 'dialog'); fen.setAttribute('aria-label', 'Aide de TRIGONE');
         fen.innerHTML = '<div class="AIDE-FEN"><div class="AIDE-TETE"><img src="' + IMG + '" alt=""><div><b>Besoin d\'aide ?</b><small>Je cherche dans la notice TRIGONE</small></div>' +
-            '<button type="button" class="AIDE-VIDER" title="Nouvelle conversation" aria-label="Nouvelle conversation">↺</button><button type="button" class="AIDE-X" aria-label="Fermer">✕</button></div>' +
+            '<button type="button" class="AIDE-QUOI" title="Ce que je sais faire" aria-label="Ce que je sais faire">?</button><button type="button" class="AIDE-VIDER" title="Nouvelle conversation" aria-label="Nouvelle conversation">↺</button><button type="button" class="AIDE-X" aria-label="Fermer">✕</button></div>' +
             '<div class="AIDE-FIL"><div class="AIDE-M lui">Chargement…</div></div>' +
             '<div class="AIDE-AVERT">⚠️ Ne saisissez pas d\'informations personnelles (nom, matricule, détails de mission).</div>' +
             '<form class="AIDE-SAISIE"><input type="text" data-no-uppercase="1" maxlength="400" placeholder="Posez votre question…" aria-label="Votre question" autocomplete="off"><button type="submit" aria-label="Envoyer">➤</button></form></div>';
@@ -359,6 +365,7 @@
             if (ev.target === fen && !estPc()) { window.AIDE_FERMER(); return; }
             var t = ev.target.closest('button'); if (!t) return;
             if (t.classList.contains('AIDE-X')) { window.AIDE_FERMER(); return; }
+            if (t.classList.contains('AIDE-QUOI')) { window.AIDE_FERMER(); window.AIDE_PRESENTATION(); return; }
             if (t.classList.contains('AIDE-VIDER')) { fil = []; ecrire(CLE_FIL, fil); ecrire(CLE_DERNIER, null); accueil(); return; }
             if (t.dataset.fiche) { var f = moteur.fiche(t.dataset.fiche); if (f) { ajouter({ de: 'moi', texte: f.t }); donnerFiche(f); } return; }
             if (t.dataset.montrer) { var g = moteur.fiche(t.dataset.montrer); if (g && g.m) { window.AIDE_FERMER(); executer(g.m); } return; }
@@ -383,7 +390,8 @@
         charger().then(function() {
             fil = lire(CLE_FIL) || [];
             if (!fil.length) accueil(); else dessinerFil();
-            if (!('ontouchstart' in window)) champ.focus();
+            poser(demande);
+            if (!('ontouchstart' in window) && !demande) champ.focus();
         }, function() {
             fen.querySelector('.AIDE-FIL').innerHTML = '<div class="AIDE-M lui">Je n\'arrive pas à charger l\'aide. Vérifiez le réseau, ou ouvrez la notice.<div class="AIDE-ACTIONS"><button type="button" class="AIDE-LIEN" data-notice="">📖 Ouvrir la notice</button></div></div>';
         });
@@ -392,9 +400,54 @@
     function echap(e) { if (e.key === 'Escape') window.AIDE_FERMER(); }
     window.AIDE_FERMER = function() { if (fen) { fen.remove(); fen = null; } document.removeEventListener('keydown', echap); };
 
+    // ---------- « Ce que je sais faire » : des exemples de questions à toucher ----------
+    // Chaque exemple pose la question dans la discussion. Ceux qui renvoient à une fiche l'ouvrent directement (réponse sûre) ;
+    // les autres (barèmes, IK, codes FD) passent par la recherche comme une question tapée.
+    var EXEMPLES = [
+        ['L\'appli', [['Comment j\'envoie ma demande ?', 'envoyer-demande'], ['Où en est ma demande ?', 'suivre-demande'], ['Je me suis trompé, je corrige comment ?', 'modifier-envoyee'], ['Comment je fais mon compte-rendu ?', 'cr-commencer']]],
+        ['Vos frais', [['Combien la nuit à Paris ?'], ['Repas en Allemagne'], ['IK Lyon → Grenoble 6 CV']]],
+        ['Les règles', [['Code FD pour un stage'], ['Qui valide ma demande ?', 'qui-valide']]],
+        ['Rien que pour vous', [['Mon adresse TRIGONE', 'mon-adresse'], ['Mes rôles', 'mes-roles'], ['Ma carte TRIGONE', 'carte-trigone']]]
+    ];
+    var pres = null;
+    function echapPres(e) { if (e.key === 'Escape') window.AIDE_PRESENTATION_FERMER(); }
+    window.AIDE_PRESENTATION_FERMER = function() { if (pres) { pres.remove(); pres = null; } document.removeEventListener('keydown', echapPres); };
+    window.AIDE_PRESENTATION = function() {
+        if (pres) return;
+        window.AIDE_FERMER();
+        try { localStorage.setItem(CLE_VUE, '1'); } catch (e) {}
+        if (pastille) pastille.classList.remove('AIDE-INVITE');
+        var bu = document.querySelector('.AIDE-BULLE'); if (bu) bu.remove();
+        pres = document.createElement('div');
+        pres.className = 'AIDE-PRES-FOND' + (estPc() ? ' pc' : '');
+        pres.setAttribute('role', 'dialog'); pres.setAttribute('aria-label', 'Ce que la mascotte sait faire');
+        var n = 0;
+        pres.innerHTML = '<div class="AIDE-PRES"><div class="AIDE-PRES-TETE"><button type="button" class="AIDE-PRES-RETOUR" aria-label="Fermer">‹</button>' +
+            '<div><b>Assistant TRIGONE</b><small>Touchez une question pour essayer</small></div></div>' +
+            '<div class="AIDE-PRES-CORPS"><div class="AIDE-PRES-SCENE"><img src="' + IMG_POUCE + '" alt="">' +
+            '<div class="AIDE-PRES-BULLE">Je réponds à tout ça, et à bien d\'autres choses. <b>Touchez une question</b>, je vous montre&nbsp;!</div></div>' +
+            EXEMPLES.map(function(th) {
+                return '<div class="AIDE-PRES-THEME">' + esc(th[0]) + '</div><div class="AIDE-PRES-QS">' + th[1].map(function(x) {
+                    return '<button type="button" class="AIDE-PRES-Q" data-i="' + (n++) + '">' + esc(x[0]) + '</button>'; }).join('') + '</div>';
+            }).join('') +
+            '<p class="AIDE-PRES-NOTE">Gratuit : l\'essentiel marche même sans réseau. Pour une question imprévue, la mascotte peut demander à l\'IA (compte TRIGONE connecté, 10 questions par jour). N\'y écrivez ni données personnelles ni informations classifiées.</p>' +
+            '<button type="button" class="AIDE-PRES-GO">Poser ma propre question</button></div></div>';
+        var tous = [].concat.apply([], EXEMPLES.map(function(th) { return th[1]; }));
+        pres.addEventListener('click', function(ev) {
+            if (ev.target === pres) { window.AIDE_PRESENTATION_FERMER(); return; }
+            var t = ev.target.closest('button'); if (!t) return;
+            if (t.classList.contains('AIDE-PRES-RETOUR')) { window.AIDE_PRESENTATION_FERMER(); return; }
+            if (t.classList.contains('AIDE-PRES-GO')) { window.AIDE_PRESENTATION_FERMER(); window.AIDE_OUVRIR(); return; }
+            if (t.dataset.i !== undefined) { var x = tous[+t.dataset.i]; window.AIDE_PRESENTATION_FERMER(); window.AIDE_OUVRIR(x[1] ? { fiche: x[1], l: x[0] } : { q: x[0] }); }
+        });
+        document.body.appendChild(pres);
+        document.addEventListener('keydown', echapPres);
+    };
+
     // ---------- Les boutons : pastille (téléphone) et carte du menu (PC) ----------
     window.AIDE_BOUTON_PC = function() {
-        return '<button type="button" class="AIDE-CARTE-PC" onclick="AIDE_OUVRIR()"><img src="' + IMG + '" alt=""><span><b>Besoin d\'aide ?</b><small>Posez votre question</small></span></button>';
+        return '<button type="button" class="AIDE-CARTE-PC" onclick="AIDE_OUVRIR()"><img src="' + IMG + '" alt=""><span><b>Besoin d\'aide ?</b><small>Posez votre question</small></span></button>' +
+            '<button type="button" class="AIDE-CARTE-PC-QUOI" onclick="AIDE_PRESENTATION()">Ce que la mascotte sait faire ›</button>';
     };
     // La pastille suit le bouton de thème (la lune) : juste à sa gauche, même hauteur, sur tous les écrans du téléphone.
     var FENETRES = '.JUM-REGLAGES, .JUM-PARAM, .JUM-SIG, .JUM-CHOIX, .JUM-VERROU, .JUM-PAVE, .JUM-PRES, .JUM-NOUV, .JUM-MDP-FOND, .JUM-GC-FEN, .JUM-ACC, .JUM-ROUE-MENU';
@@ -416,7 +469,9 @@
         pastille = document.createElement('button');
         pastille.type = 'button'; pastille.className = 'AIDE-PASTILLE'; pastille.title = 'Besoin d\'aide ?'; pastille.setAttribute('aria-label', 'Besoin d\'aide ? Posez votre question à la mascotte');
         pastille.innerHTML = '<img src="' + IMG + '" alt="">';
-        pastille.addEventListener('click', function() { window.AIDE_OUVRIR(); });
+        // Tout premier appui : la page « Ce que je sais faire » ; ensuite, directement la discussion.
+        var premier = function() { var v = false; try { v = !!localStorage.getItem(CLE_VUE); } catch (e) {} if (v) window.AIDE_OUVRIR(); else window.AIDE_PRESENTATION(); };
+        pastille.addEventListener('click', premier);
         document.body.appendChild(pastille);
         placer(); window.addEventListener('resize', placer); setInterval(placer, 1000);
         if (window.MutationObserver) new MutationObserver(placer).observe(document.body, { childList: true });
@@ -429,7 +484,7 @@
             pastille.classList.add('AIDE-INVITE');
             var bu = document.createElement('div'); bu.className = 'AIDE-BULLE'; bu.textContent = 'Besoin d\'aide ? Touchez-moi';
             var r = pastille.getBoundingClientRect(); bu.style.top = (r.bottom + 10) + 'px'; bu.style.right = Math.max(8, window.innerWidth - r.right - 10) + 'px';
-            bu.addEventListener('click', function() { window.AIDE_OUVRIR(); });
+            bu.addEventListener('click', premier);
             document.body.appendChild(bu); setTimeout(function() { bu.remove(); }, 9000);
         }, 4000);
         reprendreAction();
@@ -446,6 +501,37 @@
         '.AIDE-CARTE-PC:hover{border-color:#e9c47a;background:linear-gradient(135deg,#232323,#3a301a)}',
         '.AIDE-CARTE-PC img{width:42px;height:42px;border-radius:50%;object-fit:cover;border:2px solid #d4a64a;background:#fff;flex:none}',
         '.AIDE-CARTE-PC small{display:block;font-weight:400;font-size:11.5px;color:#d9c08a}',
+        '.AIDE-CARTE-PC-QUOI{display:block;width:100%;margin:-4px 0 10px;padding:2px 4px;border:0;background:none;color:#9a6f22;font:700 12px system-ui,sans-serif;text-align:right;cursor:pointer}',
+        '.AIDE-CARTE-PC-QUOI:hover{text-decoration:underline}',
+        'body.dark-mode .AIDE-CARTE-PC-QUOI{color:#e9c47a}',
+        '.AIDE-QUOI{margin-left:auto;font-weight:800 !important;font-size:17px !important;border:1.5px solid rgba(212,166,74,.7) !important;width:32px !important;height:32px !important}',
+        '.AIDE-PRES-FOND{position:fixed;inset:0;z-index:12000;background:rgba(5,8,15,.55);display:flex;align-items:flex-end;justify-content:center}',
+        '.AIDE-PRES-FOND.pc{align-items:center}',
+        '.AIDE-PRES{width:100%;max-width:460px;height:92%;background:#fff;border-radius:22px 22px 0 0;border-top:3px solid #d4a64a;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.4);font:15px/1.45 Montserrat,system-ui,sans-serif;color:#1a1a1a}',
+        '.AIDE-PRES-FOND.pc .AIDE-PRES{height:min(760px,calc(100vh - 48px));border-radius:22px}',
+        '.AIDE-PRES-TETE{display:flex;align-items:center;gap:10px;padding:14px 14px 10px}',
+        '.AIDE-PRES-TETE b{display:block;font-size:15px;font-weight:800;letter-spacing:.06em;text-transform:uppercase}.AIDE-PRES-TETE small{display:block;font-size:12px;color:#6b6b6b;font-weight:600}',
+        '.AIDE-PRES-RETOUR{width:38px;height:38px;border-radius:12px;border:1.5px solid #ece3d0;background:#faf7f0;font:800 20px system-ui;color:#1a1a1a;cursor:pointer;flex:none}',
+        '.AIDE-PRES-CORPS{flex:1;overflow-y:auto;padding:4px 14px 18px;overscroll-behavior:contain}',
+        '.AIDE-PRES-SCENE{position:relative;height:200px;border-radius:18px;background:radial-gradient(110% 90% at 20% 100%,#fff7e6 0%,#f3e6c8 60%,#ead6aa 100%);overflow:hidden;margin-bottom:6px}',
+        '.AIDE-PRES-SCENE img{position:absolute;left:-4px;bottom:0;height:190px;width:auto}',
+        '.AIDE-PRES-BULLE{position:absolute;right:10px;top:14px;width:min(190px,52%);background:#fff;border-radius:16px 16px 16px 4px;padding:10px 12px;font-size:13px;line-height:1.45;box-shadow:0 8px 20px rgba(0,0,0,.1)}',
+        '.AIDE-PRES-BULLE b{color:#9a6f22}',
+        '.AIDE-PRES-THEME{margin:14px 0 7px;display:flex;align-items:center;gap:8px;font-size:11px;font-weight:800;letter-spacing:.14em;text-transform:uppercase;color:#6b6b6b}',
+        '.AIDE-PRES-THEME::after{content:"";flex:1;height:1px;background:#eadfc6}',
+        '.AIDE-PRES-QS{display:flex;flex-wrap:wrap;gap:7px}',
+        '.AIDE-PRES-Q{display:flex;align-items:center;gap:7px;max-width:100%;padding:9px 12px;border-radius:14px;background:#fff;border:1.5px solid #ead9b5;font:600 13px/1.3 Montserrat,system-ui,sans-serif;color:#1a1a1a;text-align:left;cursor:pointer;box-shadow:0 2px 6px rgba(154,111,34,.08)}',
+        '.AIDE-PRES-Q::before{content:"›";font-weight:800;color:#9a6f22}',
+        '.AIDE-PRES-Q:active{transform:scale(.97);background:#faf5ea}',
+        '.AIDE-PRES-NOTE{margin:16px 0 12px;font-size:12px;color:#6b6b6b;text-align:center;line-height:1.5}',
+        '.AIDE-PRES-GO{display:block;width:100%;border:0;border-radius:14px;padding:14px;background:linear-gradient(180deg,#d6a756,#b88a35);color:#1a1a1a;font:800 13px Montserrat,system-ui,sans-serif;letter-spacing:.06em;text-transform:uppercase;cursor:pointer}',
+        'body.dark-mode .AIDE-PRES{background:#17181b;color:#e5e7eb}',
+        'body.dark-mode .AIDE-PRES-RETOUR{background:#24262b;border-color:#34373d;color:#e5e7eb}',
+        'body.dark-mode .AIDE-PRES-TETE small,body.dark-mode .AIDE-PRES-NOTE,body.dark-mode .AIDE-PRES-THEME{color:#9ca3af}',
+        'body.dark-mode .AIDE-PRES-THEME::after{background:#34373d}',
+        'body.dark-mode .AIDE-PRES-SCENE{background:radial-gradient(110% 90% at 20% 100%,#3a3020 0%,#2a2418 60%,#1d1a14 100%)}',
+        'body.dark-mode .AIDE-PRES-BULLE{background:#24262b;color:#e5e7eb}',
+        'body.dark-mode .AIDE-PRES-Q{background:#24262b;border-color:#4a3f26;color:#f3f4f6}',
         '.AIDE-FOND{position:fixed;inset:0;z-index:12000;background:rgba(5,8,15,.55);display:flex;align-items:flex-end;justify-content:center}',
         '.AIDE-FOND.pc{background:transparent;pointer-events:none;align-items:flex-end;justify-content:flex-end;padding:0 24px 24px 0}',
         '.AIDE-FEN{pointer-events:auto;width:100%;max-width:460px;height:86%;background:#f4f5f7;border-radius:20px 20px 0 0;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 -8px 30px rgba(0,0,0,.4);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;color:#111827}',
@@ -454,7 +540,7 @@
         '.AIDE-TETE img{width:54px;height:54px;border-radius:50%;object-fit:cover;border:2px solid #d4a64a;background:#fff;flex:none}',
         '.AIDE-TETE b{font-size:16px;display:block}.AIDE-TETE small{opacity:.8;font-size:12px}',
         '.AIDE-TETE button{background:none;border:0;color:#fff;font-size:20px;width:38px;height:38px;border-radius:50%;cursor:pointer;flex:none}',
-        '.AIDE-VIDER{margin-left:auto}.AIDE-TETE button:hover{background:rgba(255,255,255,.12)}',
+        '.AIDE-VIDER{margin-left:0}.AIDE-TETE button:hover{background:rgba(255,255,255,.12)}',
         '.AIDE-FIL{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px;overscroll-behavior:contain}',
         '.AIDE-M{max-width:86%;padding:10px 12px;border-radius:16px;overflow-wrap:anywhere}',
         '.AIDE-M.lui{background:#fff;border:1px solid #dde1e7;border-bottom-left-radius:4px;align-self:flex-start}',
