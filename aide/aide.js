@@ -84,8 +84,18 @@
     }
 
     // ---------- La fenêtre de discussion ----------
-    function qui() {
-        try { var r = JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}'); return [r.grade, r.nom].filter(Boolean).join(' '); } catch (e) { return ''; }
+    // Salutation selon le grade du profil (« mon adjudant », « sergent-chef »…) ; commissaires : Monsieur ou Madame,
+    // demandé une fois (le profil ne le dit pas) et retenu sur l'appareil.
+    var CLE_CIV = 'trigone_aide_civilite';
+    function salutation() {
+        var g = ''; try { g = (JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}').grade) || ''; } catch (e) {}
+        var a = window.AIDE_MOTEUR.appellation(g);
+        if (a.charAt(0) === '§') {
+            var civ = ''; try { civ = localStorage.getItem(CLE_CIV) || ''; } catch (e) {}
+            if (!civ) return { demander: a.slice(2) };
+            a = civ + a.slice(1);
+        }
+        return { texte: 'Bonjour' + (a ? ', ' + a : '') + ', en quoi puis-je vous aider ?' };
     }
     function puces() {
         // Sujets de l'écran ouvert d'abord (sauf sur les accueils : les plus demandés), puis les plus demandés.
@@ -179,6 +189,7 @@
             if (t.dataset.notice !== undefined) { var titre = t.dataset.notice; window.AIDE_FERMER(); window.JUMELAGE_NOTICE(null, titre ? { titre: titre } : {}); return; }
             if (t.dataset.ia !== undefined) { demanderIa(t.dataset.ia); return; }
             if (t.dataset.signaler) { window.AIDE_FERMER(); window.JUMELAGE_SIGNALER(); return; }
+            if (t.dataset.civ) { try { localStorage.setItem(CLE_CIV, t.dataset.civ); } catch (e) {} accueil(); return; }
         });
         fen.querySelector('form').addEventListener('submit', function(ev) {
             ev.preventDefault();
@@ -186,8 +197,9 @@
             champ.value = ''; repondre(q);
         });
         var accueil = function() {
-            var n = qui();
-            fil = [{ de: 'lui', html: 'Bonjour' + (n ? ' ' + esc(n) : '') + ' ! 👋 Je suis là pour vous aider. Que se passe-t-il ?<div class="AIDE-PUCES">' + puces() + '</div>' }];
+            var s = salutation();
+            fil = [{ de: 'lui', html: s.demander ? 'Bonjour ! Pour bien vous saluer, dois-je dire :<div class="AIDE-PUCES"><button type="button" class="AIDE-PUCE" data-civ="Monsieur">Monsieur ' + esc(s.demander) + '</button>' +
+                '<button type="button" class="AIDE-PUCE" data-civ="Madame">Madame ' + esc(s.demander) + '</button></div>' : esc(s.texte) + '<div class="AIDE-PUCES">' + puces() + '</div>' }];
             ecrire(CLE_FIL, fil); dessinerFil();
         };
         charger().then(function() {
@@ -207,12 +219,14 @@
         return '<button type="button" class="AIDE-CARTE-PC" onclick="AIDE_OUVRIR()"><img src="' + IMG + '" alt=""><span><b>Besoin d\'aide ?</b><small>Posez votre question</small></span></button>';
     };
     // La pastille suit le bouton de thème (la lune) : juste à sa gauche, même hauteur, sur tous les écrans du téléphone.
+    var FENETRES = '.JUM-REGLAGES, .JUM-PARAM, .JUM-SIG, .JUM-CHOIX, .JUM-VERROU, .JUM-PAVE, .JUM-PRES, .JUM-NOUV, .JUM-MDP-FOND, .JUM-GC-FEN, .JUM-ACC, .JUM-ROUE-MENU';
+    function fenetreOuverte() { return [].some.call(document.querySelectorAll(FENETRES), function(e) { return e.getClientRects().length > 0; }); }
     function placer() {
         if (!pastille) return;
         var lune = document.querySelector('.THEME-TOGGLE'), r = lune && lune.getClientRects().length ? lune.getBoundingClientRect() : null;
-        var cacher = !r || estPc() || document.body.classList.contains('demo-active');
+        var cacher = !r || estPc() || document.body.classList.contains('demo-active') || fenetreOuverte();
         pastille.style.display = cacher ? 'none' : '';
-        if (cacher) return;
+        if (cacher) { var bu = document.querySelector('.AIDE-BULLE'); if (bu) bu.remove(); return; }
         var t = Math.round(r.height);
         pastille.style.width = pastille.style.height = t + 'px';
         pastille.style.top = Math.round(r.top) + 'px';
@@ -227,10 +241,13 @@
         pastille.addEventListener('click', function() { window.AIDE_OUVRIR(); });
         document.body.appendChild(pastille);
         placer(); window.addEventListener('resize', placer); setInterval(placer, 1000);
+        if (window.MutationObserver) new MutationObserver(placer).observe(document.body, { childList: true });
         // Première fois : la mascotte se signale (pulsation et bulle), jusqu'au premier appui.
         var vue = false; try { vue = !!localStorage.getItem(CLE_VUE); } catch (e) {}
-        if (!vue) setTimeout(function() {
-            if (!pastille || pastille.style.display === 'none' || fen) return;
+        var essais = 0;
+        if (!vue) setTimeout(function inviter() {
+            if (fen) return;
+            if (!pastille || pastille.style.display === 'none') { if (++essais < 20) setTimeout(inviter, 3000); return; }
             pastille.classList.add('AIDE-INVITE');
             var bu = document.createElement('div'); bu.className = 'AIDE-BULLE'; bu.textContent = 'Besoin d\'aide ? Touchez-moi';
             var r = pastille.getBoundingClientRect(); bu.style.top = (r.bottom + 10) + 'px'; bu.style.right = Math.max(8, window.innerWidth - r.right - 10) + 'px';

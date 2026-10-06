@@ -101,8 +101,41 @@
         }
         return { chercher: chercher, jetons: jetons, fiche: function(id) { return fiches.filter(function(f) { return f.id === id; })[0] || null; } };
     }
+    // Appellation réglementaire d'après le grade du profil, saisi librement (« ADJ », « A/C », « Sergent chef », « 1CL »…) :
+    // « mon » devant le grade pour les adjudants, adjudants-chefs et officiers ; le grade seul pour les autres.
+    // Commissaires des armées : « Monsieur / Madame le commissaire » (§ = la civilité, demandée une fois à la personne :
+    // le profil ne dit pas si c'est un homme ou une femme). Grade inconnu : '' (la mascotte dit simplement « Bonjour »).
+    var APPELLATIONS = [
+        ['§ le commissaire général', /^(CRG|CGA|COMMISSAIREGENERAL(DE(1(ERE|RE)?|2(E|EME|ND)?)CLASSE)?|COMMISSAIREGENERALDESARMEES)$/],
+        ['§ le commissaire en chef', /^(CRC[12]?|CEC[12]?|CRCH|COMMISSAIREENCHEF(DE(1(ERE|RE)?|2(E|EME|ND)?)CLASSE)?)$/],
+        ['§ le commissaire', /^(CRP|CR[123]|CR|CRA|COM|COMMISSAIRE(PRINCIPAL|ASPIRANT|DE(1(ERE|RE)?|2(E|EME|ND)?|3(E|EME)?)CLASSE)?)$/],
+        ['mon général', /^(GEN(ERAL)?|GAL|GBR|GDI|GCA|GAR|GENERALDE(BRIGADE|DIVISION|CORPSDARMEE|ARMEE)|GENERALDARMEE)$/],
+        ['mon colonel', /^(LIEUTENANTCOLONEL|LTCOLONEL|LIEUTCOLONEL|LCL|LTCOL|LTCL|LCOL|COLONEL|COL|CEL)$/],
+        ['mon commandant', /^(COMMANDANT|CDT|CMDT|CBA|CEN|CDTCBA|CHEFDEBATAILLON|CHEFDESCADRONS?|CHEFDESCADRILLE)$/],
+        ['mon capitaine', /^(CAPITAINE|CNE|CPT|CAPT|CAPNE)$/],
+        ['mon lieutenant', /^(SOUSLIEUTENANT|SSLIEUTENANT|SLT|SLTN|SSLT|LIEUTENANT|LIEUT|LTN|LNT|LT|ASPIRANT|ASP)$/],
+        ['major', /^(MAJOR|MAJ|MJR)$/],
+        ['mon adjudant-chef', /^(ADJUDANTCHEF|ADJUDANTCH|ADJCHEF|ADJTCHEF|ADJCH|ADJC|ADC|AC|ADJTC)$/],
+        ['mon adjudant', /^(ADJUDANT|ADJ|ADJT|ADT|ADJD)$/],
+        ['maréchal des logis-chef', /^(MARECHALDESLOGISCHEF|MDLCHEF|MDLC|MDC|MLC)$/],
+        ['maréchal des logis', /^(MARECHALDESLOGIS|MDL|MARGIS)$/],
+        ['sergent-chef', /^(SERGENTCHEF|SGTCHEF|SGTCH|SGTC|SCH|SC|SGC|SCHEF)$/],
+        ['sergent', /^(SERGENT|SGT|SG|SERG)$/],
+        ['brigadier-chef', /^(BRIGADIERCHEF(DE1(ERE|RE)?CLASSE)?|BRIGCHEF|BCH|BC|BRCH)$/],
+        ['brigadier', /^(BRIGADIER|BRIG|BRG|BRI)$/],
+        ['caporal-chef', /^(CAPORALCHEF(DE1(ERE|RE)?CLASSE)?|CPLCHEF|CAPOCHEF|CCH1?(CL)?|CC1?|CPLC|CPLCH|CCHEF|CAPCHEF)$/],
+        ['caporal', /^(CAPORAL|CPL|CAL|CAPO)$/],
+        ['soldat', /^(SOLDAT|SDT|SOL|SOLD|2(E|EME|ND)?CL(ASSE)?|SOLDAT(DE)?(1|2)(ER|ERE|RE|E|EME|ND)?CL(ASSE)?|1(ER|ERE|RE)?CL(ASSE)?|1C|PREMIERECLASSE|DEUXIEMECLASSE|EV|EVAT|ENGAGEVOLONTAIRE|RECRUE)$/]
+    ];
+    function appellation(grade) {
+        var s = String(grade || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[/.'’`]/g, '').replace(/[^A-Z0-9 ]+/g, ' ').replace(/\s+/g, ' ').trim();
+        if (!s) return '';
+        var essais = [s.replace(/ /g, ''), s.split(' ').slice(0, 3).join(''), s.split(' ').slice(0, 2).join(''), s.split(' ')[0]];
+        for (var i = 0; i < essais.length; i++) for (var k = 0; k < APPELLATIONS.length; k++) if (APPELLATIONS[k][1].test(essais[i])) return APPELLATIONS[k][0];
+        return '';
+    }
     // Seuils : au-dessus de SUR, la mascotte répond ; entre PROPOSER et SUR, elle propose 2 ou 3 sujets.
-    var MOTEUR = { creer: creer, SUR: 0.5, PROPOSER: 0.28, normal: normal };
+    var MOTEUR = { creer: creer, SUR: 0.5, PROPOSER: 0.28, normal: normal, appellation: appellation };
     if (typeof module !== 'undefined' && module.exports) module.exports = MOTEUR;
     else window.AIDE_MOTEUR = MOTEUR;
 })();

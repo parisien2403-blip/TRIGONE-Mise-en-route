@@ -1536,7 +1536,7 @@ async function api(requete, env, url, ctx) {
         const question = String(d.question || '').replace(/\s+/g, ' ').trim().slice(0, 400);
         if (question.length < 2) return erreur(400, 'Question vide.');
         const jour = new Date().toISOString().slice(0, 10);
-        const maxCompte = +env.AIDE_IA_MAX_COMPTE || 15, maxJour = +env.AIDE_IA_MAX_JOUR || 80;
+        const maxCompte = +env.AIDE_IA_MAX_COMPTE || 10, maxJour = +env.AIDE_IA_MAX_JOUR || 40;
         const cleC = 'aide-ia:' + jour + ':' + moi.mail, cleJ = 'aide-ia-jour:' + jour;
         const nC = +(await kv.get(cleC)) || 0, nJ = +(await kv.get(cleJ)) || 0;
         if (nC >= maxCompte) return erreur(429, 'Vous avez posé ' + maxCompte + ' questions à l\'IA aujourd\'hui : elle revient demain.');
@@ -1558,6 +1558,8 @@ async function api(requete, env, url, ctx) {
             texte = String((r && (r.response || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '').trim();
         } catch (e) {
             console.log('aide/ia : ' + (e && e.message || e));
+            // Quota gratuit de Workers AI épuisé (compte Workers Free : rien n'est facturé, l'IA revient le lendemain).
+            if (/allocation|quota|4006|neurons/i.test(String(e && e.message || e))) return erreur(429, 'L\'IA a atteint sa limite du jour pour TRIGONE : elle revient demain.');
             return erreur(503, 'L\'IA n\'a pas pu répondre pour le moment.');
         }
         if (!texte) return erreur(503, 'L\'IA n\'a pas pu répondre pour le moment.');

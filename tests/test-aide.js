@@ -28,7 +28,7 @@ module.exports = async function() {
     await attendre(2200);
     verifier(await t.isVisible('.AIDE-BULLE') && await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE')), 'première fois : la mascotte se signale (« Besoin d\'aide ? Touchez-moi »)');
     await t.click('.AIDE-PASTILLE'); await attendre(800);
-    verifier(await t.isVisible('.AIDE-FEN') && /Bonjour ADJ TEST/.test(await derniere(t)) && (await t.$$('.AIDE-PUCE')).length === 4, 'fenêtre ouverte : « Bonjour ADJ TEST », 4 sujets proposés');
+    verifier(await t.isVisible('.AIDE-FEN') && /^Bonjour, mon adjudant, en quoi puis-je vous aider \?/.test(await derniere(t)) && (await t.$$('.AIDE-PUCE')).length === 4, 'fenêtre ouverte : « Bonjour, mon adjudant, en quoi puis-je vous aider ? » (grade ADJ), 4 sujets proposés');
     verifier(!(await t.isVisible('.AIDE-BULLE')) && !(await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE'))), 'ouverte une fois : la mascotte ne se signale plus');
     let r = await demander(t, 'jme rappel plu de mon mot2pass');
     verifier(/code de réactivation/.test(r) && /Réponse trouvée dans la notice/.test(await t.innerText('.AIDE-FIL')), 'langage SMS et fautes (« jme rappel plu de mon mot2pass ») : code de connexion oublié');
@@ -60,6 +60,23 @@ module.exports = async function() {
     await t.evaluate(() => { document.body.classList.add('dark-mode'); AIDE_OUVRIR(); }); await attendre(300);
     verifier(await t.evaluate(() => getComputedStyle(document.querySelector('.AIDE-FEN')).backgroundColor !== 'rgb(244, 245, 247)'), 'mode sombre : la fenêtre passe en sombre');
     await t.evaluate(() => AIDE_FERMER());
+
+    // ----- Salutation selon le grade (écritures libres) ; commissaire : Monsieur ou Madame, demandé une fois -----
+    const sal = await t.evaluate(() => ['A/C', 'Sergent chef', 'CNE.', 'lcl', '1CL', 'MAJ', 'civil'].map(AIDE_MOTEUR.appellation));
+    verifier(sal.join('|') === 'mon adjudant-chef|sergent-chef|mon capitaine|mon colonel|soldat|major|', 'appellations : A/C, Sergent chef, CNE., lcl, 1CL, MAJ, civil → ' + sal.join(' | '));
+    await t.evaluate(() => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.grade = 'CRP'; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); AIDE_OUVRIR(); }); await attendre(400);
+    await t.click('.AIDE-VIDER'); await attendre(300);
+    verifier(/dois-je dire/.test(await derniere(t)) && await t.isVisible('[data-civ="Madame"]'), 'commissaire (CRP) : la mascotte demande Monsieur ou Madame le commissaire');
+    await t.click('[data-civ="Madame"]'); await attendre(300);
+    verifier(/^Bonjour, Madame le commissaire, en quoi puis-je vous aider \?/.test(await derniere(t)), 'choix retenu : « Bonjour, Madame le commissaire, en quoi puis-je vous aider ? »');
+    await t.evaluate(() => { AIDE_FERMER(); const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.grade = 'CRC1'; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); sessionStorage.removeItem('trigone_aide_fil'); AIDE_OUVRIR(); }); await attendre(400);
+    verifier(/^Bonjour, Madame le commissaire en chef,/.test(await derniere(t)), 'commissaire en chef (CRC1) : « Madame le commissaire en chef », sans redemander');
+    await t.evaluate(() => AIDE_FERMER());
+    // Une fenêtre de TRIGONE ouverte : la pastille se range (elle ne recouvre jamais ses boutons).
+    await t.evaluate(() => JUMELAGE_PARAMETRES()); await attendre(400);
+    verifier(await t.evaluate(() => getComputedStyle(document.querySelector('.AIDE-PASTILLE')).display === 'none'), 'fenêtre Paramètres ouverte : la pastille se range');
+    await t.evaluate(() => JUMELAGE_FERMER_PARAMETRES()); await attendre(1200);
+    verifier(await t.isVisible('.AIDE-PASTILLE'), 'fenêtre fermée : la pastille revient');
 
     // ----- PC : la carte « Besoin d'aide ? » dans le menu de gauche, au-dessus de la notice -----
     const pc = await page({ width: 1360, height: 820 }, '', 'PC');
@@ -100,10 +117,10 @@ module.exports = async function() {
     const sys = ess.essai.messages[0].content;
     verifier(ess.essai.fiches.join() === 'envoyer-demande' && /ÉCRAN OUVERT PAR L'UTILISATEUR : Documents/.test(sys) && /FICHES UTILES/.test(sys) && /juteux/.test(sys) && ess.essai.messages.length === 3,
         'serveur : consigne avec l\'écran ouvert, les écrans, le jargon, les seules fiches connues, la conversation');
-    verifier(ess.fiche === 'envoyer-demande' && ess.restant === 15 - 2, 'serveur : fiche utilisée renvoyée, questions restantes comptées (' + ess.restant + ')');
+    verifier(ess.fiche === 'envoyer-demande' && ess.restant === 10 - 2, 'serveur : fiche utilisée renvoyée, questions restantes comptées (' + ess.restant + ')');
     let code = 0;
-    for (let i = 0; i < 14 && code !== 429; i++) code = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'test' }).then(() => 200, e => e.statut));
-    verifier(code === 429, 'limite : au-delà de 15 questions par jour et par compte, l\'IA refuse (429)');
+    for (let i = 0; i < 12 && code !== 429; i++) code = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'test' }).then(() => 200, e => e.statut));
+    verifier(code === 429, 'limite : au-delà de 10 questions par jour et par compte, l\'IA refuse (429)');
     await a.evaluate(() => AIDE_OUVRIR()); await attendre(300);
     await demander(a, 'blanquette'); await a.click('.AIDE-IA'); await attendre(1200);
     verifier(/questions à l'IA aujourd'hui|revient demain/.test(await derniere(a)), 'limite atteinte : la mascotte l\'explique');
