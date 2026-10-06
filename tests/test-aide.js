@@ -265,6 +265,19 @@ module.exports = async function() {
         verifier(/FDYDDR4FRM/.test(txt('code fd 4eriisc formation')) && /2° REI/.test(txt('code fd du 2e régiment étranger d\'infanterie')), 'codier : « 4eriisc formation », « 2e régiment étranger d\'infanterie » (REI)');
     }
 
+    // ----- Selon SA mission : droits aux repas, détail d'un montant (Compte-rendu) -----
+    {
+        const cr = await page({ width: 412, height: 860 }, 'cr/', 'CR mission');
+        await cr.evaluate(() => { DEMO_DEMARRER(); DEMO_AFFICHER_ETAPE(9); }); await attendre(1500);
+        const x = await cr.evaluate(async () => { const T = await fetch('../aide/tarifs.json').then(r => r.json()), ctx = { tarifs: T, change: { taux: T.change, date: '' } }, C = window.AIDE_CIRCUIT;
+            return { i1: C.intention('ai je droit au repas du soir ?', ctx), i2: C.intention('pourquoi seulement 180 € ?', ctx), i3: C.intention('explique moi le calcul de mon forfait', ctx),
+                d: (await C.repondre('droit', 'ai je droit au repas du soir ?', ctx)).html, c: (await C.repondre('calcul', 'pourquoi seulement 180 € ?', ctx)).html, r: C.resumeMission() }; });
+        verifier(x.i1 === 'droit' && /parti à 06 h 35/.test(x.d) && /rentré à 16 h 30/.test(x.d) && /soir <b style="color:#b91c1c">non/.test(x.d), '« ai-je droit au repas du soir ? » : selon SES horaires (parti 6 h 35, rentré 16 h 30 : pas le soir du retour)');
+        verifier(x.i2 === 'calcul' && x.i3 === 'calcul' && /180,00 €/.test(x.c) && /Nuits payantes : 2/.test(x.c) && /jusqu'à <b>3 repas de midi/.test(x.c), '« pourquoi seulement 180 € ? » : détail (2 nuits) et repas possibles non déclarés (3 midis, 2 soirs)');
+        verifier(/départ le 03\/10 à 06 h 35/.test(x.r) && !/LEFEBVRE|matricule/i.test(x.r), 'résumé de la mission pour l\'IA : horaires, sans nom ni matricule');
+        await cr.context().close();
+    }
+
     // ----- Suites de questions : on ne reprend pas tout depuis le début -----
     {
         await t.evaluate(() => { AIDE_FERMER(); sessionStorage.removeItem('trigone_aide_fil'); sessionStorage.removeItem('trigone_aide_dernier'); AIDE_OUVRIR(); }); await attendre(600);

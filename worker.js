@@ -792,7 +792,15 @@ async function distanceRoute(p1, p2, traces) {
 
 // ----- Aide de la mascotte : consigne donnée à l'IA -----
 function texteSimple(h) { return String(h || '').replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/[ \t]+/g, ' ').trim(); }
-function consigneAide(base, fiches, ecran, appli) {
+// Règles de calcul appliquées par TRIGONE Compte-rendu (les mêmes que la page « Références réglementaires » de l'appli).
+const REGLES_FRAIS = [
+    'Repas en France : forfait de 20 € par repas non pris au restaurant administratif et non fourni. Midi : compte si parti au plus tard à 11 h le jour du départ et rentré à 14 h ou après le jour du retour ; soir : parti au plus tard à 18 h, rentré à 21 h ou après. Les jours entre le départ et le retour sont toujours éligibles. Il faut être hors de ses résidences (administrative et familiale) sur toute la tranche.',
+    'Hébergement en France (petit-déjeuner compris), seulement si la nuit est à la charge de la personne (hôtel) : 90 € (communes ordinaires), 120 € (grandes villes de 200 000 habitants et plus, communes du Grand Paris), 140 € (Paris). Logé gratuitement : rien.',
+    'Étranger : un forfait journalier par pays, en devise, converti avec les taux de la BCE ; 65 % pour la nuit, 17,5 % par repas. Les repas pris pendant le trajet en France restent à 20 €. Logé ou nourri gratuitement : la part correspondante est déduite.',
+    'Indemnités kilométriques (véhicule personnel, sur autorisation) : 0,32 €/km (5 CV et moins), 0,41 €/km (6 et 7 CV), 0,45 €/km (8 CV et plus), barème de la fonction publique.',
+    'Référence : arrêté du 3 juillet 2006 fixant les taux des indemnités de mission. Pour tout cas non couvert ici (péage, parking, taxi, annulation, avance, délais), dis que l\'assistant Chorus DT de l\'unité fait foi et ne donne pas de chiffre.'
+].join('\n');
+function consigneAide(base, fiches, ecran, appli, mission) {
     return [
         'Tu es la mascotte d\'aide de TRIGONE, l\'application du 4e RIISC pour les demandes d\'ordre de mise en route (avant une mission) et les comptes-rendus de mission (horodatages, frais et justificatifs, au retour). Tu aides un militaire à se servir de l\'application.',
         'RÈGLES :',
@@ -807,6 +815,8 @@ function consigneAide(base, fiches, ecran, appli) {
         '- Question sans rapport avec TRIGONE ou les missions : réponds poliment que tu n\'aides que pour TRIGONE.',
         '- Si une fiche ci-dessous t\'a servi, termine ta réponse par [FICHE:identifiant] (une seule).',
         'VOCABULAIRE DES MILITAIRES : « chef », « juteux », « cds », « N+1 », « adjudant », « capitaine » = le plus souvent le VALIDEUR 1 ; « chef de corps », « colon », « pacha », « N+2 » = VALIDEUR 2 ; « assist », « Chorus », « la DT » = l\'assistant Chorus DT ; « OM », « OMR », « DOMR », « ordre de mission » = la demande de mise en route ; « CR » = compte-rendu ; « VL perso », « caisse » = véhicule personnel ; « IK », « bornes » = indemnités kilométriques ; « code FD », « Fd@ligne » = code d\'engagement ; « NDS », « DAF » = la note de service ou la décision à joindre ; « mdp » = code de connexion ; « perm » = absence.',
+        'RÈGLES DE CALCUL DES FRAIS (seules règles que tu peux citer) :\n' + REGLES_FRAIS,
+        mission ? 'MISSION EN COURS DE LA PERSONNE (pour répondre selon SA situation) : ' + mission : '',
         'APPLI OUVERTE : ' + appli + '.',
         ecran ? 'ÉCRAN OUVERT PAR L\'UTILISATEUR : ' + ecran.nom + ' — ' + ecran.d : '',
         'LES ÉCRANS DE TRIGONE (où cliquer) :',
@@ -1555,7 +1565,7 @@ async function api(requete, env, url, ctx) {
         const ecran = base.ecrans.find(e => e.id === d.ecran) || null;
         const historique = (Array.isArray(d.historique) ? d.historique : []).slice(-6)
             .map(h => ({ role: h && h.de === 'ia' ? 'assistant' : 'user', content: String((h && h.texte) || '').slice(0, 800) })).filter(h => h.content);
-        const messages = [{ role: 'system', content: consigneAide(base, fiches, ecran, d.app === 'cr' ? 'Compte-rendu' : 'Mise en route') }].concat(historique, [{ role: 'user', content: question }]);
+        const messages = [{ role: 'system', content: consigneAide(base, fiches, ecran, d.app === 'cr' ? 'Compte-rendu' : 'Mise en route', String(d.mission || '').slice(0, 600)) }].concat(historique, [{ role: 'user', content: question }]);
         await kv.put(cleC, String(nC + 1), { expirationTtl: 172800 });
         await kv.put(cleJ, String(nJ + 1), { expirationTtl: 172800 });
         const modele = env.AIDE_MODELE || '@cf/mistralai/mistral-small-3.1-24b-instruct';

@@ -69,6 +69,11 @@
     var CHIFFRES = / (combien|nombre|nb|total|totaux|statistique|statistiques|stats|bilan|compteur|chiffres|resume|recap) /;
     var PASSE = / (j ai|ai je|j avais|deja|depuis|cette annee|l annee|l an dernier|annee derniere|en tout|au total|total|jusqu a present|jusqu ici|en (19|20)\d\d|fait|faites|effectue|effectuees|envoye|envoyes|eu|touche|percu|parcouru|dormi|mes) /;
     var SUJET_CHIFFRES = / (touche|percu|gagne|missions?|deplacements?|cr|crs|comptes? rendus?|demandes?|mer|om|nuits?|nuitees?|jours?|km|kilometres?|rembourse|remboursements?|frais|ik|forfaits?|medailles?|trigone d|euros|argent|sous|destinations?|villes?|pays) /;
+    // « Ai-je droit au repas du soir ? » (selon SA mission) et « pourquoi 140 € ? » (le détail du calcul).
+    var DROIT = / (ai je droit|j ai droit|j aurai droit|aurai je droit|droit au|droit a|droit aux|eligible|eligibles|ca compte|est ce que ca compte|il compte|je peux compter|je peux declarer|je peux mettre|je mets|compte pour|pris en compte|pris en charge|rembourse|remboursee) /;
+    var CRENEAU = / (repas|midi|soir|dejeuner|diner|manger|nuit|nuitee|hotel|dormir|petit dejeuner|repas du soir|repas de midi) /;
+    var EXPLIQUE = / (pourquoi|comment|explique|expliquer|detail|detaille|detailler|calcul|calcule|d ou vient|d ou sort|ca sort d ou|ca vient d ou|comment c est calcule|comment ca se calcule|c est quoi ce montant) /;
+    var MONTANT = / (montant|total|forfait|somme|euros|rembourse|remboursement|calcul|\d+ ?€|\d+ euros|\d+e|seulement|que ca|si peu) /;
     var NOUVEAU = / (quoi de neuf|nouveaute|nouveautes|nouveau dans|du nouveau|nouvelle version|derniere version|derniere mise a jour|ce qui a change|qu est ce qui a change|quoi de nouveau|changements|changelog) /;
 
     // Devises : noms courants vers les clés des taux de Compte-rendu (euros pour 1 unité).
@@ -98,6 +103,8 @@
         if (NOUVEAU.test(s) && !/ (comment|installer|faire la) /.test(s)) return 'nouveautes';
         var taux = (ctx.change && ctx.change.taux) || {};
         if (devise(s, taux) && (/\d/.test(s) || / (taux|cours|combien|vaut|fait|conversion|convertir|change|en euros|en euro) /.test(s))) return 'devise';
+        if (EXPLIQUE.test(s) && MONTANT.test(q.toLowerCase() + ' ') && !/ (combien la|combien coute|tarif|prix|barem) /.test(s)) return 'calcul';
+        if (DROIT.test(s) && CRENEAU.test(s) && !/ (combien|prix|tarif|bareme) /.test(s)) return 'droit';
         if (COMMENT.test(s) && !/ (ou en est|ou est|ou sont|ou en sont|ca avance|ca bouge|ca se passe|ca donne quoi|ca en est) /.test(s)) return null;
         if ((RELIRE.test(s) && (DEMANDE.test(s) || / (formulaire|saisie|tout) /.test(s))) || PRETE.test(s)) return 'relecture';
         if (/ (statistiques|mes stats|mon bilan|mes chiffres) /.test(s)) return 'chiffres';
@@ -462,6 +469,81 @@
     function officiel(n) { return String(n).toLowerCase().replace(/(^|[\s-])([a-zà-ÿ])/g, function(t, x, c) { return x + c.toUpperCase(); }).replace(/-(Le|La|Les|Sur|En|De|Du|Des|Sous)-/g, function(t, x) { return '-' + x.toLowerCase() + '-'; }); }
     var TRANSPORT_SIMU = { train: 'Train : billets réservés par l\'unité, ou remboursés sur justificatif.', avion: 'Avion : billets réservés par l\'unité, ou remboursés sur justificatif.', service: 'Véhicule de service : pas d\'indemnité kilométrique.' };
 
+    // ---------- « Ai-je droit au repas du soir ? » : les règles de Compte-rendu appliquées à SA mission ----------
+    function heureFr(v) {          // « 06/10/2026 07:40:12 » (Compte-rendu) ou date ISO → Date avec l'heure
+        var m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})(?:[ ,T]+(\d{1,2}):(\d{2}))?/.exec(String(v || ''));
+        if (m) return new Date(+m[3], m[2] - 1, +m[1], +(m[4] || 0), +(m[5] || 0));
+        var d = new Date(v); return isNaN(d) ? null : d;
+    }
+    function hh(d) { return ('0' + d.getHours()).slice(-2) + ' h ' + ('0' + d.getMinutes()).slice(-2); }
+    function mission() { var m = window.M && window.M.DEBUT ? window.M : lireL('mission_data', null); return m && m.DEBUT ? m : null; }
+    // Repas possibles d'après les horaires (règles de Compte-rendu) : { midi, soir }.
+    function repasPossibles(dep, ret) {
+        if (!dep || !ret) return null;
+        var j0 = new Date(dep.getFullYear(), dep.getMonth(), dep.getDate()), j1 = new Date(ret.getFullYear(), ret.getMonth(), ret.getDate()), n = Math.round((j1 - j0) / 864e5);
+        var d = dep.getHours() * 60 + dep.getMinutes(), r = ret.getHours() * 60 + ret.getMinutes();
+        if (n === 0) return { midi: d <= 660 && r >= 840 ? 1 : 0, soir: d <= 1080 && r >= 1260 ? 1 : 0 };
+        return { midi: (d <= 660 ? 1 : 0) + (n - 1) + (r >= 840 ? 1 : 0), soir: (d <= 1080 ? 1 : 0) + (n - 1) + (r >= 1260 ? 1 : 0) };
+    }
+    function repDroit(q) {
+        var s = N(q), m = mission(), dep = m && heureFr(m.DEBUT), ret = m && heureFr(m.FIN_RETOUR_HORODATE);
+        var nuit = / (nuit|nuitee|hotel|dormir) /.test(s), soir = / (soir|diner) /.test(s), midi = / (midi|dejeuner) /.test(s);
+        var regle = '<small>Règle : un repas compte si vous êtes hors de vos résidences sur toute la tranche (midi : 11 h – 14 h, soir : 18 h – 21 h) et qu\'il n\'est pas pris au restaurant administratif ni fourni. Les jours entre le départ et le retour sont toujours éligibles. Une nuit compte si l\'hébergement est à votre charge (hôtel), pas si vous êtes logé gratuitement.</small>';
+        if (nuit) return Promise.resolve({ html: 'Une <b>nuit</b> est indemnisée si vous dormez hors de vos résidences <b>et</b> que l\'hébergement est à votre charge (hôtel, location) : forfait de 90 €, 120 € (grandes villes, Grand Paris) ou 140 € (Paris), petit-déjeuner compris. <b>Logé gratuitement</b> (quartier, base, hébergement fourni) : rien.' +
+            (m ? '<br>Dans votre compte-rendu, indiquez pour chaque nuit « payante » ou non dans <b>Frais › Repas & hébergement</b>.' : ''), etq: 'Règles de TRIGONE Compte-rendu (arrêté du 3 juillet 2006)' });
+        if (!dep) return Promise.resolve({ html: 'Ça dépend de vos horaires :<ul class="AIDE-LISTE"><li><b>Jour du départ</b> : midi si vous partez au plus tard à 11 h ; soir si vous partez au plus tard à 18 h.</li><li><b>Jours entre les deux</b> : midi et soir, toujours.</li><li><b>Jour du retour</b> : midi si vous rentrez à 14 h ou après ; soir si vous rentrez à 21 h ou après.</li></ul>' + regle, etq: 'Règles de TRIGONE Compte-rendu (arrêté du 3 juillet 2006)' });
+        var oui = function(b) { return b ? '<b style="color:#15803d">oui ✓</b>' : '<b style="color:#b91c1c">non</b>'; };
+        var dd = dep.getHours() * 60 + dep.getMinutes(), memeJour = ret && ret.toDateString() === dep.toDateString();
+        var l = [];
+        if (memeJour) {
+            var rr = ret.getHours() * 60 + ret.getMinutes();
+            l.push('Mission sur une journée : parti à <b>' + hh(dep) + '</b>, rentré à <b>' + hh(ret) + '</b> — midi ' + oui(dd <= 660 && rr >= 840) + ', soir ' + oui(dd <= 1080 && rr >= 1260) + '.');
+        } else {
+            l.push('<b>Jour du départ</b> (' + jour(dep) + ', parti à ' + hh(dep) + ') : midi ' + oui(dd <= 660) + (dd > 660 ? ' (parti après 11 h)' : '') + ', soir ' + oui(dd <= 1080) + (dd > 1080 ? ' (parti après 18 h)' : '') + '.');
+            l.push('<b>Jours entre les deux</b> : midi et soir ' + oui(true) + '.');
+            if (ret) { var r2 = ret.getHours() * 60 + ret.getMinutes(); l.push('<b>Jour du retour</b> (' + jour(ret) + ', rentré à ' + hh(ret) + ') : midi ' + oui(r2 >= 840) + ', soir ' + oui(r2 >= 1260) + (r2 < 1260 ? ' (rentré avant 21 h)' : '') + '.'); }
+            else l.push('<b>Jour du retour</b> : midi si vous rentrez à <b>14 h</b> ou après, soir si vous rentrez à <b>21 h</b> ou après.');
+        }
+        var auj = new Date(), focus = '';
+        if (soir || midi) {
+            var estDep = auj.toDateString() === dep.toDateString(), estRet = ret && auj.toDateString() === ret.toDateString();
+            var lim = midi ? 660 : 1080, limR = midi ? 840 : 1260, nomR = midi ? 'le repas de midi' : 'le repas du soir';
+            focus = estDep ? 'Aujourd\'hui, jour du départ : ' + nomR + ' ' + (dd <= lim ? 'compte ✓ (vous êtes parti à ' + hh(dep) + ').' : 'ne compte pas (parti à ' + hh(dep) + ', après ' + (midi ? '11' : '18') + ' h).') :
+                estRet ? 'Aujourd\'hui, jour du retour : ' + nomR + ' ' + ((ret.getHours() * 60 + ret.getMinutes()) >= limR ? 'compte ✓.' : 'ne compte pas (rentré avant ' + (midi ? '14' : '21') + ' h).') :
+                !ret ? 'Aujourd\'hui, vous êtes en mission : ' + nomR + ' compte ✓ (sauf repas fourni ou au restaurant administratif). Le jour du retour, il faudra rentrer après ' + (midi ? '14' : '21') + ' h.' : '';
+        }
+        return Promise.resolve({ html: (focus ? focus + '<br><br>' : '') + 'Pour votre mission' + (m.LIBELLE_MISSION ? ' <b>« ' + esc(m.LIBELLE_MISSION) + ' »</b>' : '') + ' :<ul class="AIDE-LISTE">' + l.map(function(x) { return '<li>' + x + '</li>'; }).join('') + '</ul>' + regle,
+            etq: 'D\'après vos horaires pointés et les règles de Compte-rendu' });
+    }
+
+    // ---------- « Pourquoi 140 € ? » : le détail du calcul de Compte-rendu ----------
+    function repCalcul(q) {
+        if (!window.REPAS_DETAIL || !window.CALC_FORFAIT_FROM_STATE || !window.GET_MISSION_LEGS_FROM_STATE)
+            return Promise.resolve({ html: 'Le détail du calcul se trouve dans <b>Compte-rendu</b> : demandez-le-moi là-bas, je vous l\'explique jour par jour.' + actions(bouton('Ouvrir Compte-rendu', 'cr:P0')) });
+        var n = +((/(\d+(?:[.,]\d+)?) ?(?:€|euros?|e)\b/i.exec(q) || [])[1] || '0').replace(',', '.');
+        var lib = lireL('mission_bibliotheque', []) || [], S = null, titre = '';
+        if (n) { var e = lib.filter(function(x) { return Math.abs((+x.forfaitOfficiel || 0) - n) < 1; })[0]; if (e) { S = e.snapshot; titre = (e.snapshot && e.snapshot.LIBELLE_MISSION) || 'mission du ' + jour(heureFr(e.debut)); } }
+        if (!S && window.M && window.M.DEBUT) { S = window.M; titre = window.M.LIBELLE_MISSION || 'mission en cours'; }
+        if (!S && lib[0]) { S = lib[0].snapshot; titre = (S && S.LIBELLE_MISSION) || 'dernière mission'; }
+        if (!S) return Promise.resolve({ html: 'Je n\'ai pas de compte-rendu à expliquer sur cet appareil.' });
+        var d, total, nuits = [], ik = 0, km = 0;
+        try {
+            d = window.REPAS_DETAIL(S); total = window.CALC_FORFAIT_FROM_STATE(S);
+            window.GET_MISSION_LEGS_FROM_STATE(S).forEach(function(leg) { (leg.JOURS || []).forEach(function(J) { if (window.LEG_HAS_HEBERG_PAYANT && window.LEG_HAS_HEBERG_PAYANT(J)) nuits.push({ date: J.DATE, t: window.GET_HEBERG_RATE_FOR_JOUR(J, S) }); }); });
+            ['A', 'A_ANX', 'R', 'R_ANX'].forEach(function(k) { if (S['IK_' + k]) { ik += +S['IK_MONTANT_' + k] || 0; km += +S['IK_KM_' + k] || 0; } });
+        } catch (e) { return Promise.resolve({ html: 'Je n\'arrive pas à relire ce compte-rendu pour l\'expliquer.' }); }
+        var lm = window.REPAS_LIGNE ? window.REPAS_LIGNE(d, 'midi') : { texte: d.midi.n + ' × ' + euros(d.taux), montant: d.midi.n * d.taux }, ls = window.REPAS_LIGNE ? window.REPAS_LIGNE(d, 'soir') : { texte: d.soir.n + ' × ' + euros(d.taux), montant: d.soir.n * d.taux };
+        var heb = total - d.total, pos = repasPossibles(heureFr(S.DEBUT), heureFr(S.FIN_RETOUR_HORODATE)), manque = '';
+        if (pos && (d.midi.n < pos.midi || d.soir.n < pos.soir))
+            manque = '<br><br>💡 D\'après vos horaires, vous pouviez déclarer jusqu\'à <b>' + pos.midi + ' repas de midi</b> et <b>' + pos.soir + ' du soir</b> ; vous en avez déclaré ' + d.midi.n + ' et ' + d.soir.n + '. Si des repas étaient à votre charge, ajoutez-les dans <b>Frais › Repas & hébergement</b> (boutons +).';
+        var html = 'Le forfait de <b>« ' + esc(titre) + ' »</b> : <b>' + euros(total) + '</b> (repas et hébergement)' + (ik ? ', plus <b>' + euros(ik) + '</b> d\'indemnités kilométriques' : '') + ' :' +
+            '<table class="AIDE-TAB"><tr><td>Repas de midi : ' + esc(lm.texte) + '</td><td>' + euros(lm.montant) + '</td></tr><tr><td>Repas du soir : ' + esc(ls.texte) + '</td><td>' + euros(ls.montant) + '</td></tr>' +
+            '<tr><td>Nuits payantes : ' + nuits.length + (nuits.length ? ' (' + nuits.map(function(x) { return (x.date ? jour(heureFr(x.date) || x.date) : '') + ' : ' + euros(x.t); }).join(', ') + ')' : '') + '</td><td>' + euros(heb) + '</td></tr>' +
+            (ik ? '<tr><td>IK : ' + Math.round(km) + ' km</td><td>' + euros(ik) + '</td></tr>' : '') + '<tr class="tot"><td>Total</td><td>' + euros(total + ik) + '</td></tr></table>' + manque +
+            '<small>Ne comptent pas : les repas où vous n\'étiez pas parti avant 11 h / 18 h ou rentré après 14 h / 21 h, les repas fournis ou pris au restaurant administratif, les nuits non payantes (logé gratuitement). Pour changer un repas ou une nuit : <b>Frais › Repas & hébergement</b>.</small>';
+        return Promise.resolve({ html: html, etq: 'Détail du calcul de TRIGONE Compte-rendu' });
+    }
+
     // ---------- Les références sont-elles à jour ? ----------
     function repAJour(q, ctx) {
         var s = N(q), sujets = SUJETS_A_JOUR.filter(function(x) { return x[1].test(s); }).map(function(x) { return x[0]; });
@@ -519,6 +601,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 213, version: 'V210', l: ['« Ai-je droit au repas du soir ? » : la mascotte répond selon VOS horaires de mission', '« Pourquoi seulement 180 € ? » : le détail du calcul, jour par jour, et les repas que vous auriez pu déclarer', 'L\'IA connaît les règles de calcul de TRIGONE et le résumé de votre mission (sans nom ni matricule)'] },
         { build: 212, version: 'V209', l: ['Les suites de questions sont comprises : « prix à Lyon », puis « et Paris ? », « et Marseille », « et en Italie », « pareil pour une nuit » — sans tout reposer', 'L\'IA suit aussi la conversation (elle voit ce que la mascotte vient de répondre)'] },
         { build: 211, version: 'V208', l: ['La mascotte comprend encore plus de façons d\'écrire : SMS (« kom », « jtrouv pa », « cmb »), fautes courantes, argot et sigles militaires (« le fourrier », « mon CDU », « ma tire »…)', 'Elle varie ses réponses pour ne pas toujours répéter la même phrase, toujours avec respect'] },
         { build: 210, version: 'V207', l: ['La mascotte connaît toutes les formules de politesse (bonjour, ça va, merci, au revoir, désolé, bravo, mes respects, bonnes fêtes…) et sait quoi répondre, même combinées (« merci, bonne soirée »)'] },
@@ -562,10 +645,20 @@
         return null;
     }
 
-    var REPONSES = { simulation: repSimulation, chiffres: repChiffres, ajour: repAJour, demande: repDemande, moncr: repCr, estimation: repEstimation, relecture: repRelecture, avalider: repAValider, chorus: repChorus, devise: repDevise, nouveautes: repNouveautes };
+    // Résumé de la mission en cours pour l'IA : horaires, lieu, nuits et repas déclarés — jamais de nom ni de matricule.
+    function resumeMission() {
+        var m = mission(); if (!m) return '';
+        var dep = heureFr(m.DEBUT), ret = heureFr(m.FIN_RETOUR_HORODATE), nuits = 0;
+        (m.JOURS || []).forEach(function(J) { if (J && J.L === 'PAYANT') nuits++; });
+        var pos = repasPossibles(dep, ret);
+        return ['Mission « ' + String(m.LIBELLE_MISSION || 'en cours').slice(0, 60) + ' »', dep ? 'départ le ' + jour(dep) + ' à ' + hh(dep) : '', ret ? 'retour le ' + jour(ret) + ' à ' + hh(ret) : 'retour pas encore pointé',
+            m.MISSION_ETRANGER ? 'à l\'étranger (' + String(m.PAYS_MISSION || '').slice(0, 40) + ')' : 'en France', 'repas payants déclarés : ' + (m.PAYANT_MIDI || 0) + ' midi, ' + (m.PAYANT_SOIR || 0) + ' soir' + (pos ? ' (possibles d\'après les horaires : ' + pos.midi + ' midi, ' + pos.soir + ' soir)' : ''),
+            'nuits payantes : ' + nuits, m.MAIL_SENT ? 'compte-rendu envoyé' : 'compte-rendu pas encore envoyé'].filter(Boolean).join(' ; ');
+    }
+    var REPONSES = { droit: repDroit, calcul: repCalcul, simulation: repSimulation, chiffres: repChiffres, ajour: repAJour, demande: repDemande, moncr: repCr, estimation: repEstimation, relecture: repRelecture, avalider: repAValider, chorus: repChorus, devise: repDevise, nouveautes: repNouveautes };
     window.AIDE_CIRCUIT = {
         intention: intention, suite: suite, repondre: function(id, q, ctx) { return (REPONSES[id] || function() { return Promise.resolve(null); })(q, ctx); },
         insulte: insulte, frustre: function(q) { return FRUSTRE.test(N(q)); }, couper: couper, coupeeJusqua: coupeeJusqua, heure: heure,
-        nouveautesAAnnoncer: nouveautesAAnnoncer, expliquerErreur: expliquerErreur, estimer: estimer
+        nouveautesAAnnoncer: nouveautesAAnnoncer, resumeMission: resumeMission, expliquerErreur: expliquerErreur, estimer: estimer
     };
 })();
