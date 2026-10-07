@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=224"></script>
-<script src="aide/moteur.js?v=224"></script>
-<script src="aide/donnees.js?v=224"></script>
-<script src="aide/circuit.js?v=224"></script>
-<script src="aide/aide.js?v=224"></script>
+<script src="jumelage.js?v=225"></script>
+<script src="aide/moteur.js?v=225"></script>
+<script src="aide/donnees.js?v=225"></script>
+<script src="aide/circuit.js?v=225"></script>
+<script src="aide/aide.js?v=225"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -113,6 +113,10 @@ body.dark-mode .MER-LOGO-IMG { filter: brightness(0) invert(0.93); }
 .BTN-ACCUEIL-REPRISE { background: var(--tg-accent) !important; }
 .MER-PASTILLE-SIGNER { position: absolute; top: -9px; right: -4px; background: #b91c1c; color: #fff; font-size: 0.72rem; font-weight: 800; letter-spacing: 0.02em; text-transform: none; padding: 4px 9px; border-radius: 999px; box-shadow: 0 4px 10px rgba(185,28,28,0.35); line-height: 1.2; }
 .BTN-ACCUEIL-PETIT { position: relative; }
+/* « Me rattacher à une mission » : bouton or au trait, sous « Nouvelle demande » */
+.BTN-ACCUEIL.BTN-ACCUEIL-RATT { background: rgba(214,167,86,0.08) !important; color: #c9963f !important; border: 1.5px solid #d6a756 !important; box-shadow: none; }
+.MER-RATT-BTN.ouverte { border-color: #d6a756 !important; color: #8a5f12 !important; background: rgba(214,167,86,0.12) !important; font-weight: 800; }
+.MER-RATT-TAG { display: inline-block; margin-left: 6px; padding: 2px 8px; border-radius: 999px; background: rgba(214,167,86,0.18); color: #8a5f12; font-size: 0.66rem; font-weight: 800; text-transform: none; letter-spacing: 0; }
 .MER-BANDEAU-RECU { position: fixed; left: 50%; top: calc(12px + var(--safe-top)); transform: translate(-50%, -20px); opacity: 0; transition: opacity .3s ease, transform .3s ease; z-index: 99997; width: min(520px, calc(100% - 24px));
   display: flex; gap: 12px; align-items: center; background: #1a1a1a; color: #fff; border-radius: 16px; padding: 12px 14px; box-shadow: 0 14px 34px rgba(0,0,0,.28); font-size: 0.82rem; line-height: 1.4; }
 .MER-BANDEAU-RECU.visible { opacity: 1; transform: translate(-50%, 0); }
@@ -1180,6 +1184,6 @@ body { overflow-wrap: break-word; }                       /* un mot trop long (f
     </div>
   </div>
 </div>
-<script src="app.js?v=224"></script>
+<script src="app.js?v=225"></script>
 </body>
 </html>

@@ -38,6 +38,8 @@ module.exports = async function() {
     verifier(/code de réactivation/.test(r) && /Réponse trouvée dans la notice/.test(await t.innerText('.AIDE-FIL')), 'langage SMS et fautes (« jme rappel plu de mon mot2pass ») : code de connexion oublié');
     r = await demander(t, 'un missionnaire n\'arrive plus à se connecter, ça se passe comment ?');
     verifier(/Code oublié/.test(r) && /code de réactivation/.test(r) && /administrateur/.test(r), '« un missionnaire n\'arrive plus à se connecter » : vue d\'ensemble (code à 4 chiffres, code de connexion, trop d\'essais, téléphone perdu)');
+    r = await demander(t, 'mon chef m\'a donné un code de mission comment je me rattache');
+    verifier(/Me rattacher à une mission/.test(r) && /6 chiffres/.test(r), '« mon chef m\'a donné un code de mission » : se rattacher à la mission');
     r = await demander(t, 'le juteux a refusé mon OM pk');
     verifier(/Refusées — à corriger/.test(r), 'jargon (« le juteux a refusé mon OM pk ») : demande refusée, corriger et renvoyer');
     r = await demander(t, 'merci beaucoup !');

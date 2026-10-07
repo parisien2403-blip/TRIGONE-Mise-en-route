@@ -121,6 +121,15 @@ async function baseBoite(env) {
             // supprime = 1 pour une ligne retirée (mission annulée), gardée pour que les autres appareils la retirent aussi.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS registre (unite TEXT NOT NULL, ref TEXT NOT NULL, omr TEXT, mref TEXT, donnees TEXT, maj INTEGER, supprime INTEGER DEFAULT 0, par TEXT, PRIMARY KEY (unite, ref))'),
             env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS registre_maj ON registre (unite, maj)'),
+            // Missions ouvertes aux participants (« Me rattacher à une mission ») : code à 6 chiffres donné par le chef de
+            // mission ; resume = ce que voit celui qui tape le code (objet, lieu, dates, transport) ; etat : ouverte,
+            // envoyee (demande partie aux valideurs : liste figée), annulee. Effacées 60 jours après leur expiration.
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS mission (code TEXT PRIMARY KEY, chef TEXT NOT NULL, unite TEXT, resume TEXT, etat TEXT, cree INTEGER, expire INTEGER, ref TEXT, motif TEXT, maj INTEGER)'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS mission_chef ON mission (chef)'),
+            // Personnes rattachées : identité reprise de leur carte TRIGONE (ident = JSON) ; statut : membre, parti
+            // (détaché lui-même), retire (retiré par le chef : il ne peut pas revenir avec ce code).
+            env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS rattache (code TEXT NOT NULL, mail TEXT NOT NULL, chef TEXT NOT NULL, ident TEXT, statut TEXT, le INTEGER, PRIMARY KEY (code, mail))'),
+            env.TRIGONE_DB.prepare('CREATE INDEX IF NOT EXISTS rattache_mail ON rattache (mail)'),
             // État des envois de la boîte, commun aux appareils d'un même compte (traité sur le PC → traité sur le téléphone).
             // Rien du contenu : identifiant de l'envoi, statut, date.
             env.TRIGONE_DB.prepare('CREATE TABLE IF NOT EXISTS boite_etat (mail TEXT NOT NULL, id TEXT NOT NULL, statut TEXT, le INTEGER, maj INTEGER, PRIMARY KEY (mail, id))'),
@@ -164,7 +173,7 @@ async function supprimerCompte(env, mail, par, motif, unite, qui) {
     const msgs = ((await db.prepare('SELECT DISTINCT id FROM boite WHERE dest = ?').bind(mail).all()).results || []).map(x => 'msg:' + x.id);
     await Promise.all(cles.concat(msgs).map(k => kv.delete(k)));
     await db.batch(['DELETE FROM boite WHERE dest = ?', 'DELETE FROM abonnement WHERE mail = ?', 'DELETE FROM muet WHERE mail = ?', 'DELETE FROM rappel WHERE mail = ?',
-        'DELETE FROM suivi WHERE demandeur = ?', 'DELETE FROM suivi_acteur WHERE mail = ?', 'DELETE FROM equipe WHERE mail = ?', 'DELETE FROM equipe_lecteur WHERE mail = ?',
+        'DELETE FROM suivi WHERE demandeur = ?', 'DELETE FROM suivi_acteur WHERE mail = ?', 'DELETE FROM equipe WHERE mail = ?', 'DELETE FROM equipe_lecteur WHERE mail = ?', 'DELETE FROM rattache WHERE mail = ?', 'DELETE FROM mission WHERE chef = ?',
         'DELETE FROM boite_etat WHERE mail = ?', 'DELETE FROM porteur_role WHERE mail = ?', 'DELETE FROM admin_unite WHERE mail = ?', 'DELETE FROM compte_demande WHERE mail = ?', 'DELETE FROM compte_unite WHERE mail = ?'].map(q => db.prepare(q).bind(mail)));
     const brevo = 'sans objet';   // plus aucun mail envoyé : rien à effacer ailleurs
     const h = await empreinte('supprime:' + mail);
@@ -209,7 +218,7 @@ async function migrerCompte(env, ancien, prenom, nom) {
     const carteId = await kv.get('carte-de:' + neuf), carte = carteId ? await kv.get('carte:' + carteId, 'json') : null;
     if (carte) { carte.mail = neuf; await kv.put('carte:' + carteId, JSON.stringify(carte)); }
     const maj = [['boite', 'dest'], ['boite', 'de'], ['abonnement', 'mail'], ['suivi', 'demandeur'], ['suivi', 'detenteur'], ['suivi_acteur', 'mail'], ['suivi_acteur', 'demandeur'],
-        ['muet', 'mail'], ['rappel', 'mail'], ['equipe', 'mail'], ['equipe', 'chef'], ['equipe_lecteur', 'mail'], ['registre', 'par'], ['boite_etat', 'mail'], ['groupe_envoi', 'pris_par'],
+        ['muet', 'mail'], ['rappel', 'mail'], ['equipe', 'mail'], ['equipe', 'chef'], ['equipe_lecteur', 'mail'], ['rattache', 'mail'], ['rattache', 'chef'], ['mission', 'chef'], ['registre', 'par'], ['boite_etat', 'mail'], ['groupe_envoi', 'pris_par'],
         ['porteur_role', 'mail'], ['admin_unite', 'mail'], ['compte_demande', 'mail'], ['compte_demande', 'par'], ['compte_unite', 'mail'], ['compte_journal', 'par']];
     await db.batch(maj.map(x => db.prepare('UPDATE OR REPLACE ' + x[0] + ' SET ' + x[1] + ' = ? WHERE ' + x[1] + ' = ?').bind(neuf, ancien))
         .concat(db.prepare('UPDATE groupe_envoi SET membres = REPLACE(membres, ?, ?) WHERE membres LIKE ?').bind('"' + ancien + '"', '"' + neuf + '"', '%"' + ancien + '"%'),
@@ -1815,6 +1824,7 @@ async function api(requete, env, url, ctx) {
         const db = await baseBoite(env);
         const mails = new Set(((await db.prepare('SELECT mail FROM porteur_role').all()).results || []).map(x => x.mail));
         ((await db.prepare('SELECT DISTINCT chef FROM equipe WHERE mail = ?').bind(moi.mail).all()).results || []).forEach(x => mails.add(x.chef));
+        ((await db.prepare("SELECT DISTINCT chef FROM rattache WHERE mail = ? AND statut = 'membre'").bind(moi.mail).all()).results || []).forEach(x => mails.add(x.chef));
         // Mes autres appareils aussi (assistant ou valideur sur le PC, photo prise sur le téléphone).
         mails.add(moi.mail);
         const appareils = [];
@@ -1853,7 +1863,8 @@ async function api(requete, env, url, ctx) {
             if (!mail && p && p.mail) mail = await cleCompte(kv, p.mail);
             const r = { nid: (p && p.nid) || '', compte: false, carte: null, photo: null, moi: !!mail && mail === moi.mail };
             if (mail && await kv.get('compte:' + mail)) {
-                const chef = !aRole && mail !== moi.mail ? await db.prepare('SELECT 1 FROM equipe WHERE chef = ? AND mail = ? LIMIT 1').bind(moi.mail, mail).first() : null;
+                const chef = !aRole && mail !== moi.mail ? (await db.prepare('SELECT 1 FROM equipe WHERE chef = ? AND mail = ? LIMIT 1').bind(moi.mail, mail).first()
+                    || await db.prepare("SELECT 1 FROM rattache WHERE chef = ? AND mail = ? AND statut = 'membre' LIMIT 1").bind(moi.mail, mail).first()) : null;
                 r.compte = true;
                 const id = await kv.get('carte-de:' + mail), ca = id ? await kv.get('carte:' + id, 'json') : null;
                 if (aRole || chef || mail === moi.mail) {
@@ -1866,6 +1877,152 @@ async function api(requete, env, url, ctx) {
             resultat.push(r);
         }
         return json({ ok: true, personnes: resultat });
+    }
+    // ----- « Me rattacher à une mission » : le chef de mission ouvre sa demande collective avec un code à 6 chiffres,
+    // chaque participant de son unité s'y rattache lui-même ; son identité (carte TRIGONE) arrive dans la liste du chef.
+    if (chemin.startsWith('mission/')) {
+        const db = await baseBoite(env), maintenant = Date.now();
+        const corps = methode === 'POST' ? await requete.json().catch(() => ({})) : {};
+        const code = String(corps.code || url.searchParams.get('code') || '').replace(/\D/g, '').slice(0, 6);
+        const monUnite = (await kv.get('unite-de:' + moi.mail)) || UNITE_REGISTRE;
+        const lire = async c => { const m = c ? await db.prepare('SELECT * FROM mission WHERE code = ?').bind(c).first() : null; if (m) m.resume = JSON.parse(m.resume || '{}'); return m; };
+        const expiree = m => m.etat === 'ouverte' && m.expire && m.expire < maintenant;
+        const libelle = m => (m.resume && (m.resume.objet || m.resume.lieu)) ? ' « ' + String(m.resume.objet || m.resume.lieu).slice(0, 60) + ' »' : '';
+        const membres = async c => ((await db.prepare("SELECT mail, ident, le FROM rattache WHERE code = ? AND statut = 'membre' ORDER BY le").bind(c).all()).results || [])
+            .map(x => ({ mail: x.mail, ident: JSON.parse(x.ident || '{}'), le: x.le }));
+        const prevenir = (mails, titre, texte) => Promise.all(mails.map(m => notifierCompte(env, m, { titre, texte, type: 'SUIVI', url: '/' }, url.origin).catch(() => {})));
+        const resumeDe = r => { r = r || {}; const t = (v, n) => String(v || '').slice(0, n);
+            return { objet: t(r.objet, 120), type: t(r.type, 20), lieu: t(r.lieu, 80), pays: t(r.pays, 40), dep: t(r.dep, 30), ret: t(r.ret, 30), moyen: t(r.moyen, 40) }; };
+        // Le chef ouvre (ou met à jour, ou rouvre après l'envoi) sa mission ; un code nouveau si besoin.
+        if (chemin === 'mission/ouvrir' && methode === 'POST') {
+            // Expiration : le départ de la mission (une heure au moins) ; sans date de départ encore saisie, 30 jours.
+            const exp = +corps.expire > 0 ? Math.min(Math.max(+corps.expire, maintenant + 3600 * 1000), maintenant + 120 * JOUR * 1000) : maintenant + 30 * JOUR * 1000;
+            const ref = nettoyerRefs([corps.ref])[0] || '';
+            let m = await lire(code);
+            if (m && m.chef === moi.mail && m.etat !== 'annulee') {
+                // Mise à jour du résumé ; une mission déjà envoyée ne se rouvre que sur demande (« Rouvrir la mission »).
+                const rouvrir = !!corps.rouvrir || m.etat === 'ouverte';
+                await db.prepare("UPDATE mission SET resume = ?, expire = ?, ref = COALESCE(NULLIF(?, ''), ref), etat = ?, maj = ? WHERE code = ?")
+                    .bind(JSON.stringify(resumeDe(corps.resume)), exp, ref, rouvrir ? 'ouverte' : m.etat, maintenant, code).run();
+                return json({ ok: true, code, expire: exp, etat: rouvrir ? 'ouverte' : m.etat, rouverte: rouvrir && m.etat !== 'ouverte' });
+            }
+            await db.prepare('DELETE FROM mission WHERE expire < ?').bind(maintenant - 60 * JOUR * 1000).run();
+            const n = (await db.prepare("SELECT COUNT(*) AS n FROM mission WHERE chef = ? AND etat = 'ouverte' AND expire > ?").bind(moi.mail, maintenant).first() || {}).n || 0;
+            if (n >= 20) return erreur(429, 'Vous avez déjà 20 missions ouvertes : envoyez ou annulez-en une d\'abord.');
+            let neuf = '';
+            for (let i = 0; i < 12 && !neuf; i++) {
+                const c = String(crypto.getRandomValues(new Uint32Array(1))[0] % 900000 + 100000);
+                if (!(await db.prepare('SELECT 1 FROM mission WHERE code = ?').bind(c).first())) neuf = c;
+            }
+            if (!neuf) return erreur(503, 'Aucun code disponible pour l\'instant : réessayez.');
+            await db.prepare("INSERT INTO mission (code, chef, unite, resume, etat, cree, expire, ref, motif, maj) VALUES (?, ?, ?, ?, 'ouverte', ?, ?, ?, '', ?)")
+                .bind(neuf, moi.mail, monUnite, JSON.stringify(resumeDe(corps.resume)), maintenant, exp, ref, maintenant).run();
+            return json({ ok: true, code: neuf, expire: exp });
+        }
+        // Une mission vue par celui qui tape son code (avant de se rattacher) : 30 essais par heure contre les codes au hasard.
+        if ((chemin === 'mission/voir' && methode === 'GET') || (chemin === 'mission/rejoindre' && methode === 'POST')) {
+            const lim = 'limite-mission:' + moi.mail, nl = +(await kv.get(lim)) || 0;
+            if (nl >= 30) return erreur(429, 'Trop de codes essayés : réessayez dans une heure.');
+            const m = await lire(code);
+            if (!m || expiree(m)) { await kv.put(lim, String(nl + 1), { expirationTtl: 3600 }); return erreur(404, 'Code inconnu ou expiré : vérifiez les 6 chiffres auprès de votre chef de mission.'); }
+            if (m.unite !== monUnite) return erreur(403, 'Cette mission est celle d\'une autre unité.');
+            const lui = await db.prepare('SELECT statut FROM rattache WHERE code = ? AND mail = ?').bind(code, moi.mail).first();
+            const n = (await db.prepare("SELECT COUNT(*) AS n FROM rattache WHERE code = ? AND statut = 'membre'").bind(code).first() || {}).n || 0;
+            const vue = { code, resume: m.resume, chef: await quiDe(env, m.chef), etat: m.etat, n: n + 1, statut: lui ? lui.statut : '', estChef: m.chef === moi.mail };
+            if (chemin === 'mission/voir') return json(Object.assign({ ok: true }, vue));
+            if (m.chef === moi.mail) return erreur(400, 'Vous êtes le chef de cette mission : vous y êtes déjà.');
+            if (m.etat === 'annulee') return erreur(410, 'Cette mission a été annulée.');
+            if (m.etat !== 'ouverte') return erreur(409, 'La demande est déjà partie aux valideurs : demandez à votre chef de mission de la rouvrir.');
+            if (lui && lui.statut === 'retire') return erreur(403, 'Le chef de mission vous a retiré de cette mission : voyez avec lui.');
+            if (lui && lui.statut === 'membre') return json({ ok: true, deja: true, n: vue.n });
+            const id = await kv.get('carte-de:' + moi.mail), ca = id ? await kv.get('carte:' + id, 'json') : null;
+            if (!ca || !(ca.nom || ca.prenom)) return erreur(400, 'Votre carte TRIGONE n\'est pas encore prête : ouvrez « Ma carte » une fois (profil complet), puis réessayez.');
+            if (!chiffresNid(ca.nid)) return erreur(400, 'Votre matricule (NID) manque : renseignez-le dans Mon profil, puis réessayez.');
+            const ident = { grade: ca.grade || '', nom: (ca.nom || '').toUpperCase(), prenom: ca.prenom || '', unite: ca.unite || '', cie: ca.cie || '', nid: ca.nid || '' };
+            await db.prepare("INSERT INTO rattache (code, mail, chef, ident, statut, le) VALUES (?, ?, ?, ?, 'membre', ?) ON CONFLICT (code, mail) DO UPDATE SET ident = excluded.ident, statut = 'membre', le = excluded.le")
+                .bind(code, moi.mail, m.chef, JSON.stringify(ident), maintenant).run();
+            await prevenir([m.chef], 'Nouveau participant', [ident.grade, ident.nom, ident.prenom].filter(Boolean).join(' ') + ' s\'est rattaché à votre mission' + libelle(m) + ' (' + (n + 2) + ' pax).');
+            return json({ ok: true, n: n + 2 });
+        }
+        // Les missions où je suis rattaché (60 derniers jours) : état, chef, résumé.
+        if (chemin === 'mission/miennes' && methode === 'GET') {
+            const r = (await db.prepare("SELECT r.code, r.statut, r.le, m.etat, m.resume, m.chef, m.motif, m.expire FROM rattache r JOIN mission m ON m.code = r.code WHERE r.mail = ? AND r.statut IN ('membre', 'retire') AND r.le > ? ORDER BY r.le DESC LIMIT 30")
+                .bind(moi.mail, maintenant - 60 * JOUR * 1000).all()).results || [];
+            const sortie = [];
+            for (const x of r) sortie.push({ code: x.code, statut: x.statut, le: x.le, etat: expiree(x) ? 'expiree' : x.etat, motif: x.motif || '', resume: JSON.parse(x.resume || '{}'), chef: await quiDe(env, x.chef) });
+            return json({ ok: true, missions: sortie });
+        }
+        if (chemin === 'mission/quitter' && methode === 'POST') {
+            const m = await lire(code);
+            if (!m) return erreur(404, 'Mission inconnue.');
+            if (m.etat === 'envoyee') return erreur(409, 'La demande est déjà partie aux valideurs : voyez avec votre chef de mission.');
+            const r = await db.prepare("UPDATE rattache SET statut = 'parti', le = ? WHERE code = ? AND mail = ? AND statut = 'membre'").bind(maintenant, code, moi.mail).run();
+            if (r.meta && r.meta.changes && m.etat === 'ouverte') await prevenir([m.chef], 'Participant détaché', (await quiDe(env, moi.mail) || moi.mail) + ' s\'est détaché de votre mission' + libelle(m) + '.');
+            return json({ ok: true });
+        }
+        // Tout le reste : le chef de la mission seulement.
+        const m = await lire(code);
+        if (!m && chemin !== 'mission/annuler') return erreur(404, 'Mission inconnue.');
+        if (m && m.chef !== moi.mail) return erreur(403, 'Réservé au chef de cette mission.');
+        if (chemin === 'mission/liste' && methode === 'GET') return json({ ok: true, code, etat: expiree(m) ? 'expiree' : m.etat, expire: m.expire, membres: await membres(code) });
+        if (chemin === 'mission/retirer' && methode === 'POST') {
+            if (m.etat === 'envoyee') return erreur(409, 'La demande est partie : rouvrez la mission pour retirer quelqu\'un (elle repartira aux valideurs).');
+            const cible = await cleCompte(kv, String(corps.mail || ''));
+            const r = await db.prepare("UPDATE rattache SET statut = 'retire', le = ? WHERE code = ? AND mail = ? AND statut = 'membre'").bind(maintenant, code, cible).run();
+            if (r.meta && r.meta.changes) await prevenir([cible], 'Retiré d\'une mission', 'Le chef de mission ' + (await quiDe(env, moi.mail)) + ' vous a retiré de la mission' + libelle(m) + '.');
+            return json({ ok: true, membres: await membres(code) });
+        }
+        // Demande envoyée aux valideurs : la liste est figée, le code ne marche plus.
+        if (chemin === 'mission/fermer' && methode === 'POST') {
+            if (m.etat === 'annulee') return json({ ok: true, etat: 'annulee' });
+            await db.prepare("UPDATE mission SET etat = 'envoyee', ref = COALESCE(NULLIF(?, ''), ref), maj = ? WHERE code = ?").bind(nettoyerRefs([corps.ref])[0] || '', maintenant, code).run();
+            const l = await membres(code);
+            await prevenir(l.map(x => x.mail), 'Demande envoyée', 'La demande de la mission' + libelle(m) + ' est partie aux valideurs (' + (l.length + 1) + ' pax).');
+            return json({ ok: true, etat: 'envoyee', n: l.length + 1 });
+        }
+        // Mission annulée par le chef (ou par le demandeur d'une demande déjà envoyée, avec ou sans code) :
+        // rattachés, participants (retrouvés par leur matricule), valideurs et assistants Chorus DT prévenus ; la ligne du
+        // registre des OMR est marquée « annulée » (pas effacée) ; plus de rappel de départ ; plus de compte-rendu attendu.
+        if (chemin === 'mission/annuler' && methode === 'POST') {
+            const motif = String(corps.motif || '').trim().slice(0, 200), ref = nettoyerRefs([corps.ref])[0] || (m && m.ref) || '', omr = String(corps.omr || '').slice(0, 30);
+            const objet = String(corps.objet || (m && (m.resume.objet || m.resume.lieu)) || '').slice(0, 80), qui = await quiDe(env, moi.mail);
+            const texte = 'La mission' + (objet ? ' « ' + objet + ' »' : '') + (omr ? ' (OMR N°' + omr + ')' : '') + ' est annulée' + (qui ? ' par ' + qui : '') + (motif ? ' : ' + motif : '') + '. Aucun compte-rendu ne sera à faire.';
+            const prev = new Set();
+            let trouve = !!m;   // une mission à moi, ou une demande à moi dans le suivi : sinon rien n'est fait (ni personne prévenu)
+            if (m) {
+                await db.prepare("UPDATE mission SET etat = 'annulee', motif = ?, maj = ? WHERE code = ?").bind(motif, maintenant, m.code).run();
+                (await membres(m.code)).forEach(x => prev.add(x.mail));
+            }
+            if (ref) {
+                const lignes = (await db.prepare("SELECT * FROM suivi WHERE ref = ? AND demandeur = ? AND genre = 'mer' AND etape NOT IN ('annulee')").bind(ref, moi.mail).all()).results || [];
+                if (lignes.length) {
+                    trouve = true;
+                    await avancerSuivi(env, lignes, 'annulee', { trace: { e: 'annulee', le: maintenant, qui, par: moi.mail } }, url.origin, null);
+                    ((await db.prepare('SELECT mail FROM suivi_acteur WHERE ref = ? AND demandeur = ?').bind(ref, moi.mail).all()).results || []).forEach(x => prev.add(x.mail));
+                    for (const l of lignes) if (l.detenteur && await kv.get('compte:' + l.detenteur)) prev.add(l.detenteur);
+                }
+                await db.prepare('DELETE FROM rappel WHERE ref = ? AND mail = ?').bind(ref, moi.mail).run();
+                const u = uniteRegistre(requete);
+                const ligne = await db.prepare("SELECT * FROM registre WHERE unite = ? AND supprime = 0 AND ((? <> '' AND omr = ?) OR ref = ? OR mref = ?) ORDER BY maj DESC LIMIT 1").bind(u, omr, omr, ref, ref).first();
+                if (ligne) {
+                    const d = JSON.parse(ligne.donnees || '{}');
+                    if (d.mailDemandeur === moi.mail && !(d.tampon && d.tampon.s === 'annule')) {
+                        // Même tampon « ANNULÉ » que celui de l'assistant Chorus DT : ligne fermée, plus de CR attendu ni de relance.
+                        d.tampon = { s: 'annule', le: maintenant, par: (qui || moi.mail) + ' (demandeur)', motif, unite: nomUnite(u) };
+                        await registreEcrireLigne(db, u, d, maintenant, moi.mail);
+                    }
+                }
+            }
+            if (!trouve) return erreur(404, 'Demande inconnue : elle n\'a peut-être pas encore été reçue par le serveur (envoi en attente de réseau).');
+            for (const nid of (Array.isArray(corps.nids) ? corps.nids : []).slice(0, 60)) {
+                const c = chiffresNid(nid), mail = c ? await kv.get('nid:' + await empreinteNid(env, c)) : null;
+                if (mail) prev.add(mail);
+            }
+            prev.delete(moi.mail);
+            await prevenir([...prev], 'Mission annulée', texte);
+            return json({ ok: true, prevenus: prev.size });
+        }
+        return erreur(404, 'Action inconnue.');
     }
     // États des envois (traité, rouvert, supprimé) partagés entre mes appareils : { etats: [{ id, statut, le }], depuis }.
     // Le plus récent (le) l'emporte ; réponse : états changés depuis « depuis » (horloge du serveur).
