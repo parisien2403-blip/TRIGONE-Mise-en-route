@@ -814,7 +814,7 @@ const REGLES_FRAIS = [
     'Consignes du 4e RIISC : le compte-rendu se rend dans les 30 jours après la date de fin de mission ; les billets de train et d\'avion passent par l\'organisme de réservation Amplitude (ABT).',
     'Référence : décret n° 2006-781 et arrêtés du 3 juillet 2006. Pour tout cas non couvert ici (restaurant administratif accessible mais repas pris ailleurs, hôtel plus cher que le forfait, outre-mer, classe de train ou avion, mission annulée, justificatif perdu, stage, délai de remboursement), dis que l\'assistant Chorus DT de l\'unité fait foi et ne donne pas de chiffre.'
 ].join('\n');
-function consigneAide(base, fiches, ecran, appli, mission, libre) {
+function consigneAide(base, fiches, ecran, appli, mission, libre, extraits, outils) {
     return [
         'Tu es la mascotte de TRIGONE, l\'application du 4e RIISC pour les demandes d\'ordre de mise en route (avant une mission) et les comptes-rendus de mission (horodatages, frais et justificatifs, au retour). Tu es un assistant conversationnel complet, chaleureux et vif d\'esprit : un camarade bienveillant qui connaît l\'appli par cœur.',
         'TA FAÇON DE PARLER :',
@@ -838,12 +838,94 @@ function consigneAide(base, fiches, ecran, appli, mission, libre) {
         ecran && !libre ? 'ÉCRAN OUVERT PAR L\'UTILISATEUR : ' + ecran.nom + ' — ' + ecran.d : '',
         // Seulement les écrans utiles (écran ouvert, écrans des fiches) : la consigne reste courte, l'IA consomme moins du quota gratuit.
         libre ? '' : 'LES ÉCRANS DE TRIGONE UTILES ICI (où cliquer) :\n' + base.ecrans.filter(e => (ecran && e.id === ecran.id) || fiches.some(f => (f.e || []).includes(e.id))).map(e => '* ' + e.nom + ' : ' + e.d).join('\n'),
-        libre ? '' : fiches.length ? 'FICHES UTILES :\n' + fiches.map(f => '[' + f.id + '] ' + f.t + ' :\n' + texteSimple(f.r)).join('\n\n') : 'Aucune fiche ne correspond directement à la question.'
+        libre ? '' : fiches.length ? 'FICHES UTILES :\n' + fiches.map(f => '[' + f.id + '] ' + f.t + ' :\n' + texteSimple(f.r)).join('\n\n') : 'Aucune fiche ne correspond directement à la question.',
+        // Passages trouvés par le sens de la question dans toute la notice et toutes les fiches.
+        (extraits || []).length ? 'PASSAGES DE LA NOTICE ET DES FICHES LES PLUS PROCHES DE LA QUESTION (sers-t\'en s\'ils répondent ; boutons en **gras** d\'après eux seulement) :\n' +
+            extraits.map(x => (x.fiche ? '[' + x.fiche + '] ' : '') + x.titre + ' :\n' + x.texte).join('\n\n') : '',
+        outils ? 'OUTILS DE CALCUL : pour tout montant (nuits, repas, mission complète), indemnités kilométriques, code FD, ou l\'état des demandes, comptes-rendus ou validations de la personne, APPELLE l\'outil qui convient au lieu de répondre de mémoire : TRIGONE fait le calcul exact sur son appareil et tu reçois le résultat. Sans besoin de calcul, réponds directement.' : ''
     ].filter(Boolean).join('\n');
 }
+
+// ---------- IA de la mascotte : outils, recherche par le sens, consommation ----------
+// Texte d'une réponse de Workers AI (deux formats selon les modèles).
+function sortieIa(r) { return String((r && (r.response || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '').trim(); }
+// Outils que l'IA peut demander : ils s'exécutent sur l'appareil de la personne (aide/aide.js), avec les moteurs exacts de
+// TRIGONE (barèmes, IK, codier FD, suivi) et ses propres données ; le serveur ne fait que transmettre.
+const OUTILS_AIDE = [
+    { name: 'calculer_mission', description: 'Calcule le remboursement estimé d\'une mission ou d\'un stage (nuits, repas, transport, indemnités kilométriques) avec les barèmes officiels de TRIGONE.',
+        parameters: { type: 'object', properties: { destination: { type: 'string', description: 'Ville (France) ou pays de la mission' }, depart: { type: 'string', description: 'Ville de départ, si elle est donnée' },
+            jours: { type: 'integer', description: 'Nombre de jours de mission' }, nuits: { type: 'integer', description: 'Nombre de nuits, si seules les nuits sont demandées' },
+            repas: { type: 'integer', description: 'Nombre de repas, si seuls les repas sont demandés' }, transport: { type: 'string', description: 'train, avion, vrc (véhicule personnel), service ou commun' },
+            cv: { type: 'integer', description: 'Puissance fiscale du véhicule personnel (CV)' } }, required: ['destination'] } },
+    { name: 'bareme_lieu', description: 'Taux de remboursement de la nuitée et du repas pour une ville de France ou un pays étranger.',
+        parameters: { type: 'object', properties: { lieu: { type: 'string', description: 'Ville ou pays' } }, required: ['lieu'] } },
+    { name: 'indemnites_kilometriques', description: 'Indemnités kilométriques (véhicule personnel) entre deux villes, distance comprise.',
+        parameters: { type: 'object', properties: { depart: { type: 'string' }, arrivee: { type: 'string' }, cv: { type: 'integer', description: 'Puissance fiscale (CV)' } }, required: ['depart', 'arrivee'] } },
+    { name: 'codes_fd', description: 'Codes FD (codes d\'imputation FD@LIGNE) de l\'unité pour un type de dépense ou de mission.',
+        parameters: { type: 'object', properties: { recherche: { type: 'string', description: 'Ex. : déplacement, formation, stage, mission opérationnelle' }, unite: { type: 'string', description: 'Unité, si elle est précisée' } }, required: [] } },
+    { name: 'mes_demandes', description: 'Où en sont les demandes de mise en route de la personne (valideurs, assistant Chorus DT).', parameters: { type: 'object', properties: {}, required: [] } },
+    { name: 'mon_compte_rendu', description: 'Où en sont les comptes-rendus de mission de la personne.', parameters: { type: 'object', properties: {}, required: [] } },
+    { name: 'a_valider', description: 'Ce que la personne a à valider ou à traiter (valideurs et assistant Chorus DT).', parameters: { type: 'object', properties: {}, required: [] } }
+];
+const NOMS_OUTILS = OUTILS_AIDE.map(o => o.name);
+const OUTILS_INDICES = /\d|combien|€|euro|rembours|toucher|tarif|bar[eè]me|taux|nuit|repas|ik\b|kilom|code|fd|imputation|o[uù] en est|demande|compte.rendu|\bcr\b|valider|signer/i;
+// Appels d'outils dans une réponse : format OpenAI (choices[0].message.tool_calls), format Workers AI (tool_calls), ou
+// à défaut un appel écrit en JSON dans le texte.
+function appelsOutils(r) {
+    let l = (r && (r.tool_calls || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.tool_calls))) || [];
+    if (!l.length) { const t = sortieIa(r); if (/^[\[{][\s\S]*"name"\s*:/.test(t)) { try { const j = JSON.parse(t); l = Array.isArray(j) ? j : [j]; } catch (e) {} } }
+    return l.map(c => { const f = (c && c.function) || c || {}; let a = f.arguments || f.parameters || {}; if (typeof a === 'string') { try { a = JSON.parse(a); } catch (e) { a = {}; } }
+        return { nom: String(f.name || ''), args: a && typeof a === 'object' ? a : {} }; }).filter(c => NOMS_OUTILS.includes(c.nom)).slice(0, 3);
+}
+// Consommation du jour (jetons envoyés / reçus par modèle), pour ajuster les plafonds au quota gratuit.
+async function noterConso(kv, jour, modele, usage) {
+    const cleU = 'aide-ia-conso:' + jour, u = (await kv.get(cleU, 'json')) || {}, x = u[modele] || { q: 0, entree: 0, sortie: 0 };
+    x.q++; if (usage) { x.entree += +usage.prompt_tokens || 0; x.sortie += +usage.completion_tokens || 0; } u[modele] = x;
+    await kv.put(cleU, JSON.stringify(u), { expirationTtl: 2592000 });
+}
+// Recherche par le sens : chaque fiche et chaque page de la notice devient un vecteur (modèle multilingue bge-m3 de
+// Workers AI), calculé une fois par version de la base et gardé dans le KV en binaire (lecture sans analyse JSON) ;
+// la question est comparée à tous (produit scalaire de vecteurs normés).
+const MODELE_SENS = '@cf/baai/bge-m3', SENS_SEUIL = 0.42, SENS_SUJET = 0.58;
+let NOTICE_AIDE = null;
+function normer(v) { let n = 0; for (let i = 0; i < v.length; i++) n += v[i] * v[i]; n = Math.sqrt(n) || 1; const o = new Float32Array(v.length); for (let i = 0; i < v.length; i++) o[i] = v[i] / n; return o; }
+async function extraitsAide(env, ia, url, base, question, exclus) {
+    if (!NOTICE_AIDE) { const r = await env.ASSETS.fetch(new Request(new URL('/aide/notice.json', url).toString())); NOTICE_AIDE = r.ok ? await r.json() : { pages: [] }; }
+    const morceaux = base.fiches.map(f => ({ fiche: f.id, titre: f.t, texte: texteSimple(f.r) }))
+        .concat((NOTICE_AIDE.pages || []).map(p => ({ fiche: '', titre: 'Notice › ' + p.t, texte: p.x })));
+    if (!morceaux.length) return [];
+    const cle = 'aide-sens:' + (await empreinte(morceaux.map(m => m.titre + '|' + m.texte.length).join('#'))).slice(0, 24);
+    let buf = await env.TRIGONE_KV.get(cle, 'arrayBuffer'), dim = 0, tout = null;
+    if (buf) { tout = new Float32Array(buf); dim = tout.length / morceaux.length; }
+    if (!tout || dim !== Math.round(dim)) {
+        const vecs = [];
+        for (let i = 0; i < morceaux.length; i += 40) {
+            const r = await ia.run(MODELE_SENS, { text: morceaux.slice(i, i + 40).map(m => (m.titre + ' : ' + m.texte).slice(0, 1200)) });
+            (r && r.data || []).forEach(v => vecs.push(normer(v)));
+        }
+        if (vecs.length !== morceaux.length) return [];
+        dim = vecs[0].length; tout = new Float32Array(dim * vecs.length); vecs.forEach((v, i) => tout.set(v, i * dim));
+        await env.TRIGONE_KV.put(cle, tout.buffer, { expirationTtl: 30 * 86400 });
+    }
+    const rq = await ia.run(MODELE_SENS, { text: [question] }), q = normer((rq && rq.data && rq.data[0]) || []);
+    if (q.length !== dim) return [];
+    const notes = morceaux.map((m, i) => { let s = 0; const o = i * dim; for (let k = 0; k < dim; k++) s += q[k] * tout[o + k]; return { m, s }; })
+        .filter(x => x.s >= SENS_SEUIL && !(x.m.fiche && (exclus || []).includes(x.m.fiche))).sort((a, b) => b.s - a.s).slice(0, 3);
+    return notes.map(x => ({ fiche: x.m.fiche, titre: x.m.titre, texte: x.m.texte.slice(0, 700), score: Math.round(x.s * 100) / 100 }));
+}
 // Tests locaux (MODE_TEST et AIDE_IA_SIMULEE) : réponse fabriquée, sans appeler Workers AI.
+function vecteurSimule(t) {
+    const v = new Array(256).fill(0);
+    String(t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().split(/[^a-z0-9]+/).filter(m => m.length > 3).forEach(m => { let h = 7; for (const c of m.slice(0, 6)) h = (h * 31 + c.charCodeAt(0)) % 256; v[h] += 1; });
+    return v;
+}
 const iaSimulee = { run: async (modele, o) => {
+    if (modele === MODELE_SENS) return { data: o.text.map(vecteurSimule) };
     const sys = o.messages[0].content, q = o.messages[o.messages.length - 1].content;
+    // Outils : « combien … à <Ville> » demande le calcul de la mission ; le 2e temps reprend les résultats.
+    const m = /combien[^?]* (?:a|à) ([A-Z][a-zé-]+)/.exec(q);
+    if (o.tools && m) return { tool_calls: [{ name: 'calculer_mission', arguments: { destination: m[1], nuits: +((/(\d+) nuits?/.exec(q) || [])[1] || 0) || undefined } }] };
+    if (/^RÉSULTATS EXACTS/.test(q)) return { response: 'Réponse simulée avec les calculs : ' + q.split('\n')[1] };
     const id = (/\[([a-z0-9-]+)\] /.exec(sys.split('FICHES UTILES :')[1] || '') || [])[1];
     return { response: 'Réponse simulée à « ' + q + ' » : touchez **Documents**.' + (id ? ' [FICHE:' + id + ']' : '') };
 } };
@@ -1568,7 +1650,7 @@ async function api(requete, env, url, ctx) {
         if (!ia) return erreur(503, 'L\'IA n\'est pas disponible.');
         const d = await requete.json().catch(() => ({}));
         const question = String(d.question || '').replace(/\s+/g, ' ').trim().slice(0, 400);
-        if (question.length < 2) return erreur(400, 'Question vide.');
+        if (question.length < 2 && !d.suite) return erreur(400, 'Question vide.');
         // Propos insultants : refusés ici aussi (la mascotte coupe déjà la conversation dans l'appli).
         const qn = ' ' + question.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim() + ' ';
         if (/ (connard|connasse|conard|salope|salaud|pute|petasse|encule|enculer|enfoire|batard|ntm|nique|fdp|ta gueule|tg|fils de pute|de merde|pd|pede) /.test(qn) ||
@@ -1578,48 +1660,88 @@ async function api(requete, env, url, ctx) {
         const maxCompte = +env.AIDE_IA_MAX_COMPTE || 40, maxJour = +env.AIDE_IA_MAX_JOUR || 400;
         const cleC = 'aide-ia:' + jour + ':' + moi.mail, cleJ = 'aide-ia-jour:' + jour;
         const nC = +(await kv.get(cleC)) || 0, nJ = +(await kv.get(cleJ)) || 0;
-        if (nC >= maxCompte) return erreur(429, 'Vous avez posé ' + maxCompte + ' questions à l\'IA aujourd\'hui : elle revient demain.');
-        if (nJ >= maxJour) return erreur(429, 'L\'IA a atteint sa limite du jour pour TRIGONE : elle revient demain.');
+        if (!d.suite && nC >= maxCompte) return erreur(429, 'Vous avez posé ' + maxCompte + ' questions à l\'IA aujourd\'hui : elle revient demain.');
+        if (!d.suite && nJ >= maxJour) return erreur(429, 'L\'IA a atteint sa limite du jour pour TRIGONE : elle revient demain.');
         const rb = await env.ASSETS.fetch(new Request(new URL('/aide/base.json', url).toString()));
         if (!rb.ok) return erreur(503, 'Base de l\'aide introuvable.');
         const base = await rb.json();
-        // Conversation libre (aucun sujet de TRIGONE reconnu par la mascotte) : consigne courte et modèle léger.
-        const libre = d.sujet === 'libre';
-        const fiches = libre ? [] : (Array.isArray(d.fiches) ? d.fiches : []).slice(0, 3).map(id => base.fiches.find(f => f.id === id)).filter(Boolean);
+        const fiches = (Array.isArray(d.fiches) ? d.fiches : []).slice(0, 3).map(id => base.fiches.find(f => f.id === id)).filter(Boolean);
         const ecran = base.ecrans.find(e => e.id === d.ecran) || null;
         const historique = (Array.isArray(d.historique) ? d.historique : []).slice(-6)
             .map(h => ({ role: h && h.de === 'ia' ? 'assistant' : 'user', content: String((h && h.texte) || '').slice(0, 800) })).filter(h => h.content);
-        const messages = [{ role: 'system', content: consigneAide(base, fiches, ecran, d.app === 'cr' ? 'Compte-rendu' : 'Mise en route', String(d.mission || '').slice(0, 600), libre) }].concat(historique, [{ role: 'user', content: question }]);
-        await kv.put(cleC, String(nC + 1), { expirationTtl: 172800 });
-        await kv.put(cleJ, String(nJ + 1), { expirationTtl: 172800 });
+        const mission = String(d.mission || '').slice(0, 600), appli = d.app === 'cr' ? 'Compte-rendu' : 'Mise en route';
         const principal = env.AIDE_MODELE || '@cf/mistralai/mistral-small-3.1-24b-instruct', leger = env.AIDE_MODELE_LEGER || '@cf/meta/llama-3.1-8b-instruct-fast';
-        let modele = libre ? leger : principal, texte = '', usage = null;
-        const lancer = async m => {
-            const r = await ia.run(m, { messages, max_tokens: libre ? 400 : 600, temperature: 0.7 });
-            usage = r && r.usage || null;
-            return String((r && (r.response || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '').trim();
+        const finir = (texte, modele, libre, messages, extra) => {
+            let fiche = '';
+            texte = String(texte || '').replace(/\[FICHE:\s*([a-z0-9-]+)\s*\]/gi, (m, id) => { if (!fiche && base.fiches.some(f => f.id === id)) fiche = id; return ''; }).trim().slice(0, 2500);
+            const rep = Object.assign({ ok: true, reponse: texte, fiche, restant: Math.max(0, maxCompte - nC - 1) }, extra || {});
+            if (env.MODE_TEST === '1') rep.essai = Object.assign({ modele, libre, fiches: fiches.map(f => f.id), ecran: ecran ? ecran.id : '', messages }, extra && extra.essai || {});
+            return rep;
         };
-        try {
-            try { texte = await lancer(modele); }
-            catch (e1) { if (modele === principal || /allocation|quota|4006|neurons/i.test(String(e1 && e1.message || e1))) throw e1; modele = principal; texte = await lancer(modele); }   // modèle léger indisponible : le principal
-            // Consommation du jour (jetons envoyés / reçus par modèle), pour ajuster les plafonds au quota gratuit.
-            if (usage) {
-                const cleU = 'aide-ia-conso:' + jour, u = (await kv.get(cleU, 'json')) || {}, x = u[modele] || { q: 0, entree: 0, sortie: 0 };
-                x.q++; x.entree += +usage.prompt_tokens || 0; x.sortie += +usage.completion_tokens || 0; u[modele] = x;
-                await kv.put(cleU, JSON.stringify(u), { expirationTtl: 2592000 });
-            }
-        } catch (e) {
+        const erreurIa = e => {
             console.log('aide/ia : ' + (e && e.message || e));
             // Quota gratuit de Workers AI épuisé (compte Workers Free : rien n'est facturé, l'IA revient le lendemain).
             if (/allocation|quota|4006|neurons/i.test(String(e && e.message || e))) return erreur(429, 'L\'IA a atteint sa limite du jour pour TRIGONE : elle revient demain.');
             return erreur(503, 'L\'IA n\'a pas pu répondre pour le moment.');
+        };
+        // 2e temps des outils : l'appareil a fait les calculs demandés (barèmes, IK, codes FD, état des demandes) avec les moteurs
+        // exacts de TRIGONE ; l'IA rédige sa réponse avec ces résultats. Compté avec la question d'origine (pas de nouvelle question).
+        if (d.suite) {
+            const cleS = 'aide-suite:' + String(d.suite).replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40), s = await kv.get(cleS, 'json');
+            if (!s || s.mail !== moi.mail) return erreur(410, 'Réponse expirée : reposez la question.');
+            await kv.delete(cleS);
+            const res = (Array.isArray(d.resultats) ? d.resultats : []).slice(0, 3).map(r => '• ' + String(r && r.nom || '').slice(0, 40) + ' : ' + String(r && r.texte || '').replace(/\s+/g, ' ').slice(0, 1500)).join('\n');
+            const messages = s.messages.concat([{ role: 'user', content: 'RÉSULTATS EXACTS DES CALCULS DE TRIGONE (reprends ces chiffres tels quels, n\'en invente aucun autre ; s\'il manque une information, dis-le) :\n' +
+                (res || '(aucun résultat)') + '\n\nRéponds maintenant à ma question, simplement : « ' + s.question + ' »' }]);
+            let texte = '';
+            try { const r = await ia.run(principal, { messages, max_tokens: 600, temperature: 0.4 }); texte = sortieIa(r); } catch (e) { return erreurIa(e); }
+            if (!texte) return erreur(503, 'L\'IA n\'a pas pu répondre pour le moment.');
+            await noterConso(kv, jour, principal, null);
+            return json(finir(texte, principal, false, messages, { outils: true }));
+        }
+        // Recherche par le sens : les passages de la notice et des fiches les plus proches de la question (même tournée
+        // autrement que dans la base). Un passage très proche suffit à en faire une question sur TRIGONE.
+        let extraits = [];
+        try { extraits = await extraitsAide(env, ia, url, base, question, fiches.map(f => f.id)); } catch (e) { console.log('aide/sens : ' + (e && e.message || e)); }
+        const libre = d.sujet === 'libre' && !(extraits[0] && extraits[0].score >= SENS_SUJET);
+        // Outils : seulement si l'appareil sait les faire (d.outils) et que la question peut en avoir besoin (chiffres, argent, codes, dossiers).
+        const avecOutils = !!d.outils && (!libre || OUTILS_INDICES.test(question));
+        // Mémoire des réponses : une question générale déjà posée (sans conversation, sans mission, sans chiffre ni adresse)
+        // reçoit la même réponse, sans consommer le quota ni compter dans les questions du jour.
+        const general = !historique.length && !mission && !/[\d@]/.test(question);
+        const cleCache = general ? 'aide-cache:' + (await empreinte([String(d.version || ''), appli, ecran ? ecran.id : '', fiches.map(f => f.id).join(','), qn.trim()].join('|'))).slice(0, 32) : '';
+        if (cleCache) { const c = await kv.get(cleCache, 'json'); if (c && c.texte) return json(finir(c.texte, c.modele, c.libre, [], { cache: true, restant: Math.max(0, maxCompte - nC) })); }
+        await kv.put(cleC, String(nC + 1), { expirationTtl: 172800 });
+        await kv.put(cleJ, String(nJ + 1), { expirationTtl: 172800 });
+        const messages = [{ role: 'system', content: consigneAide(base, fiches, ecran, appli, mission, libre, extraits, avecOutils) }].concat(historique, [{ role: 'user', content: question }]);
+        let modele = libre && !avecOutils ? leger : principal, texte = '', usage = null, appels = [];
+        const lancer = async (m, outils) => {
+            const r = await ia.run(m, Object.assign({ messages, max_tokens: libre ? 400 : 600, temperature: outils ? 0.3 : 0.7 }, outils ? { tools: outils } : {}));
+            usage = r && r.usage || null;
+            appels = outils ? appelsOutils(r) : [];
+            return sortieIa(r);
+        };
+        try {
+            if (avecOutils) {
+                // Deux écritures des outils selon les modèles de Workers AI ; sans outil possible, réponse ordinaire.
+                try { texte = await lancer(modele, OUTILS_AIDE.map(o => ({ type: 'function', function: o }))); }
+                catch (e0) { if (/allocation|quota|4006|neurons/i.test(String(e0 && e0.message || e0))) throw e0;
+                    try { texte = await lancer(modele, OUTILS_AIDE); } catch (e1) { if (/allocation|quota|4006|neurons/i.test(String(e1 && e1.message || e1))) throw e1; texte = await lancer(modele, null); } }
+            } else {
+                try { texte = await lancer(modele, null); }
+                catch (e1) { if (modele === principal || /allocation|quota|4006|neurons/i.test(String(e1 && e1.message || e1))) throw e1; modele = principal; texte = await lancer(modele, null); }   // modèle léger indisponible : le principal
+            }
+            await noterConso(kv, jour, modele, usage);
+        } catch (e) { return erreurIa(e); }
+        // L'IA demande des calculs : l'appareil les fait, puis renvoie les résultats (d.suite) pour la réponse finale.
+        if (appels.length) {
+            const jeton = b64url(crypto.getRandomValues(new Uint8Array(18)));
+            await kv.put('aide-suite:' + jeton, JSON.stringify({ mail: moi.mail, question, messages: messages.concat([{ role: 'assistant', content: 'Je lance les calculs de TRIGONE : ' + appels.map(a => a.nom).join(', ') + '.' }]) }), { expirationTtl: 300 });
+            return json({ ok: true, outils: appels, suite: jeton, essai: env.MODE_TEST === '1' ? { modele, libre, extraits: extraits.map(x => x.titre) } : undefined });
         }
         if (!texte) return erreur(503, 'L\'IA n\'a pas pu répondre pour le moment.');
-        // [FICHE:id] en fin de réponse : la fiche dont elle s'est servie (bouton « Me montrer » et page de la notice).
-        let fiche = '';
-        texte = texte.replace(/\[FICHE:\s*([a-z0-9-]+)\s*\]/gi, (m, id) => { if (!fiche && fiches.some(f => f.id === id)) fiche = id; return ''; }).trim().slice(0, 2500);
-        const rep = { ok: true, reponse: texte, fiche, restant: Math.max(0, maxCompte - nC - 1) };
-        if (env.MODE_TEST === '1') rep.essai = { modele, libre, fiches: fiches.map(f => f.id), ecran: ecran ? ecran.id : '', messages };
+        const rep = finir(texte, modele, libre, messages, env.MODE_TEST === '1' ? { essai: { extraits: extraits.map(x => x.titre) } } : null);
+        if (cleCache) await kv.put(cleCache, JSON.stringify({ texte, modele, libre }), { expirationTtl: 7 * 86400 }).catch(() => {});
         return json(rep);
     }
     if (chemin === 'compte/etat' && methode === 'GET') {
