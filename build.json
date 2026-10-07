@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 224,
-  "notifier": false,
-  "message": "TRIGONE V221 : la mascotte vous attend dès l'écran de choix — « Une question ? Je suis là. »"
+  "build": 225,
+  "notifier": true,
+  "message": "TRIGONE V222 : « Me rattacher à une mission » — le chef donne un code, chacun s'ajoute tout seul ; annuler une mission."
 }

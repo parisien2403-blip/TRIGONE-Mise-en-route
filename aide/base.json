@@ -1937,13 +1937,13 @@
    "id": "mer-accueil",
    "app": "mer",
    "nom": "Accueil de Mise en route",
-   "d": "Téléphone : en haut à gauche la pastille du compte (Se connecter, ou votre photo) ; en haut à droite la lune (thème clair/sombre) et la mascotte d'aide. Au centre : Bonjour + votre nom, le grand bouton doré NOUVELLE DEMANDE, « Reprendre ma demande en cours » s'il y a un brouillon, Boîte de réception (compte connecté), Espace valideur (si vous êtes valideur), Voir une démonstration. Barre du bas : Bibliothèque, Documents, Ma carte, Notice. Sur PC : menu à gauche (Accueil, Boîte de réception, Bibliothèque, Documents, Espace valideur) et en bas du menu Besoin d'aide, Notice TRIGONE, Passer au Compte-rendu."
+   "d": "Téléphone : en haut à gauche la pastille du compte (Se connecter, ou votre photo) ; en haut à droite la lune (thème clair/sombre) et la mascotte d'aide. Au centre : Bonjour + votre nom, le grand bouton doré NOUVELLE DEMANDE, juste dessous le bouton or au trait « 🔗 Me rattacher à une mission » (taper le code à 6 chiffres donné par le chef de mission, ou scanner son QR), « Reprendre ma demande en cours » s'il y a un brouillon, Boîte de réception (compte connecté), Espace valideur (si vous êtes valideur), Voir une démonstration. Barre du bas : Bibliothèque, Documents, Ma carte, Notice. Sur PC : menu à gauche (Accueil, Boîte de réception, Bibliothèque, Documents, Espace valideur) et en bas du menu Besoin d'aide, Notice TRIGONE, Passer au Compte-rendu."
   },
   {
    "id": "mer-formulaire",
    "app": "mer",
    "nom": "Nouvelle demande (formulaire de mise en route)",
-   "d": "En haut, 5 onglets : Identité, Aller, Retour, Alim./Héb., Imputation. Un cadenas tant que l'onglet d'avant n'est pas complet, un ✓ vert quand il l'est. Onglet Identité : Mission ou Formation / stage, Objet, Personnel concerné (déjà rempli depuis Mon profil), puis « + Ajouter une personne », « Scanner des cartes TRIGONE », « Importer une liste (Excel, Calc ou CSV) » et « Télécharger le modèle ». Le bouton Étape suivante est tout en bas de chaque onglet ; il signale en rouge ce qui manque. Dernier onglet : bouton Ajouter aux documents. Sur PC, un récapitulatif est à droite."
+   "d": "En haut, 5 onglets : Identité, Aller, Retour, Alim./Héb., Imputation. Un cadenas tant que l'onglet d'avant n'est pas complet, un ✓ vert quand il l'est. Onglet Identité : Mission ou Formation / stage, Objet, Personnel concerné (déjà rempli depuis Mon profil), puis « 🔗 Ouvrir aux participants (code de mission) » (le chef obtient un code à 6 chiffres et un QR, voit le nombre de pax et la carte de chaque rattaché), puis « + Ajouter une personne », « Scanner des cartes TRIGONE », « Importer une liste (Excel, Calc ou CSV) » et « Télécharger le modèle ». Le bouton Étape suivante est tout en bas de chaque onglet ; il signale en rouge ce qui manque. Dernier onglet : bouton Ajouter aux documents. Sur PC, un récapitulatif est à droite."
   },
   {
    "id": "mer-documents",
@@ -1955,7 +1955,7 @@
    "id": "mer-bibliotheque",
    "app": "mer",
    "nom": "Bibliothèque de Mise en route (suivi des demandes envoyées)",
-   "d": "Rangée comme une messagerie : En cours de validation (chez le VALIDEUR 1 ou 2, avec leur nom), Chez l'assistant Chorus DT, Prises en charge, Refusées. Un point rouge = une demande vient d'arriver dans ce dossier. Toucher une demande ouvre son détail : la frise de suivi, PDF, Participants, Agenda, Refaire une demande, Supprimer."
+   "d": "Rangée comme une messagerie : En cours de validation (chez le VALIDEUR 1 ou 2, avec leur nom), Chez l'assistant Chorus DT, Prises en charge, Refusées, Annulées. Dans le détail d'une demande envoyée dont le départ n'est pas passé : « ⛔ Annuler la mission » (motif facultatif ; tout le monde est prévenu). Un point rouge = une demande vient d'arriver dans ce dossier. Toucher une demande ouvre son détail : la frise de suivi, PDF, Participants, Agenda, Refaire une demande, Supprimer."
   },
   {
    "id": "mer-reception",
@@ -2385,6 +2385,119 @@
    "c": "Il manque sûrement un champ : touchez « Étape suivante » tout en bas, TRIGONE vous montre en rouge ce qu'il faut compléter."
   },
   {
+   "id": "rattacher-mission",
+   "t": "Me rattacher à la mission de mon chef",
+   "app": "mer",
+   "e": [
+    "mer-accueil"
+   ],
+   "q": [
+    "comment me rattacher à une mission",
+    "me rattacher à une mission",
+    "rejoindre une mission",
+    "rejoindre la mission de mon chef",
+    "le chef m'a donné un code",
+    "j'ai un code de mission",
+    "code de mission",
+    "code à 6 chiffres",
+    "où je mets le code de la mission",
+    "scanner le qr de la mission",
+    "mon chef a créé la mission comment je m'ajoute",
+    "m'ajouter à la demande collective",
+    "m'inscrire sur la mission",
+    "me mettre sur l'om collectif",
+    "je veux être dans la demande de mon chef",
+    "rattachement",
+    "se rattacher",
+    "me détacher d'une mission",
+    "je me suis rattaché par erreur",
+    "quitter une mission",
+    "code inconnu ou expiré",
+    "le code ne marche pas",
+    "la demande est déjà partie aux valideurs",
+    "mes missions rattachées",
+    "on bouge demain comment je m'ajoute"
+   ],
+   "r": "Votre chef de mission vous donne un <b>code à 6 chiffres</b> (ou un QR code) :<br>1. Accueil de <b>Mise en route</b> › <b>Me rattacher à une mission</b>.<br>2. Tapez le code, ou <b>Scanner le QR code</b> (l'appareil photo du téléphone marche aussi).<br>3. Vérifiez la mission (chef, dates, destination), puis <b>Je me rattache</b> : grade, nom, NID, CIE et votre carte TRIGONE partent au chef, rien à saisir.<br>Erreur ? <b>Me détacher</b>, tant que la demande n'est pas partie. Le code ne marche plus après l'envoi aux valideurs : demandez au chef de <b>rouvrir</b> la mission. Seuls les comptes de votre unité peuvent se rattacher.",
+   "n": "Me rattacher à une mission",
+   "m": {
+    "a": "rattacher",
+    "l": "Me rattacher à une mission"
+   },
+   "c": "Accueil de Mise en route › « Me rattacher à une mission » : tapez le code à 6 chiffres de votre chef (ou scannez son QR), vérifiez la mission, puis « Je me rattache »."
+  },
+  {
+   "id": "ouvrir-mission-code",
+   "t": "Ouvrir sa mission aux participants (code)",
+   "app": "mer",
+   "e": [
+    "mer-formulaire"
+   ],
+   "q": [
+    "ouvrir la mission aux participants",
+    "donner un code à mes gars",
+    "créer un code de mission",
+    "que mes personnels s'ajoutent eux-mêmes",
+    "que mes gars s'ajoutent eux-mêmes",
+    "que mes gars s'ajoutent tout seuls",
+    "pour que mes gars s'ajoutent",
+    "que chacun s'ajoute tout seul à ma demande",
+    "mission collective sans scanner les cartes",
+    "partager la mission avec ma section",
+    "qr code de la mission",
+    "combien de pax rattachés",
+    "voir qui s'est rattaché",
+    "les cartes des participants",
+    "retirer quelqu'un de ma mission",
+    "enlever un gars de la mission",
+    "rouvrir la mission",
+    "ajouter quelqu'un après l'envoi",
+    "le code de ma mission ne marche plus",
+    "le code expire quand",
+    "chef de mission code"
+   ],
+   "r": "Dans votre demande (onglet <b>Identité</b>) : <b>Ouvrir aux participants (code de mission)</b>.<br>• TRIGONE donne un <b>code à 6 chiffres</b> et un <b>QR code</b> : annoncez-le au rapport, affichez-le (<b>Plein écran</b>) ou <b>Partagez</b>-le.<br>• Le compteur <b>pax</b> et la <b>carte TRIGONE</b> de chaque rattaché s'affichent en direct ; ils sont <b>ajoutés tout seuls</b> à la demande.<br>• <b>✕</b> sur une carte : la personne est retirée et prévenue.<br>• À l'envoi aux valideurs, la liste est figée et le code ne marche plus ; <b>Rouvrir la mission</b> pour ajouter ou retirer quelqu'un (la demande repart aux valideurs).",
+   "n": "Ouvrir sa mission avec un code",
+   "m": {
+    "a": "mer:NOUVELLE",
+    "l": "Ouvrir une nouvelle demande"
+   },
+   "c": "Dans votre demande, onglet Identité › « Ouvrir aux participants » : un code à 6 chiffres et un QR, et chacun se rattache tout seul ; vous voyez le nombre de pax et leurs cartes."
+  },
+  {
+   "id": "annuler-mission",
+   "t": "Annuler une mission",
+   "app": "mer",
+   "e": [
+    "mer-bibliotheque"
+   ],
+   "q": [
+    "la mission est annulée",
+    "mission annulée",
+    "annuler la mission",
+    "annuler une mise en route",
+    "annuler ma demande envoyée",
+    "supprimer une demande déjà envoyée",
+    "effacer une mise en route",
+    "contrordre",
+    "stage reporté",
+    "stage annulé",
+    "on ne part plus",
+    "la mission ne se fait plus",
+    "annuler l'om",
+    "prévenir que la mission est annulée",
+    "mission annulée que faire du compte-rendu",
+    "annuler une mission collective"
+   ],
+   "r": "• <b>Pas encore envoyée</b> : dans le panneau des participants, <b>Annuler la mission</b> (ou retirez la demande de Documents) : le code ne marche plus et les rattachés sont prévenus.<br>• <b>Déjà envoyée</b>, départ pas encore passé : <b>Bibliothèque</b> › la demande › <b>⛔ Annuler la mission</b> (motif facultatif). Valideurs, assistant Chorus DT et participants sont prévenus ; le registre des OMR la tamponne <b>« ANNULÉ »</b> ; plus de rappel ni de compte-rendu à faire. Elle se range dans <b>Bibliothèque › Annulées</b>.",
+   "n": "Annuler une mission",
+   "m": {
+    "a": "mer:BIBLIOTHEQUE",
+    "l": "Ouvrir la Bibliothèque"
+   },
+   "c": "Pas encore envoyée : « Annuler la mission » dans le panneau des participants. Déjà envoyée : Bibliothèque › la demande › « Annuler la mission », tout le monde est prévenu."
+  },
+  {
    "id": "demande-collective",
    "t": "Demande pour plusieurs personnes",
    "app": "mer",
@@ -2393,6 +2506,8 @@
    ],
    "q": [
     "faire une demande pour plusieurs personnes",
+    "demande pour toute ma section",
+    "faire une demande pour toute ma section",
     "demande collective",
     "ajouter des gens à ma demande",
     "mission avec ma section",
@@ -2404,7 +2519,7 @@
     "om collectif",
     "modèle excel"
    ],
-   "r": "Dans l'onglet <b>Identité</b>, sous Personnel concerné :<br>• <b>+ Ajouter une personne</b> et remplissez-la ;<br>• ou <b>Scanner des cartes TRIGONE</b> : chaque carte scannée ajoute la personne ;<br>• ou <b>Importer une liste</b> Excel, Calc ou CSV (colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID) — <b>Télécharger le modèle</b> donne le tableau.<br>Vous devenez <b>chef de mission</b> : au retour, vous enverrez le compte-rendu prérempli à chacun.",
+   "r": "Dans l'onglet <b>Identité</b>, sous Personnel concerné :<br>• <b>+ Ajouter une personne</b> et remplissez-la ;<br>• ou <b>Scanner des cartes TRIGONE</b> : chaque carte scannée ajoute la personne ;<br>• ou <b>Importer une liste</b> Excel, Calc ou CSV (colonnes UNITÉ · CIE · GRADE · NOM · PRÉNOM · NID) — <b>Télécharger le modèle</b> donne le tableau ;<br>• ou <b>Ouvrir aux participants</b> : un code à 6 chiffres, et chacun se rattache lui-même depuis son téléphone.<br>Vous devenez <b>chef de mission</b> : au retour, vous enverrez le compte-rendu prérempli à chacun.",
    "n": "Demande collective",
    "m": {
     "a": "mer:NOUVELLE",
@@ -2621,7 +2736,6 @@
     "corriger après envoi",
     "changer la date d'une demande envoyée",
     "refaire une demande",
-    "annuler ma demande envoyée",
     "j'ai envoyé une erreur"
    ],
    "r": "Une demande <b>envoyée</b> ne se modifie plus (elle est signée au fil du circuit).<br>• Si elle est encore chez un valideur : demandez-lui de la <b>refuser avec un motif</b> ; elle reviendra dans <b>Documents › Refusées — à corriger</b>.<br>• Ou, dans la <b>Bibliothèque</b>, ouvrez-la et touchez <b>Refaire une demande</b> : une copie à corriger et renvoyer.",
@@ -2841,8 +2955,9 @@
    "q": [
     "mission sans frais",
     "annuler un omr",
-    "stage reporté",
-    "mission annulée",
+    "annuler un omr dans le registre",
+    "annuler une ligne du registre",
+    "tamponner annulé dans le registre",
     "mettre le tampon annulé",
     "tampon sans frais",
     "retirer le tampon",

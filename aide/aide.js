@@ -66,7 +66,7 @@
             'notif': function() { window.JUMELAGE_PARAMETRES('notif'); }, 'profil': R('profil'), 'roles': R('roles'), 'absence': R('absence'),
             'mesappareils': function() { window.JUMELAGE_MES_APPAREILS(); }, 'gestion': function() { window.JUMELAGE_GESTION_COMPTES(); },
             'montre': function() { window.JUMELAGE_MONTRE(); }, 'attente': function() { window.JUMELAGE_ATTENTE(); }, 'sauvauto': function() { window.JUMELAGE_SAUVEGARDE_AUTO(); },
-            'signaler': function() { window.JUMELAGE_SIGNALER(); }, 'partager': function() { window.JUMELAGE_PARTAGER_APPLI(); }, 'notice': function() { window.JUMELAGE_NOTICE(); },
+            'signaler': function() { window.JUMELAGE_SIGNALER(); }, 'partager': function() { window.JUMELAGE_PARTAGER_APPLI(); }, 'notice': function() { window.JUMELAGE_NOTICE(); }, 'rattacher': function() { if (window.JUMELAGE_RATTACHER) window.JUMELAGE_RATTACHER(); },
             'theme': function() {}
         };
         if (app === 'param') { window.JUMELAGE_PARAMETRES(quoi); }

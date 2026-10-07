@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 269;
+var APP_CODE_VERSION = 270;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -292,6 +292,7 @@ function TPL_ACCUEIL_PC() {
             '<div class="PC-HERO-ACTIONS">' +
                 (BROUILLON_EN_COURS() ? '<button type="button" class="BTN BTN-SECONDARY" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
                 '<button type="button" class="BTN BTN-PRIMARY" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
+                (MER_COMPTE_ACTIF() && window.JUMELAGE_RATTACHER ? '<button type="button" class="BTN BTN-SECONDARY BTN-ACCUEIL-RATT-PC" onclick="JUMELAGE_RATTACHER()">🔗 Me rattacher à une mission</button>' : '') +
                 '<button type="button" class="BTN BTN-GHOST" onclick="LANCER_DEMO()">🎬 Voir une démonstration</button>' +
             '</div></div>' +
         '<div class="PC-GRILLE2">' +
@@ -412,6 +413,7 @@ function TPL_ACCUEIL() {
           (MER_QUI() ? '<p class="JUM-BONJOUR">Bonjour, <b>' + ESC(MER_QUI()) + '</b></p>' : '') +
           (BROUILLON_EN_COURS() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-REPRISE" onclick="SHOW_PAGE(\'FORMULAIRE\')">↩ Reprendre ma demande en cours</button>' : '') +
           '<button type="button" class="BTN-ACCUEIL" onclick="DEMARRER_NOUVELLE_DEMANDE()">Nouvelle demande</button>' +
+          (MER_COMPTE_ACTIF() && window.JUMELAGE_RATTACHER ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-RATT" onclick="JUMELAGE_RATTACHER()">🔗 Me rattacher à une mission</button>' : '') +
           (MER_COMPTE_ACTIF() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT BTN-ACCUEIL-BOITE" data-mvt="MER:RECEPTION" onclick="SHOW_PAGE(\'RECEPTION\')">📥 Boîte de réception' +
             (MER_NB_BOITE() ? '<span class="MER-PASTILLE-SIGNER MER-PASTILLE-BOITE">' + MER_NB_BOITE() + '</span>' : '') + '</button>' : '') +
           (MER_EST_VALIDEUR() ? '<button type="button" class="BTN-ACCUEIL BTN-ACCUEIL-PETIT" onclick="SHOW_PAGE(\'VALIDATION\')">Espace valideur' +
@@ -467,6 +469,8 @@ function TPL_SUIVI_DEMANDE(id, nom) {
     // Rang de l'étape en cours : 1 chez le VALIDEUR 1, 2 chez le VALIDEUR 2, 3 chez Chorus DT, 4 traitée.
     var rang = { val1: 1, val2: 2, chorus: 3, traite: 4 }[s.etape], refus = s.etape === 'refus' || s.etape === 'abandon';
     var der = (s.etapes || [])[s.etapes.length - 1] || {};
+    if (s.etape === 'annulee') return '<div class="MER-SUIVI refus">' + (nom ? '<div class="MER-SUIVI-NOM">' + ESC(nom) + '</div>' : '') +
+        '<div class="MER-SUIVI-TXT"><b style="color:#b91c1c;">⛔ Mission annulée</b>' + (der.qui ? ' (' + ESC(der.qui) + ')' : '') + ' le ' + MER_DATE_HEURE(der.le) + ' : valideurs, assistant Chorus DT et participants prévenus ; aucun compte-rendu à faire.</div></div>';
     var puces = MER_SUIVI_ETAPES.map(function(x, i) {
         var etat = refus ? (i === 0 ? 'fait' : 'avenir') : i < rang ? 'fait' : i === rang ? 'encours' : 'avenir';
         return '<span class="MER-SUIVI-PT ' + etat + '"><i>' + (etat === 'fait' ? '✓' : etat === 'encours' ? '…' : '') + '</i>' + x[1] + '</span>';
@@ -508,6 +512,7 @@ function BIB_SUPPRIMER_SELECTION() {
 // apparaît dans le dossier de chacune. Sans suivi connu (ancienne demande, hors ligne) : « En cours de validation ».
 function MER_BIB_ETATS(e) {
     var s = window.JUMELAGE_SUIVI ? JUMELAGE_SUIVI() : {}, etats = {};
+    if (e.annulee || (e.demandes || []).length && (e.demandes || []).every(function(d) { return s[d.id] && s[d.id].etape === 'annulee'; })) return { annulees: true };
     (e.demandes || []).forEach(function(d) {
         var x = s[d.id], et = x && x.etape;
         etats[et === 'refus' || et === 'abandon' ? 'refus' : et === 'traite' ? 'traitees' : et === 'chorus' ? 'chorus' : 'validation'] = true;
@@ -596,14 +601,15 @@ function TPL_BIBLIOTHEQUE() {
         { id: 'validation', titre: 'En cours de validation', sous: 'Chez le VALIDEUR 1 ou le VALIDEUR 2', aide: 'Envoyées, chez le VALIDEUR 1 ou le VALIDEUR 2.' },
         { id: 'chorus', titre: 'Chez l\'assistant Chorus DT', sous: 'Validées, en attente de prise en charge', aide: 'Validées par les deux valideurs, en attente de prise en charge.' },
         { id: 'traitees', titre: 'Prises en charge', sous: 'Ordre de mission créé ou en cours de création', aide: 'Prises en charge par l\'assistant Chorus DT.' },
-        { id: 'refus', titre: 'Refusées', sous: 'Renvoyées avec un motif : à corriger', aide: 'Renvoyées avec un motif : corrigez-les dans Documents.' }
+        { id: 'refus', titre: 'Refusées', sous: 'Renvoyées avec un motif : à corriger', aide: 'Renvoyées avec un motif : corrigez-les dans Documents.' },
+        { id: 'annulees', titre: 'Annulées', sous: 'Missions annulées après l\'envoi', aide: 'Missions annulées : valideurs, assistant Chorus DT et participants ont été prévenus.' }
     ];
     ds.forEach(function(d) {
         d.liste = tout.filter(function(e) { return MER_BIB_ETATS(e)[d.id]; });
         d.nb = d.liste.length; d.gris = d.id !== 'refus'; d.nouveau = d.id === 'refus' && d.nb > 0;
         d.det = d.nb ? d.nb + ' demande' + (d.nb > 1 ? 's' : '') : 'Aucune demande';
     });
-    var TAGS = { validation: 'EN VALIDATION', chorus: 'CHEZ CHORUS DT', traitees: 'PRISE EN CHARGE', refus: 'REFUSÉE' };
+    var TAGS = { validation: 'EN VALIDATION', chorus: 'CHEZ CHORUS DT', traitees: 'PRISE EN CHARGE', refus: 'REFUSÉE', annulees: 'ANNULÉE' };
     return TPL_MAIL('BIBLIOTHEQUE', { titre: 'Bibliothèque', dossiers: ds,
         sous: 'Vos demandes envoyées, rangées selon leur suivi' + (window.JUMELAGE_MEMOIRE_TEXTE ? ' · <span class="MER-BIB-MEMOIRE">' + ESC(JUMELAGE_MEMOIRE_TEXTE(tout.length, 'demande gardée', 'demandes gardées')) + '</span>' : ''),
         intro: '<p class="MER-HINT" style="margin:0 0 10px;">Une notification vous prévient à chaque étape (VALIDEUR 1, VALIDEUR 2, assistant Chorus DT). Au retour, TRIGONE Compte-rendu les propose (« À partir d\'une mise en route »).</p>',
@@ -631,7 +637,9 @@ function TPL_BIBLIOTHEQUE() {
                     e.demandes.map(function(x, k) { return '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_PARTICIPANTS_BIB(\'' + e.id + '\', ' + k + ')">' + MER_BX_ICO('coll') + (e.demandes.length > 1 ? ESC(RESUME_DEMANDE(x).noms) : 'Participants' + ((x.personnes || []).length > 1 ? ' (' + x.personnes.length + ')' : '')) + '</button>'; }).join('') +
                     (e.demandes.some(function(x) { return x.trajets && x.trajets.aller && x.trajets.aller.dateDep; }) ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="MER_AGENDA(\'' + e.id + '\')">' + MER_BX_ICO('cal') + 'Agenda</button>' : '') +
                     '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="BIB_REUTILISER(\'' + e.id + '\')">' + MER_BX_ICO('maj') + 'Refaire une demande</button>' +
-                    '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_SUPPRIMER(\'' + e.id + '\')">Supprimer</button></div>';
+                    (BIB_ANNULABLE(e) ? '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_ANNULER(\'' + e.id + '\')">⛔ Annuler la mission</button>' : '') +
+                    '<button type="button" class="BTN-DANGER-TEXT" onclick="BIB_SUPPRIMER(\'' + e.id + '\')">Supprimer</button></div>' +
+                (e.annulee ? '<p class="MER-HINT" style="color:#b91c1c;font-weight:700;">⛔ Mission annulée le ' + ESC(new Date(e.annulee.le).toLocaleDateString('fr-FR')) + (e.annulee.motif ? ' : ' + ESC(e.annulee.motif) : '') + '.</p>' : '');
         }
     });
 }
@@ -707,6 +715,44 @@ function MER_AGENDA_GOOGLE() {
     FERMER_MODALE();
 }
 function BIB_TROUVER(id) { return GET_BIBLIOTHEQUE().filter(function(e) { return e.id === id; })[0]; }
+// « Annuler la mission » (demande déjà envoyée) : tant que la mission n'est pas commencée. Valideurs, assistants Chorus DT
+// et participants prévenus ; registre des OMR tamponné « ANNULÉ » ; plus de rappel de départ ni de compte-rendu attendu.
+function BIB_ANNULABLE(e) {
+    if (DEMO_ACTIF || !e || e.annulee || e.attente || !window.JUMELAGE_MISSION_API) return false;
+    var et = MER_BIB_ETATS(e); if (et.annulees || et.refus) return false;
+    return e.demandes.some(function(d) { var v = ((d.trajets || {}).aller || {}).dateDep; return !v || new Date(v).getTime() > Date.now(); });
+}
+function BIB_ANNULER(id) {
+    var e = BIB_TROUVER(id); if (!e) return;
+    var n = e.demandes.reduce(function(t, d) { return t + Math.max(0, (d.personnes || []).length - 1); }, 0);
+    AFFICHER_MODALE('Annuler la mission',
+        '<p style="font-size:0.86em; line-height:1.5;"><b>' + ESC(e.demandes.map(function(x) { return x.objet || ''; }).filter(Boolean).join(' · ') || 'Demande de mise en route') + '</b>' +
+            (e.demandes[0] && e.demandes[0].omr ? ' — OMR N°' + ESC(e.demandes[0].omr) : '') + '</p>' +
+        '<p class="MER-HINT">Sont prévenus : les valideurs et l\'assistant Chorus DT qui ont la demande' + (n ? ', et les ' + n + ' autre' + (n > 1 ? 's' : '') + ' personne' + (n > 1 ? 's' : '') + ' de la mission' : '') +
+            '. Dans le registre des OMR, la ligne est tamponnée « ANNULÉ » (elle n\'est pas effacée). Aucun compte-rendu ne sera à faire.</p>' +
+        '<div class="MER-FIELD"><label for="MER-ANN-MOTIF">Motif (facultatif)</label><input type="text" id="MER-ANN-MOTIF" maxlength="200" data-no-uppercase="1" placeholder="Ex : contrordre, mission reportée"></div>',
+        '<button type="button" class="BTN BTN-SECONDARY" onclick="FERMER_MODALE()">Retour</button><button type="button" class="BTN BTN-PRIMARY" id="MER-ANN-OK" style="background:#b91c1c;border-color:#b91c1c;" onclick="BIB_ANNULER_OK(\'' + e.id + '\')">⛔ Annuler la mission</button>');
+}
+function BIB_ANNULER_OK(id) {
+    var e = BIB_TROUVER(id); if (!e) return;
+    var m = document.getElementById('MER-ANN-MOTIF'), motif = m ? m.value.trim() : '', b = document.getElementById('MER-ANN-OK');
+    if (b) { b.disabled = true; b.textContent = 'Annulation…'; }
+    var prevenus = 0;
+    e.demandes.reduce(function(suite, d) {
+        return suite.then(function() {
+            return JUMELAGE_MISSION_API('annuler', { code: d.ratt && d.ratt.code || '', ref: d.id, omr: d.omr || '', objet: d.objet || '', motif: motif,
+                nids: (d.personnes || []).map(function(p) { return p.matricule || ''; }).filter(Boolean) }).then(function(r) { prevenus += r.prevenus || 0; });
+        });
+    }, Promise.resolve()).then(function() {
+        var l = GET_BIBLIOTHEQUE(); l.forEach(function(x) { if (x.id === id) x.annulee = { le: Date.now(), motif: motif }; }); SAVE_BIBLIOTHEQUE(l);
+        FERMER_MODALE(); SHOW_PAGE('BIBLIOTHEQUE');
+        MSG_INFO('Mission annulée', (prevenus ? prevenus + ' personne' + (prevenus > 1 ? 's' : '') + ' prévenue' + (prevenus > 1 ? 's' : '') + ' (valideurs, assistant Chorus DT, participants). ' : '') +
+            'La demande est rangée dans Bibliothèque › Annulées. Aucun compte-rendu à faire.', '⛔');
+    }, function(err) {
+        if (b) { b.disabled = false; b.textContent = '⛔ Annuler la mission'; }
+        MSG_ERREUR('Annulation impossible', (err && err.message || String(err)) + '\n\nVérifiez votre connexion internet et réessayez.');
+    });
+}
 function BIB_PDF(id) {
     var e = BIB_TROUVER(id); if (!e) return;
     try { GENERER_PDF(e.demandes).save(NOM_FICHIER_BASE(e.demandes) + '.pdf'); }
@@ -874,7 +920,7 @@ function TPL_PERSONNE(i) {
     var p = D.personnes[i];
     var retirer = D.personnes.length > 1 ? '<button type="button" class="MER-RETIRER" onclick="RETIRER_PERSONNE(' + i + ')" aria-label="Retirer">✕</button>' : '';
     return '<div class="MER-PERSONNE-CARD">' + retirer +
-        (D.personnes.length > 1 ? '<p class="MER-HINT" style="margin-top:0; font-weight:800;">Personne ' + (i + 1) + '</p>' : '') +
+        (D.personnes.length > 1 ? '<p class="MER-HINT" style="margin-top:0; font-weight:800;">Personne ' + (i + 1) + (p.ratt ? ' <span class="MER-RATT-TAG">🔗 rattaché par code</span>' : '') + '</p>' : '') +
         '<div class="MER-ROW2">' +
             CHAMP_TXT('Unité / entité', 'personnes.' + i + '.unite', 'EX : 4°RIISC') +
             CHAMP_TXT('CIE', 'personnes.' + i + '.cie', 'EX : 4CIE') +
@@ -1083,7 +1129,55 @@ function SCANNER_PERSONNES() {
         return { texte: '✔ Ajouté (' + D.personnes.length + ')' };
     } });
 }
-function RETIRER_PERSONNE(i) { D.personnes.splice(i, 1); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE(); }
+function RETIRER_PERSONNE(i) {
+    var p = D.personnes[i];
+    // Personne rattachée par le code de mission : retirée aussi de la mission (elle est prévenue).
+    if (p && p.ratt && D.ratt && D.ratt.code && window.JUMELAGE_MISSION_API) JUMELAGE_MISSION_API('retirer', { code: D.ratt.code, mail: p.ratt }).catch(function() {});
+    D.personnes.splice(i, 1); SAVE_BROUILLON(); RENDER_FORMULAIRE_INPLACE();
+}
+// ===================== « ME RATTACHER À UNE MISSION » (côté chef de mission) =====================
+// Le chef ouvre sa demande aux participants : code à 6 chiffres + QR (jumelage.js, JUMELAGE_MISSION_CHEF). Chaque personne
+// rattachée arrive dans la demande (personnes, marquées « ratt » = son adresse TRIGONE) ; celles qui se détachent ou que
+// le chef retire en sortent. À l'envoi aux valideurs, la liste est relue une dernière fois puis figée (code fermé).
+function MER_RATT_RESUME(d) {
+    var a = (d.trajets || {}).aller || {}, r = (d.trajets || {}).retour || {};
+    return { objet: d.objet || '', type: d.type || '', lieu: a.lieuArr || '', pays: a.paysArr || '', dep: a.dateDep || '', ret: r.dateArr || r.dateDep || '', moyen: (typeof MOYENS !== 'undefined' && MOYENS[a.moyen]) || '' };
+}
+function MER_RATT_EXPIRE(d) { var v = ((d.trajets || {}).aller || {}).dateDep, t = v ? new Date(v).getTime() : 0; return t && !isNaN(t) ? t : 0; }
+function MER_RATT_FUSION(d, membres) {
+    var chiffres = function(v) { return String(v || '').replace(/\D/g, ''); };
+    var mails = membres.map(function(m) { return m.mail; }), avant = JSON.stringify(d.personnes);
+    d.personnes = (d.personnes || []).filter(function(p, i) { return i === 0 || !p.ratt || mails.indexOf(p.ratt) >= 0; });
+    membres.forEach(function(m) {
+        var id = m.ident || {}, nid = chiffres(id.nid);
+        var ex = d.personnes.filter(function(p) { return p.ratt === m.mail || (nid && chiffres(p.matricule) === nid); })[0];
+        if (ex) { ex.ratt = m.mail; return; }
+        var p = { unite: id.unite || '', cie: id.cie || '', grade: id.grade || '', nom: (id.nom || '').toUpperCase(), prenom: id.prenom || '', matricule: id.nid || '', ratt: m.mail };
+        var vide = d.personnes.filter(function(x, i) { return i > 0 && !x.nom && !x.prenom && !x.matricule; })[0];
+        if (vide) Object.assign(vide, p); else d.personnes.push(Object.assign(VIDE_PERSONNE(), p));
+    });
+    return JSON.stringify(d.personnes) !== avant;
+}
+function MER_RATT_OUVRIR() {
+    if (!window.JUMELAGE_MISSION_CHEF) return;
+    if (!D.objet) { MSG_ERREUR('Objet manquant', 'Indiquez d\'abord l\'objet de la mission : c\'est ce que verront les participants avant de se rattacher.'); return; }
+    JUMELAGE_MISSION_CHEF({ code: D.ratt && D.ratt.code, resume: MER_RATT_RESUME(D), expire: MER_RATT_EXPIRE(D), ref: D.id, titre: D.objet,
+        onCode: function(c) { D.ratt = { code: c, le: Date.now() }; SAVE_BROUILLON(); if (PAGE_ACTUELLE === 'FORMULAIRE') RENDER_FORMULAIRE_INPLACE(); },
+        onMembres: function(l) { if (MER_RATT_FUSION(D, l)) { SAVE_BROUILLON(); if (PAGE_ACTUELLE === 'FORMULAIRE') RENDER_FORMULAIRE_INPLACE(); } },
+        onAnnuler: function() { CLEAR_BROUILLON(); D = VIDE_DEMANDE(); SHOW_PAGE('ACCUEIL'); } });
+}
+// Avant l'envoi : la liste des rattachés est relue une dernière fois (sans réseau : on garde celle déjà reçue).
+function MER_RATT_AVANT_ENVOI(panier) {
+    if (!window.JUMELAGE_MISSION_API || DEMO_ACTIF) return Promise.resolve();
+    return Promise.all(panier.filter(function(d) { return d.ratt && d.ratt.code; }).map(function(d) {
+        return JUMELAGE_MISSION_API('liste', { get: true, code: d.ratt.code }).then(function(r) { MER_RATT_FUSION(d, r.membres || []); }, function() {});
+    }));
+}
+// Demande partie : le code est fermé, les rattachés sont prévenus.
+function MER_RATT_FERMER(panier) {
+    if (!window.JUMELAGE_MISSION_API || DEMO_ACTIF) return;
+    panier.forEach(function(d) { if (d.ratt && d.ratt.code) JUMELAGE_MISSION_API('fermer', { code: d.ratt.code, ref: d.id }).catch(function() {}); });
+}
 
 // Pays étrangers : liste reprise de TRIGONE compte-rendu. Vide = France.
 var MER_PAYS = ["AFGHANISTAN", "AFRIQUE DU SUD", "ALBANIE", "ALGERIE", "ALLEMAGNE", "ANDORRE", "ANGOLA", "ANGUILLA", "ANTIGUA ET BARBUDA", "ARABIE SAOUDITE", "ARGENTINE", "ARMENIE", "ARUBA", "AUSTRALIE", "AUTRICHE", "AZERBAIDJAN", "BAHAMAS", "BAHREIN", "BANGLADESH", "BELGIQUE", "BELIZE", "BENIN", "BERMUDES", "BIELORUSSIE", "BIRMANIE", "BOLIVIE", "BOSNIE-HERZEGOVINE", "BOTSWANA", "BRESIL", "BRUNEI", "BULGARIE", "BURKINA FASO", "BURUNDI", "CAIMANS (iles)", "CAMBODGE", "CAMEROUN", "CANADA", "CAP-VERT", "CENTRAFRICAINE (Republique)", "CHILI", "CHINE", "CHYPRE", "COLOMBIE", "COMORES", "CONGO (Republique democratique du)", "CONGO BRAZZAVILLE", "COOK (iles)", "COREE DU NORD", "COREE DU SUD", "COSTA RICA", "COTE D'IVOIRE", "CROATIE", "CUBA", "CURACAO", "DANEMARK", "DJIBOUTI", "DOMINICAINE (Republique)", "EGYPTE", "EMIRATS ARABES UNIS", "EQUATEUR", "ERYTHREE", "ESPAGNE", "ESTONIE", "ETATS-UNIS", "ETATS-UNIS (hors New York)", "ETHIOPIE", "FIDJI", "FINLANDE", "GABON", "GAMBIE", "GEORGIE", "GHANA", "GRANDE-BRETAGNE", "GRECE", "GRENADE", "GUATEMALA", "GUINEE", "GUINEE EQUATORIALE", "GUINEE-BISSAU", "GUYANA", "HAITI", "HONDURAS", "HONG KONG", "HONGRIE", "INDE", "INDONESIE", "IRAK", "IRAN", "IRLANDE", "ISLANDE", "ISRAEL", "ITALIE", "JAMAIQUE", "JAPON", "JORDANIE", "KAZAKHSTAN", "KENYA", "KIRGHIZISTAN", "KIRIBATI", "KOSOVO", "KOWEIT", "LA BARBADE", "LA DOMINIQUE", "LAOS", "LESOTHO", "LETTONIE", "LIBAN", "LIBERIA", "LIBYE", "LIECHTENSTEIN", "LITUANIE", "LUXEMBOURG", "MACAO", "MACEDOINE", "MADAGASCAR", "MALAISIE", "MALAWI", "MALDIVES (iles)", "MALI", "MALTE", "MAROC", "MARSHALL (iles)", "MAURICE", "MAURITANIE", "MEXIQUE", "MICRONESIE", "MOLDAVIE", "MONGOLIE EXTERIEURE", "MONTENEGRO", "MOZAMBIQUE", "NAMIBIE", "NAURU", "NEPAL", "NICARAGUA", "NIGER", "NIGERIA", "NIUE", "NORVEGE", "NOUVELLE-ZELANDE", "OMAN", "OUGANDA", "OUZBEKISTAN", "PAKISTAN", "PALAOS (iles)", "PANAMA", "PAPOUASIE-NOUVELLE-GUINEE", "PARAGUAY", "PAYS-BAS", "PEROU", "PHILIPPINES", "POLOGNE", "PORTUGAL", "QATAR", "ROUMANIE", "RUSSIE", "RWANDA", "SAINT-CHRISTOPHE-ET-NIEVES", "SAINT-VINCENT ET LES GRENADINES", "SAINTE-LUCIE", "SALOMON", "SALVADOR", "SAMOA", "SAO TOME ET PRINCIPE", "SENEGAL", "SERBIE", "SEYCHELLES", "SIERRA LEONE", "SINGAPOUR", "SLOVAQUIE", "SLOVENIE", "SOMALIE", "SOUDAN", "SOUDAN DU SUD", "SRI LANKA", "SUEDE", "SUISSE", "SURINAME", "SWAZILAND", "SYRIE", "TADJIKISTAN", "TAIWAN", "TANZANIE", "TCHAD", "TCHEQUE (Republique)", "THAILANDE", "TIMOR ORIENTAL", "TOGO", "TONGA", "TRINITE ET TOBAGO", "TUNISIE", "TURKMENISTAN", "TURQUIE", "TUVALU", "UKRAINE", "URUGUAY", "VANUATU", "VENEZUELA", "VIETNAM", "YEMEN", "ZAMBIE", "ZIMBABWE"];
@@ -1282,6 +1376,8 @@ function TPL_ONGLET_IDENTITE() {
       '<div class="MER-SECTION-TITLE">Personnel concerné</div>' +
       D.personnes.map(function(_, i) { return TPL_PERSONNE(i); }).join('') +
       '<button type="button" class="BTN BTN-GHOST BTN-SMALL" onclick="AJOUTER_PERSONNE()">+ Ajouter une personne (demande collective)</button>' +
+      (window.JUMELAGE_MISSION_CHEF && !MER_CORRECTION() && !DEMO_ACTIF ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL MER-RATT-BTN' + (D.ratt && D.ratt.code ? ' ouverte' : '') + '" style="margin-top:8px;" onclick="MER_RATT_OUVRIR()">' +
+        (D.ratt && D.ratt.code ? '🔗 Mission ouverte · code ' + ESC(String(D.ratt.code).replace(/^(\d{3})(\d{3})$/, '$1 $2')) + ' · voir les participants' : '🔗 Ouvrir aux participants (code de mission)') + '</button>' : '') +
       (window.JUMELAGE_SCANNER_CARTE ? '<button type="button" class="BTN BTN-GHOST BTN-SMALL" style="margin-top:8px;" onclick="SCANNER_PERSONNES()">📷 Scanner des cartes TRIGONE</button>' : '') +
       '<label class="BTN BTN-GHOST BTN-SMALL" style="margin-top:8px;">📥 Importer une liste (Excel, Calc ou CSV)' +
         '<input type="file" accept=".xlsx,.ods,.csv,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.oasis.opendocument.spreadsheet,text/csv,text/comma-separated-values,application/csv,application/vnd.ms-excel" style="display:none;" onchange="IMPORTER_LISTE_PERSONNES(this)"></label>' +
@@ -1524,6 +1620,8 @@ function RETIRER_DU_PANIER(id) {
 function RETIRER_DU_PANIER_OK(id) {
     // Demande refusée abandonnée : le suivi s'arrête (plus de rappel « à corriger »).
     if (GET_PANIER().some(function(d) { return d.id === id && d.refus; }) && window.JUMELAGE_SUIVI_ABANDON) JUMELAGE_SUIVI_ABANDON([id]);
+    var x = GET_PANIER().filter(function(d) { return d.id === id; })[0];
+    if (x && x.ratt && x.ratt.code && window.JUMELAGE_MISSION_API) JUMELAGE_MISSION_API('annuler', { code: x.ratt.code, objet: x.objet || '', motif: 'demande retirée par le chef de mission' }).catch(function() {});
     var panier = GET_PANIER().filter(function(d) { return d.id !== id; });
     SAVE_PANIER(panier);
     RENDER_PANIER_INPLACE();
@@ -2516,11 +2614,12 @@ function ENVOYER_PANIER_DIRECT() {
         meta: { maj: [{ cle: 'mer_bibliotheque', cherche: { id: idBib }, pose: { envoyeLe: '$iso' }, retire: ['attente'] }], rappels: MER_LISTE_RAPPELS(panier) } };
     // N° OMR (série commune, serveur) tiré à l'envoi, avec sa date ; il fait partie de la demande signée par les valideurs.
     // Sans réseau : la demande part sans numéro, l'assistant Chorus DT lui en donne un à son arrivée.
-    MER_NUMEROTER_OMR(panier).then(function() { return GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE'); }).then(function(json) {
+    MER_RATT_AVANT_ENVOI(panier).then(function() { return MER_NUMEROTER_OMR(panier); }).then(function() { return GENERER_JSON_COMPLET(panier, 'DEMANDE_INITIALE'); }).then(function(json) {
         return JUMELAGE_ENVOYER_DIRECT(reg.mailSignataire, 'DEMANDE', NOM_FICHIER_BASE(panier) + '.json', json, opts);
     }).then(function(r) {
         var differe = !!(r && r.differe);
         ARCHIVER_ENVOI(panier, reg.mailSignataire, idBib, differe);
+        MER_RATT_FERMER(panier);
         if (!differe) MER_PROGRAMMER_RAPPELS(panier);
         FERMER_MODALE();
         SAVE_PANIER(GET_PANIER().filter(function(d) { return d.refus; }));   // les refusées non corrigées restent

@@ -1244,6 +1244,7 @@
         'html body .MER-LOGO-IMG, html body #P0 .welcome-logo { filter: brightness(0) invert(0.95); }' +
         'html body .MER-P0-SHELL .BTN-ACCUEIL:not(.BTN-ACCUEIL-PETIT), html body .P0-SHELL .P0-HERO .BTN-ACCUEIL { background: linear-gradient(180deg, #e2b866, #c99743) !important; color: #1a1a1a !important; box-shadow: 0 12px 30px rgba(214,167,86,0.25) !important; }' +
         'html body .MER-P0-SHELL .BTN-ACCUEIL-PETIT { background: transparent !important; color: #f5f5f5 !important; border: 1.5px solid rgba(255,255,255,0.25) !important; box-shadow: none !important; }' +
+        'html body .MER-P0-SHELL .BTN-ACCUEIL-PETIT.BTN-ACCUEIL-RATT { background: rgba(214,167,86,0.08) !important; color: #e2b45c !important; border-color: #d6a756 !important; }' +
         'html body .MER-P0-SHELL .P0-TAB, html body .P0-SHELL .P0-TAB { background: rgba(255,255,255,0.05) !important; border-color: rgba(255,255,255,0.12) !important; color: #e5e5e5 !important; box-shadow: none !important; }' +
         'html body .MER-P0-SHELL .P0-TAB-ICON, html body .P0-SHELL .P0-TAB-ICON { background: rgba(214,167,86,0.12) !important; border-color: rgba(214,167,86,0.3) !important; color: #e0b86a !important; }' +
         'html body .MER-P0-SHELL .JUM-BONJOUR, html body .P0-SHELL .JUM-BONJOUR { color: #a9a9a9; } html body .MER-P0-SHELL .JUM-BONJOUR b, html body .P0-SHELL .JUM-BONJOUR b { color: #e0b86a; }' +
@@ -1273,7 +1274,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 224, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 225, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -5705,6 +5706,256 @@
         window.JUMELAGE_PARTICIPANTS(pers, info.mailDemandeur).then(function(r) { if (document.body.contains(g)) dessiner((r || [])[i] || { erreur: true }); },
             function() { if (document.body.contains(g)) dessiner({ erreur: true }); });
     };
+    // ---------- « Me rattacher à une mission » ----------
+    // Le chef de mission ouvre sa demande collective : code à 6 chiffres + QR (lien « ?mission=… »). Chaque participant
+    // de son unité tape le code (ou scanne le QR), voit la mission, et s'y rattache : son identité (carte TRIGONE)
+    // arrive dans la liste du chef. Le code ne marche plus quand la demande part aux valideurs (liste figée).
+    var CSS_RT = '.JUM-RT-FOND{position:fixed;inset:0;z-index:99987;background:rgba(5,8,15,.6);display:flex;align-items:flex-end;justify-content:center}' +
+        '.JUM-RT-FEN{width:100%;max-width:480px;max-height:94vh;overflow:auto;background:#f6f6f4;color:#1a1a1a;border-radius:22px 22px 0 0;border-top:3px solid #d6a756;padding:18px 18px calc(18px + env(safe-area-inset-bottom,0px));font-family:Montserrat,system-ui,sans-serif;box-shadow:0 -10px 40px rgba(0,0,0,.4)}' +
+        '@media (min-width:700px){.JUM-RT-FOND{align-items:center}.JUM-RT-FEN{border-radius:22px;max-width:520px}}' +
+        '.JUM-RT-TETE{display:flex;align-items:flex-start;gap:10px;margin-bottom:12px}.JUM-RT-TETE>div{flex:1;min-width:0}.JUM-RT-TETE h2{margin:0;font-size:1.35rem;font-weight:800}.JUM-RT-TETE p{margin:3px 0 0;font-size:.8rem;color:#555}' +
+        '.JUM-RT-X{border:0;background:#e9e9e4;width:36px;height:36px;border-radius:50%;font-size:1rem;cursor:pointer;flex-shrink:0;color:#333}' +
+        '.JUM-RT-CODE{width:100%;box-sizing:border-box;font:800 2rem/1 Montserrat,system-ui,sans-serif;letter-spacing:.45em;text-align:center;padding:14px 8px 14px 22px;border:2px solid #d6c8a8;border-radius:16px;background:#fff;color:#1a1a1a}' +
+        '.JUM-RT-CODE:focus{outline:none;border-color:#1a1a1a}' +
+        '.JUM-RT-SCAN{display:block;margin:8px auto 0;border:0;background:none;color:#8a5f12;font:700 .82rem Montserrat,system-ui,sans-serif;cursor:pointer;text-decoration:underline}' +
+        '.JUM-RT-CARTE{background:#fff;border:1.5px solid #e3d6b8;border-radius:18px;padding:14px 16px;margin-top:14px}.JUM-RT-ET{font-size:.64rem;font-weight:800;letter-spacing:.12em;color:#a87a1f}' +
+        '.JUM-RT-OBJ{font-size:1.05rem;font-weight:800;margin:6px 0 6px}.JUM-RT-L{display:flex;justify-content:space-between;gap:10px;font-size:.82rem;padding:7px 0;border-bottom:1px solid #f0ebe0}.JUM-RT-L:last-child{border:0}.JUM-RT-L b{text-align:right}' +
+        '.JUM-RT-INFO{background:#fbf6ea;border-radius:14px;padding:10px 13px;font-size:.76rem;line-height:1.45;color:#5b4a2a;margin-top:12px}' +
+        '.JUM-RT-BTN{display:block;width:100%;margin-top:12px;border:0;border-radius:16px;padding:15px;font:800 .86rem Montserrat,system-ui,sans-serif;letter-spacing:.1em;text-transform:uppercase;cursor:pointer;background:#1a1a1a;color:#fff}' +
+        '.JUM-RT-BTN.or{background:linear-gradient(180deg,#e3b766,#c99545);color:#1a1a1a}.JUM-RT-BTN.sec{background:#fff;color:#1a1a1a;border:1.5px solid #ccc}.JUM-RT-BTN.danger{background:#fff;color:#b91c1c;border:1.5px solid #f3c4c4}.JUM-RT-BTN:disabled{opacity:.55}' +
+        '.JUM-RT-ERR{margin-top:10px;font-size:.8rem;font-weight:700;color:#b91c1c}.JUM-RT-OK{width:78px;height:78px;border-radius:50%;background:#16a34a;color:#fff;font-size:42px;display:flex;align-items:center;justify-content:center;margin:6px auto 12px}' +
+        '.JUM-RT-ETAPE{display:flex;gap:10px;font-size:.82rem;line-height:1.4;margin:9px 0}.JUM-RT-ETAPE .n{background:#1a1a1a;color:#d6a756;border-radius:8px;min-width:24px;height:24px;display:flex;align-items:center;justify-content:center;font-size:.75rem;font-weight:800;flex-shrink:0}' +
+        '.JUM-RT-MES{margin-top:18px}.JUM-RT-MES h3{font-size:.72rem;letter-spacing:.12em;color:#8a5f12;margin:0 0 6px}.JUM-RT-MI{background:#fff;border:1px solid #e7e2d6;border-radius:14px;padding:10px 12px;margin-bottom:8px;font-size:.8rem}' +
+        '.JUM-RT-MI b{display:block;font-size:.86rem}.JUM-RT-MI small{color:#666}.JUM-RT-MI .et{display:inline-block;margin-top:5px;font-size:.66rem;font-weight:800;padding:3px 8px;border-radius:8px;background:#eef2f7;color:#334155}' +
+        '.JUM-RT-MI .et.ouverte{background:rgba(214,167,86,.18);color:#8a5f12}.JUM-RT-MI .et.envoyee{background:rgba(21,128,61,.12);color:#15803d}.JUM-RT-MI .et.annulee,.JUM-RT-MI .et.retire{background:rgba(185,28,28,.1);color:#b91c1c}' +
+        '.JUM-RT-MI button{float:right;border:1px solid #ddd;background:#fff;border-radius:10px;padding:5px 9px;font:700 .7rem Montserrat,system-ui,sans-serif;cursor:pointer}' +
+        '.JUM-RT-GROS{font:800 2.6rem/1 Montserrat,system-ui,sans-serif;letter-spacing:.14em;text-align:center;margin:6px 0 4px}' +
+        '.JUM-RT-QR{width:170px;height:170px;margin:8px auto;background:#fff;padding:8px;border-radius:12px;border:1.5px solid #e3d6b8;display:flex;align-items:center;justify-content:center}.JUM-RT-QR img,.JUM-RT-QR canvas{width:154px!important;height:154px!important}' +
+        '.JUM-RT-DUO{display:flex;gap:8px}.JUM-RT-DUO .JUM-RT-BTN{margin-top:10px;padding:12px 6px;font-size:.72rem}' +
+        '.JUM-RT-PAX{display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px}.JUM-RT-PAX span:first-child{background:#1a1a1a;color:#e2b45c;border-radius:999px;padding:7px 14px;font-weight:800;font-size:.82rem}.JUM-RT-PAX .direct{color:#16a34a;font-weight:700;font-size:.7rem}' +
+        '.JUM-RT-GRILLE{display:grid;grid-template-columns:1fr;gap:14px}@media (min-width:700px){.JUM-RT-GRILLE{grid-template-columns:1fr 1fr}}' +
+        '.JUM-RT-UN{position:relative}.JUM-RT-UN.neuf .JUM-CARTE{box-shadow:0 0 0 3px rgba(34,197,94,.6)}' +
+        '.JUM-RT-UN .x{position:absolute;top:-6px;right:-6px;width:26px;height:26px;border-radius:50%;border:2px solid #fff;background:#b91c1c;color:#fff;font-size:.75rem;cursor:pointer;z-index:2}' +
+        '.JUM-RT-NOM{font-size:.7rem;font-weight:700;margin-top:4px;text-align:center}.JUM-RT-VIDE{grid-column:1/-1;text-align:center;color:#777;font-size:.8rem;padding:14px;background:#fff;border-radius:14px;border:1px dashed #d6c8a8}' +
+        '.JUM-RT-PLEIN{position:fixed;inset:0;z-index:99990;background:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:Montserrat,system-ui,sans-serif;cursor:pointer;padding:20px;text-align:center}' +
+        '.JUM-RT-PLEIN .JUM-RT-GROS{font-size:clamp(2.6rem,12vw,6rem)}.JUM-RT-PLEIN .JUM-RT-QR{width:min(70vw,340px);height:min(70vw,340px)}.JUM-RT-PLEIN .JUM-RT-QR img,.JUM-RT-PLEIN .JUM-RT-QR canvas{width:100%!important;height:100%!important}' +
+        'body.dark-mode .JUM-RT-FEN{background:#1b1b1b;color:#ececec}body.dark-mode .JUM-RT-CODE,body.dark-mode .JUM-RT-CARTE,body.dark-mode .JUM-RT-MI,body.dark-mode .JUM-RT-VIDE{background:#262626;color:#ececec;border-color:#3d3d3d}' +
+        'body.dark-mode .JUM-RT-INFO{background:#2a2419;color:#e9d9b4}body.dark-mode .JUM-RT-TETE p,body.dark-mode .JUM-RT-MI small{color:#aaa}body.dark-mode .JUM-RT-BTN.sec{background:#262626;color:#eee;border-color:#444}body.dark-mode .JUM-RT-X{background:#333;color:#eee}';
+    function cssRt() { if (!document.getElementById('JUM-RT-CSS')) { var st = document.createElement('style'); st.id = 'JUM-RT-CSS'; st.textContent = CSS_RT; document.head.appendChild(st); } }
+    function lienMission(code) { return location.origin + racineAppli + '?mission=' + code; }
+    function codeMissionDe(t) { var m = /[?&]mission=(\d{6})/.exec(String(t || '')) || /^\s*(\d{3})\s?(\d{3})\s*$/.exec(String(t || '')); return m ? (m[2] ? m[1] + m[2] : m[1]) : ''; }
+    function codeLisible(c) { return String(c || '').replace(/^(\d{3})(\d{3})$/, '$1 $2'); }
+    function jourHeure(v) { if (!v) return ''; var d = new Date(v); if (isNaN(d)) return ''; return d.toLocaleDateString('fr-FR', { weekday: 'short', day: '2-digit', month: '2-digit' }) + (d.getHours() || d.getMinutes() ? ' · ' + ('0' + d.getHours()).slice(-2) + ' h ' + ('0' + d.getMinutes()).slice(-2) : ''); }
+    function etatMission(x) {
+        if (x.statut === 'retire') return ['retire', 'Retiré par le chef de mission'];
+        return { ouverte: ['ouverte', 'Ouverte · le chef peut encore ajouter du monde'], envoyee: ['envoyee', 'Demande envoyée aux valideurs'], annulee: ['annulee', 'Mission annulée' + (x.motif ? ' : ' + x.motif : '')], expiree: ['annulee', 'Code expiré'] }[x.etat] || ['', x.etat || ''];
+    }
+    function fenetreRt(contenu) {
+        cssRt();
+        var vieux = document.querySelector('.JUM-RT-FOND'); if (vieux) vieux.remove();
+        var f = document.createElement('div'); f.className = 'JUM-RT-FOND'; f.setAttribute('role', 'dialog');
+        f.innerHTML = '<div class="JUM-RT-FEN">' + contenu + '</div>';
+        f.addEventListener('click', function(e) { if (e.target === f) f.remove(); });
+        ['pointerdown', 'pointerup'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
+        document.body.appendChild(f);
+        return f;
+    }
+    // Missionnaire : taper le code (ou scanner le QR), voir la mission, s'y rattacher ; ses missions rattachées dessous.
+    window.JUMELAGE_RATTACHER = function(codeInit) {
+        if (!monCompte()) { bandeau('Connectez-vous à votre compte TRIGONE pour vous rattacher à une mission.'); if (window.JUMELAGE_COMPTE) window.JUMELAGE_COMPTE(); return; }
+        var f = fenetreRt('<div class="JUM-RT-TETE"><div><h2>Me rattacher</h2><p>Le code de mission donné par votre chef de mission</p></div><button type="button" class="JUM-RT-X" aria-label="Fermer">✕</button></div>' +
+            '<input class="JUM-RT-CODE" id="JUM-RT-CODE" inputmode="numeric" autocomplete="off" maxlength="7" placeholder="000 000" aria-label="Code de la mission (6 chiffres)" data-no-uppercase="1">' +
+            '<button type="button" class="JUM-RT-SCAN">📷 Scanner le QR code de la mission</button>' +
+            '<div class="JUM-RT-ZONE"></div><div class="JUM-RT-MES"></div>');
+        var champ = f.querySelector('#JUM-RT-CODE'), zone = f.querySelector('.JUM-RT-ZONE'), mes = f.querySelector('.JUM-RT-MES'), vu = '';
+        f.querySelector('.JUM-RT-X').addEventListener('click', function() { f.remove(); });
+        var mesMissions = function() {
+            appelApi('mission/miennes').then(function(r) {
+                var l = r.missions || [];
+                mes.innerHTML = l.length ? '<h3>MES MISSIONS RATTACHÉES</h3>' + l.map(function(x) {
+                    var e = etatMission(x), rs = x.resume || {};
+                    return '<div class="JUM-RT-MI">' + (x.statut === 'membre' && x.etat === 'ouverte' ? '<button type="button" data-q="' + esc(x.code) + '">Me détacher</button>' : '') +
+                        '<b>' + esc(rs.objet || rs.lieu || 'Mission') + '</b><small>' + esc([rs.lieu && rs.objet ? rs.lieu : '', jourHeure(rs.dep), x.chef ? 'chef : ' + x.chef : ''].filter(Boolean).join(' · ')) + '</small><br><span class="et ' + e[0] + '">' + esc(e[1]) + '</span></div>';
+                }).join('') : '';
+                Array.prototype.forEach.call(mes.querySelectorAll('button[data-q]'), function(b) {
+                    b.addEventListener('click', function() {
+                        b.disabled = true;
+                        appelApi('mission/quitter', { methode: 'POST', corps: { code: b.getAttribute('data-q') } }).then(function() { bandeau('Vous êtes détaché de cette mission : le chef de mission est prévenu.'); mesMissions(); if (vu === b.getAttribute('data-q')) { vu = ''; voir(champ.value); } },
+                            function(e) { b.disabled = false; bandeau(e.message); });
+                    });
+                });
+            }, function() { mes.innerHTML = ''; });
+        };
+        var reussi = function(m) {
+            zone.innerHTML = '<div style="text-align:center;margin-top:14px"><div class="JUM-RT-OK">✓</div><h2 style="margin:0;font-size:1.2rem">Vous êtes rattaché</h2>' +
+                '<p style="margin:4px 0 0;font-size:.8rem;color:#666">' + esc(m.resume.objet || m.resume.lieu || '') + (m.resume.dep ? ' · ' + esc(jourHeure(m.resume.dep)) : '') + '</p></div>' +
+                '<div class="JUM-RT-ETAPE"><span class="n">1</span><span>Le chef de mission <b>' + esc(m.chef || '') + '</b> vous voit dans sa liste.</span></div>' +
+                '<div class="JUM-RT-ETAPE"><span class="n">2</span><span>Il envoie la demande collective aux valideurs : vous êtes prévenu par notification.</span></div>' +
+                '<div class="JUM-RT-ETAPE"><span class="n">3</span><span>Au retour, votre compte-rendu reprend cette mission.</span></div>' +
+                '<button type="button" class="JUM-RT-BTN sec JUM-RT-QUIT">Me détacher de cette mission</button>';
+            zone.querySelector('.JUM-RT-QUIT').addEventListener('click', function() {
+                appelApi('mission/quitter', { methode: 'POST', corps: { code: m.code } }).then(function() { bandeau('Vous êtes détaché : le chef de mission est prévenu.'); vu = ''; voir(m.code); mesMissions(); }, function(e) { bandeau(e.message); });
+            });
+            mesMissions();
+        };
+        var voir = function(v) {
+            var c = codeMissionDe(v); if (!c) { zone.innerHTML = ''; vu = ''; return; }
+            if (c === vu) return; vu = c;
+            zone.innerHTML = '<p class="JUM-RT-INFO">Recherche de la mission…</p>';
+            appelApi('mission/voir?code=' + c).then(function(m) {
+                if (vu !== c) return;
+                var rs = m.resume || {};
+                var lignes = [['Chef de mission', m.chef], ['Départ', jourHeure(rs.dep)], ['Retour', jourHeure(rs.ret)], ['Destination', [rs.lieu, rs.pays].filter(Boolean).join(', ')], ['Transport', rs.moyen], ['Déjà rattachés', m.n + ' pax']]
+                    .filter(function(l) { return l[1]; });
+                var bouton = m.estChef ? '<p class="JUM-RT-INFO">C\'est votre mission : vous en êtes le chef.</p>'
+                    : m.statut === 'membre' ? '<p class="JUM-RT-INFO">✔ Vous êtes déjà rattaché à cette mission.</p>'
+                    : m.statut === 'retire' ? '<p class="JUM-RT-ERR">Le chef de mission vous a retiré de cette mission : voyez avec lui.</p>'
+                    : m.etat === 'annulee' ? '<p class="JUM-RT-ERR">Cette mission a été annulée.</p>'
+                    : m.etat !== 'ouverte' ? '<p class="JUM-RT-ERR">La demande est déjà partie aux valideurs : demandez à votre chef de mission de la rouvrir.</p>'
+                    : '<div class="JUM-RT-INFO">Seront transmis au chef de mission : votre <b>grade, nom, prénom, NID, CIE</b> et votre <b>carte TRIGONE</b>. Rien d\'autre à saisir.</div>' +
+                      '<button type="button" class="JUM-RT-BTN JUM-RT-GO">Je me rattache</button>';
+                zone.innerHTML = '<div class="JUM-RT-CARTE"><div class="JUM-RT-ET">MISSION TROUVÉE</div><div class="JUM-RT-OBJ">' + esc(rs.objet || rs.lieu || 'Mission') + '</div>' +
+                    lignes.map(function(l) { return '<div class="JUM-RT-L"><span>' + esc(l[0]) + '</span><b>' + esc(l[1]) + '</b></div>'; }).join('') + '</div>' + bouton;
+                var go = zone.querySelector('.JUM-RT-GO');
+                if (go) go.addEventListener('click', function() {
+                    go.disabled = true; go.textContent = 'Rattachement…';
+                    appelApi('mission/rejoindre', { methode: 'POST', corps: { code: c } }).then(function() {
+                        // Ma photo de carte (si je la partage) : chiffrée aussi pour les appareils du chef de mission.
+                        if (window.JUMELAGE_PHOTO_SYNCHRO) window.JUMELAGE_PHOTO_SYNCHRO(true);
+                        reussi(m);
+                    }, function(e) { go.disabled = false; go.textContent = 'Je me rattache'; zone.insertAdjacentHTML('beforeend', '<p class="JUM-RT-ERR">' + esc(e.message) + '</p>'); });
+                });
+            }, function(e) { if (vu === c) zone.innerHTML = '<p class="JUM-RT-ERR">' + esc(e.message) + '</p>'; vu = ''; });
+        };
+        champ.addEventListener('input', function() {
+            var d = champ.value.replace(/\D/g, '').slice(0, 6);
+            champ.value = d.length > 3 ? d.slice(0, 3) + ' ' + d.slice(3) : d;
+            if (d.length === 6) { champ.blur(); voir(d); } else { zone.innerHTML = ''; vu = ''; }
+        });
+        f.querySelector('.JUM-RT-SCAN').addEventListener('click', function() {
+            window.JUMELAGE_SCANNER_CARTE({ titre: 'Scanner le QR de la mission', sous: 'Visez le QR code montré par votre chef de mission.', lire: function(t) {
+                var c = codeMissionDe(t); return c ? Promise.resolve({ code: c }) : Promise.reject(new Error('Ce QR code n\'est pas un code de mission TRIGONE.'));
+            } }).then(function(r) { if (r && r.code) { champ.value = codeLisible(r.code); voir(r.code); } });
+        });
+        if (codeInit && codeMissionDe(codeInit)) { champ.value = codeLisible(codeMissionDe(codeInit)); voir(codeInit); } else setTimeout(function() { try { champ.focus(); } catch (e) {} }, 200);
+        mesMissions();
+        return f;
+    };
+    window.JUMELAGE_MISSION_API = function(action, corps) { return appelApi('mission/' + action + (corps && corps.get ? '?code=' + corps.code : ''), corps && !corps.get ? { methode: 'POST', corps: corps } : {}); };
+    // Chef de mission : ouvrir sa demande aux participants. o : { code, resume, expire, ref, titre, onCode(code), onMembres(membres), onAnnuler() }.
+    // Le panneau s'actualise tout seul (10 s) tant qu'il est ouvert : le nombre de pax et la carte de chacun.
+    window.JUMELAGE_MISSION_CHEF = function(o) {
+        if (!monCompte()) { bandeau('Connectez-vous à votre compte TRIGONE pour ouvrir la mission aux participants.'); if (window.JUMELAGE_COMPTE) window.JUMELAGE_COMPTE(); return; }
+        var f = fenetreRt('<div class="JUM-RT-TETE"><div><h2>Participants</h2><p>' + esc(o.titre || 'Demande collective') + '</p></div><button type="button" class="JUM-RT-X" aria-label="Fermer">✕</button></div><div class="JUM-RT-CORPS"><p class="JUM-RT-INFO">Ouverture de la mission…</p></div>');
+        var corps = f.querySelector('.JUM-RT-CORPS'), code = o.code || '', etat = '', membres = null, vus = null, minuteur = null, photos = {};
+        var fermer = function() { clearTimeout(minuteur); f.remove(); };
+        f.querySelector('.JUM-RT-X').addEventListener('click', fermer);
+        f.addEventListener('click', function(e) { if (e.target === f) clearTimeout(minuteur); });
+        var dessiner = function() {
+            if (!document.body.contains(f)) return;
+            var n = membres ? membres.length : 0, ouverte = etat === 'ouverte';
+            corps.innerHTML = '<div class="JUM-RT-CARTE" style="text-align:center;margin-top:0"><div class="JUM-RT-ET">CODE DE LA MISSION</div><div class="JUM-RT-GROS">' + esc(codeLisible(code)) + '</div>' +
+                    (ouverte ? '<div class="JUM-RT-QR"></div><p style="font-size:.74rem;color:#555;margin:4px 0 0">À annoncer au rapport ou à afficher.<br>Le code ne marche plus quand la demande part aux valideurs.</p>' +
+                        '<div class="JUM-RT-DUO"><button type="button" class="JUM-RT-BTN sec JUM-RT-PART">Partager</button><button type="button" class="JUM-RT-BTN sec JUM-RT-GRAND">Plein écran</button></div>'
+                    : '<p class="JUM-RT-ERR" style="margin:6px 0 0">' + (etat === 'envoyee' ? 'Demande envoyée aux valideurs : la liste est figée, le code ne marche plus.' : etat === 'annulee' ? 'Mission annulée.' : 'Code expiré (date de départ passée).') + '</p>' +
+                      (etat === 'envoyee' ? '<button type="button" class="JUM-RT-BTN sec JUM-RT-ROUV">Rouvrir la mission</button><p style="font-size:.72rem;color:#666;margin:6px 0 0">Pour ajouter ou retirer quelqu\'un : la demande modifiée devra repartir aux valideurs.</p>' : '')) + '</div>' +
+                '<div class="JUM-RT-PAX"><span>👥 ' + (n + 1) + ' pax (vous + ' + n + ' rattaché' + (n > 1 ? 's' : '') + ')</span>' + (ouverte ? '<span class="direct">● en direct</span>' : '') + '</div>' +
+                '<div class="JUM-RT-GRILLE">' + (n ? membres.map(function(m, i) {
+                    var id = m.ident || {}, neuf = vus && !vus[m.mail];
+                    var d = { grade: id.grade, nom: id.nom, prenom: id.prenom, unite: id.unite, cie: id.cie, nid: id.nid, missions: null };
+                    return '<div class="JUM-RT-UN' + (neuf ? ' neuf' : '') + '">' + (ouverte ? '<button type="button" class="x" data-i="' + i + '" aria-label="Retirer">✕</button>' : '') +
+                        '<div class="JUM-PART-CARTE">' + carteRecto(d, photos[m.mail] || '') + '</div><div class="JUM-RT-NOM">' + esc([id.grade, id.nom, id.prenom].filter(Boolean).join(' ')) + (neuf ? ' · <span style="color:#16a34a">à l\'instant</span>' : '') + '</div></div>';
+                }).join('') : '<div class="JUM-RT-VIDE">Personne n\'est encore rattaché. Donnez le code : chacun touche « Me rattacher à une mission » sur l\'accueil de Mise en route.</div>') + '</div>' +
+                '<button type="button" class="JUM-RT-BTN or JUM-RT-OKB">Terminé</button>' +
+                (etat !== 'annulee' ? '<button type="button" class="JUM-RT-BTN danger JUM-RT-ANN">Annuler la mission</button>' : '');
+            var box = corps.querySelector('.JUM-RT-QR');
+            if (box) chargerScript('qrcode.min.js', function() { return !!window.QRCode; }).then(function() { box.innerHTML = ''; new window.QRCode(box, { text: lienMission(code), width: 300, height: 300, colorDark: '#111111', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M }); }, function() {});
+            var b;
+            if ((b = corps.querySelector('.JUM-RT-PART'))) b.addEventListener('click', function() {
+                var t = 'Mission' + (o.titre ? ' « ' + o.titre + ' »' : '') + ' : rattachez-vous dans TRIGONE (Mise en route › Me rattacher à une mission) avec le code ' + codeLisible(code) + '.';
+                if (navigator.share) navigator.share({ title: 'Code de mission TRIGONE', text: t, url: lienMission(code) }).catch(function() {});
+                else { try { navigator.clipboard.writeText(t + ' ' + lienMission(code)); bandeau('Code et lien copiés.'); } catch (e) { bandeau(t); } }
+            });
+            if ((b = corps.querySelector('.JUM-RT-GRAND'))) b.addEventListener('click', function() {
+                var p = document.createElement('div'); p.className = 'JUM-RT-PLEIN';
+                p.innerHTML = '<div class="JUM-RT-ET" style="font-size:1rem">CODE DE LA MISSION</div><div class="JUM-RT-GROS">' + esc(codeLisible(code)) + '</div><div class="JUM-RT-QR"></div><p style="color:#555">Mise en route › « Me rattacher à une mission » · touchez pour fermer</p>';
+                p.addEventListener('click', function() { p.remove(); }); document.body.appendChild(p);
+                chargerScript('qrcode.min.js', function() { return !!window.QRCode; }).then(function() { new window.QRCode(p.querySelector('.JUM-RT-QR'), { text: lienMission(code), width: 600, height: 600, colorDark: '#111111', colorLight: '#ffffff', correctLevel: window.QRCode.CorrectLevel.M }); }, function() {});
+            });
+            if ((b = corps.querySelector('.JUM-RT-ROUV'))) b.addEventListener('click', function() { ouvrir(true); });
+            corps.querySelector('.JUM-RT-OKB').addEventListener('click', fermer);
+            if ((b = corps.querySelector('.JUM-RT-ANN'))) b.addEventListener('click', function() {
+                var conf = function(motif) {
+                    appelApi('mission/annuler', { methode: 'POST', corps: { code: code, motif: motif || '' } }).then(function(r) {
+                        fermer(); bandeau('Mission annulée' + (r.prevenus ? ' : ' + r.prevenus + ' personne' + (r.prevenus > 1 ? 's' : '') + ' prévenue' + (r.prevenus > 1 ? 's' : '') : '') + '.');
+                        if (o.onAnnuler) o.onAnnuler();
+                    }, function(e) { bandeau(e.message); });
+                };
+                // Confirmation dans le panneau : motif facultatif, puis « Confirmer l'annulation ».
+                clearTimeout(minuteur);
+                b.outerHTML = '<div class="JUM-RT-CARTE JUM-RT-ANNBOX"><b style="color:#b91c1c">Annuler la mission ?</b><p style="font-size:.78rem;margin:6px 0">Les ' + (membres ? membres.length : 0) +
+                    ' rattachés sont prévenus, le code ne marche plus et la demande est effacée de cet appareil.</p><input type="text" class="JUM-RT-CODE" style="font-size:.9rem;letter-spacing:0;text-align:left;padding:10px 12px" maxlength="200" placeholder="Motif (facultatif) : ex. contrordre" data-no-uppercase="1">' +
+                    '<div class="JUM-RT-DUO"><button type="button" class="JUM-RT-BTN sec JUM-RT-ANN-NON">Retour</button><button type="button" class="JUM-RT-BTN danger JUM-RT-ANN-OUI">Confirmer l\'annulation</button></div></div>';
+                var boite = corps.querySelector('.JUM-RT-ANNBOX');
+                boite.querySelector('.JUM-RT-ANN-NON').addEventListener('click', function() { actualiser(); dessiner(); });
+                boite.querySelector('.JUM-RT-ANN-OUI').addEventListener('click', function() { this.disabled = true; conf(boite.querySelector('input').value.trim()); });
+            });
+            Array.prototype.forEach.call(corps.querySelectorAll('.JUM-RT-UN .x'), function(x) {
+                x.addEventListener('click', function() {
+                    var m = membres[+x.getAttribute('data-i')]; if (!m) return;
+                    var qui = [m.ident.grade, m.ident.nom, m.ident.prenom].filter(Boolean).join(' ');
+                    var retirer = function() { appelApi('mission/retirer', { methode: 'POST', corps: { code: code, mail: m.mail } }).then(function(r) { recevoir(r.membres || [], etat); bandeau(qui + ' est retiré de la mission.'); }, function(e) { bandeau(e.message); }); };
+                    var txt = qui + ' est prévenu et ne pourra pas revenir avec ce code.';
+                    if (typeof window.MSG_CONFIRM === 'function') window.MSG_CONFIRM('Retirer de la mission ?', txt, 'Retirer', retirer, '⚠️', 'mascotte-poubelle.webp', true);
+                    else if (window.confirm('Retirer de la mission ?\n\n' + txt)) retirer();
+                });
+            });
+        };
+        var recevoir = function(l, et) {
+            var avant = membres; membres = l; etat = et || etat;
+            if (!vus) { vus = {}; l.forEach(function(m) { vus[m.mail] = true; }); }
+            else if (avant) avant.forEach(function(m) { vus[m.mail] = true; });
+            if (o.onMembres) o.onMembres(l);
+            // Photos de carte (partagées et chiffrées pour cet appareil) : demandées une fois par personne.
+            var sans = l.filter(function(m) { return photos[m.mail] === undefined; });
+            if (sans.length && window.JUMELAGE_PARTICIPANTS) {
+                sans.forEach(function(m) { photos[m.mail] = ''; });
+                window.JUMELAGE_PARTICIPANTS(sans.map(function(m) { return { matricule: (m.ident || {}).nid || '' }; })).then(function(r) {
+                    (r || []).forEach(function(x, i) { if (x && x.photoUrl) photos[sans[i].mail] = x.photoUrl; });
+                    dessiner();
+                }, function() {});
+            }
+            dessiner();
+        };
+        var actualiser = function() {
+            clearTimeout(minuteur);
+            if (!document.body.contains(f) || !code) return;
+            appelApi('mission/liste?code=' + code).then(function(r) { recevoir(r.membres || [], r.etat); }, function() {}).then(function() {
+                if (document.body.contains(f) && etat === 'ouverte') minuteur = setTimeout(actualiser, 10000);
+            });
+        };
+        var ouvrir = function(rouvrir) {
+            appelApi('mission/ouvrir', { methode: 'POST', corps: { code: code, resume: o.resume || {}, expire: o.expire || 0, ref: o.ref || '', rouvrir: !!rouvrir } }).then(function(r) {
+                if (r.code !== code && o.onCode) o.onCode(r.code);
+                code = r.code; etat = r.etat || 'ouverte';
+                if (r.rouverte) bandeau('Mission rouverte : le code remarche. Renvoyez ensuite la demande modifiée aux valideurs.');
+                actualiser();
+            }, function(e) { corps.innerHTML = '<p class="JUM-RT-ERR">' + esc(e.message) + '</p>'; });
+        };
+        ouvrir(false);
+        return f;
+    };
+    // Lien « ?mission=123456 » (QR code lu avec l'appareil photo du téléphone) : la fenêtre « Me rattacher » s'ouvre.
+    (function() {
+        var c = ''; try { c = new URLSearchParams(location.search).get('mission') || ''; } catch (e) {}
+        c = codeMissionDe(c); if (!c) return;
+        try { history.replaceState(null, '', location.pathname); } catch (e) {}
+        var essai = 0, go = function() {
+            if (document.querySelector('.JUM-VERROU, .JUM-PIN, .JUM-ACC, .JUM-MDP-FOND') && essai++ < 40) { setTimeout(go, 1500); return; }
+            window.JUMELAGE_RATTACHER(c);
+        };
+        if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', function() { setTimeout(go, 1500); }); else setTimeout(go, 1500);
+    })();
     function carteVerso(d, memo) {
         var depuis = memo && memo.depuis ? new Date(memo.depuis).toLocaleDateString('fr-FR') : '', niv = niveauCarte(d.missions);
         return '<div class="JUM-CARTE verso' + (niv[0] ? ' niv-' + niv[0] : '') + '"><i class="JUM-CARTE-GUIL"></i><i class="JUM-CARTE-HOLO"></i><i class="JUM-CARTE-BANDE"></i>' +
