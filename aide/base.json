@@ -2065,23 +2065,22 @@
     "jme rappelle plus de mon mdp",
     "je me souviens plus de mon code",
     "perdu mon mot de passe",
-    "je ne peux plus me connecter",
-    "impossible de me connecter",
     "on me dit code incorrect",
     "code faux",
     "adresse ou code incorrect",
-    "je n'arrive pas à me connecter",
-    "je peux pas me connecter",
     "comment récupérer mon compte",
     "récupérer mes données sans mon code",
     "code de réactivation",
     "jai plus mon code",
-    "réessayez dans 15 minutes",
-    "connexion coupée"
+    "j'ai un code de réactivation",
+    "où je mets le code de réactivation",
+    "le code de réactivation marche plus",
+    "code de réactivation expiré",
+    "changer mon code de connexion oublié"
    ],
-   "r": "Pas de panique, <b>vos données ne sont pas perdues</b>.<br>1. Demandez un <b>code de réactivation</b> à l'administrateur TRIGONE de votre unité.<br>2. À l'ouverture de TRIGONE, touchez <b>« J'ai un code de réactivation »</b> et saisissez-le.<br>3. Vos données reviennent ; TRIGONE vous demande alors de <b>choisir un nouveau code de connexion</b>.<br>À savoir : après 5 codes faux, il faut attendre 15 minutes ; après 10, la connexion par code est coupée (code de réactivation obligatoire).",
+   "r": "Pas de panique, <b>vos données ne sont pas perdues</b>.<br><b>Encore connecté sur un autre appareil</b> (PC, tablette) ? Sur celui-ci : bouton de compte en haut à droite › <b>« Ajouter un appareil »</b> : un QR ou un code de liaison, sans rien demander à personne.<br><b>Sinon</b> :<br>1. Demandez un <b>code de réactivation</b> à l'<b>administrateur</b> TRIGONE de votre unité (8 caractères, valable 48 h, une seule fois).<br>2. À l'ouverture de TRIGONE, touchez <b>« J'ai un code de réactivation »</b> (ou, dans la fenêtre de connexion, « Code de connexion oublié ? ») et saisissez-le.<br>3. Vos données reviennent ; TRIGONE vous demande alors de <b>choisir un nouveau code de connexion</b> (l'ancien n'est pas demandé).<br>Code expiré ? L'administrateur en crée un nouveau.",
    "n": "Connexion et code",
-   "c": "Pas de panique, vos données ne sont pas perdues : demandez un code de réactivation à l'administrateur de votre unité, puis touchez « J'ai un code de réactivation » à l'ouverture."
+   "c": "Pas de panique, vos données ne sont pas perdues : depuis un autre appareil encore connecté, « Ajouter un appareil » ; sinon, demandez un code de réactivation à l'administrateur de votre unité, puis touchez « J'ai un code de réactivation » à l'ouverture."
   },
   {
    "id": "code-acces-oublie",
@@ -2107,6 +2106,67 @@
    "r": "Le code à 4 chiffres sert seulement à <b>ouvrir TRIGONE sur cet appareil</b> ; il est redemandé à chaque réouverture.<br>Oublié ? Sur l'écran du code, touchez <b>« Code oublié ? »</b> : TRIGONE s'efface de l'appareil. Reconnectez-vous ensuite avec <b>votre adresse TRIGONE et votre code de connexion</b> : tout revient (sauvegarde automatique).<br>Pour le changer ou le retirer : <b>Paramètres › Compte › Mon profil › Code d'accès</b>.",
    "n": "Connexion et code",
    "c": "Le code à 4 chiffres ne sert qu'à ouvrir l'appli : touchez « Code oublié ? », puis reconnectez-vous avec votre adresse et votre code de connexion, tout revient."
+  },
+  {
+   "id": "plus-connecter",
+   "t": "Je n'arrive plus à me connecter",
+   "app": "tous",
+   "e": [
+    "connexion",
+    "verrou"
+   ],
+   "q": [
+    "je ne peux plus me connecter",
+    "je n'arrive plus à me connecter",
+    "impossible de me connecter",
+    "je n'arrive pas à me connecter",
+    "je peux pas me connecter",
+    "j'arrive plus à rentrer dans trigone",
+    "trigone ne veut plus de mon code",
+    "un missionnaire n'arrive plus à se connecter",
+    "un gars n'arrive plus à se connecter",
+    "mon personnel ne peut plus se connecter",
+    "comment ça se passe si on ne peut plus se connecter",
+    "que faire si je n'arrive plus à me connecter",
+    "je suis bloqué dehors",
+    "plus accès à mon compte",
+    "j'ai perdu l'accès à mon compte",
+    "accès perdu",
+    "je n'ai plus accès à trigone",
+    "ça me demande un code que j'ai pas",
+    "je peux plus me co",
+    "jpeux plus me co",
+    "j'arrive plus à me co",
+    "impossible de se co"
+   ],
+   "r": "Tout dépend du code oublié — <b>vos données ne sont jamais perdues</b> :<br>• <b>Code à 4 chiffres</b> (ouvre l'appli) : écran du code › <b>« Code oublié ? »</b>, puis reconnectez-vous avec votre <b>adresse TRIGONE</b> et votre <b>code de connexion</b> : tout revient.<br>• <b>Code de connexion</b> (8 caractères) : depuis un autre appareil encore connecté, <b>« Ajouter un appareil »</b> ; sinon l'<b>administrateur de l'unité</b> vous remet un <b>code de réactivation</b> (48 h) : accueil › « J'ai un code de réactivation ».<br>• <b>« Trop d'essais »</b> : 5 codes faux = 15 minutes d'attente ; 10 = connexion par code coupée (code de réactivation ou de liaison).<br>• <b>Téléphone perdu</b> : l'administrateur bloque le compte, puis vous remet un code de réactivation pour le nouveau.<br>Seul l'<b>administrateur de l'unité</b> remet un code de réactivation ou bloque un compte.",
+   "n": "Je n'arrive plus à me connecter",
+   "c": "Pas de panique, vos données ne sont jamais perdues : code à 4 chiffres oublié, « Code oublié ? » puis reconnectez-vous ; code de connexion oublié, l'administrateur de l'unité vous remet un code de réactivation."
+  },
+  {
+   "id": "trop-essais",
+   "t": "« Trop d'essais » à la connexion",
+   "app": "tous",
+   "e": [
+    "connexion"
+   ],
+   "q": [
+    "trop d'essais",
+    "réessayez dans un quart d'heure",
+    "réessayez dans 15 minutes",
+    "connexion coupée",
+    "la connexion par code est coupée",
+    "j'ai tapé trop de fois le mauvais code",
+    "bloqué après plusieurs erreurs",
+    "compte bloqué après des erreurs",
+    "notification essais de connexion",
+    "codes faux ont été saisis",
+    "quelqu'un essaie de se connecter à mon compte",
+    "on a essayé mon code"
+   ],
+   "r": "Protection contre les essais au hasard :<br>• <b>5 codes faux</b> : attendez <b>15 minutes</b>.<br>• <b>10 codes faux</b> : la connexion par code est <b>coupée</b> ; vous êtes prévenu par notification.<br>Pour revenir : un <b>code de liaison</b> depuis un autre appareil connecté (« Ajouter un appareil »), ou un <b>code de réactivation</b> de l'administrateur de votre unité.<br>Ce n'était pas vous ? Changez votre code de connexion : <b>Paramètres › Compte › Mon code de connexion</b>.",
+   "n": "Je n'arrive plus à me connecter",
+   "c": "5 codes faux, c'est 15 minutes d'attente ; 10, la connexion par code est coupée : il faut un code de réactivation de l'administrateur, ou un code de liaison depuis un autre appareil."
   },
   {
    "id": "se-connecter-ailleurs",
@@ -3423,6 +3483,11 @@
    ],
    "q": [
     "donner un code de réactivation",
+    "qui donne le code de réactivation",
+    "qui peut donner un code de réactivation",
+    "l'assistant chorus peut il donner un code",
+    "un missionnaire a oublié son code",
+    "débloquer un missionnaire",
     "un collègue a oublié son code",
     "un gars a oublié son mot de passe",
     "donner un code à un collègue",
