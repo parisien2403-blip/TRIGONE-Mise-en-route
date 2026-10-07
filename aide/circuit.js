@@ -56,7 +56,7 @@
     var QUI_QUOI = / (des|y a t il|est ce qu il y a|j ai|j|ai je|me|moi|mes|attend|attendent|en attente|combien|quoi|qu est ce|reste|il y a|y a|y en a|arrive|arrivees|recues|nouvelles) /;
     var CHORUS = / (a traiter|traiter|registre|numero omr|numeros omr|dernier omr|derniere omr|om a creer|ordres de mission a creer|cr recus|comptes rendus recus|demandes validees|espace chorus|chorus) /;
     // Simulation d'une mission décrite en une phrase (« si je pars sur Paris en VRC 5 jours, logement et repas à ma charge »).
-    var DUREE = / (\d{1,3}) ?(jours?|j|journees?|nuits?|nuitees?|semaines?) | (une|un|deux|trois|quatre) (semaines?|jours?|nuits?) | du \d{1,2} (au|a) \d{1,2} | une semaine | la semaine /;
+    var DUREE = / (\d{1,3}) ?(jours?|j|journees?|nuits?|nuitees?|semaines?|repas) | (une|un|deux|trois|quatre|cinq|six) (semaines?|jours?|nuits?) | (deux|trois|quatre|cinq|six) repas | du \d{1,2} (au|a) \d{1,2} | une semaine | la semaine /;
     var HYPO = / (si je|si j|si on|je pars|je vais partir|j vais partir|je partirai|on part|on va partir|je dois partir|je pars en mission|pour une mission|mission de|simulation|simuler|simule|hypothese|imaginons|admettons|supposons|par exemple) /;
     var VP = / (vrc|vp|vl perso|vl personnelle|vehicule perso|vehicule personnel|voiture perso|voiture personnelle|ma voiture|ma caisse|ma bagnole|mon vehicule|ma vl|en voiture|avec ma voiture|ik|indemnites? kilometriques?|frais kilometriques?) /;
     var TRAIN = / (train|tgv|sncf|ter|voie ferree|vf) /, AVION = / (avion|vol|aerien|aerienne) /, SERVICE = / (vrm|vehicule de service|vl de service|voiture de service|vehicule militaire|vl service) /;
@@ -431,7 +431,9 @@
     }
     function repSimulation(q, ctx) {
         var T = ctx.tarifs, p = Object.assign({}, ctx.precedent || {}, lireMission(q, ctx));
+        var lu = lireMission(q, ctx); if (ctx.precedent && lu.jours != null && lu.nuits == null) delete p.nuits;   // « et pour 5 jours ? » : les nuits d'avant ne comptent plus
         if (ctx.precedent && lireMission(q, ctx).pays) delete p.ville; if (ctx.precedent && lireMission(q, ctx).ville) delete p.pays;
+        if (!p.jours && / (\d{1,3}|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix) ?repas /.test(N(q))) p.jours = 1;   // « 4 repas à Lyon » : les repas seulement (calculés plus bas)
         if (!p.jours) return Promise.resolve({ html: 'Pour combien de temps ? Dites-moi la durée (« 5 jours », « 3 nuits », « du 12 au 16 ») et je fais le calcul.', params: p });
         if (!p.pays && !p.ville) return Promise.resolve({ html: 'Où se passe la mission ? Dites-moi la ville ou le pays (« à Lyon », « en Allemagne »).', params: p });
         var jours = Math.max(1, Math.min(p.jours, 180)), nuits = p.nuits != null ? p.nuits : jours - 1;
@@ -441,13 +443,27 @@
             prixRepas = p.pays.m * t * T.coefRepas; prixNuit = p.pays.m * t * T.coefHebergement; lieu = p.pays.p.charAt(0) + p.pays.p.slice(1).toLowerCase(); }
         else { prixNuit = T.hebergementFrance[p.ville.zone]; lieu = p.ville.nom + (p.ville.zone === 'PARIS' ? '' : p.ville.zone === 'GRANDE' ? ' (grande ville)' : ''); }
         var ou = p.pays ? 'en <b>' + esc(lieu) + '</b>' : 'à <b>' + esc(lieu.replace(/ \(grande ville\)$/, '')) + '</b>';
+        // Réponse à ce qui est demandé, du tac au tac : « 3 nuits à Nantes » → les nuits seulement ; « 4 repas à Lyon » → les repas seulement.
+        var sq = N(q), mr = / (\d{1,3}|un|une|deux|trois|quatre|cinq|six|sept|huit|neuf|dix) ?repas /.exec(sq);
+        var parleNuits = / (nuit|nuits|nuitee|nuitees|hotel|hotels|dormir|hebergement) /.test(sq), parleRepas = / (repas|manger|midi|soir|dejeuner|diner|restaurant|resto) /.test(sq);
+        var parleReste = / (jour|jours|semaine|semaines|mission|tout|total|vp|vl|voiture|km|kilometre|kilometres|ik|train|avion|service|du \d+ au) /.test(sq);
+        if (!parleReste && !p.mode && parleNuits && !parleRepas && p.nuits != null) p.seul = 'nuits';
+        else if (!parleReste && !p.mode && parleRepas && !parleNuits && mr) { p.seul = 'repas'; p.nRepas = +mr[1] || NOMBRES[mr[1]] || 1; }
+        else if (parleReste || (parleNuits && parleRepas) || / avec les (repas|nuits) /.test(sq)) delete p.seul;
+        if (p.seul) {
+            var nb = p.seul === 'nuits' ? (p.logeGratuit ? 0 : nuits) : p.nRepas, pu = p.seul === 'nuits' ? prixNuit : prixRepas, mot = p.seul === 'nuits' ? 'nuit' : 'repas';
+            var lieuCourt = p.pays ? 'en ' + esc(lieu) : 'à ' + esc(lieu.replace(/ \(grande ville\)$/, ''));
+            return Promise.resolve({ html: 'Pour <b>' + nb + ' ' + mot + (nb > 1 && mot === 'nuit' ? 's' : '') + '</b> ' + lieuCourt + ', vous seriez remboursé de <b>' + eurosRond(nb * pu) + '</b> (' + nb + ' × ' + euros(pu) + (p.ville && p.ville.zone === 'GRANDE' && mot === 'nuit' ? ', grande ville' : '') + ').' +
+                '<small>' + (mot === 'nuit' ? 'Forfait nuitée, petit-déjeuner compris, si l\'hébergement est à votre charge' : 'Forfait par repas, s\'il n\'est ni pris au restaurant administratif ni fourni') + (p.pays ? ' ; taux du pays converti en euros' : '') + '. ' + (mot === 'nuit' ? 'Avec les repas : « et avec les repas ? ».' : 'Pour une mission complète : « et pour 3 jours ? ».') + '</small>',
+                etq: 'Barème de TRIGONE Compte-rendu', params: p });
+        }
         var taux = Object.assign({}, T.ik || {}, lireL('trigone_ik_rates', {}) || {});
         var finir = function(km, err) {
             // Noms officiels trouvés par le service de cartographie (« NOGENT-LE-ROTROU (28400) ») : la ville tapée vite est confirmée.
             if (km && typeof km === 'object') { if (km.de) p.de = officiel(km.de); if (km.a) { p.aOfficiel = officiel(km.a); } km = km.km; }
             var lignes = [], total = nRepas * prixRepas + nNuits * prixNuit;
             lignes.push('<tr><td>' + nRepas + ' repas × ' + euros(prixRepas) + (p.nourri ? ' (repas fournis)' : '') + '</td><td>' + euros(nRepas * prixRepas) + '</td></tr>');
-            lignes.push('<tr><td>' + nNuits + ' nuit' + (nNuits > 1 ? 's' : '') + ' (' + esc(lieu) + ') × ' + euros(prixNuit) + (p.logeGratuit ? ' (logé gratuitement)' : '') + '</td><td>' + euros(nNuits * prixNuit) + '</td></tr>');
+            lignes.push('<tr><td>' + nNuits + ' nuit' + (nNuits > 1 ? 's' : '') + ' à ' + esc(lieu) + ' × ' + euros(prixNuit) + (p.logeGratuit ? ' (logé gratuitement)' : '') + '</td><td>' + euros(nNuits * prixNuit) + '</td></tr>');
             var ikTxt = '';
             if (p.mode === 'vp') {
                 if (km != null) {
@@ -457,7 +473,7 @@
                 } else ikTxt = p.de ? 'Je n\'ai pas pu calculer la distance ' + esc(p.de) + ' → ' + esc(p.a || lieu) + (err ? ' (' + esc(err) + ')' : '') + '.' : 'Pour les <b>indemnités kilométriques</b>, dites-moi d\'où vous partez et la puissance (« depuis Libourne, 6 CV »).';
             }
             if (p.aOfficiel && !p.pays) ou = 'à <b>' + esc(p.aOfficiel) + '</b>';
-            var html = 'Pour <b>' + jours + ' jour' + (jours > 1 ? 's' : '') + '</b> ' + ou + (p.mode === 'vp' ? ' en véhicule personnel' : p.mode === 'train' ? ' en train' : p.mode === 'avion' ? ' en avion' : p.mode === 'service' ? ' en véhicule de service' : '') + ', comptez <b>environ ' + eurosRond(total) + '</b> :' +
+            var html = 'Pour <b>' + (p.nuits != null ? nuits + ' nuit' + (nuits > 1 ? 's' : '') + '</b> (' + jours + ' jour' + (jours > 1 ? 's' : '') + ' de mission)' : jours + ' jour' + (jours > 1 ? 's' : '') + '</b>') + ' ' + ou + (p.mode === 'vp' ? ' en véhicule personnel' : p.mode === 'train' ? ' en train' : p.mode === 'avion' ? ' en avion' : p.mode === 'service' ? ' en véhicule de service' : '') + ', comptez <b>environ ' + eurosRond(total) + '</b> :' +
                 '<table class="AIDE-TAB">' + lignes.join('') + '<tr class="tot"><td>Estimation</td><td>' + euros(total) + '</td></tr></table>' +
                 (ikTxt ? '<small>' + ikTxt + '</small>' : '') + (TRANSPORT_SIMU[p.mode] ? '<small>' + TRANSPORT_SIMU[p.mode] + '</small>' : '') +
                 '<small>Hypothèses : départ le 1er jour vers 8 h, retour le dernier vers 18 h' + (p.semaine ? ', une semaine = 5 jours' : '') + (p.logeGratuit || p.nourri ? '' : ', logement et repas à votre charge') + '. Le montant exact sort de votre compte-rendu (horaires réels).</small>' +
@@ -602,6 +618,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 220, version: 'V217', l: ['La mascotte répond juste à ce qu\'on lui demande : « 3 nuits à Nantes » → « vous seriez remboursé de 360 € », « 4 repas à Lyon » → 80 €', 'Pour la mission complète, il suffit d\'ajouter « et avec les repas ? »'] },
         { build: 219, version: 'V216', l: ['« Salut, combien pour 2 nuits à Paris ? » : la mascotte rend le bonjour et fait le calcul (le « 2 » était pris pour une abréviation SMS)'] },
         { build: 218, version: 'V215', l: ['La mascotte peut discuter beaucoup plus chaque jour (40 questions libres par personne), toujours gratuitement'] },
         { build: 217, version: 'V214', l: ['La mascotte discute librement : n\'importe quelle question, avec des phrases naturelles et de l\'humour si vous plaisantez', 'Plus de bouton « Demander à l\'IA » : elle répond directement quand elle n\'a pas de réponse toute prête', 'Les montants et les règles restent ceux validés par l\'unité'] },

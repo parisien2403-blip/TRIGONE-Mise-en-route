@@ -120,7 +120,13 @@ module.exports = async function() {
     r = await demander(t, 'j\'ai combien de temps pour rendre mon cr');
     verifier(/30 jours/.test(r), 'mémento : délai du compte-rendu au 4e RIISC → 30 jours après la fin de mission');
     r = await demander(t, 'salut, combien je suis remboursé pour 2 nuits a paris ?');
-    verifier(/^Bon(jour|soir), mon adjudant\s!/.test(r.trim()) && /2 nuits \(Paris\)/.test(r) && /280,00 €/.test(r), '« salut, combien je suis remboursé pour 2 nuits à Paris » : le « 2 » n\'est plus lu comme une abréviation SMS → 2 nuits × 140 € = 280 €, et la mascotte rend le bonjour');
+    verifier(/^Bon(jour|soir), mon adjudant\s!/.test(r.trim()) && /2 nuits/.test(r) && /280 €/.test(r) && !/repas ×/.test(r), '« salut, combien je suis remboursé pour 2 nuits à Paris » : 2 × 140 € = 280 € (les nuits seulement, pas de repas ajoutés), et la mascotte rend le bonjour');
+    r = await demander(t, 'et avec les repas ?');
+    verifier(/repas ×/.test(r) && /Paris/.test(r), '« et avec les repas ? » : la simulation complète (repas + nuits) pour Paris');
+    r = await demander(t, 'salut combien coute 3 nuits a nantes ?');
+    verifier(/Pour 3 nuits à Nantes, vous seriez remboursé de 360 €/.test(r) && !/repas ×/.test(r), '« combien coûte 3 nuits à Nantes » : réponse directe, 3 nuits × 120 € = 360 €, sans jours ni repas ajoutés');
+    r = await demander(t, 'combien pour 4 repas a lyon');
+    verifier(/Pour 4 repas à Lyon, vous seriez remboursé de 80 €/.test(r), '« combien pour 4 repas à Lyon » : les repas seulement (80 €)');
     r = await demander(t, 'qui autorise ma voiture perso');
     verifier(/chef de corps/i.test(r), 'mémento : véhicule personnel autorisé par le chef de corps');
     r = await demander(t, 'code fd du 4e riisc formation'); await attendre(800);
