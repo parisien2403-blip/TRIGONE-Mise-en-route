@@ -119,6 +119,8 @@ module.exports = async function() {
     verifier(/péage/i.test(r) && /justificatif/i.test(r), 'mémento : « le péage c\'est remboursé ? » → sur justificatif, véhicule personnel autorisé');
     r = await demander(t, 'j\'ai combien de temps pour rendre mon cr');
     verifier(/30 jours/.test(r), 'mémento : délai du compte-rendu au 4e RIISC → 30 jours après la fin de mission');
+    r = await demander(t, 'salut, combien je suis remboursé pour 2 nuits a paris ?');
+    verifier(/^Bon(jour|soir), mon adjudant\s!/.test(r.trim()) && /2 nuits \(Paris\)/.test(r) && /280,00 €/.test(r), '« salut, combien je suis remboursé pour 2 nuits à Paris » : le « 2 » n\'est plus lu comme une abréviation SMS → 2 nuits × 140 € = 280 €, et la mascotte rend le bonjour');
     r = await demander(t, 'qui autorise ma voiture perso');
     verifier(/chef de corps/i.test(r), 'mémento : véhicule personnel autorisé par le chef de corps');
     r = await demander(t, 'code fd du 4e riisc formation'); await attendre(800);

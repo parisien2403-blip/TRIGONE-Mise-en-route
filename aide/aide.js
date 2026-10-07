@@ -214,9 +214,17 @@
         try { localStorage.setItem(CLE_RAPPEL_JOUR, jour); } catch (e) {}
         setTimeout(function() { l.forEach(function(x) { if (x.medaille) try { localStorage.setItem(CLE_MEDAILLE_FETEE, x.medaille); } catch (e) {} ajouter({ de: 'lui', html: x.html, pose: 'garde', rappel: true }); }); }, 900);
     }
-    var sourire = false;
+    var sourire = false, salue = false;
+    var DEBUT_SALUT = /^\s*(bonjour|bonsoir|salut|slt|bjr|bsr|coucou|cc|hello|hey|yo|wesh|salam|kikou)\b/i;
     function ajouter(m) {
         if (m.de === 'lui' && !m.rappel && (m.etq || m.fiche || m.ia)) glisserRappels();
+        // « salut, combien… » : la mascotte rend le bonjour avant de répondre (sauf si sa réponse salue déjà).
+        if (salue && m.de === 'lui' && !m.rappel) {
+            salue = false;
+            if (!DEBUT_SALUT.test(m.ia ? (m.brut || '') : String(m.html || '').replace(/<[^>]+>/g, ''))) {
+                var a = appel(); m.html = (new Date().getHours() >= 18 ? 'Bonsoir' : 'Bonjour') + (a ? ', ' + a : '') + '\u00a0! ' + m.html; if (!m.pose) m.pose = 'salut';
+            }
+        }
         if (sourire && m.de === 'lui' && !m.pose) { m.html = 'Bien sûr\u00a0! ' + m.html; m.pose = 'content'; sourire = false; }
         fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
     // La mascotte prend une posture selon sa réponse (images déjà dans TRIGONE).
@@ -400,6 +408,7 @@
         ajouter({ de: 'moi', texte: question });
         var poli = politesse(question);
         if (poli) { ajouter({ de: 'lui', html: poli.html, pose: poli.pose || '' }); return; }
+        salue = DEBUT_SALUT.test(question);
         // Le circuit de la personne (sa demande, son compte-rendu, ce qu'elle a à valider…), avant la notice.
         var ic = C && C.intention(question, contexte()), avant = lire(CLE_DERNIER);
         // « combien je vais toucher entre Libourne et Bordeaux » : indemnités kilométriques, pas l'estimation de la mission.

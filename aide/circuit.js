@@ -94,7 +94,7 @@
 
     function suite(q) { var s = N(q); if (s.trim().split(' ').length <= 8 && / (depuis|cv|chevaux|en train|en avion|en voiture|en vrc|jours|nuits|loge|nourri|a ma charge) /.test(s)) return true; return s.trim().split(' ').length <= 9 && /^ (et|puis|sinon|aussi|pareil|idem) /.test(s) || / (celle|celui|celles|ceux|l autre|les autres) /.test(s); }
     // Le langage SMS de la base (« jtrouv », « kom », « mtn »…) est déplié avant de chercher l'intention.
-    function deplier(q, ctx) { var sms = (ctx && ctx.sms) || {}, s = N(q); return ' ' + s.trim().split(' ').map(function(m) { return Object.prototype.hasOwnProperty.call(sms, m) && sms[m] ? sms[m] : m; }).join(' ') + ' '; }
+    function deplier(q, ctx) { var sms = (ctx && ctx.sms) || {}, s = N(q); return ' ' + s.trim().split(' ').map(function(m) { return !/^\d+$/.test(m) && Object.prototype.hasOwnProperty.call(sms, m) && sms[m] ? sms[m] : m; }).join(' ') + ' '; }
     function intention(q, ctx) {
         q = deplier(q, ctx);
         var s = N(q);
@@ -602,6 +602,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 219, version: 'V216', l: ['« Salut, combien pour 2 nuits à Paris ? » : la mascotte rend le bonjour et fait le calcul (le « 2 » était pris pour une abréviation SMS)'] },
         { build: 218, version: 'V215', l: ['La mascotte peut discuter beaucoup plus chaque jour (40 questions libres par personne), toujours gratuitement'] },
         { build: 217, version: 'V214', l: ['La mascotte discute librement : n\'importe quelle question, avec des phrases naturelles et de l\'humour si vous plaisantez', 'Plus de bouton « Demander à l\'IA » : elle répond directement quand elle n\'a pas de réponse toute prête', 'Les montants et les règles restent ceux validés par l\'unité'] },
         { build: 216, version: 'V213', l: ['Nouveaux inscrits : à la fin du questionnaire, la mascotte au casque se présente (« Je suis votre assistant TRIGONE ») et montre ce qu\'elle sait faire'] },

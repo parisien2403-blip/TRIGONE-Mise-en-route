@@ -41,7 +41,7 @@
         var CANON = {}; (base.jargon || []).forEach(function(g) { CANON[g[0]] = 1; });
         function jetons(texte) {
             var s = normal(texte);
-            s = ' ' + s.trim().split(' ').map(function(m) { return Object.prototype.hasOwnProperty.call(sms, m) ? sms[m] : m; }).join(' ') + ' ';
+            s = ' ' + s.trim().split(' ').map(function(m) { return !/^\d+$/.test(m) && Object.prototype.hasOwnProperty.call(sms, m) ? sms[m] : m; }).join(' ') + ' ';
             s = normal(s);
             // Remplacement des expressions par leur mot retenu, sans retoucher un mot déjà remplacé.
             var faits = [];
