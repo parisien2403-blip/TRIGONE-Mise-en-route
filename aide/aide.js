@@ -547,7 +547,7 @@
         if (pastille) pastille.classList.remove('AIDE-INVITE');
         var b = document.querySelector('.AIDE-BULLE'); if (b) b.remove();
         fen = document.createElement('div');
-        fen.className = 'AIDE-FOND' + (estPc() ? ' pc' : '');
+        fen.className = 'AIDE-FOND' + (estPc() ? ' pc' : '') + (document.querySelector('.JUM-CHOIX') ? ' haut' : '');
         fen.setAttribute('role', 'dialog'); fen.setAttribute('aria-label', 'Aide de TRIGONE');
         fen.innerHTML = '<div class="AIDE-FEN"><div class="AIDE-TETE"><img src="' + IMG + '" alt=""><div><b>Besoin d\'aide ?</b><small>Posez-moi n\'importe quelle question</small></div>' +
             '<button type="button" class="AIDE-QUOI" title="Ce que je sais faire" aria-label="Ce que je sais faire">?</button><button type="button" class="AIDE-VIDER" title="Nouvelle conversation" aria-label="Nouvelle conversation">↺</button><button type="button" class="AIDE-X" aria-label="Fermer">✕</button></div>' +
@@ -621,7 +621,7 @@
         if (pastille) pastille.classList.remove('AIDE-INVITE');
         var bu = document.querySelector('.AIDE-BULLE'); if (bu) bu.remove();
         pres = document.createElement('div');
-        pres.className = 'AIDE-PRES-FOND' + (estPc() ? ' pc' : '');
+        pres.className = 'AIDE-PRES-FOND' + (estPc() ? ' pc' : '') + (document.querySelector('.JUM-CHOIX') ? ' haut' : '');
         pres.setAttribute('role', 'dialog'); pres.setAttribute('aria-label', 'Ce que la mascotte sait faire');
         var n = 0;
         pres.innerHTML = '<div class="AIDE-PRES"><div class="AIDE-PRES-TETE"><button type="button" class="AIDE-PRES-RETOUR" aria-label="Fermer">‹</button>' +
@@ -666,13 +666,16 @@
         pastille.style.left = Math.round(r.left - t - 8) + 'px';
         pastille.style.zIndex = getComputedStyle(lune).zIndex || 500;
     }
+    // Tout premier appui : la page « Ce que je sais faire » ; ensuite, directement la discussion. Sert à la pastille
+    // et à la carte « Une question ? Je suis là. » de l'écran de choix (jumelage.js), créée parfois avant installer().
+    window.AIDE_DEMARRER = function() { var v = false; try { v = !!localStorage.getItem(CLE_VUE); } catch (e) {} if (v) window.AIDE_OUVRIR(); else window.AIDE_PRESENTATION(); };
     function installer() {
         var st = document.createElement('style'); st.id = 'AIDE-CSS'; st.textContent = CSS; document.head.appendChild(st);
         pastille = document.createElement('button');
         pastille.type = 'button'; pastille.className = 'AIDE-PASTILLE'; pastille.title = 'Besoin d\'aide ?'; pastille.setAttribute('aria-label', 'Besoin d\'aide ? Posez votre question à la mascotte');
         pastille.innerHTML = '<img src="' + IMG + '" alt="">';
         // Tout premier appui : la page « Ce que je sais faire » ; ensuite, directement la discussion.
-        var premier = function() { var v = false; try { v = !!localStorage.getItem(CLE_VUE); } catch (e) {} if (v) window.AIDE_OUVRIR(); else window.AIDE_PRESENTATION(); };
+        var premier = window.AIDE_DEMARRER;
         pastille.addEventListener('click', premier);
         document.body.appendChild(pastille);
         placer(); window.addEventListener('resize', placer); setInterval(placer, 1000);
@@ -693,6 +696,7 @@
     }
 
     var CSS = [
+        '.AIDE-FOND.haut,.AIDE-PRES-FOND.haut{z-index:99992}',
         '.AIDE-PASTILLE{position:fixed;padding:0;border-radius:50%;border:2px solid #d4a64a;background:#fff;overflow:hidden;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3)}',
         '.AIDE-PASTILLE img{width:100%;height:100%;object-fit:cover;display:block}',
         '.AIDE-PASTILLE.AIDE-INVITE{animation:aidePulse 1.6s ease-in-out infinite}',

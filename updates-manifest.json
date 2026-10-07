@@ -1,7 +1,7 @@
 {
   "_lisezMoi": "Ce fichier contrôle les messages de mise à jour de TRIGONE Mise en route. À chaque publication de code, augmentez appCodeVersion ICI et APP_CODE_VERSION dans app.js (même numéro), ainsi que build.json / BUILD (jumelage.js) : l'appli se met à jour d'elle-même puis affiche « Nouveautés » avec appCodeMessage. appMessageVersion est un simple message d'information : augmentez-le pour le montrer une fois à tout le monde.",
-  "appCodeVersion": 268,
-  "appCodeMessage": "TRIGONE V220 : « Je n'arrive plus à me connecter » — la mascotte et la notice expliquent chaque cas.",
+  "appCodeVersion": 269,
+  "appCodeMessage": "TRIGONE V221 : la mascotte vous attend dès l'écran de choix — « Une question ? Je suis là. »",
   "appMessageVersion": 0,
   "appMessage": ""
 }

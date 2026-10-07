@@ -748,6 +748,16 @@
         '.JUM-GC-SUPPR { width: 100%; padding: 11px; border-radius: 12px; border: 1.5px solid #b91c1c; background: #fff5f5; color: #b91c1c; font: 800 0.82rem Montserrat, sans-serif; cursor: pointer; }' +
         '.JUM-GC-JOURNAL div { padding: 7px 0; border-bottom: 1px solid #eee; font-size: 0.78rem; } .JUM-GC-JOURNAL small { display: block; color: #6b7280; }' +
         'body.dark-mode .JUM-GC-FEN { background: #1f1f1f; color: #e5e5e5; } body.dark-mode .JUM-GC-DEM { background: #262626; border-color: #404040; } body.dark-mode .JUM-GC-FEN textarea, body.dark-mode .JUM-GC-FEN input, body.dark-mode .JUM-GC-FEN select { background: #141414; color: #e5e5e5; border-color: #404040; }' +
+        /* Mascotte sur l'écran de choix : carte au-dessus de la barre d'outils (téléphone), pastille en haut à gauche (PC). */
+        '.JUM-AIDE-CARTE { display: flex; align-items: center; gap: 10px; width: 100%; box-sizing: border-box; padding: 7px 12px 7px 7px; margin: 0 0 8px; border-radius: 16px; border: 1px solid rgba(214,167,86,0.55); background: rgba(255,255,255,0.05); color: #f3efe6; font: 600 0.72rem/1.3 Montserrat, system-ui, sans-serif; text-align: left; cursor: pointer; -webkit-tap-highlight-color: transparent; }' +
+        '.JUM-AIDE-CARTE:active { background: rgba(214,167,86,0.14); }' +
+        '.JUM-DOCK button.JUM-AIDE-CARTE { flex: none; flex-direction: row; align-items: center; justify-content: flex-start; gap: 10px; padding: 7px 12px 7px 7px; border: 1px solid rgba(214,167,86,0.55); background: rgba(255,255,255,0.05); color: #f3efe6; font: 600 0.72rem/1.3 Montserrat, system-ui, sans-serif; letter-spacing: 0; text-transform: none; text-align: left; border-radius: 16px; }' +
+        '.JUM-AIDE-CARTE img { width: 40px; height: 40px; flex-shrink: 0; border-radius: 50%; background: #fff; border: 2px solid #d4a64a; object-fit: cover; }' +
+        '.JUM-AIDE-CARTE b { display: block; color: #e2b45c; font-size: 0.8rem; font-weight: 800; } .JUM-AIDE-CARTE span { display: block; opacity: 0.85; }' +
+        '.JUM-CHOIX > .JUM-AIDE-CARTE { position: absolute; z-index: 3; top: max(12px, env(safe-area-inset-top, 0px)); left: calc(max(16px, env(safe-area-inset-left, 0px)) + 78px); width: auto; max-width: 330px; margin: 0; background: rgba(15,15,15,0.88); box-shadow: 0 4px 14px rgba(0,0,0,0.3); }' +
+        '.JUM-CHOIX.choisi .JUM-AIDE-CARTE { opacity: 0; pointer-events: none; }' +
+        '@media (max-width: 1099px) { .JUM-CHOIX > .JUM-AIDE-CARTE { display: none; } }' +
+        '@media (max-width: 360px) { .JUM-AIDE-CARTE { font-size: 0.64rem; } .JUM-AIDE-CARTE img { width: 34px; height: 34px; } }' +
         '.JUM-DOCK { display: none; }' +
         '@media (max-width: 1099px) {' +
             '.JUM-CHOIX.JUM-V2 { grid-template: "mer" 1fr "cr" 1fr "dock" auto / 1fr; }' +
@@ -1263,7 +1273,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 223, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 224, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -6885,6 +6895,18 @@
             else if (d === 'maj') verifierMajManuelle();
             else if (d === 'pc') window.JUMELAGE_MODE_PC();
         });
+        // Mascotte d'aide : une carte, pour poser sa question avant même de choisir une appli (aide/aide.js).
+        var carteAide = function() {
+            if (typeof window.AIDE_DEMARRER !== 'function') return null;
+            var c = document.createElement('button'); c.type = 'button'; c.className = 'JUM-AIDE-CARTE';
+            c.setAttribute('aria-label', 'Une question ? Posez-la à la mascotte');
+            c.innerHTML = '<img src="' + (DANS_CR ? '../' : '') + 'aide/mascotte-salut.webp" alt=""><div><b>Une question ? Je suis là.</b><span>Demande, remboursement, code oublié… demandez-moi.</span></div>';
+            ['pointerdown', 'pointerup'].forEach(function(t) { c.addEventListener(t, function(e) { e.stopPropagation(); }); });
+            c.addEventListener('click', function(e) { e.stopPropagation(); window.AIDE_DEMARRER(); });
+            return c;
+        };
+        var aidePc = carteAide(); if (aidePc) ecran.appendChild(aidePc);
+        var aideTel = carteAide(); if (aideTel) dock.insertBefore(aideTel, dock.firstChild);
         ecran.appendChild(dock); majBoutonsModePc();
         var badge = ecran.querySelector('.JUM-VERSION');
         if (badge) {

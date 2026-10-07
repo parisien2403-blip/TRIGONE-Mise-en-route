@@ -23,11 +23,13 @@ module.exports = async function(srv) {
     verifier(e.mer === 'Demande chez le VALIDEUR 2' && /^Mission en cours depuis le 29\/09\/2026$/.test(e.cr), 'état sous chaque logo : « ' + e.mer + ' », « ' + e.cr + ' »');
     const dk = await t.evaluate(() => {
         const d = document.querySelector('.JUM-DOCK'); if (!d || getComputedStyle(d).display === 'none') return null;
-        const vis = [...d.querySelectorAll('button')].filter(b => getComputedStyle(b).display !== 'none').map(b => b.dataset.d);
+        const vis = [...d.querySelectorAll('.JUM-DOCK-BARRE button')].filter(b => getComputedStyle(b).display !== 'none').map(b => b.dataset.d);
         const vieux = ['.JUM-MAJ-BTN', '.JUM-CARTE-ACCES', '.JUM-PARAM-ACCES', '.JUM-NOTICE-ACCES'].every(s => { const x = document.querySelector('.JUM-V2 > ' + s); return !x || getComputedStyle(x).display === 'none'; });
         return { bas: Math.abs(d.getBoundingClientRect().bottom - innerHeight) < 2, vis: vis.join(','), vieux };
     });
     verifier(dk && dk.bas && dk.vis === 'notice,param,carte,maj' && dk.vieux, 'téléphone : barre du bas Notice / Paramètres / Ma carte / Mise à jour (sans Affichage PC sur petit écran)');
+    const aide = await t.evaluate(() => { const c = document.querySelector('.JUM-DOCK .JUM-AIDE-CARTE'); return !!c && c.getClientRects().length > 0 && /Une question \? Je suis là/.test(c.textContent); });
+    verifier(aide, 'téléphone : carte de la mascotte « Une question ? Je suis là. » au-dessus de la barre du bas');
     await t.click('.JUM-PAN-CR .JUM-SOUS'); await attendre(1500);
     verifier(/\/cr\/$/.test(t.url()), 'un toucher sur l\'espace Compte-rendu ouvre Compte-rendu');
     // Barre du bas des applis (téléphone) : onglets de l'appli, puis Ma carte et Notice ; plus de pastilles en haut.
