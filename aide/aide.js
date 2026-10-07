@@ -111,6 +111,7 @@
         return { texte: 'Bonjour' + (a ? ', ' + a : '') + ', en quoi puis-je vous aider\u00a0?' };
     }
     function puces() {
+        if (!moteur) return '';   // base pas encore chargée (fil vidé dès l'ouverture)
         // Sujets de l'écran ouvert d'abord (sauf sur les accueils : les plus demandés), puis les plus demandés.
         var e = ecranCourant(), ids = [], accessoires = ['theme', 'medailles', 'pastilles-rouges', 'mise-a-jour', 'installer'];
         if (!/accueil|choix/.test(e)) (base.fiches || []).forEach(function(f) { if (ids.length < 4 && (f.e || []).indexOf(e) >= 0 && accessoires.indexOf(f.id) < 0) ids.push(f.id); });
@@ -214,7 +215,7 @@
         try { localStorage.setItem(CLE_RAPPEL_JOUR, jour); } catch (e) {}
         setTimeout(function() { l.forEach(function(x) { if (x.medaille) try { localStorage.setItem(CLE_MEDAILLE_FETEE, x.medaille); } catch (e) {} ajouter({ de: 'lui', html: x.html, pose: 'garde', rappel: true }); }); }, 900);
     }
-    var sourire = false, salue = false;
+    var sourire = false, salue = false, nbAjouts = 0;   // nbAjouts : messages ajoutés (le fil, lui, est limité à 40)
     var DEBUT_SALUT = /^\s*(bonjour|bonsoir|salut|slt|bjr|bsr|coucou|cc|hello|hey|yo|wesh|salam|kikou)\b/i;
     function ajouter(m) {
         if (m.de === 'lui' && !m.rappel && (m.etq || m.fiche || m.ia)) glisserRappels();
@@ -226,7 +227,7 @@
             }
         }
         if (sourire && m.de === 'lui' && !m.pose) { m.html = 'Bien sûr\u00a0! ' + m.html; m.pose = 'content'; sourire = false; }
-        fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
+        nbAjouts++; fil.push(m); if (fil.length > 40) fil = fil.slice(-40); ecrire(CLE_FIL, fil); dessinerFil(); }
     // La mascotte prend une posture selon sa réponse (images déjà dans TRIGONE).
     var POSES = { garde: 'aide/mascotte-salut.webp', salut: 'mascotte.webp', montre: 'demo-mascotte.webp', aide: 'mascotte-assistance.webp', code: 'mascotte-code.webp', content: 'mascotte-ok.webp', desole: 'mascotte-erreur.webp' };
     function poseDe(m) {
@@ -430,9 +431,9 @@
     }
     function enchainer(parts, i) {
         if (i >= parts.length) return;
-        var n = fil.length, debut = Date.now();
+        var n = nbAjouts, debut = Date.now();
         traiterUne(parts[i]);
-        var t = setInterval(function() { if ((!attenteIa && fil.length > n) || Date.now() - debut > 15000) { clearInterval(t); enchainer(parts, i + 1); } }, 80);
+        var t = setInterval(function() { if ((!attenteIa && nbAjouts > n) || Date.now() - debut > 15000) { clearInterval(t); enchainer(parts, i + 1); } }, 80);
     }
     function traiterUne(question) {
         var C = window.AIDE_CIRCUIT;
@@ -440,7 +441,9 @@
         var ic = C && C.intention(question, contexte()), avant = lire(CLE_DERNIER);
         // « combien je vais toucher entre Libourne et Bordeaux » : indemnités kilométriques, pas l'estimation de la mission.
         // Suite d'une simulation (« et en 6 CV », « depuis Bordeaux », « et en train ») : on garde la mission et on change ce qui est dit.
-        if (!ic && C && avant && avant.type === 'circuit' && avant.id === 'simulation' && C.suite(question)) { repondreCircuit('simulation', question, avant.params); return; }
+        // … sauf si la question change de sujet (« et les codes d'imputation ? » : le codier ; « et le péage ? » : une fiche).
+        var autreSujet = (window.AIDE_DONNEES && window.AIDE_DONNEES.intention(question, tarifs) === 'fd') || (!/repas|nuit|jour|semaine|cv|chevaux|voiture|vp|vl|train|avion|service|depuis|log|nourri|hotel|h[ôo]tel|km|ville|pays|en |à |a /i.test(question) && (function() { var r = moteur && moteur.chercher(question, { app: APP, ecran: ecranCourant() }); return !!(r && r.resultats[0] && r.resultats[0].score >= window.AIDE_MOTEUR.SUR); })());
+        if (!ic && C && avant && avant.type === 'circuit' && avant.id === 'simulation' && C.suite(question) && !autreSujet) { repondreCircuit('simulation', question, avant.params); return; }
         if (ic === 'estimation' && window.AIDE_DONNEES && window.AIDE_DONNEES.intention(question, tarifs) === 'ik') ic = null;
         try { localStorage.setItem('trigone_aide_deja', '1'); } catch (e) {}
         // « et celle de Madrid ? » après une question sur le circuit : même sujet.
