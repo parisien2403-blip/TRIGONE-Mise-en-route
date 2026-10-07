@@ -264,7 +264,8 @@
         };
         if (type === 'tarif') { var c = tauxChange(); return Promise.resolve(fin(D.tarif(question, tarifs, c.taux, c.date))); }
         var avoir = codier ? Promise.resolve(codier) : fetch(B + 'codier.json').then(function(r) { if (!r.ok) throw new Error('codier'); return r.json(); }).then(function(j) { codier = j; return j; });
-        return avoir.then(function(cd) { return fin(D.codier(question, cd)); }, function() { return false; });
+        var monUnite = ''; try { monUnite = (JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}').unite) || ''; } catch (e) {}
+        return avoir.then(function(cd) { return fin(D.codier(question, cd, monUnite)); }, function() { return false; });
     }
     // La question précédente (sujet et type), pour comprendre « et en Italie ? » ; gardée le temps de la conversation.
     var CLE_DERNIER = 'trigone_aide_dernier';
@@ -409,6 +410,32 @@
         var poli = politesse(question);
         if (poli) { ajouter({ de: 'lui', html: poli.html, pose: poli.pose || '' }); return; }
         salue = DEBUT_SALUT.test(question);
+        // Plusieurs questions dans le même message (« les codes d'imputation et le montant d'une nuit à Paris ») : une réponse chacune, dans l'ordre.
+        var parts = decouper(question);
+        if (parts.length > 1) { enchainer(parts, 0); return; }
+        traiterUne(question);
+    }
+    var LIEN_QUESTIONS = /\s*\?+\s*|\s*;\s*|\s+(?:et|puis|ainsi que|et aussi|et puis)\s+(?=(?:le|la|les|l'|l’|un|une|des|du|mon|ma|mes|combien|quel|quelle|quels|quelles|comment|où|ou est|est-ce|est ce|c'est|c’est)\b)/i;
+    function reconnue(q) {
+        var C = window.AIDE_CIRCUIT, D = window.AIDE_DONNEES;
+        if (C && C.intention(q, contexte())) return true;
+        if (D && D.intention(q, tarifs)) return true;
+        var r = moteur && moteur.chercher(q, { app: APP, ecran: ecranCourant() });
+        return !!(r && r.resultats[0] && r.resultats[0].score >= window.AIDE_MOTEUR.SUR);
+    }
+    function decouper(question) {
+        var morceaux = String(question).split(LIEN_QUESTIONS).map(function(x) { return (x || '').trim(); }).filter(function(x) { return x.split(/\s+/).length >= 3; });
+        if (morceaux.length < 2 || morceaux.length > 4) return [question];
+        return morceaux.every(reconnue) ? morceaux : [question];
+    }
+    function enchainer(parts, i) {
+        if (i >= parts.length) return;
+        var n = fil.length, debut = Date.now();
+        traiterUne(parts[i]);
+        var t = setInterval(function() { if ((!attenteIa && fil.length > n) || Date.now() - debut > 15000) { clearInterval(t); enchainer(parts, i + 1); } }, 80);
+    }
+    function traiterUne(question) {
+        var C = window.AIDE_CIRCUIT;
         // Le circuit de la personne (sa demande, son compte-rendu, ce qu'elle a à valider…), avant la notice.
         var ic = C && C.intention(question, contexte()), avant = lire(CLE_DERNIER);
         // « combien je vais toucher entre Libourne et Bordeaux » : indemnités kilométriques, pas l'estimation de la mission.
