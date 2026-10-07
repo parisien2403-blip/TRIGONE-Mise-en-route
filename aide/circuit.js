@@ -602,6 +602,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 217, version: 'V214', l: ['La mascotte discute librement : n\'importe quelle question, avec des phrases naturelles et de l\'humour si vous plaisantez', 'Plus de bouton « Demander à l\'IA » : elle répond directement quand elle n\'a pas de réponse toute prête', 'Les montants et les règles restent ceux validés par l\'unité'] },
         { build: 216, version: 'V213', l: ['Nouveaux inscrits : à la fin du questionnaire, la mascotte au casque se présente (« Je suis votre assistant TRIGONE ») et montre ce qu\'elle sait faire'] },
         { build: 215, version: 'V212', l: ['La mascotte connaît les règles validées par le 4e RIISC : péage et parking, taxi, véhicule personnel (autorisé par le chef de corps), véhicule de service, avance de 75 %, nuit imprévue, petit-déjeuner', 'Consignes de l\'unité : compte-rendu à rendre dans les 30 jours après la fin de mission, billets par Amplitude (ABT)'] },
         { build: 214, version: 'V211', l: ['Déjà un compte TRIGONE (sur votre téléphone) ? Sur un nouvel appareil, « J\'ai déjà un compte » est mis en avant', 'Si vous refaites « Créer mon compte » à votre nom, TRIGONE vous propose de vous connecter au lieu de créer un doublon'] },
