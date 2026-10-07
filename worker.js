@@ -805,7 +805,7 @@ const REGLES_FRAIS = [
     'Consignes du 4e RIISC : le compte-rendu se rend dans les 30 jours après la date de fin de mission ; les billets de train et d\'avion passent par l\'organisme de réservation Amplitude (ABT).',
     'Référence : décret n° 2006-781 et arrêtés du 3 juillet 2006. Pour tout cas non couvert ici (restaurant administratif accessible mais repas pris ailleurs, hôtel plus cher que le forfait, outre-mer, classe de train ou avion, mission annulée, justificatif perdu, stage, délai de remboursement), dis que l\'assistant Chorus DT de l\'unité fait foi et ne donne pas de chiffre.'
 ].join('\n');
-function consigneAide(base, fiches, ecran, appli, mission) {
+function consigneAide(base, fiches, ecran, appli, mission, libre) {
     return [
         'Tu es la mascotte de TRIGONE, l\'application du 4e RIISC pour les demandes d\'ordre de mise en route (avant une mission) et les comptes-rendus de mission (horodatages, frais et justificatifs, au retour). Tu es un assistant conversationnel complet, chaleureux et vif d\'esprit : un camarade bienveillant qui connaît l\'appli par cœur.',
         'TA FAÇON DE PARLER :',
@@ -823,12 +823,13 @@ function consigneAide(base, fiches, ecran, appli, mission) {
         '- Si une fiche ci-dessous t\'a servi, termine ta réponse par [FICHE:identifiant] (une seule) ; sinon, ne mets rien.',
         'VOCABULAIRE DES MILITAIRES : « chef », « juteux », « cds », « N+1 », « adjudant », « capitaine » = le plus souvent le VALIDEUR 1 ; « chef de corps », « colon », « pacha », « N+2 » = VALIDEUR 2 ; « assist », « Chorus », « la DT » = l\'assistant Chorus DT ; « OM », « OMR », « DOMR », « ordre de mission » = la demande de mise en route ; « CR » = compte-rendu ; « VL perso », « caisse » = véhicule personnel ; « IK », « bornes » = indemnités kilométriques ; « code FD », « Fd@ligne » = code d\'engagement ; « NDS », « DAF » = la note de service ou la décision à joindre ; « mdp » = code de connexion ; « perm » = absence.',
         'RÈGLES DE CALCUL DES FRAIS (seules règles que tu peux citer) :\n' + REGLES_FRAIS,
+        libre ? 'Si la personne demande où cliquer dans TRIGONE, invite-la à préciser l\'écran ou l\'action : tu n\'as pas la description des écrans sous les yeux pour cette question, n\'invente aucun bouton.' : '',
         mission ? 'MISSION EN COURS DE LA PERSONNE (pour répondre selon SA situation) : ' + mission : '',
         'APPLI OUVERTE : ' + appli + '.',
-        ecran ? 'ÉCRAN OUVERT PAR L\'UTILISATEUR : ' + ecran.nom + ' — ' + ecran.d : '',
-        'LES ÉCRANS DE TRIGONE (où cliquer) :',
-        base.ecrans.map(e => '* ' + e.nom + ' : ' + e.d).join('\n'),
-        fiches.length ? 'FICHES UTILES :\n' + fiches.map(f => '[' + f.id + '] ' + f.t + ' :\n' + texteSimple(f.r)).join('\n\n') : 'Aucune fiche ne correspond directement à la question.'
+        ecran && !libre ? 'ÉCRAN OUVERT PAR L\'UTILISATEUR : ' + ecran.nom + ' — ' + ecran.d : '',
+        // Seulement les écrans utiles (écran ouvert, écrans des fiches) : la consigne reste courte, l'IA consomme moins du quota gratuit.
+        libre ? '' : 'LES ÉCRANS DE TRIGONE UTILES ICI (où cliquer) :\n' + base.ecrans.filter(e => (ecran && e.id === ecran.id) || fiches.some(f => (f.e || []).includes(e.id))).map(e => '* ' + e.nom + ' : ' + e.d).join('\n'),
+        libre ? '' : fiches.length ? 'FICHES UTILES :\n' + fiches.map(f => '[' + f.id + '] ' + f.t + ' :\n' + texteSimple(f.r)).join('\n\n') : 'Aucune fiche ne correspond directement à la question.'
     ].filter(Boolean).join('\n');
 }
 // Tests locaux (MODE_TEST et AIDE_IA_SIMULEE) : réponse fabriquée, sans appeler Workers AI.
@@ -1565,7 +1566,7 @@ async function api(requete, env, url, ctx) {
             / (t es|tu es|espece de|sale|gros|grosse) (con|conne|nul|debile|abruti|idiot|cretin|imbecile|bete|stupide|inutile|bouffon|tocard) /.test(qn)) return erreur(400, 'Propos insultants : question refusée.');
         const jour = new Date().toISOString().slice(0, 10);
         // Compte Workers Free : au-delà du quota gratuit, Cloudflare refuse (rien n'est facturé) et l'IA revient le lendemain.
-        const maxCompte = +env.AIDE_IA_MAX_COMPTE || 20, maxJour = +env.AIDE_IA_MAX_JOUR || 150;
+        const maxCompte = +env.AIDE_IA_MAX_COMPTE || 40, maxJour = +env.AIDE_IA_MAX_JOUR || 400;
         const cleC = 'aide-ia:' + jour + ':' + moi.mail, cleJ = 'aide-ia-jour:' + jour;
         const nC = +(await kv.get(cleC)) || 0, nJ = +(await kv.get(cleJ)) || 0;
         if (nC >= maxCompte) return erreur(429, 'Vous avez posé ' + maxCompte + ' questions à l\'IA aujourd\'hui : elle revient demain.');
@@ -1573,18 +1574,31 @@ async function api(requete, env, url, ctx) {
         const rb = await env.ASSETS.fetch(new Request(new URL('/aide/base.json', url).toString()));
         if (!rb.ok) return erreur(503, 'Base de l\'aide introuvable.');
         const base = await rb.json();
-        const fiches = (Array.isArray(d.fiches) ? d.fiches : []).slice(0, 4).map(id => base.fiches.find(f => f.id === id)).filter(Boolean);
+        // Conversation libre (aucun sujet de TRIGONE reconnu par la mascotte) : consigne courte et modèle léger.
+        const libre = d.sujet === 'libre';
+        const fiches = libre ? [] : (Array.isArray(d.fiches) ? d.fiches : []).slice(0, 3).map(id => base.fiches.find(f => f.id === id)).filter(Boolean);
         const ecran = base.ecrans.find(e => e.id === d.ecran) || null;
         const historique = (Array.isArray(d.historique) ? d.historique : []).slice(-6)
             .map(h => ({ role: h && h.de === 'ia' ? 'assistant' : 'user', content: String((h && h.texte) || '').slice(0, 800) })).filter(h => h.content);
-        const messages = [{ role: 'system', content: consigneAide(base, fiches, ecran, d.app === 'cr' ? 'Compte-rendu' : 'Mise en route', String(d.mission || '').slice(0, 600)) }].concat(historique, [{ role: 'user', content: question }]);
+        const messages = [{ role: 'system', content: consigneAide(base, fiches, ecran, d.app === 'cr' ? 'Compte-rendu' : 'Mise en route', String(d.mission || '').slice(0, 600), libre) }].concat(historique, [{ role: 'user', content: question }]);
         await kv.put(cleC, String(nC + 1), { expirationTtl: 172800 });
         await kv.put(cleJ, String(nJ + 1), { expirationTtl: 172800 });
-        const modele = env.AIDE_MODELE || '@cf/mistralai/mistral-small-3.1-24b-instruct';
-        let texte = '';
+        const principal = env.AIDE_MODELE || '@cf/mistralai/mistral-small-3.1-24b-instruct', leger = env.AIDE_MODELE_LEGER || '@cf/meta/llama-3.1-8b-instruct-fast';
+        let modele = libre ? leger : principal, texte = '', usage = null;
+        const lancer = async m => {
+            const r = await ia.run(m, { messages, max_tokens: libre ? 400 : 600, temperature: 0.7 });
+            usage = r && r.usage || null;
+            return String((r && (r.response || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '').trim();
+        };
         try {
-            const r = await ia.run(modele, { messages, max_tokens: 600, temperature: 0.7 });
-            texte = String((r && (r.response || (r.choices && r.choices[0] && r.choices[0].message && r.choices[0].message.content))) || '').trim();
+            try { texte = await lancer(modele); }
+            catch (e1) { if (modele === principal || /allocation|quota|4006|neurons/i.test(String(e1 && e1.message || e1))) throw e1; modele = principal; texte = await lancer(modele); }   // modèle léger indisponible : le principal
+            // Consommation du jour (jetons envoyés / reçus par modèle), pour ajuster les plafonds au quota gratuit.
+            if (usage) {
+                const cleU = 'aide-ia-conso:' + jour, u = (await kv.get(cleU, 'json')) || {}, x = u[modele] || { q: 0, entree: 0, sortie: 0 };
+                x.q++; x.entree += +usage.prompt_tokens || 0; x.sortie += +usage.completion_tokens || 0; u[modele] = x;
+                await kv.put(cleU, JSON.stringify(u), { expirationTtl: 2592000 });
+            }
         } catch (e) {
             console.log('aide/ia : ' + (e && e.message || e));
             // Quota gratuit de Workers AI épuisé (compte Workers Free : rien n'est facturé, l'IA revient le lendemain).
@@ -1596,7 +1610,7 @@ async function api(requete, env, url, ctx) {
         let fiche = '';
         texte = texte.replace(/\[FICHE:\s*([a-z0-9-]+)\s*\]/gi, (m, id) => { if (!fiche && fiches.some(f => f.id === id)) fiche = id; return ''; }).trim().slice(0, 2500);
         const rep = { ok: true, reponse: texte, fiche, restant: Math.max(0, maxCompte - nC - 1) };
-        if (env.MODE_TEST === '1') rep.essai = { modele, fiches: fiches.map(f => f.id), ecran: ecran ? ecran.id : '', messages };
+        if (env.MODE_TEST === '1') rep.essai = { modele, libre, fiches: fiches.map(f => f.id), ecran: ecran ? ecran.id : '', messages };
         return json(rep);
     }
     if (chemin === 'compte/etat' && methode === 'GET') {

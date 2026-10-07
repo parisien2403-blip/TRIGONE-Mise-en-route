@@ -230,10 +230,13 @@ module.exports = async function() {
     const sys = ess.essai.messages[0].content;
     verifier(ess.essai.fiches.join() === 'envoyer-demande' && /ÉCRAN OUVERT PAR L'UTILISATEUR : Documents/.test(sys) && /FICHES UTILES/.test(sys) && /juteux/.test(sys) && ess.essai.messages.length === 3,
         'serveur : consigne avec l\'écran ouvert, les écrans, le jargon, les seules fiches connues, la conversation');
-    verifier(ess.fiche === 'envoyer-demande' && ess.restant === 20 - 3, 'serveur : fiche utilisée renvoyée, questions restantes comptées (' + ess.restant + ')');
+    const lib = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'tu connais Brest ?', sujet: 'libre', fiches: ['envoyer-demande'], ecran: 'mer-documents', app: 'mer' }));
+    const sysL = lib.essai.messages[0].content;
+    verifier(lib.essai.libre && !/LES ÉCRANS DE TRIGONE|FICHES UTILES/.test(sysL) && /RÈGLES DE CALCUL/.test(sysL) && sysL.length < sys.length && sys.length < 9000, 'consignes allégées (seulement les écrans utiles) ; conversation libre encore plus courte (ni écrans ni fiches, règles des frais gardées), ' + sysL.length + ' caractères contre ' + sys.length);
+    verifier(ess.fiche === 'envoyer-demande' && ess.restant === 40 - 3, 'serveur : fiche utilisée renvoyée, questions restantes comptées (' + ess.restant + ')');
     let code = 0;
-    for (let i = 0; i < 22 && code !== 429; i++) code = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'test' }).then(() => 200, e => e.statut));
-    verifier(code === 429, 'limite : au-delà de 20 questions par jour et par compte, l\'IA refuse (429)');
+    for (let i = 0; i < 42 && code !== 429; i++) code = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'test' }).then(() => 200, e => e.statut));
+    verifier(code === 429, 'limite : au-delà de 40 questions par jour et par compte, l\'IA refuse (429)');
     await a.evaluate(() => AIDE_OUVRIR()); await attendre(300);
     await demander(a, 'blanquette'); await attendre(1200);
     verifier(/revient demain|reviens demain/.test(await a.innerText('.AIDE-FIL')) && /notice|toute prête|sèche|librement|Vous voulez parler|plusieurs possibilités|l'un de ces|l'un de ceux/.test(await derniere(a)), 'quota du jour atteint : la mascotte le dit et continue avec sa mémoire');
