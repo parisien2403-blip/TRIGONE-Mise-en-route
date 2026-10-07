@@ -17,7 +17,9 @@ module.exports = async function() {
         await p.evaluate(() => document.querySelectorAll('.JUM-ACC,.JUM-PRES,.JUM-NOUV,.JUM-VERROU,.JUM-PAVE,.JUM-MDP-FOND').forEach(x => x.remove()));
         return p;
     }
-    const derniere = p => p.evaluate(() => { const l = document.querySelectorAll('.AIDE-M.lui'); return l.length ? l[l.length - 1].textContent : ''; });
+    // Attend la fin de l'écriture mot à mot (curseur) avant de lire la dernière réponse.
+    const derniere = p => p.waitForFunction(() => !document.querySelector('.AIDE-CURSEUR'), null, { timeout: 6000 }).catch(() => {}).then(() =>
+        p.evaluate(() => { const l = document.querySelectorAll('.AIDE-M.lui'); return l.length ? l[l.length - 1].textContent : ''; }));
     async function demander(p, q) { await p.fill('.AIDE-SAISIE input', q); await p.click('.AIDE-SAISIE button'); await attendre(300); return derniere(p); }
 
     // ----- Téléphone, Mise en route, sans compte -----
@@ -236,7 +238,14 @@ module.exports = async function() {
     await a.click('#JUM-C-VALIDER'); await attendre(2000); await a.evaluate(() => JUMELAGE_FERMER_COMPTE());
     await a.evaluate(() => SHOW_PAGE('PANIER')); await attendre(300);
     await a.evaluate(() => AIDE_OUVRIR()); await attendre(800);
+    // Mascotte vivante : pendant l'attente elle dit ce qu'elle fait, puis la réponse s'écrit mot à mot (curseur), en entier à la fin.
+    await a.evaluate(() => { window.__vu = { etats: [], curseur: false, partiel: false }; new MutationObserver(() => {
+        const e = document.querySelector('.AIDE-ETAT'); if (e && !__vu.etats.includes(e.textContent)) __vu.etats.push(e.textContent);
+        const c = document.querySelector('.AIDE-CURSEUR'); if (c) { __vu.curseur = true; const b = c.closest('.AIDE-M'); if (b && !/Réponse simulée[\s\S]{20,}/.test(b.textContent)) __vu.partiel = true; } }).observe(document.querySelector('.AIDE-FIL'), { childList: true, subtree: true, characterData: true }); });
     r = await demander(a, 'tu connais une bonne blague sur les gendarmes ?'); await attendre(1500); r = await derniere(a);
+    const vu = await a.evaluate(() => __vu);
+    verifier(vu.etats.length >= 1 && /…$/.test(vu.etats[0]) && vu.curseur && vu.partiel && /Réponse simulée/.test(r) && !(await a.$('.AIDE-CURSEUR')),
+        'mascotte vivante : état affiché pendant l\'attente (« ' + vu.etats.join(' » puis « ') + ' »), réponse écrite mot à mot puis complète');
     verifier(/Réponse simulée/.test(r) && !/cerveau IA|Demander à l'IA/.test(await a.innerText('.AIDE-FIL')), 'compte connecté, question libre : réponse directe, sans bouton « demander à l\'IA »');
     await demander(a, 'mon chef dit que ma demande est fausse et je capte rien'); await attendre(1500);
     if (!/Réponse simulée/.test(await derniere(a))) { await a.evaluate(() => { const l = document.querySelectorAll('.AIDE-FIL [data-ia]'); l[l.length - 1].click(); }); await attendre(1500); }

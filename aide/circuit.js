@@ -618,6 +618,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 227, version: 'V224', l: ['La mascotte vous dit ce qu\'elle fait pendant qu\'elle cherche (« Je calcule la mission à Lyon… »)', 'Sa réponse s\'écrit sous vos yeux, mot à mot (touchez la bulle pour tout afficher)'] },
         { build: 226, version: 'V223', l: ['L\'IA de la mascotte fait les calculs avec les vrais barèmes de TRIGONE (nuits, repas, IK, codes FD) au lieu de répondre de mémoire', 'Elle cherche la réponse dans toute la notice, même si la question est tournée autrement', 'Une question déjà posée reçoit sa réponse tout de suite'] },
         { build: 225, version: 'V222', l: ['« Me rattacher à une mission » : le chef de mission donne un code à 6 chiffres, chacun s\'ajoute tout seul à la demande', 'Le chef voit le nombre de pax et la carte TRIGONE de chacun', 'Annuler une mission : tout le monde est prévenu, le registre est tamponné « ANNULÉ »'] },
         { build: 224, version: 'V221', l: ['La mascotte vous attend dès l\'écran de choix des applis : « Une question ? Je suis là. »'] },

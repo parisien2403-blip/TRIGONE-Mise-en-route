@@ -244,8 +244,54 @@
             var et = m.ia ? '<div class="AIDE-ETQ">💬 Réponse libre — pour les règles et les montants, la notice et l\'assistant Chorus DT font foi</div>' : m.etq ? '<div class="AIDE-ETQ">' + esc(m.etq) + '</div>' : '';
             var bulle = '<div class="AIDE-M lui' + (m.ia ? ' ia' : '') + '">' + m.html + '</div>', pose = poseDe(m);
             return (pose ? '<div class="AIDE-LIGNE"><img class="AIDE-POSE" src="' + B + pose + '" alt="">' + bulle + '</div>' : bulle) + et;
-        }).join('') + (attenteIa ? '<div class="AIDE-M lui AIDE-TAPE"><i></i><i></i><i></i></div>' : '');
+        }).join('') + (attenteIa ? '<div class="AIDE-M lui AIDE-ATTENTE"><span class="AIDE-TAPE"><i></i><i></i><i></i></span>' + (etatIa ? '<span class="AIDE-ETAT">' + esc(etatIa) + '</span>' : '') + '</div>' : '');
         z.scrollTop = z.scrollHeight;
+        if (ecriture) { clearInterval(ecriture); ecriture = null; }   // fil redessiné : la réponse en cours d'écriture s'affiche en entier
+    }
+    // ---------- Une mascotte vivante : elle dit ce qu'elle fait, puis sa réponse s'écrit mot à mot ----------
+    // La réponse arrive entière (vérifiée par le serveur) ; seul l'affichage est progressif. Toucher la bulle l'affiche d'un coup.
+    var etatIa = '', ecriture = null;
+    function etat(t) { etatIa = t || ''; if (attenteIa && fen) { var e = fen.querySelector('.AIDE-ATTENTE'); if (e) { var x = e.querySelector('.AIDE-ETAT'); if (!x) { x = document.createElement('span'); x.className = 'AIDE-ETAT'; e.appendChild(x); } x.textContent = etatIa; } } }
+    function etatOutil(c) {
+        var a = (c && c.args) || {}, v = function(x) { return String(x || '').replace(/\s+/g, ' ').trim().slice(0, 40); };
+        switch (c && c.nom) {
+            case 'calculer_mission': return v(a.destination) ? 'Je calcule la mission à ' + v(a.destination) + '…' : 'Je calcule la mission…';
+            case 'bareme_lieu': return v(a.lieu) ? 'Je regarde le barème de ' + v(a.lieu) + '…' : 'Je regarde les barèmes…';
+            case 'indemnites_kilometriques': return v(a.depart) && v(a.arrivee) ? 'Je calcule la distance ' + v(a.depart) + ' → ' + v(a.arrivee) + '…' : 'Je calcule les indemnités kilométriques…';
+            case 'codes_fd': return 'Je cherche dans le codier FD…';
+            case 'mes_demandes': return 'Je regarde où en sont vos demandes…';
+            case 'mon_compte_rendu': return 'Je regarde votre compte-rendu…';
+            case 'a_valider': return 'Je regarde ce que vous avez à valider…';
+        }
+        return 'Je fais le calcul…';
+    }
+    function ecrireMotAMot() {
+        if (!fen || ecriture) return;
+        try { if (window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches) return; } catch (e) {}
+        var bulles = fen.querySelectorAll('.AIDE-FIL .AIDE-M.lui.ia'), b = bulles[bulles.length - 1]; if (!b) return;
+        var z = fen.querySelector('.AIDE-FIL'), textes = [], w = document.createTreeWalker(b, NodeFilter.SHOW_TEXT, null), n;
+        while ((n = w.nextNode())) if (!(n.parentNode.closest && n.parentNode.closest('.AIDE-ACTIONS'))) { textes.push({ n: n, t: n.nodeValue }); n.nodeValue = ''; }
+        var mots = []; textes.forEach(function(x, i) { (x.t.match(/\S+\s*|\s+/g) || []).forEach(function(m) { mots.push(i); }); });
+        var act = b.querySelector('.AIDE-ACTIONS'); if (act) act.style.visibility = 'hidden';
+        // Les retours à la ligne apparaissent avec le texte qui les précède (sinon la bulle aurait déjà sa hauteur finale).
+        var sauts = [].slice.call(b.querySelectorAll('br')); sauts.forEach(function(x) { x.style.display = 'none'; });
+        var montrerSauts = function(n) { sauts = sauts.filter(function(x) { if (n.compareDocumentPosition(x) & Node.DOCUMENT_POSITION_PRECEDING) { x.style.display = ''; return false; } return true; }); };
+        var curs = document.createElement('span'); curs.className = 'AIDE-CURSEUR';
+        var pas = Math.max(1, Math.ceil(mots.length / 90)), k = 0, faits = textes.map(function() { return 0; });   // ~3 s au plus, même pour une longue réponse
+        var fini = function() {
+            clearInterval(ecriture); ecriture = null; b.removeEventListener('click', fini);
+            textes.forEach(function(x) { x.n.nodeValue = x.t; }); sauts.forEach(function(x) { x.style.display = ''; }); if (curs.parentNode) curs.remove(); if (act) act.style.visibility = '';
+            z.scrollTop = z.scrollHeight;
+        };
+        b.addEventListener('click', fini);
+        ecriture = setInterval(function() {
+            for (var j = 0; j < pas && k < mots.length; j++, k++) {
+                var i = mots[k], x = textes[i], m = x.t.slice(faits[i]).match(/^(\S+\s*|\s+)/);
+                faits[i] += m ? m[0].length : x.t.length - faits[i]; x.n.nodeValue = x.t.slice(0, faits[i]); if (sauts.length) montrerSauts(x.n);
+                if (x.n.parentNode) x.n.parentNode.insertBefore(curs, x.n.nextSibling);
+            }
+            if (k >= mots.length) fini(); else if (z.scrollHeight - z.scrollTop - z.clientHeight < 140) z.scrollTop = z.scrollHeight;
+        }, 33);
     }
     function boutonsIa(question) {
         return '<div class="AIDE-ACTIONS"><button type="button" class="AIDE-BTN AIDE-IA" data-ia="' + esc(question) + '">💬 Approfondir</button>' +
@@ -536,6 +582,7 @@
         }));
     }
     window.AIDE_OUTILS_ESSAI = executerOutils;   // essais automatiques
+    function libre0(r) { var t = r && r.resultats && r.resultats[0]; return !t || t.score < window.AIDE_MOTEUR.PROPOSER; }
     function demanderIa(question, repli) {
         if (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.coupeeJusqua()) { coupure(); return; }
         if (attenteIa) return;
@@ -550,22 +597,29 @@
         // Question courte qui fait suite (« et Paris ? ») : on lui rappelle la précédente.
         var avant = lire(CLE_DERNIER);
         if (avant && avant.q && avant.q !== question && window.AIDE_DONNEES && window.AIDE_DONNEES.estSuite(question)) question = question + ' (suite de ma question précédente : « ' + avant.q + ' »)';
-        attenteIa = true; dessinerFil();
+        attenteIa = true; etatIa = libre0(r) ? 'Je réfléchis…' : varie('etat-cherche', ['Je cherche dans la notice…', 'Je regarde dans mes fiches…', 'Je consulte la notice…']); dessinerFil();
+        var redige = setTimeout(function() { if (attenteIa) etat('Je rédige la réponse…'); }, 3500);
         var top = r.resultats[0], libre = !top || top.score < window.AIDE_MOTEUR.PROPOSER;   // aucun sujet de TRIGONE reconnu : conversation libre (modèle léger)
         window.JUMELAGE_API('aide/ia', { question: question, sujet: libre ? 'libre' : 'trigone', fiches: r.resultats.slice(0, 3).map(function(x) { return x.fiche.id; }), ecran: ecranCourant(), app: APP, historique: hist, mission: (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.resumeMission()) || '', outils: true, version: VERSION })
             // L'IA demande des calculs (barèmes, IK, codes FD, état des demandes) : faits ici, avec les moteurs exacts de
             // TRIGONE et les données de cet appareil, puis renvoyés pour la réponse finale.
             .then(function(j) {
                 if (!j.outils || !j.suite) return j;
-                return executerOutils(j.outils).then(function(res) { return window.JUMELAGE_API('aide/ia', { question: question, suite: j.suite, resultats: res }); });
+                clearTimeout(redige); etat(etatOutil(j.outils[0]));
+                var t0 = Date.now();
+                return executerOutils(j.outils).then(function(res) {
+                    // L'étape reste lisible un instant, même quand le calcul est immédiat.
+                    return new Promise(function(ok) { setTimeout(ok, Math.max(0, 900 - (Date.now() - t0))); }).then(function() {
+                        etat('Je rédige la réponse…'); return window.JUMELAGE_API('aide/ia', { question: question, suite: j.suite, resultats: res }); }); });
             })
             .then(function(j) {
-                attenteIa = false;
+                attenteIa = false; etatIa = ''; clearTimeout(redige);
                 var f = j.fiche ? moteur.fiche(j.fiche) : null;
                 ajouter({ de: 'lui', ia: true, brut: j.reponse, html: htmlIa(j.reponse) + (f ? '<div class="AIDE-ACTIONS">' + (f.m ? '<button type="button" class="AIDE-BTN AIDE-MONTRER" data-montrer="' + f.id + '">👉 ' + esc(f.m.l || 'Me montrer') + '</button>' : '') +
                     (f.n ? '<button type="button" class="AIDE-LIEN" data-notice="' + esc(f.n) + '">📖 Notice › ' + esc(f.n) + '</button>' : '') + '</div>' : '') });
+                ecrireMotAMot();
             }, function(e) {
-                attenteIa = false;
+                attenteIa = false; etatIa = ''; clearTimeout(redige);
                 // Réponse libre impossible : la mascotte continue avec ce qu'elle a en mémoire.
                 if (repli) { ajouter({ de: 'lui', html: e.statut === 429 ? varie('quota', ['J\'ai beaucoup discuté aujourd\'hui : pour parler librement, je reviens demain. Voici déjà ce que j\'ai en mémoire.', 'Ma réserve de conversation du jour est épuisée, elle revient demain. En attendant, voici ce que je sais.']) : 'Je n\'arrive pas à formuler une réponse libre pour le moment. Voici ce que j\'ai en mémoire.' }); repli(); return; }
                 var msg = e.statut === 429 ? 'Le nombre de questions à l\'IA pour aujourd\'hui est atteint. La notice reste là, et l\'IA revient demain.'
@@ -844,6 +898,14 @@
         '.AIDE-SAISIE{display:flex;gap:8px;padding:10px;background:#fff;border-top:1px solid #dde1e7;margin:0}',
         '.AIDE-SAISIE input{flex:1;min-width:0;border:1px solid #cbd5e1;border-radius:22px;padding:10px 14px;font:inherit;font-size:16px;background:#fff;color:#111;text-transform:none}',
         '.AIDE-SAISIE button{width:44px;height:44px;border-radius:50%;border:0;background:#c99a45;color:#111;font-size:18px;cursor:pointer;flex:none}',
+        '.AIDE-ATTENTE{display:flex;align-items:center;gap:9px}',
+        '.AIDE-ATTENTE .AIDE-TAPE{display:inline-flex;flex:none;white-space:nowrap}',
+        '.AIDE-ETAT{font-size:13.5px;font-style:italic;color:#6f4c0e;animation:aideEtat .35s ease}',
+        '@keyframes aideEtat{from{opacity:0;transform:translateY(3px)}to{opacity:1;transform:none}}',
+        'body.dark-mode .AIDE-ETAT{color:#e9c47a}',
+        '.AIDE-CURSEUR{display:inline-block;width:2px;height:1em;background:#9a6f22;vertical-align:-2px;margin-left:1px;animation:aideCurs .8s infinite}',
+        '@keyframes aideCurs{50%{opacity:0}}',
+        'body.dark-mode .AIDE-CURSEUR{background:#e9c47a}',
         '.AIDE-TAPE i{display:inline-block;width:7px;height:7px;margin:0 2px;border-radius:50%;background:#c99a45;animation:aideTape 1s infinite}',
         '.AIDE-TAPE i:nth-child(2){animation-delay:.15s}.AIDE-TAPE i:nth-child(3){animation-delay:.3s}',
         '@keyframes aideTape{0%,80%,100%{opacity:.25}40%{opacity:1}}',
