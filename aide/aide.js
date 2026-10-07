@@ -491,6 +491,51 @@
                 ' ' + (compteActif() ? varie('pastrouve-ia', ['On en discute plus librement ?', 'Je peux vous répondre plus librement, si vous voulez.']) : 'Connectez-vous à votre compte TRIGONE et je pourrai en discuter librement avec vous.') + '<div class="AIDE-AUTRE">' + varie('reformuler', ['Ou reformulez avec d\'autres mots : je comprends le langage de tous les jours.', 'Vous pouvez aussi le dire autrement, je réessaie.', 'Ou dites-le autrement, avec vos mots : je réessaie.']) + '</div>' + boutonsIa(question), q: question, pose: 'desole' });
         }
     }
+    // ---------- Outils de l'IA : les calculs exacts de TRIGONE, faits sur l'appareil ----------
+    // Chaque outil reprend un moteur déjà utilisé par la mascotte (aide/circuit.js, aide/donnees.js) ; le résultat, en
+    // texte simple, repart vers l'IA qui rédige la réponse. Les données de la personne ne quittent l'appareil que pour cette réponse.
+    function texteOutil(h) { var d = document.createElement('div'); d.innerHTML = String(h || '').replace(/<br\s*\/?>/gi, ' ; ').replace(/<\/(li|p|div|tr)>/gi, ' ; '); d.querySelectorAll('button, .AIDE-ACTIONS, .AIDE-AUTRE, .AIDE-PUCES').forEach(function(x) { x.remove(); }); return (d.textContent || '').replace(/\s+/g, ' ').trim().slice(0, 1500); }
+    function entier(v) { var n = parseInt(v, 10); return n > 0 && n < 400 ? n : 0; }
+    var OUTILS = {
+        calculer_mission: function(a) {
+            var C = window.AIDE_CIRCUIT; if (!C || !tarifs) return Promise.resolve('Barèmes non chargés sur cet appareil.');
+            var q = 'combien ' + (entier(a.nuits) && !entier(a.jours) ? 'pour ' + entier(a.nuits) + ' nuits' : entier(a.repas) && !entier(a.jours) ? 'pour ' + entier(a.repas) + ' repas' : 'pour ' + (entier(a.jours) || 1) + ' jours') +
+                ' à ' + String(a.destination || '') + (a.depart ? ' depuis ' + a.depart : '') +
+                ({ train: ' en train', avion: ' en avion', vrc: ' en voiture personnelle', service: ' en véhicule de service', commun: ' en transport en commun' }[String(a.transport || '').toLowerCase()] || '') + (entier(a.cv) ? ' ' + entier(a.cv) + ' cv' : '');
+            return C.repondre('simulation', q, contexte()).then(function(r) { return r ? texteOutil(r.html) : 'Calcul impossible : destination inconnue des barèmes (« ' + (a.destination || '') + ' »).'; });
+        },
+        bareme_lieu: function(a) {
+            var D = window.AIDE_DONNEES; if (!D || !tarifs) return Promise.resolve('Barèmes non chargés sur cet appareil.');
+            var c = tauxChange(), r = D.tarif('combien la nuit et le repas à ' + String(a.lieu || ''), tarifs, c.taux, c.date);
+            return Promise.resolve(r ? texteOutil(r.html) : 'Lieu inconnu des barèmes (« ' + (a.lieu || '') + ' »).');
+        },
+        indemnites_kilometriques: function(a) {
+            var D = window.AIDE_DONNEES; if (!D || !tarifs) return Promise.resolve('Barèmes non chargés sur cet appareil.');
+            var q = 'ik de ' + String(a.depart || '') + ' à ' + String(a.arrivee || '') + (entier(a.cv) ? ' en ' + entier(a.cv) + ' cv' : ''), perso = null;
+            try { perso = JSON.parse(localStorage.getItem('trigone_ik_rates') || 'null'); } catch (e) {}
+            var fin = function(km, err) { var r = D.ik(q, tarifs, perso, km, err); return r ? texteOutil(r.html) : 'Calcul impossible.'; };
+            if (!navigator.onLine) return Promise.resolve(fin(null, 'pas de réseau'));
+            return fetch(B + 'api/distance?de=' + encodeURIComponent(String(a.depart || '').toUpperCase()) + '&a=' + encodeURIComponent(String(a.arrivee || '').toUpperCase()), { cache: 'no-store' })
+                .then(function(r) { return r.json(); }).then(function(j) { return j && j.ok && j.km >= 0 ? fin(j.km) : fin(null, (j && j.erreur) || 'distance introuvable'); }, function() { return fin(null, 'service indisponible'); });
+        },
+        codes_fd: function(a) {
+            var D = window.AIDE_DONNEES; if (!D) return Promise.resolve('Codier non disponible.');
+            var monUnite = ''; try { monUnite = (JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}').unite) || ''; } catch (e) {}
+            return contexte().codier().then(function(cd) { var r = D.codier('codes fd ' + String(a.recherche || 'déplacement') + (a.unite ? ' ' + a.unite : ''), cd, a.unite || monUnite); return r ? texteOutil(r.html) : 'Aucun code FD trouvé pour « ' + (a.recherche || '') + ' ».'; },
+                function() { return 'Codier non disponible (pas de réseau).'; });
+        },
+        mes_demandes: function() { return circuitOutil('demande', 'où en est ma demande'); },
+        mon_compte_rendu: function() { return circuitOutil('moncr', 'où en est mon compte rendu'); },
+        a_valider: function() { return circuitOutil('avalider', 'qu est ce que j ai à valider'); }
+    };
+    function circuitOutil(id, q) { var C = window.AIDE_CIRCUIT; return C ? C.repondre(id, q, contexte()).then(function(r) { return r ? texteOutil(r.html) : 'Rien à signaler.'; }, function() { return 'Information indisponible.'; }) : Promise.resolve('Information indisponible.'); }
+    function executerOutils(appels) {
+        return Promise.all((appels || []).slice(0, 3).map(function(c) {
+            var f = OUTILS[c.nom];
+            return (f ? Promise.resolve().then(function() { return f(c.args || {}); }) : Promise.resolve('Outil inconnu.')).then(function(t) { return { nom: c.nom, texte: String(t || '') }; }, function() { return { nom: c.nom, texte: 'Calcul impossible.' }; });
+        }));
+    }
+    window.AIDE_OUTILS_ESSAI = executerOutils;   // essais automatiques
     function demanderIa(question, repli) {
         if (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.coupeeJusqua()) { coupure(); return; }
         if (attenteIa) return;
@@ -507,7 +552,13 @@
         if (avant && avant.q && avant.q !== question && window.AIDE_DONNEES && window.AIDE_DONNEES.estSuite(question)) question = question + ' (suite de ma question précédente : « ' + avant.q + ' »)';
         attenteIa = true; dessinerFil();
         var top = r.resultats[0], libre = !top || top.score < window.AIDE_MOTEUR.PROPOSER;   // aucun sujet de TRIGONE reconnu : conversation libre (modèle léger)
-        window.JUMELAGE_API('aide/ia', { question: question, sujet: libre ? 'libre' : 'trigone', fiches: r.resultats.slice(0, 3).map(function(x) { return x.fiche.id; }), ecran: ecranCourant(), app: APP, historique: hist, mission: (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.resumeMission()) || '' })
+        window.JUMELAGE_API('aide/ia', { question: question, sujet: libre ? 'libre' : 'trigone', fiches: r.resultats.slice(0, 3).map(function(x) { return x.fiche.id; }), ecran: ecranCourant(), app: APP, historique: hist, mission: (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.resumeMission()) || '', outils: true, version: VERSION })
+            // L'IA demande des calculs (barèmes, IK, codes FD, état des demandes) : faits ici, avec les moteurs exacts de
+            // TRIGONE et les données de cet appareil, puis renvoyés pour la réponse finale.
+            .then(function(j) {
+                if (!j.outils || !j.suite) return j;
+                return executerOutils(j.outils).then(function(res) { return window.JUMELAGE_API('aide/ia', { question: question, suite: j.suite, resultats: res }); });
+            })
             .then(function(j) {
                 attenteIa = false;
                 var f = j.fiche ? moteur.fiche(j.fiche) : null;

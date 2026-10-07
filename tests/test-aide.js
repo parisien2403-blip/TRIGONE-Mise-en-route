@@ -251,8 +251,22 @@ module.exports = async function() {
     const sysL = lib.essai.messages[0].content;
     verifier(lib.essai.libre && !/LES ÉCRANS DE TRIGONE|FICHES UTILES/.test(sysL) && /RÈGLES DE CALCUL/.test(sysL) && sysL.length < sys.length && sys.length < 9000, 'consignes allégées (seulement les écrans utiles) ; conversation libre encore plus courte (ni écrans ni fiches, règles des frais gardées), ' + sysL.length + ' caractères contre ' + sys.length);
     verifier(ess.fiche === 'envoyer-demande' && ess.restant === 40 - 3, 'serveur : fiche utilisée renvoyée, questions restantes comptées (' + ess.restant + ')');
+    // Outils : l'IA demande le calcul, l'appareil le fait avec les barèmes exacts, l'IA reprend le résultat.
+    const out = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'combien ça fait à Nantes pour 3 nuits', sujet: 'trigone', fiches: [], app: 'mer', outils: true }).then(j =>
+        AIDE_OUTILS_ESSAI(j.outils).then(res => JUMELAGE_API('aide/ia', { question: 'x', suite: j.suite, resultats: res }).then(f => ({ appels: j.outils, res, f })))));
+    verifier(out.appels[0].nom === 'calculer_mission' && /360/.test(out.res[0].texte) && /360/.test(out.f.reponse) && out.f.outils,
+        'IA + outils : elle demande calculer_mission, l\'appareil calcule (3 nuits à Nantes = 360 €), elle reprend le chiffre exact');
+    const rejoue = await a.evaluate(s => JUMELAGE_API('aide/ia', { question: 'x', suite: s, resultats: [] }).then(() => 200, e => e.statut), out.f.suite || 'deja-utilise');
+    verifier(rejoue === 410, 'IA + outils : un jeton de suite ne sert qu\'une fois (410)');
+    // Recherche par le sens : sans fiche reconnue, l'IA reçoit quand même les passages proches (notice et fiches).
+    const sens = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'mon chef a donné un code pour se rattacher à sa mission, comment faire', sujet: 'libre', fiches: [], app: 'mer' }));
+    verifier(sens.essai.extraits.some(t => /rattacher/i.test(t)) && /PASSAGES DE LA NOTICE/.test(sens.essai.messages[0].content), 'recherche par le sens : passages « rattacher » trouvés et donnés à l\'IA (' + sens.essai.extraits.join(' | ') + ')');
+    // Mémoire des réponses : la même question générale, deux fois : la 2e vient de la mémoire, sans compter.
+    const c1 = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'comment on fait une demande collective', fiches: ['demande-collective'], app: 'mer' }));
+    const c2 = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'Comment on fait une demande collective ?', fiches: ['demande-collective'], app: 'mer' }));
+    verifier(!c1.cache && c2.cache && c2.reponse === c1.reponse && c2.restant === c1.restant, 'mémoire des réponses : même question générale → même réponse, sans consommer de question');
     let code = 0;
-    for (let i = 0; i < 42 && code !== 429; i++) code = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'test' }).then(() => 200, e => e.statut));
+    for (let i = 0; i < 42 && code !== 429; i++) code = await a.evaluate(i => JUMELAGE_API('aide/ia', { question: 'test ' + i }).then(() => 200, e => e.statut), i);
     verifier(code === 429, 'limite : au-delà de 40 questions par jour et par compte, l\'IA refuse (429)');
     await a.evaluate(() => AIDE_OUVRIR()); await attendre(300);
     await demander(a, 'blanquette'); await attendre(1200);
