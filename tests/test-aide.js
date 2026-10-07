@@ -66,7 +66,7 @@ module.exports = async function() {
     r = await demander(t, 'jai dormi a l\'hotel comment je le mets');
     verifier(/Repas & hébergement/.test(r), 'familier (« jai dormi a l\'hotel… ») : frais d\'hébergement');
     r = await demander(t, 'recette de la blanquette de veau');
-    verifier(/cerveau IA/.test(r) && await t.isVisible('.AIDE-IA'), 'hors notice : propose de demander à l\'IA');
+    verifier(/discuter librement/.test(r) && await t.isVisible('.AIDE-IA'), 'hors notice, sans compte : propose de se connecter pour discuter librement');
     await t.click('.AIDE-IA'); await attendre(300);
     verifier(/réservée aux comptes TRIGONE connectés/.test(await derniere(t)), 'sans compte connecté : l\'IA est refusée, explication');
     // Sujet proposé → réponse ; « Me montrer » → le bon écran et le bon bouton clignote.
@@ -125,7 +125,7 @@ module.exports = async function() {
     r = await demander(t, 'et intervention ?');
     verifier(/FDYDDR4INT/.test(r), 'suite : « et intervention ? » après le code FD formation du 4e RIISC → FDYDDR4INT');
     r = await demander(t, 'blanquette');
-    verifier(!/codes FD correspondent/.test(r) && /cerveau IA|Vous voulez parler|Vous pensez|plusieurs possibilités|l'un de ceux-là/.test(r), 'un mot hors sujet après un code FD n\'est pas pris pour une suite (« blanquette »)');
+    verifier(!/codes FD correspondent/.test(r) && /discuter librement|Vous voulez parler|Vous pensez|plusieurs possibilités|l'un de ceux-là/.test(r), 'un mot hors sujet après un code FD n\'est pas pris pour une suite (« blanquette »)');
     r = await demander(t, 'combien coute un repas en espagne'); r = await demander(t, 'blanquette');
     verifier(!/€/.test(r), 'un mot hors sujet après un barème n\'est pas pris pour une ville (« blanquette »)');
     // Indemnités kilométriques : distance par la route (simulée ici) et montant selon la puissance ; suites.
@@ -219,22 +219,24 @@ module.exports = async function() {
     await a.click('#JUM-C-VALIDER'); await attendre(2000); await a.evaluate(() => JUMELAGE_FERMER_COMPTE());
     await a.evaluate(() => SHOW_PAGE('PANIER')); await attendre(300);
     await a.evaluate(() => AIDE_OUVRIR()); await attendre(800);
-    await demander(a, 'mon chef dit que ma demande est fausse et je capte rien');
-    await a.evaluate(() => { const l = document.querySelectorAll('.AIDE-FIL [data-ia]'); l[l.length - 1].click(); }); await attendre(1500);
+    r = await demander(a, 'tu connais une bonne blague sur les gendarmes ?'); await attendre(1500); r = await derniere(a);
+    verifier(/Réponse simulée/.test(r) && !/cerveau IA|Demander à l'IA/.test(await a.innerText('.AIDE-FIL')), 'compte connecté, question libre : réponse directe, sans bouton « demander à l\'IA »');
+    await demander(a, 'mon chef dit que ma demande est fausse et je capte rien'); await attendre(1500);
+    if (!/Réponse simulée/.test(await derniere(a))) { await a.evaluate(() => { const l = document.querySelectorAll('.AIDE-FIL [data-ia]'); l[l.length - 1].click(); }); await attendre(1500); }
     r = await derniere(a);
-    verifier(/Réponse simulée/.test(r) && /Réponse de l'IA/.test(await a.innerText('.AIDE-FIL')) && !/\[FICHE/.test(r), 'compte connecté : l\'IA répond (étiquette « elle peut se tromper »), sans la balise [FICHE]');
+    verifier(/Réponse simulée/.test(r) && /Réponse libre/.test(await a.innerText('.AIDE-FIL')) && !/\[FICHE/.test(r), 'compte connecté : réponse libre (étiquette « la notice fait foi »), sans la balise [FICHE]');
     verifier(await a.evaluate(() => { const l = document.querySelectorAll('.AIDE-M.lui.ia'); return !!l[l.length - 1].querySelector('[data-notice]'); }), 'réponse de l\'IA : lien vers la page de la notice de la fiche utilisée');
     const ess = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'où je clique', fiches: ['envoyer-demande', 'inconnue'], ecran: 'mer-documents', app: 'mer', historique: [{ de: 'moi', texte: 'bonjour' }] }));
     const sys = ess.essai.messages[0].content;
     verifier(ess.essai.fiches.join() === 'envoyer-demande' && /ÉCRAN OUVERT PAR L'UTILISATEUR : Documents/.test(sys) && /FICHES UTILES/.test(sys) && /juteux/.test(sys) && ess.essai.messages.length === 3,
         'serveur : consigne avec l\'écran ouvert, les écrans, le jargon, les seules fiches connues, la conversation');
-    verifier(ess.fiche === 'envoyer-demande' && ess.restant === 10 - 2, 'serveur : fiche utilisée renvoyée, questions restantes comptées (' + ess.restant + ')');
+    verifier(ess.fiche === 'envoyer-demande' && ess.restant === 20 - 3, 'serveur : fiche utilisée renvoyée, questions restantes comptées (' + ess.restant + ')');
     let code = 0;
-    for (let i = 0; i < 12 && code !== 429; i++) code = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'test' }).then(() => 200, e => e.statut));
-    verifier(code === 429, 'limite : au-delà de 10 questions par jour et par compte, l\'IA refuse (429)');
+    for (let i = 0; i < 22 && code !== 429; i++) code = await a.evaluate(() => JUMELAGE_API('aide/ia', { question: 'test' }).then(() => 200, e => e.statut));
+    verifier(code === 429, 'limite : au-delà de 20 questions par jour et par compte, l\'IA refuse (429)');
     await a.evaluate(() => AIDE_OUVRIR()); await attendre(300);
-    await demander(a, 'blanquette'); await a.click('.AIDE-IA'); await attendre(1200);
-    verifier(/questions à l'IA aujourd'hui|revient demain/.test(await derniere(a)), 'limite atteinte : la mascotte l\'explique');
+    await demander(a, 'blanquette'); await attendre(1200);
+    verifier(/revient demain|reviens demain/.test(await a.innerText('.AIDE-FIL')) && /notice|toute prête|sèche|librement|Vous voulez parler|plusieurs possibilités|l'un de ces|l'un de ceux/.test(await derniere(a)), 'quota du jour atteint : la mascotte le dit et continue avec sa mémoire');
     verifier(await a.evaluate(() => fetch('api/aide/ia', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{"question":"x y"}' }).then(r => r.status)) === 401, 'sans compte : la route de l\'IA refuse (401)');
     // ----- « Qui valide ma demande ? » : réponse personnelle (profil + annuaire de l'unité, avec la fonction) -----
     const MAILV = 'val.' + s + '@interieur.gouv.fr';
@@ -281,7 +283,7 @@ module.exports = async function() {
                 d: (await C.repondre('droit', 'ai je droit au repas du soir ?', ctx)).html, c: (await C.repondre('calcul', 'pourquoi seulement 180 € ?', ctx)).html, r: C.resumeMission() }; });
         verifier(x.i1 === 'droit' && /parti à 06 h 35/.test(x.d) && /rentré à 16 h 30/.test(x.d) && /soir <b style="color:#b91c1c">non/.test(x.d), '« ai-je droit au repas du soir ? » : selon SES horaires (parti 6 h 35, rentré 16 h 30 : pas le soir du retour)');
         verifier(x.i2 === 'calcul' && x.i3 === 'calcul' && /180,00 €/.test(x.c) && /Nuits payantes : 2/.test(x.c) && /jusqu'à <b>3 repas de midi/.test(x.c), '« pourquoi seulement 180 € ? » : détail (2 nuits) et repas possibles non déclarés (3 midis, 2 soirs)');
-        verifier(/départ le 03\/10 à 06 h 35/.test(x.r) && !/LEFEBVRE|matricule/i.test(x.r), 'résumé de la mission pour l\'IA : horaires, sans nom ni matricule');
+        verifier(/départ le \d\d\/\d\d à 06 h 35/.test(x.r) && !/LEFEBVRE|matricule/i.test(x.r), 'résumé de la mission pour l\'IA : horaires, sans nom ni matricule');
         await cr.context().close();
     }
 

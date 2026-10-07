@@ -175,7 +175,7 @@
     // Donne la réponse d'une fiche (personnelle si elle l'est), avec « Ce n'est pas ça ? » si elle vient d'une question.
     function donnerFiche(f, question) {
         var fin = function(corps) {
-            ajouter({ de: 'lui', html: htmlFiche(f, corps) + (question ? '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>' : ''),
+            ajouter({ de: 'lui', html: htmlFiche(f, corps) + (question ? '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">💬 Approfondir</button></div>' : ''),
                 etq: f.dyn ? 'Réponse d\'après votre profil' : 'Réponse trouvée dans la notice', fiche: f.id, q: question });
         };
         if (f.dyn && PERSO[f.dyn]) { attenteIa = true; dessinerFil(); PERSO[f.dyn]().then(function(h) { attenteIa = false; fin(h); }, function() { attenteIa = false; fin(); }); }
@@ -232,14 +232,14 @@
         var z = fen.querySelector('.AIDE-FIL');
         z.innerHTML = fil.map(function(m) {
             if (m.de === 'moi') return '<div class="AIDE-M moi">' + esc(m.texte) + '</div>';
-            var et = m.ia ? '<div class="AIDE-ETQ">✨ Réponse de l\'IA — elle peut se tromper, la notice fait foi</div>' : m.etq ? '<div class="AIDE-ETQ">' + esc(m.etq) + '</div>' : '';
+            var et = m.ia ? '<div class="AIDE-ETQ">💬 Réponse libre — pour les règles et les montants, la notice et l\'assistant Chorus DT font foi</div>' : m.etq ? '<div class="AIDE-ETQ">' + esc(m.etq) + '</div>' : '';
             var bulle = '<div class="AIDE-M lui' + (m.ia ? ' ia' : '') + '">' + m.html + '</div>', pose = poseDe(m);
             return (pose ? '<div class="AIDE-LIGNE"><img class="AIDE-POSE" src="' + B + pose + '" alt="">' + bulle + '</div>' : bulle) + et;
         }).join('') + (attenteIa ? '<div class="AIDE-M lui AIDE-TAPE"><i></i><i></i><i></i></div>' : '');
         z.scrollTop = z.scrollHeight;
     }
     function boutonsIa(question) {
-        return '<div class="AIDE-ACTIONS"><button type="button" class="AIDE-BTN AIDE-IA" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button>' +
+        return '<div class="AIDE-ACTIONS"><button type="button" class="AIDE-BTN AIDE-IA" data-ia="' + esc(question) + '">💬 Approfondir</button>' +
             '<button type="button" class="AIDE-LIEN" data-signaler="1">Signaler un problème</button></div>';
     }
     // Codier FD et barèmes : réponse tirée des données de TRIGONE (sans IA, sans réseau une fois chargés).
@@ -251,7 +251,7 @@
     function repondreDonnees(question, type) {
         var D = window.AIDE_DONNEES, fin = function(r) {
             if (!r) return false;
-            ajouter({ de: 'lui', html: r.html + '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>', etq: r.etq, q: question });
+            ajouter({ de: 'lui', html: r.html + '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">💬 Approfondir</button></div>', etq: r.etq, q: question });
             return true;
         };
         if (type === 'tarif') { var c = tauxChange(); return Promise.resolve(fin(D.tarif(question, tarifs, c.taux, c.date))); }
@@ -325,7 +325,7 @@
         if (vu.tendre) { html.push(V('tendre', ['C\'est gentil 😊 Restons professionnels quand même !', 'Merci, c\'est touchant 😊 Revenons à nos missions !'])); pose = pose || 'content'; }
         if (vu.dors) html.push(V('dors', ['Jamais ! Je suis disponible 24 h sur 24, même sans réseau.', 'Pas du tout, je veille ! Jour et nuit, à votre service.']));
         if (vu.la) html.push(V('la', ['Oui, je suis là{v} ! Je vous écoute.', 'Présent{v} ! Que puis-je faire pour vous ?', 'Toujours là{v} ! Je vous écoute.']));
-        if (vu.qui) html.push('Je suis la <b>mascotte d\'aide de TRIGONE</b>. Je réponds avec la notice, les barèmes, le codier et votre propre circuit (demandes, comptes-rendus), sans réseau pour l\'essentiel. Je ne suis pas un humain : pour les questions imprévues, je peux demander à mon cerveau IA.' + PRES);
+        if (vu.qui) html.push('Je suis la <b>mascotte d\'aide de TRIGONE</b>. Je réponds avec la notice, les barèmes, le codier et votre propre circuit (demandes, comptes-rendus), sans réseau pour l\'essentiel. Je ne suis pas un humain, mais vous pouvez me parler de tout, comme à un camarade : je comprends et je réponds librement.' + PRES);
         if (vu.perdu) html.push(V('perdu', ['Pas de panique{v} ! ', 'On va trouver ensemble{v} ! ', 'Je suis là pour ça{v} ! ']) + 'Dites-moi en quelques mots ce que vous voulez faire (« envoyer ma demande », « où en est mon CR »…), ou regardez ce que je sais faire.' + PRES);
         if (vu.fetes) {
             var f = / bonne annee | meilleurs voeux /.test(t) ? 'Bonne année à vous aussi' : / joyeux noel /.test(t) ? 'Joyeux Noël à vous aussi' : / bonnes fetes /.test(t) ? 'Bonnes fêtes à vous aussi' : / bonnes vacances /.test(t) ? 'Merci, bonnes vacances à vous' :
@@ -354,7 +354,7 @@
         try { perso = JSON.parse(localStorage.getItem('trigone_ik_rates') || 'null'); } catch (e) {}
         var fin = function(km, err) {
             var rep = D.ik(q, tarifs, perso, km, err);
-            ajouter({ de: 'lui', html: rep.html + '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(q) + '">✨ Demander à l\'IA</button></div>', etq: rep.etq, q: q });
+            ajouter({ de: 'lui', html: rep.html + '<div class="AIDE-AUTRE">' + pasCa() + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(q) + '">💬 Approfondir</button></div>', etq: rep.etq, q: q });
             ecrire(CLE_DERNIER, { type: 'ik', q: q, ik: rep.ik });
         };
         if (!v) return fin(null);
@@ -435,16 +435,24 @@
         if (top && top.score >= M.SUR) ecrire(CLE_DERNIER, { type: 'fiche', q: question, fiche: top.fiche.id });
         if (top && top.score >= M.SUR) {
             donnerFiche(top.fiche, question);
-        } else if (top && top.score >= M.PROPOSER) {
+        } else if (compteActif() && navigator.onLine && !(window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.coupeeJusqua())) {
+            // Pas de réponse toute prête : la mascotte répond librement, comme dans une vraie conversation (les sujets proches lui servent de contexte).
+            demanderIa(question, function() { sansIa(r, question); });
+        } else sansIa(r, question);
+    }
+    // Sans réponse libre possible (pas de compte, pas de réseau, quota du jour atteint) : sujets proches, ou rien trouvé.
+    function sansIa(r, question) {
+        var top = r.resultats[0], M = window.AIDE_MOTEUR;
+        if (top && top.score >= M.PROPOSER) {
             ajouter({ de: 'lui', html: varie('proposer', ['Vous voulez parler de :', 'Vous pensez à l\'un de ces sujets ?', 'Je vois plusieurs possibilités :', 'C\'est l\'un de ceux-là ?']) + '<div class="AIDE-PUCES">' + r.resultats.slice(0, 3).map(function(x) {
                 return '<button type="button" class="AIDE-PUCE" data-fiche="' + x.fiche.id + '">' + esc(x.fiche.t) + '</button>'; }).join('') + '</div>' +
-                '<div class="AIDE-AUTRE">' + varie('aucun', ['Aucun des trois ?', 'Rien de tout ça ?', 'Ce n\'est aucun de ceux-là ?']) + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">✨ Demander à l\'IA</button></div>', q: question });
+                '<div class="AIDE-AUTRE">' + varie('aucun', ['Aucun des trois ?', 'Rien de tout ça ?', 'Ce n\'est aucun de ceux-là ?']) + ' <button type="button" class="AIDE-LIEN" data-ia="' + esc(question) + '">💬 Approfondir</button></div>', q: question });
         } else {
             ajouter({ de: 'lui', html: varie('pastrouve', ['Je n\'ai pas trouvé de page de la notice qui réponde à ça.', 'Hum, je ne trouve pas de réponse toute prête à cette question.', 'Là, je sèche un peu : rien dans la notice ne correspond.', 'Je n\'ai rien de précis là-dessus dans la notice.']) +
-                ' ' + varie('pastrouve-ia', ['Voulez-vous que je demande à mon <b>cerveau IA</b> ?', 'Je peux demander à mon <b>cerveau IA</b>, si vous voulez.', 'On tente avec mon <b>cerveau IA</b> ?']) + '<div class="AIDE-AUTRE">' + varie('reformuler', ['Ou reformulez avec d\'autres mots : je comprends le langage de tous les jours.', 'Vous pouvez aussi le dire autrement, je réessaie.', 'Ou dites-le autrement, avec vos mots : je réessaie.']) + '</div>' + boutonsIa(question), q: question, pose: 'desole' });
+                ' ' + (compteActif() ? varie('pastrouve-ia', ['On en discute plus librement ?', 'Je peux vous répondre plus librement, si vous voulez.']) : 'Connectez-vous à votre compte TRIGONE et je pourrai en discuter librement avec vous.') + '<div class="AIDE-AUTRE">' + varie('reformuler', ['Ou reformulez avec d\'autres mots : je comprends le langage de tous les jours.', 'Vous pouvez aussi le dire autrement, je réessaie.', 'Ou dites-le autrement, avec vos mots : je réessaie.']) + '</div>' + boutonsIa(question), q: question, pose: 'desole' });
         }
     }
-    function demanderIa(question) {
+    function demanderIa(question, repli) {
         if (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.coupeeJusqua()) { coupure(); return; }
         if (attenteIa) return;
         if (!compteActif()) { ajouter({ de: 'lui', html: 'L\'IA est réservée aux <b>comptes TRIGONE connectés</b> : connectez-vous (pastille du compte › Se connecter), puis reposez votre question.' }); return; }
@@ -467,6 +475,8 @@
                     (f.n ? '<button type="button" class="AIDE-LIEN" data-notice="' + esc(f.n) + '">📖 Notice › ' + esc(f.n) + '</button>' : '') + '</div>' : '') });
             }, function(e) {
                 attenteIa = false;
+                // Réponse libre impossible : la mascotte continue avec ce qu'elle a en mémoire.
+                if (repli) { ajouter({ de: 'lui', html: e.statut === 429 ? varie('quota', ['J\'ai beaucoup discuté aujourd\'hui : pour parler librement, je reviens demain. Voici déjà ce que j\'ai en mémoire.', 'Ma réserve de conversation du jour est épuisée, elle revient demain. En attendant, voici ce que je sais.']) : 'Je n\'arrive pas à formuler une réponse libre pour le moment. Voici ce que j\'ai en mémoire.' }); repli(); return; }
                 var msg = e.statut === 429 ? 'Le nombre de questions à l\'IA pour aujourd\'hui est atteint. La notice reste là, et l\'IA revient demain.'
                     : e.statut === 503 ? 'L\'IA n\'est pas disponible pour le moment. Essayez la notice, ou signalez le problème.'
                     : 'L\'IA n\'a pas pu répondre (' + esc(e.message || 'erreur') + ').';
@@ -488,6 +498,7 @@
         if (x) { ajouter({ de: 'lui', html: '<b>' + esc(titre) + '</b> : ' + x, etq: 'Explication du message', q: titre }); return; }
         var r = moteur.chercher(titre + ' ' + texte, { app: APP, ecran: ecranCourant() }), top = r.resultats[0];
         if (top && top.score >= window.AIDE_MOTEUR.SUR) { donnerFiche(top.fiche, titre); return; }
+        if (compteActif() && navigator.onLine) { demanderIa('Pourquoi ai-je le message « ' + titre + ' » : ' + texte); return; }
         ajouter({ de: 'lui', html: 'Le message disait : « ' + esc(texte || titre) + ' ». Je n\'ai pas d\'explication toute prête : voulez-vous que je demande à mon <b>cerveau IA</b> ?' + boutonsIa('Pourquoi ai-je le message « ' + titre + ' » : ' + texte), q: titre });
     }
     window.AIDE_OUVRIR = function(demande) {
@@ -498,7 +509,7 @@
         fen = document.createElement('div');
         fen.className = 'AIDE-FOND' + (estPc() ? ' pc' : '');
         fen.setAttribute('role', 'dialog'); fen.setAttribute('aria-label', 'Aide de TRIGONE');
-        fen.innerHTML = '<div class="AIDE-FEN"><div class="AIDE-TETE"><img src="' + IMG + '" alt=""><div><b>Besoin d\'aide ?</b><small>Je cherche dans la notice TRIGONE</small></div>' +
+        fen.innerHTML = '<div class="AIDE-FEN"><div class="AIDE-TETE"><img src="' + IMG + '" alt=""><div><b>Besoin d\'aide ?</b><small>Posez-moi n\'importe quelle question</small></div>' +
             '<button type="button" class="AIDE-QUOI" title="Ce que je sais faire" aria-label="Ce que je sais faire">?</button><button type="button" class="AIDE-VIDER" title="Nouvelle conversation" aria-label="Nouvelle conversation">↺</button><button type="button" class="AIDE-X" aria-label="Fermer">✕</button></div>' +
             '<div class="AIDE-FIL"><div class="AIDE-M lui">Chargement…</div></div>' +
             '<div class="AIDE-AVERT">⚠️ Ne saisissez pas d\'informations personnelles (nom, matricule, détails de mission).</div>' +
