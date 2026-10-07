@@ -5,11 +5,11 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>TRIGONE — Mise en route</title>
 <link rel="manifest" href="manifest.json">
-<script src="jumelage.js?v=227"></script>
-<script src="aide/moteur.js?v=227"></script>
-<script src="aide/donnees.js?v=227"></script>
-<script src="aide/circuit.js?v=227"></script>
-<script src="aide/aide.js?v=227"></script>
+<script src="jumelage.js?v=228"></script>
+<script src="aide/moteur.js?v=228"></script>
+<script src="aide/donnees.js?v=228"></script>
+<script src="aide/circuit.js?v=228"></script>
+<script src="aide/aide.js?v=228"></script>
 <meta name="theme-color" content="#ecebe7">
 <link href="fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
@@ -829,6 +829,11 @@ body.dark-mode .MER-TAB-NUM { background: #262626; border-color: #404040; color:
   /* accueil : le logo commence sous « Références » et « Mise à jour » */
   .MER-P0-INNER { padding-top: 60px; padding-bottom: 30px; }
 }
+/* Place insuffisante même avec le logo réduit au minimum (app.js : MER_ACCUEIL_AJUSTER) : l'accueil défile */
+#MER-P0.MER-P0-DEFILE { height: auto; max-height: none; overflow: visible; }
+#MER-P0.MER-P0-DEFILE .MER-P0-SHELL { height: auto; }
+#MER-P0.MER-P0-DEFILE .MER-P0-INNER { flex: 0 0 auto; }
+#MER-P0.MER-P0-DEFILE .MER-P0-ESPACE { display: none; }
 /* Téléphone à l'horizontale : l'accueil défile au lieu d'être tronqué, logo réduit */
 @media (orientation: landscape) and (max-height: 500px) {
   #MER-P0 { height: auto; max-height: none; overflow: visible; }
@@ -1184,6 +1189,6 @@ body { overflow-wrap: break-word; }                       /* un mot trop long (f
     </div>
   </div>
 </div>
-<script src="app.js?v=227"></script>
+<script src="app.js?v=228"></script>
 </body>
 </html>
