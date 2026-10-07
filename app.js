@@ -609,6 +609,8 @@ function TPL_BIBLIOTHEQUE() {
         d.nb = d.liste.length; d.gris = d.id !== 'refus'; d.nouveau = d.id === 'refus' && d.nb > 0;
         d.det = d.nb ? d.nb + ' demande' + (d.nb > 1 ? 's' : '') : 'Aucune demande';
     });
+    // « Annulées » n'apparaît que s'il y a au moins une mission annulée.
+    ds = ds.filter(function(d) { return d.id !== 'annulees' || d.nb; });
     var TAGS = { validation: 'EN VALIDATION', chorus: 'CHEZ CHORUS DT', traitees: 'PRISE EN CHARGE', refus: 'REFUSÉE', annulees: 'ANNULÉE' };
     return TPL_MAIL('BIBLIOTHEQUE', { titre: 'Bibliothèque', dossiers: ds,
         sous: 'Vos demandes envoyées, rangées selon leur suivi' + (window.JUMELAGE_MEMOIRE_TEXTE ? ' · <span class="MER-BIB-MEMOIRE">' + ESC(JUMELAGE_MEMOIRE_TEXTE(tout.length, 'demande gardée', 'demandes gardées')) + '</span>' : ''),
