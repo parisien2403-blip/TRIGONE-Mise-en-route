@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 272;
+var APP_CODE_VERSION = 273;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -179,7 +179,32 @@ function SHOW_PAGE(page) {
     RENDRE_MENU_PC();
     window.scrollTo(0, 0);
     setTimeout(MER_MVT_SCAN, 0);
+    if (page === 'ACCUEIL') MER_ACCUEIL_AJUSTER();
 }
+// Accueil : boutons et barre d'onglets toujours entiers, quel que soit l'écran (pliable, petit téléphone, grand texte
+// d'Android, compte avec beaucoup de boutons) : s'il manque de la place, c'est le logo qui rétrécit ; s'il deviendrait
+// trop petit, l'accueil défile plutôt que de couper.
+var MER_LOGO_MIN = 70;
+function MER_ACCUEIL_AJUSTER() {
+    var p0 = document.getElementById('MER-P0'); if (!p0 || DEMO_ACTIF) return;
+    var shell = p0.querySelector('.MER-P0-SHELL'), inner = p0.querySelector('.MER-P0-INNER'), img = p0.querySelector('.MER-LOGO-IMG'), nav = p0.querySelector('.P0-TAB-BAR');
+    if (!shell || !inner || !img || !nav) return;
+    img.style.width = img.style.height = img.style.maxHeight = ''; p0.classList.remove('MER-P0-DEFILE');
+    if (!img.complete || !img.naturalHeight) { img.onload = function() { img.onload = null; MER_ACCUEIL_AJUSTER(); }; return; }
+    var cs = getComputedStyle(shell), ci = getComputedStyle(inner), r = img.getBoundingClientRect();
+    var basCarte = shell.getBoundingClientRect().bottom - (parseFloat(cs.paddingBottom) || 0);
+    var placeLogo = inner.clientHeight - (parseFloat(ci.paddingTop) || 0) - (parseFloat(ci.paddingBottom) || 0);
+    var trop = Math.max(nav.getBoundingClientRect().bottom - basCarte, r.height - placeLogo, 0);
+    if (trop < 1) return;
+    var h = Math.floor(r.height - trop - 4);
+    img.style.width = 'auto'; img.style.maxHeight = 'none'; img.style.height = Math.max(h, MER_LOGO_MIN) + 'px';
+    if (h < MER_LOGO_MIN) p0.classList.add('MER-P0-DEFILE');
+}
+(function() {
+    var t = null, refaire = function() { clearTimeout(t); t = setTimeout(function() { if (PAGE_ACTUELLE === 'ACCUEIL') MER_ACCUEIL_AJUSTER(); }, 120); };
+    window.addEventListener('resize', refaire); window.addEventListener('orientationchange', refaire);
+    if (document.fonts && document.fonts.ready) document.fonts.ready.then(refaire);
+})();
 
 var MER_ICONES = {
     BIBLIOTHEQUE: '<svg viewBox="0 0 24 24"><path d="M12 6.3c-1.7-1.3-3.9-2-6.3-2A2 2 0 0 0 3.7 6.3v10.9a2 2 0 0 0 2 2c2.2 0 4.3.6 6 1.8M12 6.3c1.7-1.3 3.9-2 6.3-2a2 2 0 0 1 2 2v10.9a2 2 0 0 1-2 2c-2.2 0-4.3.6-6 1.8M12 6.3v14.7"/></svg>',

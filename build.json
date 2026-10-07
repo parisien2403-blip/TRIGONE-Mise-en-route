@@ -1,6 +1,6 @@
 {
   "_lisezMoi": "Numéro de publication : à augmenter à chaque publication, avec BUILD dans jumelage.js et les ?v= des scripts (index.html : jumelage.js?v= et app.js?v= ; cr/index.html : ../jumelage.js?v=), tous au même numéro. Les applis ouvertes se mettent alors à jour d'elles-mêmes dès l'ouverture. « notifier » : true si cette publication mérite une notification à tous les appareils abonnés (envoyée par le serveur dans l'heure, une seule fois par numéro), avec « message » (nouveautés en une ligne) ; false pour un simple correctif.",
-  "build": 227,
+  "build": 228,
   "notifier": false,
-  "message": "TRIGONE V224 : la mascotte dit ce qu'elle fait et sa réponse s'écrit mot à mot."
+  "message": "TRIGONE V225 : l'accueil de Mise en route s'adapte à tous les écrans (onglets toujours visibles)."
 }
