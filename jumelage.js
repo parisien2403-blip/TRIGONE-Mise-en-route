@@ -1263,7 +1263,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 222, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 223, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -6513,8 +6513,14 @@
             : 'Votre compte TRIGONE a été supprimé par votre assistant Chorus DT ou l\'administrateur de votre unité : toutes les données de TRIGONE ont été effacées de cet appareil.', 'info'); }, 1500);
     })();
     if (/[?&]espace=comptes/.test(location.search)) setTimeout(function() { if (monCompte()) window.JUMELAGE_GESTION_COMPTES(); }, 1800);
+    // Code à 4 chiffres oublié : avec un compte, la sauvegarde automatique rend tout à la reconnexion (adresse + code
+    // de connexion) ; sans compte, l'effacement est définitif.
     window.JUMELAGE_CODE_OUBLIE = function() {
-        confirmerEffacement('Code oublié ?',
+        var c = monCompte();
+        if (c) confirmerEffacement('Code oublié ?',
+            'TRIGONE va s\'effacer de cet appareil, puis vous vous reconnectez avec votre adresse TRIGONE (' + (c.mail || '') + ') et votre code de connexion : vos demandes, comptes-rendus et réglages reviennent tout seuls (dernière sauvegarde automatique). Vous choisirez ensuite un nouveau code à 4 chiffres.\n\nCode de connexion oublié lui aussi ? L\'administrateur de votre unité vous remet un code de réactivation.',
+            'Effacer et me reconnecter');
+        else confirmerEffacement('Code oublié ?',
             'Il n\'existe aucun moyen de récupérer votre code. La seule solution est d\'effacer toutes les données de TRIGONE sur cet appareil (demandes, comptes-rendus, réglages). Cette action est irréversible.',
             'Oui, tout effacer et recommencer');
     };

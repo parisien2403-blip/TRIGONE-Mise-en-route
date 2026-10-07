@@ -618,6 +618,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 223, version: 'V220', l: ['« Je n\'arrive plus à me connecter » : la mascotte et la notice expliquent chaque cas (code oublié, trop d\'essais, téléphone perdu)', 'Code à 4 chiffres oublié : avec un compte, vos données reviennent à la reconnexion'] },
         { build: 222, version: 'V219', l: ['Après un calcul, « et les codes d\'imputation ? » est compris comme un nouveau sujet (codes FD), plus comme la suite du calcul'] },
         { build: 221, version: 'V218', l: ['Plusieurs questions dans le même message : la mascotte répond à chacune, dans l\'ordre', '« Codes d\'imputation pour une mission » : les codes FD de votre unité (ceux de déplacement en premier)'] },
         { build: 220, version: 'V217', l: ['La mascotte répond juste à ce qu\'on lui demande : « 3 nuits à Nantes » → « vous seriez remboursé de 360 € », « 4 repas à Lyon » → 80 €', 'Pour la mission complète, il suffit d\'ajouter « et avec les repas ? »'] },

@@ -36,6 +36,8 @@ module.exports = async function() {
     verifier(!(await t.isVisible('.AIDE-BULLE')) && !(await t.evaluate(() => document.querySelector('.AIDE-PASTILLE').classList.contains('AIDE-INVITE'))), 'ouverte une fois : la mascotte ne se signale plus');
     let r = await demander(t, 'jme rappel plu de mon mot2pass');
     verifier(/code de réactivation/.test(r) && /Réponse trouvée dans la notice/.test(await t.innerText('.AIDE-FIL')), 'langage SMS et fautes (« jme rappel plu de mon mot2pass ») : code de connexion oublié');
+    r = await demander(t, 'un missionnaire n\'arrive plus à se connecter, ça se passe comment ?');
+    verifier(/Code oublié/.test(r) && /code de réactivation/.test(r) && /administrateur/.test(r), '« un missionnaire n\'arrive plus à se connecter » : vue d\'ensemble (code à 4 chiffres, code de connexion, trop d\'essais, téléphone perdu)');
     r = await demander(t, 'le juteux a refusé mon OM pk');
     verifier(/Refusées — à corriger/.test(r), 'jargon (« le juteux a refusé mon OM pk ») : demande refusée, corriger et renvoyer');
     r = await demander(t, 'merci beaucoup !');

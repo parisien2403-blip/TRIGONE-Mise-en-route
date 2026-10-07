@@ -262,12 +262,18 @@
     ajouter(page('Hors réseau', duo('a1-hors-reseau', et(['Sans réseau, une pastille ' + r(1) + ' <b>Hors réseau</b> apparaît en haut de l\'écran (avec le nombre d\'envois en attente).', 'Touchez-la : tout est <b>gardé sur l\'appareil</b> (horodatages, comptes-rendus, demandes) et <b>part tout seul</b> au retour du réseau.', 'Au retour du réseau : « <b>Réseau revenu</b> », la pastille disparaît.'])), 'donnees'));
 
     // ---------- 15. Questions fréquentes ----------
-    ajouter(chapitre(15, 'Questions fréquentes', 'Les situations les plus courantes et leur solution.', ['Connexion et code', 'Envois et destinataires', 'Notifications', 'Signaler un problème'], 'faq'));
+    ajouter(chapitre(15, 'Questions fréquentes', 'Les situations les plus courantes et leur solution.', ['Connexion et code', 'Je n\'arrive plus à me connecter', 'Envois et destinataires', 'Notifications', 'Signaler un problème'], 'faq'));
     ajouter(page('Connexion et code', '<div class="n-faq">' +
         '<b>J\'ai oublié mon code de connexion.</b><p>Demandez un <b>code de réactivation</b> à l\'administrateur de votre unité, puis accueil › « J\'ai un code de réactivation ». Vos données reviennent ; choisissez ensuite un nouveau code.</p>' +
         '<b>J\'ai oublié mon code d\'accès à 4 chiffres.</b><p>« Code oublié ? » efface TRIGONE sur l\'appareil ; reconnectez-vous ensuite avec votre adresse et votre code de connexion : tout revient. Code de connexion oublié : code de réactivation de l\'administrateur.</p>' +
         '<b>L\'empreinte ne marche plus.</b><p>Touchez « Utiliser mon code ». Désactivez puis réactivez l\'empreinte dans Mon profil.</p>' +
         '<b>Rôle VALIDEUR non reconnu.</b><p>Le rôle doit être coché dans Mes rôles <b>avec son code</b>. Il suffit ensuite d\'ouvrir TRIGONE : le rôle est redéclaré tout seul.</p></div>', 'faq'));
+    ajouter(page('Je n\'arrive plus à me connecter', '<div class="n-faq">' +
+        '<b>Code à 4 chiffres oublié</b> (celui qui ouvre l\'appli).<p>Écran du code › « Code oublié ? » : TRIGONE s\'efface de l\'appareil. Reconnectez-vous avec votre <b>adresse TRIGONE</b> et votre <b>code de connexion</b> : tout revient (sauvegarde automatique).</p>' +
+        '<b>Code de connexion oublié</b> (8 caractères).<p>Encore connecté sur un autre appareil ? Bouton de compte en haut à droite › <b>« Ajouter un appareil »</b> : un QR ou un code de liaison, sans rien demander. Sinon, l\'<b>administrateur de votre unité</b> vous remet un <b>code de réactivation</b> (48 h, une seule fois) : accueil › « J\'ai un code de réactivation ». Vos données reviennent, puis choisissez un nouveau code.</p>' +
+        '<b>« Trop d\'essais ».</b><p>5 codes faux : 15 minutes d\'attente. 10 : connexion par code coupée (vous êtes prévenu par notification) ; il faut un code de réactivation ou un code de liaison.</p>' +
+        '<b>Téléphone perdu ou volé.</b><p>L\'administrateur <b>bloque</b> le compte (l\'appareil s\'efface s\'il se rallume), puis vous remet un code de réactivation pour le nouveau téléphone.</p></div>' +
+        savoir('Seul l\'<b>administrateur de l\'unité</b> remet un code de réactivation ou bloque un compte. Votre compte, votre carte et votre sauvegarde ne sont jamais perdus.'), 'faq'));
     ajouter(page('Envois et notifications', '<div class="n-faq">' +
         '<b>« Pas encore de compte TRIGONE ».</b><p>Le destinataire doit créer son compte TRIGONE (et cocher son rôle). Votre demande reste dans vos Documents.</p>' +
         '<b>« Mauvais destinataire ».</b><p>Une demande part vers le <b>1<sup>er</sup> valideur</b>, la validation 1 vers le <b>2<sup>e</sup></b>, la validation 2 et les comptes-rendus vers l\'<b>assistant Chorus DT</b>. Vérifiez l\'adresse.</p>' +
