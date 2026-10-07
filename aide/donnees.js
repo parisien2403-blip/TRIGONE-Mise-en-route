@@ -13,7 +13,7 @@
 
     // ---------- Intention ----------
     var CODE_FD = /\b(fd[0-9a-z]{6,10})\b/i;
-    var MOTS_FD = / (code fd|codes fd|code d engagement|codes d engagement|code engagement|fd ligne|fd@ligne|fdligne|codier|fd) /;
+    var MOTS_FD = / (code fd|codes fd|code d engagement|codes d engagement|code engagement|fd ligne|fd@ligne|fdligne|codier|fd|code imputation|codes imputation|code d imputation|codes d imputation|code de l imputation|imputation|imputations|code budgetaire|ligne budgetaire|centre financier) /;
     var FORT = / (tarif|tarifs|taux|bareme|baremes|forfait|forfaits|prix|montant|montants|coute|coutent|cout|couts|euro|euros|indemnite|indemnites|indemnise|indemnisation|indemnisations|indemnisee|frais|allocation|allocations|prime|primes|touche|toucher|percoit|percevoir|rembourse|remboursee|remboursement|plafond|droit|droits) /;
     var SUJET = / (repas|manger|dejeuner|diner|hebergement|hotel|hotels|nuit|nuits|nuitee|nuitees|dormir|logement|chambre|journalier|journaliere|etranger|pays) /;
     var OUTRE_MER = / (reunion|guadeloupe|martinique|guyane|mayotte|nouvelle caledonie|polynesie|tahiti|saint pierre et miquelon|wallis|saint martin|saint barthelemy|dom tom|outre mer|dom) /;
@@ -21,7 +21,7 @@
     // ---------- Codier FD ----------
     var vides = {}; ('le la les l un une des de du d j je tu il on nous vous mon ma mes ton ta tes son sa ses notre votre leur ce cet cette ces ca c est a au aux en et ou que qu qui quoi quel quelle quels quelles ' +
         'est sont suis ai as avez pour par sur dans avec sans chez donne donner trouver trouve cherche connaitre connais savoir sais veux voudrais besoin stp svp merci bonjour salut moi me m faut il y pas ne n ' +
-        'code codes fd fds codier engagement ligne numero unite regiment imputation imputer mettre mets met utiliser utilise').split(' ').forEach(function(m) { vides[m] = 1; });
+        'code codes fd fds codier engagement ligne numero unite regiment imputation imputations imputer mettre mets met utiliser utilise mission missions ma mon quels quelles c budgetaire centre financier').split(' ').forEach(function(m) { vides[m] = 1; });
     var indexCodier = null;
     function preparerCodier(codier) {
         if (indexCodier && indexCodier.src === codier) return indexCodier;
@@ -68,7 +68,8 @@
         return '<div class="AIDE-CODE"><b>' + esc(code) + '</b> <button type="button" class="AIDE-LIEN" data-copier="' + esc(code) + '">Copier</button><br>' + esc(v.lib) +
             (v.cf ? '<small>Centre financier ' + esc(v.cf) + ' · centre de coût ' + esc(v.cc || '') + ' · activité ' + esc(v.act || '') + '</small>' : '') + '</div>';
     }
-    function repondreCodier(q, codier) {
+    // uniteDefaut : unité du profil (« 4°RIISC »), utilisée quand la question n'en cite pas (« les codes d'imputation pour une mission »).
+    function repondreCodier(q, codier, uniteDefaut) {
         var etq = 'Réponse tirée du codier FD' + (codier._source && codier._source.date ? ' (' + codier._source.date.split('-').reverse().join('/') + ')' : '');
         var m = CODE_FD.exec(q);
         if (m) {
@@ -82,7 +83,8 @@
             return { html: html, etq: etq };
         }
         var idx = preparerCodier(codier), meilleurs = [], best = 0;
-        var mots = motsRecherche(q);
+        var mots = motsRecherche(q), uDef = false;
+        if (uniteDefaut && !mots.some(function(w) { return w === 'uiisc' || SIGLES_CONNUS.indexOf(' ' + w + ' ') >= 0; })) { var mu = motsRecherche(uniteDefaut); if (mu.length) { mots = mu.concat(mots); uDef = true; } }
         if (!mots.length) return null;
         idx.liste.forEach(function(e) {
             var ok = 0, chiffres = true;
@@ -94,8 +96,10 @@
             if (s > best) { best = s; meilleurs = [e]; } else if (s === best && s > 0) meilleurs.push(e);
         });
         if (best < 0.5 || !meilleurs.length) return { html: 'Je n\'ai pas trouvé de code FD pour « ' + esc(mots.join(' ')) + ' » dans le codier. Précisez l\'unité (ex. « UIISC n°4 ») et l\'objet (formation, intervention, entraînement, fonctionnement courant), ou demandez à votre assistant Chorus DT.', etq: etq };
+        // Les codes de déplacement d'abord (les plus demandés pour une mission).
+        meilleurs.sort(function(a, b) { return (/d[ée]placement/i.test(b.v.lib || '') ? 1 : 0) - (/d[ée]placement/i.test(a.v.lib || '') ? 1 : 0); });
         var n = meilleurs.length;
-        return { html: (n === 1 ? 'Dans le codier FD :' : n + ' codes FD correspondent' + (n > 8 ? ' (les 8 premiers ; précisez l\'objet : formation, intervention, entraînement…)' : '') + ' :') +
+        return { html: (uDef ? 'Pour votre unité (' + esc(uniteDefaut) + ') — ' : '') + (n === 1 ? 'Dans le codier FD :' : n + ' codes FD correspondent' + (n > 8 ? ' (les 8 premiers ; précisez l\'objet : formation, intervention, entraînement…)' : '') + ' :') +
             meilleurs.slice(0, 8).map(function(e) { return ligneCode(e.code, e.v); }).join('') +
             '<small>Le bon code dépend de l\'objet de la mission : en cas de doute, l\'assistant Chorus DT fait foi.</small>', etq: etq };
     }
@@ -222,6 +226,8 @@
         if (MOTS_IK.test(s) && (FORT.test(s) || / combien | distance | entre /.test(s) || trajet)) return 'ik';
         if (trajet && (FORT.test(s) || / combien /.test(s)) && !trouverPays(q, tarifs || { pays: [] }).length) return 'ik';
         if (MOTS_FD.test(s) && motsRecherche(q).length) return 'fd';
+        // « donne-moi les codes d'imputation pour une mission » (sans unité ni objet) : les codes de l'unité du profil ; « où mettre le code FD ? » reste une question sur l'écran.
+        if (MOTS_FD.test(s) && / (codes|donne|donnez|quel|quels|quelle|liste|lister|pour une mission|pour ma mission|pour un deplacement) /.test(s) && !/ (ou|comment|onglet|trouve|trouver|mettre|saisir|remplir|rentrer|taper|sert|signifie|veut dire) /.test(s)) return 'fd';
         // « le code du 3rpima », « imputation du 6e régiment du génie » : un mot de code et une unité numérotée.
         if (/ (code|codes|imputation|imputer|engagement) /.test(s)) { var u = unites(s), m = / \d{1,3} ([a-z]{2,8}) /.exec(u); if (m && SIGLES_CONNUS.indexOf(' ' + m[1] + ' ') >= 0) return 'fd'; }
         var combien = / combien /.test(s) && !/ combien de (repas|nuit|nuits|nuitee|nuitees|jours?) /.test(s);

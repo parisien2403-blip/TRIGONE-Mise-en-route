@@ -127,6 +127,9 @@ module.exports = async function() {
     verifier(/Pour 3 nuits à Nantes, vous seriez remboursé de 360 €/.test(r) && !/repas ×/.test(r), '« combien coûte 3 nuits à Nantes » : réponse directe, 3 nuits × 120 € = 360 €, sans jours ni repas ajoutés');
     r = await demander(t, 'combien pour 4 repas a lyon');
     verifier(/Pour 4 repas à Lyon, vous seriez remboursé de 80 €/.test(r), '« combien pour 4 repas à Lyon » : les repas seulement (80 €)');
+    await demander(t, 'donne moi les codes imputation pour une mission et le montant de remboursement d\'une nuit a paris'); await attendre(2500);
+    const deux = await t.evaluate(() => [...document.querySelectorAll('.AIDE-M.lui')].slice(-2).map(x => x.innerText));
+    verifier(deux.length === 2 && /UIISC n°4/.test(deux[0]) && /FDYDDR4/.test(deux[0]) && /Pour 1 nuit à Paris, vous seriez remboursé de 140 €/.test(deux[1]), 'deux questions dans un message (codes d\'imputation + une nuit à Paris) : deux réponses, codes FD de l\'unité du profil puis 140 € [' + deux.map(x => x.slice(0, 60)).join(' | ') + ']');
     r = await demander(t, 'qui autorise ma voiture perso');
     verifier(/chef de corps/i.test(r), 'mémento : véhicule personnel autorisé par le chef de corps');
     r = await demander(t, 'code fd du 4e riisc formation'); await attendre(800);

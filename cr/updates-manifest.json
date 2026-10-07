@@ -6,8 +6,8 @@
   "ikVersion": 1,
   "ikMessage": "Indemnité kilométrique revalorisée de 3,2 % jusqu'au 31 décembre 2026 (arrêté du 29 mai 2026) : 0,33 € (5 CV et moins), 0,42 € (6-7 CV), 0,46 € (8 CV et plus).",
   "ikFile": "./ik_officiel.json",
-  "appCodeVersion": 315,
-  "appCodeMessage": "TRIGONE V217 : la mascotte répond juste à ce qu'on lui demande (« 3 nuits à Nantes » → 360 €).",
+  "appCodeVersion": 316,
+  "appCodeMessage": "TRIGONE V218 : deux questions dans un message, deux réponses ; « codes d'imputation » compris.",
   "appMessageVersion": 0,
   "appMessage": "Une information importante vous concerne.",
   "appMessageDetail": ""
