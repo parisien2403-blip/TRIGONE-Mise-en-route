@@ -467,7 +467,8 @@
         var avant = lire(CLE_DERNIER);
         if (avant && avant.q && avant.q !== question && window.AIDE_DONNEES && window.AIDE_DONNEES.estSuite(question)) question = question + ' (suite de ma question précédente : « ' + avant.q + ' »)';
         attenteIa = true; dessinerFil();
-        window.JUMELAGE_API('aide/ia', { question: question, fiches: r.resultats.slice(0, 4).map(function(x) { return x.fiche.id; }), ecran: ecranCourant(), app: APP, historique: hist, mission: (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.resumeMission()) || '' })
+        var top = r.resultats[0], libre = !top || top.score < window.AIDE_MOTEUR.PROPOSER;   // aucun sujet de TRIGONE reconnu : conversation libre (modèle léger)
+        window.JUMELAGE_API('aide/ia', { question: question, sujet: libre ? 'libre' : 'trigone', fiches: r.resultats.slice(0, 3).map(function(x) { return x.fiche.id; }), ecran: ecranCourant(), app: APP, historique: hist, mission: (window.AIDE_CIRCUIT && window.AIDE_CIRCUIT.resumeMission()) || '' })
             .then(function(j) {
                 attenteIa = false;
                 var f = j.fiche ? moteur.fiche(j.fiche) : null;
