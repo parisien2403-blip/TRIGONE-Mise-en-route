@@ -1274,7 +1274,7 @@
     // Dès l'ouverture (démarrage ou retour dans l'appli), TRIGONE vérifie s'il existe une publication plus récente
     // et se met à jour tout seul. Jamais au mauvais moment : uniquement sur l'accueil, sans fenêtre ouverte
     // (chaque appli le dit via JUMELAGE_PEUT_RECHARGER) ; sinon au prochain retour sur l'accueil.
-    var BUILD = 230, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
+    var BUILD = 231, MAJ_DISPO = false, CLE_RECHARGE = 'trigone_recharge_build';
     function peutRecharger() {
         if (document.visibilityState === 'hidden') return false;
         if (document.body && document.body.classList.contains('demo-active')) return false;
@@ -6017,7 +6017,7 @@
                 (window.JUMELAGE_ADRESSE_CONNUE() ? '<div class="JUM-ADRESSE"><span>📥 Vos factures et billets : envoyez-les ou transférez-les à</span><b>' + esc(window.JUMELAGE_ADRESSE_CONNUE()) + '</b>' +
                     '<button type="button" class="JUM-R-SECOND JUM-ADRESSE-COPIER" onclick="JUMELAGE_COPIER_ADRESSE(this)">Copier</button><small>Ils arrivent chiffrés dans Boîte de réception › Justificatifs, prêts à joindre au compte-rendu.</small></div>' : '') +
                 '<button type="button" class="JUM-R-LIEN JUM-CARTE-PROFIL">Modifier Mon profil</button>' +
-                (memo && memo.id ? '<button type="button" class="JUM-R-LIEN JUM-CARTE-REVOQUER">Carte perdue ou volée ? Révoquer le QR code</button>' : '') + '</div>';
+                (memo && memo.id ? '<button type="button" class="JUM-R-LIEN JUM-CARTE-REVOQUER">QR code partagé ou photographié ? Changer mon QR code</button>' : '') + '</div>';
             if (memo && memo.id) dessinerQR(fenCarte.querySelector('.JUM-CARTE-QR'), memo.id);
             if (tel) {
                 var zone = fenCarte.querySelector('.JUM-CARTE-ZONE'), tourne = fenCarte.querySelector('.JUM-CARTE-TOURNE');
@@ -6080,10 +6080,10 @@
     }
     // Carte perdue, volée ou photographiée : l'ancien QR code devient « Carte non reconnue », un nouveau est créé.
     function revoquerCarte(apres) {
-        var f = document.createElement('div'); f.className = 'JUM-SIG JUM-BIOC'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Révoquer le QR code');
+        var f = document.createElement('div'); f.className = 'JUM-SIG JUM-BIOC'; f.setAttribute('role', 'dialog'); f.setAttribute('aria-label', 'Changer mon QR code');
         f.innerHTML = '<div class="JUM-SIG-CARTE"><div class="JUM-BIOC-ROND">' + (window.JUMELAGE_ICONE ? window.JUMELAGE_ICONE('qr') : '') + '</div>' +
-            '<h2>Révoquer le QR code ?</h2><p>L\'ancien QR code ne marchera plus : scanné, il affichera « Carte non reconnue ». Votre carte reçoit aussitôt un nouveau QR code. Vos missions et votre compte ne changent pas.</p>' +
-            '<div class="JUM-BIOC-ERR"></div><div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND">Annuler</button><button type="button" class="JUM-R-PRINCIPAL">Révoquer</button></div></div>';
+            '<h2>Changer mon QR code ?</h2><p>À faire si une capture de votre carte a circulé, si elle a été photographiée ou si votre téléphone a été perdu. L\'ancien QR code ne marchera plus : scanné, il affichera « Carte non reconnue ». Votre carte reçoit aussitôt un nouveau QR code. Vos missions et votre compte ne changent pas.</p>' +
+            '<div class="JUM-BIOC-ERR"></div><div class="JUM-SIG-BTNS"><button type="button" class="JUM-R-SECOND">Annuler</button><button type="button" class="JUM-R-PRINCIPAL">Changer</button></div></div>';
         ['pointerdown', 'pointerup', 'click'].forEach(function(t) { f.addEventListener(t, function(e) { e.stopPropagation(); }); });
         f.querySelector('.JUM-R-SECOND').addEventListener('click', function() { f.remove(); });
         f.querySelector('.JUM-R-PRINCIPAL').addEventListener('click', function() {

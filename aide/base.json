@@ -2045,7 +2045,7 @@
    "id": "carte",
    "app": "tous",
    "nom": "Ma carte TRIGONE",
-   "d": "Recto : photo, nom, grade, NID, unité, nombre de missions. Toucher la carte la retourne (verso : QR code, rôles). Boutons Afficher en grand, Partager, changer la photo, case « Partager ma photo avec les valideurs et l'assistant Chorus DT », votre adresse des justificatifs avec Copier, Révoquer le QR code."
+   "d": "Recto : photo, nom, grade, NID, unité, nombre de missions. Toucher la carte la retourne (verso : QR code, rôles). Boutons Afficher en grand, Partager, changer la photo, case « Partager ma photo avec les valideurs et l'assistant Chorus DT », votre adresse des justificatifs avec Copier, Changer mon QR code."
   }
  ],
  "fiches": [
@@ -3277,7 +3277,7 @@
   },
   {
    "id": "carte-perdue",
-   "t": "Carte perdue ou volée (QR code)",
+   "t": "QR code partagé ou photographié (changer de QR code)",
    "app": "tous",
    "e": [
     "carte"
@@ -3288,15 +3288,21 @@
     "révoquer le qr code",
     "carte volée",
     "carte non reconnue",
-    "changer mon qr code"
+    "changer mon qr code",
+    "j'ai envoyé ma carte à la mauvaise personne",
+    "ma carte a été partagée",
+    "capture de ma carte",
+    "nouveau qr code",
+    "on peut voler ma carte",
+    "carte perdue ou volée"
    ],
-   "r": "Sous votre carte : <b>Révoquer le QR code</b>. L'ancien ne marche plus, un nouveau est créé tout de suite.<br>« Carte non reconnue » à la vérification : carte inventée, révoquée ou compte supprimé.",
-   "n": "Vérifier une carte, carte perdue",
+   "r": "La carte TRIGONE est <b>numérique</b> : ce qui peut circuler, c'est son <b>QR code</b> (capture partagée par erreur, carte photographiée, téléphone perdu).<br>Sous votre carte : <b>« Changer mon QR code »</b>. L'ancien ne marche plus, un nouveau est créé tout de suite. Le QR code ne donne accès à rien : il permet seulement à un compte TRIGONE de vous retrouver.<br>« Carte non reconnue » à la vérification : carte inventée, ancien QR code ou compte supprimé.",
+   "n": "Vérifier une carte, changer de QR code",
    "m": {
     "a": "carte",
     "l": "Ouvrir Ma carte"
    },
-   "c": "Sous votre carte, « Révoquer le QR code » : l'ancien ne marche plus, un nouveau est créé aussitôt."
+   "c": "Sous votre carte, « Changer mon QR code » : l'ancien ne marche plus, un nouveau est créé aussitôt."
   },
   {
    "id": "profil",
