@@ -124,6 +124,15 @@ module.exports = async function() {
     r = await derniere(t);
     verifier(/FDYD/.test(r), 'petit « ? » → « Voir les codes FD de mon unité » : la mascotte donne les codes de l\'unité');
     await t.evaluate(() => { AIDE_FERMER(); SHOW_PAGE('ACCUEIL'); AIDE_OUVRIR(); }); await attendre(500);
+    // Classe du train selon le grade du profil (officiers 1re, sous-officiers et militaires du rang 2de).
+    const gradeAvant = await t.evaluate(() => JSON.parse(localStorage.getItem('trigone_reglages_communs') || '{}').grade || '');
+    await t.evaluate(() => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.grade = 'CNE'; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); });
+    r = await demander(t, 'j ai droit a la premiere classe en tgv ?'); await attendre(800); r = await derniere(t);
+    verifier(/capitaine/.test(r) && /officier/.test(r) && /1re classe/.test(r), 'train, capitaine : « vous êtes capitaine (officier) : 1re classe »');
+    await t.evaluate(() => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.grade = 'SGT'; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); });
+    r = await demander(t, 'on voyage en quelle classe en train'); await attendre(800); r = await derniere(t);
+    verifier(/sergent/.test(r) && /sous-officier/.test(r) && /2de classe/.test(r), 'train, sergent : « vous êtes sergent (sous-officier) : 2de classe »');
+    await t.evaluate(g => { const r = JSON.parse(localStorage.getItem('trigone_reglages_communs')); r.grade = g; localStorage.setItem('trigone_reglages_communs', JSON.stringify(r)); }, gradeAvant);
     r = await demander(t, 'FD1ADNR11F il marche encore ?');
     verifier(/plus valable/.test(r) && /FD1ADTB11C/.test(r), 'codier : ancien code fermé → le code qui le remplace');
     r = await demander(t, 'combien pour une nuit d\'hotel a lyon');

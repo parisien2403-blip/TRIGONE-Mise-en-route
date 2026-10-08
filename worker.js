@@ -809,6 +809,7 @@ const REGLES_FRAIS = [
     'Petit-déjeuner : pas indemnisé à part, il est compris dans la nuitée. Nuit imprévue (train annulé, grève, retard sur ordre) : indemnisée si elle est justifiée (facture d\'hôtel et attestation de retard ou d\'annulation).',
     'Indemnités kilométriques (véhicule personnel) : 0,32 €/km (5 CV et moins), 0,41 €/km (6 et 7 CV), 0,45 €/km (8 CV et plus), barème de la fonction publique.',
     'Véhicule personnel : seulement sur autorisation (au 4e RIISC, c\'est le chef de corps qui l\'autorise), avec une assurance qui couvre les trajets professionnels. Autorisé : péage et parking remboursés sur justificatif.',
+    'Train (SNCF) : la classe du billet dépend du grade : officiers en 1re classe ; sous-officiers et militaires du rang en 2de classe. Billets réservés par Amplitude (ABT) ; cas particulier (plus de place, surclassement) : l\'assistant Chorus DT fait foi.',
     'Véhicule de service : pas d\'indemnités kilométriques ; carburant et péage avec les moyens de l\'unité. Taxi : seulement en l\'absence de transport en commun ou en cas d\'urgence, si c\'est autorisé, sur justificatif.',
     'Avance : possible jusqu\'à 75 % des frais prévus, à demander avant le départ (case « Demande d\'avance » de la demande de mise en route).',
     'Consignes du 4e RIISC : le compte-rendu se rend dans les 30 jours après la date de fin de mission ; les billets de train et d\'avion passent par l\'organisme de réservation Amplitude (ABT).',
