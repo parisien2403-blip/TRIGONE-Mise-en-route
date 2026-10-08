@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 274;
+var APP_CODE_VERSION = 275;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -940,7 +940,7 @@ function SELECT_MOYEN(path) {
         var label = k ? MOYENS[k] : '— Choisir —';
         return '<option value="' + k + '"' + (v === k ? ' selected' : '') + '>' + label + '</option>';
     }).join('');
-    return '<div class="MER-FIELD"><label>Moyen de transport</label><select data-path="' + path + '" onchange="ON_CHAMP_INPUT(\'' + path + '\', this.value)">' + opts + '</select></div>';
+    return '<div class="MER-FIELD"><label>Moyen de transport' + AQ('moyen') + '</label><select data-path="' + path + '" onchange="ON_CHAMP_INPUT(\'' + path + '\', this.value)">' + opts + '</select></div>';
 }
 
 function TPL_PERSONNE(i) {
@@ -1537,17 +1537,19 @@ function AFFICHER_CODE_FD() {
     var zone = document.getElementById('MER-FD-INFO');
     if (zone) zone.innerHTML = TPL_INFO_FD();
 }
+// Petit « ? » de la mascotte à côté d'un libellé (aide/aide.js : explication écrite à l'avance, ouverte sous le libellé).
+function AQ(k) { return window.AIDE_Q ? window.AIDE_Q(k) : ''; }
 function UTILISER_CODE_FD(code) { D.codeFD = code; MAJ_CHAMP_DOM('codeFD'); AFFICHER_CODE_FD(); }
 
 function TPL_ONGLET_IMPUTATION() {
     return '<div class="MER-SECTION-TITLE" style="margin-top:0;">Imputation</div>' +
-      TOGGLE_OUI_NON('Mission imputée à l\'unité', 'missionImputee', '', 'Fournir le justificatif de l\'autorité ayant prescrit le déplacement.') +
-      '<div class="MER-FIELD"><label>Code d\'engagement FD@LIGNE</label>' +
+      TOGGLE_OUI_NON('Mission imputée à l\'unité' + AQ('imputee'), 'missionImputee', '', 'Fournir le justificatif de l\'autorité ayant prescrit le déplacement.') +
+      '<div class="MER-FIELD"><label>Code d\'engagement FD@LIGNE' + AQ('codefd') + '</label>' +
         '<input type="text" data-path="codeFD" value="' + ESC(D.codeFD || '') + '" placeholder="EX : FD1ADSJ11F" autocapitalize="characters" autocomplete="off" ' +
         'oninput="this.value=this.value.toUpperCase().replace(/\\s/g, \'\'); ON_CHAMP_INPUT(\'codeFD\', this.value); AFFICHER_CODE_FD()"></div>' +
       '<div id="MER-FD-INFO">' + TPL_INFO_FD() + '</div>' +
-      TOGGLE_OUI_NON('Demande d\'avance', 'demandeAvance') +
-      '<div class="MER-SECTION-TITLE">NDS ou DAF</div>' +
+      TOGGLE_OUI_NON('Demande d\'avance' + AQ('avance'), 'demandeAvance') +
+      '<div class="MER-SECTION-TITLE">NDS ou DAF' + AQ('nds') + '</div>' +
       TPL_RAPPEL_RESA() +
       TPL_PJ_FORMULAIRE() +
       '<div class="MER-FIELD"><label>Référence (facultatif)</label><textarea rows="2" oninput="ON_CHAMP_INPUT(\'piecesJointes\', this.value)" placeholder="EX : NDS n°42/2026">' + ESC(D.piecesJointes || '') + '</textarea></div>';

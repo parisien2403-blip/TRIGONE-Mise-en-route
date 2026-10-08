@@ -628,6 +628,94 @@
                 ajouter({ de: 'lui', html: msg + '<div class="AIDE-ACTIONS"><button type="button" class="AIDE-LIEN" data-notice="">📖 Ouvrir la notice</button></div>' });
             });
     }
+    // ---------- Suggestions pendant la frappe ----------
+    // Les formulations des fiches (aide/base.json) qui contiennent les mots tapés (le dernier peut être commencé) :
+    // au plus 3 questions, une par fiche, de préférence de l'écran ouvert, sans langage SMS. Touchée = réponse de la fiche.
+    function motsDe(t) { return String(t || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[’'`´]/g, ' ').replace(/[^a-z0-9]+/g, ' ').trim().split(' ').filter(Boolean); }
+    var MOTS_VIDES_SUG = { je: 1, j: 1, le: 1, la: 1, les: 1, l: 1, de: 1, du: 1, des: 1, d: 1, un: 1, une: 1, et: 1, a: 1, en: 1, pour: 1, est: 1, ce: 1, c: 1, que: 1, qu: 1, il: 1, on: 1, mon: 1, ma: 1, mes: 1 };
+    // Questions dont la réponse est calculée par la mascotte (barèmes, circuit, codier) : réponse vérifiée elle aussi.
+    var SUG_CALCULS = ['Où en est ma demande ?', 'Vérifie ma demande avant l\'envoi', 'Combien je vais toucher ?', 'Où en est mon compte-rendu ?',
+        'Ai-je droit au repas du midi ?', 'Ai-je droit au repas du soir ?', 'Ai-je droit à la nuitée ?', 'Combien pour un repas en France ?', 'Combien la nuit à Paris ?',
+        'Les IK, c\'est combien du kilomètre ?', 'Quels sont les codes FD de mon unité ?', 'Qu\'est-ce que j\'ai à valider ?', 'Le codier est-il à jour ?',
+        'Les barèmes sont-ils à jour ?', 'Combien de missions j\'ai faites ?', 'Quoi de neuf ?'];
+    var indexSug = null;
+    function preparerSug() {
+        if (indexSug || !moteur || !base) return indexSug;
+        var sms = base.sms || {}; indexSug = [];
+        SUG_CALCULS.forEach(function(q) { indexSug.push({ f: { id: '', app: 'tous', e: [] }, q: q, m: motsDe(q), calc: true }); });
+        (base.fiches || []).forEach(function(f) {
+            [f.t].concat(f.q || []).forEach(function(q, i) {
+                var m = motsDe(q); if (!m.length || q.length > 70) return;
+                var argot = m.some(function(x) { return sms[x]; });
+                indexSug.push({ f: f, q: q, m: m, titre: i === 0, argot: argot });
+            });
+        });
+        return indexSug;
+    }
+    function suggestions(texte) {
+        var tous = motsDe(texte), dernier = tous[tous.length - 1] || '';
+        var mots = tous.filter(function(x, i) { return i === tous.length - 1 || !MOTS_VIDES_SUG[x]; });
+        if (!mots.length || !preparerSug()) return [];
+        var court = String(texte).trim().length < 3;   // « ik », « om » : mot entier seulement
+        var proches = {}; try { moteur.chercher(texte, { app: APP, ecran: ecranCourant() }).resultats.slice(0, 3).forEach(function(r, i) { proches[r.fiche.id] = 3 - i; }); } catch (e) {}
+        var ecran = ecranCourant(), meilleur = {};
+        indexSug.forEach(function(x) {
+            if (x.f.app !== 'tous' && x.f.app !== APP) return;
+            var ok = mots.every(function(t) {
+                if (court) return x.m.indexOf(t) >= 0;
+                var debut = t === dernier || t.length >= 4;
+                return x.m.some(function(w) { return w === t || (debut && t.length >= 2 && w.indexOf(t) === 0) || (t.length >= 5 && w.length >= 5 && w.slice(0, 5) === t.slice(0, 5)); });
+            });
+            if (!ok) return;
+            var sc = 10 + (x.calc ? 3 : 0) + (proches[x.f.id] || 0) * 2 + ((x.f.e || []).indexOf(ecran) >= 0 ? 2 : 0) - (x.argot ? 6 : 0) - x.q.length / 25 - (x.titre ? 0.5 : 0);
+            var cle = x.calc ? 'calc:' + x.q : x.f.id;
+            if (!meilleur[cle] || sc > meilleur[cle].sc) meilleur[cle] = { x: x, sc: sc };
+        });
+        return Object.keys(meilleur).map(function(k) { return meilleur[k]; }).sort(function(a, b) { return b.sc - a.sc; }).slice(0, 3).map(function(o) { return o.x; });
+    }
+    function libelleSug(q) { q = String(q).trim(); q = q.charAt(0).toUpperCase() + q.slice(1); return /[?!.]$/.test(q) ? q.replace(/\s*\?$/, '\u00a0?') : q + '\u00a0?'; }
+    function surligner(q, tapes) {
+        return libelleSug(q).split(/(\s+)/).map(function(w) {
+            var n = motsDe(w)[0]; if (!n) return esc(w);
+            return tapes.some(function(t) { return t.length >= 2 && n.indexOf(t) === 0; }) ? '<b>' + esc(w) + '</b>' : esc(w);
+        }).join('');
+    }
+    function montrerSuggestions(texte) {
+        if (!fen) return;
+        var z = fen.querySelector('.AIDE-SUG'); if (!z) return;
+        var l = suggestions(texte), tapes = motsDe(texte).filter(function(x) { return !MOTS_VIDES_SUG[x]; });
+        if (!l.length) { z.hidden = true; z.innerHTML = ''; return; }
+        z.innerHTML = '<small>Questions avec réponse vérifiée</small>' + l.map(function(x) {
+            return '<button type="button" class="AIDE-SUG-Q" ' + (x.calc ? 'data-sugq="' + esc(x.q) + '"' : 'data-sug="' + esc(x.f.id) + '"') + ' data-l="' + esc(libelleSug(x.q)) + '">' + surligner(x.q, tapes) + '</button>'; }).join('');
+        z.hidden = false;
+    }
+    window.AIDE_SUGGESTIONS = function(t) { return suggestions(t).map(function(x) { return { fiche: x.f.id, q: libelleSug(x.q), calcul: !!x.calc }; }); };   // essais automatiques
+
+    // ---------- Petits « ? » à côté des champs difficiles (demande et compte-rendu) ----------
+    // Touché : l'explication s'ouvre juste sous le libellé, sans quitter le champ des yeux. Réponses écrites à l'avance.
+    var CHAMPS = {
+        imputee: { t: '<b>Mission imputée à l\'unité</b> : <b>OUI</b> si la mission est payée sur le budget de votre unité. <b>NON</b> si un autre organisme la prescrit et la paie : joignez alors le justificatif de l\'autorité qui a prescrit le déplacement.' },
+        codefd: { t: '<b>Code d\'engagement Fd@ligne</b> : c\'est le code qui dit <b>sur quel budget</b> la mission est payée. Demandez-le à votre chef de service ou à l\'assistant Chorus DT. Dès que vous le tapez, TRIGONE affiche son libellé pour vérifier.', l: 'Voir les codes FD de mon unité', q: 'codes fd de mon unité' },
+        avance: { t: '<b>Demande d\'avance</b> : <b>OUI</b> pour recevoir, avant le départ, jusqu\'à <b>75 %</b> des frais prévus (mission longue ou coûteuse). Elle est déduite du remboursement final. À demander <b>avant le départ</b>.' },
+        nds: { t: '<b>NDS ou DAF</b> : le document de votre bureau qui justifie la mission (NDS : note de service). Joignez-le en PDF ou en photo ; vous ne l\'avez pas ? Demandez-le à votre bureau ou à l\'assistant Chorus DT.' },
+        moyen: { t: '<b>Moyen de transport</b> :<br>• <b>Véhicule de service</b> : pas d\'indemnités kilométriques.<br>• <b>VRC</b> (votre véhicule personnel) : seulement <b>sur autorisation</b> ; joignez la demande d\'autorisation VRC, la carte grise et l\'attestation d\'assurance. Indemnités kilométriques selon les CV.<br>• <b>Train, avion</b> : billets par l\'organisme de réservation (Amplitude, ABT).', l: 'Combien pour mes kilomètres ?', q: 'comment sont calculées les indemnités kilométriques' },
+        'cr-repas': { t: '<b>Repas payants</b> : le nombre de repas que vous avez <b>payés vous-même</b> (20 € chacun en France). Ne comptez pas un repas <b>fourni</b> ou pris au <b>restaurant administratif</b>.<br>Le maximum suit vos horaires : midi si vous étiez en mission de <b>11 h à 14 h</b>, soir de <b>18 h à 21 h</b>.', l: 'Pourquoi ce maximum ?', q: 'ai je droit au repas du midi' },
+        'cr-nuit': { t: '<b>Nuit par nuit</b> :<br>• <b>Payant</b> : vous avez payé l\'hôtel (gardez la facture) : 90, 120 ou 140 € selon la ville.<br>• <b>Gratuit</b> : logé gratuitement (caserne, hébergement fourni) : rien n\'est versé.<br>• <b>Demande de réservation</b> : la nuit a été réservée par l\'unité.' }
+    };
+    window.AIDE_Q = function(k) { return CHAMPS[k] ? '<button type="button" class="AIDE-Q" data-aide-q="' + k + '" aria-label="Explication" aria-expanded="false">?</button>' : ''; };
+    document.addEventListener('click', function(e) {
+        var b = e.target.closest && e.target.closest('.AIDE-Q, .AIDE-Q-X, .AIDE-Q-LIEN'); if (!b) return;
+        e.preventDefault(); e.stopPropagation();
+        if (b.classList.contains('AIDE-Q-X')) { var bx = b.closest('.AIDE-Q-BULLE'); if (bx) { var q0 = document.querySelector('.AIDE-Q[data-aide-q="' + bx.dataset.k + '"]'); if (q0) { q0.classList.remove('ouvert'); q0.setAttribute('aria-expanded', 'false'); } bx.remove(); } return; }
+        if (b.classList.contains('AIDE-Q-LIEN')) { window.AIDE_OUVRIR({ q: b.dataset.q }); return; }
+        var k = b.dataset.aideQ, c = CHAMPS[k]; if (!c) return;
+        var hote = b.closest('label, .MER-SECTION-TITLE, .FRAIS-NUIT-TITLE, .FST-ROW') || b, suiv = hote.nextElementSibling;
+        if (suiv && suiv.classList.contains('AIDE-Q-BULLE') && suiv.dataset.k === k) { suiv.remove(); b.classList.remove('ouvert'); b.setAttribute('aria-expanded', 'false'); return; }
+        var d = document.createElement('div'); d.className = 'AIDE-Q-BULLE'; d.dataset.k = k; d.setAttribute('role', 'note');
+        d.innerHTML = '<button type="button" class="AIDE-Q-X" aria-label="Fermer">✕</button>' + c.t + (c.l ? '<br><button type="button" class="AIDE-Q-LIEN" data-q="' + esc(c.q) + '">👉 ' + esc(c.l) + '</button>' : '');
+        hote.insertAdjacentElement('afterend', d); b.classList.add('ouvert'); b.setAttribute('aria-expanded', 'true');
+    }, true);
+
     // demande (facultatif) : { fiche: id } ou { q: texte }, touchée sur la page « Ce que je sais faire ».
     function poser(d) {
         if (!d || !moteur) return;
@@ -658,6 +746,7 @@
             '<button type="button" class="AIDE-QUOI" title="Ce que je sais faire" aria-label="Ce que je sais faire">?</button><button type="button" class="AIDE-VIDER" title="Nouvelle conversation" aria-label="Nouvelle conversation">↺</button><button type="button" class="AIDE-X" aria-label="Fermer">✕</button></div>' +
             '<div class="AIDE-FIL"><div class="AIDE-M lui">Chargement…</div></div>' +
             '<div class="AIDE-AVERT">⚠️ Ne saisissez pas d\'informations personnelles (nom, matricule, détails de mission).</div>' +
+            '<div class="AIDE-SUG" hidden></div>' +
             '<form class="AIDE-SAISIE"><input type="text" data-no-uppercase="1" maxlength="400" placeholder="Posez votre question…" aria-label="Votre question" autocomplete="off"><button type="submit" aria-label="Envoyer">➤</button></form></div>';
         document.body.appendChild(fen);
         var champ = fen.querySelector('input');
@@ -667,6 +756,8 @@
             if (t.classList.contains('AIDE-X')) { window.AIDE_FERMER(); return; }
             if (t.classList.contains('AIDE-QUOI')) { window.AIDE_FERMER(); window.AIDE_PRESENTATION(); return; }
             if (t.classList.contains('AIDE-VIDER')) { fil = []; ecrire(CLE_FIL, fil); ecrire(CLE_DERNIER, null); accueil(); return; }
+            if (t.dataset.sugq) { champ.value = ''; montrerSuggestions(''); if (!coupure()) repondre(t.dataset.sugq); return; }
+            if (t.dataset.sug) { var fs = moteur.fiche(t.dataset.sug); champ.value = ''; montrerSuggestions(''); if (fs) { ajouter({ de: 'moi', texte: t.dataset.l || fs.t }); donnerFiche(fs); } return; }
             if (t.dataset.fiche) { var f = moteur.fiche(t.dataset.fiche); if (f) { ajouter({ de: 'moi', texte: f.t }); donnerFiche(f); } return; }
             if (t.dataset.montrer) { var g = moteur.fiche(t.dataset.montrer); if (g && g.m) { window.AIDE_FERMER(); executer(g.m); } return; }
             if (t.dataset.notice !== undefined) { var titre = t.dataset.notice; window.AIDE_FERMER(); window.JUMELAGE_NOTICE(null, titre ? { titre: titre } : {}); return; }
@@ -681,8 +772,11 @@
         fen.querySelector('form').addEventListener('submit', function(ev) {
             ev.preventDefault();
             var q = champ.value.trim(); if (!q || !moteur || coupure()) return;
-            champ.value = ''; repondre(q);
+            champ.value = ''; montrerSuggestions(''); repondre(q);
         });
+        // Pendant la frappe : les questions toutes prêtes (réponse vérifiée) qui correspondent, au-dessus de la saisie.
+        var minuterieSug = null;
+        champ.addEventListener('input', function() { clearTimeout(minuterieSug); minuterieSug = setTimeout(function() { montrerSuggestions(champ.value); }, 120); });
         var accueil = function() {
             var s = salutation();
             fil = [{ de: 'lui', html: s.demander ? 'Bonjour ! Pour bien vous saluer, dois-je dire :<div class="AIDE-PUCES"><button type="button" class="AIDE-PUCE" data-civ="Monsieur">Monsieur ' + esc(s.demander) + '</button>' +
@@ -801,6 +895,22 @@
     }
 
     var CSS = [
+        '.AIDE-SUG{border-top:1px solid #ead9b5;background:#fffaf0;padding:6px 10px 2px;flex:none}',
+        '.AIDE-SUG small{display:block;font-size:11px;color:#9a6f22;font-weight:800;margin:0 0 4px 4px;text-transform:uppercase;letter-spacing:.05em}',
+        '.AIDE-SUG-Q{display:flex;align-items:center;gap:8px;width:100%;text-align:left;background:#fff;border:1px solid #ead9b5;border-radius:12px;padding:8px 12px;margin:0 0 5px;font:inherit;font-size:14px;line-height:1.3;color:#1a1a1a;cursor:pointer}',
+        '.AIDE-SUG-Q::before{content:"\\2714";color:#15803d;font-weight:800;font-size:12px;flex:none}',
+        '.AIDE-SUG-Q b{color:#9a6f22}',
+        '.AIDE-SUG-Q:active{transform:scale(.98);background:#faf5ea}',
+        'body.dark-mode .AIDE-SUG{background:#1f2024;border-color:#4a3f26}body.dark-mode .AIDE-SUG-Q{background:#24262b;border-color:#4a3f26;color:#f3f4f6}body.dark-mode .AIDE-SUG-Q b{color:#e9c47a}',
+        '.AIDE-Q{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;padding:0;border-radius:50%;border:1.5px solid #c99a45;color:#9a6f22;background:#fff;font:800 12px/1 Montserrat,system-ui,sans-serif;margin-left:6px;vertical-align:1px;cursor:pointer;text-transform:none;letter-spacing:0;flex:none}',
+        '.AIDE-Q::after{content:"";position:absolute;inset:-10px}', '.AIDE-Q{position:relative}',
+        '.AIDE-Q.ouvert{background:#c99a45;color:#fff}',
+        '.AIDE-Q-BULLE{position:relative;margin:4px 0 10px;background:#fffaf0;border:1px solid #ead9b5;border-radius:12px;padding:10px 32px 10px 12px;font:500 13.5px/1.45 Montserrat,system-ui,sans-serif;color:#1a1a1a;text-transform:none;letter-spacing:0;text-align:left}',
+        '.AIDE-Q-BULLE::before{content:"";position:absolute;top:-7px;left:18px;width:12px;height:12px;background:#fffaf0;border-left:1px solid #ead9b5;border-top:1px solid #ead9b5;transform:rotate(45deg)}',
+        '.AIDE-Q-X{position:absolute;right:6px;top:4px;border:0;background:none;color:#9ca3af;font-size:16px;padding:4px 6px;cursor:pointer}',
+        '.AIDE-Q-LIEN{border:0;background:none;padding:6px 0 0;color:#9a6f22;font:700 13.5px Montserrat,system-ui,sans-serif;text-decoration:underline;cursor:pointer;text-align:left}',
+        'body.dark-mode .AIDE-Q{background:#24262b;color:#e9c47a;border-color:#a87a1f}body.dark-mode .AIDE-Q.ouvert{background:#c99a45;color:#1a1a1a}',
+        'body.dark-mode .AIDE-Q-BULLE{background:#24262b;border-color:#4a3f26;color:#f3f4f6}body.dark-mode .AIDE-Q-BULLE::before{background:#24262b;border-color:#4a3f26}body.dark-mode .AIDE-Q-LIEN{color:#e9c47a}',
         '.AIDE-FOND.haut,.AIDE-PRES-FOND.haut{z-index:99992}',
         '.AIDE-PASTILLE{position:fixed;padding:0;border-radius:50%;border:2px solid #d4a64a;background:#fff;overflow:hidden;cursor:pointer;box-shadow:0 3px 10px rgba(0,0,0,.3)}',
         '.AIDE-PASTILLE img{width:100%;height:100%;object-fit:cover;display:block}',

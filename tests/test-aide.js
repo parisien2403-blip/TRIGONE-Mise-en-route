@@ -98,8 +98,32 @@ module.exports = async function() {
 
     // ----- Codier FD et barèmes : réponses tirées des données de TRIGONE, sans IA -----
     await t.evaluate(() => { document.body.classList.remove('dark-mode'); AIDE_OUVRIR(); }); await attendre(500);
+    // Suggestions pendant la frappe : questions avec réponse vérifiée ; touchée → réponse sans IA.
+    await t.type('.AIDE-SAISIE input', 'repas', { delay: 30 }); await attendre(500);
+    const sug = await t.evaluate(() => [...document.querySelectorAll('.AIDE-SUG-Q')].map(b => b.textContent));
+    verifier(await t.isVisible('.AIDE-SUG') && sug.length >= 2 && sug.length <= 3 && sug.some(x => /droit au repas du midi/.test(x)), 'suggestions pendant la frappe : « repas » → ' + sug.join(' | '));
+    await t.click('.AIDE-SUG-Q'); await attendre(1200);
+    r = await derniere(t);
+    verifier(/11 h/.test(r) && !(await t.isVisible('.AIDE-SUG')) && (await t.inputValue('.AIDE-SAISIE input')) === '', 'suggestion touchée : la question part, réponse des horaires (11 h – 14 h), saisie et suggestions vidées');
+    await t.type('.AIDE-SAISIE input', 'mot de passe', { delay: 20 }); await attendre(400);
+    const sug2 = await t.evaluate(() => AIDE_SUGGESTIONS('mot de passe').map(x => x.fiche));
+    verifier(sug2.indexOf('code-connexion-oublie') >= 0, 'suggestions : « mot de passe » → fiche Code de connexion oublié');
+    await t.fill('.AIDE-SAISIE input', ''); await t.dispatchEvent('.AIDE-SAISIE input', 'input'); await attendre(400);
+    verifier(!(await t.isVisible('.AIDE-SUG')), 'saisie vidée : plus de suggestions');
     r = await demander(t, 'c quoi le code fd pour la formation au 4eme RIISC'); await attendre(1500); r = await derniere(t);
     verifier(/FDYDDR4FRM/.test(r) && /UIISC n°4 - Déplacement formation/.test(r) && /codier FD/.test(await t.innerText('.AIDE-FIL')), 'codier : « code fd pour la formation au 4eme RIISC » → FDYDDR4FRM (UIISC n°4, formation)');
+    // Petits « ? » des champs : onglet Imputation, explication sous le libellé, lien vers la mascotte, fermeture.
+    await t.evaluate(() => { AIDE_FERMER(); MER_ACTIVE_TAB = 'IMPUTATION'; SHOW_PAGE('FORMULAIRE'); }); await attendre(600);
+    const nbQ = await t.evaluate(() => document.querySelectorAll('.AIDE-Q').length);
+    await t.click('.AIDE-Q[data-aide-q="codefd"]'); await attendre(300);
+    const bulle = await t.evaluate(() => { const b = document.querySelector('.AIDE-Q-BULLE'); return b ? { txt: b.textContent, apres: b.previousElementSibling.tagName, champ: !!b.closest('.MER-FIELD').querySelector('[data-path="codeFD"]') } : null; });
+    verifier(nbQ >= 4 && bulle && /sur quel budget/.test(bulle.txt) && bulle.apres === 'LABEL' && bulle.champ, 'petit « ? » : ' + nbQ + ' sur l\'onglet Imputation ; code FD → explication sous le libellé, dans le champ');
+    await t.click('.AIDE-Q[data-aide-q="codefd"]'); await attendre(200);
+    verifier(!(await t.$('.AIDE-Q-BULLE')), 'petit « ? » touché à nouveau : l\'explication se referme');
+    await t.click('.AIDE-Q[data-aide-q="codefd"]'); await attendre(200); await t.click('.AIDE-Q-LIEN'); await attendre(1500);
+    r = await derniere(t);
+    verifier(/FDYD/.test(r), 'petit « ? » → « Voir les codes FD de mon unité » : la mascotte donne les codes de l\'unité');
+    await t.evaluate(() => { AIDE_FERMER(); SHOW_PAGE('ACCUEIL'); AIDE_OUVRIR(); }); await attendre(500);
     r = await demander(t, 'FD1ADNR11F il marche encore ?');
     verifier(/plus valable/.test(r) && /FD1ADTB11C/.test(r), 'codier : ancien code fermé → le code qui le remplace');
     r = await demander(t, 'combien pour une nuit d\'hotel a lyon');
