@@ -11,11 +11,11 @@
 <link rel="manifest" href="../manifest.json">
 <meta name="apple-mobile-web-app-title" content="TRIGONE">
 <meta name="application-name" content="TRIGONE">
-<script src="../jumelage.js?v=229"></script>
-<script src="../aide/moteur.js?v=229"></script>
-<script src="../aide/donnees.js?v=229"></script>
-<script src="../aide/circuit.js?v=229"></script>
-<script src="../aide/aide.js?v=229"></script>
+<script src="../jumelage.js?v=230"></script>
+<script src="../aide/moteur.js?v=230"></script>
+<script src="../aide/donnees.js?v=230"></script>
+<script src="../aide/circuit.js?v=230"></script>
+<script src="../aide/aide.js?v=230"></script>
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png?v=3">
 <link rel="apple-touch-icon" href="apple-touch-icon.png?v=3">
 <link href="../fonts/montserrat.css" rel="stylesheet"><!-- police hébergée avec TRIGONE : identique hors ligne -->
@@ -11788,7 +11788,7 @@ function SET_UPDATE_SEEN_VERSION(cle, version) {
 // Numéro de version du code de CETTE appli. À augmenter à chaque publication, en même temps que
 // « appCodeVersion » dans updates-manifest.json : c'est ce qui permet à l'appli de savoir si elle est
 // déjà à jour (elle affiche alors les « Nouveautés ») ou en retard (elle demande la mise à jour).
-var APP_CODE_VERSION = 324;
+var APP_CODE_VERSION = 325;
 // Jumelage : numéro affiché « V1, V2… » ; APP_CODE_VERSION reste le compteur interne des mises à jour
 // (à augmenter avec appCodeVersion de cr/updates-manifest.json, sans jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 98;
@@ -15628,7 +15628,7 @@ function RENDER() {
     var _repasFst = REPAS_DETAIL(M);
 
     // Repas midi
-    html += '<div class="FST-ROW"><span class="FST-CAT">Repas midi</span>';
+    html += '<div class="FST-ROW"><span class="FST-CAT">Repas midi' + (window.AIDE_Q ? AIDE_Q('cr-repas') : '') + '</span>';
     html += '<span class="FST-VAL">' + eligMidi + '</span>';
     html += '<span class="FST-ADJ"><button type="button" class="FST-BTN"' + dis + ' onclick="ADJ_PAYANT_REPAS(\'MIDI\',-1)">−</button>';
     html += '<span class="FST-COUNT">' + pMidi + '</span>';
@@ -15636,7 +15636,7 @@ function RENDER() {
     html += '<span class="FST-MNT">' + FORMAT_EURO(REPAS_LIGNE(_repasFst, 'midi').montant) + ' €</span></div>';
 
     // Repas soir
-    html += '<div class="FST-ROW"><span class="FST-CAT">Repas soir</span>';
+    html += '<div class="FST-ROW"><span class="FST-CAT">Repas soir' + (window.AIDE_Q ? AIDE_Q('cr-repas') : '') + '</span>';
     html += '<span class="FST-VAL">' + eligSoir + '</span>';
     html += '<span class="FST-ADJ"><button type="button" class="FST-BTN"' + dis + ' onclick="ADJ_PAYANT_REPAS(\'SOIR\',-1)">−</button>';
     html += '<span class="FST-COUNT">' + pSoir + '</span>';
@@ -15659,7 +15659,7 @@ function RENDER() {
     // --- per-night hébergement ---
     if (nightEntries.length > 0) {
         html += '<div class="FRAIS-NUIT-SECTION">';
-        html += '<h4 class="FRAIS-NUIT-TITLE">Hébergement — nuit par nuit</h4>';
+        html += '<h4 class="FRAIS-NUIT-TITLE">Hébergement — nuit par nuit' + (window.AIDE_Q ? AIDE_Q('cr-nuit') : '') + '</h4>';
         if (M.MER_RESA_HEBERG && ABT_ENABLED) html += '<p class="FRAIS-RESA-NOTE">Votre mise en route demandait une réservation d\'hébergement (« ' + ESC_HTML(ABT_LABEL) + ' »). Rien n\'est choisi d\'office : pour <b>chaque nuit</b>, indiquez <b>' + ESC_HTML(ABT_LABEL) + '</b> si elle a bien été réservée, <b>Payant</b> si vous l\'avez payée vous-même (facture à joindre), ou <b>Gratuit</b>.</p>';
         nightEntries.forEach(function(entry) {
             var J = entry.J;
