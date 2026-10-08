@@ -166,6 +166,14 @@
             return Promise.resolve(a ? 'Votre adresse TRIGONE, c\'est <b>' + esc(a) + '</b> <button type="button" class="AIDE-LIEN" data-copier="' + esc(a) + '">Copier</button><br>Elle sert à vous connecter (avec votre code de connexion) et à recevoir vos factures et billets.'
                 : 'Vous n\'êtes pas encore connecté sur cet appareil : touchez <b>Se connecter</b> (pastille du compte) avec votre adresse TRIGONE et votre code de connexion.');
         },
+        // Classe du train selon le grade du profil : officiers en 1re classe, sous-officiers et militaires du rang en 2de.
+        'classe-train': function() {
+            var g = String(reglages().grade || ''), a = window.AIDE_MOTEUR.appellation(g), nom = a.replace(/^(§ le |mon )/, '');
+            var fin = '<br>Les billets se réservent par l\'organisme de réservation (Amplitude, ABT). Pour un cas particulier (plus de place, surclassement), voyez l\'<b>assistant Chorus DT</b> : il fait foi.';
+            if (!a) return Promise.resolve('Train (SNCF) : la <b>classe du billet dépend du grade</b>.<br>• <b>Officiers</b> : <b>1re classe</b>.<br>• <b>Sous-officiers</b> et <b>militaires du rang</b> : <b>2de classe</b>.' + fin + '<br><small>Indiquez votre grade dans <b>Mon profil</b> : je vous dirai directement votre classe.</small>');
+            var officier = /(general|colonel|commandant|capitaine|lieutenant|commissaire)/.test(a.normalize('NFD').replace(/[\u0300-\u036f]/g, '')), sof = /(major|adjudant|marechal des logis|sergent)/.test(a.normalize('NFD').replace(/[\u0300-\u036f]/g, ''));
+            return Promise.resolve('Vous êtes <b>' + esc(nom) + '</b> (' + (officier ? 'officier' : sof ? 'sous-officier' : 'militaire du rang') + ') : en train, votre billet est en <b>' + (officier ? '1re classe' : '2de classe') + '</b>.<br>Pour rappel : officiers en 1re classe ; sous-officiers et militaires du rang en 2de classe.' + fin);
+        },
         'mes-roles': function() {
             var l = {}; try { l = JSON.parse(localStorage.getItem('trigone_roles_locaux') || '{}') || {}; if (localStorage.getItem('trigone_role_chorus') === '1') l.chorus = true; if (localStorage.getItem('trigone_role_admin')) l.admin = true; } catch (e) {}
             var noms = { valideur1: 'VALIDEUR 1', valideur2: 'VALIDEUR 2', chorus: 'ASSIST CHORUS DT', admin: 'ADMINISTRATEUR' }, eus = Object.keys(noms).filter(function(k) { return l[k]; }).map(function(k) { return '<b>' + noms[k] + '</b>'; });
@@ -646,8 +654,8 @@
         (base.fiches || []).forEach(function(f) {
             [f.t].concat(f.q || []).forEach(function(q, i) {
                 var m = motsDe(q); if (!m.length || q.length > 70) return;
-                var argot = m.some(function(x) { return sms[x]; });
-                indexSug.push({ f: f, q: q, m: m, titre: i === 0, argot: argot });
+                var argot = m.some(function(x) { return sms[x] && sms[x] !== x; });   // « ou », « ai » : des mots ordinaires
+                indexSug.push({ f: f, q: q, m: m, titre: i === 0, premiere: i === 1, argot: argot });
             });
         });
         return indexSug;
@@ -667,7 +675,7 @@
                 return x.m.some(function(w) { return w === t || (debut && t.length >= 2 && w.indexOf(t) === 0) || (t.length >= 5 && w.length >= 5 && w.slice(0, 5) === t.slice(0, 5)); });
             });
             if (!ok) return;
-            var sc = 10 + (x.calc ? 3 : 0) + (proches[x.f.id] || 0) * 2 + ((x.f.e || []).indexOf(ecran) >= 0 ? 2 : 0) - (x.argot ? 6 : 0) - x.q.length / 25 - (x.titre ? 0.5 : 0);
+            var sc = 10 + (x.calc ? 3 : 0) + (proches[x.f.id] || 0) * 2 + ((x.f.e || []).indexOf(ecran) >= 0 ? 2 : 0) - (x.argot ? 6 : 0) - x.q.length / 25 - (x.titre ? 0.5 : 0) + (x.premiere ? 0.8 : 0);   // la 1re formulation d'une fiche est sa question type
             var cle = x.calc ? 'calc:' + x.q : x.f.id;
             if (!meilleur[cle] || sc > meilleur[cle].sc) meilleur[cle] = { x: x, sc: sc };
         });
@@ -698,7 +706,7 @@
         codefd: { t: '<b>Code d\'engagement Fd@ligne</b> : c\'est le code qui dit <b>sur quel budget</b> la mission est payée. Demandez-le à votre chef de service ou à l\'assistant Chorus DT. Dès que vous le tapez, TRIGONE affiche son libellé pour vérifier.', l: 'Voir les codes FD de mon unité', q: 'codes fd de mon unité' },
         avance: { t: '<b>Demande d\'avance</b> : <b>OUI</b> pour recevoir, avant le départ, jusqu\'à <b>75 %</b> des frais prévus (mission longue ou coûteuse). Elle est déduite du remboursement final. À demander <b>avant le départ</b>.' },
         nds: { t: '<b>NDS ou DAF</b> : le document de votre bureau qui justifie la mission (NDS : note de service). Joignez-le en PDF ou en photo ; vous ne l\'avez pas ? Demandez-le à votre bureau ou à l\'assistant Chorus DT.' },
-        moyen: { t: '<b>Moyen de transport</b> :<br>• <b>Véhicule de service</b> : pas d\'indemnités kilométriques.<br>• <b>VRC</b> (votre véhicule personnel) : seulement <b>sur autorisation</b> ; joignez la demande d\'autorisation VRC, la carte grise et l\'attestation d\'assurance. Indemnités kilométriques selon les CV.<br>• <b>Train, avion</b> : billets par l\'organisme de réservation (Amplitude, ABT).', l: 'Combien pour mes kilomètres ?', q: 'comment sont calculées les indemnités kilométriques' },
+        moyen: { t: '<b>Moyen de transport</b> :<br>• <b>Véhicule de service</b> : pas d\'indemnités kilométriques.<br>• <b>VRC</b> (votre véhicule personnel) : seulement <b>sur autorisation</b> ; joignez la demande d\'autorisation VRC, la carte grise et l\'attestation d\'assurance. Indemnités kilométriques selon les CV.<br>• <b>Train, avion</b> : billets par l\'organisme de réservation (Amplitude, ABT). En train : <b>1re classe</b> pour les officiers, <b>2de classe</b> pour les sous-officiers et militaires du rang.', l: 'Combien pour mes kilomètres ?', q: 'comment sont calculées les indemnités kilométriques' },
         'cr-repas': { t: '<b>Repas payants</b> : le nombre de repas que vous avez <b>payés vous-même</b> (20 € chacun en France). Ne comptez pas un repas <b>fourni</b> ou pris au <b>restaurant administratif</b>.<br>Le maximum suit vos horaires : midi si vous étiez en mission de <b>11 h à 14 h</b>, soir de <b>18 h à 21 h</b>.', l: 'Pourquoi ce maximum ?', q: 'ai je droit au repas du midi' },
         'cr-nuit': { t: '<b>Nuit par nuit</b> :<br>• <b>Payant</b> : vous avez payé l\'hôtel (gardez la facture) : 90, 120 ou 140 € selon la ville.<br>• <b>Gratuit</b> : logé gratuitement (caserne, hébergement fourni) : rien n\'est versé.<br>• <b>Demande de réservation</b> : la nuit a été réservée par l\'unité.' }
     };
