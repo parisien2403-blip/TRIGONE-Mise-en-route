@@ -618,6 +618,7 @@
 
     // ---------- Nouveautés (à compléter à chaque publication, numéro de build des ?v=) ----------
     var NOUVEAUTES = [
+        { build: 231, version: 'V228', l: ['Ma carte : « Changer mon QR code » si une capture de votre carte a circulé (la carte est numérique, elle ne se perd pas)'] },
         { build: 230, version: 'V227', l: ['Quand vous tapez une question, je vous propose les questions dont je connais la réponse exacte : touchez la bonne', 'Des petits « ? » à côté des champs difficiles (code FD, avance, transport, repas, nuit) expliquent quoi mettre'] },
         { build: 229, version: 'V226', l: ['Références : les textes officiels des frais de déplacement des militaires (décret n° 2009-545) sont cités à côté des barèmes', 'Demandez-moi « c\'est quoi le texte sur les frais de mission ? »'] },
         { build: 228, version: 'V225', l: ['L\'accueil de Mise en route s\'adapte à tous les écrans : la barre d\'onglets du bas reste toujours visible (téléphones pliables, petits écrans, grand texte)'] },
