@@ -1,7 +1,7 @@
 // ===================== TRIGONE MISE EN ROUTE — logique =====================
 var MER_VERSION = 1;          // version du format des fichiers .json échangés
 // Version du code de l'appli : à augmenter à chaque publication, avec « appCodeVersion » dans updates-manifest.json.
-var APP_CODE_VERSION = 273;
+var APP_CODE_VERSION = 274;
 // Numéro de version affiché (« V1 », « V2 »…) : repart de 1 au lancement de TRIGONE jumelé et suit ensuite chaque
 // publication. APP_CODE_VERSION reste le compteur interne des mises à jour (ne jamais le faire redescendre).
 var APP_VERSION_AFFICHEE = APP_CODE_VERSION - 48;
@@ -2314,6 +2314,13 @@ function TPL_REFERENCES() {
         MER_FOLD('<svg viewBox="0 0 24 24"><rect x="4" y="11" width="16" height="10" rx="2"/><path d="M8 11V7a4 4 0 0 1 8 0v4"/></svg>', 'Valideurs habilités', [
             'La liste des valideurs habilités (1er et 2e valideur) est publiée avec l\'appli et relue à chaque ouverture de l\'Espace valideur : un changement de code s\'applique automatiquement.',
             'Chaque validation est une <b>signature électronique</b> du contenu exact de la demande et de ses pièces jointes : toute modification ultérieure est détectée.']) +
+        MER_FOLD('<svg viewBox="0 0 24 24"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5M9 13h6M9 17h4"/></svg>', 'Textes réglementaires (frais de déplacement)', [
+            '<b>Décret n° 2009-545 du 14 mai 2009</b> modifié : frais de déplacement temporaire des <b>militaires</b> (texte de base pour le personnel militaire).',
+            '<b>Instruction n° 230600/DRH-MD/SPGRH/FM2</b> (2009) : application du décret aux militaires. Indemnités <b>forfaitaires</b>, versées pour une <b>dépense réelle et justifiée</b> ; justificatifs joints à l\'ordre de mission ; défraiement dans les mêmes conditions que le personnel civil.',
+            '<b>Décret n° 2006-781 du 3 juillet 2006</b> : déplacements temporaires des personnels civils de l\'État (régime sur lequel les militaires sont alignés).',
+            '<b>Arrêté du 3 juillet 2006</b> fixant les taux des <b>indemnités de mission</b> (modifié) : repas, nuitée, barème par pays.',
+            '<b>Arrêté du 3 juillet 2006</b> fixant les taux des <b>indemnités kilométriques</b>, modifié par les arrêtés du <b>26 février 2019</b> et du <b>14 mars 2022</b>.',
+            'Version en vigueur : <b>Légifrance</b> (legifrance.gouv.fr) et <b>Bulletin officiel des armées</b>. En cas de doute sur un cas particulier, l\'<b>assistant Chorus DT</b> de l\'unité fait foi.']) +
         MER_FOLD('<svg viewBox="0 0 24 24"><path d="M7 7h11l-3-3M17 17H6l3 3"/></svg>', 'Compte-rendu de mission', [
             'TRIGONE Compte-rendu de mission est intégré : on le choisit sur l\'écran d\'ouverture coupé en diagonale, ou en touchant le logo de l\'accueil.',
             'Il garde ses propres références (repas, hébergement, étranger, indemnité kilométrique), consultables depuis son propre bouton « Références ».']) +

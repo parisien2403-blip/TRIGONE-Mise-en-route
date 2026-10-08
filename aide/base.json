@@ -3909,6 +3909,44 @@
    "c": "Une nuit imprévue (train annulé, grève, retard) est indemnisée avec la facture d'hôtel et une attestation."
   },
   {
+   "id": "textes-reference",
+   "t": "Textes de référence (frais de déplacement)",
+   "app": "tous",
+   "e": [
+    "cr-frais",
+    "cr-rembours"
+   ],
+   "q": [
+    "quels sont les textes de référence",
+    "texte de référence",
+    "c'est quoi le texte sur les frais de mission",
+    "quel décret pour les frais de déplacement",
+    "décret frais de déplacement militaire",
+    "sur quel texte se base trigone",
+    "d'où viennent les règles",
+    "quelle est la règle officielle",
+    "référence réglementaire",
+    "base légale des frais de mission",
+    "quel arrêté pour les indemnités",
+    "texte officiel des repas",
+    "décret 2009-545",
+    "arrêté du 3 juillet 2006",
+    "instruction 230600",
+    "les textes militaires sur les frais",
+    "c'est écrit où",
+    "c'est écrit où cette règle",
+    "où est écrite la règle des repas",
+    "quel texte dit ça",
+    "légifrance frais de mission"
+   ],
+   "r": "TRIGONE s'appuie sur ces textes :<br>• <b>Décret n° 2009-545 du 14 mai 2009</b> modifié : frais de déplacement temporaire des <b>militaires</b>.<br>• <b>Instruction n° 230600/DRH-MD/SPGRH/FM2</b> (2009) : son application (indemnités <b>forfaitaires</b>, pour une <b>dépense réelle et justifiée</b>, justificatifs joints à l'ordre de mission).<br>• <b>Décret n° 2006-781 du 3 juillet 2006</b> : régime des civils de l'État, sur lequel les militaires sont alignés.<br>• <b>Arrêtés du 3 juillet 2006</b> : taux des <b>indemnités de mission</b> (repas, nuitée, barème par pays) et des <b>indemnités kilométriques</b> (modifiés en 2019 et 2022).<br>Exemple : le repas du midi n'est dû que si vous êtes en mission sur <b>toute</b> la tranche 11 h – 14 h (18 h – 21 h le soir, 0 h – 5 h pour la nuit).<br>Version en vigueur : <b>Légifrance</b> et <b>Bulletin officiel des armées</b>. Pour un cas particulier, l'<b>assistant Chorus DT</b> fait foi.",
+   "m": {
+    "a": "mer:REFERENCES",
+    "l": "Ouvrir les Références"
+   },
+   "c": "Pour les militaires : décret n° 2009-545 du 14 mai 2009 ; taux : arrêtés du 3 juillet 2006 (mission et kilomètres)."
+  },
+  {
    "id": "regle-petit-dej",
    "t": "Petit-déjeuner",
    "app": "tous",
